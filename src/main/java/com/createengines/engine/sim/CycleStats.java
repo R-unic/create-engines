@@ -21,7 +21,7 @@ public final class CycleStats {
 		return result.fired() && unburnedFraction() > 0.15;
 	}
 
-	void copyFrom(CycleStats other) {
+	public void copyFrom(CycleStats other) {
 		work = other.work;
 		fuelInjected = other.fuelInjected;
 		fuelBurned = other.fuelBurned;

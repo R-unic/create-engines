@@ -43,6 +43,10 @@ public final class CylinderModel {
 	private double temperature;
 	private double fresh;
 
+	/** Gas pushed back into the intake manifold, and how much of it is still fresh air. */
+	private double intakeBackflow;
+	private double intakeBackflowFresh = 1;
+
 	private double fuelPending;
 	private double timeSinceInjection;
 	private boolean burning;
@@ -109,11 +113,35 @@ public final class CylinderModel {
 	}
 
 	public void resetGas() {
-		moles = spec.volumeAt(0);
+		resetGas(0);
+	}
+
+	/** Fills the cylinder with fresh air at ambient pressure for wherever its piston currently is. */
+	public void resetGas(double pistonAngle) {
+		moles = spec.volumeAt(pistonAngle);
 		temperature = 1;
 		fresh = 1;
+		intakeBackflow = 0;
+		intakeBackflowFresh = 1;
 		fuelPending = 0;
 		burning = false;
+	}
+
+	/** Takes over another model's gas and cycle state, e.g. when the engine is rebuilt around this cylinder. */
+	public void copyStateFrom(CylinderModel other) {
+		moles = other.moles;
+		temperature = other.temperature;
+		fresh = other.fresh;
+		intakeBackflow = other.intakeBackflow;
+		intakeBackflowFresh = other.intakeBackflowFresh;
+		fuelPending = other.fuelPending;
+		timeSinceInjection = other.timeSinceInjection;
+		burning = other.burning;
+		burnRate = other.burnRate;
+		burningFuel = other.burningFuel;
+		travelSinceCycle = other.travelSinceCycle;
+		current.copyFrom(other.current);
+		last.copyFrom(other.last);
 	}
 
 	public CycleStats lastCycle() {
@@ -145,7 +173,7 @@ public final class CylinderModel {
 		// Rule 3: valves, opened by the cam
 		if (camshaft != null) {
 			double mid = SimMath.wrap(camFrom + camDelta / 2);
-			exchange(v1, 1, 1, 1, spec.intakeFlow() * profile.intakeLift(mid) * intakeFactor, dt);
+			exchangeIntake(v1, spec.intakeFlow() * profile.intakeLift(mid) * intakeFactor, dt);
 			exchange(v1, 1, EXHAUST_TEMP, 0, spec.exhaustFlow() * profile.exhaustLift(mid) * exhaustFactor, dt);
 		}
 
@@ -169,6 +197,31 @@ public final class CylinderModel {
 
 	private double pressure(double volume) {
 		return moles * temperature / volume;
+	}
+
+	/**
+	 * The intake port is a manifold, not open sky: gas pushed back out through the intake valve (reversion, or all of
+	 * it if the exhaust can't open) waits in the manifold, cools, and is the first thing drawn back in.
+	 */
+	private void exchangeIntake(double volume, double rate, double dt) {
+		if (rate <= 0)
+			return;
+		double p = pressure(volume);
+		double target = p + (1 - p) * (1 - Math.exp(-rate * dt));
+		if (target < p) {
+			double out = (p - target) * volume / temperature;
+			intakeBackflowFresh = (intakeBackflow * intakeBackflowFresh + out * fresh) / (intakeBackflow + out);
+			intakeBackflow += out;
+			moles -= out;
+			return;
+		}
+		double in = (target - p) * volume;
+		double reingested = Math.min(intakeBackflow, in);
+		double inFresh = in <= 0 ? 1 : (reingested * intakeBackflowFresh + (in - reingested)) / in;
+		intakeBackflow -= reingested;
+		fresh = (moles * fresh + in * inFresh) / (moles + in);
+		temperature = (moles * temperature + in) / (moles + in);
+		moles += in;
 	}
 
 	private void exchange(double volume, double portPressure, double portTemp, double portFresh, double rate,

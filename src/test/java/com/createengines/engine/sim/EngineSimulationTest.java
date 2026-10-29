@@ -159,6 +159,18 @@ class EngineSimulationTest {
 	}
 
 	@Test
+	void blockingTheExhaustOfARunningEngineStallsIt() {
+		CylinderModel cylinder = single(new Tank(1000));
+		EngineSimulation engine = engine(0, cylinder);
+		crank(engine, 10);
+		run(engine, 20, 0);
+		assertFalse(engine.isStopped(), "should be running before the exhaust is blocked");
+		cylinder.exhaustFactor = 0;
+		run(engine, 60, 0);
+		assertTrue(engine.isStopped(), "burned gas pushed back into the intake should choke it");
+	}
+
+	@Test
 	void noCamshaftMeansNoBreathingOrInjection() {
 		CylinderModel cylinder = cylinderWithLobe(0, 0, null, new Tank(1000));
 		EngineSimulation engine = engine(0, cylinder);
