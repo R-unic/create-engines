@@ -4,7 +4,9 @@ import com.createengines.content.camshaft.CamshaftBlockEntity;
 import com.createengines.content.crankshaft.CrankshaftBlockEntity;
 import com.createengines.content.cylinder.CylinderBlock;
 import com.createengines.content.head.CylinderHeadBlock;
+import com.createengines.registry.CEFluids;
 import com.createengines.registry.CEItems;
+import com.simibubi.create.content.fluids.tank.FluidTankBlockEntity;
 import com.simibubi.create.foundation.ponder.CreateSceneBuilder;
 
 import net.createmod.catnip.math.Pointing;
@@ -15,6 +17,8 @@ import net.createmod.ponder.api.scene.Selection;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.world.level.block.Blocks;
+import net.neoforged.neoforge.fluids.FluidStack;
+import net.neoforged.neoforge.fluids.capability.IFluidHandler.FluidAction;
 
 /** Ponder scenes for the engine components. Text here is the English source; datagen writes it to the lang file. */
 public final class EngineScenes {
@@ -238,6 +242,14 @@ public final class EngineScenes {
 			.placeNearTarget();
 		scene.idle(100);
 
+		scene.overlay()
+			.showText(90)
+			.text("Engine Oil goes in the same way, into a second tank beside the fuel. It lubricates every moving part of the engine, not just this cylinder.")
+			.pointAt(util.vector()
+				.blockSurface(head, Direction.EAST))
+			.placeNearTarget();
+		scene.idle(100);
+
 		scene.world()
 			.setKineticSpeed(crank, 32);
 		scene.world()
@@ -445,6 +457,103 @@ public final class EngineScenes {
 			.text("Smoke from the outlet follows each firing. Black smoke means more fuel than air: the engine is running rich.")
 			.pointAt(util.vector()
 				.topOf(3, 4, 4))
+			.placeNearTarget();
+		scene.idle(100);
+		scene.markAsFinished();
+	}
+
+	public static void lubrication(SceneBuilder builder, SceneBuildingUtil util) {
+		CreateSceneBuilder scene = new CreateSceneBuilder(builder);
+		scene.title("lubrication", "Keeping an Engine Oiled");
+		scene.configureBasePlate(0, 0, 6);
+		scene.world()
+			.showSection(util.select()
+				.layer(0), Direction.UP);
+
+		Selection crank = util.select()
+			.fromTo(1, 1, 3, 3, 1, 3);
+		BlockPos head = util.grid()
+			.at(2, 3, 3);
+		BlockPos tank = util.grid()
+			.at(4, 3, 3);
+		scene.world()
+			.modifyBlockEntity(util.grid()
+				.at(4, 3, 3), FluidTankBlockEntity.class, be -> be.getTankInventory()
+					.fill(new FluidStack(CEFluids.ENGINE_OIL.get()
+						.getSource(), 4000), FluidAction.EXECUTE));
+		scene.idle(10);
+
+		scene.world()
+			.showSection(util.select()
+				.fromTo(1, 1, 3, 2, 3, 3), Direction.DOWN);
+		scene.idle(10);
+		scene.world()
+			.setKineticSpeed(crank, 32);
+		scene.overlay()
+			.showText(90)
+			.attachKeyFrame()
+			.text("Crankshaft bearings, pistons and connecting rods all rub against something. They need a film of oil to slide.")
+			.pointAt(util.vector()
+				.blockSurface(util.grid()
+					.at(2, 2, 3), Direction.NORTH))
+			.placeNearTarget();
+		scene.idle(100);
+
+		scene.overlay()
+			.showText(100)
+			.colored(PonderPalette.RED)
+			.text("A new engine is dry. Dry parts drag: an engine with no oil still runs, but tops out at about half its speed and has less torque to spare.")
+			.pointAt(util.vector()
+				.topOf(2, 1, 3))
+			.placeNearTarget();
+		scene.idle(110);
+
+		scene.world()
+			.showSection(util.select()
+				.fromTo(3, 3, 3, 4, 3, 3), Direction.WEST);
+		scene.idle(15);
+		scene.overlay()
+			.showText(100)
+			.attachKeyFrame()
+			.text("Pipe Engine Oil into any face of a Cylinder Head. It has a second tank for oil, apart from the fuel. Heads that touch share it.")
+			.pointAt(util.vector()
+				.blockSurface(head, Direction.EAST))
+			.placeNearTarget();
+		scene.idle(110);
+
+		scene.world()
+			.setKineticSpeed(crank, 96);
+		scene.overlay()
+			.showText(100)
+			.attachKeyFrame()
+			.colored(PonderPalette.GREEN)
+			.text("Once oil reaches the engine, the film builds within seconds and friction drops. The engine can turn faster and has more torque to spare.")
+			.pointAt(util.vector()
+				.topOf(2, 1, 3))
+			.placeNearTarget();
+		scene.idle(110);
+
+		scene.overlay()
+			.showText(100)
+			.text("Turning wears the oil off a little at a time. If the supply runs dry the film thins and the engine slows, so keep the tank topped up.")
+			.pointAt(util.vector()
+				.blockSurface(tank, Direction.UP))
+			.placeNearTarget();
+		scene.idle(110);
+
+		scene.overlay()
+			.showText(90)
+			.text("Goggles on any crankshaft block show how well the engine is lubricated.")
+			.pointAt(util.vector()
+				.topOf(1, 1, 3))
+			.placeNearTarget();
+		scene.idle(100);
+
+		scene.overlay()
+			.showText(90)
+			.text("Engine Oil is made by heating Plant Oil with a Slime Ball in a Mechanical Mixer over a Blaze Burner.")
+			.pointAt(util.vector()
+				.blockSurface(tank, Direction.EAST))
 			.placeNearTarget();
 		scene.idle(100);
 		scene.markAsFinished();

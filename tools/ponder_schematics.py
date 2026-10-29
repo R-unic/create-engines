@@ -175,3 +175,15 @@ write_schematic("starter", (5, 6, 5), [
     (1, 2, 0, "create:creative_motor", facing("south")),
     (0, 2, 2, "minecraft:redstone_block", {}),
 ])
+
+write_schematic("lubrication", (6, 6, 6), [
+    (1, 1, 3, ce("crankshaft"), axis("x")),
+    (2, 1, 3, ce("crank_throw"), axis("x")),
+    (3, 1, 3, ce("crankshaft"), axis("x")),
+    (2, 2, 3, ce("cylinder"), cylinder("up")),
+    (2, 3, 3, ce("cylinder_head"), head("up")),
+    # Oil comes in through a pipe from a tank, into the side of the head
+    (3, 3, 3, "create:fluid_pipe", {"east": "true", "west": "true", "north": "false", "south": "false",
+                                    "up": "false", "down": "false", "waterlogged": "false"}),
+    (4, 3, 3, "create:fluid_tank", {}),
+])

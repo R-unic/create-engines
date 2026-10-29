@@ -11,6 +11,7 @@ import com.createengines.content.cylinder.CylinderBlock;
 import com.createengines.engine.CrankGeometry;
 import com.createengines.gametest.TestEngine;
 import com.createengines.registry.CEBlocks;
+import com.createengines.registry.CEFluids;
 
 import net.createmod.catnip.animation.AnimationTickHolder;
 import net.createmod.catnip.gui.ScreenOpener;
@@ -138,7 +139,10 @@ public final class VisualSmokeTest {
 			});
 		}));
 		frames("no_rod", 3400, 2.5, 2.0, -0.5, 0, 2.3f);
-		STEPS.add(new Step(3440, () -> Minecraft.getInstance()
+		ponder("lubrication", 3450, () -> CEFluids.ENGINE_OIL.getBucket()
+			.orElseThrow()
+			.getDefaultInstance(), 150, 330, 560, 700, 880);
+		STEPS.add(new Step(4400, () -> Minecraft.getInstance()
 			.stop()));
 	}
 
