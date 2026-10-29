@@ -5,9 +5,13 @@ import java.util.List;
 import java.util.function.Supplier;
 
 import com.createengines.CreateEngines;
+import com.createengines.content.EnginePoses;
+import com.createengines.content.crankshaft.CrankshaftBlockEntity;
+import com.createengines.engine.CrankGeometry;
 import com.createengines.gametest.TestEngine;
 import com.createengines.registry.CEBlocks;
 
+import net.createmod.catnip.animation.AnimationTickHolder;
 import net.createmod.catnip.gui.ScreenOpener;
 import net.createmod.ponder.foundation.ui.PonderUI;
 import net.minecraft.client.Minecraft;
@@ -17,6 +21,7 @@ import net.minecraft.client.gui.screens.TitleScreen;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.server.MinecraftServer;
+import net.minecraft.util.Mth;
 import net.minecraft.world.Difficulty;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.GameRules;
@@ -27,6 +32,7 @@ import net.minecraft.world.level.levelgen.Heightmap;
 import net.minecraft.world.level.levelgen.WorldOptions;
 import net.minecraft.world.level.levelgen.presets.WorldPresets;
 import net.neoforged.neoforge.client.event.ClientTickEvent;
+import net.neoforged.neoforge.client.event.RenderFrameEvent;
 import net.neoforged.neoforge.common.NeoForge;
 
 /**
@@ -54,6 +60,7 @@ public final class VisualSmokeTest {
 			return;
 		CreateEngines.LOGGER.info("Visual smoke test enabled");
 		NeoForge.EVENT_BUS.addListener(VisualSmokeTest::onClientTick);
+		NeoForge.EVENT_BUS.addListener(VisualSmokeTest::onRenderFrame);
 		schedule();
 	}
 
@@ -130,6 +137,51 @@ public final class VisualSmokeTest {
 	private static void goggles(String name, int tick, double x, double y, double z, float yaw, float pitch) {
 		STEPS.add(new Step(tick, () -> view(x, y, z, yaw, pitch)));
 		STEPS.add(new Step(tick + 15, () -> shot("goggles_" + name)));
+	}
+
+	// Animation smoothness: while the engine cranks, fires and speeds up, compare each frame's drawn crank angle with
+	// how far its speed says it should have turned since the last frame
+	private static final int MEASURE_FROM = 60;
+	private static final int MEASURE_TO = 520;
+	private static float lastTime = Float.NaN;
+	private static float lastAngle;
+	private static float lastCreateAngle;
+	private static float worstJump;
+	private static float worstCreateJump;
+	private static int speedChanges;
+	private static float lastSpeed;
+
+	private static void onRenderFrame(RenderFrameEvent.Post event) {
+		Minecraft minecraft = Minecraft.getInstance();
+		if (minecraft.level == null || ticksInWorld < MEASURE_FROM)
+			return;
+		if (ticksInWorld > MEASURE_TO) {
+			if (!Float.isNaN(lastTime)) {
+				CreateEngines.LOGGER.info(
+					"Smoke test smoothness: worst crank jump {} degrees beyond its speed over {} speed changes; "
+						+ "time x speed would have jumped {} degrees", worstJump, speedChanges, worstCreateJump);
+				lastTime = Float.NaN;
+			}
+			return;
+		}
+		if (!(minecraft.level.getBlockEntity(origin.offset(TestEngine.THROW)) instanceof CrankshaftBlockEntity crank))
+			return;
+		float time = AnimationTickHolder.getRenderTime(minecraft.level);
+		float speed = crank.getTheoreticalSpeed();
+		float angle = EnginePoses.crankAngle(crank, time);
+		float createAngle = CrankGeometry.renderAngle(time, speed);
+		if (!Float.isNaN(lastTime) && time > lastTime) {
+			float expected = (time - lastTime) * speed * 3 / 10;
+			float jump = Math.abs(Mth.wrapDegrees(angle - lastAngle - expected));
+			worstJump = Math.max(worstJump, jump);
+			worstCreateJump = Math.max(worstCreateJump, Math.abs(Mth.wrapDegrees(createAngle - lastCreateAngle - expected)));
+			if (speed != lastSpeed)
+				speedChanges++;
+		}
+		lastTime = time;
+		lastAngle = angle;
+		lastCreateAngle = createAngle;
+		lastSpeed = speed;
 	}
 
 	private static void onClientTick(ClientTickEvent.Post event) {

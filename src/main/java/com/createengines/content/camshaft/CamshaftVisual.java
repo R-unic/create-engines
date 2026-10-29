@@ -1,5 +1,6 @@
 package com.createengines.content.camshaft;
 
+import com.createengines.content.EnginePoses;
 import com.createengines.content.RotatingPartVisual;
 import com.createengines.registry.CEPartialModels;
 
@@ -14,7 +15,7 @@ public class CamshaftVisual extends RotatingPartVisual<CamshaftBlockEntity> {
 	}
 
 	@Override
-	protected float partAngle() {
-		return (float) blockEntity.lobeAngle();
+	protected float angle(float renderTime) {
+		return EnginePoses.camAngle(blockEntity, renderTime);
 	}
 }

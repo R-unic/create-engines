@@ -4,6 +4,7 @@ import java.util.List;
 
 import org.jetbrains.annotations.Nullable;
 
+import com.createengines.content.RenderRotation;
 import com.createengines.engine.EngineController;
 import com.createengines.engine.EngineState;
 import com.createengines.engine.EngineSummary;
@@ -41,6 +42,7 @@ public class CrankshaftBlockEntity extends GeneratingKineticBlockEntity implemen
 	private @Nullable EngineController controller;
 	private @Nullable EngineController.Motion savedMotion;
 	private @Nullable EngineSummary summary;
+	private final RenderRotation rotation = new RenderRotation();
 
 	public CrankshaftBlockEntity(BlockEntityType<?> type, BlockPos pos, BlockState state) {
 		super(type, pos, state);
@@ -166,6 +168,20 @@ public class CrankshaftBlockEntity extends GeneratingKineticBlockEntity implemen
 	public float calculateStressApplied() {
 		lastStressApplied = 0;
 		return 0;
+	}
+
+	/**
+	 * How far the crank has turned for drawing, in degrees (not wrapped, and before this block's throw angle). Every
+	 * block of an engine's crankshaft takes it from the primary, so that the whole crank, its pistons and its cams
+	 * move as one.
+	 */
+	public double rotation(float renderTime) {
+		float speed = getTheoreticalSpeed();
+		if (primaryPos != null && !primaryPos.equals(worldPosition) && level != null
+			&& level.getBlockEntity(primaryPos) instanceof CrankshaftBlockEntity primary
+			&& primary.getTheoreticalSpeed() == speed)
+			return rotation.follow(renderTime, primary.rotation.at(renderTime, speed));
+		return rotation.at(renderTime, speed);
 	}
 
 	public @Nullable BlockPos primaryPos() {

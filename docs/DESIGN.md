@@ -19,9 +19,9 @@ before relying on it.
 
 | Behaviour | Verified by |
 |---|---|
-| Five-rule cylinder model; crank energy balance; starting, fuel starvation, missing intake, blocked exhaust, missing or mis-geared cam, mistiming, overload, flywheel smoothing, firing order, plant oil vs diesel ignition | 21 JUnit tests (`./gradlew test`) on the pure-Java `engine.sim` package |
-| A single-cylinder engine built from blocks in a real world: the starter cranks it, it fires, runs on its own after release, provides Create stress capacity, keeps its cam at exactly half crank speed with timing on time, burns fuel; without fuel it stalls; removing the exhaust chokes it; the starter loads its input network | 4 GameTests (`./gradlew runGameTestServer`) |
-| Crank, throw, piston, connecting rod, cam lobe and valve stems animate together; exhaust smoke follows the cam; goggle diagnostics; all five Ponder scenes render and play | Visual smoke test (`./gradlew runVisualSmokeTest`): builds the engine in a fresh flat world and saves screenshots to `run/screenshots/`, then quits |
+| Five-rule cylinder model; crank energy balance; starting, fuel starvation, missing intake, blocked exhaust, missing or mis-geared cam, mistiming, overload, flywheel smoothing, firing order, plant oil vs diesel ignition | 24 JUnit tests (`./gradlew test`) on the pure-Java `engine.sim` package, including the dynamometer rating |
+| A single-cylinder engine built from blocks in a real world: the starter cranks it, it fires, runs on its own after release, provides Create stress capacity, keeps its cam at exactly half crank speed with timing on time, burns fuel; without fuel it stalls; removing the exhaust chokes it; the starter loads its input network; two presses within its rating slow it into its torque band and keep turning; three presses overstress the network while the engine keeps running; every item is listed once in the creative tabs | 7 GameTests (`./gradlew runGameTestServer`) |
+| Crank, throw, piston, connecting rod, cam lobe and valve stems animate together; exhaust smoke follows the cam; goggle diagnostics; all five Ponder scenes render and play; the crank's drawn angle never jumps beyond what its speed explains, across every speed change while starting | Visual smoke test (`./gradlew runVisualSmokeTest`): builds the engine in a fresh flat world and saves screenshots to `run/screenshots/`, then quits |
 
 ### Decisions taken in review
 
@@ -29,7 +29,7 @@ before relying on it.
 |---|---|
 | Pistons and connecting rods | Parts installed into the cylinder (right-click; sneak-right-click with an empty hand removes). Block state properties, so installing one rescans the engine. |
 | Crank speed | Crank RPM = Create RPM, 1:1. |
-| Stress capacity | Torque available at full fuel at the current RPM. |
+| Stress capacity | Rated torque: 90% of the peak of the engine's dynamometer torque curve at or below its current RPM (see §2.4, revised after play-testing). |
 | Starting | A **Starter** block: faces a crankshaft block, takes rotation into its back from any Create source, engages while redstone-powered, and drives the crank through a one-way clutch the engine outruns. It is not kinetically connected to the crank; cranking effort is stress on its own input. A Hand Crank on the crank line also works. |
 | Valve timing | **Camshafts are in Milestone 1** (the timing-mark stand-in was dropped). A Camshaft line must turn at half crank speed via any gearing; a Cam Lobe touching a head works its valves *and* its unit injector. Lobe angle (7.5° steps, value panel) sets timing and which crank revolution the cylinder fires on. Wrong ratio, wrong angle or no cam fall out of the simulation. Cam phase is locked to the crank whenever the ratio is exactly 1:2. |
 | Throw angle | 15° steps through the value panel. |
@@ -56,9 +56,9 @@ before relying on it.
 
 ### Known gaps and follow-ups
 
-- **No governor.** Unloaded, a crude engine revs until its torque falls to friction (about 150 RPM), where available
-  torque is small. A heavy load then briefly overstresses the network until the engine slows into its torque band. A
-  mechanical governor that moves the rack to hold a set speed is the natural next component.
+- **No governor.** Unloaded, a crude engine revs until its torque falls to friction (about 150 to 170 RPM), and under
+  load it slows into its torque band, so the speed of everything it drives depends on the load. A mechanical governor
+  that moves the rack to hold a set speed is the natural next component.
 - **Default full rack runs rich** (black smoke) at speed. That is a fair crude-diesel behaviour, but a shorter default
   shot may read better.
 - **Cam direction is ignored**: only the speed ratio's magnitude is checked, because Create gearing flips direction
@@ -160,6 +160,14 @@ we still rate-limit them to every ~5 ticks and only on meaningful change. Create
 it snaps output to 16/32/48/64 RPM and divides capacity so SU stays constant.
 
 ### 2.4 What "capacity" means
+
+> **Revised after play-testing.** The rule below put a loaded engine exactly on the overstress line: it slows until its
+> torque equals the load, so "torque at the current RPM" equals the load, and any ripple overstressed the network and
+> stopped everything on it. As built, capacity is the engine's **rated torque**: `engine.sim.Dynamometer` drives copies
+> of its cylinders at fixed speeds from 16 to 256 RPM with racks fully open and records net torque at each, and the
+> rating is 90% of the curve's peak at or below the current RPM. The curve is re-measured only when a cylinder's fuel
+> or cam lock changes. A load within the rating is carried by lugging down; a load above it overstresses the network,
+> and because an overstressed network has stopped everything on it, the engine then feels no load and keeps running.
 
 If capacity reported the engine's *current* net torque, then at steady state capacity = load exactly, and any
 roughness would make the network flicker in and out of overstress. Instead:
@@ -419,6 +427,8 @@ piston, linkage and connector `TransformedInstance`s every frame from the shaft'
 - **Known cosmetic quirk:** Create's angle is `time × speed`, so every published speed change makes the visual angle
   jump. That's acceptable at our quantization. If it looks bad on engines, engine parts can switch to a client-side
   *accumulated* angle shared by all parts of one engine, and only downstream Create shafts would jump.
+  **As built:** play-testing showed the jumps clearly, so engine parts use `RenderRotation`, an accumulated angle. The
+  primary crankshaft owns it, the other crank blocks follow it, and phase-locked camshafts take exactly half of it.
 
 The server sim's Θ and the client's render angle are **not** the same number, by design. The server is authoritative
 for torque and fuel; the client is authoritative for what looks right. The status flags tie them together qualitatively.

@@ -7,7 +7,6 @@ import org.jetbrains.annotations.Nullable;
 import com.createengines.content.airflow.PortOpeningBlock;
 import com.createengines.content.camshaft.CamshaftBlockEntity;
 import com.createengines.content.crankshaft.CrankshaftBlockEntity;
-import com.createengines.engine.CrankGeometry;
 import com.createengines.engine.CylinderStatus;
 import com.createengines.engine.sim.CamProfile;
 import com.createengines.engine.sim.CycleResult;
@@ -89,8 +88,7 @@ public class CylinderBlockEntity extends SmartBlockEntity implements IHaveGoggle
 			lastCamCycle = Double.NaN;
 			return;
 		}
-		float camAngle = Math.abs(
-			CrankGeometry.renderAngle(AnimationTickHolder.getRenderTime(level), lobe.getTheoreticalSpeed()));
+		float camAngle = (float) Math.abs(lobe.rotation(AnimationTickHolder.getRenderTime(level)) % 360);
 		double cycle = CylinderModel.camCycleAngle(camAngle, lobe.lobeAngle());
 		double previous = lastCamCycle;
 		lastCamCycle = cycle;

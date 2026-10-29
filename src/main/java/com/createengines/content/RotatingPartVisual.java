@@ -2,7 +2,6 @@ package com.createengines.content;
 
 import java.util.function.Consumer;
 
-import com.createengines.engine.CrankGeometry;
 import com.simibubi.create.content.kinetics.base.KineticBlockEntity;
 
 import dev.engine_room.flywheel.api.instance.Instance;
@@ -19,8 +18,8 @@ import net.minecraft.core.Direction.Axis;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 
 /**
- * A crankshaft or camshaft part spinning about its axis, with an extra fixed angle (throw or lobe angle). Posed on
- * the CPU each frame so that pistons and valves, which are posed from the same angle, stay in step with it.
+ * A crankshaft or camshaft part spinning about its axis. Posed on the CPU each frame from {@link EnginePoses}, so
+ * that pistons and valves, which are posed from the same angle, stay in step with it.
  */
 public abstract class RotatingPartVisual<T extends KineticBlockEntity> extends AbstractBlockEntityVisual<T>
 	implements SimpleDynamicVisual {
@@ -36,8 +35,8 @@ public abstract class RotatingPartVisual<T extends KineticBlockEntity> extends A
 		animate();
 	}
 
-	/** Fixed angle added to the shaft's own rotation, in degrees. */
-	protected abstract float partAngle();
+	/** The part's angle about its axis at {@code renderTime}, in degrees. */
+	protected abstract float angle(float renderTime);
 
 	@Override
 	public void beginFrame(DynamicVisual.Context context) {
@@ -45,8 +44,7 @@ public abstract class RotatingPartVisual<T extends KineticBlockEntity> extends A
 	}
 
 	private void animate() {
-		float angle = CrankGeometry.renderAngle(AnimationTickHolder.getRenderTime(level),
-			blockEntity.getTheoreticalSpeed()) + partAngle();
+		float angle = angle(AnimationTickHolder.getRenderTime(level));
 		part.setIdentityTransform()
 			.translate(getVisualPosition())
 			.mul(EnginePoses.rotatingPart(axis, angle))

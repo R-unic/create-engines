@@ -51,11 +51,11 @@ public final class EnginePoses {
 	}
 
 	public static float crankAngle(CrankshaftBlockEntity crank, float renderTime) {
-		return CrankGeometry.renderAngle(renderTime, crank.getTheoreticalSpeed()) + (float) crank.throwAngle();
+		return (float) ((crank.rotation(renderTime) + crank.throwAngle()) % 360);
 	}
 
 	public static float camAngle(CamshaftBlockEntity cam, float renderTime) {
-		return CrankGeometry.renderAngle(renderTime, cam.getTheoreticalSpeed()) + (float) cam.lobeAngle();
+		return (float) ((cam.rotation(renderTime) + cam.lobeAngle()) % 360);
 	}
 
 	/** Piston and connecting rod, from the crank throw's angle by slider-crank geometry. */
@@ -114,7 +114,7 @@ public final class EnginePoses {
 			if (!(level.getBlockEntity(head.getBlockPos()
 				.relative(face)) instanceof CamshaftBlockEntity lobe))
 				continue;
-			float travelled = Math.abs(CrankGeometry.renderAngle(renderTime, lobe.getTheoreticalSpeed()));
+			float travelled = (float) Math.abs(lobe.rotation(renderTime) % 360);
 			double cycle = CylinderModel.camCycleAngle(travelled, lobe.lobeAngle());
 			Vector3f camAxis = CrankGeometry.axisVector(neighbour.getValue(BlockStateProperties.AXIS));
 			Vector3f normal = new Vector3f(face.step());

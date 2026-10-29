@@ -4,6 +4,7 @@ import java.util.List;
 
 import org.jetbrains.annotations.Nullable;
 
+import com.createengines.content.RenderRotation;
 import com.createengines.content.crankshaft.CrankshaftBlockEntity;
 import com.createengines.content.crankshaft.SideValueBox;
 import com.createengines.engine.topology.EngineMember;
@@ -34,6 +35,7 @@ public class CamshaftBlockEntity extends KineticBlockEntity implements EngineMem
 	private float rack;
 	private int actuated;
 	private float timingError;
+	private final RenderRotation rotation = new RenderRotation();
 
 	public CamshaftBlockEntity(BlockEntityType<?> type, BlockPos pos, BlockState state) {
 		super(type, pos, state);
@@ -57,6 +59,21 @@ public class CamshaftBlockEntity extends KineticBlockEntity implements EngineMem
 	/** Angle of this block's lobes on the camshaft, in cam degrees. Zero for plain camshaft. */
 	public double lobeAngle() {
 		return lobeAngle == null ? 0 : lobeAngle.getValue() * LOBE_ANGLE_STEP;
+	}
+
+	/**
+	 * How far the camshaft has turned for drawing, in degrees (not wrapped, and before this block's lobe angle).
+	 * Geared 1:2 to an engine, it is exactly half the crank's, so the valves stay in time with the pistons.
+	 */
+	public double rotation(float renderTime) {
+		float speed = getTheoreticalSpeed();
+		if (phaseLocked && primaryPos != null && level != null
+			&& level.getBlockEntity(primaryPos) instanceof CrankshaftBlockEntity crank) {
+			float crankSpeed = crank.getTheoreticalSpeed();
+			if (crankSpeed != 0 && speed != 0)
+				return rotation.follow(renderTime, crank.rotation(renderTime) * Math.signum(speed * crankSpeed) / 2);
+		}
+		return rotation.at(renderTime, speed);
 	}
 
 	public boolean isLobe() {
