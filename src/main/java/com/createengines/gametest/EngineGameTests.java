@@ -45,72 +45,17 @@ import net.neoforged.neoforge.gametest.PrefixGameTestTemplate;
 @PrefixGameTestTemplate(false)
 public class EngineGameTests {
 
-	private static final BlockPos PRIMARY = new BlockPos(1, 2, 2);
-	private static final BlockPos THROW = new BlockPos(2, 2, 2);
-	private static final BlockPos CYLINDER = new BlockPos(2, 3, 2);
-	private static final BlockPos HEAD = new BlockPos(2, 4, 2);
-	private static final BlockPos LOBE = new BlockPos(2, 4, 3);
-	private static final BlockPos AIR_INTAKE = new BlockPos(2, 4, 1);
-	private static final BlockPos EXHAUST = new BlockPos(1, 4, 2);
-	private static final BlockPos STARTER = new BlockPos(1, 1, 2);
-	private static final BlockPos MOTOR = new BlockPos(1, 0, 2);
-	private static final BlockPos STARTER_POWER = new BlockPos(0, 1, 2);
-	private static final int MOTOR_RPM = 64;
+	private static final BlockPos PRIMARY = TestEngine.PRIMARY;
+	private static final BlockPos CYLINDER = TestEngine.CYLINDER;
+	private static final BlockPos HEAD = TestEngine.HEAD;
+	private static final BlockPos LOBE = TestEngine.LOBE;
+	private static final BlockPos EXHAUST = TestEngine.EXHAUST;
+	private static final BlockPos STARTER = TestEngine.STARTER;
+	private static final BlockPos MOTOR = TestEngine.MOTOR;
+	private static final BlockPos STARTER_POWER = TestEngine.STARTER_POWER;
 
-	private static BlockState axisX(BlockState state) {
-		return state.setValue(BlockStateProperties.AXIS, Axis.X);
-	}
-
-	/** Builds the test engine. Returns nothing; positions are the constants above. */
 	private static void buildSingleCylinder(GameTestHelper helper, boolean fuelled) {
-		helper.setBlock(PRIMARY, axisX(CEBlocks.CRANKSHAFT.getDefaultState()));
-		helper.setBlock(THROW, axisX(CEBlocks.CRANK_THROW.getDefaultState()));
-		helper.setBlock(new BlockPos(3, 2, 2), axisX(CEBlocks.CRANKSHAFT.getDefaultState()));
-		helper.setBlock(new BlockPos(4, 2, 2), axisX(AllBlocks.SHAFT.getDefaultState()));
-		helper.setBlock(new BlockPos(5, 2, 2), axisX(AllBlocks.COGWHEEL.getDefaultState()));
-
-		helper.setBlock(CYLINDER, CEBlocks.CYLINDER.getDefaultState()
-			.setValue(CylinderBlock.FACING, Direction.UP)
-			.setValue(CylinderBlock.HAS_PISTON, true)
-			.setValue(CylinderBlock.HAS_ROD, true));
-		helper.setBlock(HEAD, CEBlocks.CYLINDER_HEAD.getDefaultState()
-			.setValue(CylinderHeadBlock.FACING, Direction.UP)
-			.setValue(CylinderHeadBlock.HAS_INJECTOR, true));
-		helper.setBlock(AIR_INTAKE, CEBlocks.AIR_INTAKE.getDefaultState()
-			.setValue(PortOpeningBlock.FACING, Direction.NORTH));
-		helper.setBlock(EXHAUST, CEBlocks.EXHAUST_OUTLET.getDefaultState()
-			.setValue(PortOpeningBlock.FACING, Direction.WEST));
-
-		// Camshaft beside the head, geared 1:2 from the crank
-		helper.setBlock(LOBE, axisX(CEBlocks.CAM_LOBE.getDefaultState()));
-		for (int x = 3; x <= 5; x++)
-			helper.setBlock(new BlockPos(x, 4, 3), axisX(CEBlocks.CAMSHAFT.getDefaultState()));
-		helper.setBlock(new BlockPos(5, 3, 3), axisX(AllBlocks.LARGE_COGWHEEL.getDefaultState()));
-		helper.setBlock(new BlockPos(6, 3, 3), axisX(AllBlocks.ENCASED_CHAIN_DRIVE.getDefaultState()));
-		helper.setBlock(new BlockPos(6, 4, 3), axisX(AllBlocks.ENCASED_CHAIN_DRIVE.getDefaultState()));
-
-		// Starter under the first journal, driven by a creative motor, engaged by a redstone block
-		helper.setBlock(STARTER, CEBlocks.STARTER.getDefaultState()
-			.setValue(StarterBlock.FACING, Direction.UP));
-		helper.setBlock(MOTOR, AllBlocks.CREATIVE_MOTOR.getDefaultState()
-			.setValue(CreativeMotorBlock.FACING, Direction.UP));
-		helper.setBlock(STARTER_POWER, Blocks.REDSTONE_BLOCK);
-
-		CreativeMotorBlockEntity motor = helper.getBlockEntity(MOTOR);
-		motor.generatedSpeed.setValue(MOTOR_RPM);
-
-		// Time the cam lobe for this cylinder: the cam must fire it when its piston is at top dead centre
-		double tdc = CrankGeometry.topDeadCentreAngle(Axis.X, 0, Direction.UP);
-		double lobe = ((tdc / 2) % 180 + 180) % 180;
-		CamshaftBlockEntity cam = helper.getBlockEntity(LOBE);
-		cam.lobeAngle.setValue((int) Math.round(lobe / CamshaftBlockEntity.LOBE_ANGLE_STEP));
-
-		if (fuelled) {
-			CylinderHeadBlockEntity head = helper.getBlockEntity(HEAD);
-			head.tank()
-				.fill(new FluidStack(CEFluids.DIESEL.get()
-					.getSource(), 250), FluidAction.EXECUTE);
-		}
+		TestEngine.build(helper.getLevel(), helper.absolutePos(BlockPos.ZERO), fuelled);
 	}
 
 	private static EngineSummary summary(GameTestHelper helper) {

@@ -1,5 +1,6 @@
 package com.createengines;
 
+import com.createengines.client.VisualSmokeTest;
 import com.createengines.registry.CEPartialModels;
 
 import net.neoforged.api.distmarker.Dist;
@@ -11,5 +12,6 @@ public class CreateEnginesClient {
 
 	public CreateEnginesClient(IEventBus modEventBus) {
 		CEPartialModels.init();
+		VisualSmokeTest.register();
 	}
 }

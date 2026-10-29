@@ -50,22 +50,58 @@
       ],
       "faces": {
         "north": {
-          "texture": "#rod"
+          "texture": "#rod",
+          "uv": [
+            0,
+            0,
+            3.0,
+            3.0
+          ]
         },
         "south": {
-          "texture": "#rod"
+          "texture": "#rod",
+          "uv": [
+            0,
+            0,
+            3.0,
+            3.0
+          ]
         },
         "east": {
-          "texture": "#rod"
+          "texture": "#rod",
+          "uv": [
+            0,
+            0,
+            4,
+            3.0
+          ]
         },
         "west": {
-          "texture": "#rod"
+          "texture": "#rod",
+          "uv": [
+            0,
+            0,
+            4,
+            3.0
+          ]
         },
         "up": {
-          "texture": "#rod"
+          "texture": "#rod",
+          "uv": [
+            0,
+            0,
+            3.0,
+            4
+          ]
         },
         "down": {
-          "texture": "#rod"
+          "texture": "#rod",
+          "uv": [
+            0,
+            0,
+            3.0,
+            4
+          ]
         }
       }
     },
