@@ -1,14 +1,14 @@
 {
   "cylinder_fire": {
     "sounds": [
-      { "name": "minecraft:entity.generic.explode", "type": "event", "volume": 0.22, "pitch": 0.7 },
-      { "name": "minecraft:block.piston.extend", "type": "event", "volume": 0.7, "pitch": 0.7 },
-      { "name": "minecraft:block.anvil.land", "type": "event", "volume": 0.25, "pitch": 0.7 }
+      { "name": "create_engines:cylinder_fire1", "attenuation_distance": 24 },
+      { "name": "create_engines:cylinder_fire2", "attenuation_distance": 24 },
+      { "name": "create_engines:cylinder_fire3", "attenuation_distance": 24 }
     ]
   },
-  "starter_crank": {
+  "starter_whir": {
     "sounds": [
-      { "name": "minecraft:block.grindstone.use", "type": "event", "volume": 0.45, "pitch": 1.3 }
+      { "name": "create_engines:starter_whir", "attenuation_distance": 16 }
     ]
   }
 }

@@ -8,7 +8,10 @@ import net.neoforged.bus.api.IEventBus;
 import net.neoforged.neoforge.registries.DeferredHolder;
 import net.neoforged.neoforge.registries.DeferredRegister;
 
-/** Sound events; what each one actually plays is in {@code assets/create_engines/sounds.json}. */
+/**
+ * Sound events; what each one plays is in {@code assets/create_engines/sounds.json}. The recordings themselves are
+ * synthesized by {@code tools/generate_sounds.py}.
+ */
 public final class CESounds {
 
 	private static final DeferredRegister<SoundEvent> SOUNDS =
@@ -16,8 +19,8 @@ public final class CESounds {
 
 	/** A cylinder's charge igniting at the top of its compression stroke. */
 	public static final DeferredHolder<SoundEvent, SoundEvent> CYLINDER_FIRE = register("cylinder_fire");
-	/** The starter motor turning an engine over, played in short bursts for as long as it is cranking. */
-	public static final DeferredHolder<SoundEvent, SoundEvent> STARTER_CRANK = register("starter_crank");
+	/** The starter motor turning an engine over: a seamless loop, played for as long as it is cranking. */
+	public static final DeferredHolder<SoundEvent, SoundEvent> STARTER_WHIR = register("starter_whir");
 
 	private CESounds() {
 	}

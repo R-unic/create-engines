@@ -4,6 +4,9 @@ import java.util.List;
 
 import org.jetbrains.annotations.Nullable;
 
+import org.joml.Vector3f;
+
+import com.createengines.content.EnginePoses;
 import com.createengines.content.airflow.PortOpeningBlock;
 import com.createengines.content.camshaft.CamshaftBlockEntity;
 import com.createengines.content.crankshaft.CrankshaftBlockEntity;
@@ -24,11 +27,13 @@ import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.HolderLookup;
+import net.minecraft.core.particles.DustParticleOptions;
 import net.minecraft.core.particles.ParticleOptions;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.sounds.SoundSource;
+import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.Vec3;
@@ -37,6 +42,12 @@ public class CylinderBlockEntity extends SmartBlockEntity implements IHaveGoggle
 
 	/** Where the cam says the charge fires: the top of the compression stroke. */
 	private static final double FIRING_CYCLE_ANGLE = 360;
+	/** The piston's crown above its wrist pin, in blocks (the 6/16 top of the piston model). */
+	private static final float PISTON_CROWN = 6 / 16f;
+	/** The head's face, in blocks from the cylinder's centre along the bore. */
+	private static final double ROOF = 0.5;
+	/** How far from the bore's axis gas is drawn, which keeps it between the frame posts. */
+	private static final double LATERAL = 0.26;
 
 	private @Nullable CylinderStatus status;
 	private double lastCamCycle = Double.NaN;
@@ -81,19 +92,22 @@ public class CylinderBlockEntity extends SmartBlockEntity implements IHaveGoggle
 	public void tick() {
 		super.tick();
 		if (level != null && level.isClientSide)
-			tickExhaust();
+			tickClient();
 	}
 
-	/** Smoke from the exhaust when the exhaust valve opens after a firing: follows the visible cam, not a packet. */
-	private void tickExhaust() {
+	/**
+	 * Everything you see and hear from a running cylinder, driven by the visible cam rather than by packets so it stays
+	 * in step with the moving parts: the bang at firing TDC, the gas in the bore, and smoke when the exhaust opens.
+	 */
+	private void tickClient() {
 		CylinderStatus current = status;
-		if (current == null || current.lobe() == null || current.exhaustOutlets()
-			.isEmpty()
+		if (current == null || current.lobe() == null
 			|| !(level.getBlockEntity(current.lobe()) instanceof CamshaftBlockEntity lobe)) {
 			lastCamCycle = Double.NaN;
 			return;
 		}
-		float camAngle = (float) Math.abs(lobe.rotation(AnimationTickHolder.getRenderTime(level)) % 360);
+		float renderTime = AnimationTickHolder.getRenderTime(level);
+		float camAngle = (float) Math.abs(lobe.rotation(renderTime) % 360);
 		double cycle = CylinderModel.camCycleAngle(camAngle, lobe.lobeAngle());
 		double previous = lastCamCycle;
 		lastCamCycle = cycle;
@@ -102,12 +116,126 @@ public class CylinderBlockEntity extends SmartBlockEntity implements IHaveGoggle
 		double travelled = (cycle - previous + 720) % 720;
 		if (travelled > 360)
 			return;
-		if (current.result() == CycleResult.FIRED && crosses(previous, travelled, FIRING_CYCLE_ANGLE))
-			level.playLocalSound(worldPosition, CESounds.CYLINDER_FIRE.get(), SoundSource.BLOCKS, 0.8f,
-				0.8f + level.random.nextFloat() * 0.4f, false);
-		if (!crosses(previous, travelled, CamProfile.BASIC.exhaustOpen()))
+
+		boolean fired = current.result() == CycleResult.FIRED;
+		if (fired && crosses(previous, travelled, FIRING_CYCLE_ANGLE))
+			ignite();
+		tickChamber(current, cycle, renderTime);
+		if (!current.exhaustOutlets()
+			.isEmpty() && crosses(previous, travelled, CamProfile.BASIC.exhaustOpen()))
+			tickExhaust(current);
+	}
+
+	/** The bang, and a flash of flame and sparks at the roof of the chamber. */
+	private void ignite() {
+		if (level.getNearestPlayer(worldPosition.getX() + 0.5, worldPosition.getY() + 0.5, worldPosition.getZ() + 0.5,
+			48, false) == null)
+			return;
+		RandomSource random = level.random;
+		level.playLocalSound(worldPosition, CESounds.CYLINDER_FIRE.get(), SoundSource.BLOCKS, 1f,
+			0.92f + random.nextFloat() * 0.16f, false);
+		Direction bore = getBlockState().getValue(CylinderBlock.FACING);
+		for (int i = 0; i < 6; i++) {
+			Vec3 at = chamberPoint(bore, ROOF - random.nextDouble() * 0.1);
+			Vec3 push = Vec3.atLowerCornerOf(bore.getNormal())
+				.scale(-0.02);
+			level.addParticle(i < 4 ? ParticleTypes.SMALL_FLAME : ParticleTypes.ELECTRIC_SPARK, at.x, at.y, at.z,
+				push.x + (random.nextDouble() - 0.5) * 0.04, push.y + (random.nextDouble() - 0.5) * 0.04,
+				push.z + (random.nextDouble() - 0.5) * 0.04);
+		}
+	}
+
+	/**
+	 * Gas moving about between the piston crown and the head, one look per stroke: cool air drawn in, charge heating
+	 * as it is squeezed, flame and embers pushing the piston down, then spent gas swept out. What is burnt follows the
+	 * last cycle's result, and a blocked valve shows nothing moving through it.
+	 */
+	private void tickChamber(CylinderStatus current, double cycle, float renderTime) {
+		if (level.getNearestPlayer(worldPosition.getX() + 0.5, worldPosition.getY() + 0.5, worldPosition.getZ() + 0.5,
+			24, false) == null)
+			return;
+		EnginePoses.CylinderPose pose = EnginePoses.cylinder(this, renderTime);
+		if (!pose.showPiston())
+			return;
+		Direction bore = getBlockState().getValue(CylinderBlock.FACING);
+		int axis = bore.getAxis()
+			.ordinal();
+		int sign = bore.getAxisDirection()
+			.getStep();
+		float wrist = pose.piston()
+			.transformPosition(0.5f, 0, 0.5f, new Vector3f())
+			.get(axis);
+		double crown = (wrist - 0.5) * sign + PISTON_CROWN;
+		if (ROOF - crown < 0.08)
 			return;
 
+		RandomSource random = level.random;
+		Vec3 along = Vec3.atLowerCornerOf(bore.getNormal());
+		CycleResult result = current.result();
+		boolean fired = result == CycleResult.FIRED;
+		int faults = current.faults();
+
+		if (cycle < 180) {
+			if (CylinderFault.NO_INTAKE.in(faults) || CylinderFault.INTAKE_BLOCKED.in(faults))
+				return;
+			for (int i = 0; i < 2; i++)
+				dust(chamberPoint(bore, ROOF - random.nextDouble() * 0.12), along.scale(-0.045), 0.78f, 0.9f, 1f, 0.45f);
+		} else if (cycle < 360) {
+			float squeeze = (float) (cycle - 180) / 180;
+			int count = squeeze > 0.6f ? 2 : 1;
+			for (int i = 0; i < count; i++)
+				dust(chamberPoint(bore, crown + random.nextDouble() * (ROOF - crown)), jitter(random, 0.012),
+					0.78f + 0.22f * squeeze, 0.9f - 0.4f * squeeze, 1f - 0.9f * squeeze, 0.4f);
+		} else if (cycle < 540) {
+			if (fired && cycle < 450) {
+				for (int i = 0; i < 2; i++) {
+					Vec3 at = chamberPoint(bore, crown + random.nextDouble() * (ROOF - crown));
+					Vec3 drift = jitter(random, 0.012);
+					level.addParticle(ParticleTypes.SMALL_FLAME, at.x, at.y, at.z, drift.x, drift.y, drift.z);
+				}
+			} else if (fired)
+				dust(chamberPoint(bore, crown + random.nextDouble() * (ROOF - crown)), jitter(random, 0.01), 0.85f,
+					0.35f, 0.1f, 0.4f);
+			else if (result == CycleResult.NO_IGNITION)
+				dust(chamberPoint(bore, crown + random.nextDouble() * (ROOF - crown)), jitter(random, 0.01), 0.6f, 0.6f,
+					0.6f, 0.4f);
+		} else {
+			if (CylinderFault.NO_EXHAUST.in(faults) || CylinderFault.EXHAUST_BLOCKED.in(faults))
+				return;
+			float shade = current.rich() ? 0.08f : fired ? 0.3f : 0.6f;
+			if (fired || result == CycleResult.NO_IGNITION)
+				for (int i = 0; i < 2; i++)
+					dust(chamberPoint(bore, crown + random.nextDouble() * 0.15), along.scale(0.04), shade, shade, shade,
+						0.5f);
+		}
+	}
+
+	/** A random spot inside the bore {@code distance} from the block's centre along it, towards the head if positive. */
+	private Vec3 chamberPoint(Direction bore, double distance) {
+		RandomSource random = level.random;
+		int axis = bore.getAxis()
+			.ordinal();
+		double[] offset = new double[3];
+		for (int i = 0; i < 3; i++)
+			offset[i] = 0.5 + (random.nextDouble() - 0.5) * 2 * LATERAL;
+		offset[axis] = 0.5 + distance * bore.getAxisDirection()
+			.getStep();
+		return new Vec3(worldPosition.getX() + offset[0], worldPosition.getY() + offset[1],
+			worldPosition.getZ() + offset[2]);
+	}
+
+	private static Vec3 jitter(RandomSource random, double size) {
+		return new Vec3((random.nextDouble() - 0.5) * size, (random.nextDouble() - 0.5) * size,
+			(random.nextDouble() - 0.5) * size);
+	}
+
+	private void dust(Vec3 at, Vec3 velocity, float red, float green, float blue, float size) {
+		level.addParticle(new DustParticleOptions(new Vector3f(red, green, blue), size), at.x, at.y, at.z, velocity.x,
+			velocity.y, velocity.z);
+	}
+
+	/** Smoke from the exhaust when the exhaust valve opens after a firing. */
+	private void tickExhaust(CylinderStatus current) {
 		ParticleOptions particle;
 		int count;
 		if (current.result() == CycleResult.FIRED) {

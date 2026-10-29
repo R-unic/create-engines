@@ -6,7 +6,6 @@ import org.jetbrains.annotations.Nullable;
 
 import com.createengines.engine.topology.EngineMember;
 import com.createengines.registry.CELang;
-import com.createengines.registry.CESounds;
 import com.simibubi.create.content.kinetics.base.KineticBlockEntity;
 
 import net.minecraft.ChatFormatting;
@@ -15,7 +14,6 @@ import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.NbtUtils;
 import net.minecraft.network.chat.Component;
-import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
 
@@ -26,13 +24,14 @@ import net.minecraft.world.level.block.state.BlockState;
  */
 public class StarterBlockEntity extends KineticBlockEntity implements EngineMember {
 
-	/** Ticks between bursts of the cranking sound, which each last a little longer than this. */
-	private static final int CRANK_SOUND_INTERVAL = 6;
+	/** Ticks the engine has to go without drawing on the starter before it counts as having outrun it. */
+	private static final int ENGAGED_GRACE = 10;
 
 	private @Nullable BlockPos primaryPos;
 	private float drag;
 	private boolean cranking;
-	private int soundTicks;
+	private boolean turning;
+	private int idleTicks;
 
 	public StarterBlockEntity(BlockEntityType<?> type, BlockPos pos, BlockState state) {
 		super(type, pos, state);
@@ -50,10 +49,15 @@ public class StarterBlockEntity extends KineticBlockEntity implements EngineMemb
 
 	/** Called by the engine each tick with how hard turning it over currently is (SU per RPM). */
 	public void updateCranking(BlockPos primary, double crankingStress, boolean active) {
-		boolean changed = !primary.equals(primaryPos) || active != cranking;
+		if (active && crankingStress > 0)
+			idleTicks = 0;
+		else
+			idleTicks++;
+		boolean engaged = active && idleTicks < ENGAGED_GRACE;
+		boolean changed = !primary.equals(primaryPos) || active != cranking || engaged != turning;
 		primaryPos = primary;
 		cranking = active;
-		playCrankSound(active && crankingStress > 0);
+		turning = engaged;
 		// Smooth over a cycle so the input network isn't jerked about every compression stroke
 		float next = (float) (drag + (crankingStress - drag) * 0.05);
 		if (!active && crankingStress == 0 && next < 0.05f)
@@ -67,19 +71,16 @@ public class StarterBlockEntity extends KineticBlockEntity implements EngineMemb
 			sendData();
 	}
 
-	/**
-	 * Whirring while the clutch is actually turning the engine over; it falls silent once the engine outruns the
-	 * starter. Heard from the server so it matches the physics rather than a delayed packet.
-	 */
-	private void playCrankSound(boolean turningEngine) {
-		if (!turningEngine || level == null || level.isClientSide) {
-			soundTicks = 0;
-			return;
-		}
-		if (soundTicks++ % CRANK_SOUND_INTERVAL != 0)
-			return;
-		float pitch = 0.8f + Math.min(Math.abs(getSpeed()), 256) / 256f * 0.6f;
-		level.playSound(null, worldPosition, CESounds.STARTER_CRANK.get(), SoundSource.BLOCKS, 0.6f, pitch);
+	/** Whether the clutch is really turning the engine over: false once the engine outruns the starter. */
+	public boolean isTurning() {
+		return turning;
+	}
+
+	@Override
+	public void tick() {
+		super.tick();
+		if (turning && level != null && level.isClientSide)
+			StarterWhirSound.ensurePlaying(this);
 	}
 
 	@Override
@@ -92,6 +93,7 @@ public class StarterBlockEntity extends KineticBlockEntity implements EngineMemb
 	public void detachFromEngine() {
 		primaryPos = null;
 		cranking = false;
+		turning = false;
 		drag = 0;
 		if (hasNetwork())
 			getOrCreateNetwork().updateStressFor(this, 0);
@@ -103,6 +105,7 @@ public class StarterBlockEntity extends KineticBlockEntity implements EngineMemb
 		super.write(tag, registries, clientPacket);
 		tag.putFloat("Drag", drag);
 		tag.putBoolean("Cranking", cranking);
+		tag.putBoolean("Turning", turning);
 		if (primaryPos != null)
 			tag.put("Primary", NbtUtils.writeBlockPos(primaryPos));
 	}
@@ -112,6 +115,7 @@ public class StarterBlockEntity extends KineticBlockEntity implements EngineMemb
 		super.read(tag, registries, clientPacket);
 		drag = tag.getFloat("Drag");
 		cranking = tag.getBoolean("Cranking");
+		turning = tag.getBoolean("Turning");
 		primaryPos = NbtUtils.readBlockPos(tag, "Primary")
 			.orElse(null);
 	}
