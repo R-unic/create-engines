@@ -6,6 +6,7 @@ import org.jetbrains.annotations.Nullable;
 
 import com.createengines.engine.topology.EngineMember;
 import com.createengines.registry.CELang;
+import com.createengines.registry.CESounds;
 import com.simibubi.create.content.kinetics.base.KineticBlockEntity;
 
 import net.minecraft.ChatFormatting;
@@ -14,6 +15,7 @@ import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.NbtUtils;
 import net.minecraft.network.chat.Component;
+import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
 
@@ -24,9 +26,13 @@ import net.minecraft.world.level.block.state.BlockState;
  */
 public class StarterBlockEntity extends KineticBlockEntity implements EngineMember {
 
+	/** Ticks between bursts of the cranking sound, which each last a little longer than this. */
+	private static final int CRANK_SOUND_INTERVAL = 6;
+
 	private @Nullable BlockPos primaryPos;
 	private float drag;
 	private boolean cranking;
+	private int soundTicks;
 
 	public StarterBlockEntity(BlockEntityType<?> type, BlockPos pos, BlockState state) {
 		super(type, pos, state);
@@ -47,6 +53,7 @@ public class StarterBlockEntity extends KineticBlockEntity implements EngineMemb
 		boolean changed = !primary.equals(primaryPos) || active != cranking;
 		primaryPos = primary;
 		cranking = active;
+		playCrankSound(active && crankingStress > 0);
 		// Smooth over a cycle so the input network isn't jerked about every compression stroke
 		float next = (float) (drag + (crankingStress - drag) * 0.05);
 		if (!active && crankingStress == 0 && next < 0.05f)
@@ -58,6 +65,21 @@ public class StarterBlockEntity extends KineticBlockEntity implements EngineMemb
 		}
 		if (changed)
 			sendData();
+	}
+
+	/**
+	 * Whirring while the clutch is actually turning the engine over; it falls silent once the engine outruns the
+	 * starter. Heard from the server so it matches the physics rather than a delayed packet.
+	 */
+	private void playCrankSound(boolean turningEngine) {
+		if (!turningEngine || level == null || level.isClientSide) {
+			soundTicks = 0;
+			return;
+		}
+		if (soundTicks++ % CRANK_SOUND_INTERVAL != 0)
+			return;
+		float pitch = 0.8f + Math.min(Math.abs(getSpeed()), 256) / 256f * 0.6f;
+		level.playSound(null, worldPosition, CESounds.STARTER_CRANK.get(), SoundSource.BLOCKS, 0.6f, pitch);
 	}
 
 	@Override

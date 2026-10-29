@@ -14,6 +14,7 @@ import com.createengines.engine.sim.CylinderModel;
 import com.createengines.engine.topology.CylinderFault;
 import com.createengines.engine.topology.EngineMember;
 import com.createengines.registry.CELang;
+import com.createengines.registry.CESounds;
 import com.simibubi.create.api.equipment.goggles.IHaveGoggleInformation;
 import com.simibubi.create.foundation.blockEntity.SmartBlockEntity;
 import com.simibubi.create.foundation.blockEntity.behaviour.BlockEntityBehaviour;
@@ -27,11 +28,15 @@ import net.minecraft.core.particles.ParticleOptions;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
+import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.Vec3;
 
 public class CylinderBlockEntity extends SmartBlockEntity implements IHaveGoggleInformation, EngineMember {
+
+	/** Where the cam says the charge fires: the top of the compression stroke. */
+	private static final double FIRING_CYCLE_ANGLE = 360;
 
 	private @Nullable CylinderStatus status;
 	private double lastCamCycle = Double.NaN;
@@ -94,10 +99,13 @@ public class CylinderBlockEntity extends SmartBlockEntity implements IHaveGoggle
 		lastCamCycle = cycle;
 		if (Double.isNaN(previous) || lobe.getTheoreticalSpeed() == 0)
 			return;
-		double exhaustOpen = CamProfile.BASIC.exhaustOpen();
 		double travelled = (cycle - previous + 720) % 720;
-		double ahead = (exhaustOpen - previous + 720) % 720;
-		if (travelled > 360 || ahead <= 0 || ahead > travelled)
+		if (travelled > 360)
+			return;
+		if (current.result() == CycleResult.FIRED && crosses(previous, travelled, FIRING_CYCLE_ANGLE))
+			level.playLocalSound(worldPosition, CESounds.CYLINDER_FIRE.get(), SoundSource.BLOCKS, 0.8f,
+				0.8f + level.random.nextFloat() * 0.4f, false);
+		if (!crosses(previous, travelled, CamProfile.BASIC.exhaustOpen()))
 			return;
 
 		ParticleOptions particle;
@@ -125,6 +133,12 @@ public class CylinderBlockEntity extends SmartBlockEntity implements IHaveGoggle
 				level.addParticle(particle, at.x, at.y, at.z, velocity.x, velocity.y, velocity.z);
 			}
 		}
+	}
+
+	/** Whether a cam-cycle angle advancing from {@code from} by {@code travelled} passes {@code mark}. */
+	private static boolean crosses(double from, double travelled, double mark) {
+		double ahead = (mark - from + 720) % 720;
+		return ahead > 0 && ahead <= travelled;
 	}
 
 	@Override

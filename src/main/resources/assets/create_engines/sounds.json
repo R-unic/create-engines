@@ -1,0 +1,14 @@
+{
+  "cylinder_fire": {
+    "sounds": [
+      { "name": "minecraft:entity.generic.explode", "type": "event", "volume": 0.22, "pitch": 0.7 },
+      { "name": "minecraft:block.piston.extend", "type": "event", "volume": 0.7, "pitch": 0.7 },
+      { "name": "minecraft:block.anvil.land", "type": "event", "volume": 0.25, "pitch": 0.7 }
+    ]
+  },
+  "starter_crank": {
+    "sounds": [
+      { "name": "minecraft:block.grindstone.use", "type": "event", "volume": 0.45, "pitch": 1.3 }
+    ]
+  }
+}
