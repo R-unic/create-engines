@@ -1,6 +1,7 @@
-# Create: Engine Engineer — Architecture Proposal (Milestone 1)
+# Create: Engine Engineer — Architecture (Milestone 1)
 
-Status: **proposal, awaiting review**. Nothing below is implemented yet beyond the empty mod scaffold.
+Status: **Milestone 1 vertical slice implemented.** §0 describes what was built and wins wherever it differs from the
+original proposal in §1–§14, which is kept for its reasoning.
 
 Targets: Minecraft 1.21.1, NeoForge 21.1.219+, Create 6.0.10 (build `6.0.10-281`), Flywheel 1.0.6, Ponder 1.0.82,
 Registrate `MC1.21-1.3.0+67` (the exact versions Create 6.0.10 pins in its own `gradle.properties`).
@@ -9,6 +10,64 @@ Claims about Create internals below were checked against the `mc1.21.1-6.0.10` t
 `GeneratingKineticBlockEntity`, `KineticNetwork`, `PoweredShaftBlockEntity`, `SteamEngineVisual`,
 `KineticBlockEntityRenderer` and `BlockStressValues`. Anything marked *(verify)* is from memory and must be checked
 before relying on it.
+
+---
+
+## 0. Milestone 1 as built
+
+### What works, and how it was checked
+
+| Behaviour | Verified by |
+|---|---|
+| Five-rule cylinder model; crank energy balance; starting, fuel starvation, missing intake, blocked exhaust, missing or mis-geared cam, mistiming, overload, flywheel smoothing, firing order, plant oil vs diesel ignition | 21 JUnit tests (`./gradlew test`) on the pure-Java `engine.sim` package |
+| A single-cylinder engine built from blocks in a real world: the starter cranks it, it fires, runs on its own after release, provides Create stress capacity, keeps its cam at exactly half crank speed with timing on time, burns fuel; without fuel it stalls; removing the exhaust chokes it; the starter loads its input network | 4 GameTests (`./gradlew runGameTestServer`) |
+| Crank, throw, piston, connecting rod, cam lobe and valve stems animate together; exhaust smoke follows the cam; goggle diagnostics; all five Ponder scenes render and play | Visual smoke test (`./gradlew runVisualSmokeTest`): builds the engine in a fresh flat world and saves screenshots to `run/screenshots/`, then quits |
+
+### Decisions taken in review
+
+| Question | Decision |
+|---|---|
+| Pistons and connecting rods | Parts installed into the cylinder (right-click; sneak-right-click with an empty hand removes). Block state properties, so installing one rescans the engine. |
+| Crank speed | Crank RPM = Create RPM, 1:1. |
+| Stress capacity | Torque available at full fuel at the current RPM. |
+| Starting | A **Starter** block: faces a crankshaft block, takes rotation into its back from any Create source, engages while redstone-powered, and drives the crank through a one-way clutch the engine outruns. It is not kinetically connected to the crank; cranking effort is stress on its own input. A Hand Crank on the crank line also works. |
+| Valve timing | **Camshafts are in Milestone 1** (the timing-mark stand-in was dropped). A Camshaft line must turn at half crank speed via any gearing; a Cam Lobe touching a head works its valves *and* its unit injector. Lobe angle (7.5° steps, value panel) sets timing and which crank revolution the cylinder fires on. Wrong ratio, wrong angle or no cam fall out of the simulation. Cam phase is locked to the crank whenever the ratio is exactly 1:2. |
+| Throw angle | 15° steps through the value panel. |
+| Head ports | Decided by what is attached: an intake manifold or Air Intake on any free face is the intake, likewise exhaust. |
+| Fuel injection | The Fuel Injector is a part installed in the head. Heads that touch share fuel through a gallery, so one pipe feeds a bank. Fuel is piped into any head face. |
+| Fuel rack | Redstone on any block of a camshaft line closes that line's rack (15 = fuel cut off), like an inline injection pump. |
+| Fuels | **Plant Oil** (compact seeds; rustic, harder to ignite) and **Diesel** (heated mixing of Plant Oil with coal or charcoal; ignites readily, more energy). Properties come from the `create_engines:fuel` data map. |
+| Names | Display name "Create: Engine Engineer"; mod id `create_engines`; package `com.createengines`. |
+| Commits | One commit per major feature. |
+
+### Differences from the proposal worth knowing
+
+- **Cranking is a speed floor, not a fixed speed.** Anything turning the crank (a starter, or another kinetic source on
+  the crank's network) holds it at *at least* that speed; the engine may outrun it. This is what lets the engine pull
+  away from a starter, and what made a released single cylinder behave correctly.
+- **The intake manifold remembers what was pushed into it.** Gas forced back out through the intake valve is
+  breathed in again first. Without this, an engine with no exhaust kept running by exhausting through its intake.
+- **Engine rebuilds keep cylinder gas state**, and an unchanged layout keeps its controller. The periodic safety-net
+  rescan (every 100 ticks) once reset every cylinder mid-stroke and stalled the engine.
+- **Fallback renderers exist for every moving part** (`EnginePartRenderers`), sharing poses with the Flywheel visuals
+  through `EnginePoses`. Ponder needs them, and so do worlds with Flywheel switched off.
+- Calibration: 1 unit of simulated torque = 40 SU/RPM (`stressPerTorque` server config). A crude single cylinder makes
+  roughly 16 SU/RPM at moderate speed, so about 1000 SU at 64 RPM.
+
+### Known gaps and follow-ups
+
+- **No governor.** Unloaded, a crude engine revs until its torque falls to friction (about 150 RPM), where available
+  torque is small. A heavy load then briefly overstresses the network until the engine slows into its torque band. A
+  mechanical governor that moves the rack to hold a set speed is the natural next component.
+- **Default full rack runs rich** (black smoke) at speed. That is a fair crude-diesel behaviour, but a shorter default
+  shot may read better.
+- **Cam direction is ignored**: only the speed ratio's magnitude is checked, because Create gearing flips direction
+  freely.
+- **Two crankshafts geared together are two engines** that both feed the network; coupled-crank engines are future
+  work.
+- Placeholder art: models reuse Create and vanilla textures; manifolds are full cubes without connection shapes.
+- Not yet tested in-game by hand: placing and wiring an engine by a player, multi-cylinder builds beyond the Ponder
+  scenes, and the fluid pipe to head connection (the head exposes a fluid capability on every face).
 
 ---
 
@@ -462,14 +521,6 @@ M2 starts with camshafts, cam lobes and real valve actuation replacing `FixedVal
 
 ---
 
-## 14. Decisions I'd like confirmed
+## 14. Decisions
 
-1. **Piston and connecting rod as installed items** (rendered, required, upgradeable) rather than blocks. §3 explains why.
-2. **Crank RPM = Create RPM, 1:1**, capped by Create's max speed.
-3. **Capacity = full-rack available torque** at the current RPM (§2.4), so a partly fuelled, overloaded engine bogs down
-   instead of jamming.
-4. **Hand crank (or any Create source) as the M1 starter**, with rotation direction set by cranking.
-5. **Timing mark on the head** as M1's stand-in for camshaft phase.
-6. **Throw angle in 15° steps** through Create's value box (covers 90°, 120° and 180° cranks; not 72° five-cylinder cranks).
-7. **Naming:** mod id `create_engines`, package `com.createengines`, display name "Create: Engines". These are
-   placeholders and cheap to change now, expensive later.
+All resolved in review; see the table in §0.
