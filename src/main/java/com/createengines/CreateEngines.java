@@ -14,7 +14,9 @@ import com.createengines.registry.CELang;
 import com.mojang.logging.LogUtils;
 import com.simibubi.create.foundation.data.CreateRegistrate;
 
+import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.item.CreativeModeTab;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.fml.ModContainer;
 import net.neoforged.fml.common.Mod;
@@ -26,7 +28,10 @@ public class CreateEngines {
 	public static final String MOD_ID = "create_engines";
 	public static final Logger LOGGER = LogUtils.getLogger();
 
-	public static final CreateRegistrate REGISTRATE = CreateRegistrate.create(MOD_ID);
+	// Our tab lists every entry itself, as Create's do. Registrate's default would also add each one to search, and
+	// search already collects them from our tab, so the duplicates crash the creative inventory.
+	public static final CreateRegistrate REGISTRATE = CreateRegistrate.create(MOD_ID)
+		.defaultCreativeTab((ResourceKey<CreativeModeTab>) null);
 
 	public CreateEngines(IEventBus modEventBus, ModContainer modContainer) {
 		REGISTRATE.registerEventListeners(modEventBus);

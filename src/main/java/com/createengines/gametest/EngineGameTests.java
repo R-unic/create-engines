@@ -1,5 +1,7 @@
 package com.createengines.gametest;
 
+import java.util.Collection;
+
 import com.createengines.CreateEngines;
 import com.createengines.content.airflow.PortOpeningBlock;
 import com.createengines.content.camshaft.CamshaftBlockEntity;
@@ -16,16 +18,23 @@ import com.createengines.engine.EngineSummary;
 import com.createengines.engine.sim.CycleResult;
 import com.createengines.engine.topology.CylinderFault;
 import com.createengines.registry.CEBlocks;
+import com.createengines.registry.CECreativeTabs;
 import com.createengines.registry.CEFluids;
 import com.simibubi.create.AllBlocks;
+import com.tterrag.registrate.util.entry.RegistryEntry;
 import com.simibubi.create.content.kinetics.motor.CreativeMotorBlock;
 import com.simibubi.create.content.kinetics.motor.CreativeMotorBlockEntity;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.Direction.Axis;
+import net.minecraft.core.registries.Registries;
 import net.minecraft.gametest.framework.GameTest;
 import net.minecraft.gametest.framework.GameTestHelper;
+import net.minecraft.world.item.CreativeModeTab;
+import net.minecraft.world.item.CreativeModeTabs;
+import net.minecraft.world.item.Item;
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
@@ -153,5 +162,31 @@ public class EngineGameTests {
 				"Cranking a dead engine should put stress on the starter's input");
 			helper.succeed();
 		});
+	}
+
+	/** Each item should be listed once in our tab and in search; a duplicate crashes the creative inventory. */
+	@GameTest(template = "empty")
+	public static void creativeTabListsEachItemOnce(GameTestHelper helper) {
+		CreativeModeTabs.tryRebuildTabContents(helper.getLevel()
+			.enabledFeatures(), true, helper.getLevel()
+				.registryAccess());
+		CreativeModeTab search = helper.getLevel()
+			.registryAccess()
+			.registryOrThrow(Registries.CREATIVE_MODE_TAB)
+			.getOrThrow(CreativeModeTabs.SEARCH);
+		for (RegistryEntry<Item, Item> entry : CreateEngines.REGISTRATE.getAll(Registries.ITEM)) {
+			assertListedOnce(helper, CECreativeTabs.MAIN.get()
+				.getDisplayItems(), entry, "our tab");
+			assertListedOnce(helper, search.getDisplayItems(), entry, "search");
+		}
+		helper.succeed();
+	}
+
+	private static void assertListedOnce(GameTestHelper helper, Collection<ItemStack> listed,
+		RegistryEntry<Item, Item> entry, String tab) {
+		long count = listed.stream()
+			.filter(stack -> stack.is(entry.get()))
+			.count();
+		helper.assertTrue(count == 1, "Creative " + tab + " should list " + entry.getId() + " once, found " + count);
 	}
 }
