@@ -291,6 +291,10 @@ public final class EngineSimulation {
 		return baseInertia;
 	}
 
+	public double baseFriction() {
+		return baseFriction;
+	}
+
 	public double indicatedTorque() {
 		return indicatedTorque;
 	}

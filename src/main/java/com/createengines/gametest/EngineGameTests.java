@@ -22,6 +22,7 @@ import com.createengines.registry.CECreativeTabs;
 import com.createengines.registry.CEFluids;
 import com.simibubi.create.AllBlocks;
 import com.tterrag.registrate.util.entry.RegistryEntry;
+import com.simibubi.create.content.kinetics.base.KineticBlockEntity;
 import com.simibubi.create.content.kinetics.motor.CreativeMotorBlock;
 import com.simibubi.create.content.kinetics.motor.CreativeMotorBlockEntity;
 
@@ -62,6 +63,8 @@ public class EngineGameTests {
 	private static final BlockPos STARTER = TestEngine.STARTER;
 	private static final BlockPos MOTOR = TestEngine.MOTOR;
 	private static final BlockPos STARTER_POWER = TestEngine.STARTER_POWER;
+	/** First of a row of presses on the crank's output shaft, beyond its cogwheel. */
+	private static final BlockPos PRESS = new BlockPos(6, 2, 2);
 
 	private static void buildSingleCylinder(GameTestHelper helper, boolean fuelled) {
 		TestEngine.build(helper.getLevel(), helper.absolutePos(BlockPos.ZERO), fuelled);
@@ -188,5 +191,45 @@ public class EngineGameTests {
 			.filter(stack -> stack.is(entry.get()))
 			.count();
 		helper.assertTrue(count == 1, "Creative " + tab + " should list " + entry.getId() + " once, found " + count);
+	}
+
+	/** Two presses are within the engine's rating: it slows into its torque band and keeps them turning. */
+	@GameTest(template = "empty", timeoutTicks = 1400)
+	public static void heavyLoadLugsTheEngineDown(GameTestHelper helper) {
+		runWithPresses(helper, 2);
+		helper.runAtTickTime(1200, () -> {
+			CrankshaftBlockEntity crank = helper.getBlockEntity(PRIMARY);
+			EngineSummary summary = summary(helper);
+			helper.assertTrue(summary.state() == EngineState.RUNNING, "Engine should carry two presses: " + summary);
+			helper.assertFalse(crank.isOverStressed(), "Two presses are within the engine's rating");
+			helper.assertTrue(summary.rpm() < 130, "Engine should have slowed under load: " + summary);
+			KineticBlockEntity press = helper.getBlockEntity(PRESS);
+			helper.assertTrue(press.getSpeed() != 0, "Presses should be turning");
+			helper.succeed();
+		});
+	}
+
+	/** Three presses are more than it's rated for: Create overstresses the network, and the engine keeps running. */
+	@GameTest(template = "empty", timeoutTicks = 1400)
+	public static void overloadOverstressesWithoutStalling(GameTestHelper helper) {
+		runWithPresses(helper, 3);
+		helper.runAtTickTime(1000, () -> {
+			CrankshaftBlockEntity crank = helper.getBlockEntity(PRIMARY);
+			EngineSummary summary = summary(helper);
+			helper.assertTrue(crank.isOverStressed(), "Three presses exceed the engine's rating");
+			helper.assertTrue(summary.state() == EngineState.OVERLOADED && summary.rpm() > 50,
+				"Engine should keep running while overstressed: " + summary);
+			helper.succeed();
+		});
+	}
+
+	private static void runWithPresses(GameTestHelper helper, int presses) {
+		buildSingleCylinder(helper, true);
+		helper.runAtTickTime(300, () -> helper.setBlock(STARTER_POWER, Blocks.AIR));
+		helper.runAtTickTime(500, () -> {
+			for (int i = 0; i < presses; i++)
+				helper.setBlock(PRESS.east(i), AllBlocks.MECHANICAL_PRESS.getDefaultState()
+					.setValue(BlockStateProperties.HORIZONTAL_FACING, Direction.EAST));
+		});
 	}
 }

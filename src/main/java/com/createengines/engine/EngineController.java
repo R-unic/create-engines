@@ -16,6 +16,7 @@ import com.createengines.engine.sim.Camshaft;
 import com.createengines.engine.sim.CycleStats;
 import com.createengines.engine.sim.CylinderModel;
 import com.createengines.engine.sim.CylinderSpec;
+import com.createengines.engine.sim.Dynamometer;
 import com.createengines.engine.sim.EngineSimulation;
 import com.createengines.engine.sim.FuelSpec;
 import com.createengines.engine.sim.FuelSupply;
@@ -33,9 +34,10 @@ import net.minecraft.world.level.Level;
  * block entity, which is a Create generator.
  * <p>
  * Create sees a generator like any other. Its speed is the crank's simulated RPM (rounded, and only republished when
- * it has moved enough, because every speed change makes Create re-propagate the network). Its capacity is the torque
- * the engine could make at full fuel at that speed. The load it feels is the network's total stress divided by its
- * speed, so gearing downstream changes the load exactly as it should.
+ * it has moved enough, because every speed change makes Create re-propagate the network). Its capacity is the
+ * engine's rated torque: the peak of its {@link Dynamometer} curve at or below its current speed, because a loaded
+ * engine slows down until its torque matches the load. The load it feels is the network's total stress divided by
+ * its speed, so gearing downstream changes the load exactly as it should.
  */
 public final class EngineController {
 
@@ -50,6 +52,9 @@ public final class EngineController {
 	private static final int CAPACITY_INTERVAL = 5;
 	private static final int SYNC_INTERVAL = 10;
 	private static final int RACK_INTERVAL = 10;
+	private static final int RATING_INTERVAL = 20;
+	/** Rated torque is held back a little from the dyno peak, so a load Create accepts never quite stalls the engine. */
+	private static final double RATING_MARGIN = 0.9;
 
 	private final CrankshaftBlockEntity primary;
 	private final EngineLayout layout;
@@ -63,8 +68,9 @@ public final class EngineController {
 	private int ticks;
 	private int ticksSincePublish = PUBLISH_INTERVAL;
 	private int ticksSinceCapacity = CAPACITY_INTERVAL;
-	private double smoothedCapacity;
 	private double smoothedLoad;
+	private double[] torqueCurve = new double[Dynamometer.SPEEDS.length];
+	private @Nullable List<Object> ratingKey;
 	private boolean cranking;
 	private @Nullable BlockPos activeStarter;
 
@@ -114,7 +120,6 @@ public final class EngineController {
 			model.resetGas(model.pistonAngle(sim.angle(), sim.direction()));
 		if (motion != null && motion.source() != null)
 			carryCylinders(motion.source());
-		smoothedCapacity = primary.publishedCapacity();
 	}
 
 	private void carryCylinders(EngineController old) {
@@ -172,6 +177,8 @@ public final class EngineController {
 		measureCamshafts(level, crankSpeed);
 		if (ticks % RACK_INTERVAL == 1)
 			readFuelRacks(level);
+		if (ticks % RATING_INTERVAL == 1)
+			updateRating();
 
 		// Anything turning the crank harder than the engine itself: another kinetic source, or a starter
 		double floor = 0;
@@ -192,7 +199,9 @@ public final class EngineController {
 			}
 		}
 
-		double load = crankSpeed == 0 ? 0 : primary.networkStress() / Math.abs(crankSpeed) / torqueScale;
+		// An overstressed network has stopped everything on it, so nothing is drawing on the engine
+		double load = crankSpeed == 0 || primary.isOverStressed() ? 0
+			: primary.networkStress() / Math.abs(crankSpeed) / torqueScale;
 		smoothedLoad += (load - smoothedLoad) * 0.1;
 		double maxOmega = EngineSimulation.rpmToOmega(AllConfigs.server().kinetics.maxRotationSpeed.get());
 		sim.tickCranked(load, maxOmega, floor, floorDirection);
@@ -264,15 +273,36 @@ public final class EngineController {
 		}
 	}
 
+	/**
+	 * Re-measures the torque curve when something it depends on has changed: which cylinders have fuel and of what
+	 * kind, and which cams are geared 1:2.
+	 */
+	private void updateRating() {
+		List<Object> key = new ArrayList<>();
+		for (CylinderModel model : sim.cylinders()) {
+			key.add(model.fuelSupply.fuel());
+			Camshaft camshaft = model.camshaft();
+			key.add(camshaft != null && camshaft.isPhaseLocked());
+		}
+		key.add(sim.direction());
+		if (key.equals(ratingKey))
+			return;
+		ratingKey = key;
+		torqueCurve = Dynamometer.torqueCurve(sim);
+	}
+
+	private double ratedTorque() {
+		return sim.isStopped() ? 0 : Dynamometer.peakTorque(torqueCurve, sim.rpm()) * RATING_MARGIN;
+	}
+
 	private void publishCapacity(double torqueScale) {
-		double target = sim.isStopped() ? 0 : sim.availableTorque() * torqueScale;
-		smoothedCapacity = sim.isStopped() ? 0 : smoothedCapacity + (target - smoothedCapacity) * 0.15;
+		double target = ratedTorque() * torqueScale;
 		float current = primary.publishedCapacity();
 		ticksSinceCapacity++;
-		boolean dropped = smoothedCapacity == 0 && current != 0;
-		boolean significant = Math.abs(smoothedCapacity - current) > Math.max(0.5, 0.05 * current);
+		boolean dropped = target == 0 && current != 0;
+		boolean significant = Math.abs(target - current) > Math.max(0.5, 0.05 * current);
 		if (dropped || significant && ticksSinceCapacity >= CAPACITY_INTERVAL) {
-			primary.publishCapacity((float) smoothedCapacity);
+			primary.publishCapacity((float) target);
 			ticksSinceCapacity = 0;
 		}
 	}
@@ -282,7 +312,7 @@ public final class EngineController {
 			return EngineState.STALLED;
 		if (cranking)
 			return EngineState.CRANKING;
-		if (primary.isOverStressed() || smoothedLoad > sim.availableTorque() + 1e-3)
+		if (primary.isOverStressed())
 			return EngineState.OVERLOADED;
 		return EngineState.RUNNING;
 	}
@@ -305,7 +335,7 @@ public final class EngineController {
 		float[] angles = new float[firingAngles.size()];
 		for (int i = 0; i < angles.length; i++)
 			angles[i] = firingAngles.get(i);
-		return new EngineSummary(state, (float) sim.rpm(), (float) smoothedCapacity,
+		return new EngineSummary(state, (float) sim.rpm(), primary.publishedCapacity(),
 			(float) (smoothedLoad * torqueScale), (float) (sim.fuelRate() * 60), (float) sim.ripple(), firing,
 			working, (float) sim.inertia(), activeStarter != null, angles);
 	}

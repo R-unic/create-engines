@@ -264,6 +264,41 @@ class EngineSimulationTest {
 	}
 
 	@Test
+	void engineCarriesAnyLoadBelowItsRatedPeak() {
+		EngineSimulation engine = engine(FLYWHEEL_INERTIA, single(new Tank(100000)));
+		crank(engine, 10);
+		run(engine, 30, 0);
+		double freeRpm = engine.rpm();
+		double[] curve = Dynamometer.torqueCurve(engine);
+		double peak = Dynamometer.peakTorque(curve, freeRpm);
+		System.out.printf("free %.0f rpm, curve %s, peak %.3f%n", freeRpm, java.util.Arrays.toString(curve), peak);
+		assertTrue(peak > 0);
+
+		// The engine lugs down into its torque band rather than stalling
+		run(engine, 60, peak * 0.9);
+		assertFalse(engine.isStopped(), "Engine should carry 90% of its rated peak");
+		assertTrue(engine.rpm() < freeRpm, engine.rpm() + " should be below free speed " + freeRpm);
+
+		run(engine, 60, peak * 1.3);
+		assertTrue(engine.isStopped(), "Engine can't carry more than its rated peak");
+	}
+
+	@Test
+	void unfuelledEngineIsRatedAtNothing() {
+		EngineSimulation engine = engine(FLYWHEEL_INERTIA, single(new Tank(0)));
+		crank(engine, 5);
+		assertEquals(0, Dynamometer.peakTorque(Dynamometer.torqueCurve(engine), 256));
+	}
+
+	@Test
+	void miscamshaftedEngineIsRatedAtNothing() {
+		Camshaft cam = new Camshaft();
+		cam.ratio = 1;
+		EngineSimulation engine = engine(FLYWHEEL_INERTIA, cylinder(0, 0, cam, new Tank(1000)));
+		assertEquals(0, Dynamometer.peakTorque(Dynamometer.torqueCurve(engine), 256));
+	}
+
+	@Test
 	void flywheelReducesRipple() {
 		EngineSimulation bare = engine(0, single(new Tank(1000)));
 		EngineSimulation heavy = engine(FLYWHEEL_INERTIA * 3, single(new Tank(1000)));

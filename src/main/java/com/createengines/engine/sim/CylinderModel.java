@@ -112,6 +112,15 @@ public final class CylinderModel {
 		return tdcCrankAngle;
 	}
 
+	/** A fresh cylinder built the same way on {@code camshaft}, to test apart from the engine. */
+	public CylinderModel copyOnto(@Nullable Camshaft camshaft) {
+		CylinderModel copy = new CylinderModel(spec, profile, tdcCrankAngle, camshaft, lobeAngle);
+		copy.rack = rack;
+		copy.intakeFactor = intakeFactor;
+		copy.exhaustFactor = exhaustFactor;
+		return copy;
+	}
+
 	public void resetGas() {
 		resetGas(0);
 	}

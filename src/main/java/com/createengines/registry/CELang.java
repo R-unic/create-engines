@@ -44,11 +44,11 @@ public final class CELang {
 		raw("goggles.state.stalled", "Stalled");
 		raw("goggles.state.cranking", "Cranking");
 		raw("goggles.state.running", "Running");
-		raw("goggles.state.overloaded", "Overloaded: slowing down");
+		raw("goggles.state.overloaded", "Overloaded: load is more than its rated torque");
 		raw("goggles.state.incomplete", "Not fully loaded");
 		raw("goggles.speed", "Speed:");
 		raw("goggles.rpm", "%1$s RPM");
-		raw("goggles.available_torque", "Torque available:");
+		raw("goggles.available_torque", "Rated torque:");
 		raw("goggles.load", "Load:");
 		raw("goggles.su_per_rpm", "%1$s SU/RPM");
 		raw("goggles.fuel_use", "Fuel use:");
