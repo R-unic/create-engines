@@ -1,0 +1,68 @@
+{
+  "parent": "block/block",
+  "textures": {
+    "piston": "minecraft:block/iron_block",
+    "ring": "create:block/industrial_iron_block",
+    "particle": "minecraft:block/iron_block"
+  },
+  "elements": [
+    {
+      "from": [
+        3,
+        -2,
+        3
+      ],
+      "to": [
+        13,
+        6,
+        13
+      ],
+      "faces": {
+        "north": {
+          "texture": "#piston"
+        },
+        "south": {
+          "texture": "#piston"
+        },
+        "east": {
+          "texture": "#piston"
+        },
+        "west": {
+          "texture": "#piston"
+        },
+        "up": {
+          "texture": "#piston"
+        },
+        "down": {
+          "texture": "#piston"
+        }
+      }
+    },
+    {
+      "from": [
+        2.9,
+        4,
+        2.9
+      ],
+      "to": [
+        13.1,
+        4.6,
+        13.1
+      ],
+      "faces": {
+        "north": {
+          "texture": "#ring"
+        },
+        "south": {
+          "texture": "#ring"
+        },
+        "east": {
+          "texture": "#ring"
+        },
+        "west": {
+          "texture": "#ring"
+        }
+      }
+    }
+  ]
+}

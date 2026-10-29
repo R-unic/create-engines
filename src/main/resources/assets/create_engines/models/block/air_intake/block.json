@@ -1,0 +1,89 @@
+{
+  "parent": "block/block",
+  "textures": {
+    "body": "create:block/copper_casing",
+    "grille": "minecraft:block/iron_trapdoor",
+    "particle": "create:block/copper_casing"
+  },
+  "elements": [
+    {
+      "from": [
+        2,
+        0,
+        2
+      ],
+      "to": [
+        14,
+        10,
+        14
+      ],
+      "faces": {
+        "north": {
+          "texture": "#body"
+        },
+        "south": {
+          "texture": "#body"
+        },
+        "east": {
+          "texture": "#body"
+        },
+        "west": {
+          "texture": "#body"
+        },
+        "up": {
+          "texture": "#body"
+        },
+        "down": {
+          "texture": "#body"
+        }
+      }
+    },
+    {
+      "from": [
+        1,
+        10,
+        1
+      ],
+      "to": [
+        15,
+        13,
+        15
+      ],
+      "faces": {
+        "north": {
+          "texture": "#body"
+        },
+        "south": {
+          "texture": "#body"
+        },
+        "east": {
+          "texture": "#body"
+        },
+        "west": {
+          "texture": "#body"
+        },
+        "down": {
+          "texture": "#body"
+        }
+      }
+    },
+    {
+      "from": [
+        1.5,
+        12.9,
+        1.5
+      ],
+      "to": [
+        14.5,
+        13,
+        14.5
+      ],
+      "faces": {
+        "up": {
+          "texture": "#grille"
+        }
+      }
+    }
+  ],
+  "render_type": "minecraft:cutout"
+}

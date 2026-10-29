@@ -1,0 +1,16 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "category": "misc",
+  "ingredients": [
+    {
+      "item": "create_engines:intake_manifold"
+    },
+    {
+      "item": "minecraft:iron_bars"
+    }
+  ],
+  "result": {
+    "count": 1,
+    "id": "create_engines:air_intake"
+  }
+}

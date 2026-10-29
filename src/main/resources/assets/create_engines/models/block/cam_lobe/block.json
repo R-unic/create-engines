@@ -1,0 +1,107 @@
+{
+  "parent": "block/block",
+  "textures": {
+    "axis": "create:block/axis",
+    "end": "create:block/axis_top",
+    "lobe": "minecraft:block/iron_block",
+    "particle": "minecraft:block/iron_block"
+  },
+  "elements": [
+    {
+      "from": [
+        6.5,
+        0,
+        6.5
+      ],
+      "to": [
+        9.5,
+        16,
+        9.5
+      ],
+      "faces": {
+        "north": {
+          "texture": "#axis"
+        },
+        "south": {
+          "texture": "#axis"
+        },
+        "east": {
+          "texture": "#axis"
+        },
+        "west": {
+          "texture": "#axis"
+        },
+        "up": {
+          "texture": "#end"
+        },
+        "down": {
+          "texture": "#end"
+        }
+      }
+    },
+    {
+      "from": [
+        4,
+        3,
+        4
+      ],
+      "to": [
+        12,
+        13,
+        12
+      ],
+      "faces": {
+        "north": {
+          "texture": "#lobe"
+        },
+        "south": {
+          "texture": "#lobe"
+        },
+        "east": {
+          "texture": "#lobe"
+        },
+        "west": {
+          "texture": "#lobe"
+        },
+        "up": {
+          "texture": "#lobe"
+        },
+        "down": {
+          "texture": "#lobe"
+        }
+      }
+    },
+    {
+      "from": [
+        5,
+        3,
+        12
+      ],
+      "to": [
+        11,
+        13,
+        13.5
+      ],
+      "faces": {
+        "north": {
+          "texture": "#lobe"
+        },
+        "south": {
+          "texture": "#lobe"
+        },
+        "east": {
+          "texture": "#lobe"
+        },
+        "west": {
+          "texture": "#lobe"
+        },
+        "up": {
+          "texture": "#lobe"
+        },
+        "down": {
+          "texture": "#lobe"
+        }
+      }
+    }
+  ]
+}

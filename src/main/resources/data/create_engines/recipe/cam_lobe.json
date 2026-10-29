@@ -1,0 +1,16 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "category": "misc",
+  "ingredients": [
+    {
+      "item": "create_engines:camshaft"
+    },
+    {
+      "item": "create:iron_sheet"
+    }
+  ],
+  "result": {
+    "count": 1,
+    "id": "create_engines:cam_lobe"
+  }
+}

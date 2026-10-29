@@ -1,0 +1,106 @@
+{
+  "parent": "block/block",
+  "textures": {
+    "body": "create:block/andesite_casing",
+    "pinion": "create:block/brass_block",
+    "particle": "create:block/andesite_casing"
+  },
+  "elements": [
+    {
+      "from": [
+        2,
+        2,
+        2
+      ],
+      "to": [
+        14,
+        12,
+        14
+      ],
+      "faces": {
+        "north": {
+          "texture": "#body"
+        },
+        "south": {
+          "texture": "#body"
+        },
+        "east": {
+          "texture": "#body"
+        },
+        "west": {
+          "texture": "#body"
+        },
+        "up": {
+          "texture": "#body"
+        },
+        "down": {
+          "texture": "#body"
+        }
+      }
+    },
+    {
+      "from": [
+        5,
+        12,
+        5
+      ],
+      "to": [
+        11,
+        16,
+        11
+      ],
+      "faces": {
+        "north": {
+          "texture": "#pinion"
+        },
+        "south": {
+          "texture": "#pinion"
+        },
+        "east": {
+          "texture": "#pinion"
+        },
+        "west": {
+          "texture": "#pinion"
+        },
+        "up": {
+          "texture": "#pinion"
+        },
+        "down": {
+          "texture": "#pinion"
+        }
+      }
+    },
+    {
+      "from": [
+        4,
+        0,
+        4
+      ],
+      "to": [
+        12,
+        2,
+        12
+      ],
+      "faces": {
+        "north": {
+          "texture": "#body"
+        },
+        "south": {
+          "texture": "#body"
+        },
+        "east": {
+          "texture": "#body"
+        },
+        "west": {
+          "texture": "#body"
+        },
+        "up": {
+          "texture": "#body"
+        },
+        "down": {
+          "texture": "#body"
+        }
+      }
+    }
+  ]
+}

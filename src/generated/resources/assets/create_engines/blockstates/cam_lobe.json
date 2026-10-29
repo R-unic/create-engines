@@ -1,0 +1,17 @@
+{
+  "variants": {
+    "axis=x": {
+      "model": "create_engines:block/cam_lobe/block",
+      "x": 90,
+      "y": 90
+    },
+    "axis=y": {
+      "model": "create_engines:block/cam_lobe/block"
+    },
+    "axis=z": {
+      "model": "create_engines:block/cam_lobe/block",
+      "x": 90,
+      "y": 180
+    }
+  }
+}

@@ -1,0 +1,56 @@
+{
+  "variants": {
+    "facing=down,injector=false": {
+      "model": "create_engines:block/cylinder_head/block",
+      "x": 180
+    },
+    "facing=down,injector=true": {
+      "model": "create_engines:block/cylinder_head/block_injector",
+      "x": 180
+    },
+    "facing=east,injector=false": {
+      "model": "create_engines:block/cylinder_head/block",
+      "x": 90,
+      "y": 90
+    },
+    "facing=east,injector=true": {
+      "model": "create_engines:block/cylinder_head/block_injector",
+      "x": 90,
+      "y": 90
+    },
+    "facing=north,injector=false": {
+      "model": "create_engines:block/cylinder_head/block",
+      "x": 90
+    },
+    "facing=north,injector=true": {
+      "model": "create_engines:block/cylinder_head/block_injector",
+      "x": 90
+    },
+    "facing=south,injector=false": {
+      "model": "create_engines:block/cylinder_head/block",
+      "x": 90,
+      "y": 180
+    },
+    "facing=south,injector=true": {
+      "model": "create_engines:block/cylinder_head/block_injector",
+      "x": 90,
+      "y": 180
+    },
+    "facing=up,injector=false": {
+      "model": "create_engines:block/cylinder_head/block"
+    },
+    "facing=up,injector=true": {
+      "model": "create_engines:block/cylinder_head/block_injector"
+    },
+    "facing=west,injector=false": {
+      "model": "create_engines:block/cylinder_head/block",
+      "x": 90,
+      "y": 270
+    },
+    "facing=west,injector=true": {
+      "model": "create_engines:block/cylinder_head/block_injector",
+      "x": 90,
+      "y": 270
+    }
+  }
+}

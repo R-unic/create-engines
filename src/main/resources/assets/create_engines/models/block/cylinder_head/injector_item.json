@@ -1,0 +1,107 @@
+{
+  "parent": "block/block",
+  "textures": {
+    "body": "create:block/brass_block",
+    "cap": "minecraft:block/cut_copper",
+    "nozzle": "minecraft:block/iron_block",
+    "particle": "create:block/brass_block"
+  },
+  "elements": [
+    {
+      "from": [
+        6,
+        0,
+        6
+      ],
+      "to": [
+        10,
+        9,
+        10
+      ],
+      "faces": {
+        "north": {
+          "texture": "#body"
+        },
+        "south": {
+          "texture": "#body"
+        },
+        "east": {
+          "texture": "#body"
+        },
+        "west": {
+          "texture": "#body"
+        },
+        "up": {
+          "texture": "#body"
+        },
+        "down": {
+          "texture": "#body"
+        }
+      }
+    },
+    {
+      "from": [
+        5,
+        9,
+        5
+      ],
+      "to": [
+        11,
+        12,
+        11
+      ],
+      "faces": {
+        "north": {
+          "texture": "#cap"
+        },
+        "south": {
+          "texture": "#cap"
+        },
+        "east": {
+          "texture": "#cap"
+        },
+        "west": {
+          "texture": "#cap"
+        },
+        "up": {
+          "texture": "#cap"
+        },
+        "down": {
+          "texture": "#cap"
+        }
+      }
+    },
+    {
+      "from": [
+        7,
+        -3,
+        7
+      ],
+      "to": [
+        9,
+        0,
+        9
+      ],
+      "faces": {
+        "north": {
+          "texture": "#nozzle"
+        },
+        "south": {
+          "texture": "#nozzle"
+        },
+        "east": {
+          "texture": "#nozzle"
+        },
+        "west": {
+          "texture": "#nozzle"
+        },
+        "up": {
+          "texture": "#nozzle"
+        },
+        "down": {
+          "texture": "#nozzle"
+        }
+      }
+    }
+  ]
+}

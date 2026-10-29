@@ -1,0 +1,15 @@
+{
+  "values": [
+    "create_engines:crankshaft",
+    "create_engines:crank_throw",
+    "create_engines:cylinder",
+    "create_engines:cylinder_head",
+    "create_engines:camshaft",
+    "create_engines:cam_lobe",
+    "create_engines:intake_manifold",
+    "create_engines:exhaust_manifold",
+    "create_engines:air_intake",
+    "create_engines:exhaust_outlet",
+    "create_engines:starter"
+  ]
+}

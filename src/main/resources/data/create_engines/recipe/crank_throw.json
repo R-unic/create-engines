@@ -1,0 +1,19 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "category": "misc",
+  "ingredients": [
+    {
+      "item": "create_engines:crankshaft"
+    },
+    {
+      "item": "minecraft:iron_ingot"
+    },
+    {
+      "item": "create:andesite_alloy"
+    }
+  ],
+  "result": {
+    "count": 1,
+    "id": "create_engines:crank_throw"
+  }
+}

@@ -1,0 +1,105 @@
+{
+  "parent": "block/block",
+  "textures": {
+    "rod": "create:block/industrial_iron_block",
+    "particle": "create:block/industrial_iron_block"
+  },
+  "elements": [
+    {
+      "from": [
+        7,
+        1,
+        7
+      ],
+      "to": [
+        9,
+        13,
+        9
+      ],
+      "faces": {
+        "north": {
+          "texture": "#rod"
+        },
+        "south": {
+          "texture": "#rod"
+        },
+        "east": {
+          "texture": "#rod"
+        },
+        "west": {
+          "texture": "#rod"
+        },
+        "up": {
+          "texture": "#rod"
+        },
+        "down": {
+          "texture": "#rod"
+        }
+      }
+    },
+    {
+      "from": [
+        6.5,
+        -1.5,
+        6
+      ],
+      "to": [
+        9.5,
+        1.5,
+        10
+      ],
+      "faces": {
+        "north": {
+          "texture": "#rod"
+        },
+        "south": {
+          "texture": "#rod"
+        },
+        "east": {
+          "texture": "#rod"
+        },
+        "west": {
+          "texture": "#rod"
+        },
+        "up": {
+          "texture": "#rod"
+        },
+        "down": {
+          "texture": "#rod"
+        }
+      }
+    },
+    {
+      "from": [
+        6.75,
+        12.75,
+        6.5
+      ],
+      "to": [
+        9.25,
+        15.25,
+        9.5
+      ],
+      "faces": {
+        "north": {
+          "texture": "#rod"
+        },
+        "south": {
+          "texture": "#rod"
+        },
+        "east": {
+          "texture": "#rod"
+        },
+        "west": {
+          "texture": "#rod"
+        },
+        "up": {
+          "texture": "#rod"
+        },
+        "down": {
+          "texture": "#rod"
+        }
+      }
+    }
+  ]
+}

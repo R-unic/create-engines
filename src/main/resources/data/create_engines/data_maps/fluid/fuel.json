@@ -1,0 +1,14 @@
+{
+  "values": {
+    "create_engines:plant_oil": {
+      "energy_per_mb": 30,
+      "autoignition_temperature": 1.7,
+      "air_per_mb": 1.6
+    },
+    "create_engines:diesel": {
+      "energy_per_mb": 36,
+      "autoignition_temperature": 1.55,
+      "air_per_mb": 1.7
+    }
+  }
+}

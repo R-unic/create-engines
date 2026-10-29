@@ -1,0 +1,74 @@
+{
+  "parent": "block/block",
+  "textures": {
+    "stem": "minecraft:block/iron_block",
+    "cap": "create:block/brass_block",
+    "particle": "minecraft:block/iron_block"
+  },
+  "elements": [
+    {
+      "from": [
+        7.25,
+        -2,
+        7.25
+      ],
+      "to": [
+        8.75,
+        1.5,
+        8.75
+      ],
+      "faces": {
+        "north": {
+          "texture": "#stem"
+        },
+        "south": {
+          "texture": "#stem"
+        },
+        "east": {
+          "texture": "#stem"
+        },
+        "west": {
+          "texture": "#stem"
+        },
+        "up": {
+          "texture": "#stem"
+        },
+        "down": {
+          "texture": "#stem"
+        }
+      }
+    },
+    {
+      "from": [
+        6.5,
+        1.5,
+        6.5
+      ],
+      "to": [
+        9.5,
+        2.25,
+        9.5
+      ],
+      "faces": {
+        "north": {
+          "texture": "#cap"
+        },
+        "south": {
+          "texture": "#cap"
+        },
+        "east": {
+          "texture": "#cap"
+        },
+        "west": {
+          "texture": "#cap"
+        },
+        "up": {
+          "texture": "#cap"
+        },
+        "down": {
+          "texture": "#cap"
+        }
+      }
+    }
+  ]
+}

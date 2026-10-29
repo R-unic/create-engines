@@ -1,0 +1,16 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "category": "misc",
+  "ingredients": [
+    {
+      "item": "create:copper_casing"
+    },
+    {
+      "item": "create:copper_sheet"
+    }
+  ],
+  "result": {
+    "count": 1,
+    "id": "create_engines:cylinder_head"
+  }
+}

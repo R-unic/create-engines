@@ -1,0 +1,19 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "category": "misc",
+  "ingredients": [
+    {
+      "item": "create:copper_sheet"
+    },
+    {
+      "item": "create:fluid_pipe"
+    },
+    {
+      "item": "create:andesite_alloy"
+    }
+  ],
+  "result": {
+    "count": 1,
+    "id": "create_engines:fuel_injector"
+  }
+}

@@ -2,12 +2,24 @@ package com.createengines;
 
 import org.slf4j.Logger;
 
+import com.createengines.config.CEConfig;
+import com.createengines.engine.topology.EngineTopology;
+import com.createengines.registry.CEBlockEntities;
+import com.createengines.registry.CEBlocks;
+import com.createengines.registry.CECreativeTabs;
+import com.createengines.registry.CEDataMaps;
+import com.createengines.registry.CEFluids;
+import com.createengines.registry.CEItems;
+import com.createengines.registry.CELang;
 import com.mojang.logging.LogUtils;
 import com.simibubi.create.foundation.data.CreateRegistrate;
 
 import net.minecraft.resources.ResourceLocation;
 import net.neoforged.bus.api.IEventBus;
+import net.neoforged.fml.ModContainer;
 import net.neoforged.fml.common.Mod;
+import net.neoforged.fml.config.ModConfig;
+import net.neoforged.neoforge.common.NeoForge;
 
 @Mod(CreateEngines.MOD_ID)
 public class CreateEngines {
@@ -16,8 +28,22 @@ public class CreateEngines {
 
 	public static final CreateRegistrate REGISTRATE = CreateRegistrate.create(MOD_ID);
 
-	public CreateEngines(IEventBus modEventBus) {
+	public CreateEngines(IEventBus modEventBus, ModContainer modContainer) {
 		REGISTRATE.registerEventListeners(modEventBus);
+
+		CECreativeTabs.register(modEventBus);
+		CEBlocks.register();
+		CEItems.register();
+		CEFluids.register();
+		CEBlockEntities.register();
+		CELang.register();
+
+		modEventBus.addListener(CEDataMaps::register);
+		modEventBus.addListener(CEBlockEntities::registerCapabilities);
+		modContainer.registerConfig(ModConfig.Type.SERVER, CEConfig.SPEC);
+
+		NeoForge.EVENT_BUS.addListener(EngineTopology::onLevelTick);
+		NeoForge.EVENT_BUS.addListener(EngineTopology::onLevelUnload);
 	}
 
 	public static ResourceLocation asResource(String path) {
