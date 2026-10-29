@@ -2,11 +2,7 @@ package com.createengines.content.cylinder;
 
 import java.util.function.Consumer;
 
-import org.joml.Quaternionf;
-import org.joml.Vector3f;
-
-import com.createengines.content.crankshaft.CrankshaftBlockEntity;
-import com.createengines.engine.CrankGeometry;
+import com.createengines.content.EnginePoses;
 import com.createengines.registry.CEPartialModels;
 
 import dev.engine_room.flywheel.api.instance.Instance;
@@ -19,17 +15,11 @@ import dev.engine_room.flywheel.lib.visual.AbstractBlockEntityVisual;
 import dev.engine_room.flywheel.lib.visual.SimpleDynamicVisual;
 import net.createmod.catnip.animation.AnimationTickHolder;
 import net.minecraft.core.BlockPos;
-import net.minecraft.core.Direction;
-import net.minecraft.core.Direction.Axis;
-import net.minecraft.world.level.block.state.BlockState;
-import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 
 /**
  * Piston and connecting rod, posed every frame from the crank throw's visible angle with slider-crank geometry.
  */
 public class CylinderVisual extends AbstractBlockEntityVisual<CylinderBlockEntity> implements SimpleDynamicVisual {
-
-	private static final Vector3f UP = new Vector3f(0, 1, 0);
 
 	private final TransformedInstance piston;
 	private final TransformedInstance rod;
@@ -49,49 +39,17 @@ public class CylinderVisual extends AbstractBlockEntityVisual<CylinderBlockEntit
 	}
 
 	private void animate() {
-		BlockState state = blockEntity.getBlockState();
-		Direction bore = state.getValue(CylinderBlock.FACING);
-		Vector3f boreVector = new Vector3f(bore.step());
-		CrankshaftBlockEntity crank = blockEntity.crankThrow();
-
-		// Crank pin position relative to the throw's centre
-		Vector3f pin;
-		if (crank != null) {
-			Axis axis = crank.getBlockState()
-				.getValue(BlockStateProperties.AXIS);
-			float angle = CrankGeometry.renderAngle(AnimationTickHolder.getRenderTime(level),
-				crank.getTheoreticalSpeed()) + (float) crank.throwAngle();
-			pin = CrankGeometry.featureDirection(axis, angle)
-				.mul(CrankGeometry.THROW_RADIUS);
-		} else
-			pin = new Vector3f(boreVector).mul(CrankGeometry.THROW_RADIUS);
-
-		float along = pin.dot(boreVector);
-		Vector3f across = new Vector3f(pin).sub(new Vector3f(boreVector).mul(along));
-		float rodLength = CrankGeometry.ROD_LENGTH;
-		float wristDistance = along + (float) Math.sqrt(rodLength * rodLength - across.lengthSquared());
-
-		Vector3f throwCentre = new Vector3f(0.5f).sub(boreVector);
-		Vector3f pinPos = new Vector3f(throwCentre).add(pin);
-		Vector3f wrist = new Vector3f(throwCentre).add(new Vector3f(boreVector).mul(wristDistance));
-		Vector3f rodDirection = new Vector3f(wrist).sub(pinPos)
-			.normalize();
-
+		EnginePoses.CylinderPose pose = EnginePoses.cylinder(blockEntity, AnimationTickHolder.getRenderTime(level));
 		BlockPos origin = getVisualPosition();
-		piston.setVisible(state.getValue(CylinderBlock.HAS_PISTON));
+		piston.setVisible(pose.showPiston());
 		piston.setIdentityTransform()
 			.translate(origin)
-			.translate(wrist.x, wrist.y, wrist.z)
-			.rotate(new Quaternionf().rotationTo(UP, boreVector))
-			.translate(-0.5f, 0, -0.5f)
+			.mul(pose.piston())
 			.setChanged();
-
-		rod.setVisible(state.getValue(CylinderBlock.HAS_ROD) && crank != null);
+		rod.setVisible(pose.showRod());
 		rod.setIdentityTransform()
 			.translate(origin)
-			.translate(pinPos.x, pinPos.y, pinPos.z)
-			.rotate(new Quaternionf().rotationTo(UP, rodDirection))
-			.translate(-0.5f, 0, -0.5f)
+			.mul(pose.rod())
 			.setChanged();
 	}
 

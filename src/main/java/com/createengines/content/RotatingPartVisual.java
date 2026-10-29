@@ -49,10 +49,7 @@ public abstract class RotatingPartVisual<T extends KineticBlockEntity> extends A
 			blockEntity.getTheoreticalSpeed()) + partAngle();
 		part.setIdentityTransform()
 			.translate(getVisualPosition())
-			.center()
-			.rotate(CrankGeometry.spin(axis, angle))
-			.rotate(CrankGeometry.modelToAxis(axis))
-			.uncenter()
+			.mul(EnginePoses.rotatingPart(axis, angle))
 			.setChanged();
 	}
 

@@ -3,8 +3,11 @@ package com.createengines.registry;
 import static com.createengines.CreateEngines.REGISTRATE;
 
 import com.createengines.CreateEngines;
+import com.createengines.ponder.CEPonderPlugin;
+import com.tterrag.registrate.providers.ProviderType;
 
 import net.createmod.catnip.lang.LangBuilder;
+import net.createmod.ponder.foundation.PonderIndex;
 
 /** Text that isn't a block or item name. Generated into en_us.json by datagen. */
 public final class CELang {
@@ -25,6 +28,13 @@ public final class CELang {
 	}
 
 	public static void register() {
+		// Ponder scene text is written in the scenes; datagen collects it into the lang file
+		REGISTRATE.addDataGenerator(ProviderType.LANG, provider -> {
+			PonderIndex.addPlugin(new CEPonderPlugin());
+			PonderIndex.getLangAccess()
+				.provideLang(CreateEngines.MOD_ID, provider::add);
+		});
+
 		REGISTRATE.addRawLang("itemGroup.create_engines.main", "Create: Engine Engineer");
 
 		raw("value.throw_angle", "Throw Angle");

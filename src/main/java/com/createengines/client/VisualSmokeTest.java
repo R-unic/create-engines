@@ -2,10 +2,14 @@ package com.createengines.client;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Supplier;
 
 import com.createengines.CreateEngines;
 import com.createengines.gametest.TestEngine;
+import com.createengines.registry.CEBlocks;
 
+import net.createmod.catnip.gui.ScreenOpener;
+import net.createmod.ponder.foundation.ui.PonderUI;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.Screenshot;
 import net.minecraft.client.gui.screens.AccessibilityOnboardingScreen;
@@ -14,6 +18,7 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.world.Difficulty;
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.GameRules;
 import net.minecraft.world.level.GameType;
 import net.minecraft.world.level.LevelSettings;
@@ -95,7 +100,13 @@ public final class VisualSmokeTest {
 		goggles("cam_lobe", 585, 2.5, 6.5, 1.6, 0, 59.5f);
 		goggles("head", 605, 4.5, 4.0, 1.0, 45, 0);
 		goggles("starter", 625, 1.5, 0.0, 0.0, 0, 2.7f);
-		STEPS.add(new Step(650, () -> Minecraft.getInstance()
+		// Ponder scenes, which draw engine parts with the fallback renderers rather than Flywheel
+		ponder("crankshaft", 660, CEBlocks.CRANK_THROW::asStack, 160, 420);
+		ponder("cylinder", 1120, CEBlocks.CYLINDER::asStack, 300, 600);
+		ponder("camshaft", 1780, CEBlocks.CAM_LOBE::asStack, 300, 560);
+		ponder("airflow", 2400, CEBlocks.AIR_INTAKE::asStack, 340, 450);
+		ponder("starter", 2900, CEBlocks.STARTER::asStack, 220, 420);
+		STEPS.add(new Step(3360, () -> Minecraft.getInstance()
 			.stop()));
 	}
 
@@ -106,6 +117,14 @@ public final class VisualSmokeTest {
 			int frame = i;
 			STEPS.add(new Step(tick + 15 + i * 2, () -> shot(name + "_" + frame)));
 		}
+	}
+
+	private static void ponder(String name, int tick, Supplier<ItemStack> component, int... shotsAfter) {
+		STEPS.add(new Step(tick, () -> ScreenOpener.open(PonderUI.of(component.get()))));
+		for (int after : shotsAfter)
+			STEPS.add(new Step(tick + after, () -> shot("ponder_" + name + "_" + after)));
+		STEPS.add(new Step(tick + shotsAfter[shotsAfter.length - 1] + 5, () -> Minecraft.getInstance()
+			.setScreen(null)));
 	}
 
 	private static void goggles(String name, int tick, double x, double y, double z, float yaw, float pitch) {

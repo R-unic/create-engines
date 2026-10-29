@@ -1,8 +1,10 @@
 package com.createengines;
 
 import com.createengines.client.VisualSmokeTest;
+import com.createengines.ponder.CEPonderPlugin;
 import com.createengines.registry.CEPartialModels;
 
+import net.createmod.ponder.foundation.PonderIndex;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.fml.common.Mod;
@@ -12,6 +14,7 @@ public class CreateEnginesClient {
 
 	public CreateEnginesClient(IEventBus modEventBus) {
 		CEPartialModels.init();
+		PonderIndex.addPlugin(new CEPonderPlugin());
 		VisualSmokeTest.register();
 	}
 }
