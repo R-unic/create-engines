@@ -7,9 +7,11 @@ import java.util.List;
 import org.jetbrains.annotations.Nullable;
 
 import com.createengines.config.CEConfig;
+import com.createengines.content.battery.BatteryBlockEntity;
 import com.createengines.content.camshaft.CamshaftBlockEntity;
 import com.createengines.content.crankshaft.CrankshaftBlockEntity;
 import com.createengines.content.cylinder.CylinderBlockEntity;
+import com.createengines.content.head.CylinderHeadBlockEntity;
 import com.createengines.content.starter.StarterBlockEntity;
 import com.createengines.engine.sim.CamProfile;
 import com.createengines.engine.sim.Camshaft;
@@ -20,6 +22,7 @@ import com.createengines.engine.sim.Dynamometer;
 import com.createengines.engine.sim.EngineSimulation;
 import com.createengines.engine.sim.FuelSpec;
 import com.createengines.engine.sim.FuelSupply;
+import com.createengines.engine.sim.IgnitionSource;
 import com.createengines.engine.sim.OilSupply;
 import com.createengines.engine.topology.CylinderFault;
 import com.createengines.engine.topology.EngineLayout;
@@ -104,6 +107,8 @@ public final class EngineController {
 			return delivered;
 		};
 
+		IgnitionSource plugs = new BatteryIgnition(level, layout.batteries());
+
 		models = new ArrayList<>();
 		List<CylinderModel> working = new ArrayList<>();
 		// A piston and rod that turn with the crank but aren't part of a working cylinder (no head, say) still have
@@ -129,6 +134,7 @@ public final class EngineController {
 				cylinder.lobeAngle());
 			boolean injector = !CylinderFault.NO_INJECTOR.in(cylinder.faults()) && cylinder.gallery() >= 0;
 			model.fuelSupply = injector ? galleries.get(cylinder.gallery()) : FuelSupply.NONE;
+			model.ignition = cylinder.sparkPlug() ? plugs : IgnitionSource.NONE;
 			model.intakeFactor = flow(cylinder.intake());
 			model.exhaustFactor = flow(cylinder.exhaust());
 			models.add(model);
@@ -271,7 +277,10 @@ public final class EngineController {
 		}
 	}
 
-	/** A redstone signal anywhere on a camshaft closes its fuel rack, as on an inline injection pump. */
+	/**
+	 * A redstone signal anywhere on a camshaft closes its fuel rack, as on an inline injection pump. The metering
+	 * each injector is set to is read here too.
+	 */
 	private void readFuelRacks(Level level) {
 		for (int i = 0; i < racks.length; i++) {
 			int signal = 0;
@@ -288,6 +297,11 @@ public final class EngineController {
 				.camLine();
 			if (model != null && line >= 0)
 				model.rack = racks[line];
+			BlockPos head = layout.cylinders()
+				.get(i)
+				.head();
+			if (model != null && head != null && level.getBlockEntity(head) instanceof CylinderHeadBlockEntity be)
+				model.metering = be.meteringFraction();
 		}
 	}
 
@@ -310,7 +324,8 @@ public final class EngineController {
 
 	/**
 	 * Re-measures the torque curve when something it depends on has changed: which cylinders have fuel and of what
-	 * kind, which cams are geared 1:2, and how well oiled the engine is.
+	 * kind and metering, which have a spark to burn it by, which cams are geared 1:2, and how well oiled the
+	 * engine is.
 	 */
 	private void updateRating() {
 		List<Object> key = new ArrayList<>();
@@ -318,6 +333,8 @@ public final class EngineController {
 			.film() * 5));
 		for (CylinderModel model : sim.cylinders()) {
 			key.add(model.fuelSupply.fuel());
+			key.add((int) Math.round(model.metering * 20));
+			key.add(model.ignition.installed() && model.ignition.powered());
 			Camshaft camshaft = model.camshaft();
 			key.add(camshaft != null && camshaft.isPhaseLocked());
 		}
@@ -409,8 +426,13 @@ public final class EngineController {
 			be.updateStatus(new CylinderStatus(layout.primary(), cylinder.faults(),
 				last == null ? com.createengines.engine.sim.CycleResult.NONE : last.result, last != null && last.rich(),
 				(float) cylinder.tdcAngle(), timing, charge, fuel == null ? Float.NaN : (float) fuel.autoignitionTemp(),
-				cylinder.lobe(), outlets));
+				cylinder.lobe(), outlets, last != null && last.lean(),
+				last == null || last.equivalence <= 0 ? Float.NaN : (float) last.equivalence, cylinder.sparkPlug()));
 		}
+
+		for (BlockPos pos : layout.batteries())
+			if (level.getBlockEntity(pos) instanceof BatteryBlockEntity battery)
+				battery.attachToEngine(layout.primary());
 
 		for (int line = 0; line < camshafts.size(); line++) {
 			Camshaft camshaft = camshafts.get(line);

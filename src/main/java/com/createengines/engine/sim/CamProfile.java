@@ -6,15 +6,16 @@ package com.createengines.engine.sim;
  * 360° = firing TDC). Each valve follows a half-sine lift curve between its opening and closing angles.
  *
  * @param injection cycle angle at which the injector lobe fires the unit injector
+ * @param spark     cycle angle at which a spark plug on this cylinder fires
  */
 public record CamProfile(double intakeOpen, double intakeClose, double exhaustOpen, double exhaustClose,
-						 double injection) {
+						 double injection, double spark) {
 
 	/**
 	 * Intake 10° before TDC to 40° after BDC; exhaust 40° before BDC to 10° after TDC; injection 15° before firing
-	 * TDC.
+	 * TDC and the spark 10° before it.
 	 */
-	public static final CamProfile BASIC = new CamProfile(710, 220, 500, 10, 345);
+	public static final CamProfile BASIC = new CamProfile(710, 220, 500, 10, 345, 350);
 
 	public double intakeLift(double cycleDegrees) {
 		return lift(cycleDegrees, intakeOpen, intakeClose);

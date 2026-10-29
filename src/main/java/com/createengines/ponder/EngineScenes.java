@@ -411,7 +411,7 @@ public final class EngineScenes {
 		scene.overlay()
 			.showText(90)
 			.attachKeyFrame()
-			.text("Intake Manifolds join many heads to an Air Intake. Whichever face a manifold touches becomes that head's intake.")
+			.text("Intake Manifolds are pipes. They connect to the heads, pipes and openings beside them, and run from the heads to an Air Intake.")
 			.pointAt(util.vector()
 				.blockSurface(util.grid()
 					.at(2, 3, 2), Direction.NORTH))
@@ -423,9 +423,17 @@ public final class EngineScenes {
 		scene.idle(15);
 		scene.overlay()
 			.showText(90)
-			.text("Exhaust Manifolds do the same for an Exhaust Outlet. Each opening comfortably serves two cylinders.")
+			.text("Exhaust Manifolds do the same for an Exhaust Outlet, as pipes can bend and join like a real exhaust. Each opening comfortably serves two cylinders.")
 			.pointAt(util.vector()
 				.topOf(3, 4, 4))
+			.placeNearTarget();
+		scene.idle(100);
+		scene.overlay()
+			.showText(90)
+			.text("A Wrench cuts or restores the pipe connection on the side you click, so two runs can lie side by side without joining.")
+			.pointAt(util.vector()
+				.blockSurface(util.grid()
+					.at(2, 3, 4), Direction.UP))
 			.placeNearTarget();
 		scene.idle(100);
 
@@ -454,11 +462,93 @@ public final class EngineScenes {
 
 		scene.overlay()
 			.showText(90)
-			.text("Smoke from the outlet follows each firing. Black smoke means more fuel than air: the engine is running rich.")
+			.text("Smoke from the outlet follows each firing. Black smoke means more fuel than air: the engine is running rich. Turn down the Fuel Metering on its cylinder heads.")
 			.pointAt(util.vector()
 				.topOf(3, 4, 4))
 			.placeNearTarget();
 		scene.idle(100);
+		scene.markAsFinished();
+	}
+
+	public static void spark(SceneBuilder builder, SceneBuildingUtil util) {
+		CreateSceneBuilder scene = new CreateSceneBuilder(builder);
+		scene.title("spark", "Spark Ignition and Fuel Metering");
+		scene.configureBasePlate(0, 0, 6);
+		scene.world()
+			.showSection(util.select()
+				.layer(0), Direction.UP);
+
+		Selection crank = util.select()
+			.fromTo(1, 1, 3, 3, 1, 3);
+		Selection battery = util.select()
+			.position(0, 1, 3);
+		Selection engine = util.select()
+			.fromTo(2, 2, 3, 2, 3, 3)
+			.add(util.select()
+				.fromTo(2, 3, 2, 2, 3, 4))
+			.add(util.select()
+				.fromTo(1, 4, 3, 3, 4, 3));
+		BlockPos head = util.grid()
+			.at(2, 3, 3);
+
+		setThrow(scene, util.select()
+			.position(2, 1, 3), 0);
+		setLobe(scene, util.select()
+			.position(2, 4, 3), LOBE_FOR_UPRIGHT_CYLINDER);
+		scene.world()
+			.showSection(crank, Direction.DOWN);
+		scene.world()
+			.showSection(engine, Direction.DOWN);
+		scene.idle(20);
+		scene.overlay()
+			.showText(100)
+			.attachKeyFrame()
+			.text("A Spark Plug installed in a Cylinder Head lights the fuel with a spark, instead of waiting for compression to heat it. Gasoline is too hard to light by compression alone, so it needs one.")
+			.pointAt(util.vector()
+				.topOf(head))
+			.placeNearTarget();
+		scene.idle(110);
+
+		scene.world()
+			.showSection(battery, Direction.EAST);
+		scene.idle(15);
+		scene.overlay()
+			.showText(100)
+			.attachKeyFrame()
+			.text("Plugs fire from a Battery touching the crankshaft or a cylinder head. Each spark uses a little charge, and a flat battery gives no spark.")
+			.pointAt(util.vector()
+				.blockSurface(util.grid()
+					.at(0, 1, 3), Direction.UP))
+			.placeNearTarget();
+		scene.idle(110);
+
+		scene.world()
+			.setKineticSpeed(crank.add(battery), 48);
+		scene.overlay()
+			.showText(100)
+			.text("A battery charges while its shaft turns, for a little stress. On the crank's own shaft line, cranking charges it and the running engine keeps it topped up.")
+			.pointAt(util.vector()
+				.topOf(0, 1, 3))
+			.placeNearTarget();
+		scene.idle(110);
+
+		scene.overlay()
+			.showText(110)
+			.attachKeyFrame()
+			.colored(PonderPalette.RED)
+			.text("Each head's injector is metered by hand. A cylinder breathes less air as it speeds up, so a setting that is right at one speed is rich above it: fuel wasted, black smoke, less power. Too little runs lean.")
+			.pointAt(util.vector()
+				.blockSurface(head, Direction.EAST))
+			.placeNearTarget();
+		scene.idle(120);
+
+		scene.overlay()
+			.showText(100)
+			.text("A spark can only light a mixture that is neither too lean nor too rich. Tune Fuel Metering to the speed the engine runs at, reading each cylinder's mixture through goggles.")
+			.pointAt(util.vector()
+				.blockSurface(head, Direction.EAST))
+			.placeNearTarget();
+		scene.idle(110);
 		scene.markAsFinished();
 	}
 

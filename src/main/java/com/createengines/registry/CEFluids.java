@@ -29,6 +29,7 @@ public final class CEFluids {
 
 	private static final int PLANT_OIL_COLOUR = 0xFF6E4A1A;
 	private static final int DIESEL_COLOUR = 0xFFC7A93B;
+	private static final int GASOLINE_COLOUR = 0xFFE6D27A;
 	private static final int ENGINE_OIL_COLOUR = 0xFF2B2622;
 
 	public static final FluidEntry<BaseFlowingFluid.Flowing> PLANT_OIL =
@@ -61,6 +62,25 @@ public final class CEFluids {
 			.source(BaseFlowingFluid.Source::new)
 			.block()
 			.properties(p -> p.mapColor(MapColor.TERRACOTTA_YELLOW))
+			.build()
+			.bucket()
+			.model(CEFluids::bucketModel)
+			.build()
+			.register();
+
+	/** Too hard to light by compression alone: it burns only in an engine with spark plugs. */
+	public static final FluidEntry<BaseFlowingFluid.Flowing> GASOLINE =
+		REGISTRATE.fluid("gasoline", STILL, FLOW, tinted(GASOLINE_COLOUR))
+			.lang("Gasoline")
+			.properties(b -> b.viscosity(600)
+				.density(740))
+			.fluidProperties(p -> p.levelDecreasePerBlock(2)
+				.tickRate(10)
+				.slopeFindDistance(4)
+				.explosionResistance(100f))
+			.source(BaseFlowingFluid.Source::new)
+			.block()
+			.properties(p -> p.mapColor(MapColor.COLOR_YELLOW))
 			.build()
 			.bucket()
 			.model(CEFluids::bucketModel)

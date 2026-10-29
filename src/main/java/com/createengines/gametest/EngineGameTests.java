@@ -4,7 +4,9 @@ import java.util.Collection;
 import java.util.function.BiConsumer;
 
 import com.createengines.CreateEngines;
+import com.createengines.content.airflow.ManifoldBlock;
 import com.createengines.content.airflow.PortOpeningBlock;
+import com.createengines.content.battery.BatteryBlockEntity;
 import com.createengines.content.camshaft.CamshaftBlockEntity;
 import com.createengines.content.crankshaft.CrankshaftBlockEntity;
 import com.createengines.content.cylinder.CylinderBlock;
@@ -33,14 +35,19 @@ import net.minecraft.core.Direction.Axis;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.gametest.framework.GameTest;
 import net.minecraft.gametest.framework.GameTestHelper;
+import net.minecraft.world.InteractionHand;
 import net.minecraft.world.item.CreativeModeTab;
 import net.minecraft.world.item.CreativeModeTabs;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.context.BlockPlaceContext;
+import net.minecraft.world.level.GameType;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.material.Fluids;
+import net.minecraft.world.phys.BlockHitResult;
+import net.minecraft.world.phys.Vec3;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.neoforged.neoforge.fluids.FluidStack;
 import net.neoforged.neoforge.fluids.capability.IFluidHandler.FluidAction;
@@ -366,6 +373,181 @@ public class EngineGameTests {
 				"A dry engine should top out well below an oiled one's 120+: " + summary);
 			helper.succeed();
 		});
+	}
+
+	/** A battery on the crank's own shaft is charged by cranking, which lets a spark engine start on gasoline. */
+	@GameTest(template = "empty", timeoutTicks = 1000)
+	public static void sparkEngineStartsOnGasolineAndChargesItsBattery(GameTestHelper helper) {
+		TestEngine.buildSpark(helper.getLevel(), helper.absolutePos(BlockPos.ZERO), true);
+		helper.runAtTickTime(300, () -> {
+			EngineSummary summary = summary(helper);
+			helper.assertTrue(summary.firing() == 1,
+				"Cylinder should fire from the plug under the starter, summary " + summary + ", cylinder " + cylinder(helper));
+			BatteryBlockEntity battery = helper.getBlockEntity(TestEngine.BATTERY);
+			helper.assertTrue(battery.charge() > 0, "Cranking should have charged the battery");
+			helper.setBlock(STARTER_POWER, Blocks.AIR);
+		});
+		helper.runAtTickTime(800, () -> {
+			EngineSummary summary = summary(helper);
+			helper.assertTrue(summary.state() == EngineState.RUNNING, "Spark engine should run on its own: " + summary);
+			helper.assertTrue(cylinder(helper).result() == CycleResult.FIRED, "Cylinder should fire: " + cylinder(helper));
+			CylinderHeadBlockEntity head = helper.getBlockEntity(HEAD);
+			helper.assertTrue(head.tank()
+				.getFluidAmount() < 250, "Engine should have burned gasoline");
+			BatteryBlockEntity battery = helper.getBlockEntity(TestEngine.BATTERY);
+			helper.assertTrue(battery.charge() > 20, "The turning engine should keep its battery charged");
+			helper.succeed();
+		});
+	}
+
+	/** Gasoline won't light by compression alone: without a plug the engine only turns over. */
+	@GameTest(template = "empty", timeoutTicks = 700)
+	public static void gasolineWithoutASparkPlugDoesNotLight(GameTestHelper helper) {
+		buildSingleCylinder(helper, false);
+		CylinderHeadBlockEntity head = helper.getBlockEntity(HEAD);
+		head.tank()
+			.fill(new FluidStack(CEFluids.GASOLINE.get()
+				.getSource(), 250), FluidAction.EXECUTE);
+		for (int tick = 100; tick <= 600; tick += 100)
+			helper.runAtTickTime(tick, () -> helper.assertTrue(summary(helper).firing() == 0,
+				"Gasoline lit with no spark plug: " + cylinder(helper)));
+		helper.runAtTickTime(650, () -> {
+			helper.assertTrue(cylinder(helper).result() == CycleResult.NO_IGNITION,
+				"Fuel should be left unlit: " + cylinder(helper));
+			helper.succeed();
+		});
+	}
+
+	/** A plug with no battery on the engine is reported, and never fires. */
+	@GameTest(template = "empty", timeoutTicks = 700)
+	public static void sparkPlugWithoutABatteryNeverFires(GameTestHelper helper) {
+		TestEngine.buildSpark(helper.getLevel(), helper.absolutePos(BlockPos.ZERO), false);
+		for (int tick = 100; tick <= 600; tick += 100)
+			helper.runAtTickTime(tick, () -> helper.assertTrue(summary(helper).firing() == 0,
+				"Cylinder fired with no battery: " + cylinder(helper)));
+		helper.runAtTickTime(650, () -> {
+			helper.assertTrue(CylinderFault.NO_BATTERY.in(cylinder(helper).faults()),
+				"Cylinder should report its missing battery: " + cylinder(helper));
+			helper.assertTrue(cylinder(helper).result() == CycleResult.NO_SPARK,
+				"Cylinder should report no spark: " + cylinder(helper));
+			helper.succeed();
+		});
+	}
+
+	/** A spark engine runs only while its battery holds charge: drain one the engine cannot recharge and it quits. */
+	@GameTest(template = "empty", timeoutTicks = 1500)
+	public static void sparkEngineStopsWhenItsBatteryIsDrained(GameTestHelper helper) {
+		TestEngine.buildSpark(helper.getLevel(), helper.absolutePos(BlockPos.ZERO), true);
+		helper.runAtTickTime(300, () -> helper.setBlock(STARTER_POWER, Blocks.AIR));
+		helper.runAtTickTime(600, () -> {
+			helper.assertTrue(summary(helper).state() == EngineState.RUNNING, "Engine should be running first");
+			BatteryBlockEntity battery = helper.getBlockEntity(TestEngine.BATTERY);
+			battery.draw(BatteryBlockEntity.CAPACITY);
+			// Take the battery off the crank's shaft line so the engine cannot charge it again
+			helper.setBlock(TestEngine.BATTERY, CEBlocks.BATTERY.getDefaultState()
+				.setValue(BlockStateProperties.AXIS, Axis.Y));
+		});
+		helper.succeedWhen(() -> {
+			helper.assertTrue(helper.getTick() > 620, "Battery not drained yet");
+			helper.assertTrue(summary(helper).firing() == 0, "Nothing should fire without a spark: " + summary(helper));
+			CrankshaftBlockEntity crank = helper.getBlockEntity(PRIMARY);
+			helper.assertTrue(crank.getSpeed() == 0, "Engine should have stopped, speed " + crank.getSpeed());
+		});
+	}
+
+	/** Too much fuel for the air is a fault you can see: the cylinder reports rich, and a hand on the dial fixes it. */
+	@GameTest(template = "empty", timeoutTicks = 1500)
+	public static void aRichMeteringSettingRunsRichAndTurningItDownCuresIt(GameTestHelper helper) {
+		buildSingleCylinder(helper, true);
+		CylinderHeadBlockEntity head = helper.getBlockEntity(HEAD);
+		head.metering.setValue(CylinderHeadBlockEntity.MAX_METERING);
+		helper.runAtTickTime(300, () -> helper.setBlock(STARTER_POWER, Blocks.AIR));
+		helper.runAtTickTime(900, () -> {
+			CylinderStatus status = cylinder(helper);
+			helper.assertTrue(status.result() == CycleResult.FIRED, "Rich engine should still fire: " + status);
+			helper.assertTrue(status.rich(), "Twice the fuel should run rich: " + status);
+			helper.assertTrue(status.mixture() > 1.25f, "Mixture should read rich: " + status);
+			head.metering.setValue(CylinderHeadBlockEntity.DEFAULT_METERING / 2);
+		});
+		helper.runAtTickTime(1400, () -> {
+			CylinderStatus status = cylinder(helper);
+			helper.assertFalse(status.rich(), "Half the fuel should clear it: " + status);
+			helper.assertTrue(status.result() == CycleResult.FIRED, "Cylinder should be firing: " + status);
+			helper.succeed();
+		});
+	}
+
+	/** An intake pipe joins a head to an opening: the engine breathes through it, and cutting it chokes the engine. */
+	@GameTest(template = "empty", timeoutTicks = 1200)
+	public static void aPipeCarriesTheIntakeAndCuttingItChokesTheEngine(GameTestHelper helper) {
+		buildSingleCylinder(helper, true);
+		BlockPos pipe = TestEngine.AIR_INTAKE;
+		helper.setBlock(pipe, Blocks.AIR);
+		// Placed as a player would: it opens towards the head beside it
+		BlockState placed = placePipe(helper, CEBlocks.INTAKE_MANIFOLD.get(), pipe);
+		helper.assertTrue(placed.getValue(ManifoldBlock.CONNECTIONS.get(Direction.SOUTH)),
+			"A pipe placed beside a head should open towards it");
+		helper.assertFalse(placed.getValue(ManifoldBlock.CONNECTIONS.get(Direction.WEST)),
+			"Nothing is there yet to open towards");
+		helper.setBlock(pipe, placed);
+		// An opening placed against the pipe opens the pipe towards itself
+		helper.setBlock(pipe.west(), CEBlocks.AIR_INTAKE.getDefaultState()
+			.setValue(PortOpeningBlock.FACING, Direction.WEST));
+		helper.assertTrue(helper.getBlockState(pipe)
+			.getValue(ManifoldBlock.CONNECTIONS.get(Direction.WEST)), "The pipe should open towards the new opening");
+		helper.runAtTickTime(300, () -> {
+			helper.setBlock(STARTER_POWER, Blocks.AIR);
+			helper.assertFalse(CylinderFault.NO_INTAKE.in(cylinder(helper).faults()),
+				"The head should breathe through the pipe: " + cylinder(helper));
+			helper.assertFalse(CylinderFault.INTAKE_BLOCKED.in(cylinder(helper).faults()),
+				"The pipe leads to an open air intake: " + cylinder(helper));
+			helper.assertTrue(summary(helper).firing() == 1, "Engine should fire through the pipe: " + summary(helper));
+		});
+		helper.runAtTickTime(500, () -> {
+			helper.assertTrue(summary(helper).state() == EngineState.RUNNING, "Engine should be running first");
+			// What a wrench does: close the pipe's end towards the head
+			helper.setBlock(pipe, helper.getBlockState(pipe)
+				.setValue(ManifoldBlock.CONNECTIONS.get(Direction.SOUTH), false));
+		});
+		helper.succeedWhen(() -> {
+			helper.assertTrue(helper.getTick() > 520, "Pipe not cut yet");
+			helper.assertTrue(CylinderFault.NO_INTAKE.in(cylinder(helper).faults()),
+				"A cut pipe should leave the head with no intake: " + cylinder(helper));
+			CrankshaftBlockEntity crank = helper.getBlockEntity(PRIMARY);
+			helper.assertTrue(crank.getSpeed() == 0, "Engine with no intake should stall, speed " + crank.getSpeed());
+		});
+	}
+
+	/** Two runs of the same kind of pipe side by side join, unless the wrench has cut them apart. */
+	@GameTest(template = "empty")
+	public static void pipesJoinTheirNeighboursAndLetGo(GameTestHelper helper) {
+		BlockPos first = new BlockPos(1, 1, 1);
+		BlockPos second = first.east();
+		helper.setBlock(first, placePipe(helper, CEBlocks.EXHAUST_MANIFOLD.get(), first));
+		helper.setBlock(second, placePipe(helper, CEBlocks.EXHAUST_MANIFOLD.get(), second));
+		helper.assertTrue(helper.getBlockState(first)
+			.getValue(ManifoldBlock.CONNECTIONS.get(Direction.EAST)), "The earlier pipe should open towards the new one");
+		helper.assertTrue(helper.getBlockState(second)
+			.getValue(ManifoldBlock.CONNECTIONS.get(Direction.WEST)), "The new pipe should open towards the old one");
+
+		BlockPos other = first.south();
+		helper.setBlock(other, placePipe(helper, CEBlocks.INTAKE_MANIFOLD.get(), other));
+		helper.assertFalse(helper.getBlockState(first)
+			.getValue(ManifoldBlock.CONNECTIONS.get(Direction.SOUTH)), "Intake and exhaust pipes must not join");
+
+		// Remove the neighbour: the open end closes behind it
+		helper.setBlock(second, Blocks.AIR);
+		helper.assertFalse(helper.getBlockState(first)
+			.getValue(ManifoldBlock.CONNECTIONS.get(Direction.EAST)), "A pipe should close an end that lost its neighbour");
+		helper.succeed();
+	}
+
+	private static BlockState placePipe(GameTestHelper helper, ManifoldBlock block, BlockPos pos) {
+		BlockPos absolute = helper.absolutePos(pos);
+		BlockHitResult hit = new BlockHitResult(Vec3.atCenterOf(absolute), Direction.UP, absolute, false);
+		BlockPlaceContext context = new BlockPlaceContext(helper.makeMockPlayer(GameType.CREATIVE), InteractionHand.MAIN_HAND,
+			new ItemStack(block), hit);
+		return block.getStateForPlacement(context);
 	}
 
 	private static void runWithPresses(GameTestHelper helper, int presses) {

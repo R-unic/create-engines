@@ -249,7 +249,7 @@ public final class EngineSimulation {
 			double scale = 1;
 			FuelSpec fuel = cylinder.fuelSupply.fuel();
 			if (last.result.fired() && last.fuelBurned > 0 && fuel != null) {
-				double fullShot = cylinder.spec.maxFuelPerShot();
+				double fullShot = cylinder.spec.maxFuelPerShot() * cylinder.metering;
 				double airLimit = last.freshAirAtInjection / fuel.airPerMb();
 				scale = Math.max(1, Math.min(fullShot, airLimit) / last.fuelBurned);
 			}

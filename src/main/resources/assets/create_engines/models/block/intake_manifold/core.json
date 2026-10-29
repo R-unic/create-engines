@@ -1,39 +1,40 @@
 {
   "parent": "block/block",
   "textures": {
-    "all": "minecraft:block/cut_copper",
+    "pipe": "minecraft:block/cut_copper",
+    "flange": "minecraft:block/copper_block",
     "particle": "minecraft:block/cut_copper"
   },
   "elements": [
     {
       "from": [
-        0,
-        0,
-        0
+        5,
+        5,
+        5
       ],
       "to": [
-        16,
-        16,
-        16
+        11,
+        11,
+        11
       ],
       "faces": {
         "north": {
-          "texture": "#all"
+          "texture": "#pipe"
         },
         "south": {
-          "texture": "#all"
+          "texture": "#pipe"
         },
         "east": {
-          "texture": "#all"
+          "texture": "#pipe"
         },
         "west": {
-          "texture": "#all"
+          "texture": "#pipe"
         },
         "up": {
-          "texture": "#all"
+          "texture": "#pipe"
         },
         "down": {
-          "texture": "#all"
+          "texture": "#pipe"
         }
       }
     }

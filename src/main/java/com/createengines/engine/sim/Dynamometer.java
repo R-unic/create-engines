@@ -9,7 +9,7 @@ import org.jetbrains.annotations.Nullable;
 
 /**
  * Measures an engine's torque curve the way a real one is rated: copies of its cylinders are driven at a series of
- * fixed speeds with every injector fully open, and the net torque they make at each speed is recorded.
+ * fixed speeds with every injector's rack fully open (and still set to the metering the player chose), and the net torque they make at each speed is recorded.
  * <p>
  * An engine under load slows down until its torque matches the load, so what it can carry is the peak of this
  * curve at or below its current speed, not whatever it happens to make at the speed it is running.
@@ -52,6 +52,8 @@ public final class Dynamometer {
 			Camshaft camshaft = live == null ? null : camshafts.computeIfAbsent(live, c -> new Camshaft());
 			CylinderModel copy = cylinder.copyOnto(camshaft);
 			copy.rack = 1;
+			copy.ignition = cylinder.ignition.installed() && cylinder.ignition.powered() ? IgnitionSource.UNLIMITED
+				: IgnitionSource.NONE;
 			FuelSpec fuel = cylinder.fuelSupply.fuel();
 			copy.fuelSupply = fuel != null && live != null && live.isPhaseLocked() ? unlimited(fuel) : FuelSupply.NONE;
 			copies.add(copy);

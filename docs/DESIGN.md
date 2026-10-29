@@ -33,10 +33,14 @@ before relying on it.
 | Starting | A **Starter** block: faces a crankshaft block, takes rotation into its back from any Create source, engages while redstone-powered, and drives the crank through a one-way clutch the engine outruns. It is not kinetically connected to the crank; cranking effort is stress on its own input. A Hand Crank on the crank line also works. |
 | Valve timing | **Camshafts are in Milestone 1** (the timing-mark stand-in was dropped). A Camshaft line must turn at half crank speed via any gearing; a Cam Lobe touching a head works its valves *and* its unit injector. Lobe angle (7.5° steps, value panel) sets timing and which crank revolution the cylinder fires on. Wrong ratio, wrong angle or no cam fall out of the simulation. Cam phase is locked to the crank whenever the ratio is exactly 1:2. |
 | Throw angle | 15° steps through the value panel. |
-| Head ports | Decided by what is attached: an intake manifold or Air Intake on any free face is the intake, likewise exhaust. |
+| Head ports | Decided by what is attached: an intake pipe or Air Intake on any free face is the intake, likewise exhaust. A pipe only counts if it is open towards the head (see *Pipes* below). |
 | Fuel injection | The Fuel Injector is a part installed in the head. Heads that touch share fuel through a gallery, so one pipe feeds a bank. Fuel is piped into any head face. |
 | Fuel rack | Redstone on any block of a camshaft line closes that line's rack (15 = fuel cut off), like an inline injection pump. |
-| Fuels | **Plant Oil** (compact seeds; rustic, harder to ignite) and **Diesel** (heated mixing of Plant Oil with coal or charcoal; ignites readily, more energy). Properties come from the `create_engines:fuel` data map. |
+| Fuels | **Plant Oil** (compact seeds; rustic, harder to ignite), **Diesel** (heated mixing of Plant Oil with coal or charcoal; ignites readily, more energy) and **Gasoline** (superheated mixing of Diesel with blaze powder; too hard to light by compression at any speed this engine turns, so it needs a spark plug). Properties come from the `create_engines:fuel` data map. |
+| Pipes | **Intake and Exhaust Manifolds are pipes**: six `north/east/…` open-end properties, a core and an arm model per open end, a matching collision shape. A pipe opens towards every compatible neighbour when it is placed, and a block placed beside pipes later (head, opening) opens them towards itself. Pipes only ever *close* by themselves (an end that lost its neighbour); a Wrench cuts or restores the connection nearest the point clicked, so two runs can lie side by side without joining. Pipes of different kinds never join. An opening connects only through its back (opposite its mouth), to a pipe or straight to a head. The scanner follows open ends from each head to its openings; both ends of a join have to agree. Anything that implements `AirflowPort` and sits in a pipe run (a turbocharger, an intercooler) is part of the airflow without the pipes or the scanner knowing about it, and the pipe graph is the natural place for forced-induction pressure later. |
+| Fuel metering | Each head's injector has a **Fuel Metering** value box (10% to 200% of the usual shot, 100% by default). The injector delivers that much whatever the engine is doing; nothing matches it to the air the cylinder drew in (the earlier air-matched "smoke limiter" is gone). Breathing falls with speed, so a setting is right at one speed, rich above it and lean below it. Rich fuel is wasted (smoke), soaks up heat the piston would have had (less power), and drowns a spark; lean is weak. The torque rating (the dynamometer) uses the metering you chose, so a badly tuned engine is rated lower. Goggles on a cylinder read the mixture (balanced / n× rich / n× lean). The camshaft redstone fuel rack still scales the shot on top. |
+| Spark ignition | A **Spark Plug** is a part installed in the head (like the injector) and fires once per cycle at 10° before firing TDC. It lights the fuel waiting in the cylinder whatever its temperature, provided the mixture is between 0.5 and 1.8 times balanced; outside that the cylinder misfires *too lean* or *too rich*. A plug with no charge behind it misfires *no spark*. A cylinder with a plug can still compression-ignite a fuel that gets hot enough (diesel in a spark engine runs on, with a flat battery too). |
+| Batteries | A **Battery** is a Create kinetic block with a shaft through it. It counts charge in sparks (200 at most), gains charge while its shaft turns (0.01 spark per RPM per tick, for 2 SU/RPM of stress while it is taking charge) and loses one per spark. Any battery touching a crankshaft block or a cylinder head belongs to that engine and supplies every plug on it. On the crank's own shaft line, cranking charges it and the running engine keeps it topped up; a battery that is not spinning runs the engine only until it is flat. A plug with no battery on the engine reports *no battery* in goggles. |
 | Lubrication | **Engine Oil** (heated mixing of Plant Oil with a slime ball) is piped into any cylinder head, into a second tank beside the fuel tank, and shared along touching heads like fuel. It lubricates the whole engine: crank blocks and every piston and rod. Turning uses it up (about 0.01 mB per part per crank revolution); while the supply keeps up the film builds to full in a few seconds, and without oil it thins over a few hundred revolutions. A dry part drags: friction doubles, and speed-dependent friction quadruples, so a dry engine tops out at roughly half the speed and has less torque to spare, but it still runs. A new engine starts dry. Goggles show the lubrication. |
 | Names | Display name "Create: Engine Engineer"; mod id `create_engines`; package `com.createengines`. |
 | Commits | One commit per major feature. |
@@ -70,14 +74,20 @@ before relying on it.
   that moves the rack to hold a set speed is the natural next component.
 - **Lubrication is one figure for the whole engine.** There is no oil pump, filter or per-part wear: an engine is
   oiled or it isn't. Nothing shows the oil in a Ponder scene yet.
-- **Default full rack runs rich** (black smoke) at speed. That is a fair crude-diesel behaviour, but a shorter default
-  shot may read better.
+- **The default metering (100%) runs rich above about 100 RPM** on diesel (black smoke, less power). That is deliberate:
+  tuning it is the point of the dial. A spark engine on the default floods above about 150 RPM and then pre-ignites by
+  compression around 190, so it has a narrower usable band than a diesel.
 - **Cam direction is ignored**: only the speed ratio's magnitude is checked, because Create gearing flips direction
   freely.
 - **Two crankshafts geared together are two engines** that both feed the network; coupled-crank engines are future
   work.
-- Placeholder art: models reuse Create and vanilla textures; manifolds are full cubes without connection shapes.
-- Not yet tested in-game by hand: placing and wiring an engine by a player, multi-cylinder builds beyond the Ponder
+- Placeholder art: models reuse Create and vanilla textures. Pipes have no bend or T pieces of their own (arms around a core).
+- **Old saves lose their manifolds' connections.** Manifolds used to be stateless; one placed before pipes existed has no
+  open ends until a wrench opens them.
+- **Spark timing is fixed.** A spark engine's timing is the cam lobe's angle plus a fixed advance; there is no
+  distributor and no ignition-advance dial. There is also no knock: pre-ignition of gasoline at high speed just falls
+  out of the compression temperature.
+- Not yet tested in-game by hand: wrenching pipes, placing a spark engine by a player, placing and wiring an engine by a player, multi-cylinder builds beyond the Ponder
   scenes, and the fluid pipe to head connection (the head exposes a fluid capability on every face).
 
 ---

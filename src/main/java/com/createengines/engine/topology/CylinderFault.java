@@ -11,7 +11,9 @@ public enum CylinderFault {
 	NO_INTAKE(false),
 	INTAKE_BLOCKED(false),
 	NO_EXHAUST(false),
-	EXHAUST_BLOCKED(false);
+	EXHAUST_BLOCKED(false),
+	/** The head has a spark plug but no battery touches the engine to fire it. */
+	NO_BATTERY(false);
 
 	/** Without this the cylinder is not a working piston at all and is left out of the simulation. */
 	public final boolean disablesCylinder;

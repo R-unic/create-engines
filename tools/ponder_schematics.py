@@ -95,6 +95,11 @@ def facing(f):
     return {"facing": f}
 
 
+def pipe(*open_ends):
+    """A pipe open on the given sides."""
+    return {side: "true" for side in open_ends}
+
+
 write_schematic("crankshaft", (7, 5, 7), [
     (1, 1, 3, ce("crankshaft"), axis("x")),
     (2, 1, 3, ce("crank_throw"), axis("x")),
@@ -152,16 +157,30 @@ write_schematic("airflow", (6, 6, 6), [
     (3, 2, 3, ce("cylinder"), cylinder("up")),
     (2, 3, 3, ce("cylinder_head"), head("up")),
     (3, 3, 3, ce("cylinder_head"), head("up")),
-    (2, 3, 2, ce("intake_manifold"), {}),
-    (3, 3, 2, ce("intake_manifold"), {}),
+    (2, 3, 2, ce("intake_manifold"), pipe("west", "east", "south")),
+    (3, 3, 2, ce("intake_manifold"), pipe("west", "south")),
     (1, 3, 2, ce("air_intake"), facing("west")),
-    (2, 3, 4, ce("exhaust_manifold"), {}),
-    (3, 3, 4, ce("exhaust_manifold"), {}),
+    (2, 3, 4, ce("exhaust_manifold"), pipe("north", "east")),
+    (3, 3, 4, ce("exhaust_manifold"), pipe("north", "west", "up")),
     (3, 4, 4, ce("exhaust_outlet"), facing("up")),
     (2, 4, 3, ce("cam_lobe"), axis("x")),
     (3, 4, 3, ce("cam_lobe"), axis("x")),
     (1, 4, 3, ce("camshaft"), axis("x")),
     (4, 4, 3, ce("camshaft"), axis("x")),
+])
+
+write_schematic("spark", (6, 6, 6), [
+    (0, 1, 3, ce("battery"), axis("x")),
+    (1, 1, 3, ce("crankshaft"), axis("x")),
+    (2, 1, 3, ce("crank_throw"), axis("x")),
+    (3, 1, 3, ce("crankshaft"), axis("x")),
+    (2, 2, 3, ce("cylinder"), cylinder("up")),
+    (2, 3, 3, ce("cylinder_head"), {**head("up"), "spark_plug": "true"}),
+    (2, 3, 2, ce("air_intake"), facing("north")),
+    (2, 3, 4, ce("exhaust_outlet"), facing("south")),
+    (2, 4, 3, ce("cam_lobe"), axis("x")),
+    (1, 4, 3, ce("camshaft"), axis("x")),
+    (3, 4, 3, ce("camshaft"), axis("x")),
 ])
 
 write_schematic("starter", (5, 6, 5), [

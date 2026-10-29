@@ -11,7 +11,13 @@ public enum CycleResult {
 	/** Fuel was injected but the charge never got hot enough to ignite it. */
 	NO_IGNITION,
 	/** Fuel was injected into a cylinder with no fresh air in it. */
-	NO_AIR;
+	NO_AIR,
+	/** The cylinder has a spark plug but nothing came out of it: the battery is flat or missing. */
+	NO_SPARK,
+	/** The spark fired but there was too little fuel in the air for a flame to travel. */
+	TOO_LEAN,
+	/** The spark fired but the charge was drowned in fuel, so the flame never took. */
+	TOO_RICH;
 
 	public boolean fired() {
 		return this == FIRED;

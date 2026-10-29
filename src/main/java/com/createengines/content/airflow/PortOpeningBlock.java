@@ -21,9 +21,10 @@ import com.mojang.serialization.MapCodec;
 
 /**
  * Where an intake or exhaust network meets the open air. Its mouth ({@link #FACING}) must not be covered by a solid
- * face, or nothing can flow through it.
+ * face, or nothing can flow through it. The back of it, opposite the mouth, is what connects: to a pipe, or straight
+ * to a cylinder head.
  */
-public class PortOpeningBlock extends DirectionalBlock {
+public class PortOpeningBlock extends DirectionalBlock implements AirflowPort {
 
 	public static final DirectionProperty FACING = DirectionalBlock.FACING;
 
@@ -37,6 +38,12 @@ public class PortOpeningBlock extends DirectionalBlock {
 
 	public PortKind kind() {
 		return kind;
+	}
+
+	@Override
+	public boolean acceptsPipe(BlockState state, Direction side, PortKind kind) {
+		return kind == this.kind && side == state.getValue(FACING)
+			.getOpposite();
 	}
 
 	/** Whether air can get in or out of this opening's mouth. */
@@ -75,6 +82,8 @@ public class PortOpeningBlock extends DirectionalBlock {
 	@Override
 	protected void onPlace(BlockState state, Level level, BlockPos pos, BlockState oldState, boolean movedByPiston) {
 		super.onPlace(state, level, pos, oldState, movedByPiston);
+		if (!oldState.is(this))
+			Pipes.attachNeighbours(level, pos, state);
 		EngineTopology.markDirty(level, pos);
 	}
 

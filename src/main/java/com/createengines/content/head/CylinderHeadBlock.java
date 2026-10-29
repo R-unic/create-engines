@@ -4,6 +4,9 @@ import org.jetbrains.annotations.Nullable;
 
 import com.createengines.content.PartInstallation;
 import com.createengines.content.PartInstallation.Slot;
+import com.createengines.content.airflow.AirflowPort;
+import com.createengines.content.airflow.Pipes;
+import com.createengines.content.airflow.PortKind;
 import com.createengines.engine.topology.EngineTopology;
 import com.createengines.registry.CEBlockEntities;
 import com.createengines.registry.CEItems;
@@ -31,20 +34,24 @@ import net.minecraft.world.level.block.state.properties.BooleanProperty;
 import net.minecraft.world.phys.BlockHitResult;
 
 /**
- * Closes the end of a cylinder ({@link #FACING} points away from it) and holds its valves and unit injector.
- * Its other faces are where the engine is plumbed: an intake manifold or air intake on one, an exhaust on another,
- * a cam lobe on a third. Heads touching each other share fuel through a common gallery.
+ * Closes the end of a cylinder ({@link #FACING} points away from it) and holds its valves, unit injector and, in a
+ * spark engine, spark plug. Its other faces are where the engine is plumbed: an intake pipe or air intake on one, an
+ * exhaust on another, a cam lobe on a third. Heads touching each other share fuel through a common gallery.
  */
-public class CylinderHeadBlock extends DirectionalBlock implements IBE<CylinderHeadBlockEntity>, IWrenchable {
+public class CylinderHeadBlock extends DirectionalBlock
+	implements IBE<CylinderHeadBlockEntity>, IWrenchable, AirflowPort {
 
 	public static final BooleanProperty HAS_INJECTOR = BooleanProperty.create("injector");
+	public static final BooleanProperty HAS_SPARK_PLUG = BooleanProperty.create("spark_plug");
 
-	private static final Slot[] PARTS = {new Slot(HAS_INJECTOR, CEItems.FUEL_INJECTOR)};
+	private static final Slot[] PARTS =
+		{new Slot(HAS_INJECTOR, CEItems.FUEL_INJECTOR), new Slot(HAS_SPARK_PLUG, CEItems.SPARK_PLUG)};
 
 	public CylinderHeadBlock(Properties properties) {
 		super(properties);
 		registerDefaultState(defaultBlockState().setValue(FACING, Direction.UP)
-			.setValue(HAS_INJECTOR, false));
+			.setValue(HAS_INJECTOR, false)
+			.setValue(HAS_SPARK_PLUG, false));
 	}
 
 	@Override
@@ -54,7 +61,7 @@ public class CylinderHeadBlock extends DirectionalBlock implements IBE<CylinderH
 
 	@Override
 	protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {
-		builder.add(FACING, HAS_INJECTOR);
+		builder.add(FACING, HAS_INJECTOR, HAS_SPARK_PLUG);
 	}
 
 	@Override
@@ -86,9 +93,18 @@ public class CylinderHeadBlock extends DirectionalBlock implements IBE<CylinderH
 		return InteractionResult.PASS;
 	}
 
+	/** Any face but the cylinder's takes a pipe: an intake on one, an exhaust on another. */
+	@Override
+	public boolean acceptsPipe(BlockState state, Direction side, PortKind kind) {
+		return side != state.getValue(FACING)
+			.getOpposite();
+	}
+
 	@Override
 	protected void onPlace(BlockState state, Level level, BlockPos pos, BlockState oldState, boolean movedByPiston) {
 		super.onPlace(state, level, pos, oldState, movedByPiston);
+		if (!oldState.is(this))
+			Pipes.attachNeighbours(level, pos, state);
 		EngineTopology.markDirty(level, pos);
 	}
 

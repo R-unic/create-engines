@@ -49,6 +49,10 @@ public class CylinderBlockEntity extends SmartBlockEntity implements IHaveGoggle
 	/** How far from the bore's axis gas is drawn, which keeps it between the frame posts. */
 	private static final double LATERAL = 0.26;
 
+	/** Mixtures within these equivalence ratios read as balanced. */
+	private static final float LEAN_MIXTURE = 0.8f;
+	private static final float RICH_MIXTURE = 1.25f;
+
 	private @Nullable CylinderStatus status;
 	private double lastCamCycle = Double.NaN;
 
@@ -196,18 +200,24 @@ public class CylinderBlockEntity extends SmartBlockEntity implements IHaveGoggle
 			} else if (fired)
 				dust(chamberPoint(bore, crown + random.nextDouble() * (ROOF - crown)), jitter(random, 0.01), 0.85f,
 					0.35f, 0.1f, 0.4f);
-			else if (result == CycleResult.NO_IGNITION)
+			else if (unlit(result))
 				dust(chamberPoint(bore, crown + random.nextDouble() * (ROOF - crown)), jitter(random, 0.01), 0.6f, 0.6f,
 					0.6f, 0.4f);
 		} else {
 			if (CylinderFault.NO_EXHAUST.in(faults) || CylinderFault.EXHAUST_BLOCKED.in(faults))
 				return;
 			float shade = current.rich() ? 0.08f : fired ? 0.3f : 0.6f;
-			if (fired || result == CycleResult.NO_IGNITION)
+			if (fired || unlit(result))
 				for (int i = 0; i < 2; i++)
 					dust(chamberPoint(bore, crown + random.nextDouble() * 0.15), along.scale(0.04), shade, shade, shade,
 						0.5f);
 		}
+	}
+
+	/** Fuel went in and nothing lit it: it leaves the cylinder as it came. */
+	private static boolean unlit(CycleResult result) {
+		return result == CycleResult.NO_IGNITION || result == CycleResult.NO_SPARK
+			|| result == CycleResult.TOO_LEAN || result == CycleResult.TOO_RICH;
 	}
 
 	/** A random spot inside the bore {@code distance} from the block's centre along it, towards the head if positive. */
@@ -241,7 +251,7 @@ public class CylinderBlockEntity extends SmartBlockEntity implements IHaveGoggle
 		if (current.result() == CycleResult.FIRED) {
 			particle = current.rich() ? ParticleTypes.LARGE_SMOKE : ParticleTypes.SMOKE;
 			count = current.rich() ? 3 : 2;
-		} else if (current.result() == CycleResult.NO_IGNITION) {
+		} else if (unlit(current.result())) {
 			particle = ParticleTypes.POOF;
 			count = 1;
 		} else
@@ -309,7 +319,20 @@ public class CylinderBlockEntity extends SmartBlockEntity implements IHaveGoggle
 				CELang.translate("goggles.cycle.rich")
 					.style(ChatFormatting.GOLD)
 					.forGoggles(tooltip, 1);
-			if (!Float.isNaN(current.chargeTemp()) && !Float.isNaN(current.ignitionTemp()))
+			if (current.lean())
+				CELang.translate("goggles.cycle.lean")
+					.style(ChatFormatting.GOLD)
+					.forGoggles(tooltip, 1);
+			if (!Float.isNaN(current.mixture()))
+				CELang.translate("goggles.mixture", mixture(current.mixture()))
+					.style(current.mixture() < LEAN_MIXTURE || current.mixture() > RICH_MIXTURE ? ChatFormatting.GOLD
+						: ChatFormatting.GRAY)
+					.forGoggles(tooltip, 1);
+			if (current.sparkPlug())
+				CELang.translate("goggles.ignition.spark")
+					.style(ChatFormatting.GRAY)
+					.forGoggles(tooltip, 1);
+			else if (!Float.isNaN(current.chargeTemp()) && !Float.isNaN(current.ignitionTemp()))
 				CELang.translate("goggles.compression", temperature(current.chargeTemp()),
 						temperature(current.ignitionTemp()))
 					.style(current.chargeTemp() >= current.ignitionTemp() ? ChatFormatting.GRAY : ChatFormatting.GOLD)
@@ -334,6 +357,18 @@ public class CylinderBlockEntity extends SmartBlockEntity implements IHaveGoggle
 					.style(fault.disablesCylinder ? ChatFormatting.RED : ChatFormatting.GOLD)
 					.forGoggles(tooltip, 1);
 		return true;
+	}
+
+	/** The mixture as a plain reading: balanced, or how many times richer or leaner than balanced it is. */
+	private static Component mixture(float equivalence) {
+		if (equivalence < LEAN_MIXTURE)
+			return CELang.translate("goggles.mixture.lean", String.format(java.util.Locale.ROOT, "%.1f", 1 / equivalence))
+				.component();
+		if (equivalence > RICH_MIXTURE)
+			return CELang.translate("goggles.mixture.rich", String.format(java.util.Locale.ROOT, "%.1f", equivalence))
+				.component();
+		return CELang.translate("goggles.mixture.balanced")
+			.component();
 	}
 
 	/** Shows a normalized temperature in kelvin, taking ambient as 300 K. */

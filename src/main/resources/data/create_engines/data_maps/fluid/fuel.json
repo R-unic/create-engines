@@ -9,6 +9,11 @@
       "energy_per_mb": 36,
       "autoignition_temperature": 1.55,
       "air_per_mb": 1.7
+    },
+    "create_engines:gasoline": {
+      "energy_per_mb": 40,
+      "autoignition_temperature": 2.7,
+      "air_per_mb": 1.5
     }
   }
 }

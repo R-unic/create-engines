@@ -3,6 +3,8 @@ package com.createengines.registry;
 import static com.createengines.CreateEngines.REGISTRATE;
 
 import com.createengines.content.EnginePartRenderers;
+import com.createengines.content.battery.BatteryBlockEntity;
+import com.createengines.content.battery.BatteryVisual;
 import com.createengines.content.camshaft.CamshaftBlockEntity;
 import com.createengines.content.camshaft.CamshaftVisual;
 import com.createengines.content.crankshaft.CrankshaftBlockEntity;
@@ -14,6 +16,7 @@ import com.createengines.content.head.CylinderHeadVisual;
 import com.createengines.content.starter.StarterBlockEntity;
 import com.createengines.content.starter.StarterRenderer;
 import com.createengines.content.starter.StarterVisual;
+import com.simibubi.create.content.kinetics.base.KineticBlockEntityRenderer;
 import com.tterrag.registrate.util.entry.BlockEntityEntry;
 
 import net.neoforged.neoforge.capabilities.Capabilities;
@@ -54,6 +57,13 @@ public final class CEBlockEntities {
 		.visual(() -> StarterVisual::create, false)
 		.validBlocks(CEBlocks.STARTER)
 		.renderer(() -> StarterRenderer::new)
+		.register();
+
+	public static final BlockEntityEntry<BatteryBlockEntity> BATTERY = REGISTRATE
+		.blockEntity("battery", BatteryBlockEntity::new)
+		.visual(() -> BatteryVisual::create, false)
+		.validBlocks(CEBlocks.BATTERY)
+		.renderer(() -> KineticBlockEntityRenderer::new)
 		.register();
 
 	private CEBlockEntities() {

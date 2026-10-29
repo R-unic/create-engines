@@ -6,6 +6,8 @@ import java.util.function.Supplier;
 
 import com.createengines.CreateEngines;
 import com.createengines.content.EnginePoses;
+import com.createengines.content.airflow.ManifoldBlock;
+import com.createengines.content.airflow.PortOpeningBlock;
 import com.createengines.content.crankshaft.CrankshaftBlockEntity;
 import com.createengines.content.cylinder.CylinderBlock;
 import com.createengines.engine.CrankGeometry;
@@ -21,6 +23,7 @@ import net.minecraft.client.Screenshot;
 import net.minecraft.client.gui.screens.AccessibilityOnboardingScreen;
 import net.minecraft.client.gui.screens.TitleScreen;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.util.Mth;
@@ -29,7 +32,9 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.GameRules;
 import net.minecraft.world.level.GameType;
 import net.minecraft.world.level.LevelSettings;
+import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.WorldDataConfiguration;
 import net.minecraft.world.level.levelgen.Heightmap;
 import net.minecraft.world.level.levelgen.WorldOptions;
@@ -49,6 +54,9 @@ public final class VisualSmokeTest {
 
 	private record Step(int tick, Runnable action) {
 	}
+
+	/** Where the spark engine stands, relative to the first. */
+	private static final BlockPos SPARK_OFFSET = new BlockPos(12, 0, 0);
 
 	private static final List<Step> STEPS = new ArrayList<>();
 	private static boolean worldRequested;
@@ -142,8 +150,52 @@ public final class VisualSmokeTest {
 		ponder("lubrication", 3450, () -> CEFluids.ENGINE_OIL.getBucket()
 			.orElseThrow()
 			.getDefaultInstance(), 150, 330, 560, 700, 880);
-		STEPS.add(new Step(4400, () -> Minecraft.getInstance()
+
+		// A spark engine beside it: gasoline, a spark plug, a battery on the crank's shaft line, and real pipes
+		// leading to its intake and exhaust openings
+		STEPS.add(new Step(4400, () -> {
+			Minecraft.getInstance().options.hideGui = true;
+			server(server -> {
+				var level = server.overworld();
+				BlockPos spark = origin.offset(SPARK_OFFSET);
+				TestEngine.buildSpark(level, spark, true);
+				level.removeBlock(spark.offset(TestEngine.AIR_INTAKE), false);
+				level.removeBlock(spark.offset(TestEngine.EXHAUST), false);
+				BlockPos intake = spark.offset(TestEngine.AIR_INTAKE);
+				level.setBlock(intake.north(), pipe(CEBlocks.INTAKE_MANIFOLD.get(), Direction.SOUTH, Direction.WEST), 3);
+				level.setBlock(intake.north()
+					.west(), CEBlocks.AIR_INTAKE.getDefaultState()
+						.setValue(PortOpeningBlock.FACING, Direction.WEST),
+					3);
+				level.setBlock(intake, pipe(CEBlocks.INTAKE_MANIFOLD.get(), Direction.SOUTH, Direction.NORTH), 3);
+				BlockPos exhaust = spark.offset(TestEngine.EXHAUST);
+				level.setBlock(exhaust.above(2), CEBlocks.EXHAUST_OUTLET.getDefaultState()
+					.setValue(PortOpeningBlock.FACING, Direction.UP), 3);
+				level.setBlock(exhaust.above(), pipe(CEBlocks.EXHAUST_MANIFOLD.get(), Direction.UP, Direction.DOWN), 3);
+				level.setBlock(exhaust, pipe(CEBlocks.EXHAUST_MANIFOLD.get(), Direction.EAST, Direction.UP), 3);
+			});
+		}));
+		STEPS.add(new Step(4700, () -> server(server -> server.overworld()
+			.removeBlock(origin.offset(SPARK_OFFSET)
+				.offset(TestEngine.STARTER_POWER), false))));
+		frames("spark_front", 4900, SPARK_OFFSET.getX() + 2.5, 2.0, -1.2, 0, 9.5f);
+		frames("spark_pipes", 4950, SPARK_OFFSET.getX() - 1.5, 6.0, -2.5, -35, 32);
+		STEPS.add(new Step(5000, () -> view(SPARK_OFFSET.getX() - 2.5, 6.5, -1.5, -55, 37)));
+		STEPS.add(new Step(5015, () -> shot("spark_overview")));
+		STEPS.add(new Step(5020, () -> Minecraft.getInstance().options.hideGui = false));
+		goggles("spark_battery", 5025, SPARK_OFFSET.getX() + 0.5, 2.0, 0.2, 0, 28);
+		goggles("spark_head", 5045, SPARK_OFFSET.getX() + 4.5, 4.0, 1.0, 45, 0);
+		goggles("spark_cylinder", 5065, SPARK_OFFSET.getX() + 2.5, 2.0, -0.5, 0, 2.3f);
+		ponder("spark", 5100, CEBlocks.BATTERY::asStack, 250, 450, 650);
+		STEPS.add(new Step(5900, () -> Minecraft.getInstance()
 			.stop()));
+	}
+
+	private static BlockState pipe(Block block, Direction... open) {
+		BlockState state = block.defaultBlockState();
+		for (Direction direction : open)
+			state = state.setValue(ManifoldBlock.CONNECTIONS.get(direction), true);
+		return state;
 	}
 
 	/** Four screenshots two ticks apart from one viewpoint, to see things move. */

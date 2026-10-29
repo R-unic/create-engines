@@ -44,6 +44,8 @@ public final class TestEngine {
 	public static final BlockPos STARTER = new BlockPos(1, 1, 2);
 	public static final BlockPos MOTOR = new BlockPos(1, 0, 2);
 	public static final BlockPos STARTER_POWER = new BlockPos(0, 1, 2);
+	/** On the crank's own axis, so the engine charges it while it turns. */
+	public static final BlockPos BATTERY = new BlockPos(0, 2, 2);
 	public static final int MOTOR_RPM = 64;
 
 	private static BlockState axisX(BlockState state) {
@@ -112,6 +114,24 @@ public final class TestEngine {
 				.fill(new FluidStack(CEFluids.DIESEL.get()
 					.getSource(), 250), FluidAction.EXECUTE);
 		}
+	}
+
+	/**
+	 * The same engine as a spark engine: a spark plug in the head, gasoline in the tank (which compression alone can't
+	 * light) and, if asked, a flat battery on the end of the crankshaft.
+	 */
+	public static void buildSpark(Level level, BlockPos origin, boolean battery) {
+		build(level, origin, false);
+		level.setBlock(origin.offset(HEAD), CEBlocks.CYLINDER_HEAD.getDefaultState()
+			.setValue(CylinderHeadBlock.FACING, Direction.UP)
+			.setValue(CylinderHeadBlock.HAS_INJECTOR, true)
+			.setValue(CylinderHeadBlock.HAS_SPARK_PLUG, true), Block.UPDATE_ALL);
+		CylinderHeadBlockEntity head = (CylinderHeadBlockEntity) level.getBlockEntity(origin.offset(HEAD));
+		head.tank()
+			.fill(new FluidStack(CEFluids.GASOLINE.get()
+				.getSource(), 250), FluidAction.EXECUTE);
+		if (battery)
+			level.setBlock(origin.offset(BATTERY), axisX(CEBlocks.BATTERY.getDefaultState()), Block.UPDATE_ALL);
 	}
 
 	private TestEngine() {

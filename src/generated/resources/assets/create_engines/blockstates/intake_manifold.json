@@ -1,7 +1,57 @@
 {
-  "variants": {
-    "": {
-      "model": "create_engines:block/intake_manifold/block"
+  "multipart": [
+    {
+      "apply": {
+        "model": "create_engines:block/intake_manifold/core"
+      }
+    },
+    {
+      "apply": {
+        "model": "create_engines:block/intake_manifold/arm_down"
+      },
+      "when": {
+        "down": "true"
+      }
+    },
+    {
+      "apply": {
+        "model": "create_engines:block/intake_manifold/arm_up"
+      },
+      "when": {
+        "up": "true"
+      }
+    },
+    {
+      "apply": {
+        "model": "create_engines:block/intake_manifold/arm_north"
+      },
+      "when": {
+        "north": "true"
+      }
+    },
+    {
+      "apply": {
+        "model": "create_engines:block/intake_manifold/arm_south"
+      },
+      "when": {
+        "south": "true"
+      }
+    },
+    {
+      "apply": {
+        "model": "create_engines:block/intake_manifold/arm_west"
+      },
+      "when": {
+        "west": "true"
+      }
+    },
+    {
+      "apply": {
+        "model": "create_engines:block/intake_manifold/arm_east"
+      },
+      "when": {
+        "east": "true"
+      }
     }
-  }
+  ]
 }

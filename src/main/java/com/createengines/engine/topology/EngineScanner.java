@@ -14,8 +14,10 @@ import org.jetbrains.annotations.Nullable;
 
 import com.createengines.config.CEConfig;
 import com.createengines.content.airflow.ManifoldBlock;
+import com.createengines.content.airflow.Pipes;
 import com.createengines.content.airflow.PortKind;
 import com.createengines.content.airflow.PortOpeningBlock;
+import com.createengines.content.battery.BatteryBlock;
 import com.createengines.content.camshaft.CamLobeBlock;
 import com.createengines.content.camshaft.CamshaftBlock;
 import com.createengines.content.camshaft.CamshaftBlockEntity;
@@ -107,6 +109,10 @@ public final class EngineScanner {
 
 		int flywheels = countFlywheels(start.relative(back), back, axis) + countFlywheels(cursor, forward, axis);
 
+		Set<BlockPos> batteries = new LinkedHashSet<>();
+		for (Segment segment : segments)
+			addBatteriesAround(segment.pos(), batteries);
+
 		List<CylinderDraft> drafts = new ArrayList<>();
 		List<BlockPos> starters = new ArrayList<>();
 		for (Segment segment : segments) {
@@ -154,13 +160,28 @@ public final class EngineScanner {
 			galleries.add(List.copyOf(gallery));
 		}
 
+		for (BlockPos head : heads)
+			addBatteriesAround(head, batteries);
+
 		List<Cylinder> cylinders = new ArrayList<>();
-		for (CylinderDraft draft : drafts)
+		for (CylinderDraft draft : drafts) {
+			if (draft.sparkPlug && batteries.isEmpty())
+				draft.faults |= CylinderFault.NO_BATTERY.bit();
 			cylinders.add(draft.build(draft.head == null ? -1 : galleryOf.get(draft.head)));
+		}
 
 		return new EngineLayout(start.immutable(), axis, List.copyOf(segments), List.copyOf(cylinders),
-			List.copyOf(ports), List.copyOf(camLines), List.copyOf(starters), List.copyOf(galleries), flywheels,
-			Set.copyOf(members), incomplete);
+			List.copyOf(ports), List.copyOf(camLines), List.copyOf(starters), List.copyOf(batteries),
+			List.copyOf(galleries), flywheels, Set.copyOf(members), incomplete);
+	}
+
+	/** Batteries touching {@code pos} on any side supply the engine's spark plugs. */
+	private void addBatteriesAround(BlockPos pos, Set<BlockPos> batteries) {
+		for (Direction direction : Direction.values()) {
+			BlockPos neighbour = pos.relative(direction);
+			if (state(neighbour).getBlock() instanceof BatteryBlock && batteries.add(neighbour.immutable()))
+				members.add(neighbour.immutable());
+		}
 	}
 
 	private int countFlywheels(BlockPos from, Direction direction, Axis axis) {
@@ -192,10 +213,11 @@ public final class EngineScanner {
 		int intake = -1;
 		int exhaust = -1;
 		int faults;
+		boolean sparkPlug;
 
 		Cylinder build(int gallery) {
 			return new Cylinder(pos, throwPos, bore, tdcAngle, head, lobe, camLine, lobeAngle, intake, exhaust,
-				gallery, faults);
+				gallery, faults, sparkPlug);
 		}
 	}
 
@@ -223,6 +245,7 @@ public final class EngineScanner {
 		members.add(draft.head);
 		if (!head.getValue(CylinderHeadBlock.HAS_INJECTOR))
 			draft.faults |= CylinderFault.NO_INJECTOR.bit();
+		draft.sparkPlug = head.getValue(CylinderHeadBlock.HAS_SPARK_PLUG);
 
 		for (Direction face : Direction.values()) {
 			if (face == bore.getOpposite())
@@ -261,12 +284,15 @@ public final class EngineScanner {
 		return draft;
 	}
 
-	/** The port kind of a duct block reached by stepping {@code towards} from something, if it connects back. */
+	/**
+	 * The port kind of the duct block reached by stepping {@code towards} from a head, if it connects back: a pipe
+	 * that is open on that side, or an opening whose back is against the head.
+	 */
 	private static @Nullable PortKind portKindFacing(BlockState state, Direction towards) {
 		if (state.getBlock() instanceof ManifoldBlock manifold)
-			return manifold.kind();
+			return state.getValue(ManifoldBlock.CONNECTIONS.get(towards.getOpposite())) ? manifold.kind() : null;
 		if (state.getBlock() instanceof PortOpeningBlock opening
-			&& state.getValue(PortOpeningBlock.FACING) != towards.getOpposite())
+			&& state.getValue(PortOpeningBlock.FACING) == towards)
 			return opening.kind();
 		return null;
 	}
@@ -288,26 +314,34 @@ public final class EngineScanner {
 			queue.add(start.immutable());
 			visited.add(start.immutable());
 		}
+		// Follow the pipes, wherever they are open, to the heads and openings at their ends
 		while (!queue.isEmpty() && visited.size() < limit) {
 			BlockPos duct = queue.poll();
+			BlockState ductState = state(duct);
 			for (Direction direction : Direction.values()) {
+				if (!ductState.getValue(ManifoldBlock.CONNECTIONS.get(direction)))
+					continue;
 				BlockPos next = duct.relative(direction);
 				BlockState state = state(next);
 				Block block = state.getBlock();
 				if (block instanceof ManifoldBlock manifold && manifold.kind() == kind) {
-					if (visited.add(next.immutable()))
+					if (state.getValue(ManifoldBlock.CONNECTIONS.get(direction.getOpposite()))
+						&& visited.add(next.immutable()))
 						queue.add(next.immutable());
 				} else if (block instanceof PortOpeningBlock opening && opening.kind() == kind
-					&& state.getValue(PortOpeningBlock.FACING) != direction.getOpposite())
+					&& state.getValue(PortOpeningBlock.FACING) == direction)
 					openings.add(next.immutable());
-				else if (block instanceof CylinderHeadBlock)
+				else if (block instanceof CylinderHeadBlock && Pipes.accepts(state, direction.getOpposite(), kind))
 					heads.add(next.immutable());
 			}
 		}
-		for (BlockPos opening : openings)
-			for (Direction direction : Direction.values())
-				if (state(opening.relative(direction)).getBlock() instanceof CylinderHeadBlock)
-					heads.add(opening.relative(direction));
+		// An opening also serves the head its back is against
+		for (BlockPos opening : openings) {
+			BlockPos behind = opening.relative(state(opening).getValue(PortOpeningBlock.FACING)
+				.getOpposite());
+			if (state(behind).getBlock() instanceof CylinderHeadBlock)
+				heads.add(behind.immutable());
+		}
 
 		int open = 0;
 		for (BlockPos opening : openings)
@@ -386,6 +420,9 @@ public final class EngineScanner {
 					cursor = cursor.relative(direction);
 				}
 			}
+		} else if (block instanceof BatteryBlock) {
+			for (Direction direction : Direction.values())
+				addHeadSeed(level, pos.relative(direction), level.getBlockState(pos.relative(direction)), seeds);
 		} else if (block instanceof ManifoldBlock || block instanceof PortOpeningBlock) {
 			Set<BlockPos> visited = new HashSet<>();
 			Deque<BlockPos> queue = new ArrayDeque<>();

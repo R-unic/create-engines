@@ -35,6 +35,8 @@ public class CEPonderPlugin implements PonderPlugin {
 			.addStoryBoard("lubrication", EngineScenes::lubrication);
 		helper.forComponents(CreateEngines.asResource("engine_oil_bucket"))
 			.addStoryBoard("lubrication", EngineScenes::lubrication);
+		scenes.forComponents(CEBlocks.BATTERY, CEItems.SPARK_PLUG)
+			.addStoryBoard("spark", EngineScenes::spark);
 		scenes.forComponents(CEBlocks.STARTER)
 			.addStoryBoard("starter", EngineScenes::starter);
 	}

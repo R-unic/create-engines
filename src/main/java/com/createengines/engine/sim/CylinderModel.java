@@ -6,13 +6,14 @@ import org.jetbrains.annotations.Nullable;
  * One piston-cylinder: a pocket of gas whose volume is set by crank angle, moved by cam-driven valves and heated by
  * cam-triggered fuel injection.
  * <p>
- * The whole model is five rules:
+ * The whole model is five rules (plus a spark plug, if the cylinder has one):
  * <ol>
  *     <li>Volume follows slider-crank geometry; the torque on the crank is the p·dV work.</li>
  *     <li>Gas changes volume adiabatically.</li>
  *     <li>An open valve relaxes cylinder pressure toward its port's pressure at a rate set by lift × flow × time.</li>
  *     <li>Injected fuel ignites after a delay, but only if the charge is hot enough, and burns only as far as fresh
- *     air allows.</li>
+ *     air allows. With a spark plug it is lit by the spark instead, if the mixture is neither too lean nor too rich.
+ *     Fuel it has no air to burn only soaks up heat.</li>
  *     <li>(In {@link EngineSimulation}) the rotor's kinetic energy changes by work minus friction and load.</li>
  * </ol>
  * The piston follows the crank; the valves and injector follow the cam. Whether those two agree is entirely down to
@@ -28,6 +29,14 @@ public final class CylinderModel {
 	private static final double FUEL_EPSILON = 1e-6;
 	/** Fresh charge below which a cylinder counts as having no air at all, rather than too little for the shot. */
 	private static final double MIN_FRESH_AIR = 0.05;
+	/** Leaner or richer than this (equivalence ratio) and a spark can't get a flame going. */
+	private static final double LEAN_LIMIT = 0.5;
+	private static final double RICH_LIMIT = 1.8;
+	/**
+	 * Heat soaked up by unburned fuel, in moles of gas it is worth: fuel the air can't burn still has to be warmed, so
+	 * a rich mixture makes less pressure for the fuel it wastes.
+	 */
+	private static final double FUEL_HEAT_CAPACITY = 1.5;
 
 	public final CylinderSpec spec;
 	private final CamProfile profile;
@@ -39,6 +48,9 @@ public final class CylinderModel {
 
 	// Inputs, refreshed by the owner every tick
 	public double rack = 1;
+	/** Share of {@link CylinderSpec#maxFuelPerShot()} the injector is set to deliver, set by hand. */
+	public double metering = 1;
+	public IgnitionSource ignition = IgnitionSource.NONE;
 	public double intakeFactor = 1;
 	public double exhaustFactor = 1;
 	public FuelSupply fuelSupply = FuelSupply.NONE;
@@ -124,6 +136,8 @@ public final class CylinderModel {
 	public CylinderModel copyOnto(@Nullable Camshaft camshaft) {
 		CylinderModel copy = new CylinderModel(spec, profile, tdcCrankAngle, camshaft, lobeAngle);
 		copy.rack = rack;
+		copy.metering = metering;
+		copy.ignition = ignition;
 		copy.intakeFactor = intakeFactor;
 		copy.exhaustFactor = exhaustFactor;
 		return copy;
@@ -203,6 +217,8 @@ public final class CylinderModel {
 		// Rule 4: injection (triggered by the cam), ignition, combustion
 		if (camshaft != null && SimMath.crosses(camFrom, camDelta, profile.injection()))
 			inject();
+		if (camshaft != null && SimMath.crosses(camFrom, camDelta, profile.spark()))
+			spark();
 		if (fuelPending > FUEL_EPSILON)
 			combust(dt);
 		if (fuelPending > FUEL_EPSILON && !burning)
@@ -272,25 +288,56 @@ public final class CylinderModel {
 	}
 
 	/**
-	 * The pump meters fuel to the air the cylinder actually drew in, like a diesel's smoke limiter. Breathing falls
-	 * with speed (valve flow is per second, not per degree), so a fixed shot would go unburned at high RPM, wasting fuel
-	 * and smoking. A cylinder with no air at all is left alone, so it still reads as starved rather than as unfuelled.
+	 * The injector delivers what it was set to deliver, however much air the cylinder drew in. Breathing falls with
+	 * speed (valve flow is per second, not per degree), so a setting that suits one speed is rich at a higher one and
+	 * lean at a lower one: tuning it to the engine is the player's job. A cylinder with no air at all is still told
+	 * apart from one with no fuel.
 	 */
 	private void inject() {
 		FuelSpec fuel = fuelSupply.fuel();
 		double air = fresh * moles;
-		double shot = spec.maxFuelPerShot() * rack;
-		if (fuel != null && air >= MIN_FRESH_AIR)
-			shot = Math.min(shot, air / fuel.airPerMb());
+		double shot = spec.maxFuelPerShot() * rack * metering;
 		double delivered = fuel == null ? 0 : fuelSupply.draw(shot);
 		current.fuelInjected += delivered;
 		current.freshAirAtInjection = air;
 		current.compressionTemp = Math.max(current.compressionTemp, temperature);
 		if (delivered <= 0)
 			return;
+		if (air >= MIN_FRESH_AIR)
+			current.equivalence = delivered * fuel.airPerMb() / air;
 		fuelPending += delivered;
 		timeSinceInjection = 0;
 		burningFuel = fuel;
+	}
+
+	/**
+	 * The plug fires once per cycle whether or not there is anything to light. It lights the charge only if there is
+	 * fuel waiting and the mixture can carry a flame: a flat battery, or air and fuel too far out of proportion either
+	 * way, leaves the fuel to waste.
+	 */
+	private void spark() {
+		if (!ignition.installed())
+			return;
+		if (!ignition.spark()) {
+			current.deadSparks++;
+			return;
+		}
+		current.sparks++;
+		if (fuelPending <= FUEL_EPSILON || burning || burningFuel == null)
+			return;
+		double air = fresh * moles;
+		double equivalence = air < MIN_FRESH_AIR ? Double.MAX_VALUE : fuelPending * burningFuel.airPerMb() / air;
+		if (equivalence < LEAN_LIMIT)
+			current.flameOut = -1;
+		else if (equivalence > RICH_LIMIT)
+			current.flameOut = 1;
+		else
+			startBurning();
+	}
+
+	private void startBurning() {
+		burning = true;
+		burnRate = fuelPending / spec.burnDuration();
 	}
 
 	private void combust(double dt) {
@@ -298,8 +345,7 @@ public final class CylinderModel {
 			timeSinceInjection += dt;
 			if (timeSinceInjection < spec.ignitionDelay() || temperature < burningFuel.autoignitionTemp())
 				return;
-			burning = true;
-			burnRate = fuelPending / spec.burnDuration();
+			startBurning();
 		}
 		double airLimited = fresh * moles / burningFuel.airPerMb();
 		double burned = Math.min(Math.min(fuelPending, burnRate * dt), airLimited);
@@ -307,7 +353,7 @@ public final class CylinderModel {
 			return;
 		fuelPending -= burned;
 		fresh = Math.max(0, (fresh * moles - burned * burningFuel.airPerMb()) / moles);
-		temperature += burned * burningFuel.energyPerMb() * (GAMMA - 1) / moles;
+		temperature += burned * burningFuel.energyPerMb() * (GAMMA - 1) / (moles + FUEL_HEAT_CAPACITY * fuelPending);
 		current.fuelBurned += burned;
 		if (fuelPending <= FUEL_EPSILON)
 			burning = false;
@@ -320,6 +366,12 @@ public final class CylinderModel {
 			current.result = CycleResult.FIRED;
 		else if (current.freshAirAtInjection < MIN_FRESH_AIR)
 			current.result = CycleResult.NO_AIR;
+		else if (current.deadSparks > 0 && current.sparks == 0)
+			current.result = CycleResult.NO_SPARK;
+		else if (current.flameOut < 0)
+			current.result = CycleResult.TOO_LEAN;
+		else if (current.flameOut > 0)
+			current.result = CycleResult.TOO_RICH;
 		else
 			current.result = CycleResult.NO_IGNITION;
 

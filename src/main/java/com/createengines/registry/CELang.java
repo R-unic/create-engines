@@ -39,6 +39,7 @@ public final class CELang {
 
 		raw("value.throw_angle", "Throw Angle");
 		raw("value.lobe_angle", "Lobe Angle");
+		raw("value.fuel_metering", "Fuel Metering");
 
 		raw("goggles.engine", "Engine");
 		raw("goggles.state.stalled", "Stalled");
@@ -71,7 +72,16 @@ public final class CELang {
 		raw("goggles.cycle.no_fuel", "Misfire: no fuel injected");
 		raw("goggles.cycle.no_ignition", "Misfire: fuel did not ignite");
 		raw("goggles.cycle.no_air", "Misfire: no fresh air in the cylinder");
+		raw("goggles.cycle.no_spark", "Misfire: no spark from the plug");
+		raw("goggles.cycle.too_lean", "Misfire: mixture too lean for the spark to light");
+		raw("goggles.cycle.too_rich", "Misfire: mixture too rich for the spark to light");
 		raw("goggles.cycle.rich", "Running rich: unburned fuel");
+		raw("goggles.cycle.lean", "Running lean: air to spare");
+		raw("goggles.mixture", "Air-fuel mixture: %1$s");
+		raw("goggles.mixture.lean", "%1$s× lean");
+		raw("goggles.mixture.rich", "%1$s× rich");
+		raw("goggles.mixture.balanced", "balanced");
+		raw("goggles.ignition.spark", "Spark ignition");
 		raw("goggles.compression", "Charge temperature: %1$s (fuel ignites at %2$s)");
 		raw("goggles.timing", "Valve timing: %1$s");
 		raw("goggles.timing.on_time", "on time");
@@ -89,6 +99,7 @@ public final class CELang {
 		raw("goggles.fault.intake_blocked", "Intake has no open air intake");
 		raw("goggles.fault.no_exhaust", "Head has no exhaust");
 		raw("goggles.fault.exhaust_blocked", "Exhaust has no open outlet");
+		raw("goggles.fault.no_battery", "Spark plug has no battery touching the engine");
 
 		raw("goggles.cam", "Camshaft");
 		raw("goggles.cam_ratio", "Speed ratio to crank: %1$s");
@@ -106,6 +117,16 @@ public final class CELang {
 		raw("goggles.head", "Cylinder Head");
 		raw("goggles.head.no_injector", "Right-click with a Fuel Injector to install");
 		raw("goggles.head.oil", "Takes Engine Oil as well as fuel: it lubricates the whole engine");
+		raw("goggles.head.metering", "Fuel metering: %1$s%%");
+		raw("goggles.head.metering.hint", "Too much fuel runs rich and wastes it, too little runs lean. Breathing falls as the engine speeds up");
+		raw("goggles.head.spark_plug", "Spark plug fitted");
+		raw("goggles.head.no_spark_plug", "Right-click with a Spark Plug to light fuel by spark instead of compression");
+
+		raw("goggles.battery", "Battery");
+		raw("goggles.battery.charge", "Charge: %1$s%%");
+		raw("goggles.battery.flat", "Flat: spin its shaft to charge it");
+		raw("goggles.battery.charging", "Charging from its shaft");
+		raw("goggles.battery.no_engine", "Not touching an engine's crankshaft or cylinder head");
 	}
 
 	private static void raw(String key, String value) {

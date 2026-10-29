@@ -1,0 +1,138 @@
+{
+  "parent": "block/block",
+  "textures": {
+    "ceramic": "minecraft:block/quartz_block_top",
+    "terminal": "create:block/industrial_iron_block",
+    "particle": "minecraft:block/quartz_block_top"
+  },
+  "elements": [
+    {
+      "from": [
+        6,
+        0,
+        6
+      ],
+      "to": [
+        10,
+        7,
+        10
+      ],
+      "faces": {
+        "north": {
+          "texture": "#ceramic"
+        },
+        "south": {
+          "texture": "#ceramic"
+        },
+        "east": {
+          "texture": "#ceramic"
+        },
+        "west": {
+          "texture": "#ceramic"
+        },
+        "up": {
+          "texture": "#ceramic"
+        },
+        "down": {
+          "texture": "#ceramic"
+        }
+      }
+    },
+    {
+      "from": [
+        7,
+        7,
+        7
+      ],
+      "to": [
+        9,
+        10,
+        9
+      ],
+      "faces": {
+        "north": {
+          "texture": "#terminal"
+        },
+        "south": {
+          "texture": "#terminal"
+        },
+        "east": {
+          "texture": "#terminal"
+        },
+        "west": {
+          "texture": "#terminal"
+        },
+        "up": {
+          "texture": "#terminal"
+        },
+        "down": {
+          "texture": "#terminal"
+        }
+      }
+    },
+    {
+      "from": [
+        5,
+        0,
+        5
+      ],
+      "to": [
+        11,
+        2,
+        11
+      ],
+      "faces": {
+        "north": {
+          "texture": "#terminal"
+        },
+        "south": {
+          "texture": "#terminal"
+        },
+        "east": {
+          "texture": "#terminal"
+        },
+        "west": {
+          "texture": "#terminal"
+        },
+        "up": {
+          "texture": "#terminal"
+        },
+        "down": {
+          "texture": "#terminal"
+        }
+      }
+    },
+    {
+      "from": [
+        7.5,
+        -3,
+        7.5
+      ],
+      "to": [
+        8.5,
+        0,
+        8.5
+      ],
+      "faces": {
+        "north": {
+          "texture": "#terminal"
+        },
+        "south": {
+          "texture": "#terminal"
+        },
+        "east": {
+          "texture": "#terminal"
+        },
+        "west": {
+          "texture": "#terminal"
+        },
+        "up": {
+          "texture": "#terminal"
+        },
+        "down": {
+          "texture": "#terminal"
+        }
+      }
+    }
+  ]
+}

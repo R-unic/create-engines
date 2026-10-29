@@ -22,6 +22,10 @@ public final class CEItems {
 		.model((c, p) -> p.withExistingParent(c.getName(), p.modLoc("block/cylinder_head/injector_item")))
 		.register();
 
+	public static final ItemEntry<Item> SPARK_PLUG = REGISTRATE.item("spark_plug", Item::new)
+		.model((c, p) -> p.withExistingParent(c.getName(), p.modLoc("block/cylinder_head/plug_item")))
+		.register();
+
 	private CEItems() {
 	}
 

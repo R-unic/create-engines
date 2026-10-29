@@ -10,6 +10,7 @@
     "create_engines:exhaust_manifold",
     "create_engines:air_intake",
     "create_engines:exhaust_outlet",
-    "create_engines:starter"
+    "create_engines:starter",
+    "create_engines:battery"
   ]
 }

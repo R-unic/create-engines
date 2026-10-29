@@ -20,10 +20,13 @@ import net.minecraft.nbt.NbtUtils;
  * @param ignitionTemp    autoignition temperature of the fuel available (NaN if none)
  * @param lobe            cam lobe working this cylinder's valves, for animation
  * @param exhaustOutlets  where this cylinder's exhaust comes out, for smoke
+ * @param lean            fired with air to spare
+ * @param mixture         fuel-air equivalence ratio at injection last cycle (NaN if nothing was injected): 1 is balanced
+ * @param sparkPlug       the head has a spark plug
  */
 public record CylinderStatus(BlockPos primary, int faults, CycleResult result, boolean rich, float tdcAngle,
 							 float timingError, float chargeTemp, float ignitionTemp, @Nullable BlockPos lobe,
-							 List<BlockPos> exhaustOutlets) {
+							 List<BlockPos> exhaustOutlets, boolean lean, float mixture, boolean sparkPlug) {
 
 	public CompoundTag write() {
 		CompoundTag tag = new CompoundTag();
@@ -42,6 +45,9 @@ public record CylinderStatus(BlockPos primary, int faults, CycleResult result, b
 			outlets[i] = exhaustOutlets.get(i)
 				.asLong();
 		tag.putLongArray("Outlets", outlets);
+		tag.putBoolean("Lean", lean);
+		tag.putFloat("Mixture", mixture);
+		tag.putBoolean("Plug", sparkPlug);
 		return tag;
 	}
 
@@ -58,7 +64,8 @@ public record CylinderStatus(BlockPos primary, int faults, CycleResult result, b
 			results[Math.clamp(tag.getInt("Result"), 0, results.length - 1)], tag.getBoolean("Rich"),
 			tag.getFloat("Tdc"), tag.getFloat("Timing"), tag.getFloat("Charge"), tag.getFloat("Ignition"),
 			NbtUtils.readBlockPos(tag, "Lobe")
-				.orElse(null), List.copyOf(outlets));
+				.orElse(null), List.copyOf(outlets), tag.getBoolean("Lean"), tag.getFloat("Mixture"),
+			tag.getBoolean("Plug"));
 	}
 
 	/** Whether anything a player would see has changed. */
@@ -66,7 +73,8 @@ public record CylinderStatus(BlockPos primary, int faults, CycleResult result, b
 		if (other == null)
 			return true;
 		return !primary.equals(other.primary) || faults != other.faults || result != other.result
-			|| rich != other.rich || changed(tdcAngle, other.tdcAngle, 0.5f)
+			|| rich != other.rich || lean != other.lean || sparkPlug != other.sparkPlug
+			|| changed(mixture, other.mixture, 0.05f) || changed(tdcAngle, other.tdcAngle, 0.5f)
 			|| changed(timingError, other.timingError, 0.5f) || changed(chargeTemp, other.chargeTemp, 0.05f)
 			|| changed(ignitionTemp, other.ignitionTemp, 0.01f) || !Objects.equals(lobe, other.lobe)
 			|| !exhaustOutlets.equals(other.exhaustOutlets);
