@@ -183,10 +183,10 @@ public final class VisualSmokeTest {
 		STEPS.add(new Step(5000, () -> view(SPARK_OFFSET.getX() - 2.5, 6.5, -1.5, -55, 37)));
 		STEPS.add(new Step(5015, () -> shot("spark_overview")));
 		STEPS.add(new Step(5020, () -> Minecraft.getInstance().options.hideGui = false));
-		goggles("spark_battery", 5025, SPARK_OFFSET.getX() + 0.5, 2.0, 0.2, 0, 28);
+		goggles("spark_battery", 5025, SPARK_OFFSET.getX() + 1.5, 3.0, 0.4, 0, 28);
 		goggles("spark_head", 5045, SPARK_OFFSET.getX() + 4.5, 4.0, 1.0, 45, 0);
 		goggles("spark_cylinder", 5065, SPARK_OFFSET.getX() + 2.5, 2.0, -0.5, 0, 2.3f);
-		ponder("spark", 5100, CEBlocks.BATTERY::asStack, 250, 450, 650);
+		ponder("spark", 5100, CEBlocks.ALTERNATOR::asStack, 250, 450, 650);
 		STEPS.add(new Step(5900, () -> Minecraft.getInstance()
 			.stop()));
 	}

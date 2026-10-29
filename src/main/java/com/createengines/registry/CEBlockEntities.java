@@ -3,8 +3,9 @@ package com.createengines.registry;
 import static com.createengines.CreateEngines.REGISTRATE;
 
 import com.createengines.content.EnginePartRenderers;
+import com.createengines.content.alternator.AlternatorBlockEntity;
+import com.createengines.content.alternator.AlternatorVisual;
 import com.createengines.content.battery.BatteryBlockEntity;
-import com.createengines.content.battery.BatteryVisual;
 import com.createengines.content.camshaft.CamshaftBlockEntity;
 import com.createengines.content.camshaft.CamshaftVisual;
 import com.createengines.content.crankshaft.CrankshaftBlockEntity;
@@ -61,8 +62,13 @@ public final class CEBlockEntities {
 
 	public static final BlockEntityEntry<BatteryBlockEntity> BATTERY = REGISTRATE
 		.blockEntity("battery", BatteryBlockEntity::new)
-		.visual(() -> BatteryVisual::create, false)
 		.validBlocks(CEBlocks.BATTERY)
+		.register();
+
+	public static final BlockEntityEntry<AlternatorBlockEntity> ALTERNATOR = REGISTRATE
+		.blockEntity("alternator", AlternatorBlockEntity::new)
+		.visual(() -> AlternatorVisual::create, false)
+		.validBlocks(CEBlocks.ALTERNATOR)
 		.renderer(() -> KineticBlockEntityRenderer::new)
 		.register();
 

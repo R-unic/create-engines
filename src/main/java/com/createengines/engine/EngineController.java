@@ -7,6 +7,7 @@ import java.util.List;
 import org.jetbrains.annotations.Nullable;
 
 import com.createengines.config.CEConfig;
+import com.createengines.content.alternator.AlternatorBlockEntity;
 import com.createengines.content.battery.BatteryBlockEntity;
 import com.createengines.content.camshaft.CamshaftBlockEntity;
 import com.createengines.content.crankshaft.CrankshaftBlockEntity;
@@ -433,6 +434,9 @@ public final class EngineController {
 		for (BlockPos pos : layout.batteries())
 			if (level.getBlockEntity(pos) instanceof BatteryBlockEntity battery)
 				battery.attachToEngine(layout.primary());
+		for (BlockPos pos : layout.alternators())
+			if (level.getBlockEntity(pos) instanceof AlternatorBlockEntity alternator)
+				alternator.attachToEngine(layout.primary(), layout.batteries());
 
 		for (int line = 0; line < camshafts.size(); line++) {
 			Camshaft camshaft = camshafts.get(line);

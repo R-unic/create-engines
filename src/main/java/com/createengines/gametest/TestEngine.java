@@ -44,8 +44,10 @@ public final class TestEngine {
 	public static final BlockPos STARTER = new BlockPos(1, 1, 2);
 	public static final BlockPos MOTOR = new BlockPos(1, 0, 2);
 	public static final BlockPos STARTER_POWER = new BlockPos(0, 1, 2);
-	/** On the crank's own axis, so the engine charges it while it turns. */
-	public static final BlockPos BATTERY = new BlockPos(0, 2, 2);
+	/** On the crank's own axis, so the engine charges the battery while it turns. */
+	public static final BlockPos ALTERNATOR = new BlockPos(0, 2, 2);
+	/** On top of the first journal, touching the crank, so its plugs fire from it. */
+	public static final BlockPos BATTERY = new BlockPos(1, 3, 2);
 	public static final int MOTOR_RPM = 64;
 
 	private static BlockState axisX(BlockState state) {
@@ -118,7 +120,7 @@ public final class TestEngine {
 
 	/**
 	 * The same engine as a spark engine: a spark plug in the head, gasoline in the tank (which compression alone can't
-	 * light) and, if asked, a flat battery on the end of the crankshaft.
+	 * light) and, if asked, a flat battery on the crankshaft and an alternator on its end.
 	 */
 	public static void buildSpark(Level level, BlockPos origin, boolean battery) {
 		build(level, origin, false);
@@ -131,7 +133,8 @@ public final class TestEngine {
 			.fill(new FluidStack(CEFluids.GASOLINE.get()
 				.getSource(), 250), FluidAction.EXECUTE);
 		if (battery)
-			level.setBlock(origin.offset(BATTERY), axisX(CEBlocks.BATTERY.getDefaultState()), Block.UPDATE_ALL);
+			level.setBlock(origin.offset(BATTERY), CEBlocks.BATTERY.getDefaultState(), Block.UPDATE_ALL);
+			level.setBlock(origin.offset(ALTERNATOR), axisX(CEBlocks.ALTERNATOR.getDefaultState()), Block.UPDATE_ALL);
 	}
 
 	private TestEngine() {

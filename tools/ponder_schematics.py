@@ -170,7 +170,8 @@ write_schematic("airflow", (6, 6, 6), [
 ])
 
 write_schematic("spark", (6, 6, 6), [
-    (0, 1, 3, ce("battery"), axis("x")),
+    (0, 1, 3, ce("alternator"), axis("x")),
+    (1, 2, 3, ce("battery"), {}),
     (1, 1, 3, ce("crankshaft"), axis("x")),
     (2, 1, 3, ce("crank_throw"), axis("x")),
     (3, 1, 3, ce("crankshaft"), axis("x")),

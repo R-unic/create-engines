@@ -124,8 +124,12 @@ public final class CELang {
 
 		raw("goggles.battery", "Battery");
 		raw("goggles.battery.charge", "Charge: %1$s%%");
-		raw("goggles.battery.flat", "Flat: spin its shaft to charge it");
-		raw("goggles.battery.charging", "Charging from its shaft");
+		raw("goggles.battery.flat", "Flat: an alternator has to charge it");
+
+		raw("goggles.alternator", "Alternator");
+		raw("goggles.alternator.charging", "Charging batteries from its shaft");
+		raw("goggles.alternator.no_battery", "No battery touching it or its engine to charge");
+		raw("goggles.alternator.idle", "Idle: needs a turning shaft and a battery that isn't full");
 		raw("goggles.battery.no_engine", "Not touching an engine's crankshaft or cylinder head");
 	}
 

@@ -375,7 +375,7 @@ public class EngineGameTests {
 		});
 	}
 
-	/** A battery on the crank's own shaft is charged by cranking, which lets a spark engine start on gasoline. */
+	/** An alternator on the crank's own shaft charges the battery by cranking, which lets a spark engine start. */
 	@GameTest(template = "empty", timeoutTicks = 1000)
 	public static void sparkEngineStartsOnGasolineAndChargesItsBattery(GameTestHelper helper) {
 		TestEngine.buildSpark(helper.getLevel(), helper.absolutePos(BlockPos.ZERO), true);
@@ -384,7 +384,7 @@ public class EngineGameTests {
 			helper.assertTrue(summary.firing() == 1,
 				"Cylinder should fire from the plug under the starter, summary " + summary + ", cylinder " + cylinder(helper));
 			BatteryBlockEntity battery = helper.getBlockEntity(TestEngine.BATTERY);
-			helper.assertTrue(battery.charge() > 0, "Cranking should have charged the battery");
+			helper.assertTrue(battery.charge() > 0, "Cranking should have charged the battery through the alternator");
 			helper.setBlock(STARTER_POWER, Blocks.AIR);
 		});
 		helper.runAtTickTime(800, () -> {
@@ -443,9 +443,8 @@ public class EngineGameTests {
 			helper.assertTrue(summary(helper).state() == EngineState.RUNNING, "Engine should be running first");
 			BatteryBlockEntity battery = helper.getBlockEntity(TestEngine.BATTERY);
 			battery.draw(BatteryBlockEntity.CAPACITY);
-			// Take the battery off the crank's shaft line so the engine cannot charge it again
-			helper.setBlock(TestEngine.BATTERY, CEBlocks.BATTERY.getDefaultState()
-				.setValue(BlockStateProperties.AXIS, Axis.Y));
+			// Take the alternator away so nothing can charge it again
+			helper.setBlock(TestEngine.ALTERNATOR, Blocks.AIR);
 		});
 		helper.succeedWhen(() -> {
 			helper.assertTrue(helper.getTick() > 620, "Battery not drained yet");

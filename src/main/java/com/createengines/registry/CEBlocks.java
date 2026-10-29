@@ -5,6 +5,7 @@ import static com.createengines.CreateEngines.REGISTRATE;
 import com.createengines.content.airflow.ManifoldBlock;
 import com.createengines.content.airflow.PortKind;
 import com.createengines.content.airflow.PortOpeningBlock;
+import com.createengines.content.alternator.AlternatorBlock;
 import com.createengines.content.battery.BatteryBlock;
 import com.createengines.content.camshaft.CamLobeBlock;
 import com.createengines.content.camshaft.CamshaftBlock;
@@ -160,6 +161,16 @@ public final class CEBlocks {
 		.register();
 
 	public static final BlockEntry<BatteryBlock> BATTERY = REGISTRATE.block("battery", BatteryBlock::new)
+		.initialProperties(SharedProperties::softMetal)
+		.properties(p -> p.noOcclusion()
+			.mapColor(MapColor.METAL))
+		.transform(TagGen.pickaxeOnly())
+		.blockstate((c, p) -> BlockStateGen.simpleBlock(c, p, s -> AssetLookup.partialBaseModel(c, p)))
+		.item()
+		.transform(ModelGen.customItemModel())
+		.register();
+
+	public static final BlockEntry<AlternatorBlock> ALTERNATOR = REGISTRATE.block("alternator", AlternatorBlock::new)
 		.initialProperties(SharedProperties::softMetal)
 		.properties(p -> p.noOcclusion()
 			.mapColor(MapColor.METAL))

@@ -17,13 +17,14 @@ import net.minecraft.core.Direction.Axis;
  *
  * @param primary    the crankshaft block that hosts the simulation and acts as the Create generator
  * @param batteries  batteries touching the crankshaft or a cylinder head, which fire every spark plug
+ * @param alternators alternators touching the crankshaft or a cylinder head, which charge those batteries
  * @param members    every block whose change should trigger a rescan of this engine
  * @param incomplete part of the engine is in an unloaded chunk, so it is not run
  */
 public record EngineLayout(BlockPos primary, Axis axis, List<Segment> segments, List<Cylinder> cylinders,
 						   List<PortNetwork> ports, List<CamLine> camLines, List<BlockPos> starters,
-						   List<BlockPos> batteries, List<List<BlockPos>> galleries, int flywheels,
-						   Set<BlockPos> members, boolean incomplete) {
+						   List<BlockPos> batteries, List<BlockPos> alternators, List<List<BlockPos>> galleries,
+						   int flywheels, Set<BlockPos> members, boolean incomplete) {
 
 	public record Segment(BlockPos pos, boolean isThrow, double throwAngle) {
 	}

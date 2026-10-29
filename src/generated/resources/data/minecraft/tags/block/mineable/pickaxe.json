@@ -11,6 +11,7 @@
     "create_engines:air_intake",
     "create_engines:exhaust_outlet",
     "create_engines:starter",
-    "create_engines:battery"
+    "create_engines:battery",
+    "create_engines:alternator"
   ]
 }

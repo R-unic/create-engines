@@ -17,6 +17,7 @@ import com.createengines.content.airflow.ManifoldBlock;
 import com.createengines.content.airflow.Pipes;
 import com.createengines.content.airflow.PortKind;
 import com.createengines.content.airflow.PortOpeningBlock;
+import com.createengines.content.alternator.AlternatorBlock;
 import com.createengines.content.battery.BatteryBlock;
 import com.createengines.content.camshaft.CamLobeBlock;
 import com.createengines.content.camshaft.CamshaftBlock;
@@ -110,8 +111,9 @@ public final class EngineScanner {
 		int flywheels = countFlywheels(start.relative(back), back, axis) + countFlywheels(cursor, forward, axis);
 
 		Set<BlockPos> batteries = new LinkedHashSet<>();
+		Set<BlockPos> alternators = new LinkedHashSet<>();
 		for (Segment segment : segments)
-			addBatteriesAround(segment.pos(), batteries);
+			addElectricsAround(segment.pos(), batteries, alternators);
 
 		List<CylinderDraft> drafts = new ArrayList<>();
 		List<BlockPos> starters = new ArrayList<>();
@@ -161,7 +163,7 @@ public final class EngineScanner {
 		}
 
 		for (BlockPos head : heads)
-			addBatteriesAround(head, batteries);
+			addElectricsAround(head, batteries, alternators);
 
 		List<Cylinder> cylinders = new ArrayList<>();
 		for (CylinderDraft draft : drafts) {
@@ -172,14 +174,16 @@ public final class EngineScanner {
 
 		return new EngineLayout(start.immutable(), axis, List.copyOf(segments), List.copyOf(cylinders),
 			List.copyOf(ports), List.copyOf(camLines), List.copyOf(starters), List.copyOf(batteries),
-			List.copyOf(galleries), flywheels, Set.copyOf(members), incomplete);
+			List.copyOf(alternators), List.copyOf(galleries), flywheels, Set.copyOf(members), incomplete);
 	}
 
-	/** Batteries touching {@code pos} on any side supply the engine's spark plugs. */
-	private void addBatteriesAround(BlockPos pos, Set<BlockPos> batteries) {
+	/** Batteries touching {@code pos} on any side supply the engine's spark plugs, and alternators there charge them. */
+	private void addElectricsAround(BlockPos pos, Set<BlockPos> batteries, Set<BlockPos> alternators) {
 		for (Direction direction : Direction.values()) {
 			BlockPos neighbour = pos.relative(direction);
-			if (state(neighbour).getBlock() instanceof BatteryBlock && batteries.add(neighbour.immutable()))
+			Block block = state(neighbour).getBlock();
+			if (block instanceof BatteryBlock && batteries.add(neighbour.immutable())
+				|| block instanceof AlternatorBlock && alternators.add(neighbour.immutable()))
 				members.add(neighbour.immutable());
 		}
 	}
@@ -420,7 +424,7 @@ public final class EngineScanner {
 					cursor = cursor.relative(direction);
 				}
 			}
-		} else if (block instanceof BatteryBlock) {
+		} else if (block instanceof BatteryBlock || block instanceof AlternatorBlock) {
 			for (Direction direction : Direction.values())
 				addHeadSeed(level, pos.relative(direction), level.getBlockState(pos.relative(direction)), seeds);
 		} else if (block instanceof ManifoldBlock || block instanceof PortOpeningBlock) {

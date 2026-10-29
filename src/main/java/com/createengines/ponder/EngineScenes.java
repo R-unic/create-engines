@@ -480,8 +480,10 @@ public final class EngineScenes {
 
 		Selection crank = util.select()
 			.fromTo(1, 1, 3, 3, 1, 3);
-		Selection battery = util.select()
+		Selection alternator = util.select()
 			.position(0, 1, 3);
+		Selection battery = util.select()
+			.position(1, 2, 3);
 		Selection engine = util.select()
 			.fromTo(2, 2, 3, 2, 3, 3)
 			.add(util.select()
@@ -510,25 +512,36 @@ public final class EngineScenes {
 		scene.idle(110);
 
 		scene.world()
-			.showSection(battery, Direction.EAST);
+			.showSection(battery, Direction.DOWN);
 		scene.idle(15);
 		scene.overlay()
 			.showText(100)
 			.attachKeyFrame()
 			.text("Plugs fire from a Battery touching the crankshaft or a cylinder head. Each spark uses a little charge, and a flat battery gives no spark.")
 			.pointAt(util.vector()
-				.blockSurface(util.grid()
-					.at(0, 1, 3), Direction.UP))
+				.topOf(1, 2, 3))
 			.placeNearTarget();
 		scene.idle(110);
 
 		scene.world()
-			.setKineticSpeed(crank.add(battery), 48);
+			.showSection(alternator, Direction.EAST);
+		scene.idle(15);
+		scene.world()
+			.setKineticSpeed(crank.add(alternator), 48);
 		scene.overlay()
 			.showText(100)
-			.text("A battery charges while its shaft turns, for a little stress. On the crank's own shaft line, cranking charges it and the running engine keeps it topped up.")
+			.attachKeyFrame()
+			.text("A battery makes no charge itself. An Alternator charges the batteries touching it, and those of the engine it touches, while its shaft turns, for a little stress.")
 			.pointAt(util.vector()
 				.topOf(0, 1, 3))
+			.placeNearTarget();
+		scene.idle(110);
+
+		scene.overlay()
+			.showText(100)
+			.text("On the crank's own shaft line, cranking charges the battery and the running engine keeps it topped up.")
+			.pointAt(util.vector()
+				.topOf(1, 2, 3))
 			.placeNearTarget();
 		scene.idle(110);
 
