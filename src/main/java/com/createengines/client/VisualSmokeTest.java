@@ -7,6 +7,7 @@ import java.util.function.Supplier;
 import com.createengines.CreateEngines;
 import com.createengines.content.EnginePoses;
 import com.createengines.content.crankshaft.CrankshaftBlockEntity;
+import com.createengines.content.cylinder.CylinderBlock;
 import com.createengines.engine.CrankGeometry;
 import com.createengines.gametest.TestEngine;
 import com.createengines.registry.CEBlocks;
@@ -27,6 +28,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.GameRules;
 import net.minecraft.world.level.GameType;
 import net.minecraft.world.level.LevelSettings;
+import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.WorldDataConfiguration;
 import net.minecraft.world.level.levelgen.Heightmap;
 import net.minecraft.world.level.levelgen.WorldOptions;
@@ -113,7 +115,30 @@ public final class VisualSmokeTest {
 		ponder("camshaft", 1780, CEBlocks.CAM_LOBE::asStack, 300, 560);
 		ponder("airflow", 2400, CEBlocks.AIR_INTAKE::asStack, 340, 450);
 		ponder("starter", 2900, CEBlocks.STARTER::asStack, 220, 420);
-		STEPS.add(new Step(3360, () -> Minecraft.getInstance()
+		// Buckets in the hotbar: each fluid layer should wear its own colour, not the grey of the water texture
+		STEPS.add(new Step(3340, () -> {
+			Minecraft.getInstance().options.hideGui = false;
+			server(server -> {
+				for (String bucket : List.of("plant_oil_bucket", "diesel_bucket", "engine_oil_bucket"))
+					command(server, "give @a create_engines:" + bucket);
+			});
+			view(2.5, 2.0, -0.5, 0, 2.3f);
+		}));
+		STEPS.add(new Step(3365, () -> shot("buckets")));
+
+		// A piston with no connecting rod isn't tied to the crank, so it must stay put while the crank turns
+		STEPS.add(new Step(3370, () -> {
+			Minecraft.getInstance().options.hideGui = true;
+			server(server -> {
+				var level = server.overworld();
+				BlockPos cylinder = origin.offset(TestEngine.CYLINDER);
+				level.setBlock(cylinder, level.getBlockState(cylinder)
+					.setValue(CylinderBlock.HAS_ROD, false), 3);
+				level.setBlock(origin.offset(TestEngine.STARTER_POWER), Blocks.REDSTONE_BLOCK.defaultBlockState(), 3);
+			});
+		}));
+		frames("no_rod", 3400, 2.5, 2.0, -0.5, 0, 2.3f);
+		STEPS.add(new Step(3440, () -> Minecraft.getInstance()
 			.stop()));
 	}
 

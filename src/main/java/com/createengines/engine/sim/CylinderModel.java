@@ -21,9 +21,11 @@ import org.jetbrains.annotations.Nullable;
 public final class CylinderModel {
 
 	private static final double GAMMA = 1.3;
-	private static final double EXHAUST_TEMP = 2.5;
+	/** Moles of breathed-out gas it takes to replace what the exhaust port is holding. */
+	private static final double EXHAUST_MEMORY = 1;
+	/** Seconds for the gas in the exhaust port to leave and be replaced by ambient air. */
+	private static final double EXHAUST_CLEARING = 1;
 	private static final double FUEL_EPSILON = 1e-6;
-
 	public final CylinderSpec spec;
 	private final CamProfile profile;
 	/** Geometric crank angle (degrees) at which this piston is at top dead centre. */
@@ -46,6 +48,9 @@ public final class CylinderModel {
 	/** Gas pushed back into the intake manifold, and how much of it is still fresh air. */
 	private double intakeBackflow;
 	private double intakeBackflowFresh = 1;
+
+	/** Temperature of the spent gas in the exhaust port, which is what reversion draws back in. Ambient until it fires. */
+	private double exhaustTemp = 1;
 
 	private double fuelPending;
 	private double timeSinceInjection;
@@ -125,13 +130,18 @@ public final class CylinderModel {
 		resetGas(0);
 	}
 
-	/** Fills the cylinder with fresh air at ambient pressure for wherever its piston currently is. */
+	/**
+	 * Fills the cylinder with stale gas at ambient pressure for wherever its piston currently is. It holds no fresh
+	 * air to burn: a cylinder has to breathe in through its intake before it can fire, so one with no intake never
+	 * does.
+	 */
 	public void resetGas(double pistonAngle) {
 		moles = spec.volumeAt(pistonAngle);
 		temperature = 1;
-		fresh = 1;
+		fresh = 0;
 		intakeBackflow = 0;
 		intakeBackflowFresh = 1;
+		exhaustTemp = 1;
 		fuelPending = 0;
 		burning = false;
 	}
@@ -143,6 +153,7 @@ public final class CylinderModel {
 		fresh = other.fresh;
 		intakeBackflow = other.intakeBackflow;
 		intakeBackflowFresh = other.intakeBackflowFresh;
+		exhaustTemp = other.exhaustTemp;
 		fuelPending = other.fuelPending;
 		timeSinceInjection = other.timeSinceInjection;
 		burning = other.burning;
@@ -183,7 +194,7 @@ public final class CylinderModel {
 		if (camshaft != null) {
 			double mid = SimMath.wrap(camFrom + camDelta / 2);
 			exchangeIntake(v1, spec.intakeFlow() * profile.intakeLift(mid) * intakeFactor, dt);
-			exchange(v1, 1, EXHAUST_TEMP, 0, spec.exhaustFlow() * profile.exhaustLift(mid) * exhaustFactor, dt);
+			exchangeExhaust(v1, spec.exhaustFlow() * profile.exhaustLift(mid) * exhaustFactor, dt);
 		}
 
 		// Rule 4: injection (triggered by the cam), ignition, combustion
@@ -233,19 +244,27 @@ public final class CylinderModel {
 		moles += in;
 	}
 
-	private void exchange(double volume, double portPressure, double portTemp, double portFresh, double rate,
-						  double dt) {
+	/**
+	 * The exhaust port holds spent gas: it never counts as fresh air. It is hot only if this cylinder has just burned
+	 * fuel, and that heat is what reversion draws back in. A cylinder that isn't burning anything can't get hot gas
+	 * out of its exhaust (that would be heat from nowhere), and the gas in the port drifts back to ambient anyway.
+	 */
+	private void exchangeExhaust(double volume, double rate, double dt) {
+		exhaustTemp = 1 + (exhaustTemp - 1) * Math.exp(-dt / EXHAUST_CLEARING);
 		if (rate <= 0)
 			return;
 		double p = pressure(volume);
-		double target = p + (portPressure - p) * (1 - Math.exp(-rate * dt));
+		double target = p + (1 - p) * (1 - Math.exp(-rate * dt));
 		if (target > p) {
-			double in = (target - p) * volume / portTemp;
-			fresh = (moles * fresh + in * portFresh) / (moles + in);
-			temperature = (moles * temperature + in * portTemp) / (moles + in);
+			double in = (target - p) * volume / exhaustTemp;
+			fresh = moles * fresh / (moles + in);
+			temperature = (moles * temperature + in * exhaustTemp) / (moles + in);
 			moles += in;
 		} else {
-			moles -= (p - target) * volume / temperature;
+			double out = (p - target) * volume / temperature;
+			if (current.fuelBurned > 0 || last.fuelBurned > 0)
+				exhaustTemp += (temperature - exhaustTemp) * Math.min(1, out / EXHAUST_MEMORY);
+			moles -= out;
 		}
 	}
 

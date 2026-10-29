@@ -11,15 +11,16 @@ import net.minecraft.nbt.CompoundTag;
  * @param availableTorque  SU per RPM the engine could deliver at full fuel
  * @param loadTorque       SU per RPM the network is asking for
  * @param fuelPerMinute    mB per minute being injected
+ * @param lubrication      oil film on the moving parts, 0 (dry) to 1
  * @param ripple           speed variation over a cycle, fraction of mean speed
  * @param firingAngles     crank angles (0-720) at which each cam-timed cylinder fires, sorted
  */
 public record EngineSummary(EngineState state, float rpm, float availableTorque, float loadTorque,
-							float fuelPerMinute, float ripple, int firing, int cylinders, float inertia,
+							float fuelPerMinute, float ripple, int firing, int cylinders, float inertia, float lubrication,
 							boolean starterEngaged, float[] firingAngles) {
 
 	public static final EngineSummary EMPTY =
-		new EngineSummary(EngineState.STALLED, 0, 0, 0, 0, 0, 0, 0, 0, false, new float[0]);
+		new EngineSummary(EngineState.STALLED, 0, 0, 0, 0, 0, 0, 0, 0, 0, false, new float[0]);
 
 	public CompoundTag write() {
 		CompoundTag tag = new CompoundTag();
@@ -32,6 +33,7 @@ public record EngineSummary(EngineState state, float rpm, float availableTorque,
 		tag.putInt("Firing", firing);
 		tag.putInt("Cylinders", cylinders);
 		tag.putFloat("Inertia", inertia);
+		tag.putFloat("Lubrication", lubrication);
 		tag.putBoolean("Starter", starterEngaged);
 		int[] angles = new int[firingAngles.length];
 		for (int i = 0; i < angles.length; i++)
@@ -48,7 +50,8 @@ public record EngineSummary(EngineState state, float rpm, float availableTorque,
 		EngineState[] states = EngineState.values();
 		return new EngineSummary(states[Math.clamp(tag.getInt("State"), 0, states.length - 1)], tag.getFloat("Rpm"),
 			tag.getFloat("Torque"), tag.getFloat("Load"), tag.getFloat("Fuel"), tag.getFloat("Ripple"),
-			tag.getInt("Firing"), tag.getInt("Cylinders"), tag.getFloat("Inertia"), tag.getBoolean("Starter"),
+			tag.getInt("Firing"), tag.getInt("Cylinders"), tag.getFloat("Inertia"), tag.getFloat("Lubrication"),
+			tag.getBoolean("Starter"),
 			firingAngles);
 	}
 
@@ -71,6 +74,7 @@ public record EngineSummary(EngineState state, float rpm, float availableTorque,
 			|| starterEngaged != other.starterEngaged || Math.abs(rpm - other.rpm) >= 1
 			|| relativeChange(availableTorque, other.availableTorque) || relativeChange(loadTorque, other.loadTorque)
 			|| relativeChange(fuelPerMinute, other.fuelPerMinute) || Math.abs(ripple - other.ripple) > 0.01
+			|| Math.abs(lubrication - other.lubrication) >= 0.02
 			|| !Arrays.equals(firingAngles, other.firingAngles);
 	}
 

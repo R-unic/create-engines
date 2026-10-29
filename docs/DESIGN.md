@@ -19,8 +19,8 @@ before relying on it.
 
 | Behaviour | Verified by |
 |---|---|
-| Five-rule cylinder model; crank energy balance; starting, fuel starvation, missing intake, blocked exhaust, missing or mis-geared cam, mistiming, overload, flywheel smoothing, firing order, plant oil vs diesel ignition | 24 JUnit tests (`./gradlew test`) on the pure-Java `engine.sim` package, including the dynamometer rating |
-| A single-cylinder engine built from blocks in a real world: the starter cranks it, it fires, runs on its own after release, provides Create stress capacity, keeps its cam at exactly half crank speed with timing on time, burns fuel; without fuel it stalls; removing the exhaust chokes it; the starter loads its input network; two presses within its rating slow it into its torque band and keep turning; three presses overstress the network while the engine keeps running; every item is listed once in the creative tabs | 7 GameTests (`./gradlew runGameTestServer`) |
+| Five-rule cylinder model; crank energy balance; starting, fuel starvation, missing intake, blocked exhaust, missing or mis-geared cam, mistiming, overload, flywheel smoothing, firing order, plant oil vs diesel ignition; cylinders that can't burn fuel (no intake, no fuel) never fire and only cost power; oil film building, thinning and slowing a dry engine | 34 JUnit tests (`./gradlew test`) on the pure-Java `engine.sim` package, including the dynamometer rating |
+| A single-cylinder engine built from blocks in a real world: the starter cranks it, it fires, runs on its own after release, provides Create stress capacity, keeps its cam at exactly half crank speed with timing on time, burns fuel; without fuel it stalls; removing the exhaust chokes it; the starter loads its input network; two presses within its rating slow it into its torque band and keep turning; three presses overstress the network while the engine keeps running; every item is listed once in the creative tabs | 13 GameTests (`./gradlew runGameTestServer`), including cranks that stop when the starter lets go, misfiring cylinders that stay silent, and oil feeding and being used up |
 | Crank, throw, piston, connecting rod, cam lobe and valve stems animate together; exhaust smoke follows the cam; goggle diagnostics; all five Ponder scenes render and play; the crank's drawn angle never jumps beyond what its speed explains, across every speed change while starting | Visual smoke test (`./gradlew runVisualSmokeTest`): builds the engine in a fresh flat world and saves screenshots to `run/screenshots/`, then quits |
 
 ### Decisions taken in review
@@ -37,6 +37,7 @@ before relying on it.
 | Fuel injection | The Fuel Injector is a part installed in the head. Heads that touch share fuel through a gallery, so one pipe feeds a bank. Fuel is piped into any head face. |
 | Fuel rack | Redstone on any block of a camshaft line closes that line's rack (15 = fuel cut off), like an inline injection pump. |
 | Fuels | **Plant Oil** (compact seeds; rustic, harder to ignite) and **Diesel** (heated mixing of Plant Oil with coal or charcoal; ignites readily, more energy). Properties come from the `create_engines:fuel` data map. |
+| Lubrication | **Engine Oil** (heated mixing of Plant Oil with a slime ball) is piped into any cylinder head, into a second tank beside the fuel tank, and shared along touching heads like fuel. It lubricates the whole engine: crank blocks and every piston and rod. Turning uses it up (about 0.01 mB per part per crank revolution); while the supply keeps up the film builds to full in a few seconds, and without oil it thins over a few hundred revolutions. A dry part drags: friction doubles, and speed-dependent friction quadruples, so a dry engine tops out at roughly half the speed and has less torque to spare, but it still runs. A new engine starts dry. Goggles show the lubrication. |
 | Names | Display name "Create: Engine Engineer"; mod id `create_engines`; package `com.createengines`. |
 | Commits | One commit per major feature. |
 
@@ -45,6 +46,14 @@ before relying on it.
 - **Cranking is a speed floor, not a fixed speed.** Anything turning the crank (a starter, or another kinetic source on
   the crank's network) holds it at *at least* that speed; the engine may outrun it. This is what lets the engine pull
   away from a starter, and what made a released single cylinder behave correctly.
+- **A cylinder that can't burn fuel makes no power.** A new cylinder holds stale gas, not fresh air, so one with no
+  intake can't fire on the air it was built with; and the exhaust port only gives back hot gas if the cylinder has
+  burned fuel recently, so pumping air can't be turned into heat. A starter holding the crank above its own speed
+  because of pumping ripple is just its one-way clutch overrunning; it is not power.
+- **A piston and rod with no head still drag the crank.** Cylinders left out of the simulation for want of a head still
+  add their inertia and friction (and need oil), so a crank with nothing working on it coasts to a stop within a
+  couple of seconds instead of spinning on. An engine with nothing firing reads *Coasting*, not *Running*.
+- **A piston with no connecting rod doesn't move.** Only the rod ties it to the crank.
 - **The intake manifold remembers what was pushed into it.** Gas forced back out through the intake valve is
   breathed in again first. Without this, an engine with no exhaust kept running by exhausting through its intake.
 - **Engine rebuilds keep cylinder gas state**, and an unchanged layout keeps its controller. The periodic safety-net
@@ -59,6 +68,8 @@ before relying on it.
 - **No governor.** Unloaded, a crude engine revs until its torque falls to friction (about 150 to 170 RPM), and under
   load it slows into its torque band, so the speed of everything it drives depends on the load. A mechanical governor
   that moves the rack to hold a set speed is the natural next component.
+- **Lubrication is one figure for the whole engine.** There is no oil pump, filter or per-part wear: an engine is
+  oiled or it isn't. Nothing shows the oil in a Ponder scene yet.
 - **Default full rack runs rich** (black smoke) at speed. That is a fair crude-diesel behaviour, but a shorter default
   shot may read better.
 - **Cam direction is ignored**: only the speed ratio's magnitude is checked, because Create gearing flips direction

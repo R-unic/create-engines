@@ -1,6 +1,7 @@
 package com.createengines.gametest;
 
 import java.util.Collection;
+import java.util.function.BiConsumer;
 
 import com.createengines.CreateEngines;
 import com.createengines.content.airflow.PortOpeningBlock;
@@ -36,8 +37,10 @@ import net.minecraft.world.item.CreativeModeTab;
 import net.minecraft.world.item.CreativeModeTabs;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.material.Fluids;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.neoforged.neoforge.fluids.FluidStack;
 import net.neoforged.neoforge.fluids.capability.IFluidHandler.FluidAction;
@@ -219,6 +222,148 @@ public class EngineGameTests {
 			helper.assertTrue(crank.isOverStressed(), "Three presses exceed the engine's rating");
 			helper.assertTrue(summary.state() == EngineState.OVERLOADED && summary.rpm() > 50,
 				"Engine should keep running while overstressed: " + summary);
+			helper.succeed();
+		});
+	}
+
+	/**
+	 * A crank, throw and starter driven at 16 RPM by a creative motor, with or without a headless cylinder (piston and
+	 * rod, but nothing to make it work) on the throw.
+	 */
+	private static void buildCrankOnly(GameTestHelper helper, boolean headlessCylinder) {
+		BlockPos origin = helper.absolutePos(BlockPos.ZERO);
+		BiConsumer<BlockPos, BlockState> set = (pos, state) -> helper.getLevel()
+			.setBlock(origin.offset(pos), state, Block.UPDATE_ALL);
+		set.accept(PRIMARY, CEBlocks.CRANKSHAFT.getDefaultState()
+			.setValue(BlockStateProperties.AXIS, Axis.X));
+		set.accept(TestEngine.THROW, CEBlocks.CRANK_THROW.getDefaultState()
+			.setValue(BlockStateProperties.AXIS, Axis.X));
+		set.accept(new BlockPos(3, 2, 2), CEBlocks.CRANKSHAFT.getDefaultState()
+			.setValue(BlockStateProperties.AXIS, Axis.X));
+		if (headlessCylinder)
+			set.accept(CYLINDER, CEBlocks.CYLINDER.getDefaultState()
+				.setValue(CylinderBlock.FACING, Direction.UP)
+				.setValue(CylinderBlock.HAS_PISTON, true)
+				.setValue(CylinderBlock.HAS_ROD, true));
+		set.accept(STARTER, CEBlocks.STARTER.getDefaultState()
+			.setValue(StarterBlock.FACING, Direction.UP));
+		set.accept(MOTOR, AllBlocks.CREATIVE_MOTOR.getDefaultState()
+			.setValue(CreativeMotorBlock.FACING, Direction.UP));
+		set.accept(STARTER_POWER, Blocks.REDSTONE_BLOCK.defaultBlockState());
+		CreativeMotorBlockEntity motor = helper.getBlockEntity(MOTOR);
+		motor.generatedSpeed.setValue(16);
+	}
+
+	/** Without a working cylinder there is nothing to run on: the starter turns the crank, and when it lets go it stops. */
+	private static void checkDeadCrankCoastsToAStop(GameTestHelper helper, boolean headlessCylinder) {
+		buildCrankOnly(helper, headlessCylinder);
+		helper.runAtTickTime(100, () -> {
+			EngineSummary summary = summary(helper);
+			helper.assertTrue(summary.state() == EngineState.CRANKING, "Starter should be cranking it: " + summary);
+			helper.assertTrue(summary.cylinders() == 0, "No cylinder can work without a head: " + summary);
+			helper.setBlock(STARTER_POWER, Blocks.AIR);
+		});
+		helper.runAtTickTime(110, () -> {
+			EngineSummary summary = summary(helper);
+			helper.assertFalse(summary.state() == EngineState.RUNNING,
+				"Nothing is firing, so it can't be running: " + summary);
+		});
+		// It must not go on turning for ever
+		helper.succeedWhen(() -> {
+			helper.assertTrue(helper.getTick() > 120, "Starter not released yet");
+			CrankshaftBlockEntity crank = helper.getBlockEntity(PRIMARY);
+			helper.assertTrue(crank.getSpeed() == 0,
+				"Crank with no working cylinder should stop, speed " + crank.getSpeed());
+			helper.assertTrue(summary(helper).state() == EngineState.STALLED, "Engine should be stalled");
+		});
+	}
+
+	@GameTest(template = "empty", timeoutTicks = 900)
+	public static void bareCrankStopsWhenTheStarterLetsGo(GameTestHelper helper) {
+		checkDeadCrankCoastsToAStop(helper, false);
+	}
+
+	@GameTest(template = "empty", timeoutTicks = 900)
+	public static void headlessCylinderStopsWhenTheStarterLetsGo(GameTestHelper helper) {
+		checkDeadCrankCoastsToAStop(helper, true);
+	}
+
+	/** Fuel with no intake: no fresh air ever gets in, so it never fires, not even on the air it was built with. */
+	@GameTest(template = "empty", timeoutTicks = 700)
+	public static void cylinderWithoutIntakeNeverFires(GameTestHelper helper) {
+		buildSingleCylinder(helper, true);
+		helper.setBlock(TestEngine.AIR_INTAKE, Blocks.AIR);
+		for (int tick = 20; tick <= 600; tick += 20)
+			helper.runAtTickTime(tick, () -> {
+				EngineSummary summary = summary(helper);
+				helper.assertTrue(summary.firing() == 0, "Cylinder with no intake fired: " + summary);
+				CrankshaftBlockEntity crank = helper.getBlockEntity(PRIMARY);
+				helper.assertTrue(crank.publishedCapacity() == 0, "Engine shouldn't provide stress capacity");
+			});
+		helper.runAtTickTime(650, () -> {
+			helper.assertTrue(CylinderFault.NO_INTAKE.in(cylinder(helper).faults()),
+				"Cylinder should report its missing intake");
+			helper.succeed();
+		});
+	}
+
+	/** Air with no injector: pumping air round costs power, it can't make any. */
+	@GameTest(template = "empty", timeoutTicks = 700)
+	public static void cylinderWithoutInjectorNeverFires(GameTestHelper helper) {
+		buildSingleCylinder(helper, true);
+		helper.setBlock(HEAD, CEBlocks.CYLINDER_HEAD.getDefaultState()
+			.setValue(CylinderHeadBlock.FACING, Direction.UP)
+			.setValue(CylinderHeadBlock.HAS_INJECTOR, false));
+		for (int tick = 20; tick <= 600; tick += 20)
+			helper.runAtTickTime(tick, () -> {
+				EngineSummary summary = summary(helper);
+				helper.assertTrue(summary.firing() == 0, "Cylinder with no injector fired: " + summary);
+				CrankshaftBlockEntity crank = helper.getBlockEntity(PRIMARY);
+				helper.assertTrue(crank.publishedCapacity() == 0, "Engine shouldn't provide stress capacity");
+			});
+		helper.runAtTickTime(650, () -> {
+			helper.assertTrue(CylinderFault.NO_INJECTOR.in(cylinder(helper).faults()),
+				"Cylinder should report its missing injector");
+			helper.succeed();
+		});
+	}
+
+	/** A new engine is dry. Oil piped into its head builds the film, and turning the engine uses the oil up. */
+	@GameTest(template = "empty", timeoutTicks = 900)
+	public static void engineOilBuildsTheFilmAndIsUsedUp(GameTestHelper helper) {
+		TestEngine.build(helper.getLevel(), helper.absolutePos(BlockPos.ZERO), true, false);
+		helper.runAtTickTime(100, () -> {
+			EngineSummary summary = summary(helper);
+			helper.assertTrue(summary.lubrication() < 0.05, "An engine with no oil should be dry: " + summary);
+			CylinderHeadBlockEntity head = helper.getBlockEntity(HEAD);
+			helper.assertTrue(head.fluidCapability()
+				.fill(new FluidStack(CEFluids.ENGINE_OIL.get()
+					.getSource(), 250), FluidAction.EXECUTE) == 250, "The head should take engine oil from a pipe");
+			helper.assertTrue(head.fluidCapability()
+				.fill(new FluidStack(Fluids.WATER, 250), FluidAction.EXECUTE) == 0, "It shouldn't take water");
+		});
+		helper.runAtTickTime(500, () -> {
+			EngineSummary summary = summary(helper);
+			helper.assertTrue(summary.lubrication() > 0.95, "Oil should have built the film: " + summary);
+			CylinderHeadBlockEntity head = helper.getBlockEntity(HEAD);
+			helper.assertTrue(head.oilTank()
+				.getFluidAmount() < 250, "Turning the engine should use oil");
+			helper.assertTrue(head.oilTank()
+				.getFluidAmount() > 200, "But not very much of it");
+			helper.succeed();
+		});
+	}
+
+	/** Oil is what lets an engine reach its speed: the same engine, dry, tops out far lower. */
+	@GameTest(template = "empty", timeoutTicks = 1300)
+	public static void dryEngineRunsSlowerThanAnOiledOne(GameTestHelper helper) {
+		TestEngine.build(helper.getLevel(), helper.absolutePos(BlockPos.ZERO), true, false);
+		helper.runAtTickTime(300, () -> helper.setBlock(STARTER_POWER, Blocks.AIR));
+		helper.runAtTickTime(1200, () -> {
+			EngineSummary summary = summary(helper);
+			helper.assertTrue(summary.state() == EngineState.RUNNING, "A dry engine still runs: " + summary);
+			helper.assertTrue(summary.rpm() < 100,
+				"A dry engine should top out well below an oiled one's 120+: " + summary);
 			helper.succeed();
 		});
 	}

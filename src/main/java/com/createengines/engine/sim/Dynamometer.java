@@ -56,7 +56,11 @@ public final class Dynamometer {
 			copy.fuelSupply = fuel != null && live != null && live.isPhaseLocked() ? unlimited(fuel) : FuelSupply.NONE;
 			copies.add(copy);
 		}
-		EngineSimulation dyno = new EngineSimulation(copies, engine.baseInertia(), engine.baseFriction());
+		EngineSimulation dyno =
+			new EngineSimulation(copies, engine.baseInertia(), engine.baseFriction(), engine.baseViscousFriction());
+		dyno.lubrication()
+			.setFilm(engine.lubrication()
+				.film());
 		dyno.restore(0, 0, engine.direction());
 		for (CylinderModel copy : copies)
 			copy.resetGas(copy.pistonAngle(0, engine.direction()));

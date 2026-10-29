@@ -206,6 +206,7 @@ public class CrankshaftBlockEntity extends GeneratingKineticBlockEntity implemen
 			motionTag.putDouble("Angle", motion.angle());
 			motionTag.putDouble("Omega", motion.omega());
 			motionTag.putInt("Direction", motion.direction());
+			motionTag.putDouble("Film", motion.film());
 			tag.put("Motion", motionTag);
 		}
 		if (clientPacket && summary != null)
@@ -222,7 +223,7 @@ public class CrankshaftBlockEntity extends GeneratingKineticBlockEntity implemen
 		if (tag.contains("Motion")) {
 			CompoundTag motion = tag.getCompound("Motion");
 			savedMotion = new EngineController.Motion(motion.getDouble("Angle"), motion.getDouble("Omega"),
-				motion.getInt("Direction"), null);
+				motion.getInt("Direction"), motion.getDouble("Film"), null);
 		}
 		if (clientPacket)
 			summary = tag.contains("Summary") ? EngineSummary.read(tag.getCompound("Summary")) : null;
@@ -254,6 +255,7 @@ public class CrankshaftBlockEntity extends GeneratingKineticBlockEntity implemen
 		ChatFormatting stateColour = switch (engine.state()) {
 			case RUNNING -> ChatFormatting.GREEN;
 			case CRANKING -> ChatFormatting.YELLOW;
+			case COASTING -> ChatFormatting.GRAY;
 			case OVERLOADED -> ChatFormatting.GOLD;
 			case STALLED, INCOMPLETE -> ChatFormatting.RED;
 		};
@@ -261,6 +263,16 @@ public class CrankshaftBlockEntity extends GeneratingKineticBlockEntity implemen
 				.langKey())
 			.style(stateColour)
 			.forGoggles(tooltip, 1);
+		if (engine.state() != EngineState.INCOMPLETE) {
+			int oil = Math.round(engine.lubrication() * 100);
+			CELang.translate("goggles.lubrication", oil)
+				.style(oil < 30 ? ChatFormatting.RED : oil < 70 ? ChatFormatting.GOLD : ChatFormatting.GREEN)
+				.forGoggles(tooltip, 1);
+			if (oil < 30)
+				CELang.translate("goggles.lubrication.dry")
+					.style(ChatFormatting.GRAY)
+					.forGoggles(tooltip, 2);
+		}
 		if (engine.cylinders() == 0) {
 			CELang.translate("goggles.no_cylinders")
 				.style(ChatFormatting.GRAY)

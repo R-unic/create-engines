@@ -5,6 +5,7 @@ import java.util.Locale;
 public enum EngineState {
 	STALLED,
 	CRANKING,
+	COASTING,
 	RUNNING,
 	OVERLOADED,
 	INCOMPLETE;

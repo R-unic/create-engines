@@ -38,4 +38,15 @@ public enum CylinderFault {
 				return true;
 		return false;
 	}
+
+	/**
+	 * How much a cylinder with these faults loads the crank even though it isn't working: a rod on a throw drags a
+	 * piston along its bore (or swings on its own, if there is no piston), whether or not there's a head on it.
+	 * Zero if nothing is connected to the crank.
+	 */
+	public static double dragOnCrank(int faults) {
+		if (NOT_ON_THROW.in(faults) || NO_ROD.in(faults))
+			return 0;
+		return NO_PISTON.in(faults) ? 0.5 : 1;
+	}
 }

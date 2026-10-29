@@ -145,7 +145,50 @@ class EngineSimulationTest {
 		crank(engine, 10);
 		assertFalse(engine.isSustaining());
 		CycleResult result = cylinder.lastCycle().result;
-		assertTrue(result == CycleResult.NO_AIR || result == CycleResult.NO_IGNITION, "got " + result);
+		assertEquals(CycleResult.NO_AIR, result);
+	}
+
+	/**
+	 * Cranks a cylinder that can never fire, checking it never does and returns the energy the starter had to supply:
+	 * a cylinder that isn't burning anything can only be a drag.
+	 */
+	private static double crankWithoutCombustion(CylinderModel cylinder, double seconds) {
+		EngineSimulation engine = engine(FLYWHEEL_INERTIA, cylinder);
+		double supplied = 0;
+		for (int i = 0; i < seconds * 20; i++) {
+			engine.tickCranked(0, MAX_OMEGA, EngineSimulation.rpmToOmega(CRANK_RPM), 1);
+			supplied += engine.crankingTorque();
+			assertFalse(cylinder.lastCycle().result.fired(), "should never fire, tick " + i);
+			assertFalse(engine.isSustaining(), "should never carry itself, tick " + i);
+		}
+		return supplied;
+	}
+
+	@Test
+	void missingIntakeNeverFiresEvenOnItsFirstCycles() {
+		CylinderModel cylinder = single(new Tank(1000));
+		cylinder.intakeFactor = 0;
+		assertTrue(crankWithoutCombustion(cylinder, 60) > 0, "starter has to drag a cylinder that can't breathe");
+		assertEquals(CycleResult.NO_AIR, cylinder.lastCycle().result);
+	}
+
+	@Test
+	void cylinderWithoutFuelOnlyCostsPower() {
+		assertTrue(crankWithoutCombustion(single(new Tank(0)), 60) > 0, "pumping air with no fuel can't add energy");
+	}
+
+	@Test
+	void motoringTorqueIsAlwaysNegative() {
+		for (boolean intake : new boolean[] {true, false}) {
+			CylinderModel cylinder = single(new Tank(0));
+			cylinder.intakeFactor = intake ? 1 : 0;
+			EngineSimulation engine = engine(FLYWHEEL_INERTIA, cylinder);
+			for (double rpm : Dynamometer.SPEEDS) {
+				drive(engine, rpm, 20);
+				assertTrue(engine.netTorque() < 0,
+					"motoring at " + rpm + " RPM (intake " + intake + ") made torque " + engine.netTorque());
+			}
+		}
 	}
 
 	@Test
@@ -298,6 +341,98 @@ class EngineSimulationTest {
 		assertEquals(0, Dynamometer.peakTorque(Dynamometer.torqueCurve(engine), 256));
 	}
 
+	private static EngineSimulation settledAt(double film) {
+		EngineSimulation engine = engine(FLYWHEEL_INERTIA, single(new Tank(100000)));
+		engine.lubrication()
+			.setFilm(film);
+		crank(engine, 15);
+		run(engine, 60, 0);
+		return engine;
+	}
+
+	@Test
+	void dryEngineTopsOutFarSlowerThanAnOiledOne() {
+		EngineSimulation oiled = settledAt(1);
+		EngineSimulation dry = settledAt(0);
+		System.out.printf("oiled %.0f RPM, dry %.0f RPM%n", oiled.rpm(), dry.rpm());
+		assertFalse(oiled.isStopped());
+		assertTrue(dry.rpm() < oiled.rpm() * 0.7, "dry " + dry.rpm() + " should be well below oiled " + oiled.rpm());
+	}
+
+	@Test
+	void dryEngineHasLessTorqueToSpare() {
+		double[] oiled = Dynamometer.torqueCurve(settledAt(1));
+		double[] dry = Dynamometer.torqueCurve(settledAt(0));
+		double oiledPeak = Dynamometer.peakTorque(oiled, 256);
+		double dryPeak = Dynamometer.peakTorque(dry, 256);
+		assertTrue(dryPeak < oiledPeak, "dry " + dryPeak + " should be below oiled " + oiledPeak);
+		for (int i = 0; i < Dynamometer.SPEEDS.length; i++)
+			assertTrue(dry[i] < oiled[i], "dry torque at " + Dynamometer.SPEEDS[i] + " RPM should be lower");
+	}
+
+	@Test
+	void frictionFallsAsTheFilmBuilds() {
+		EngineSimulation engine = engine(0);
+		engine.restore(0, EngineSimulation.rpmToOmega(100), 1);
+		double previous = Double.MAX_VALUE;
+		for (double film : new double[] {0, 0.25, 0.5, 0.75, 1}) {
+			engine.lubrication()
+				.setFilm(film);
+			assertTrue(engine.frictionTorque() < previous, "friction should fall as the film builds");
+			previous = engine.frictionTorque();
+		}
+	}
+
+	@Test
+	void filmBuildsWhileOilIsSuppliedAndThinsWhenItIsNot() {
+		Lubrication film = new Lubrication(0);
+		OilSupply plenty = mb -> mb;
+		for (int i = 0; i < 20 * 5; i++)
+			film.update(0.05, 0.05, 4, plenty);
+		assertEquals(1, film.film(), 1e-9, "should be fully filmed after a few seconds");
+
+		// 300 revolutions with no oil at all is most of the way to dry
+		for (int i = 0; i < 300; i++)
+			film.update(1, 0.05, 4, OilSupply.NONE);
+		assertTrue(film.film() < 0.5, "should be thinning, got " + film.film());
+		for (int i = 0; i < 300; i++)
+			film.update(1, 0.05, 4, OilSupply.NONE);
+		assertEquals(0, film.film(), 1e-9);
+	}
+
+	@Test
+	void filmHoldsAtWhatASupplyThatCannotKeepUpDelivers() {
+		Lubrication film = new Lubrication(1);
+		OilSupply half = mb -> mb / 2;
+		for (int i = 0; i < 20000; i++)
+			film.update(0.1, 0.05, 4, half);
+		assertEquals(0.5, film.film(), 1e-9);
+	}
+
+	@Test
+	void aStoppedEngineKeepsItsFilm() {
+		Lubrication film = new Lubrication(0.8);
+		film.update(0, 0.05, 4, OilSupply.NONE);
+		assertEquals(0.8, film.film(), 1e-9);
+	}
+
+	@Test
+	void pistonsAndRodsWithoutAHeadStillDragTheCrank() {
+		// A crank with nothing working on it coasts a long way. Pistons and rods moving in headless cylinders stop it.
+		CylinderSpec idle = CylinderSpec.CRUDE;
+		double[] coastTime = new double[2];
+		for (int i = 0; i < 2; i++) {
+			EngineSimulation engine = new EngineSimulation(List.of(), 3 * JOURNAL_INERTIA + i * idle.inertia(),
+				0.03 + i * idle.frictionStatic(), i * idle.frictionViscous());
+			engine.restore(0, EngineSimulation.rpmToOmega(16), 1);
+			while (!engine.isStopped() && coastTime[i] < 600) {
+				engine.tickFree(0, MAX_OMEGA);
+				coastTime[i] += EngineSimulation.TICK;
+			}
+		}
+		assertTrue(coastTime[1] < coastTime[0] / 2, "dragged " + coastTime[1] + " s vs bare " + coastTime[0] + " s");
+	}
+
 	@Test
 	void flywheelReducesRipple() {
 		EngineSimulation bare = engine(0, single(new Tank(1000)));
@@ -349,7 +484,7 @@ class EngineSimulationTest {
 	@Test
 	void dieselStartsWhereSeedOilWillNot() {
 		// A leaky low-compression cylinder: the charge gets hot enough for diesel but not for plant oil.
-		CylinderSpec lowCompression = new CylinderSpec(6, 4 / 14d, 20, 20, 0.5, 0.02, 0.06, 0.08, 0.01, 0.2);
+		CylinderSpec lowCompression = new CylinderSpec(7, 4 / 14d, 20, 20, 0.5, 0.02, 0.06, 0.08, 0.01, 0.2);
 		CylinderModel oil = new CylinderModel(lowCompression, CamProfile.BASIC, 0, new Camshaft(), 0);
 		oil.fuelSupply = new Tank(1000, FuelSpec.PLANT_OIL);
 		CylinderModel diesel = new CylinderModel(lowCompression, CamProfile.BASIC, 0, new Camshaft(), 0);

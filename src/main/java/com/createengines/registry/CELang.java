@@ -43,7 +43,10 @@ public final class CELang {
 		raw("goggles.engine", "Engine");
 		raw("goggles.state.stalled", "Stalled");
 		raw("goggles.state.cranking", "Cranking");
+		raw("goggles.state.coasting", "Coasting: turning, but nothing is firing");
 		raw("goggles.state.running", "Running");
+		raw("goggles.lubrication", "Lubrication: %1$s%%");
+		raw("goggles.lubrication.dry", "Dry parts drag: pipe Engine Oil into a cylinder head");
 		raw("goggles.state.overloaded", "Overloaded: load is more than its rated torque");
 		raw("goggles.state.incomplete", "Not fully loaded");
 		raw("goggles.speed", "Speed:");
@@ -102,6 +105,7 @@ public final class CELang {
 
 		raw("goggles.head", "Cylinder Head");
 		raw("goggles.head.no_injector", "Right-click with a Fuel Injector to install");
+		raw("goggles.head.oil", "Takes Engine Oil as well as fuel: it lubricates the whole engine");
 	}
 
 	private static void raw(String key, String value) {

@@ -64,9 +64,11 @@ public final class EnginePoses {
 		Vector3f bore = new Vector3f(state.getValue(CylinderBlock.FACING)
 			.step());
 		CrankshaftBlockEntity crank = cylinder.crankThrow();
+		// Only the connecting rod ties the piston to the crank: without one it sits where it was dropped
+		boolean connected = crank != null && state.getValue(CylinderBlock.HAS_ROD);
 
 		Vector3f pin;
-		if (crank != null) {
+		if (connected) {
 			Axis axis = crank.getBlockState()
 				.getValue(BlockStateProperties.AXIS);
 			pin = CrankGeometry.featureDirection(axis, crankAngle(crank, renderTime))
@@ -91,8 +93,7 @@ public final class EnginePoses {
 		Matrix4f rod = new Matrix4f().translate(pinPos)
 			.rotate(new Quaternionf().rotationTo(UP, rodDirection))
 			.translate(-0.5f, 0, -0.5f);
-		return new CylinderPose(piston, rod, state.getValue(CylinderBlock.HAS_PISTON),
-			state.getValue(CylinderBlock.HAS_ROD) && crank != null);
+		return new CylinderPose(piston, rod, state.getValue(CylinderBlock.HAS_PISTON), connected);
 	}
 
 	/** Valve stems on the face touching a cam lobe, pushed in by the same cam profile the simulation uses. */

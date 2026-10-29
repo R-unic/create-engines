@@ -52,6 +52,11 @@ public final class TestEngine {
 
 	/** Builds the engine with its corner at {@code origin}. Positions above are relative to that corner. */
 	public static void build(Level level, BlockPos origin, boolean fuelled) {
+		build(level, origin, fuelled, true);
+	}
+
+	/** As {@link #build(Level, BlockPos, boolean)}, optionally leaving the engine dry. */
+	public static void build(Level level, BlockPos origin, boolean fuelled, boolean oiled) {
 		BiConsumer<BlockPos, BlockState> set = (pos, state) -> level.setBlock(origin.offset(pos), state, Block.UPDATE_ALL);
 		set.accept(PRIMARY, axisX(CEBlocks.CRANKSHAFT.getDefaultState()));
 		set.accept(THROW, axisX(CEBlocks.CRANK_THROW.getDefaultState()));
@@ -95,6 +100,12 @@ public final class TestEngine {
 		CamshaftBlockEntity cam = (CamshaftBlockEntity) level.getBlockEntity(origin.offset(LOBE));
 		cam.lobeAngle.setValue((int) Math.round(lobe / CamshaftBlockEntity.LOBE_ANGLE_STEP));
 
+		if (oiled) {
+			CylinderHeadBlockEntity head = (CylinderHeadBlockEntity) level.getBlockEntity(origin.offset(HEAD));
+			head.oilTank()
+				.fill(new FluidStack(CEFluids.ENGINE_OIL.get()
+					.getSource(), 250), FluidAction.EXECUTE);
+		}
 		if (fuelled) {
 			CylinderHeadBlockEntity head = (CylinderHeadBlockEntity) level.getBlockEntity(origin.offset(HEAD));
 			head.tank()

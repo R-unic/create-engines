@@ -20,6 +20,7 @@ import com.createengines.engine.sim.Dynamometer;
 import com.createengines.engine.sim.EngineSimulation;
 import com.createengines.engine.sim.FuelSpec;
 import com.createengines.engine.sim.FuelSupply;
+import com.createengines.engine.sim.OilSupply;
 import com.createengines.engine.topology.CylinderFault;
 import com.createengines.engine.topology.EngineLayout;
 import com.createengines.engine.topology.EngineLayout.CamLine;
@@ -45,7 +46,7 @@ public final class EngineController {
 	 * What carries over when an engine is rebuilt: the crank's motion, and (if the engine was running in memory)
 	 * the controller it was running in, so each surviving cylinder keeps its gas.
 	 */
-	public record Motion(double angle, double omega, int direction, @Nullable EngineController source) {
+	public record Motion(double angle, double omega, int direction, double film, @Nullable EngineController source) {
 	}
 
 	private static final int PUBLISH_INTERVAL = 10;
@@ -64,6 +65,9 @@ public final class EngineController {
 	/** Parallel to {@link EngineLayout#camLines()}. */
 	private final List<Camshaft> camshafts;
 	private final double[] racks;
+	private final OilSupply oilSupply;
+	/** How many moving parts need oil: crank blocks, plus every piston and rod turning with the crank. */
+	private final double oilParts;
 
 	private int ticks;
 	private int ticksSincePublish = PUBLISH_INTERVAL;
@@ -87,16 +91,39 @@ public final class EngineController {
 		Arrays.fill(racks, 1);
 
 		List<FuelSupply> galleries = new ArrayList<>();
-		for (List<BlockPos> gallery : layout.galleries())
+		List<OilSupply> oilGalleries = new ArrayList<>();
+		for (List<BlockPos> gallery : layout.galleries()) {
 			galleries.add(new GalleryFuelSupply(level, gallery));
+			oilGalleries.add(new GalleryOilSupply(level, gallery));
+		}
+		oilSupply = mb -> {
+			double delivered = 0;
+			for (OilSupply gallery : oilGalleries)
+				if (delivered < mb)
+					delivered += gallery.draw(mb - delivered);
+			return delivered;
+		};
 
 		models = new ArrayList<>();
 		List<CylinderModel> working = new ArrayList<>();
+		// A piston and rod that turn with the crank but aren't part of a working cylinder (no head, say) still have
+		// mass and rub against their bore, so the crank can't spin freely just because nothing is burning
+		double idleInertia = 0;
+		double idleStatic = 0;
+		double idleViscous = 0;
+		double parts = layout.segments()
+			.size();
 		for (Cylinder cylinder : layout.cylinders()) {
 			if (CylinderFault.disables(cylinder.faults())) {
 				models.add(null);
+				double weight = CylinderFault.dragOnCrank(cylinder.faults());
+				idleInertia += weight * CylinderSpec.CRUDE.inertia();
+				idleStatic += weight * CylinderSpec.CRUDE.frictionStatic();
+				idleViscous += weight * CylinderSpec.CRUDE.frictionViscous();
+				parts += weight;
 				continue;
 			}
+			parts++;
 			Camshaft camshaft = cylinder.camLine() >= 0 ? camshafts.get(cylinder.camLine()) : null;
 			CylinderModel model = new CylinderModel(CylinderSpec.CRUDE, CamProfile.BASIC, cylinder.tdcAngle(), camshaft,
 				cylinder.lobeAngle());
@@ -108,12 +135,17 @@ public final class EngineController {
 			working.add(model);
 		}
 
-		double inertia = layout.flywheels() * CEConfig.FLYWHEEL_INERTIA.get();
+		oilParts = parts;
+
+		double inertia = idleInertia + layout.flywheels() * CEConfig.FLYWHEEL_INERTIA.get();
 		for (EngineLayout.Segment segment : layout.segments())
 			inertia += segment.isThrow() ? CEConfig.THROW_INERTIA.get() : CEConfig.JOURNAL_INERTIA.get();
-		double friction = layout.segments()
+		double friction = idleStatic + layout.segments()
 			.size() * CEConfig.BEARING_FRICTION.get();
-		sim = new EngineSimulation(working, inertia, friction);
+		sim = new EngineSimulation(working, inertia, friction, idleViscous);
+		// A new engine starts dry, and has to be oiled
+		sim.lubrication()
+			.setFilm(motion == null ? 0 : motion.film());
 		if (motion != null)
 			sim.restore(motion.angle(), motion.omega(), motion.direction());
 		for (CylinderModel model : working)
@@ -154,7 +186,8 @@ public final class EngineController {
 	}
 
 	public Motion motion() {
-		return new Motion(sim.angle(), sim.omega(), sim.direction(), this);
+		return new Motion(sim.angle(), sim.omega(), sim.direction(), sim.lubrication()
+			.film(), this);
 	}
 
 	public void tick() {
@@ -205,6 +238,8 @@ public final class EngineController {
 		smoothedLoad += (load - smoothedLoad) * 0.1;
 		double maxOmega = EngineSimulation.rpmToOmega(AllConfigs.server().kinetics.maxRotationSpeed.get());
 		sim.tickCranked(load, maxOmega, floor, floorDirection);
+		sim.lubrication()
+			.update(sim.revolutionsLastTick(), EngineSimulation.TICK, oilParts, oilSupply);
 		cranking = floor > 0 && !sim.isSustaining();
 
 		// The starter feels the effort of turning the engine as stress on its own input shaft
@@ -275,10 +310,12 @@ public final class EngineController {
 
 	/**
 	 * Re-measures the torque curve when something it depends on has changed: which cylinders have fuel and of what
-	 * kind, and which cams are geared 1:2.
+	 * kind, which cams are geared 1:2, and how well oiled the engine is.
 	 */
 	private void updateRating() {
 		List<Object> key = new ArrayList<>();
+		key.add((int) Math.round(sim.lubrication()
+			.film() * 5));
 		for (CylinderModel model : sim.cylinders()) {
 			key.add(model.fuelSupply.fuel());
 			Camshaft camshaft = model.camshaft();
@@ -314,7 +351,11 @@ public final class EngineController {
 			return EngineState.CRANKING;
 		if (primary.isOverStressed())
 			return EngineState.OVERLOADED;
-		return EngineState.RUNNING;
+		for (CylinderModel model : models)
+			if (model != null && model.lastCycle().result.fired())
+				return EngineState.RUNNING;
+		// Still turning, but nothing is burning fuel: it will run down
+		return EngineState.COASTING;
 	}
 
 	private EngineSummary summary(EngineState state, double torqueScale) {
@@ -337,7 +378,9 @@ public final class EngineController {
 			angles[i] = firingAngles.get(i);
 		return new EngineSummary(state, (float) sim.rpm(), primary.publishedCapacity(),
 			(float) (smoothedLoad * torqueScale), (float) (sim.fuelRate() * 60), (float) sim.ripple(), firing,
-			working, (float) sim.inertia(), activeStarter != null, angles);
+			working, (float) sim.inertia(), (float) sim.lubrication()
+				.film(),
+			activeStarter != null, angles);
 	}
 
 	private void syncDiagnostics(Level level, double torqueScale) {

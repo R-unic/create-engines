@@ -38,7 +38,8 @@ public record CylinderSpec(double compressionRatio, double rodRatio, double inta
 		return clearanceVolume() + stroke;
 	}
 
-	public double frictionAt(double omega) {
-		return frictionStatic + frictionViscous * omega;
+	/** Friction torque of one cylinder turning at {@code omega}, with its parts oiled to {@code film}. */
+	public double frictionAt(double omega, double film) {
+		return frictionStatic * Lubrication.staticFactor(film) + frictionViscous * omega * Lubrication.viscousFactor(film);
 	}
 }

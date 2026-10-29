@@ -23,6 +23,8 @@ public final class EngineSimulation {
 	private final List<Camshaft> camshafts;
 	private final double baseInertia;
 	private final double baseFriction;
+	private final double baseViscousFriction;
+	private final Lubrication lubrication = new Lubrication(1);
 
 	private double inertia;
 	/** Rotor angle in [0, 720), always increasing in the direction of travel. */
@@ -49,11 +51,20 @@ public final class EngineSimulation {
 	private double fuelRate;
 	private boolean hasCompletedCycle;
 
-	/**
-	 * @param baseInertia  inertia of crank segments, flywheels and anything else rigidly on the crank
-	 * @param baseFriction speed-independent friction of the bearings and anything else not a cylinder
-	 */
 	public EngineSimulation(List<CylinderModel> cylinders, double baseInertia, double baseFriction) {
+		this(cylinders, baseInertia, baseFriction, 0);
+	}
+
+	/**
+	 * The crank starts fully oiled; see {@link #lubrication()}.
+	 *
+	 * @param baseInertia         inertia of crank segments, flywheels and anything else rigidly on the crank
+	 * @param baseFriction        speed-independent friction of the bearings and anything else not a cylinder
+	 * @param baseViscousFriction friction per rad/s of anything else not a cylinder, e.g. pistons and rods in a
+	 *                            cylinder that has no head to make it work
+	 */
+	public EngineSimulation(List<CylinderModel> cylinders, double baseInertia, double baseFriction,
+							double baseViscousFriction) {
 		this.cylinders = List.copyOf(cylinders);
 		this.camshafts = cylinders.stream()
 			.map(CylinderModel::camshaft)
@@ -62,6 +73,7 @@ public final class EngineSimulation {
 			.toList();
 		this.baseInertia = baseInertia;
 		this.baseFriction = baseFriction;
+		this.baseViscousFriction = baseViscousFriction;
 		this.inertia = baseInertia + cylinders.stream()
 			.mapToDouble(c -> c.spec.inertia())
 			.sum();
@@ -205,10 +217,22 @@ public final class EngineSimulation {
 	}
 
 	public double frictionTorque() {
-		double friction = baseFriction;
+		double film = lubrication.film();
+		double friction = baseFriction * Lubrication.staticFactor(film)
+			+ baseViscousFriction * omega * Lubrication.viscousFactor(film);
 		for (CylinderModel cylinder : cylinders)
-			friction += cylinder.spec.frictionAt(omega);
+			friction += cylinder.spec.frictionAt(omega, film);
 		return friction;
+	}
+
+	/** How well oiled the moving parts are; the owner keeps it up to date from the oil supply. */
+	public Lubrication lubrication() {
+		return lubrication;
+	}
+
+	/** Crank revolutions turned during the last tick. */
+	public double revolutionsLastTick() {
+		return crankingAngle / (2 * Math.PI);
 	}
 
 	/**
@@ -293,6 +317,10 @@ public final class EngineSimulation {
 
 	public double baseFriction() {
 		return baseFriction;
+	}
+
+	public double baseViscousFriction() {
+		return baseViscousFriction;
 	}
 
 	public double indicatedTorque() {
