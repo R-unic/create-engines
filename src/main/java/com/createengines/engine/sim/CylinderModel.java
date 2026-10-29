@@ -26,6 +26,9 @@ public final class CylinderModel {
 	/** Seconds for the gas in the exhaust port to leave and be replaced by ambient air. */
 	private static final double EXHAUST_CLEARING = 1;
 	private static final double FUEL_EPSILON = 1e-6;
+	/** Fresh charge below which a cylinder counts as having no air at all, rather than too little for the shot. */
+	private static final double MIN_FRESH_AIR = 0.05;
+
 	public final CylinderSpec spec;
 	private final CamProfile profile;
 	/** Geometric crank angle (degrees) at which this piston is at top dead centre. */
@@ -268,11 +271,20 @@ public final class CylinderModel {
 		}
 	}
 
+	/**
+	 * The pump meters fuel to the air the cylinder actually drew in, like a diesel's smoke limiter. Breathing falls
+	 * with speed (valve flow is per second, not per degree), so a fixed shot would go unburned at high RPM, wasting fuel
+	 * and smoking. A cylinder with no air at all is left alone, so it still reads as starved rather than as unfuelled.
+	 */
 	private void inject() {
 		FuelSpec fuel = fuelSupply.fuel();
-		double delivered = fuel == null ? 0 : fuelSupply.draw(spec.maxFuelPerShot() * rack);
+		double air = fresh * moles;
+		double shot = spec.maxFuelPerShot() * rack;
+		if (fuel != null && air >= MIN_FRESH_AIR)
+			shot = Math.min(shot, air / fuel.airPerMb());
+		double delivered = fuel == null ? 0 : fuelSupply.draw(shot);
 		current.fuelInjected += delivered;
-		current.freshAirAtInjection = fresh * moles;
+		current.freshAirAtInjection = air;
 		current.compressionTemp = Math.max(current.compressionTemp, temperature);
 		if (delivered <= 0)
 			return;
@@ -306,7 +318,7 @@ public final class CylinderModel {
 			current.result = CycleResult.NO_FUEL;
 		else if (current.fuelBurned > 0)
 			current.result = CycleResult.FIRED;
-		else if (current.freshAirAtInjection < 0.05)
+		else if (current.freshAirAtInjection < MIN_FRESH_AIR)
 			current.result = CycleResult.NO_AIR;
 		else
 			current.result = CycleResult.NO_IGNITION;
