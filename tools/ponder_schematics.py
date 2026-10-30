@@ -258,6 +258,25 @@ write_schematic("turbocharger", (7, 6, 7), [
     (1, 2, 3, "minecraft:redstone_block", {}),
 ])
 
+write_schematic("supercharger", (7, 6, 7), [
+    (1, 1, 3, ce("crankshaft"), axis("x")),
+    (2, 1, 3, ce("crank_throw"), axis("x")),
+    (3, 1, 3, ce("crankshaft"), axis("x")),
+    (2, 2, 3, ce("cylinder"), cylinder("up")),
+    (2, 3, 3, ce("cylinder_head"), head("up")),
+    (1, 3, 3, ce("exhaust_outlet"), facing("west")),
+    # The blower is bolted to the head's north face, with its shaft along X, and an intercooler and the air intake
+    # in line beyond it
+    (2, 3, 2, ce("supercharger"), axis("x")),
+    (2, 3, 1, ce("intercooler"), axis("z")),
+    (2, 3, 0, ce("air_intake"), facing("north")),
+    (3, 3, 2, "create:shaft", {"axis": "x", "waterlogged": "false"}),
+    (4, 3, 2, "create:creative_motor", facing("west")),
+    (2, 4, 3, ce("cam_lobe"), axis("x")),
+    (1, 4, 3, ce("camshaft"), axis("x")),
+    (3, 4, 3, ce("camshaft"), axis("x")),
+])
+
 write_schematic("transmission", (8, 4, 5), [
     (0, 1, 2, "create:creative_motor", facing("east")),
     (1, 1, 2, "create:shaft", {"axis": "x", "waterlogged": "false"}),

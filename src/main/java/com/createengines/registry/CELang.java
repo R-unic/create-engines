@@ -102,6 +102,7 @@ public final class CELang {
 		raw("goggles.turbo", "Turbocharger");
 		raw("goggles.turbo.no_engine", "Not on an engine's intake or exhaust");
 		raw("goggles.turbo.boost", "Boost: +%1$s bar");
+		raw("goggles.turbo.charge", "Intake boost, all stages: +%1$s bar");
 		raw("goggles.turbo.spool", "Wheel speed: %1$s%%");
 		raw("goggles.turbo.wastegate", "Wastegate venting %1$s%% of the exhaust");
 		raw("goggles.turbo.dumping", "Redstone is dumping the boost (wastegate %1$s%%)");
@@ -110,7 +111,18 @@ public final class CELang {
 		raw("goggles.turbo.back_pressure", "Exhaust back-pressure: +%1$s bar");
 		raw("goggles.turbo.limit", "Boost limit: %1$s bar");
 		raw("goggles.turbo.hint",
-			"Driven by the heat of the exhaust, so it lags and fades with the fuel. Boost packs in more air, which needs more fuel metering to use, and heats the charge. Redstone opens the wastegate fully");
+			"Driven by the heat of the exhaust, so it lags and fades with the fuel. Boost packs in more air, which needs more fuel metering to use, and heats the charge. Redstone opens the wastegate fully. Turbos on one intake run compound, their pressures multiplying, while turbos on one exhaust run share its heat and each add back-pressure");
+
+		raw("goggles.supercharger", "Supercharger");
+		raw("goggles.supercharger.no_engine", "Not on an engine's intake: nothing is boosted");
+		raw("goggles.supercharger.boost", "Boost: +%1$s bar");
+		raw("goggles.supercharger.speed", "Shaft speed: %1$s RPM");
+		raw("goggles.supercharger.bypass", "Bypass valve bleeding %1$s%% of the boost");
+		raw("goggles.supercharger.dumping", "Redstone is dumping the boost (bypass %1$s%%)");
+		raw("goggles.supercharger.fed", "Feeding %1$s cylinders");
+		raw("goggles.supercharger.limit", "Boost limit: %1$s bar");
+		raw("goggles.supercharger.hint",
+			"Boost goes with the square of the shaft speed, at once and with no need for exhaust: 0.9 bar at 128 RPM. The work of turning it is stress on the shaft, so gear it for the boost you want. It heats the air more than a turbo does, so an Intercooler helps. Redstone opens the bypass fully");
 
 		raw("goggles.transmission", "Transmission");
 		raw("goggles.transmission.neutral", "Neutral: no drive reaches the output");

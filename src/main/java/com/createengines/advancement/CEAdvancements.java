@@ -147,6 +147,21 @@ public final class CEAdvancements {
 			"Big Boost", "Spool a turbocharger up to a full bar of boost.");
 		on("blow_off", "boost", () -> CEBlocks.TURBOCHARGER.get(), AdvancementType.TASK, Milestone.BLOW_OFF,
 			"Psssht", "Dump a turbocharger's boost with a redstone signal.");
+		has("supercharger", "turbocharger", () -> CEBlocks.SUPERCHARGER.get(), "Blown Away",
+			"Craft a Supercharger. Drive its shaft and put it in the intake run for boost with no lag.");
+		on("supercharged", "supercharger", () -> CEBlocks.SUPERCHARGER.get(), AdvancementType.TASK,
+			Milestone.SUPERCHARGED, "Whine On", "Run a supercharger at 0.3 bar of boost on a running engine.");
+		on("compound_boost", "boost", () -> CEBlocks.TURBOCHARGER.get(), AdvancementType.GOAL,
+			Milestone.COMPOUND_BOOST, "Compound Interest",
+			"Run two turbochargers on the same cylinders, each making at least 0.2 bar of boost, so their pressures multiply.");
+		on("twincharged", "supercharged", () -> CEBlocks.SUPERCHARGER.get(), AdvancementType.CHALLENGE,
+			Milestone.TWINCHARGED, "Twincharged",
+			"Run a turbocharger and a supercharger on the same cylinders, each making at least 0.2 bar.");
+		has("intercooler", "turbocharger", () -> CEBlocks.INTERCOOLER.get(), "Chill Out",
+			"Craft an Intercooler to take the heat out of air a compressor has squeezed.");
+		on("cooled_charge", "intercooler", () -> CEBlocks.INTERCOOLER.get(), AdvancementType.TASK,
+			Milestone.COOLED_CHARGE, "Cool Customer",
+			"Run a firing engine at 0.3 bar of boost with an intercooler in its intake.");
 
 		// Engine management
 		has("maf_sensor", "throttle", () -> CEBlocks.MAF_SENSOR.get(), "Weighing the Air",

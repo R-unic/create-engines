@@ -1,0 +1,33 @@
+{
+  "parent": "create_engines:turbocharger",
+  "criteria": {
+    "supercharger": {
+      "conditions": {
+        "items": [
+          {
+            "items": "create_engines:supercharger"
+          }
+        ]
+      },
+      "trigger": "minecraft:inventory_changed"
+    }
+  },
+  "display": {
+    "description": {
+      "translate": "advancement.create_engines.supercharger.desc"
+    },
+    "icon": {
+      "count": 1,
+      "id": "create_engines:supercharger"
+    },
+    "title": {
+      "translate": "advancement.create_engines.supercharger"
+    }
+  },
+  "requirements": [
+    [
+      "supercharger"
+    ]
+  ],
+  "sends_telemetry_event": true
+}

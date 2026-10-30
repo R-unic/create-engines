@@ -3,6 +3,7 @@ package com.createengines.engine;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.EnumMap;
+import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -25,6 +26,7 @@ import com.createengines.content.governor.GovernorBlockEntity;
 import com.createengines.content.limiter.RevLimiterBlockEntity;
 import com.createengines.content.starter.StarterBlockEntity;
 import com.createengines.content.sump.SumpBlockEntity;
+import com.createengines.content.supercharger.SuperchargerBlockEntity;
 import com.createengines.content.turbo.TurbochargerBlockEntity;
 import com.createengines.engine.sim.CamProfile;
 import com.createengines.engine.sim.Camshaft;
@@ -42,6 +44,8 @@ import com.createengines.engine.sim.Mixture;
 import com.createengines.engine.sim.RevLimiter;
 import com.createengines.engine.sim.Sensors;
 import com.createengines.engine.sim.Throttle;
+import com.createengines.engine.sim.Intercooler;
+import com.createengines.engine.sim.Supercharger;
 import com.createengines.engine.sim.Turbocharger;
 import com.createengines.engine.sim.OilSupply;
 import com.createengines.engine.topology.CylinderFault;
@@ -78,6 +82,9 @@ public final class EngineController {
 	private static final int PUBLISH_INTERVAL = 10;
 	private static final int CAPACITY_INTERVAL = 5;
 	private static final int SYNC_INTERVAL = 10;
+	/** Crank speed below which a blower's gearing to it is not worked out. */
+	private static final double MIN_RATIO_RPM = 8;
+	private static final double MAX_DRIVE_RATIO = 16;
 	private static final int RACK_INTERVAL = 10;
 	private static final int RATING_INTERVAL = 20;
 	/** Rated torque is held back a little from the dyno peak, so a load Create accepts never quite stalls the engine. */
@@ -101,6 +108,8 @@ public final class EngineController {
 	private final double[] portOpening;
 	/** Parallel to {@link EngineLayout#turbos()}. */
 	private final List<Turbocharger> turbos = new ArrayList<>();
+	/** Parallel to {@link EngineLayout#superchargers()}. */
+	private final List<Supercharger> blowers = new ArrayList<>();
 	private final OilSupply oilSupply;
 	/** How many moving parts need oil: crank blocks, plus every piston and rod turning with the crank. */
 	private final double oilParts;
@@ -213,6 +222,13 @@ public final class EngineController {
 			turbos.add(unit);
 			sim.addTurbo(unit);
 		}
+		for (EngineLayout.Inline placed : layout.superchargers()) {
+			Supercharger blower = new Supercharger(breathingOn(placed.intake()));
+			blowers.add(blower);
+			sim.addSupercharger(blower);
+		}
+		for (EngineLayout.Inline placed : layout.intercoolers())
+			sim.addIntercooler(new Intercooler(breathingOn(placed.intake())));
 		// A new engine starts dry, and has to be oiled
 		sim.lubrication()
 			.setFilm(motion == null ? 0 : motion.film());
@@ -224,6 +240,17 @@ public final class EngineController {
 			model.resetGas(model.pistonAngle(sim.angle(), sim.direction()));
 		if (motion != null && motion.source() != null)
 			carryCylinders(motion.source());
+	}
+
+	/** The working cylinders that draw their air from intake network {@code port}. */
+	private List<CylinderModel> breathingOn(int port) {
+		List<CylinderModel> found = new ArrayList<>();
+		for (int i = 0; i < models.size(); i++)
+			if (models.get(i) != null && layout.cylinders()
+				.get(i)
+				.intake() == port)
+				found.add(models.get(i));
+		return found;
 	}
 
 	private void carryCylinders(EngineController old) {
@@ -296,6 +323,7 @@ public final class EngineController {
 		measureCamshafts(level, crankSpeed);
 		readThrottles(level);
 		readTurbos(level);
+		readSuperchargers(level);
 		readLimiters(level);
 		readGovernors(level);
 		if (ticks % RACK_INTERVAL == 1)
@@ -410,6 +438,26 @@ public final class EngineController {
 				turbo.limit = be.boostLimit();
 				turbo.dump = be.dumping();
 			}
+		}
+	}
+
+	/**
+	 * Each blower turns at the speed of its shaft, whatever is turning it. The ratio of that to the crank's speed is
+	 * kept for the dynamometer, which has no shaft to read and runs it with the crank at the same ratio.
+	 */
+	private void readSuperchargers(Level level) {
+		double crankRpm = sim.rpm();
+		for (int i = 0; i < blowers.size(); i++) {
+			if (!(level.getBlockEntity(layout.superchargers()
+				.get(i)
+				.pos()) instanceof SuperchargerBlockEntity be))
+				continue;
+			Supercharger blower = blowers.get(i);
+			blower.limit = be.boostLimit();
+			blower.dump = be.dumping();
+			blower.rpm = be.shaftRpm();
+			if (crankRpm >= MIN_RATIO_RPM)
+				blower.driveRatio = Math.min(MAX_DRIVE_RATIO, blower.rpm / crankRpm);
 		}
 	}
 
@@ -602,6 +650,12 @@ public final class EngineController {
 		}
 		for (Turbocharger turbo : sim.turbos())
 			key.add((int) Math.round(turbo.limit * 20));
+		for (Supercharger blower : sim.superchargers()) {
+			key.add((int) Math.round(blower.limit * 20));
+			key.add((int) Math.round(blower.driveRatio * 4));
+		}
+		key.add(sim.intercoolers()
+			.size());
 		key.add(sim.direction());
 		if (key.equals(ratingKey))
 			return;
@@ -670,6 +724,7 @@ public final class EngineController {
 		primary.updateSummary(summary(state, torqueScale));
 		reportMilestones(level, state);
 		syncTurbos(level);
+		syncSuperchargers(level);
 
 		for (EngineLayout.Segment segment : layout.segments())
 			if (level.getBlockEntity(segment.pos()) instanceof CrankshaftBlockEntity crank)
@@ -734,6 +789,17 @@ public final class EngineController {
 		}
 	}
 
+	private void syncSuperchargers(Level level) {
+		for (int i = 0; i < blowers.size(); i++) {
+			Supercharger blower = blowers.get(i);
+			if (level.getBlockEntity(layout.superchargers()
+				.get(i)
+				.pos()) instanceof SuperchargerBlockEntity be)
+				be.updateBlower(layout.primary(), blower.compressor()
+					.size(), (float) blower.boost(), (float) blower.bypass());
+		}
+	}
+
 	private void syncTurbos(Level level) {
 		for (int i = 0; i < turbos.size(); i++) {
 			Turbo placed = layout.turbos()
@@ -741,11 +807,19 @@ public final class EngineController {
 			Turbocharger turbo = turbos.get(i);
 			if (level.getBlockEntity(placed.pos()) instanceof TurbochargerBlockEntity be)
 				be.updateStatus(new TurboStatus((float) turbo.spool(), (float) turbo.boost(), (float) turbo.wastegate(),
-					(float) turbo.backPressure(), !turbo.compressor()
+					(float) turbo.backPressure(), (float) charge(turbo), !turbo.compressor()
 						.isEmpty(),
 					!turbo.turbine()
 						.isEmpty()));
 		}
+	}
+
+	/** The boost on the air a turbo's compressor feeds, all stages and coolers counted. */
+	private static double charge(Turbocharger turbo) {
+		double charge = 0;
+		for (CylinderModel cylinder : turbo.compressor())
+			charge = Math.max(charge, cylinder.intakePressure - 1);
+		return charge;
 	}
 
 	private static float[] toArray(List<Float> values) {
@@ -799,6 +873,7 @@ public final class EngineController {
 			dumping |= turbo.dump;
 		}
 		float rpm = (float) sim.rpm();
+		reportInduction(level, state);
 		EngineMilestones.Snapshot snapshot = new EngineMilestones.Snapshot(state, previousState, rpm,
 			activeStarter != null, firing, primary.publishedCapacity() * rpm, sparkFiring, (float) sim.lubrication()
 				.effective(),
@@ -810,6 +885,48 @@ public final class EngineController {
 			layout.lines() > 1);
 		previousState = state;
 		for (Milestone milestone : EngineMilestones.reached(snapshot)) {
+			Integer last = milestoneTicks.get(milestone);
+			if (last != null && ticks - last < MILESTONE_COOLDOWN)
+				continue;
+			milestoneTicks.put(milestone, ticks);
+			Achievements.award(level, layout.members(), milestone);
+		}
+	}
+
+	/** Credits the operator with boost from superchargers, stacked stages and intercoolers. */
+	private void reportInduction(Level level, EngineState state) {
+		Map<CylinderModel, int[]> stages = new IdentityHashMap<>();
+		for (Turbocharger turbo : turbos)
+			if (turbo.boost() >= EngineMilestones.STAGE_BOOST)
+				for (CylinderModel cylinder : turbo.compressor())
+					stages.computeIfAbsent(cylinder, $ -> new int[2])[0]++;
+		float blowerBoost = 0;
+		for (Supercharger blower : blowers) {
+			if (blower.boost() >= EngineMilestones.STAGE_BOOST)
+				for (CylinderModel cylinder : blower.compressor())
+					stages.computeIfAbsent(cylinder, $ -> new int[2])[1]++;
+			if (blower.compressor()
+				.stream()
+				.anyMatch(cylinder -> cylinder.lastCycle().result.fired()))
+				blowerBoost = Math.max(blowerBoost, (float) blower.boost());
+		}
+		int turboStages = 0;
+		int blowerStages = 0;
+		for (int[] count : stages.values()) {
+			turboStages = Math.max(turboStages, count[0]);
+			blowerStages = Math.max(blowerStages, count[1]);
+			if (count[0] >= 1 && count[1] >= 1) {
+				turboStages = Math.max(turboStages, 1);
+				blowerStages = Math.max(blowerStages, 1);
+			}
+		}
+		float cooled = 0;
+		for (Intercooler cooler : sim.intercoolers())
+			for (CylinderModel cylinder : cooler.charge())
+				if (cylinder.lastCycle().result.fired())
+					cooled = Math.max(cooled, (float) (cylinder.intakePressure - 1));
+		for (Milestone milestone : EngineMilestones.reachedInduction(new EngineMilestones.Induction(
+			state == EngineState.RUNNING, blowerBoost, turboStages, blowerStages, cooled))) {
 			Integer last = milestoneTicks.get(milestone);
 			if (last != null && ticks - last < MILESTONE_COOLDOWN)
 				continue;

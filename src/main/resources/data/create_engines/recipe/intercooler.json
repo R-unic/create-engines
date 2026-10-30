@@ -1,0 +1,24 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "key": {
+    "B": {
+      "item": "create:brass_ingot"
+    },
+    "E": {
+      "item": "create:copper_sheet"
+    },
+    "I": {
+      "item": "minecraft:iron_ingot"
+    }
+  },
+  "pattern": [
+    "EIE",
+    "IBI",
+    "EIE"
+  ],
+  "result": {
+    "count": 1,
+    "id": "create_engines:intercooler"
+  }
+}

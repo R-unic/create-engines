@@ -67,6 +67,11 @@ public final class Dynamometer {
 		// Turbos start at rest and build the boost this speed gives; the live engine's boost and dump don't carry over
 		for (Turbocharger turbo : engine.turbos())
 			dyno.addTurbo(turbo.copyOnto(copyOf));
+		// A blower turns with the crank at the ratio it was last seen driven at, whatever is really turning it now
+		for (Supercharger blower : engine.superchargers())
+			dyno.addSupercharger(blower.copyOnto(copyOf));
+		for (Intercooler cooler : engine.intercoolers())
+			dyno.addIntercooler(cooler.copyOnto(copyOf));
 		dyno.lubrication()
 			.setFilm(engine.lubrication()
 				.film());

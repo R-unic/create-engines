@@ -16,6 +16,11 @@ import java.util.Map;
  * cylinders push against a back-pressure that rises with the boost. A wastegate dumps exhaust round the turbine to hold
  * the boost at its limit, and can be forced open to blow all the boost off.
  * <p>
+ * Turbos on the same intake run compound: the air passes through each compressor in turn, so their pressure ratios
+ * multiply and their temperature rises multiply, and every turbine on an exhaust run adds its own back-pressure. Turbos
+ * sharing an exhaust run split its heat between them, so a second one spools both slower; what it buys is a higher
+ * boost than one turbo can make, at the price of back-pressure and lag.
+ * <p>
  * Pure Java, like the rest of this package.
  */
 public final class Turbocharger {
@@ -127,7 +132,10 @@ public final class Turbocharger {
 		bypass = other.bypass;
 	}
 
-	/** Spools for one tick on the heat the cylinders sent out during it, then sets the pressures they breathe against. */
+	/**
+	 * Spools for one tick on the heat the cylinders sent out during it. The engine then puts this turbo's pressures
+	 * together with every other stage's, so that two turbos on one run add up instead of overwriting each other.
+	 */
 	void tick(double dt) {
 		double power = heatRate(dt);
 		bypass = dump ? 1 : Math.max(0, Math.min(1, (boost() - limit) / WASTEGATE_BAND));
@@ -135,14 +143,5 @@ public final class Turbocharger {
 		double drain = COMPRESSOR_POWER * spool * spool * spool + BEARING_DRAG * spool;
 		energy = Math.max(0, energy + (power * (1 - bypass) - drain) * dt);
 
-		double pressure = 1 + boost();
-		double temperature = chargeTemperature();
-		double back = backPressure();
-		for (CylinderModel cylinder : compressor) {
-			cylinder.intakePressure = pressure;
-			cylinder.intakeTemperature = temperature;
-		}
-		for (CylinderModel cylinder : turbine)
-			cylinder.exhaustPressure = back;
 	}
 }

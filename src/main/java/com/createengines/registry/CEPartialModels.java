@@ -14,6 +14,7 @@ public final class CEPartialModels {
 	public static final PartialModel CONNECTING_ROD = block("cylinder/rod");
 	public static final PartialModel VALVE_STEM = block("cylinder_head/valve");
 	public static final PartialModel TURBO_WHEEL = block("turbocharger/wheel");
+	public static final PartialModel SUPERCHARGER_ROTOR = block("supercharger/rotor");
 
 	private CEPartialModels() {
 	}

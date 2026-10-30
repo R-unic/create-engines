@@ -17,9 +17,11 @@ import com.createengines.content.crankshaft.CrankshaftBlock;
 import com.createengines.content.cylinder.CylinderBlock;
 import com.createengines.content.governor.GovernorBlock;
 import com.createengines.content.head.CylinderHeadBlock;
+import com.createengines.content.intercooler.IntercoolerBlock;
 import com.createengines.content.limiter.RevLimiterBlock;
 import com.createengines.content.starter.StarterBlock;
 import com.createengines.content.sump.SumpBlock;
+import com.createengines.content.supercharger.SuperchargerBlock;
 import com.createengines.content.transmission.TransmissionBlock;
 import com.createengines.content.turbo.TurbochargerBlock;
 import com.simibubi.create.foundation.data.AssetLookup;
@@ -294,6 +296,28 @@ public final class CEBlocks {
 			.transform(TagGen.pickaxeOnly())
 			.blockstate((c, p) -> BlockStateGen.directionalBlockIgnoresWaterlogged(c, p,
 				s -> AssetLookup.partialBaseModel(c, p)))
+			.item()
+			.transform(ModelGen.customItemModel())
+			.register();
+
+	public static final BlockEntry<SuperchargerBlock> SUPERCHARGER =
+		REGISTRATE.block("supercharger", SuperchargerBlock::new)
+			.initialProperties(SharedProperties::softMetal)
+			.properties(p -> p.noOcclusion()
+				.mapColor(MapColor.METAL))
+			.transform(TagGen.pickaxeOnly())
+			.blockstate((c, p) -> BlockStateGen.axisBlock(c, p, s -> AssetLookup.partialBaseModel(c, p)))
+			.item()
+			.transform(ModelGen.customItemModel())
+			.register();
+
+	public static final BlockEntry<IntercoolerBlock> INTERCOOLER =
+		REGISTRATE.block("intercooler", IntercoolerBlock::new)
+			.initialProperties(SharedProperties::copperMetal)
+			.properties(p -> p.noOcclusion()
+				.mapColor(MapColor.COLOR_ORANGE))
+			.transform(TagGen.pickaxeOnly())
+			.blockstate((c, p) -> BlockStateGen.axisBlock(c, p, s -> AssetLookup.partialBaseModel(c, p)))
 			.item()
 			.transform(ModelGen.customItemModel())
 			.register();

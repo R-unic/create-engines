@@ -23,6 +23,9 @@ import com.createengines.content.sump.SumpBlockEntity;
 import com.createengines.content.transmission.Gears;
 import com.createengines.content.transmission.TransmissionBlockEntity;
 import com.createengines.content.tool.TimingToolItem;
+import com.createengines.content.intercooler.IntercoolerBlock;
+import com.createengines.content.supercharger.SuperchargerBlock;
+import com.createengines.content.supercharger.SuperchargerBlockEntity;
 import com.createengines.content.turbo.TurbochargerBlock;
 import com.createengines.content.turbo.TurbochargerBlockEntity;
 import com.createengines.engine.TurboStatus;
@@ -981,6 +984,125 @@ public class EngineGameTests {
 		helper.setBlock(headPipe, placePipe(helper, CEBlocks.INTAKE_MANIFOLD.get(), headPipe));
 		BlockPos turboPipe = turbo.north();
 		helper.setBlock(turboPipe, placePipe(helper, CEBlocks.INTAKE_MANIFOLD.get(), turboPipe));
+	}
+
+	/**
+	 * A second turbo whose turbine sits on the first's south side, so both are on the one exhaust run, and whose
+	 * compressor joins the first's by intake pipes above them, so both are on the one intake run.
+	 */
+	private static void buildTwinTurbo(GameTestHelper helper) {
+		BlockPos first = EXHAUST;
+		BlockPos second = first.south();
+		helper.setBlock(first, CEBlocks.TURBOCHARGER.getDefaultState()
+			.setValue(TurbochargerBlock.FACING, Direction.WEST));
+		helper.setBlock(second, CEBlocks.TURBOCHARGER.getDefaultState()
+			.setValue(TurbochargerBlock.FACING, Direction.SOUTH));
+		helper.setBlock(second.south(), CEBlocks.AIR_INTAKE.getDefaultState()
+			.setValue(PortOpeningBlock.FACING, Direction.SOUTH));
+		helper.setBlock(second.below(), CEBlocks.EXHAUST_OUTLET.getDefaultState()
+			.setValue(PortOpeningBlock.FACING, Direction.DOWN));
+		BlockPos headPipe = TestEngine.AIR_INTAKE;
+		helper.setBlock(headPipe, Blocks.AIR);
+		for (BlockPos pipe : new BlockPos[] {headPipe, first.north(), second.above(), first.above()})
+			helper.setBlock(pipe, placePipe(helper, CEBlocks.INTAKE_MANIFOLD.get(), pipe));
+	}
+
+	/**
+	 * Two turbochargers on the one exhaust run and the one intake run. Both are spun by the shared exhaust, and the
+	 * cylinder breathes through both compressors in turn, so it is boosted by more than either makes alone.
+	 */
+	@GameTest(template = "empty", timeoutTicks = 1700)
+	public static void twoTurbochargersOnOneIntakeStackTheirBoost(GameTestHelper helper) {
+		buildSingleCylinder(helper, true);
+		buildTwinTurbo(helper);
+		helper.runAtTickTime(300, () -> helper.setBlock(STARTER_POWER, Blocks.AIR));
+		helper.runAtTickTime(1100, () -> {
+			EngineSummary summary = summary(helper);
+			helper.assertTrue(summary.state() == EngineState.RUNNING,
+				"Engine should run through both turbos: " + summary + ", cylinder " + cylinder(helper));
+			TurbochargerBlockEntity first = helper.getBlockEntity(EXHAUST);
+			TurbochargerBlockEntity second = helper.getBlockEntity(EXHAUST.south());
+			helper.assertTrue(first.status() != null && second.status() != null, "Both turbos should belong to the engine");
+			for (TurbochargerBlockEntity turbo : new TurbochargerBlockEntity[] {first, second}) {
+				TurboStatus status = turbo.status();
+				helper.assertTrue(status.compressor() && status.turbine(), "Both sides on the engine: " + status);
+				helper.assertTrue(status.boost() > 0.04f, "A shared exhaust should still spool each turbo: " + status);
+			}
+			float strongest = Math.max(first.status().boost(), second.status().boost());
+			helper.assertTrue(first.status().charge() > 1.5f * strongest,
+				"The cylinder should breathe both compressors in turn: " + first.status() + " " + second.status());
+			helper.succeed();
+		});
+	}
+
+	/** A supercharger takes intake pipes on the faces round its shaft and nothing on the shaft's ends. */
+	@GameTest(template = "empty")
+	public static void aSuperchargerTakesIntakePipesAroundItsShaft(GameTestHelper helper) {
+		BlockPos pos = new BlockPos(1, 1, 1);
+		helper.setBlock(pos, CEBlocks.SUPERCHARGER.getDefaultState()
+			.setValue(BlockStateProperties.AXIS, Axis.Y));
+		BlockState state = helper.getBlockState(pos);
+		SuperchargerBlock block = CEBlocks.SUPERCHARGER.get();
+		for (Direction side : Direction.Plane.HORIZONTAL) {
+			helper.assertTrue(block.acceptsPipe(state, side, PortKind.INTAKE), "Round the shaft takes intake");
+			helper.assertFalse(block.acceptsPipe(state, side, PortKind.EXHAUST), "A blower has no exhaust side");
+		}
+		helper.assertFalse(block.acceptsPipe(state, Direction.UP, PortKind.INTAKE), "The shaft's end takes no pipe");
+		helper.assertFalse(block.acceptsPipe(state, Direction.DOWN, PortKind.INTAKE), "The shaft's end takes no pipe");
+		helper.succeed();
+	}
+
+	/**
+	 * A creative motor spins a supercharger bolted to the head's east face, with an air intake on its far face. The
+	 * blower boosts at once, tells the engine it feeds its cylinder, and puts stress on its own shaft.
+	 */
+	@GameTest(template = "empty", timeoutTicks = 1700)
+	public static void aSuperchargerBoostsTheEngineItFeeds(GameTestHelper helper) {
+		buildSingleCylinder(helper, true);
+		BlockPos blower = HEAD.east();
+		helper.setBlock(TestEngine.AIR_INTAKE, Blocks.AIR);
+		helper.setBlock(blower.east(), CEBlocks.AIR_INTAKE.getDefaultState()
+			.setValue(PortOpeningBlock.FACING, Direction.EAST));
+		helper.setBlock(blower, CEBlocks.SUPERCHARGER.getDefaultState()
+			.setValue(BlockStateProperties.AXIS, Axis.Y));
+		helper.setBlock(blower.below(), AllBlocks.CREATIVE_MOTOR.getDefaultState()
+			.setValue(CreativeMotorBlock.FACING, Direction.UP));
+		CreativeMotorBlockEntity motor = helper.getBlockEntity(blower.below());
+		motor.generatedSpeed.setValue(128);
+		helper.runAtTickTime(300, () -> helper.setBlock(STARTER_POWER, Blocks.AIR));
+		helper.runAtTickTime(900, () -> {
+			EngineSummary summary = summary(helper);
+			helper.assertTrue(summary.state() == EngineState.RUNNING,
+				"Engine should run through the supercharger: " + summary + ", cylinder " + cylinder(helper));
+			SuperchargerBlockEntity be = helper.getBlockEntity(blower);
+			helper.assertTrue(be.onEngine(), "The blower should feed the engine's cylinder");
+			helper.assertTrue(Math.abs(be.shaftRpm() - 128) < 1, "Its shaft should turn at the motor's speed: " + be.shaftRpm());
+			helper.assertTrue(be.boost() > 0.4f, "128 RPM should make the boost its bypass allows: " + be.boost());
+			helper.assertTrue(be.calculateStressApplied() > 0, "Turning the blower should cost stress");
+			helper.succeed();
+		});
+	}
+
+	/** An intercooler in the intake run is a junction like a pipe: air goes in at one end and out of the other. */
+	@GameTest(template = "empty", timeoutTicks = 1700)
+	public static void anIntercoolerInTheIntakeRunJoinsTheEngine(GameTestHelper helper) {
+		buildSingleCylinder(helper, true);
+		BlockPos cooler = HEAD.east();
+		helper.setBlock(TestEngine.AIR_INTAKE, Blocks.AIR);
+		helper.setBlock(cooler.east(), CEBlocks.AIR_INTAKE.getDefaultState()
+			.setValue(PortOpeningBlock.FACING, Direction.EAST));
+		helper.setBlock(cooler, CEBlocks.INTERCOOLER.getDefaultState()
+			.setValue(IntercoolerBlock.AXIS, Axis.X));
+		helper.runAtTickTime(300, () -> helper.setBlock(STARTER_POWER, Blocks.AIR));
+		helper.runAtTickTime(900, () -> {
+			EngineSummary summary = summary(helper);
+			helper.assertTrue(summary.state() == EngineState.RUNNING,
+				"Engine should breathe through the intercooler: " + summary + ", cylinder " + cylinder(helper));
+			EngineLayout layout = EngineScanner.scan(helper.getLevel(), helper.absolutePos(PRIMARY));
+			helper.assertTrue(layout != null && layout.intercoolers().size() == 1,
+				"The scanner should find the intercooler in the intake run: " + layout);
+			helper.succeed();
+		});
 	}
 
 	/** A creative motor, a transmission and a shaft in a line along X. */

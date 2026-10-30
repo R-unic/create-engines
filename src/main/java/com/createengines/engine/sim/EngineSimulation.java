@@ -31,6 +31,8 @@ public final class EngineSimulation {
 	private final double baseViscousFriction;
 	private final Lubrication lubrication = new Lubrication(1);
 	private final List<Turbocharger> turbos = new ArrayList<>();
+	private final List<Supercharger> superchargers = new ArrayList<>();
+	private final List<Intercooler> intercoolers = new ArrayList<>();
 
 	private boolean washesOil = true;
 
@@ -179,6 +181,48 @@ public final class EngineSimulation {
 			cylinder.endTick();
 		for (Turbocharger turbo : turbos)
 			turbo.tick(TICK);
+		for (Supercharger blower : superchargers) {
+			if (blower.followsCrank())
+				blower.rpm = blower.driveRatio * rpm();
+			blower.tick(TICK);
+		}
+		applyInduction();
+	}
+
+	/**
+	 * Sets the air every cylinder breathes. The compressors on a cylinder's intake run in turn, so their pressure and
+	 * temperature ratios multiply; the intercoolers then take heat out of the result; and the turbines on its exhaust
+	 * run each hold it up, so their back-pressures add.
+	 */
+	private void applyInduction() {
+		if (turbos.isEmpty() && superchargers.isEmpty() && intercoolers.isEmpty())
+			return;
+		for (CylinderModel cylinder : cylinders) {
+			cylinder.intakePressure = 1;
+			cylinder.intakeTemperature = 1;
+			cylinder.exhaustPressure = 1;
+		}
+		for (Turbocharger turbo : turbos) {
+			double pressure = 1 + turbo.boost();
+			double temperature = turbo.chargeTemperature();
+			for (CylinderModel cylinder : turbo.compressor()) {
+				cylinder.intakePressure *= pressure;
+				cylinder.intakeTemperature *= temperature;
+			}
+			double back = turbo.backPressure() - 1;
+			for (CylinderModel cylinder : turbo.turbine())
+				cylinder.exhaustPressure += back;
+		}
+		for (Supercharger blower : superchargers) {
+			double pressure = 1 + blower.boost();
+			double temperature = blower.chargeTemperature();
+			for (CylinderModel cylinder : blower.compressor()) {
+				cylinder.intakePressure *= pressure;
+				cylinder.intakeTemperature *= temperature;
+			}
+		}
+		for (Intercooler cooler : intercoolers)
+			cooler.cool();
 	}
 
 	/** Whether unburned fuel thins the oil as it runs. A dynamometer measures the oil as it is and leaves it alone. */
@@ -193,6 +237,24 @@ public final class EngineSimulation {
 
 	public List<Turbocharger> turbos() {
 		return turbos;
+	}
+
+	/** Adds a supercharger, which is ticked with the engine. */
+	public void addSupercharger(Supercharger supercharger) {
+		superchargers.add(supercharger);
+	}
+
+	public List<Supercharger> superchargers() {
+		return superchargers;
+	}
+
+	/** Adds an intercooler, which cools the air whatever compressors are ahead of it. */
+	public void addIntercooler(Intercooler intercooler) {
+		intercoolers.add(intercooler);
+	}
+
+	public List<Intercooler> intercoolers() {
+		return intercoolers;
 	}
 
 	private double advance(double delta, double dt) {

@@ -115,6 +115,36 @@ public final class EngineMilestones {
 		return true;
 	}
 
+	/** Boost one stage has to make to count towards stacking boost. */
+	public static final float STAGE_BOOST = 0.2f;
+
+	/**
+	 * What an engine's forced induction is doing.
+	 *
+	 * @param running      the engine is running on its own power
+	 * @param blowerBoost  the strongest supercharger boost on a firing cylinder, atmospheres
+	 * @param turboStages  most turbochargers making at least {@link #STAGE_BOOST} on one cylinder
+	 * @param blowerStages most superchargers making at least {@link #STAGE_BOOST} on one cylinder
+	 * @param cooledBoost  the strongest boost, atmospheres, on a firing cylinder that breathes through an intercooler
+	 */
+	public record Induction(boolean running, float blowerBoost, int turboStages, int blowerStages, float cooledBoost) {
+	}
+
+	public static Set<Milestone> reachedInduction(Induction i) {
+		Set<Milestone> reached = EnumSet.noneOf(Milestone.class);
+		if (!i.running())
+			return reached;
+		if (i.blowerBoost() >= BOOST)
+			reached.add(Milestone.SUPERCHARGED);
+		if (i.turboStages() >= 2)
+			reached.add(Milestone.COMPOUND_BOOST);
+		if (i.turboStages() >= 1 && i.blowerStages() >= 1)
+			reached.add(Milestone.TWINCHARGED);
+		if (i.cooledBoost() >= BOOST)
+			reached.add(Milestone.COOLED_CHARGE);
+		return reached;
+	}
+
 	public static Set<Milestone> reached(Snapshot s) {
 		Set<Milestone> reached = EnumSet.noneOf(Milestone.class);
 		if (s.starterEngaged() && s.state() == EngineState.CRANKING)

@@ -2100,6 +2100,140 @@ public final class EngineScenes {
 		scene.markAsFinished();
 	}
 
+	public static void supercharger(SceneBuilder builder, SceneBuildingUtil util) {
+		CreateSceneBuilder scene = new CreateSceneBuilder(builder);
+		scene.title("supercharger", "Superchargers, Intercoolers and Stacked Boost");
+		scene.configureBasePlate(0, 0, 7);
+		scene.world()
+			.showSection(util.select()
+				.layer(0), Direction.UP);
+
+		Selection crank = util.select()
+			.fromTo(1, 1, 3, 3, 1, 3);
+		Selection cam = util.select()
+			.fromTo(1, 4, 3, 3, 4, 3);
+		Selection engine = util.select()
+			.fromTo(2, 2, 3, 2, 3, 3)
+			.add(cam);
+		Selection outlet = util.select()
+			.position(1, 3, 3);
+		Selection blower = util.select()
+			.position(2, 3, 2);
+		Selection driven = util.select()
+			.fromTo(2, 3, 2, 4, 3, 2);
+		Selection drive = util.select()
+			.fromTo(3, 3, 2, 4, 3, 2);
+		Selection cooler = util.select()
+			.position(2, 3, 1);
+		Selection airIntake = util.select()
+			.position(2, 3, 0);
+		BlockPos blowerPos = util.grid()
+			.at(2, 3, 2);
+		BlockPos coolerPos = util.grid()
+			.at(2, 3, 1);
+
+		setThrow(scene, util.select()
+			.position(2, 1, 3), 0);
+		setLobe(scene, util.select()
+			.position(2, 4, 3), LOBE_FOR_UPRIGHT_CYLINDER);
+		scene.world()
+			.showSection(crank, Direction.DOWN);
+		scene.world()
+			.showSection(engine, Direction.DOWN);
+		scene.world()
+			.showSection(outlet, Direction.EAST);
+		scene.world()
+			.setKineticSpeed(crank, 64);
+		scene.world()
+			.setKineticSpeed(cam, 32);
+		scene.idle(20);
+
+		scene.world()
+			.showSection(blower, Direction.SOUTH);
+		scene.world()
+			.showSection(airIntake, Direction.SOUTH);
+		scene.idle(15);
+		scene.overlay()
+			.showText(120)
+			.attachKeyFrame()
+			.text("A Supercharger is a blower on a shaft. Intake pipes join the faces round the shaft, so it sits in the intake run, or bolts straight to a head.")
+			.pointAt(util.vector()
+				.topOf(blowerPos))
+			.placeNearTarget();
+		scene.idle(130);
+
+		scene.world()
+			.showSection(drive, Direction.WEST);
+		scene.world()
+			.setKineticSpeed(driven, 128);
+		scene.idle(15);
+		scene.overlay()
+			.showText(120)
+			.attachKeyFrame()
+			.colored(PonderPalette.GREEN)
+			.text("It needs no exhaust and has no lag. Its boost goes with the square of its shaft speed: 0.9 bar at 128 RPM, a quarter of that at half the speed.")
+			.pointAt(util.vector()
+				.blockSurface(blowerPos, Direction.EAST))
+			.placeNearTarget();
+		scene.idle(130);
+
+		scene.overlay()
+			.showText(120)
+			.colored(PonderPalette.RED)
+			.text("The price is stress. Turning the blower loads its shaft in proportion to the cylinders it feeds and the boost it makes, so geared from the crank's own shaft line it comes out of the engine's output.")
+			.pointAt(util.vector()
+				.blockSurface(blowerPos, Direction.EAST))
+			.placeNearTarget();
+		scene.idle(130);
+
+		scene.overlay()
+			.showControls(util.vector()
+				.blockSurface(blowerPos, Direction.UP), Pointing.DOWN, 40)
+			.rightClick();
+		scene.idle(10);
+		scene.overlay()
+			.showText(110)
+			.attachKeyFrame()
+			.colored(PonderPalette.BLUE)
+			.text("A bypass valve holds the boost at the limit set on its value panel; gear the shaft for the speed you want. Redstone opens the bypass fully and dumps the boost.")
+			.pointAt(util.vector()
+				.blockSurface(blowerPos, Direction.UP))
+			.placeNearTarget();
+		scene.idle(120);
+
+		scene.world()
+			.showSection(cooler, Direction.SOUTH);
+		scene.idle(15);
+		scene.overlay()
+			.showText(120)
+			.attachKeyFrame()
+			.text("Squeezing air heats it, and a blower heats it more than a turbo does. An Intercooler in the run, after the compressors, takes 60 percent of that heat back out.")
+			.pointAt(util.vector()
+				.topOf(coolerPos))
+			.placeNearTarget();
+		scene.idle(130);
+
+		scene.overlay()
+			.showText(120)
+			.colored(PonderPalette.GREEN)
+			.text("Cooler air is denser, so the same boost packs in more of it, and a charge that starts cooler is further from lighting before the spark. The core costs about 4 percent of the boost in pressure.")
+			.pointAt(util.vector()
+				.blockSurface(coolerPos, Direction.EAST))
+			.placeNearTarget();
+		scene.idle(130);
+
+		scene.overlay()
+			.showText(130)
+			.attachKeyFrame()
+			.colored(PonderPalette.BLUE)
+			.text("Stages compound. Turbochargers and superchargers on one intake run squeeze the air in turn, so their pressures multiply. Turbos sharing an exhaust run split its heat and each holds the exhaust up, adding back-pressure.")
+			.pointAt(util.vector()
+				.topOf(blowerPos))
+			.placeNearTarget();
+		scene.idle(140);
+		scene.markAsFinished();
+	}
+
 	public static void transmission(SceneBuilder builder, SceneBuildingUtil util) {
 		CreateSceneBuilder scene = new CreateSceneBuilder(builder);
 		scene.title("transmission", "Gearing with a Transmission");

@@ -140,6 +140,9 @@ public class TurbochargerBlockEntity extends SmartBlockEntity implements IHaveGo
 		else {
 			GoggleLines.add(CELang.translate("goggles.turbo.boost", String.format(Locale.ROOT, "%.2f", current.boost()))
 				.style(current.boost() > 0.05f ? ChatFormatting.AQUA : ChatFormatting.GRAY), tooltip, 1);
+			if (current.compressor() && Math.abs(current.charge() - current.boost()) >= 0.02f)
+				GoggleLines.add(CELang.translate("goggles.turbo.charge", String.format(Locale.ROOT, "%.2f", current.charge()))
+					.style(ChatFormatting.DARK_AQUA), tooltip, 1);
 			GoggleLines.add(CELang.translate("goggles.turbo.spool", Math.round(current.spool() * 100))
 				.style(ChatFormatting.GRAY), tooltip, 1);
 			if (current.wastegate() > 0.05f)

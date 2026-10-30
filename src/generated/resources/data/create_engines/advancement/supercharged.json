@@ -1,0 +1,29 @@
+{
+  "parent": "create_engines:supercharger",
+  "criteria": {
+    "supercharged": {
+      "conditions": {
+        "event": "supercharged"
+      },
+      "trigger": "create_engines:event"
+    }
+  },
+  "display": {
+    "description": {
+      "translate": "advancement.create_engines.supercharged.desc"
+    },
+    "icon": {
+      "count": 1,
+      "id": "create_engines:supercharger"
+    },
+    "title": {
+      "translate": "advancement.create_engines.supercharged"
+    }
+  },
+  "requirements": [
+    [
+      "supercharged"
+    ]
+  ],
+  "sends_telemetry_event": true
+}

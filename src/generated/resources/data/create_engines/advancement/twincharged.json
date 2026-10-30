@@ -1,0 +1,30 @@
+{
+  "parent": "create_engines:supercharged",
+  "criteria": {
+    "twincharged": {
+      "conditions": {
+        "event": "twincharged"
+      },
+      "trigger": "create_engines:event"
+    }
+  },
+  "display": {
+    "description": {
+      "translate": "advancement.create_engines.twincharged.desc"
+    },
+    "frame": "challenge",
+    "icon": {
+      "count": 1,
+      "id": "create_engines:supercharger"
+    },
+    "title": {
+      "translate": "advancement.create_engines.twincharged"
+    }
+  },
+  "requirements": [
+    [
+      "twincharged"
+    ]
+  ],
+  "sends_telemetry_event": true
+}

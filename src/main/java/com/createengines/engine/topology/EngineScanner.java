@@ -34,6 +34,9 @@ import com.createengines.content.governor.GovernorBlock;
 import com.createengines.content.limiter.RevLimiterBlock;
 import com.createengines.content.starter.StarterBlock;
 import com.createengines.content.sump.SumpBlock;
+import com.createengines.content.airflow.InlineDuct;
+import com.createengines.content.intercooler.IntercoolerBlock;
+import com.createengines.content.supercharger.SuperchargerBlock;
 import com.createengines.content.turbo.TurbochargerBlock;
 import com.createengines.engine.CrankGeometry;
 import com.createengines.engine.topology.EngineLayout.CamLine;
@@ -239,7 +242,18 @@ public final class EngineScanner {
 		return new EngineLayout(first.start, first.axis, List.copyOf(segments), List.copyOf(cylinders),
 			List.copyOf(ports), List.copyOf(camLines), List.copyOf(starters), List.copyOf(batteries),
 			List.copyOf(alternators), List.copyOf(sumps), List.copyOf(limiters), List.copyOf(governors), List.copyOf(heads),
-			turbos(), flywheels, lines.size(), Set.copyOf(members), incomplete);
+			turbos(), inlines(true), inlines(false), flywheels, lines.size(), Set.copyOf(members), incomplete);
+	}
+
+	/** Every supercharger (or, if not {@code superchargers}, intercooler) on one of this engine's intake networks. */
+	private List<EngineLayout.Inline> inlines(boolean superchargers) {
+		List<EngineLayout.Inline> found = new ArrayList<>();
+		for (int i = 0; i < ports.size(); i++) {
+			PortNetwork network = ports.get(i);
+			for (BlockPos pos : superchargers ? network.superchargers() : network.intercoolers())
+				found.add(new EngineLayout.Inline(pos, i));
+		}
+		return found;
 	}
 
 	/** Every turbocharger on one of this engine's port networks, with the intake and exhaust network it joins. */
@@ -413,23 +427,18 @@ public final class EngineScanner {
 		if (state.getBlock() instanceof PortOpeningBlock opening
 			&& state.getValue(PortOpeningBlock.FACING) == towards)
 			return opening.kind();
-		// A head bolted straight to a turbo uses its compressor face as an intake and its turbine face as an exhaust;
-		// the side faces take either, so they need a pipe to say which
-		if (state.getBlock() instanceof TurbochargerBlock) {
-			Direction facing = state.getValue(TurbochargerBlock.FACING);
-			if (towards.getOpposite() == facing)
-				return PortKind.INTAKE;
-			if (towards.getOpposite() == facing.getOpposite())
-				return PortKind.EXHAUST;
-		}
+		// A head bolted straight to an inline duct uses whichever face is for one kind of air; a turbo's compressor face
+		// is an intake and its turbine face an exhaust, and its side faces need a pipe to say which
+		if (state.getBlock() instanceof InlineDuct duct)
+			return duct.kindFacingHead(state, towards.getOpposite());
 		return null;
 	}
 
-	/** Whether the duct block at {@code state}, a pipe or a turbocharger, is open towards {@code direction} for {@code kind}. */
+	/** Whether the duct block at {@code state}, a pipe or an inline duct, is open towards {@code direction} for {@code kind}. */
 	private static boolean opensTowards(BlockState state, Direction direction, PortKind kind) {
 		if (state.getBlock() instanceof ManifoldBlock)
 			return state.getValue(ManifoldBlock.CONNECTIONS.get(direction));
-		return state.getBlock() instanceof TurbochargerBlock turbo && turbo.acceptsPipe(state, direction, kind);
+		return state.getBlock() instanceof InlineDuct duct && duct.acceptsPipe(state, direction, kind);
 	}
 
 	private int portNetwork(BlockPos start, PortKind kind) {
@@ -450,8 +459,9 @@ public final class EngineScanner {
 			queue.add(start.immutable());
 			visited.add(start.immutable());
 		}
-		// Follow the pipes, wherever they are open, to the heads and openings at their ends. A turbocharger is a
-		// junction like any other pipe block: the run goes in at one face and out of another
+		// Follow the pipes, wherever they are open, to the heads and openings at their ends. A turbocharger,
+		// supercharger or intercooler is a junction like any other pipe block: the run goes in at one face and out of
+		// another
 		while (!queue.isEmpty() && visited.size() < limit) {
 			BlockPos duct = queue.poll();
 			BlockState ductState = state(duct);
@@ -465,8 +475,8 @@ public final class EngineScanner {
 					if (state.getValue(ManifoldBlock.CONNECTIONS.get(direction.getOpposite()))
 						&& visited.add(next.immutable()))
 						queue.add(next.immutable());
-				} else if (block instanceof TurbochargerBlock turbo) {
-					if (turbo.acceptsPipe(state, direction.getOpposite(), kind) && visited.add(next.immutable()))
+				} else if (block instanceof InlineDuct inline) {
+					if (inline.acceptsPipe(state, direction.getOpposite(), kind) && visited.add(next.immutable()))
 						queue.add(next.immutable());
 				} else if (block instanceof PortOpeningBlock opening && opening.kind() == kind
 					&& state.getValue(PortOpeningBlock.FACING) == direction)
@@ -491,6 +501,8 @@ public final class EngineScanner {
 		List<BlockPos> throttles = new ArrayList<>();
 		List<BlockPos> sensors = new ArrayList<>();
 		List<BlockPos> turbos = new ArrayList<>();
+		List<BlockPos> superchargers = new ArrayList<>();
+		List<BlockPos> intercoolers = new ArrayList<>();
 		for (BlockPos pos : visited) {
 			Block block = state(pos).getBlock();
 			if (block instanceof ThrottleBlock)
@@ -499,11 +511,15 @@ public final class EngineScanner {
 				sensors.add(pos);
 			else if (block instanceof TurbochargerBlock)
 				turbos.add(pos);
+			else if (block instanceof SuperchargerBlock)
+				superchargers.add(pos);
+			else if (block instanceof IntercoolerBlock)
+				intercoolers.add(pos);
 		}
 
 		int number = ports.size();
 		ports.add(new PortNetwork(kind, open, Math.max(1, heads.size()), List.copyOf(openings), List.copyOf(throttles), List.copyOf(sensors),
-			List.copyOf(turbos)));
+			List.copyOf(turbos), List.copyOf(superchargers), List.copyOf(intercoolers)));
 		for (BlockPos pos : visited) {
 			index.put(pos, number);
 			members.add(pos);
@@ -582,7 +598,7 @@ public final class EngineScanner {
 			for (Direction direction : Direction.values())
 				addHeadSeed(level, pos.relative(direction), level.getBlockState(pos.relative(direction)), seeds);
 		} else if (block instanceof ManifoldBlock || block instanceof PortOpeningBlock
-			|| block instanceof TurbochargerBlock) {
+			|| block instanceof InlineDuct) {
 			Set<BlockPos> visited = new HashSet<>();
 			Deque<BlockPos> queue = new ArrayDeque<>();
 			queue.add(pos);
@@ -594,7 +610,7 @@ public final class EngineScanner {
 					if (!level.isLoaded(next))
 						continue;
 					BlockState nextState = level.getBlockState(next);
-					if ((nextState.getBlock() instanceof ManifoldBlock || nextState.getBlock() instanceof TurbochargerBlock)
+					if ((nextState.getBlock() instanceof ManifoldBlock || nextState.getBlock() instanceof InlineDuct)
 						&& visited.add(next))
 						queue.add(next);
 					else

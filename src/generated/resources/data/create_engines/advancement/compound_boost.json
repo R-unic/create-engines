@@ -1,0 +1,30 @@
+{
+  "parent": "create_engines:boost",
+  "criteria": {
+    "compound_boost": {
+      "conditions": {
+        "event": "compound_boost"
+      },
+      "trigger": "create_engines:event"
+    }
+  },
+  "display": {
+    "description": {
+      "translate": "advancement.create_engines.compound_boost.desc"
+    },
+    "frame": "goal",
+    "icon": {
+      "count": 1,
+      "id": "create_engines:turbocharger"
+    },
+    "title": {
+      "translate": "advancement.create_engines.compound_boost"
+    }
+  },
+  "requirements": [
+    [
+      "compound_boost"
+    ]
+  ],
+  "sends_telemetry_event": true
+}

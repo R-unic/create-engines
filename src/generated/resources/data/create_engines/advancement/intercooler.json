@@ -1,0 +1,33 @@
+{
+  "parent": "create_engines:turbocharger",
+  "criteria": {
+    "intercooler": {
+      "conditions": {
+        "items": [
+          {
+            "items": "create_engines:intercooler"
+          }
+        ]
+      },
+      "trigger": "minecraft:inventory_changed"
+    }
+  },
+  "display": {
+    "description": {
+      "translate": "advancement.create_engines.intercooler.desc"
+    },
+    "icon": {
+      "count": 1,
+      "id": "create_engines:intercooler"
+    },
+    "title": {
+      "translate": "advancement.create_engines.intercooler"
+    }
+  },
+  "requirements": [
+    [
+      "intercooler"
+    ]
+  ],
+  "sends_telemetry_event": true
+}

@@ -23,6 +23,8 @@ import com.createengines.content.starter.StarterBlockEntity;
 import com.createengines.content.starter.StarterRenderer;
 import com.createengines.content.starter.StarterVisual;
 import com.createengines.content.sump.SumpBlockEntity;
+import com.createengines.content.supercharger.SuperchargerBlockEntity;
+import com.createengines.content.supercharger.SuperchargerVisual;
 import com.createengines.content.transmission.TransmissionBlockEntity;
 import com.createengines.content.turbo.TurbochargerBlockEntity;
 import com.createengines.content.turbo.TurbochargerRenderer;
@@ -117,6 +119,13 @@ public final class CEBlockEntities {
 		.blockEntity("turbocharger", TurbochargerBlockEntity::new)
 		.validBlocks(CEBlocks.TURBOCHARGER)
 		.renderer(() -> TurbochargerRenderer::new)
+		.register();
+
+	public static final BlockEntityEntry<SuperchargerBlockEntity> SUPERCHARGER = REGISTRATE
+		.blockEntity("supercharger", SuperchargerBlockEntity::new)
+		.visual(() -> SuperchargerVisual::create, false)
+		.validBlocks(CEBlocks.SUPERCHARGER)
+		.renderer(() -> KineticBlockEntityRenderer::new)
 		.register();
 
 	public static final BlockEntityEntry<TransmissionBlockEntity> TRANSMISSION = REGISTRATE

@@ -22,6 +22,8 @@
     "create_engines:alternator",
     "create_engines:sump",
     "create_engines:turbocharger",
+    "create_engines:supercharger",
+    "create_engines:intercooler",
     "create_engines:transmission"
   ]
 }

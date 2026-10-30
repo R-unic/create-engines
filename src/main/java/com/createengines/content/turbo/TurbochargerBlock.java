@@ -3,6 +3,7 @@ package com.createengines.content.turbo;
 import org.jetbrains.annotations.Nullable;
 
 import com.createengines.content.airflow.AirflowPort;
+import com.createengines.content.airflow.InlineDuct;
 import com.createengines.content.airflow.Pipes;
 import com.createengines.content.airflow.PortKind;
 import com.createengines.engine.topology.EngineTopology;
@@ -34,7 +35,7 @@ import net.minecraft.world.phys.shapes.VoxelShape;
  * any side (a side face takes whichever kind arrives, since a neighbour can only be one). The engine scanner follows
  * pipes through it, so everything the intake run feeds is boosted and everything the exhaust run drains drives it.
  */
-public class TurbochargerBlock extends DirectionalBlock implements AirflowPort, IWrenchable, IBE<TurbochargerBlockEntity> {
+public class TurbochargerBlock extends DirectionalBlock implements InlineDuct, IWrenchable, IBE<TurbochargerBlockEntity> {
 
 	public static final DirectionProperty FACING = DirectionalBlock.FACING;
 
@@ -51,6 +52,14 @@ public class TurbochargerBlock extends DirectionalBlock implements AirflowPort, 
 		if (side.getAxis() != facing.getAxis())
 			return true;
 		return kind == PortKind.INTAKE ? side == facing : side == facing.getOpposite();
+	}
+
+	@Override
+	public @Nullable PortKind kindFacingHead(BlockState state, Direction face) {
+		Direction facing = state.getValue(FACING);
+		if (face == facing)
+			return PortKind.INTAKE;
+		return face == facing.getOpposite() ? PortKind.EXHAUST : null;
 	}
 
 	@Override

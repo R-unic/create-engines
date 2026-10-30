@@ -478,6 +478,68 @@ def turbocharger():
     write("turbocharger/item", {**textures, **wheel_textures}, elements + wheel)
 
 
+def supercharger():
+    """A belt-driven blower along the Y axis: a finned housing with the shaft through both ends, open ring plates so
+    the rotor shows, and an inlet flange on each side. The rotor (a two-lobe roots pair on the shaft) is a separate
+    model so it can spin."""
+    textures = {"housing": CASING, "plate": IRON, "fin": DARK, "bolt": BRASS, "flange": COPPER_CASING,
+                "particle": CASING}
+
+    def ring(y0, y1, hole, tex):
+        lo, hi = 8 - hole, 8 + hole
+        return [box((1, y0, 1), (15, y1, lo), tex), box((1, y0, hi), (15, y1, 15), tex),
+                box((1, y0, lo), (lo, y1, hi), tex), box((hi, y0, lo), (15, y1, hi), tex)]
+
+    elements = ring(0, 2, 3, "plate") + ring(14, 16, 3, "plate")
+    elements += [
+        # The housing: four walls round a hollow where the rotor turns
+        box((1.5, 2, 1.5), (14.5, 14, 4), "housing"),
+        box((1.5, 2, 12), (14.5, 14, 14.5), "housing"),
+        box((1.5, 2, 4), (4, 14, 12), "housing"),
+        box((12, 2, 4), (14.5, 14, 12), "housing"),
+        # Cooling fins round the middle
+        box((1, 5, 1), (15, 6, 15), "fin"),
+        box((1, 10, 1), (15, 11, 15), "fin"),
+    ]
+    # Inlet flanges on each side, where the intake pipes bolt on
+    elements += [box((6, 4, 0), (10, 12, 1.5), "flange"), box((6, 4, 14.5), (10, 12, 16), "flange"),
+                 box((0, 4, 6), (1.5, 12, 10), "flange"), box((14.5, 4, 6), (16, 12, 10), "flange")]
+    for x in (1.6, 13.4):
+        for z in (1.6, 13.4):
+            elements.append(box((x, 15.8, z), (x + 1, 16.2, z + 1), "bolt"))
+            elements.append(box((x, -0.2, z), (x + 1, 0.2, z + 1), "bolt"))
+    write("supercharger/block", textures, elements)
+
+    rotor_textures = {"shaft": IRON, "lobe": BRASS, "particle": BRASS}
+    rotor = [
+        box((6, 0, 6), (10, 16, 10), "shaft"),
+        # Two lobes at right angles, like the pair of a roots blower seen end on
+        box((4.5, 3, 6.75), (11.5, 13, 9.25), "lobe"),
+        box((6.75, 3, 4.5), (9.25, 13, 11.5), "lobe"),
+        box((5.25, 4, 5.25), (10.75, 12, 10.75), "lobe"),
+    ]
+    write("supercharger/rotor", rotor_textures, rotor)
+    write("supercharger/item", {**textures, **rotor_textures}, elements + rotor)
+
+
+def intercooler():
+    """A charge-air cooler along the Y axis (the block state turns it): a finned core between two end tanks, with an
+    inlet stub on each end."""
+    textures = {"tank": COPPER_CASING, "core": DARK, "fin": IRON, "stub": BRASS, "particle": COPPER_CASING}
+    elements = [
+        box((2, 0, 2), (14, 3, 14), "tank"),
+        box((2, 13, 2), (14, 16, 14), "tank"),
+        box((3, 3, 3), (13, 13, 13), "core"),
+    ]
+    # Fins across the core
+    for i in range(7):
+        y = 3.5 + i * 1.4
+        elements.append(box((1.5, y, 2.5), (14.5, y + 0.6, 13.5), "fin"))
+    elements += [box((6, 0, 6), (10, 1, 10), "stub"), box((6, 15, 6), (10, 16, 10), "stub")]
+    write("intercooler/block", textures, elements)
+    write_item("intercooler/item", "intercooler/block")
+
+
 def transmission():
     """A split-shaft gearbox: a casing round the axis, with the shaft halves drawn by the renderer in the openings.
     Stepped bands on the faces show the gear train and a small selector plate shows it is a gearbox."""
@@ -675,6 +737,8 @@ def main():
     battery()
     alternator()
     turbocharger()
+    supercharger()
+    intercooler()
     transmission()
     sump()
     rev_limiter()
