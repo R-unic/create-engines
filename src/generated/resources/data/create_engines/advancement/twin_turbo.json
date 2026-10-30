@@ -1,0 +1,30 @@
+{
+  "parent": "create_engines:boost",
+  "criteria": {
+    "twin_turbo": {
+      "conditions": {
+        "event": "twin_turbo"
+      },
+      "trigger": "create_engines:event"
+    }
+  },
+  "display": {
+    "description": {
+      "translate": "advancement.create_engines.twin_turbo.desc"
+    },
+    "frame": "goal",
+    "icon": {
+      "count": 1,
+      "id": "create_engines:turbocharger"
+    },
+    "title": {
+      "translate": "advancement.create_engines.twin_turbo"
+    }
+  },
+  "requirements": [
+    [
+      "twin_turbo"
+    ]
+  ],
+  "sends_telemetry_event": true
+}

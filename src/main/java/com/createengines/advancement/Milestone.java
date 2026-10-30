@@ -38,6 +38,7 @@ public enum Milestone {
 	// Superchargers, intercoolers and several stages of boost
 	SUPERCHARGED,
 	COMPOUND_BOOST,
+	TWIN_TURBO,
 	TWINCHARGED,
 	COOLED_CHARGE,
 	// Transmission

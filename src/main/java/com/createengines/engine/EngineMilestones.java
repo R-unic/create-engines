@@ -123,11 +123,13 @@ public final class EngineMilestones {
 	 *
 	 * @param running      the engine is running on its own power
 	 * @param blowerBoost  the strongest supercharger boost on a firing cylinder, atmospheres
-	 * @param turboStages  most turbochargers making at least {@link #STAGE_BOOST} on one cylinder
+	 * @param turboStages  most turbochargers in series making at least {@link #STAGE_BOOST} on one cylinder
 	 * @param blowerStages most superchargers making at least {@link #STAGE_BOOST} on one cylinder
+	 * @param twinStages   most turbochargers side by side making at least {@link #STAGE_BOOST} on one cylinder
 	 * @param cooledBoost  the strongest boost, atmospheres, on a firing cylinder that breathes through an intercooler
 	 */
-	public record Induction(boolean running, float blowerBoost, int turboStages, int blowerStages, float cooledBoost) {
+	public record Induction(boolean running, float blowerBoost, int turboStages, int blowerStages, int twinStages,
+							float cooledBoost) {
 	}
 
 	public static Set<Milestone> reachedInduction(Induction i) {
@@ -138,6 +140,8 @@ public final class EngineMilestones {
 			reached.add(Milestone.SUPERCHARGED);
 		if (i.turboStages() >= 2)
 			reached.add(Milestone.COMPOUND_BOOST);
+		if (i.twinStages() >= 2)
+			reached.add(Milestone.TWIN_TURBO);
 		if (i.turboStages() >= 1 && i.blowerStages() >= 1)
 			reached.add(Milestone.TWINCHARGED);
 		if (i.cooledBoost() >= BOOST)

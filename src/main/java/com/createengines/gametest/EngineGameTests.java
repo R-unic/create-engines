@@ -1234,6 +1234,64 @@ public class EngineGameTests {
 		helper.succeed();
 	}
 
+	/**
+	 * A crankshaft is one unbroken line. With a plain Shaft in the middle of it the blocks either side are not one
+	 * crankshaft, however the shaft carries their rotation, so the engine reports itself broken until journals replace it.
+	 */
+	@GameTest(template = "empty", timeoutTicks = 400)
+	public static void aShaftInTheCrankLineBreaksTheEngine(GameTestHelper helper) {
+		buildSingleCylinder(helper, true);
+		BlockPos shaft = new BlockPos(4, 2, 2);
+		// The crank is at 1 to 3, then a shaft at 4 and a cogwheel at 5: a crank block in place of the cogwheel is past the gap
+		helper.setBlock(new BlockPos(5, 2, 2), alongX(CEBlocks.CRANKSHAFT.getDefaultState()));
+
+		helper.runAtTickTime(2, () -> {
+			EngineLayout layout = EngineScanner.scan(helper.getLevel(), helper.absolutePos(PRIMARY));
+			helper.assertTrue(layout != null && layout.broken(), "A shaft between crank blocks should break the line");
+		});
+		helper.runAtTickTime(150, () -> {
+			helper.assertTrue(summary(helper).state() == EngineState.BROKEN, "The engine should say it is broken: " + summary(helper));
+			helper.setBlock(shaft, alongX(CEBlocks.CRANKSHAFT.getDefaultState()));
+		});
+		helper.runAtTickTime(160, () -> {
+			EngineLayout layout = EngineScanner.scan(helper.getLevel(), helper.absolutePos(PRIMARY));
+			helper.assertTrue(layout != null && !layout.broken(), "Journals all the way along are an unbroken crankshaft");
+		});
+		helper.runAtTickTime(300, () -> {
+			helper.assertTrue(summary(helper).state() != EngineState.BROKEN, "Mended, it should no longer be broken: " + summary(helper));
+			helper.succeed();
+		});
+	}
+
+	/** A camshaft is one unbroken line too: a plain Shaft in it leaves the lobe cut off, and its cylinder with no cam. */
+	@GameTest(template = "empty", timeoutTicks = 200)
+	public static void aShaftInTheCamshaftLeavesTheLobeWithNoCam(GameTestHelper helper) {
+		buildSingleCylinder(helper, true);
+		helper.runAtTickTime(2, () -> {
+			EngineLayout whole = EngineScanner.scan(helper.getLevel(), helper.absolutePos(PRIMARY));
+			helper.assertTrue(whole != null && whole.cylinders()
+				.getFirst()
+				.camLine() >= 0 && !CylinderFault.BROKEN_CAM.in(whole.cylinders()
+					.getFirst()
+					.faults()), "The camshaft starts out whole");
+
+			// The lobe is at x 2 with camshaft blocks from 3 to 5: a shaft at 4 cuts the lobe off from the block at 5
+			helper.setBlock(new BlockPos(4, 4, 3), alongX(AllBlocks.SHAFT.getDefaultState()));
+			EngineLayout split = EngineScanner.scan(helper.getLevel(), helper.absolutePos(PRIMARY));
+			EngineLayout.Cylinder cylinder = split.cylinders()
+				.getFirst();
+			helper.assertTrue(CylinderFault.BROKEN_CAM.in(cylinder.faults()) && cylinder.camLine() == -1 && cylinder.lobe() == null,
+				"A shaft in the camshaft should leave the cylinder with no cam: " + cylinder);
+
+			helper.setBlock(new BlockPos(4, 4, 3), alongX(CEBlocks.CAMSHAFT.getDefaultState()));
+			EngineLayout mended = EngineScanner.scan(helper.getLevel(), helper.absolutePos(PRIMARY));
+			helper.assertTrue(mended.cylinders()
+				.getFirst()
+				.camLine() >= 0, "Camshaft blocks all the way along should be one camshaft again");
+			helper.succeed();
+		});
+	}
+
 	private static BlockState alongX(BlockState state) {
 		return state.setValue(BlockStateProperties.AXIS, Axis.X);
 	}

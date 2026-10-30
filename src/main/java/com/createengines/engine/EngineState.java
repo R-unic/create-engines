@@ -8,7 +8,9 @@ public enum EngineState {
 	COASTING,
 	RUNNING,
 	OVERLOADED,
-	INCOMPLETE;
+	INCOMPLETE,
+	/** A plain shaft splits the crankshaft, so there is no single engine to run. */
+	BROKEN;
 
 	public String langKey() {
 		return "goggles.state." + name().toLowerCase(Locale.ROOT);

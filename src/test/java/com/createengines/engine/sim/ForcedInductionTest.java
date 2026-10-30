@@ -1,6 +1,7 @@
 package com.createengines.engine.sim;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.ArrayList;
@@ -116,6 +117,61 @@ class ForcedInductionTest {
 		twin.turbo(1.5, 0.5);
 		twin.drive(160, 20);
 		assertTrue(twin.work() > 1.05 * single.work(), "one " + single.work() + ", two " + twin.work());
+	}
+
+	private static Turbocharger parallelTurbo(Rig rig, double limit, int bank) {
+		Turbocharger turbo = rig.turbo(limit, 1d / bank);
+		turbo.parallelCompressor = true;
+		turbo.parallelTurbine = true;
+		turbo.flow = 1d / bank;
+		return turbo;
+	}
+
+	/** Side by side, each compressor moves half the air, so the cylinder gets one compressor's pressure and not two's. */
+	@Test
+	void turbosSideBySideShareTheAirInsteadOfCompounding() {
+		Rig single = new Rig(1);
+		single.turbo(1.5, 1);
+		single.drive(160, 20);
+		Rig twin = new Rig(1);
+		Turbocharger a = parallelTurbo(twin, 1.5, 2);
+		Turbocharger b = parallelTurbo(twin, 1.5, 2);
+		twin.drive(160, 20);
+		assertEquals((a.boost() + b.boost()) / 2, twin.boost(), 1e-9);
+		assertEquals(single.boost(), twin.boost(), 0.1 * single.boost());
+	}
+
+	/** The pair are smaller wheels each doing half the work, so they come up to the same boost sooner. */
+	@Test
+	void turbosSideBySideSpoolSoonerThanOneBigTurbo() {
+		Rig single = new Rig(1);
+		single.turbo(1.5, 1);
+		single.drive(160, 2);
+		Rig twin = new Rig(1);
+		parallelTurbo(twin, 1.5, 2);
+		parallelTurbo(twin, 1.5, 2);
+		twin.drive(160, 2);
+		assertTrue(twin.boost() > 1.3 * single.boost(), "one " + single.boost() + ", pair " + twin.boost());
+	}
+
+	@Test
+	void turbinesSideBySideAverageTheirBackPressure() {
+		Rig twin = new Rig(1);
+		Turbocharger a = parallelTurbo(twin, 1.5, 2);
+		Turbocharger b = parallelTurbo(twin, 1.5, 2);
+		twin.drive(160, 20);
+		assertEquals((a.backPressure() + b.backPressure()) / 2, twin.cylinders.getFirst().exhaustPressure, 1e-9);
+	}
+
+	/** A blower in parallel with a turbo averages with it, and one in series still multiplies. */
+	@Test
+	void aParallelBlowerAveragesWithTheTurboBesideIt() {
+		Rig rig = new Rig(1);
+		Turbocharger turbo = parallelTurbo(rig, 1.5, 2);
+		Supercharger blower = rig.blower(128, 1.5);
+		blower.parallel = true;
+		rig.drive(160, 10);
+		assertEquals(((1 + turbo.boost()) + (1 + blower.boost())) / 2, rig.cylinders.getFirst().intakePressure, 1e-9);
 	}
 
 	/** Turbos on separate intakes do not feel each other: each cylinder only breathes what its own run feeds. */
@@ -275,14 +331,22 @@ class ForcedInductionTest {
 
 	@Test
 	void inductionMilestonesNeedARunningEngine() {
-		assertTrue(EngineMilestones.reachedInduction(new EngineMilestones.Induction(false, 0.9f, 2, 2, 0.9f))
+		assertTrue(EngineMilestones.reachedInduction(new EngineMilestones.Induction(false, 0.9f, 2, 2, 2, 0.9f))
 			.isEmpty());
-		var reached = EngineMilestones.reachedInduction(new EngineMilestones.Induction(true, 0.4f, 2, 1, 0.4f));
+		var reached = EngineMilestones.reachedInduction(new EngineMilestones.Induction(true, 0.4f, 2, 1, 0, 0.4f));
 		assertTrue(reached.contains(Milestone.SUPERCHARGED));
 		assertTrue(reached.contains(Milestone.COMPOUND_BOOST));
 		assertTrue(reached.contains(Milestone.TWINCHARGED));
 		assertTrue(reached.contains(Milestone.COOLED_CHARGE));
-		var weak = EngineMilestones.reachedInduction(new EngineMilestones.Induction(true, 0.1f, 1, 0, 0.1f));
+		assertFalse(reached.contains(Milestone.TWIN_TURBO));
+		var weak = EngineMilestones.reachedInduction(new EngineMilestones.Induction(true, 0.1f, 1, 0, 0, 0.1f));
 		assertTrue(weak.isEmpty(), weak.toString());
+	}
+
+	@Test
+	void twoTurbosSideBySideEarnTheTwinTurboMilestoneAndNotTheCompoundOne() {
+		var reached = EngineMilestones.reachedInduction(new EngineMilestones.Induction(true, 0, 0, 0, 2, 0));
+		assertTrue(reached.contains(Milestone.TWIN_TURBO));
+		assertFalse(reached.contains(Milestone.COMPOUND_BOOST));
 	}
 }

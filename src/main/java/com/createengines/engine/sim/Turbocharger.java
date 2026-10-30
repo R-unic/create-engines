@@ -16,10 +16,11 @@ import java.util.Map;
  * cylinders push against a back-pressure that rises with the boost. A wastegate dumps exhaust round the turbine to hold
  * the boost at its limit, and can be forced open to blow all the boost off.
  * <p>
- * Turbos on the same intake run compound: the air passes through each compressor in turn, so their pressure ratios
- * multiply and their temperature rises multiply, and every turbine on an exhaust run adds its own back-pressure. Turbos
- * sharing an exhaust run split its heat between them, so a second one spools both slower; what it buys is a higher
- * boost than one turbo can make, at the price of back-pressure and lag.
+ * Turbos in series on the same intake run compound: the air passes through each compressor in turn, so their pressure
+ * ratios multiply and their temperature rises multiply, and every turbine in series on an exhaust run adds its own
+ * back-pressure; what that buys is a higher boost than one turbo can make, at the price of back-pressure and lag. Turbos
+ * side by side (the air can go round either) share the flow instead: the cylinder gets their average pressure, each
+ * turbine splits the exhaust heat, and each wheel is a smaller one, so the pair makes about one turbo's boost sooner.
  * <p>
  * Pure Java, like the rest of this package.
  */
@@ -52,6 +53,16 @@ public final class Turbocharger {
 	public double limit = DEFAULT_LIMIT;
 	/** Forces the wastegate wide open, dumping the boost. */
 	public boolean dump;
+	/** The intake air can bypass the compressor, so its pressure is averaged with the other branches' rather than compounded. */
+	public boolean parallelCompressor;
+	/** The exhaust can bypass the turbine, so its back-pressure is averaged with the other branches' rather than added. */
+	public boolean parallelTurbine;
+	/**
+	 * Share of the intake air this compressor moves: 1 in series, 1/n in a bank of n in parallel. A compressor moving a
+	 * share does that share of the work, and is a smaller wheel (inertia falls with the square of the flow, since a
+	 * wheel's mass falls faster than its capacity), so the bank reaches the same boost as one turbo but spools sooner.
+	 */
+	public double flow = 1;
 
 	private double energy;
 	private double bypass;
@@ -71,6 +82,9 @@ public final class Turbocharger {
 	public Turbocharger copyOnto(Map<CylinderModel, CylinderModel> copies) {
 		Turbocharger copy = new Turbocharger(mapped(turbine, copies), mapped(compressor, copies), share);
 		copy.limit = limit;
+		copy.parallelCompressor = parallelCompressor;
+		copy.parallelTurbine = parallelTurbine;
+		copy.flow = flow;
 		return copy;
 	}
 
@@ -94,7 +108,7 @@ public final class Turbocharger {
 
 	/** Wheel speed as a fraction of design speed. */
 	public double spool() {
-		return Math.sqrt(2 * energy / INERTIA);
+		return Math.sqrt(2 * energy / (INERTIA * flow * flow));
 	}
 
 	/** Gauge pressure the compressor is making, atmospheres. */
@@ -140,7 +154,7 @@ public final class Turbocharger {
 		double power = heatRate(dt);
 		bypass = dump ? 1 : Math.max(0, Math.min(1, (boost() - limit) / WASTEGATE_BAND));
 		double spool = spool();
-		double drain = COMPRESSOR_POWER * spool * spool * spool + BEARING_DRAG * spool;
+		double drain = flow * (COMPRESSOR_POWER * spool * spool * spool + BEARING_DRAG * spool);
 		energy = Math.max(0, energy + (power * (1 - bypass) - drain) * dt);
 
 	}

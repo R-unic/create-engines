@@ -111,7 +111,7 @@ public final class CELang {
 		raw("goggles.turbo.back_pressure", "Exhaust back-pressure: +%1$s bar");
 		raw("goggles.turbo.limit", "Boost limit: %1$s bar");
 		raw("goggles.turbo.hint",
-			"Driven by the heat of the exhaust, so it lags and fades with the fuel. Boost packs in more air, which needs more fuel metering to use, and heats the charge. Redstone opens the wastegate fully. Turbos on one intake run compound, their pressures multiplying, while turbos on one exhaust run share its heat and each add back-pressure");
+			"Driven by the heat of the exhaust, so it lags and fades with the fuel. Boost packs in more air, which needs more fuel metering to use, and heats the charge. Redstone opens the wastegate fully. Turbos in series on one intake run compound, their pressures multiplying, while turbos side by side (the air can go round either) share the flow and average their pressures, with smaller wheels that spool sooner");
 
 		raw("goggles.supercharger", "Supercharger");
 		raw("goggles.supercharger.no_engine", "Not on an engine's intake: nothing is boosted");
@@ -142,6 +142,8 @@ public final class CELang {
 		raw("goggles.lubrication.thinned.hint", "Fuel the air can't burn washes into the oil, however much is supplied. It drags the engine until the mixture burns clean");
 		raw("goggles.state.overloaded", "Overloaded: load is more than its rated torque");
 		raw("goggles.state.incomplete", "Not fully loaded");
+		raw("goggles.state.broken", "Broken: a plain Shaft splits the crankshaft");
+		raw("goggles.broken.hint", "A crankshaft has to be one unbroken line of Crankshaft and Crank Throw blocks. Replace the Shaft between them with Crankshaft blocks");
 		raw("goggles.speed", "Speed:");
 		raw("goggles.rpm", "%1$s RPM");
 		raw("goggles.available_torque", "Rated torque:");
@@ -197,6 +199,7 @@ public final class CELang {
 		raw("goggles.fault.no_exhaust", "Head has no exhaust");
 		raw("goggles.fault.exhaust_blocked", "Exhaust has no open outlet");
 		raw("goggles.fault.no_battery", "Spark plug has no battery touching the engine");
+		raw("goggles.fault.broken_cam", "A plain Shaft splits the camshaft: replace it with Camshaft blocks");
 
 		raw("goggles.cam", "Camshaft");
 		raw("goggles.cam_ratio", "Speed ratio to crank: %1$s");

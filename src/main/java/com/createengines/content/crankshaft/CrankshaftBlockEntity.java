@@ -274,11 +274,16 @@ public class CrankshaftBlockEntity extends GeneratingKineticBlockEntity implemen
 			case CRANKING -> ChatFormatting.YELLOW;
 			case COASTING -> ChatFormatting.GRAY;
 			case OVERLOADED -> ChatFormatting.GOLD;
-			case STALLED, INCOMPLETE -> ChatFormatting.RED;
+			case STALLED, INCOMPLETE, BROKEN -> ChatFormatting.RED;
 		};
 		GoggleLines.add(CELang.translate(engine.state()
 				.langKey())
 			.style(stateColour), tooltip, 1);
+		if (engine.state() == EngineState.BROKEN) {
+			GoggleLines.add(CELang.translate("goggles.broken.hint")
+				.style(ChatFormatting.GRAY), tooltip, 1);
+			return;
+		}
 		if (engine.lines() > 1)
 			GoggleLines.add(CELang.translate("goggles.coupled", engine.lines())
 				.style(ChatFormatting.GRAY), tooltip, 1);

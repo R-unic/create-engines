@@ -1,0 +1,77 @@
+{
+  "parent": "block/block",
+  "textures": {
+    "pipe": "minecraft:block/cut_copper",
+    "bead": "minecraft:block/copper_block",
+    "flange": "minecraft:block/copper_block",
+    "gasket": "create:block/dark_metal_block",
+    "bolt": "create:block/brass_block",
+    "particle": "minecraft:block/cut_copper"
+  },
+  "elements": [
+    {
+      "from": [
+        5,
+        5,
+        5
+      ],
+      "to": [
+        11,
+        11,
+        11
+      ],
+      "faces": {
+        "north": {
+          "texture": "#pipe"
+        },
+        "south": {
+          "texture": "#pipe"
+        },
+        "east": {
+          "texture": "#pipe"
+        },
+        "west": {
+          "texture": "#pipe"
+        },
+        "up": {
+          "texture": "#pipe"
+        },
+        "down": {
+          "texture": "#pipe"
+        }
+      }
+    },
+    {
+      "from": [
+        4.25,
+        4.25,
+        4.25
+      ],
+      "to": [
+        11.75,
+        11.75,
+        11.75
+      ],
+      "faces": {
+        "north": {
+          "texture": "#bead"
+        },
+        "south": {
+          "texture": "#bead"
+        },
+        "east": {
+          "texture": "#bead"
+        },
+        "west": {
+          "texture": "#bead"
+        },
+        "up": {
+          "texture": "#bead"
+        },
+        "down": {
+          "texture": "#bead"
+        }
+      }
+    }
+  ]
+}

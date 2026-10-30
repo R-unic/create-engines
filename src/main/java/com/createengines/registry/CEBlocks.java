@@ -341,16 +341,45 @@ public final class CEBlocks {
 																 RegistrateBlockstateProvider provider) {
 		String name = context.getName();
 		var builder = provider.getMultipartBuilder(context.get());
-		builder.part()
-			.modelFile(pipeModel(provider, name, "core"))
-			.addModel()
-			.end();
+		if (name.endsWith("_manifold"))
+			// The pipes have a fitting of their own for a straight run, a bend and a tee, picked by which sides are open
+			for (int mask = 0; mask < 1 << Direction.values().length; mask++) {
+				var part = builder.part()
+					.modelFile(pipeModel(provider, name, coreFor(mask)))
+					.addModel();
+				for (Direction direction : Direction.values())
+					part.condition(ManifoldBlock.CONNECTIONS.get(direction), (mask >> direction.ordinal() & 1) == 1);
+				part.end();
+			}
+		else
+			builder.part()
+				.modelFile(pipeModel(provider, name, "core"))
+				.addModel()
+				.end();
 		for (Direction direction : Direction.values())
 			builder.part()
 				.modelFile(pipeModel(provider, name, "arm_" + direction.getName()))
 				.addModel()
 				.condition(ManifoldBlock.CONNECTIONS.get(direction), true)
 				.end();
+	}
+
+	/**
+	 * The core model for a pipe open on the sides in {@code mask} (bit per {@link Direction#ordinal()}): a plain
+	 * coupling for a straight run, a cast elbow for a bend, a tee fitting across the run for a branch, and the bulged
+	 * node for everything else.
+	 */
+	private static String coreFor(int mask) {
+		int open = Integer.bitCount(mask);
+		for (Direction.Axis axis : Direction.Axis.values()) {
+			Direction positive = Direction.fromAxisAndDirection(axis, Direction.AxisDirection.POSITIVE);
+			boolean through = (mask >> positive.ordinal() & 1) == 1 && (mask >> positive.getOpposite().ordinal() & 1) == 1;
+			if (through && open == 2)
+				return "core_straight_" + axis.getName();
+			if (through && open == 3)
+				return "core_tee_" + axis.getName();
+		}
+		return open == 2 ? "core_elbow" : "core";
 	}
 
 	private static ModelFile pipeModel(RegistrateBlockstateProvider provider, String name, String part) {

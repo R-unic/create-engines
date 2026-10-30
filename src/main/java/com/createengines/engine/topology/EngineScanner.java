@@ -74,6 +74,8 @@ public final class EngineScanner {
 	private final Set<BlockPos> limiters = new LinkedHashSet<>();
 	private final Set<BlockPos> governors = new LinkedHashSet<>();
 	private boolean incomplete;
+	/** A plain shaft sits between blocks of a crank line. */
+	private boolean brokenCrank;
 
 	private EngineScanner(Level level) {
 		this.level = level;
@@ -242,7 +244,7 @@ public final class EngineScanner {
 		return new EngineLayout(first.start, first.axis, List.copyOf(segments), List.copyOf(cylinders),
 			List.copyOf(ports), List.copyOf(camLines), List.copyOf(starters), List.copyOf(batteries),
 			List.copyOf(alternators), List.copyOf(sumps), List.copyOf(limiters), List.copyOf(governors), List.copyOf(heads),
-			turbos(), inlines(true), inlines(false), flywheels, lines.size(), Set.copyOf(members), incomplete);
+			turbos(), inlines(true), inlines(false), flywheels, lines.size(), Set.copyOf(members), incomplete, brokenCrank);
 	}
 
 	/** Every supercharger (or, if not {@code superchargers}, intercooler) on one of this engine's intake networks. */
@@ -251,7 +253,7 @@ public final class EngineScanner {
 		for (int i = 0; i < ports.size(); i++) {
 			PortNetwork network = ports.get(i);
 			for (BlockPos pos : superchargers ? network.superchargers() : network.intercoolers())
-				found.add(new EngineLayout.Inline(pos, i));
+				found.add(new EngineLayout.Inline(pos, i, network.parallel().contains(pos)));
 		}
 		return found;
 	}
@@ -262,12 +264,14 @@ public final class EngineScanner {
 		for (int i = 0; i < ports.size(); i++) {
 			PortNetwork network = ports.get(i);
 			for (BlockPos pos : network.turbos()) {
-				int[] join = joins.computeIfAbsent(pos, $ -> new int[] {-1, -1});
-				join[network.kind() == PortKind.INTAKE ? 0 : 1] = i;
+				int[] join = joins.computeIfAbsent(pos, $ -> new int[] {-1, -1, 0, 0});
+				int side = network.kind() == PortKind.INTAKE ? 0 : 1;
+				join[side] = i;
+				join[2 + side] = network.parallel().contains(pos) ? 1 : 0;
 			}
 		}
 		List<EngineLayout.Turbo> turbos = new ArrayList<>();
-		joins.forEach((pos, join) -> turbos.add(new EngineLayout.Turbo(pos, join[0], join[1])));
+		joins.forEach((pos, join) -> turbos.add(new EngineLayout.Turbo(pos, join[0], join[1], join[2] == 1, join[3] == 1)));
 		return turbos;
 	}
 
@@ -297,7 +301,11 @@ public final class EngineScanner {
 				&& state.getValue(BlockStateProperties.AXIS) == axis;
 			if (onAxis && AllBlocks.FLYWHEEL.has(state))
 				flywheels++;
-			else if (!onAxis || !AllBlocks.SHAFT.has(state))
+			else if (i > 0 && isCrank(state, axis)) {
+				// A shaft in the middle of the crankshaft: the blocks either side of it are not one line
+				brokenCrank = true;
+				break;
+			} else if (!onAxis || !AllBlocks.SHAFT.has(state))
 				break;
 			members.add(cursor.immutable());
 			cursor = cursor.relative(direction);
@@ -387,7 +395,13 @@ public final class EngineScanner {
 			draft.faults |= CylinderFault.NO_CAM.bit();
 		else {
 			draft.camLine = camLine(draft.lobe);
-			if (level.getBlockEntity(draft.lobe) instanceof CamshaftBlockEntity lobe)
+			if (camLines.get(draft.camLine)
+				.broken()) {
+				// Cut off from the rest of its camshaft, the lobe is not held to the crank's timing: no cam at all
+				draft.faults |= CylinderFault.BROKEN_CAM.bit();
+				draft.camLine = -1;
+				draft.lobe = null;
+			} else if (level.getBlockEntity(draft.lobe) instanceof CamshaftBlockEntity lobe)
 				draft.lobeAngle = lobe.lobeAngle();
 		}
 		if (draft.intake < 0)
@@ -441,12 +455,15 @@ public final class EngineScanner {
 		return state.getBlock() instanceof InlineDuct duct && duct.acceptsPipe(state, direction, kind);
 	}
 
-	private int portNetwork(BlockPos start, PortKind kind) {
-		Map<BlockPos, Integer> index = portIndex.computeIfAbsent(kind, $ -> new HashMap<>());
-		Integer known = index.get(start);
-		if (known != null)
-			return known;
+	private record Trace(Set<BlockPos> visited, Set<BlockPos> openings, Set<BlockPos> heads) {
+	}
 
+	/**
+	 * Follows the pipes from {@code start}, wherever they are open, to the heads and openings at their ends, as if the
+	 * duct block at {@code excluded} (if any) were not there. A turbocharger, supercharger or intercooler is a junction
+	 * like any other pipe block: the run goes in at one face and out of another.
+	 */
+	private Trace trace(BlockPos start, PortKind kind, @Nullable BlockPos excluded) {
 		int limit = CEConfig.MAX_MANIFOLD_BLOCKS.get();
 		Set<BlockPos> visited = new HashSet<>();
 		Set<BlockPos> openings = new LinkedHashSet<>();
@@ -455,13 +472,10 @@ public final class EngineScanner {
 
 		if (state(start).getBlock() instanceof PortOpeningBlock)
 			openings.add(start.immutable());
-		else {
+		else if (!start.equals(excluded)) {
 			queue.add(start.immutable());
 			visited.add(start.immutable());
 		}
-		// Follow the pipes, wherever they are open, to the heads and openings at their ends. A turbocharger,
-		// supercharger or intercooler is a junction like any other pipe block: the run goes in at one face and out of
-		// another
 		while (!queue.isEmpty() && visited.size() < limit) {
 			BlockPos duct = queue.poll();
 			BlockState ductState = state(duct);
@@ -469,6 +483,8 @@ public final class EngineScanner {
 				if (!opensTowards(ductState, direction, kind))
 					continue;
 				BlockPos next = duct.relative(direction);
+				if (next.equals(excluded))
+					continue;
 				BlockState state = state(next);
 				Block block = state.getBlock();
 				if (block instanceof ManifoldBlock manifold && manifold.kind() == kind) {
@@ -492,6 +508,19 @@ public final class EngineScanner {
 			if (state(behind).getBlock() instanceof CylinderHeadBlock)
 				heads.add(behind.immutable());
 		}
+		return new Trace(visited, openings, heads);
+	}
+
+	private int portNetwork(BlockPos start, PortKind kind) {
+		Map<BlockPos, Integer> index = portIndex.computeIfAbsent(kind, $ -> new HashMap<>());
+		Integer known = index.get(start);
+		if (known != null)
+			return known;
+
+		Trace trace = trace(start, kind, null);
+		Set<BlockPos> visited = trace.visited;
+		Set<BlockPos> openings = trace.openings;
+		Set<BlockPos> heads = trace.heads;
 
 		int open = 0;
 		for (BlockPos opening : openings)
@@ -517,9 +546,17 @@ public final class EngineScanner {
 				intercoolers.add(pos);
 		}
 
+		// A compressor or turbine that the air can go round (another branch of the run reaches an opening without it)
+		// shares the flow with whatever is on that branch; one that every path goes through takes all of it
+		Set<BlockPos> parallel = new HashSet<>();
+		for (List<BlockPos> stages : List.of(turbos, superchargers))
+			for (BlockPos stage : stages)
+				if (!trace(start, kind, stage).openings.isEmpty())
+					parallel.add(stage);
+
 		int number = ports.size();
 		ports.add(new PortNetwork(kind, open, Math.max(1, heads.size()), List.copyOf(openings), List.copyOf(throttles), List.copyOf(sensors),
-			List.copyOf(turbos), List.copyOf(superchargers), List.copyOf(intercoolers)));
+			List.copyOf(turbos), List.copyOf(superchargers), List.copyOf(intercoolers), Set.copyOf(parallel)));
 		for (BlockPos pos : visited) {
 			index.put(pos, number);
 			members.add(pos);
@@ -546,8 +583,12 @@ public final class EngineScanner {
 			cursor.relative(back.getOpposite()))
 			segments.add(cursor.immutable());
 
+		Direction forward = back.getOpposite();
+		boolean broken = shaftBeyond(start.relative(back), back, axis)
+			|| shaftBeyond(segments.getLast()
+				.relative(forward), forward, axis);
 		int index = camLines.size();
-		camLines.add(new CamLine(axis, List.copyOf(segments)));
+		camLines.add(new CamLine(axis, List.copyOf(segments), broken));
 		for (BlockPos pos : segments) {
 			camIndex.put(pos, index);
 			members.add(pos);
@@ -557,6 +598,21 @@ public final class EngineScanner {
 
 	private static boolean isCam(BlockState state, Axis axis) {
 		return state.getBlock() instanceof CamshaftBlock && state.getValue(BlockStateProperties.AXIS) == axis;
+	}
+
+	/** Whether plain shafts run on from {@code from} to more camshaft blocks: a camshaft with a gap in it. */
+	private boolean shaftBeyond(BlockPos from, Direction direction, Axis axis) {
+		BlockPos cursor = from;
+		for (int i = 0; i < MAX_SHAFT_WALK; i++) {
+			BlockState state = state(cursor);
+			if (i > 0 && isCam(state, axis))
+				return true;
+			if (!state.hasProperty(BlockStateProperties.AXIS) || state.getValue(BlockStateProperties.AXIS) != axis
+				|| !AllBlocks.SHAFT.has(state))
+				return false;
+			cursor = cursor.relative(direction);
+		}
+		return false;
 	}
 
 	/**

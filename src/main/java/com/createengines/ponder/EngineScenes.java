@@ -64,9 +64,9 @@ public final class EngineScenes {
 			.showSection(crank, Direction.DOWN);
 		scene.idle(10);
 		scene.overlay()
-			.showText(70)
+			.showText(100)
 			.attachKeyFrame()
-			.text("A crankshaft is a line of Crankshaft and Crank Throw blocks on one axis. It turns like any Create shaft.")
+			.text("A crankshaft is an unbroken line of Crankshaft and Crank Throw blocks on one axis. It turns like a Create shaft, but a plain Shaft in the middle splits it and the engine will not run.")
 			.pointAt(util.vector()
 				.topOf(1, 1, 3))
 			.placeNearTarget();
@@ -303,9 +303,9 @@ public final class EngineScenes {
 			.showSection(lobe, Direction.NORTH);
 		scene.idle(10);
 		scene.overlay()
-			.showText(80)
+			.showText(110)
 			.attachKeyFrame()
-			.text("A Cam Lobe touching a cylinder head, or the cylinder block below it, opens its valves and fires its injector as the camshaft turns.")
+			.text("A Cam Lobe touching a cylinder head, or the cylinder block below it, opens its valves and fires its injector as the camshaft turns. Keep the camshaft unbroken: a plain Shaft between its blocks leaves the lobes cut off from it with no cam.")
 			.pointAt(util.vector()
 				.blockSurface(util.grid()
 					.at(2, 3, 3), Direction.WEST))
@@ -2226,7 +2226,7 @@ public final class EngineScenes {
 			.showText(130)
 			.attachKeyFrame()
 			.colored(PonderPalette.BLUE)
-			.text("Stages compound. Turbochargers and superchargers on one intake run squeeze the air in turn, so their pressures multiply. Turbos sharing an exhaust run split its heat and each holds the exhaust up, adding back-pressure.")
+			.text("Stages in series compound. When all the air has to pass through two compressors in turn, their pressures multiply, and each turbine in the exhaust adds its back-pressure. Stages side by side, with a branch the air can take round either, share the flow: the cylinders get their average pressure, and the smaller wheels spool sooner.")
 			.pointAt(util.vector()
 				.topOf(blowerPos))
 			.placeNearTarget();

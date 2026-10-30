@@ -29,13 +29,16 @@ import net.minecraft.core.Direction.Axis;
  *                   which case {@link #segments()} lists them all, the first line's first
  * @param members    every block whose change should trigger a rescan of this engine
  * @param incomplete part of the engine is in an unloaded chunk, so it is not run
+ * @param broken     a plain shaft sits between two blocks of the crankshaft, which has to be one unbroken line, so
+ *                   it is not run
  */
 public record EngineLayout(BlockPos primary, Axis axis, List<Segment> segments, List<Cylinder> cylinders,
 						   List<PortNetwork> ports, List<CamLine> camLines, List<BlockPos> starters,
 						   List<BlockPos> batteries, List<BlockPos> alternators, List<BlockPos> sumps,
 						   List<BlockPos> limiters, List<BlockPos> governors, List<BlockPos> heads,
 						   List<Turbo> turbos, List<Inline> superchargers, List<Inline> intercoolers, int flywheels,
-							   int lines, Set<BlockPos> members, boolean incomplete) {
+							   int lines, Set<BlockPos> members, boolean incomplete,
+							   boolean broken) {
 
 	/**
 	 * A turbocharger joining one of this engine's exhaust networks (its turbine) to one of its intake networks (its
@@ -43,16 +46,19 @@ public record EngineLayout(BlockPos primary, Axis axis, List<Segment> segments, 
 	 *
 	 * @param intake  index into {@link #ports()} of the intake network the compressor feeds
 	 * @param exhaust index into {@link #ports()} of the exhaust network that drives the turbine
+	 * @param intakeParallel  the air can reach the heads without going through the compressor, so it shares the flow
+	 * @param exhaustParallel the exhaust can leave without going through the turbine, so it shares the flow
 	 */
-	public record Turbo(BlockPos pos, int intake, int exhaust) {
+	public record Turbo(BlockPos pos, int intake, int exhaust, boolean intakeParallel, boolean exhaustParallel) {
 	}
 
 	/**
 	 * A supercharger or an intercooler, which sits in one of this engine's intake networks.
 	 *
 	 * @param intake index into {@link #ports()} of the intake network it is in
+	 * @param parallel the air can reach the heads without going through it, so it shares the flow
 	 */
-	public record Inline(BlockPos pos, int intake) {
+	public record Inline(BlockPos pos, int intake, boolean parallel) {
 	}
 
 	/**
@@ -87,10 +93,12 @@ public record EngineLayout(BlockPos primary, Axis axis, List<Segment> segments, 
 	 * @param turbos    turbochargers the line runs through: a compressor if it is an intake, a turbine if an exhaust
 	 * @param superchargers superchargers in an intake line, whose blowers push all of its air
 	 * @param intercoolers  intercoolers in an intake line, which cool the charge the compressors heat
+	 * @param parallel      turbochargers and superchargers the run can go round, which share its flow with the
+	 *                      other branches; any other is in series, and all of the flow goes through it
 	 */
 	public record PortNetwork(PortKind kind, int openings, int heads, List<BlockPos> outlets,
 							  List<BlockPos> throttles, List<BlockPos> sensors, List<BlockPos> turbos,
-							  List<BlockPos> superchargers, List<BlockPos> intercoolers) {
+							  List<BlockPos> superchargers, List<BlockPos> intercoolers, Set<BlockPos> parallel) {
 		/** Share of full breathing each head gets: an opening comfortably serves two cylinders. */
 		public double flowFactor() {
 			if (openings == 0 || heads == 0)
@@ -99,6 +107,7 @@ public record EngineLayout(BlockPos primary, Axis axis, List<Segment> segments, 
 		}
 	}
 
-	public record CamLine(Axis axis, List<BlockPos> segments) {
+	/** @param broken a plain shaft sits between two blocks of the camshaft, which has to be one unbroken line */
+	public record CamLine(Axis axis, List<BlockPos> segments, boolean broken) {
 	}
 }

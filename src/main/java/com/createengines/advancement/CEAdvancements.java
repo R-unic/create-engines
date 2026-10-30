@@ -153,7 +153,9 @@ public final class CEAdvancements {
 			Milestone.SUPERCHARGED, "Whine On", "Run a supercharger at 0.3 bar of boost on a running engine.");
 		on("compound_boost", "boost", () -> CEBlocks.TURBOCHARGER.get(), AdvancementType.GOAL,
 			Milestone.COMPOUND_BOOST, "Compound Interest",
-			"Run two turbochargers on the same cylinders, each making at least 0.2 bar of boost, so their pressures multiply.");
+			"Run two turbochargers on the same cylinders, each making at least 0.2 bar of boost, with all the air going through both so their pressures multiply.");
+		on("twin_turbo", "boost", () -> CEBlocks.TURBOCHARGER.get(), AdvancementType.GOAL, Milestone.TWIN_TURBO,
+			"Two Lungs", "Run two turbochargers side by side on the same cylinders, each making at least 0.2 bar, so they share the air.");
 		on("twincharged", "supercharged", () -> CEBlocks.SUPERCHARGER.get(), AdvancementType.CHALLENGE,
 			Milestone.TWINCHARGED, "Twincharged",
 			"Run a turbocharger and a supercharger on the same cylinders, each making at least 0.2 bar.");

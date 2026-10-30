@@ -38,6 +38,8 @@ public final class Supercharger {
 	public double rpm;
 	/** Shaft turns per crank turn, which a dynamometer run uses to work out the speed this blower would be driven at. */
 	public double driveRatio = 1;
+	/** The air can reach the cylinders without going through this blower, so its pressure is averaged with the other branches'. */
+	public boolean parallel;
 
 	private boolean followsCrank;
 	private double boost;
@@ -58,6 +60,7 @@ public final class Supercharger {
 		Supercharger copy = new Supercharger(mapped);
 		copy.limit = limit;
 		copy.driveRatio = driveRatio;
+		copy.parallel = parallel;
 		copy.followsCrank = true;
 		return copy;
 	}

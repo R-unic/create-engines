@@ -1,7 +1,9 @@
 package com.createengines.engine.sim;
 
 import java.util.ArrayList;
+import java.util.IdentityHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 
 /**
@@ -202,27 +204,68 @@ public final class EngineSimulation {
 			cylinder.intakeTemperature = 1;
 			cylinder.exhaustPressure = 1;
 		}
+		// Stages in series multiply (or add) straight onto the cylinder; stages in parallel each handle a share of the
+		// air, so the cylinder gets their average, whatever the number of them
+		Parallel intake = new Parallel();
+		Parallel exhaust = new Parallel();
 		for (Turbocharger turbo : turbos) {
 			double pressure = 1 + turbo.boost();
 			double temperature = turbo.chargeTemperature();
 			for (CylinderModel cylinder : turbo.compressor()) {
-				cylinder.intakePressure *= pressure;
-				cylinder.intakeTemperature *= temperature;
+				if (turbo.parallelCompressor)
+					intake.add(cylinder, pressure, temperature);
+				else {
+					cylinder.intakePressure *= pressure;
+					cylinder.intakeTemperature *= temperature;
+				}
 			}
 			double back = turbo.backPressure() - 1;
-			for (CylinderModel cylinder : turbo.turbine())
-				cylinder.exhaustPressure += back;
+			for (CylinderModel cylinder : turbo.turbine()) {
+				if (turbo.parallelTurbine)
+					exhaust.add(cylinder, back, 0);
+				else
+					cylinder.exhaustPressure += back;
+			}
 		}
 		for (Supercharger blower : superchargers) {
 			double pressure = 1 + blower.boost();
 			double temperature = blower.chargeTemperature();
 			for (CylinderModel cylinder : blower.compressor()) {
-				cylinder.intakePressure *= pressure;
-				cylinder.intakeTemperature *= temperature;
+				if (blower.parallel)
+					intake.add(cylinder, pressure, temperature);
+				else {
+					cylinder.intakePressure *= pressure;
+					cylinder.intakeTemperature *= temperature;
+				}
 			}
 		}
+		intake.forEach((cylinder, pressure, temperature) -> {
+			cylinder.intakePressure *= pressure;
+			cylinder.intakeTemperature *= temperature;
+		});
+		exhaust.forEach((cylinder, back, $) -> cylinder.exhaustPressure += back);
 		for (Intercooler cooler : intercoolers)
 			cooler.cool();
+	}
+
+	/** Running averages of what several parallel stages make for each cylinder they serve. */
+	private static final class Parallel {
+		private final Map<CylinderModel, double[]> sums = new IdentityHashMap<>();
+
+		void add(CylinderModel cylinder, double first, double second) {
+			double[] sum = sums.computeIfAbsent(cylinder, $ -> new double[3]);
+			sum[0] += first;
+			sum[1] += second;
+			sum[2]++;
+		}
+
+		void forEach(Average average) {
+			sums.forEach((cylinder, sum) -> average.accept(cylinder, sum[0] / sum[2], sum[1] / sum[2]));
+		}
+
+		interface Average {
+			void accept(CylinderModel cylinder, double first, double second);
+		}
 	}
 
 	/** Whether unburned fuel thins the oil as it runs. A dynamometer measures the oil as it is and leaves it alone. */

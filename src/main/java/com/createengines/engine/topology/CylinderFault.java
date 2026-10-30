@@ -13,7 +13,9 @@ public enum CylinderFault {
 	NO_EXHAUST(false),
 	EXHAUST_BLOCKED(false),
 	/** The head has a spark plug but no battery touches the engine to fire it. */
-	NO_BATTERY(false);
+	NO_BATTERY(false),
+	/** A plain shaft splits the camshaft, so the lobe is left with no cam to turn it in time. */
+	BROKEN_CAM(false);
 
 	/** Without this the cylinder is not a working piston at all and is left out of the simulation. */
 	public final boolean disablesCylinder;

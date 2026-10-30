@@ -213,17 +213,23 @@ public final class EngineController {
 				if (turbo.intake() >= 0 && cylinder.intake() == turbo.intake())
 					compressor.add(model);
 			}
-			// Several turbines on one exhaust network split its heat between them
-			long sharing = layout.turbos()
+			// Turbines side by side on one exhaust network split its heat between them; one the exhaust has to go
+			// through gets all of it
+			long sharing = turbo.exhaustParallel() ? layout.turbos()
 				.stream()
-				.filter(other -> turbo.exhaust() >= 0 && other.exhaust() == turbo.exhaust())
-				.count();
+				.filter(other -> other.exhaust() == turbo.exhaust() && other.exhaustParallel())
+				.count() : 1;
 			Turbocharger unit = new Turbocharger(turbine, compressor, 1d / Math.max(1, sharing));
+			unit.parallelTurbine = turbo.exhaustParallel();
+			unit.parallelCompressor = turbo.intakeParallel();
+			if (turbo.intakeParallel())
+				unit.flow = 1d / Math.max(1, banked(turbo.intake()));
 			turbos.add(unit);
 			sim.addTurbo(unit);
 		}
 		for (EngineLayout.Inline placed : layout.superchargers()) {
 			Supercharger blower = new Supercharger(breathingOn(placed.intake()));
+			blower.parallel = placed.parallel();
 			blowers.add(blower);
 			sim.addSupercharger(blower);
 		}
@@ -240,6 +246,18 @@ public final class EngineController {
 			model.resetGas(model.pistonAngle(sim.angle(), sim.direction()));
 		if (motion != null && motion.source() != null)
 			carryCylinders(motion.source());
+	}
+
+	/** How many compressors, turbo or blower, sit side by side on intake network {@code port} and share its air. */
+	private long banked(int port) {
+		return layout.turbos()
+			.stream()
+			.filter(other -> other.intake() == port && other.intakeParallel())
+			.count()
+			+ layout.superchargers()
+				.stream()
+				.filter(other -> other.intake() == port && other.parallel())
+				.count();
 	}
 
 	/** The working cylinders that draw their air from intake network {@code port}. */
@@ -310,12 +328,12 @@ public final class EngineController {
 		ticks++;
 		double torqueScale = CEConfig.STRESS_PER_TORQUE.get();
 
-		if (layout.incomplete()) {
+		if (layout.incomplete() || layout.broken()) {
 			sim.restore(sim.angle(), 0, sim.direction());
 			publishSpeed();
 			publishCapacity(torqueScale);
 			if (ticks % SYNC_INTERVAL == 0)
-				primary.updateSummary(summary(EngineState.INCOMPLETE, torqueScale));
+				primary.updateSummary(summary(layout.incomplete() ? EngineState.INCOMPLETE : EngineState.BROKEN, torqueScale));
 			return;
 		}
 
@@ -896,15 +914,16 @@ public final class EngineController {
 	/** Credits the operator with boost from superchargers, stacked stages and intercoolers. */
 	private void reportInduction(Level level, EngineState state) {
 		Map<CylinderModel, int[]> stages = new IdentityHashMap<>();
+		// Per cylinder: turbos in series, blowers, turbos side by side
 		for (Turbocharger turbo : turbos)
 			if (turbo.boost() >= EngineMilestones.STAGE_BOOST)
 				for (CylinderModel cylinder : turbo.compressor())
-					stages.computeIfAbsent(cylinder, $ -> new int[2])[0]++;
+					stages.computeIfAbsent(cylinder, $ -> new int[3])[turbo.parallelCompressor ? 2 : 0]++;
 		float blowerBoost = 0;
 		for (Supercharger blower : blowers) {
 			if (blower.boost() >= EngineMilestones.STAGE_BOOST)
 				for (CylinderModel cylinder : blower.compressor())
-					stages.computeIfAbsent(cylinder, $ -> new int[2])[1]++;
+					stages.computeIfAbsent(cylinder, $ -> new int[3])[1]++;
 			if (blower.compressor()
 				.stream()
 				.anyMatch(cylinder -> cylinder.lastCycle().result.fired()))
@@ -912,10 +931,12 @@ public final class EngineController {
 		}
 		int turboStages = 0;
 		int blowerStages = 0;
+		int twinStages = 0;
 		for (int[] count : stages.values()) {
 			turboStages = Math.max(turboStages, count[0]);
 			blowerStages = Math.max(blowerStages, count[1]);
-			if (count[0] >= 1 && count[1] >= 1) {
+			twinStages = Math.max(twinStages, count[2]);
+			if (count[0] + count[2] >= 1 && count[1] >= 1) {
 				turboStages = Math.max(turboStages, 1);
 				blowerStages = Math.max(blowerStages, 1);
 			}
@@ -926,7 +947,7 @@ public final class EngineController {
 				if (cylinder.lastCycle().result.fired())
 					cooled = Math.max(cooled, (float) (cylinder.intakePressure - 1));
 		for (Milestone milestone : EngineMilestones.reachedInduction(new EngineMilestones.Induction(
-			state == EngineState.RUNNING, blowerBoost, turboStages, blowerStages, cooled))) {
+			state == EngineState.RUNNING, blowerBoost, turboStages, blowerStages, twinStages, cooled))) {
 			Integer last = milestoneTicks.get(milestone);
 			if (last != null && ticks - last < MILESTONE_COOLDOWN)
 				continue;

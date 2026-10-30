@@ -1,0 +1,110 @@
+{
+  "parent": "block/block",
+  "textures": {
+    "pipe": "create:block/dark_metal_block",
+    "bead": "create:block/industrial_iron_block",
+    "flange": "create:block/industrial_iron_block",
+    "gasket": "create:block/dark_metal_block",
+    "wrap": "minecraft:block/smooth_stone",
+    "bolt": "create:block/brass_block",
+    "particle": "create:block/dark_metal_block"
+  },
+  "elements": [
+    {
+      "from": [
+        5,
+        4.5,
+        5
+      ],
+      "to": [
+        11,
+        11.5,
+        11
+      ],
+      "faces": {
+        "north": {
+          "texture": "#pipe"
+        },
+        "south": {
+          "texture": "#pipe"
+        },
+        "east": {
+          "texture": "#pipe"
+        },
+        "west": {
+          "texture": "#pipe"
+        },
+        "up": {
+          "texture": "#pipe"
+        },
+        "down": {
+          "texture": "#pipe"
+        }
+      }
+    },
+    {
+      "from": [
+        4.25,
+        4.25,
+        4.25
+      ],
+      "to": [
+        11.75,
+        11.75,
+        11.75
+      ],
+      "faces": {
+        "north": {
+          "texture": "#bead"
+        },
+        "south": {
+          "texture": "#bead"
+        },
+        "east": {
+          "texture": "#bead"
+        },
+        "west": {
+          "texture": "#bead"
+        },
+        "up": {
+          "texture": "#bead"
+        },
+        "down": {
+          "texture": "#bead"
+        }
+      }
+    },
+    {
+      "from": [
+        4,
+        6.5,
+        4
+      ],
+      "to": [
+        12,
+        9.5,
+        12
+      ],
+      "faces": {
+        "north": {
+          "texture": "#flange"
+        },
+        "south": {
+          "texture": "#flange"
+        },
+        "east": {
+          "texture": "#flange"
+        },
+        "west": {
+          "texture": "#flange"
+        },
+        "up": {
+          "texture": "#flange"
+        },
+        "down": {
+          "texture": "#flange"
+        }
+      }
+    }
+  ]
+}
