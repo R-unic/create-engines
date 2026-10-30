@@ -106,7 +106,7 @@ public final class EngineScenes {
 			.showText(90)
 			.attachKeyFrame()
 			.colored(PonderPalette.BLUE)
-			.text("A throw's angle can be changed with its value panel. Here the second throw is turned 180°, so its piston moves opposite the first.")
+			.text("A throw's angle can be changed with its value panel. Here the second throw is turned 180°, so its piston peaks half a turn after the first. Spreading the throws like this is how firings are spaced out; see Firing Order and Smooth Running.")
 			.pointAt(util.vector()
 				.blockSurface(util.grid()
 					.at(4, 1, 3), Direction.NORTH))
@@ -355,7 +355,7 @@ public final class EngineScenes {
 			.setKineticSpeed(camTrain, -16);
 		scene.overlay()
 			.showText(100)
-			.text("Two angles 180° apart both work: each picks which crank revolution the cylinder fires on. This is how firing order is set; the next page shows how.")
+			.text("The camshaft turns at half speed, so a lobe angle counts double. Two angles 180° apart both time the valves, but one fires the cylinder a whole crank turn after the other. That choice is how firing order is set; the next page shows how.")
 			.pointAt(util.vector()
 				.blockSurface(util.grid()
 					.at(2, 3, 3), Direction.UP))
@@ -386,9 +386,44 @@ public final class EngineScenes {
 		return (int) Math.round(lobe / CamshaftBlockEntity.LOBE_ANGLE_STEP) % steps;
 	}
 
+	/** Crank speed of the firing pages. 7.2° a tick makes a 720° four-stroke cycle exactly 100 ticks, 180° exactly 25. */
+	private static final int TIMING_SPEED = 24;
+	private static final float TIMING_DEGREES_PER_TICK = TIMING_SPEED * 3 / 10f;
+	private static final int FLASH_TICKS = 10;
+
+	/** Outlines the cylinder and head in the given column of the inline four, as a power stroke. */
+	private static void flash(CreateSceneBuilder scene, SceneBuildingUtil util, PonderPalette color, int column) {
+		scene.overlay()
+			.showOutline(color, "firing" + column, util.select()
+				.fromTo(column, 2, 3, column, 3, 3), FLASH_TICKS);
+	}
+
+	/**
+	 * Flashes cylinders at the crank angles they fire at, in real time for the page's crank speed, for whole 720°
+	 * cycles. {@code angles} ascend within one cycle and {@code columns[i]} are the cylinders firing at {@code angles[i]}.
+	 * The flashes keep the spacing the page is about but are not locked to the pistons drawn.
+	 */
+	private static void playFirings(CreateSceneBuilder scene, SceneBuildingUtil util, PonderPalette color, int cycles,
+		int[] angles, int[][] columns) {
+		int clock = 0;
+		for (int cycle = 0; cycle < cycles; cycle++)
+			for (int i = 0; i < angles.length; i++) {
+				int target = cycle * 720 + angles[i];
+				int wait = Math.round((target - clock) / TIMING_DEGREES_PER_TICK);
+				if (wait > 0)
+					scene.idle(wait);
+				clock = target;
+				for (int column : columns[i])
+					flash(scene, util, color, column);
+			}
+		int rest = Math.round((cycles * 720 - clock) / TIMING_DEGREES_PER_TICK);
+		if (rest > 0)
+			scene.idle(rest);
+	}
+
 	public static void firingOrder(SceneBuilder builder, SceneBuildingUtil util) {
 		CreateSceneBuilder scene = new CreateSceneBuilder(builder);
-		scene.title("firing_order", "Choosing a Firing Order");
+		scene.title("firing_order", "Firing Order and Smooth Running");
 		scene.configureBasePlate(0, 0, 8);
 		scene.world()
 			.showSection(util.select()
@@ -396,16 +431,29 @@ public final class EngineScenes {
 
 		Selection crank = util.select()
 			.fromTo(1, 1, 3, 6, 1, 3);
-		Selection engine = util.select()
-			.fromTo(2, 2, 3, 5, 3, 3)
+		Selection firstCylinder = util.select()
+			.fromTo(2, 2, 3, 2, 3, 3)
 			.add(util.select()
-				.fromTo(2, 3, 2, 5, 3, 2))
+				.position(2, 3, 2))
 			.add(util.select()
-				.fromTo(2, 3, 4, 5, 3, 4));
+				.position(2, 3, 4));
+		Selection otherCylinders = util.select()
+			.fromTo(3, 2, 3, 5, 3, 3)
+			.add(util.select()
+				.fromTo(3, 3, 2, 5, 3, 2))
+			.add(util.select()
+				.fromTo(3, 3, 4, 5, 3, 4));
+		Selection firstCam = util.select()
+			.fromTo(1, 4, 3, 2, 4, 3);
+		Selection otherCams = util.select()
+			.fromTo(3, 4, 3, 6, 4, 3);
 		Selection cam = util.select()
 			.fromTo(1, 4, 3, 6, 4, 3);
+		Selection flywheel = util.select()
+			.position(7, 1, 3);
 
-		// Cylinders 1 and 4 sit on throws at 0°, 2 and 3 on throws at 180°: a flat-plane crank
+		// Cylinders 1 and 4 sit on throws at 0°, 2 and 3 on throws at 180°: a flat-plane crank. Every lobe starts on the
+		// first crank turn, so 1 and 4 fire together and 2 and 3 fire together
 		int[] throwSteps = {0, THROW_HALF_TURN, THROW_HALF_TURN, 0};
 		for (int i = 0; i < 4; i++) {
 			setThrow(scene, util.select()
@@ -414,66 +462,131 @@ public final class EngineScenes {
 				.position(2 + i, 4, 3), lobeFor(throwSteps[i], Direction.UP, false));
 		}
 		scene.world()
+			.setKineticSpeed(crank, TIMING_SPEED);
+		scene.world()
+			.setKineticSpeed(cam, TIMING_SPEED / 2);
+		scene.world()
+			.setKineticSpeed(flywheel, TIMING_SPEED);
+
+		// One cylinder: a power stroke every 720°, and a lurch in between
+		scene.world()
 			.showSection(crank, Direction.DOWN);
 		scene.world()
-			.showSection(engine, Direction.DOWN);
+			.showSection(firstCylinder, Direction.DOWN);
 		scene.world()
-			.showSection(cam, Direction.DOWN);
-		scene.world()
-			.setKineticSpeed(crank, 32);
-		scene.world()
-			.setKineticSpeed(cam, 16);
-		scene.idle(20);
-
+			.showSection(firstCam, Direction.DOWN);
+		scene.idle(25);
 		scene.overlay()
-			.showText(110)
+			.showText(160)
 			.attachKeyFrame()
-			.text("Four cylinders on one crank. Each cam lobe times its cylinder to its own piston, so every one fires. When it fires is set by the lobe angles.")
+			.text("A four-stroke cylinder gives one power stroke every two turns of the crank: 720°. The rest of the time it only drags on the crankshaft, so a lone cylinder makes the engine surge with each stroke and slow between them. That surge is the speed ripple.")
 			.pointAt(util.vector()
-				.topOf(2, 4, 3))
+				.topOf(2, 3, 3))
 			.placeNearTarget();
-		scene.idle(120);
+		playFirings(scene, util, PonderPalette.WHITE, 2, new int[] {0}, new int[][] {{2}});
+		scene.idle(5);
 
+		// Four cylinders timed badly: two bunches and a long gap
+		scene.world()
+			.showSection(otherCylinders, Direction.DOWN);
+		scene.world()
+			.showSection(otherCams, Direction.DOWN);
+		scene.idle(20);
+		for (int i = 0; i < 4; i++)
+			scene.overlay()
+				.showText(45)
+				.text(String.valueOf(i + 1))
+				.pointAt(util.vector()
+					.blockSurface(util.grid()
+						.at(2 + i, 2, 3), Direction.NORTH))
+				.placeNearTarget();
+		scene.idle(50);
 		scene.overlay()
-			.showText(110)
+			.showText(170)
+			.attachKeyFrame()
 			.colored(PonderPalette.RED)
-			.text("Cylinders 1 and 4 reach top dead centre together, and so do 2 and 3. Timed this simply they fire in pairs: two kicks in two turns, and a lumpy engine.")
+			.text("More cylinders only smooth the engine if they fire at different moments. As built, pistons 1 and 4 reach the top together and so do 2 and 3, so all four fire in two bunches 180° apart, then nothing for 540°. The speed ripple stays high.")
 			.pointAt(util.vector()
 				.topOf(3, 4, 3))
 			.placeNearTarget();
-		scene.idle(120);
+		playFirings(scene, util, PonderPalette.RED, 2, new int[] {0, 180}, new int[][] {{3, 4}, {2, 5}});
+		scene.idle(5);
+
+		// The two dials: throw angle and lobe angle
+		scene.overlay()
+			.showText(150)
+			.attachKeyFrame()
+			.colored(PonderPalette.BLUE)
+			.text("Two angles set when each cylinder fires. A crank throw's angle sets where in one turn its piston peaks: turn a throw, and its piston peaks that much sooner or later. Throws 2 and 3 here are turned 180°, so their pistons peak half a turn after 1 and 4.")
+			.pointAt(util.vector()
+				.blockSurface(util.grid()
+					.at(3, 1, 3), Direction.NORTH))
+			.placeNearTarget();
+		scene.idle(160);
 
 		setLobe(scene, util.select()
 			.position(4, 4, 3), lobeFor(THROW_HALF_TURN, Direction.UP, true));
 		setLobe(scene, util.select()
 			.position(5, 4, 3), lobeFor(0, Direction.UP, true));
 		scene.overlay()
-			.showText(120)
+			.showText(170)
 			.attachKeyFrame()
 			.colored(PonderPalette.BLUE)
-			.text("A lobe angle 180° further round times a cylinder just as well, but fires it on the next crank turn instead. Cylinders 3 and 4 are moved on to the second turn.")
+			.text("A cam lobe's angle sets which turn. The camshaft runs at half speed, so a lobe angle counts double: a lobe 180° further round times its cylinder just as well, but fires it a whole crank turn later. Cylinders 3 and 4 are moved on to the second turn.")
 			.pointAt(util.vector()
 				.topOf(4, 4, 3))
 			.placeNearTarget();
-		scene.idle(130);
+		playFirings(scene, util, PonderPalette.GREEN, 2, new int[] {0, 180, 360, 540},
+			new int[][] {{3}, {2}, {4}, {5}});
+		scene.idle(5);
 
+		// Even spacing
 		scene.overlay()
-			.showText(110)
+			.showText(170)
+			.attachKeyFrame()
 			.colored(PonderPalette.GREEN)
-			.text("Now they fire one after another in the order 1, 3, 4, 2, a power stroke every 180°. Goggles on the crankshaft show the firing intervals.")
+			.text("Now they fire one after another in the order 1, 3, 4, 2, a power stroke every 180°. Some cylinder is always pushing, so the speed hardly moves. Aim for 720° ÷ cylinders between firings: 180° for four, 120° for six, 90° for eight.")
+			.pointAt(util.vector()
+				.topOf(3, 4, 3))
+			.placeNearTarget();
+		playFirings(scene, util, PonderPalette.GREEN, 2, new int[] {0, 180, 360, 540},
+			new int[][] {{3}, {2}, {4}, {5}});
+		scene.idle(5);
+
+		// Goggles
+		scene.overlay()
+			.showText(150)
+			.text("Goggles on a crankshaft show the firing intervals and the Speed ripple, which turns gold when the engine runs rough. Goggles on a cylinder show the crank angle its piston peaks at.")
 			.pointAt(util.vector()
 				.topOf(1, 1, 3))
 			.placeNearTarget();
-		scene.idle(120);
+		scene.idle(160);
 
+		// Mass smooths what spacing leaves
+		scene.world()
+			.showSection(flywheel, Direction.WEST);
+		scene.idle(15);
 		scene.overlay()
-			.showText(130)
+			.showText(170)
 			.attachKeyFrame()
-			.text("To plan one by hand: read each piston's top dead centre angle from goggles, halve it for the lobe angle, then add 180° to some lobes so the firings land 720° ÷ cylinders apart. A Timing Tool does all of this for you.")
+			.colored(PonderPalette.WHITE)
+			.text("Mass smooths the rest. A Create Flywheel on the crankshaft's axis adds rotating inertia, so each power stroke changes the speed less and the engine carries through its compression strokes. Even spacing and enough inertia together give a low speed ripple.")
+			.pointAt(util.vector()
+				.topOf(7, 1, 3))
+			.placeNearTarget();
+		playFirings(scene, util, PonderPalette.GREEN, 2, new int[] {0, 180, 360, 540},
+			new int[][] {{3}, {2}, {4}, {5}});
+		scene.idle(5);
+
+		// Planning by hand
+		scene.overlay()
+			.showText(190)
+			.attachKeyFrame()
+			.text("To plan one by hand, read each piston's top dead centre angle from goggles. Its firing point in the 720° cycle is that angle, plus 360° if its lobe is on the second turn, and the lobe angle is half the firing point. Choose them so the points fall 720° ÷ cylinders apart. A Timing Tool does all of this for you.")
 			.pointAt(util.vector()
 				.topOf(5, 4, 3))
 			.placeNearTarget();
-		scene.idle(140);
+		scene.idle(200);
 		scene.markAsFinished();
 	}
 

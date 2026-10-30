@@ -112,7 +112,8 @@ public final class VisualSmokeTest {
 			goggles("head", 110, 4.5, 4.0, 1.0, 45, 0);
 			goggles("crankshaft", 130, 1.5, 2.0, 0.4, 0, 28);
 			goggles("cylinder", 150, 2.5, 2.0, -0.5, 0, 2.3f);
-			management(200);
+			ponderScene("firing_order", 200, CEBlocks.CAM_LOBE::asStack, 1, 120, 400, 600, 780, 960, 1350, 1560);
+			management(2000);
 			return;
 		}
 
@@ -247,10 +248,10 @@ public final class VisualSmokeTest {
 
 	/** The firing order, compact V and mixture pages, from {@code start}; then quits. */
 	private static void newScenes(int start) {
-		ponderScene("firing_order", start, CEBlocks.CAM_LOBE::asStack, 1, 250, 450, 700);
-		ponderScene("compact_v", start + 800, CEBlocks.CAM_LOBE::asStack, 2, 250, 450, 700);
-		ponder("mixture", start + 1600, CEItems.FUEL_INJECTOR::asStack, 500, 750, 900, 1000);
-		management(start + 2700);
+		ponderScene("firing_order", start, CEBlocks.CAM_LOBE::asStack, 1, 120, 400, 600, 780, 960, 1350, 1560);
+		ponderScene("compact_v", start + 1700, CEBlocks.CAM_LOBE::asStack, 2, 250, 450, 700);
+		ponder("mixture", start + 2500, CEItems.FUEL_INJECTOR::asStack, 500, 750, 900, 1000);
+		management(start + 3600);
 	}
 
 	/** Where the engine-management engine stands, relative to the first. */

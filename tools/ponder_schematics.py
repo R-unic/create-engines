@@ -297,6 +297,8 @@ for x in range(2, 6):
         (x, 3, 4, ce("exhaust_outlet"), facing("south")),
         (x, 4, 3, ce("cam_lobe"), axis("x")),
     ]
+# A Create flywheel on the crank's axis, which the firing order page brings in to show inertia (other pages leave it hidden)
+firing_order.append((7, 1, 3, "create:flywheel", {"axis": "x", "waterlogged": "false"}))
 write_schematic("firing_order", (8, 5, 8), firing_order)
 
 # A small V: one bank bored up and one bored north from the same two throws. Each bank's cam sits against its
