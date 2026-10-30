@@ -1,0 +1,29 @@
+{
+  "parent": "create_engines:camshaft",
+  "criteria": {
+    "pushrod_cam": {
+      "conditions": {
+        "event": "pushrod_cam"
+      },
+      "trigger": "create_engines:event"
+    }
+  },
+  "display": {
+    "description": {
+      "translate": "advancement.create_engines.pushrod_cam.desc"
+    },
+    "icon": {
+      "count": 1,
+      "id": "create_engines:cam_lobe"
+    },
+    "title": {
+      "translate": "advancement.create_engines.pushrod_cam"
+    }
+  },
+  "requirements": [
+    [
+      "pushrod_cam"
+    ]
+  ],
+  "sends_telemetry_event": true
+}

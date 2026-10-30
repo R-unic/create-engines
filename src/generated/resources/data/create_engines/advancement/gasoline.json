@@ -1,0 +1,33 @@
+{
+  "parent": "create_engines:diesel",
+  "criteria": {
+    "gasoline": {
+      "conditions": {
+        "items": [
+          {
+            "items": "create_engines:gasoline_bucket"
+          }
+        ]
+      },
+      "trigger": "minecraft:inventory_changed"
+    }
+  },
+  "display": {
+    "description": {
+      "translate": "advancement.create_engines.gasoline.desc"
+    },
+    "icon": {
+      "count": 1,
+      "id": "create_engines:gasoline_bucket"
+    },
+    "title": {
+      "translate": "advancement.create_engines.gasoline"
+    }
+  },
+  "requirements": [
+    [
+      "gasoline"
+    ]
+  ],
+  "sends_telemetry_event": true
+}

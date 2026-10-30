@@ -16,8 +16,12 @@ public final class CycleStats {
 	/** Sparks the plug fired this cycle, and attempts that produced nothing because the supply was flat. */
 	public int sparks;
 	public int deadSparks;
-	/** Why a spark failed to light the charge: -1 too lean, 1 too rich, 0 it didn't fail. */
+	/** Why a spark failed to light the charge: -1 too lean, 1 too rich, 2 a fouled plug, 0 it didn't fail. */
 	public int flameOut;
+	/** Share of the shot a MAF sensor held back because the air could not burn it: 0 (none) to 1 (all of it). */
+	public double mafCut;
+	/** A rev limiter cut the injector this cycle. */
+	public boolean limited;
 	public CycleResult result = CycleResult.NONE;
 
 	public double unburnedFraction() {
@@ -25,7 +29,7 @@ public final class CycleStats {
 	}
 
 	public boolean rich() {
-		return result.fired() && unburnedFraction() > 0.15;
+		return result.fired() && unburnedFraction() > Mixture.RICH_UNBURNED;
 	}
 
 	/** Fired with air to spare: more than a third of the charge's air went unused. */
@@ -44,6 +48,8 @@ public final class CycleStats {
 		sparks = other.sparks;
 		deadSparks = other.deadSparks;
 		flameOut = other.flameOut;
+		mafCut = other.mafCut;
+		limited = other.limited;
 		result = other.result;
 	}
 
@@ -58,6 +64,8 @@ public final class CycleStats {
 		sparks = 0;
 		deadSparks = 0;
 		flameOut = 0;
+		mafCut = 0;
+		limited = false;
 		result = CycleResult.NONE;
 	}
 }

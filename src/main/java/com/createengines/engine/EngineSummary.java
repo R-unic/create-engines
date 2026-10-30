@@ -11,16 +11,25 @@ import net.minecraft.nbt.CompoundTag;
  * @param availableTorque  SU per RPM the engine could deliver at full fuel
  * @param loadTorque       SU per RPM the network is asking for
  * @param fuelPerMinute    mB per minute being injected
- * @param lubrication      oil film on the moving parts, 0 (dry) to 1
+ * @param lubrication      how well oiled the moving parts are, 0 (dry) to 1, counting the oil fuel has thinned
+ * @param thinning         share of the oil's strength unburned fuel has taken, 0 to 0.5
  * @param ripple           speed variation over a cycle, fraction of mean speed
  * @param firingAngles     crank angles (0-720) at which each cam-timed cylinder fires, sorted
+ * @param lines            how many crankshafts are geared together into this engine
  */
 public record EngineSummary(EngineState state, float rpm, float availableTorque, float loadTorque,
 							float fuelPerMinute, float ripple, int firing, int cylinders, float inertia, float lubrication,
-							boolean starterEngaged, float[] firingAngles) {
+							boolean starterEngaged, float[] firingAngles, int lines, float thinning) {
 
 	public static final EngineSummary EMPTY =
-		new EngineSummary(EngineState.STALLED, 0, 0, 0, 0, 0, 0, 0, 0, 0, false, new float[0]);
+		new EngineSummary(EngineState.STALLED, 0, 0, 0, 0, 0, 0, 0, 0, 0, false, new float[0], 1, 0);
+
+	public EngineSummary(EngineState state, float rpm, float availableTorque, float loadTorque, float fuelPerMinute,
+						 float ripple, int firing, int cylinders, float inertia, float lubrication,
+						 boolean starterEngaged, float[] firingAngles) {
+		this(state, rpm, availableTorque, loadTorque, fuelPerMinute, ripple, firing, cylinders, inertia, lubrication,
+			starterEngaged, firingAngles, 1, 0);
+	}
 
 	public CompoundTag write() {
 		CompoundTag tag = new CompoundTag();
@@ -34,6 +43,8 @@ public record EngineSummary(EngineState state, float rpm, float availableTorque,
 		tag.putInt("Cylinders", cylinders);
 		tag.putFloat("Inertia", inertia);
 		tag.putFloat("Lubrication", lubrication);
+		tag.putFloat("Thinning", thinning);
+		tag.putInt("Lines", lines);
 		tag.putBoolean("Starter", starterEngaged);
 		int[] angles = new int[firingAngles.length];
 		for (int i = 0; i < angles.length; i++)
@@ -52,7 +63,7 @@ public record EngineSummary(EngineState state, float rpm, float availableTorque,
 			tag.getFloat("Torque"), tag.getFloat("Load"), tag.getFloat("Fuel"), tag.getFloat("Ripple"),
 			tag.getInt("Firing"), tag.getInt("Cylinders"), tag.getFloat("Inertia"), tag.getFloat("Lubrication"),
 			tag.getBoolean("Starter"),
-			firingAngles);
+			firingAngles, Math.max(1, tag.getInt("Lines")), tag.getFloat("Thinning"));
 	}
 
 	/** Gaps between consecutive firings around the 720° cycle. */
@@ -70,7 +81,7 @@ public record EngineSummary(EngineState state, float rpm, float availableTorque,
 
 	/** Whether the sync-worthy figures differ noticeably. */
 	public boolean differsFrom(EngineSummary other) {
-		return state != other.state || firing != other.firing || cylinders != other.cylinders
+		return state != other.state || firing != other.firing || cylinders != other.cylinders || lines != other.lines
 			|| starterEngaged != other.starterEngaged || Math.abs(rpm - other.rpm) >= 1
 			|| relativeChange(availableTorque, other.availableTorque) || relativeChange(loadTorque, other.loadTorque)
 			|| relativeChange(fuelPerMinute, other.fuelPerMinute) || Math.abs(ripple - other.ripple) > 0.01

@@ -1,0 +1,29 @@
+{
+  "parent": "create_engines:alive",
+  "criteria": {
+    "overloaded": {
+      "conditions": {
+        "event": "overloaded"
+      },
+      "trigger": "create_engines:event"
+    }
+  },
+  "display": {
+    "description": {
+      "translate": "advancement.create_engines.overloaded.desc"
+    },
+    "icon": {
+      "count": 1,
+      "id": "create_engines:transmission"
+    },
+    "title": {
+      "translate": "advancement.create_engines.overloaded"
+    }
+  },
+  "requirements": [
+    [
+      "overloaded"
+    ]
+  ],
+  "sends_telemetry_event": true
+}

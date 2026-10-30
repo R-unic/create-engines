@@ -1,0 +1,29 @@
+{
+  "parent": "create_engines:transmission",
+  "criteria": {
+    "shifted": {
+      "conditions": {
+        "event": "shifted"
+      },
+      "trigger": "create_engines:event"
+    }
+  },
+  "display": {
+    "description": {
+      "translate": "advancement.create_engines.shifted.desc"
+    },
+    "icon": {
+      "count": 1,
+      "id": "create_engines:transmission"
+    },
+    "title": {
+      "translate": "advancement.create_engines.shifted"
+    }
+  },
+  "requirements": [
+    [
+      "shifted"
+    ]
+  ],
+  "sends_telemetry_event": true
+}

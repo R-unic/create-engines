@@ -1,0 +1,30 @@
+{
+  "parent": "create_engines:heavy_duty",
+  "criteria": {
+    "steam_beater": {
+      "conditions": {
+        "event": "steam_beater"
+      },
+      "trigger": "create_engines:event"
+    }
+  },
+  "display": {
+    "description": {
+      "translate": "advancement.create_engines.steam_beater.desc"
+    },
+    "frame": "challenge",
+    "icon": {
+      "count": 1,
+      "id": "create_engines:crankshaft"
+    },
+    "title": {
+      "translate": "advancement.create_engines.steam_beater"
+    }
+  },
+  "requirements": [
+    [
+      "steam_beater"
+    ]
+  ],
+  "sends_telemetry_event": true
+}

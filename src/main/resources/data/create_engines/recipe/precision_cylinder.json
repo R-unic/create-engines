@@ -1,0 +1,20 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "key": {
+    "B": {
+      "item": "create:brass_sheet"
+    },
+    "C": {
+      "item": "create_engines:cylinder"
+    },
+    "M": {
+      "item": "create:precision_mechanism"
+    }
+  },
+  "pattern": ["B", "C", "M"],
+  "result": {
+    "count": 1,
+    "id": "create_engines:precision_cylinder"
+  }
+}

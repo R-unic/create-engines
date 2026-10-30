@@ -1,0 +1,33 @@
+{
+  "parent": "create_engines:crankshaft",
+  "criteria": {
+    "rev_limiter": {
+      "conditions": {
+        "items": [
+          {
+            "items": "create_engines:rev_limiter"
+          }
+        ]
+      },
+      "trigger": "minecraft:inventory_changed"
+    }
+  },
+  "display": {
+    "description": {
+      "translate": "advancement.create_engines.rev_limiter.desc"
+    },
+    "icon": {
+      "count": 1,
+      "id": "create_engines:rev_limiter"
+    },
+    "title": {
+      "translate": "advancement.create_engines.rev_limiter"
+    }
+  },
+  "requirements": [
+    [
+      "rev_limiter"
+    ]
+  ],
+  "sends_telemetry_event": true
+}

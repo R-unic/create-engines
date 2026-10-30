@@ -1,0 +1,172 @@
+package com.createengines.engine;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
+import java.util.Set;
+
+import org.junit.jupiter.api.Test;
+
+import com.createengines.advancement.Milestone;
+import com.createengines.engine.EngineMilestones.Snapshot;
+
+class EngineMilestonesTest {
+
+	private static Snapshot running(float rpm, int firing) {
+		return new Snapshot(EngineState.RUNNING, EngineState.RUNNING, rpm, false, firing, 100, false, 0.5f, false, 0,
+			false);
+	}
+
+	@Test
+	void aRunningEngineIsAliveAndNothingMore() {
+		Set<Milestone> reached = EngineMilestones.reached(running(64, 1));
+		assertEquals(Set.of(Milestone.ENGINE_RUNNING), reached);
+	}
+
+	@Test
+	void aStoppedEngineReachesNothing() {
+		for (EngineState state : new EngineState[] {EngineState.STALLED, EngineState.COASTING, EngineState.INCOMPLETE})
+			assertTrue(EngineMilestones.reached(new Snapshot(state, state, 100, false, 8, 99999, true, 1, true, 0, false))
+				.isEmpty(), state.name());
+	}
+
+	@Test
+	void cylinderCountsStack() {
+		assertFalse(EngineMilestones.reached(running(64, 3))
+			.contains(Milestone.FOUR_CYLINDERS));
+		assertTrue(EngineMilestones.reached(running(64, 4))
+			.contains(Milestone.FOUR_CYLINDERS));
+		Set<Milestone> twelve = EngineMilestones.reached(running(64, 12));
+		assertTrue(twelve.containsAll(Set.of(Milestone.FOUR_CYLINDERS, Milestone.EIGHT_CYLINDERS, Milestone.TWELVE_CYLINDERS)));
+	}
+
+	private static Snapshot twoCranks(int firing, boolean coupled) {
+		return new Snapshot(EngineState.RUNNING, EngineState.RUNNING, 64, false, firing, 100, false, 0.5f, false, 0, false,
+			0, false, 0, false, false, false, false, false, false, false, coupled);
+	}
+
+	@Test
+	void coupledCranksNeedBothAnEngineWithSeveralCylindersAndMoreThanOneCrank() {
+		assertTrue(EngineMilestones.reached(twoCranks(4, true))
+			.contains(Milestone.COUPLED_CRANKS));
+		assertFalse(EngineMilestones.reached(twoCranks(4, false))
+			.contains(Milestone.COUPLED_CRANKS), "one crankshaft is not coupled");
+		assertFalse(EngineMilestones.reached(twoCranks(2, true))
+			.contains(Milestone.COUPLED_CRANKS), "two cylinders is not enough to count");
+	}
+
+	@Test
+	void sixteenFiringCylindersAreAMilestoneOfTheirOwn() {
+		assertFalse(EngineMilestones.reached(running(64, 15))
+			.contains(Milestone.SIXTEEN_CYLINDERS));
+		assertTrue(EngineMilestones.reached(running(64, 16))
+			.containsAll(Set.of(Milestone.TWELVE_CYLINDERS, Milestone.SIXTEEN_CYLINDERS)));
+	}
+
+	@Test
+	void speedMilestonesNeedTheEngineRunning() {
+		assertTrue(EngineMilestones.reached(running(205, 1))
+			.contains(Milestone.HIGH_REVS));
+		assertFalse(EngineMilestones.reached(running(205, 1))
+			.contains(Milestone.REDLINE));
+		assertTrue(EngineMilestones.reached(running(250, 1))
+			.contains(Milestone.REDLINE));
+		assertFalse(EngineMilestones.reached(new Snapshot(EngineState.CRANKING, EngineState.CRANKING, 250, true, 0, 0,
+			false, 1, false, 0, false)).contains(Milestone.HIGH_REVS));
+	}
+
+	@Test
+	void stallingNeedsTheEngineToHaveBeenTurning() {
+		assertTrue(EngineMilestones.reached(new Snapshot(EngineState.STALLED, EngineState.RUNNING, 0, false, 0, 0, false,
+			0, false, 0, false)).contains(Milestone.STALLED));
+		assertFalse(EngineMilestones.reached(new Snapshot(EngineState.STALLED, EngineState.STALLED, 0, false, 0, 0,
+			false, 0, false, 0, false)).contains(Milestone.STALLED));
+		assertFalse(EngineMilestones.reached(new Snapshot(EngineState.STALLED, EngineState.CRANKING, 0, false, 0, 0,
+			false, 0, false, 0, false)).contains(Milestone.STALLED));
+	}
+
+	@Test
+	void oilAndMixtureMilestones() {
+		Snapshot dry = new Snapshot(EngineState.RUNNING, EngineState.RUNNING, 64, false, 1, 0, false, 0.02f, true, 0, false);
+		Set<Milestone> reached = EngineMilestones.reached(dry);
+		assertTrue(reached.contains(Milestone.DRY_RUN) && reached.contains(Milestone.SMOKE_SIGNALS));
+		assertFalse(reached.contains(Milestone.WELL_OILED));
+		Snapshot oiled = new Snapshot(EngineState.RUNNING, EngineState.RUNNING, 64, false, 1, 0, true, 0.95f, false, 0, false);
+		reached = EngineMilestones.reached(oiled);
+		assertTrue(reached.contains(Milestone.WELL_OILED) && reached.contains(Milestone.SPARK_ENGINE));
+		assertFalse(reached.contains(Milestone.DRY_RUN));
+	}
+
+	@Test
+	void boostMilestonesFollowThePressureAndTheDump() {
+		Snapshot weak = new Snapshot(EngineState.RUNNING, EngineState.RUNNING, 64, false, 1, 0, false, 0.5f, false, 0.1f, false);
+		assertFalse(EngineMilestones.reached(weak)
+			.contains(Milestone.BOOST));
+		Snapshot boosted = new Snapshot(EngineState.RUNNING, EngineState.RUNNING, 64, false, 1, 0, false, 0.5f, false, 0.5f, false);
+		assertTrue(EngineMilestones.reached(boosted)
+			.contains(Milestone.BOOST));
+		assertFalse(EngineMilestones.reached(boosted)
+			.contains(Milestone.BIG_BOOST));
+		assertFalse(EngineMilestones.reached(boosted)
+			.contains(Milestone.BLOW_OFF));
+		Snapshot dumping = new Snapshot(EngineState.RUNNING, EngineState.RUNNING, 64, false, 1, 0, false, 0.5f, false, 1.1f, true);
+		assertTrue(EngineMilestones.reached(dumping)
+			.containsAll(Set.of(Milestone.BIG_BOOST, Milestone.BLOW_OFF)));
+	}
+
+	private static Snapshot mixture(EngineState state, float rpm, float fouling, boolean balanced, float dilution) {
+		return new Snapshot(state, state, rpm, false, 1, 100, false, 0.5f, false, 0, false, fouling, balanced, dilution);
+	}
+
+	@Test
+	void aBalancedMixtureOnlyCountsOnceTheEngineIsUpToSpeed() {
+		assertTrue(EngineMilestones.reached(mixture(EngineState.RUNNING, 100, 0, true, 0))
+			.contains(Milestone.DIALED_IN));
+		assertFalse(EngineMilestones.reached(mixture(EngineState.RUNNING, 60, 0, true, 0))
+			.contains(Milestone.DIALED_IN));
+		assertFalse(EngineMilestones.reached(mixture(EngineState.RUNNING, 150, 0, false, 0))
+			.contains(Milestone.DIALED_IN));
+		assertFalse(EngineMilestones.reached(mixture(EngineState.COASTING, 150, 0, true, 0))
+			.contains(Milestone.DIALED_IN));
+	}
+
+	@Test
+	void aFouledPlugAndThinnedOilAreReportedOnceTheyAreBadEnough() {
+		assertFalse(EngineMilestones.reached(mixture(EngineState.RUNNING, 64, 0.4f, false, 0.2f))
+			.containsAll(Set.of(Milestone.FOULED_PLUG, Milestone.THINNED_OIL)));
+		Set<Milestone> reached = EngineMilestones.reached(mixture(EngineState.STALLED, 0, 0.6f, false, 0.35f));
+		assertTrue(reached.containsAll(Set.of(Milestone.FOULED_PLUG, Milestone.THINNED_OIL)), reached.toString());
+	}
+
+	@Test
+	void firingIsEvenOnlyWhenFourOrMoreCylindersAreSpacedEqually() {
+		assertTrue(EngineMilestones.evenFiring(new float[] {450, 90, 630, 270}));
+		assertTrue(EngineMilestones.evenFiring(new float[] {0, 60, 120, 180, 240, 300, 360, 420, 480, 540, 600, 660}));
+		assertFalse(EngineMilestones.evenFiring(new float[] {90, 270}), "two cylinders prove nothing");
+		assertFalse(EngineMilestones.evenFiring(new float[] {90, 90, 270, 270}), "paired firing is not even");
+		assertFalse(EngineMilestones.evenFiring(new float[] {0, 100, 360, 460}));
+	}
+
+	@Test
+	void pushrodAndEvenFiringCountOnlyWhileTheEngineRuns() {
+		Snapshot running = new Snapshot(EngineState.RUNNING, EngineState.RUNNING, 64, false, 4, 100, false, 0.5f, false,
+			0, false, 0, false, 0, true, true);
+		assertTrue(EngineMilestones.reached(running)
+			.containsAll(Set.of(Milestone.PUSHROD_CAM, Milestone.EVEN_FIRING)));
+		Snapshot coasting = new Snapshot(EngineState.COASTING, EngineState.RUNNING, 64, false, 4, 100, false, 0.5f, false,
+			0, false, 0, false, 0, true, true);
+		assertFalse(EngineMilestones.reached(coasting)
+			.contains(Milestone.PUSHROD_CAM));
+	}
+
+	@Test
+	void everyMilestoneHasADistinctLowerCaseId() {
+		Set<String> ids = new java.util.HashSet<>();
+		for (Milestone milestone : Milestone.values()) {
+			assertEquals(milestone.id(), milestone.id()
+				.toLowerCase(java.util.Locale.ROOT));
+			assertTrue(ids.add(milestone.id()));
+		}
+	}
+}

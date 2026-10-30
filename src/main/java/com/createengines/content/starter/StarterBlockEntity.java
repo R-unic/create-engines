@@ -5,6 +5,7 @@ import java.util.List;
 import org.jetbrains.annotations.Nullable;
 
 import com.createengines.engine.topology.EngineMember;
+import com.createengines.content.GoggleLines;
 import com.createengines.registry.CELang;
 import com.simibubi.create.content.kinetics.base.KineticBlockEntity;
 
@@ -139,9 +140,8 @@ public class StarterBlockEntity extends KineticBlockEntity implements EngineMemb
 			key = "goggles.starter.idle";
 			colour = ChatFormatting.GRAY;
 		}
-		CELang.translate(key)
-			.style(colour)
-			.forGoggles(tooltip, 1);
+		GoggleLines.add(CELang.translate(key)
+			.style(colour), tooltip, 1);
 		super.addToGoggleTooltip(tooltip, isPlayerSneaking);
 		return true;
 	}

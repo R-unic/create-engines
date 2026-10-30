@@ -37,6 +37,12 @@ public final class CylinderModel {
 	 * a rich mixture makes less pressure for the fuel it wastes.
 	 */
 	private static final double FUEL_HEAT_CAPACITY = 1.5;
+	/** Soot a plug gains per cycle, times the share of that cycle's fuel the air couldn't burn. */
+	private static final double FOULING_RATE = 0.2;
+	/** Soot a plug loses each cycle it fires on a mixture that burns clean. */
+	private static final double FOULING_BURN_OFF = 0.08;
+	/** How far a completely fouled plug pulls the rich limit in: it can light no more than a balanced mixture. */
+	private static final double FOULED_RICH_LOSS = RICH_LIMIT - Mixture.RICH_BAND;
 
 	public final CylinderSpec spec;
 	private final CamProfile profile;
@@ -52,7 +58,29 @@ public final class CylinderModel {
 	public double metering = 1;
 	public IgnitionSource ignition = IgnitionSource.NONE;
 	public double intakeFactor = 1;
+	/** Share of the shot a throttle body's linkage lets through; 1 where there is no throttle. */
+	public double fuelTrim = 1;
+	/**
+	 * Equivalence ratio a MAF sensor holds the shot to, or 0 where there is none. The injector never delivers more
+	 * fuel than the air the cylinder drew in can burn at this ratio; it is a cap, so it only ever cuts.
+	 */
+	public double airMatch = 0;
+	/** A rev limiter is holding the injector shut. */
+	public boolean fuelCut;
+	/**
+	 * Rack position a mechanical governor holds the engine at, 0 (shut) to 1 (wide open); 1 where there is none. A
+	 * compression engine is governed on fuel alone. A spark engine can't be, because a lean charge won't light, so the
+	 * governor throttles its air and the throttle linkage trims its fuel to follow. Not part of the engine's rating: a
+	 * governor holds speed with the torque in hand, it does not take any away.
+	 */
+	public double governor = 1;
 	public double exhaustFactor = 1;
+	/** Pressure of the air the intake valve draws on, ambient (1) unless a compressor is pushing it. */
+	public double intakePressure = 1;
+	/** Temperature of that air: compressing it heats it, which costs some of the density the pressure bought. */
+	public double intakeTemperature = 1;
+	/** Pressure the exhaust valve blows down into, ambient (1) unless a turbine is in the way. */
+	public double exhaustPressure = 1;
 	public FuelSupply fuelSupply = FuelSupply.NONE;
 
 	// Gas state: amount, temperature, and fraction that is still fresh (unburned) air
@@ -66,12 +94,19 @@ public final class CylinderModel {
 
 	/** Temperature of the spent gas in the exhaust port, which is what reversion draws back in. Ambient until it fires. */
 	private double exhaustTemp = 1;
+	/** Heat carried out of the exhaust valve since the tick began, and during the last whole tick. */
+	private double exhaustHeat;
+	private double exhaustHeatLastTick;
 
 	private double fuelPending;
 	private double timeSinceInjection;
 	private boolean burning;
 	private double burnRate;
+	/** Equivalence ratio the charge had when it lit: it sets how fast it burns and how much heat it gives. */
+	private double burnEquivalence = 1;
 	private FuelSpec burningFuel;
+	/** Soot on the spark plug, 0 (clean) to 1: rich running builds it, a mixture that burns clean cleans it off. */
+	private double fouling;
 	private double travelSinceCycle;
 
 	private final CycleStats current = new CycleStats();
@@ -139,8 +174,27 @@ public final class CylinderModel {
 		copy.metering = metering;
 		copy.ignition = ignition;
 		copy.intakeFactor = intakeFactor;
+		copy.fuelTrim = fuelTrim;
+		copy.airMatch = airMatch;
 		copy.exhaustFactor = exhaustFactor;
+		copy.intakePressure = intakePressure;
+		copy.intakeTemperature = intakeTemperature;
+		copy.exhaustPressure = exhaustPressure;
 		return copy;
+	}
+
+	/**
+	 * Closes a tick's accounting of the heat this cylinder sent out of its exhaust valve, in moles of gas times how far
+	 * hotter than ambient it was. That is what a turbine has to work with: gas that was never heated carries nothing.
+	 */
+	void endTick() {
+		exhaustHeatLastTick = exhaustHeat;
+		exhaustHeat = 0;
+	}
+
+	/** Heat this cylinder put into its exhaust during the last whole tick. */
+	public double exhaustHeatLastTick() {
+		return exhaustHeatLastTick;
 	}
 
 	public void resetGas() {
@@ -159,6 +213,8 @@ public final class CylinderModel {
 		intakeBackflow = 0;
 		intakeBackflowFresh = 1;
 		exhaustTemp = 1;
+		exhaustHeat = 0;
+		exhaustHeatLastTick = 0;
 		fuelPending = 0;
 		burning = false;
 	}
@@ -171,10 +227,14 @@ public final class CylinderModel {
 		intakeBackflow = other.intakeBackflow;
 		intakeBackflowFresh = other.intakeBackflowFresh;
 		exhaustTemp = other.exhaustTemp;
+		exhaustHeat = other.exhaustHeat;
+		exhaustHeatLastTick = other.exhaustHeatLastTick;
 		fuelPending = other.fuelPending;
 		timeSinceInjection = other.timeSinceInjection;
 		burning = other.burning;
 		burnRate = other.burnRate;
+		burnEquivalence = other.burnEquivalence;
+		fouling = other.fouling;
 		burningFuel = other.burningFuel;
 		travelSinceCycle = other.travelSinceCycle;
 		current.copyFrom(other.current);
@@ -183,6 +243,11 @@ public final class CylinderModel {
 
 	public CycleStats lastCycle() {
 		return last;
+	}
+
+	/** Soot on the spark plug from 0 to 1. A fouled plug can't light a rich mixture it otherwise could. */
+	public double fouling() {
+		return fouling;
 	}
 
 	public CycleStats currentCycle() {
@@ -210,7 +275,7 @@ public final class CylinderModel {
 		// Rule 3: valves, opened by the cam
 		if (camshaft != null) {
 			double mid = SimMath.wrap(camFrom + camDelta / 2);
-			exchangeIntake(v1, spec.intakeFlow() * profile.intakeLift(mid) * intakeFactor, dt);
+			exchangeIntake(v1, spec.intakeFlow() * profile.intakeLift(mid) * intakeFactor * governedAir(), dt);
 			exchangeExhaust(v1, spec.exhaustFlow() * profile.exhaustLift(mid) * exhaustFactor, dt);
 		}
 
@@ -238,6 +303,16 @@ public final class CylinderModel {
 		return moles * temperature / volume;
 	}
 
+	/** How open the governor leaves the intake: a spark engine is throttled, a compression engine breathes freely. */
+	private double governedAir() {
+		return ignition.installed() ? Governor.opening(governor) : 1;
+	}
+
+	/** Share of the shot the governor lets through. */
+	private double governedFuel() {
+		return ignition.installed() ? Throttle.fuelTrim(Governor.opening(governor)) : governor;
+	}
+
 	/**
 	 * The intake port is a manifold, not open sky: gas pushed back out through the intake valve (reversion, or all of
 	 * it if the exhaust can't open) waits in the manifold, cools, and is the first thing drawn back in.
@@ -246,7 +321,7 @@ public final class CylinderModel {
 		if (rate <= 0)
 			return;
 		double p = pressure(volume);
-		double target = p + (1 - p) * (1 - Math.exp(-rate * dt));
+		double target = p + (intakePressure - p) * (1 - Math.exp(-rate * dt));
 		if (target < p) {
 			double out = (p - target) * volume / temperature;
 			intakeBackflowFresh = (intakeBackflow * intakeBackflowFresh + out * fresh) / (intakeBackflow + out);
@@ -254,12 +329,13 @@ public final class CylinderModel {
 			moles -= out;
 			return;
 		}
-		double in = (target - p) * volume;
+		// Gas at the intake's temperature is what raises the pressure, so a hotter charge means fewer moles for it
+		double in = (target - p) * volume / intakeTemperature;
 		double reingested = Math.min(intakeBackflow, in);
 		double inFresh = in <= 0 ? 1 : (reingested * intakeBackflowFresh + (in - reingested)) / in;
 		intakeBackflow -= reingested;
 		fresh = (moles * fresh + in * inFresh) / (moles + in);
-		temperature = (moles * temperature + in) / (moles + in);
+		temperature = (moles * temperature + in * intakeTemperature) / (moles + in);
 		moles += in;
 	}
 
@@ -273,7 +349,7 @@ public final class CylinderModel {
 		if (rate <= 0)
 			return;
 		double p = pressure(volume);
-		double target = p + (1 - p) * (1 - Math.exp(-rate * dt));
+		double target = p + (exhaustPressure - p) * (1 - Math.exp(-rate * dt));
 		if (target > p) {
 			double in = (target - p) * volume / exhaustTemp;
 			fresh = moles * fresh / (moles + in);
@@ -281,8 +357,11 @@ public final class CylinderModel {
 			moles += in;
 		} else {
 			double out = (p - target) * volume / temperature;
-			if (current.fuelBurned > 0 || last.fuelBurned > 0)
+			if (current.fuelBurned > 0 || last.fuelBurned > 0) {
 				exhaustTemp += (temperature - exhaustTemp) * Math.min(1, out / EXHAUST_MEMORY);
+				// Only burning makes heat: a turbine can't be spun by compressed air that was never lit
+				exhaustHeat += out * Math.max(0, temperature - 1);
+			}
 			moles -= out;
 		}
 	}
@@ -296,7 +375,18 @@ public final class CylinderModel {
 	private void inject() {
 		FuelSpec fuel = fuelSupply.fuel();
 		double air = fresh * moles;
-		double shot = spec.maxFuelPerShot() * rack * metering;
+		double shot = spec.maxFuelPerShot() * rack * metering * fuelTrim * governedFuel();
+		if (fuel != null && airMatch > 0 && shot > 0) {
+			double matched = air / fuel.airPerMb() * airMatch;
+			if (matched < shot) {
+				current.mafCut = 1 - matched / shot;
+				shot = matched;
+			}
+		}
+		if (fuelCut) {
+			current.limited = true;
+			shot = 0;
+		}
 		double delivered = fuel == null ? 0 : fuelSupply.draw(shot);
 		current.fuelInjected += delivered;
 		current.freshAirAtInjection = air;
@@ -331,13 +421,17 @@ public final class CylinderModel {
 			current.flameOut = -1;
 		else if (equivalence > RICH_LIMIT)
 			current.flameOut = 1;
+		else if (equivalence > RICH_LIMIT - FOULED_RICH_LOSS * fouling)
+			current.flameOut = 2;
 		else
 			startBurning();
 	}
 
 	private void startBurning() {
 		burning = true;
-		burnRate = fuelPending / spec.burnDuration();
+		double air = fresh * moles;
+		burnEquivalence = air < MIN_FRESH_AIR ? RICH_LIMIT : fuelPending * burningFuel.airPerMb() / air;
+		burnRate = fuelPending / spec.burnDuration() * Mixture.flameSpeed(burnEquivalence);
 	}
 
 	private void combust(double dt) {
@@ -353,7 +447,8 @@ public final class CylinderModel {
 			return;
 		fuelPending -= burned;
 		fresh = Math.max(0, (fresh * moles - burned * burningFuel.airPerMb()) / moles);
-		temperature += burned * burningFuel.energyPerMb() * (GAMMA - 1) / (moles + FUEL_HEAT_CAPACITY * fuelPending);
+		double heat = burned * burningFuel.energyPerMb() * Mixture.efficiency(burnEquivalence);
+		temperature += heat * (GAMMA - 1) / (moles + FUEL_HEAT_CAPACITY * fuelPending);
 		current.fuelBurned += burned;
 		if (fuelPending <= FUEL_EPSILON)
 			burning = false;
@@ -361,7 +456,10 @@ public final class CylinderModel {
 
 	private void finishCycle() {
 		if (current.fuelInjected <= 0)
-			current.result = CycleResult.NO_FUEL;
+			current.result = current.limited ? CycleResult.FUEL_CUT
+				// A MAF sensor that cut the shot to nothing did so because there was nothing to burn it with
+				: current.mafCut > 0 && current.freshAirAtInjection < MIN_FRESH_AIR ? CycleResult.NO_AIR
+					: CycleResult.NO_FUEL;
 		else if (current.fuelBurned > 0)
 			current.result = CycleResult.FIRED;
 		else if (current.freshAirAtInjection < MIN_FRESH_AIR)
@@ -370,10 +468,20 @@ public final class CylinderModel {
 			current.result = CycleResult.NO_SPARK;
 		else if (current.flameOut < 0)
 			current.result = CycleResult.TOO_LEAN;
+		else if (current.flameOut == 2)
+			current.result = CycleResult.FOULED;
 		else if (current.flameOut > 0)
 			current.result = CycleResult.TOO_RICH;
 		else
 			current.result = CycleResult.NO_IGNITION;
+
+		if (ignition.installed() && current.fuelInjected > 0) {
+			double unburned = current.unburnedFraction();
+			if (unburned > Mixture.RICH_UNBURNED)
+				fouling = Math.min(1, fouling + FOULING_RATE * unburned);
+			else if (current.fuelBurned > 0)
+				fouling = Math.max(0, fouling - FOULING_BURN_OFF);
+		}
 
 		last.copyFrom(current);
 		current.reset();

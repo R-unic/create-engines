@@ -23,10 +23,12 @@ import net.minecraft.nbt.NbtUtils;
  * @param lean            fired with air to spare
  * @param mixture         fuel-air equivalence ratio at injection last cycle (NaN if nothing was injected): 1 is balanced
  * @param sparkPlug       the head has a spark plug
+ * @param fouling         soot on the spark plug from running rich, 0 (clean) to 1
  */
 public record CylinderStatus(BlockPos primary, int faults, CycleResult result, boolean rich, float tdcAngle,
 							 float timingError, float chargeTemp, float ignitionTemp, @Nullable BlockPos lobe,
-							 List<BlockPos> exhaustOutlets, boolean lean, float mixture, boolean sparkPlug) {
+							 List<BlockPos> exhaustOutlets, boolean lean, float mixture, boolean sparkPlug,
+							 float fouling) {
 
 	public CompoundTag write() {
 		CompoundTag tag = new CompoundTag();
@@ -48,6 +50,7 @@ public record CylinderStatus(BlockPos primary, int faults, CycleResult result, b
 		tag.putBoolean("Lean", lean);
 		tag.putFloat("Mixture", mixture);
 		tag.putBoolean("Plug", sparkPlug);
+		tag.putFloat("Fouling", fouling);
 		return tag;
 	}
 
@@ -65,7 +68,7 @@ public record CylinderStatus(BlockPos primary, int faults, CycleResult result, b
 			tag.getFloat("Tdc"), tag.getFloat("Timing"), tag.getFloat("Charge"), tag.getFloat("Ignition"),
 			NbtUtils.readBlockPos(tag, "Lobe")
 				.orElse(null), List.copyOf(outlets), tag.getBoolean("Lean"), tag.getFloat("Mixture"),
-			tag.getBoolean("Plug"));
+			tag.getBoolean("Plug"), tag.getFloat("Fouling"));
 	}
 
 	/** Whether anything a player would see has changed. */
@@ -74,7 +77,7 @@ public record CylinderStatus(BlockPos primary, int faults, CycleResult result, b
 			return true;
 		return !primary.equals(other.primary) || faults != other.faults || result != other.result
 			|| rich != other.rich || lean != other.lean || sparkPlug != other.sparkPlug
-			|| changed(mixture, other.mixture, 0.05f) || changed(tdcAngle, other.tdcAngle, 0.5f)
+			|| changed(mixture, other.mixture, 0.05f) || changed(fouling, other.fouling, 0.05f) || changed(tdcAngle, other.tdcAngle, 0.5f)
 			|| changed(timingError, other.timingError, 0.5f) || changed(chargeTemp, other.chargeTemp, 0.05f)
 			|| changed(ignitionTemp, other.ignitionTemp, 0.01f) || !Objects.equals(lobe, other.lobe)
 			|| !exhaustOutlets.equals(other.exhaustOutlets);

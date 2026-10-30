@@ -1,0 +1,24 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "key": {
+    "I": {
+      "item": "minecraft:iron_ingot"
+    },
+    "K": {
+      "item": "create:andesite_casing"
+    },
+    "B": {
+      "item": "minecraft:bucket"
+    }
+  },
+  "pattern": [
+    " K ",
+    "IBI",
+    "III"
+  ],
+  "result": {
+    "count": 1,
+    "id": "create_engines:sump"
+  }
+}

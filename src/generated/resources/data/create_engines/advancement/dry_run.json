@@ -1,0 +1,29 @@
+{
+  "parent": "create_engines:alive",
+  "criteria": {
+    "dry_run": {
+      "conditions": {
+        "event": "dry_run"
+      },
+      "trigger": "create_engines:event"
+    }
+  },
+  "display": {
+    "description": {
+      "translate": "advancement.create_engines.dry_run.desc"
+    },
+    "icon": {
+      "count": 1,
+      "id": "create_engines:crankshaft"
+    },
+    "title": {
+      "translate": "advancement.create_engines.dry_run"
+    }
+  },
+  "requirements": [
+    [
+      "dry_run"
+    ]
+  ],
+  "sends_telemetry_event": true
+}

@@ -1,0 +1,33 @@
+{
+  "parent": "create_engines:cylinder_head",
+  "criteria": {
+    "precision_head": {
+      "conditions": {
+        "items": [
+          {
+            "items": "create_engines:precision_cylinder_head"
+          }
+        ]
+      },
+      "trigger": "minecraft:inventory_changed"
+    }
+  },
+  "display": {
+    "description": {
+      "translate": "advancement.create_engines.precision_head.desc"
+    },
+    "icon": {
+      "count": 1,
+      "id": "create_engines:precision_cylinder_head"
+    },
+    "title": {
+      "translate": "advancement.create_engines.precision_head"
+    }
+  },
+  "requirements": [
+    [
+      "precision_head"
+    ]
+  ],
+  "sends_telemetry_event": true
+}

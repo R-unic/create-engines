@@ -1,0 +1,28 @@
+{
+  "criteria": {
+    "engineer": {
+      "trigger": "minecraft:tick"
+    }
+  },
+  "display": {
+    "announce_to_chat": false,
+    "background": "minecraft:textures/gui/advancements/backgrounds/stone.png",
+    "description": {
+      "translate": "advancement.create_engines.engineer.desc"
+    },
+    "icon": {
+      "count": 1,
+      "id": "create_engines:crank_throw"
+    },
+    "show_toast": false,
+    "title": {
+      "translate": "advancement.create_engines.engineer"
+    }
+  },
+  "requirements": [
+    [
+      "engineer"
+    ]
+  ],
+  "sends_telemetry_event": true
+}

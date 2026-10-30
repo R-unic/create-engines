@@ -9,6 +9,7 @@ import com.createengines.content.crankshaft.CrankshaftBlockEntity;
 import com.createengines.content.crankshaft.SideValueBox;
 import com.createengines.engine.topology.EngineMember;
 import com.createengines.engine.topology.EngineTopology;
+import com.createengines.content.GoggleLines;
 import com.createengines.registry.CELang;
 import com.simibubi.create.content.kinetics.base.KineticBlockEntity;
 import com.simibubi.create.foundation.blockEntity.behaviour.BlockEntityBehaviour;
@@ -146,25 +147,20 @@ public class CamshaftBlockEntity extends KineticBlockEntity implements EngineMem
 			return super.addToGoggleTooltip(tooltip, isPlayerSneaking);
 		CELang.translate("goggles.cam")
 			.forGoggles(tooltip);
-		CELang.translate("goggles.cam_ratio", "1:" + CrankshaftBlockEntity.format(ratio == 0 ? 0 : 1 / ratio))
-			.style(ChatFormatting.GRAY)
-			.forGoggles(tooltip, 1);
-		CELang.translate(phaseLocked ? "goggles.cam_ratio.correct" : "goggles.cam_ratio.wrong")
-			.style(phaseLocked ? ChatFormatting.GREEN : ChatFormatting.RED)
-			.forGoggles(tooltip, 1);
+		GoggleLines.add(CELang.translate("goggles.cam_ratio", "1:" + CrankshaftBlockEntity.format(ratio == 0 ? 0 : 1 / ratio))
+			.style(ChatFormatting.GRAY), tooltip, 1);
+		GoggleLines.add(CELang.translate(phaseLocked ? "goggles.cam_ratio.correct" : "goggles.cam_ratio.wrong")
+			.style(phaseLocked ? ChatFormatting.GREEN : ChatFormatting.RED), tooltip, 1);
 		if (isLobe()) {
-			CELang.translate("goggles.lobe_cylinders", actuated)
-				.style(ChatFormatting.GRAY)
-				.forGoggles(tooltip, 1);
+			GoggleLines.add(CELang.translate("goggles.lobe_cylinders", actuated)
+				.style(ChatFormatting.GRAY), tooltip, 1);
 			if (!Float.isNaN(timingError))
-				CELang.translate("goggles.timing", timingText(timingError))
-					.style(Math.abs(timingError) < 7.5f ? ChatFormatting.GREEN : ChatFormatting.GOLD)
-					.forGoggles(tooltip, 1);
+				GoggleLines.add(CELang.translate("goggles.timing", timingText(timingError))
+					.style(Math.abs(timingError) < 7.5f ? ChatFormatting.GREEN : ChatFormatting.GOLD), tooltip, 1);
 		}
 		int rackPercent = Math.round(rack * 100);
-		CELang.translate("goggles.fuel_rack", rackPercent)
-			.style(rackPercent < 100 ? ChatFormatting.GOLD : ChatFormatting.GRAY)
-			.forGoggles(tooltip, 1);
+		GoggleLines.add(CELang.translate("goggles.fuel_rack", rackPercent)
+			.style(rackPercent < 100 ? ChatFormatting.GOLD : ChatFormatting.GRAY), tooltip, 1);
 		super.addToGoggleTooltip(tooltip, isPlayerSneaking);
 		return true;
 	}

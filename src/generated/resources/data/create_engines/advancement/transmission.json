@@ -1,0 +1,33 @@
+{
+  "parent": "create_engines:crankshaft",
+  "criteria": {
+    "transmission": {
+      "conditions": {
+        "items": [
+          {
+            "items": "create_engines:transmission"
+          }
+        ]
+      },
+      "trigger": "minecraft:inventory_changed"
+    }
+  },
+  "display": {
+    "description": {
+      "translate": "advancement.create_engines.transmission.desc"
+    },
+    "icon": {
+      "count": 1,
+      "id": "create_engines:transmission"
+    },
+    "title": {
+      "translate": "advancement.create_engines.transmission"
+    }
+  },
+  "requirements": [
+    [
+      "transmission"
+    ]
+  ],
+  "sends_telemetry_event": true
+}

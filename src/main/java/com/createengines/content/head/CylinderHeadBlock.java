@@ -36,22 +36,40 @@ import net.minecraft.world.phys.BlockHitResult;
 /**
  * Closes the end of a cylinder ({@link #FACING} points away from it) and holds its valves, unit injector and, in a
  * spark engine, spark plug. Its other faces are where the engine is plumbed: an intake pipe or air intake on one, an
- * exhaust on another, a cam lobe on a third. Heads touching each other share fuel through a common gallery.
+ * exhaust on another, and a cam lobe on a third unless the cam sits beside the cylinder block instead. Every head on
+ * a crankshaft shares one fuel gallery, so fuel piped into any one of them runs the whole engine.
  */
 public class CylinderHeadBlock extends DirectionalBlock
 	implements IBE<CylinderHeadBlockEntity>, IWrenchable, AirflowPort {
 
 	public static final BooleanProperty HAS_INJECTOR = BooleanProperty.create("injector");
 	public static final BooleanProperty HAS_SPARK_PLUG = BooleanProperty.create("spark_plug");
+	/** Set with {@link #HAS_INJECTOR} when the injector is a precision common-rail one. */
+	public static final BooleanProperty FINE_INJECTOR = BooleanProperty.create("fine_injector");
 
 	private static final Slot[] PARTS =
-		{new Slot(HAS_INJECTOR, CEItems.FUEL_INJECTOR), new Slot(HAS_SPARK_PLUG, CEItems.SPARK_PLUG)};
+		{new Slot(HAS_INJECTOR, CEItems.FUEL_INJECTOR, FINE_INJECTOR, CEItems.PRECISION_INJECTOR),
+			new Slot(HAS_SPARK_PLUG, CEItems.SPARK_PLUG)};
+
+	private final boolean precision;
 
 	public CylinderHeadBlock(Properties properties) {
+		this(properties, false);
+	}
+
+	/** @param precision a four-valve head: it breathes better and lights the charge sooner */
+	public CylinderHeadBlock(Properties properties, boolean precision) {
 		super(properties);
+		this.precision = precision;
 		registerDefaultState(defaultBlockState().setValue(FACING, Direction.UP)
 			.setValue(HAS_INJECTOR, false)
+			.setValue(FINE_INJECTOR, false)
 			.setValue(HAS_SPARK_PLUG, false));
+	}
+
+	/** Whether this is the precision head. */
+	public boolean precision() {
+		return precision;
 	}
 
 	@Override
@@ -61,7 +79,7 @@ public class CylinderHeadBlock extends DirectionalBlock
 
 	@Override
 	protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {
-		builder.add(FACING, HAS_INJECTOR, HAS_SPARK_PLUG);
+		builder.add(FACING, HAS_INJECTOR, FINE_INJECTOR, HAS_SPARK_PLUG);
 	}
 
 	@Override

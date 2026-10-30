@@ -17,7 +17,11 @@ public enum CycleResult {
 	/** The spark fired but there was too little fuel in the air for a flame to travel. */
 	TOO_LEAN,
 	/** The spark fired but the charge was drowned in fuel, so the flame never took. */
-	TOO_RICH;
+	TOO_RICH,
+	/** The mixture was within a clean plug's limits, but a plug caked with soot from running rich could not light it. */
+	FOULED,
+	/** A rev limiter held the injector shut: nothing was wrong, the engine was at its set speed. */
+	FUEL_CUT;
 
 	public boolean fired() {
 		return this == FIRED;

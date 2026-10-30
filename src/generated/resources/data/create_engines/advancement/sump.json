@@ -1,0 +1,33 @@
+{
+  "parent": "create_engines:engine_oil",
+  "criteria": {
+    "sump": {
+      "conditions": {
+        "items": [
+          {
+            "items": "create_engines:sump"
+          }
+        ]
+      },
+      "trigger": "minecraft:inventory_changed"
+    }
+  },
+  "display": {
+    "description": {
+      "translate": "advancement.create_engines.sump.desc"
+    },
+    "icon": {
+      "count": 1,
+      "id": "create_engines:sump"
+    },
+    "title": {
+      "translate": "advancement.create_engines.sump"
+    }
+  },
+  "requirements": [
+    [
+      "sump"
+    ]
+  ],
+  "sends_telemetry_event": true
+}

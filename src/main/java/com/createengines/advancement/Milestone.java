@@ -1,0 +1,61 @@
+package com.createengines.advancement;
+
+import java.util.Locale;
+
+/**
+ * Something that happens in the world that an advancement can wait for. Each one is fired by name through
+ * {@link EventTrigger}, so adding an achievement for a new feature is a constant here, a line where it happens, and
+ * an entry in {@link CEAdvancements}.
+ */
+public enum Milestone {
+	// Engine
+	CRANKING,
+	ENGINE_RUNNING,
+	FOUR_CYLINDERS,
+	EIGHT_CYLINDERS,
+	TWELVE_CYLINDERS,
+	HIGH_REVS,
+	REDLINE,
+	HEAVY_DUTY,
+	SPARK_ENGINE,
+	WELL_OILED,
+	DRY_RUN,
+	SMOKE_SIGNALS,
+	STALLED,
+	OVERLOADED,
+	CHARGED_BATTERY,
+	// Cams and firing order
+	PUSHROD_CAM,
+	EVEN_FIRING,
+	// Air-fuel ratio
+	DIALED_IN,
+	FOULED_PLUG,
+	THINNED_OIL,
+	// Turbocharger
+	BOOST,
+	BIG_BOOST,
+	BLOW_OFF,
+	// Transmission
+	SHIFTED,
+	REVERSE,
+	EVERY_GEAR,
+	// Engine management
+	MAF_TRIM,
+	LAMBDA_LOCK,
+	REV_LIMITED,
+	// Speed control
+	GOVERNED,
+	// Output and precision parts
+	STEAM_BEATER,
+	PRECISION_ENGINE,
+	// Firing order tool
+	TOOL_TIMED,
+	// Big engines and coupled cranks
+	SIXTEEN_CYLINDERS,
+	COUPLED_CRANKS;
+
+	/** The name the advancement's criterion carries. */
+	public String id() {
+		return name().toLowerCase(Locale.ROOT);
+	}
+}

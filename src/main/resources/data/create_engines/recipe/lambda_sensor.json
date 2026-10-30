@@ -1,0 +1,24 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "key": {
+    "E": {
+      "item": "create:electron_tube"
+    },
+    "M": {
+      "item": "create_engines:exhaust_manifold"
+    },
+    "B": {
+      "item": "create:brass_sheet"
+    }
+  },
+  "pattern": [
+    "E",
+    "M",
+    "B"
+  ],
+  "result": {
+    "count": 1,
+    "id": "create_engines:lambda_sensor"
+  }
+}

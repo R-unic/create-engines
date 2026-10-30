@@ -2,7 +2,11 @@
   "parent": "block/block",
   "textures": {
     "pipe": "create:block/dark_metal_block",
+    "bead": "create:block/industrial_iron_block",
     "flange": "create:block/industrial_iron_block",
+    "gasket": "create:block/dark_metal_block",
+    "wrap": "minecraft:block/smooth_stone",
+    "bolt": "create:block/brass_block",
     "particle": "create:block/dark_metal_block"
   },
   "elements": [
@@ -35,6 +39,102 @@
         },
         "down": {
           "texture": "#pipe"
+        }
+      }
+    },
+    {
+      "from": [
+        4.5,
+        5.5,
+        5.5
+      ],
+      "to": [
+        11.5,
+        10.5,
+        10.5
+      ],
+      "faces": {
+        "north": {
+          "texture": "#bead"
+        },
+        "south": {
+          "texture": "#bead"
+        },
+        "east": {
+          "texture": "#bead"
+        },
+        "west": {
+          "texture": "#bead"
+        },
+        "up": {
+          "texture": "#bead"
+        },
+        "down": {
+          "texture": "#bead"
+        }
+      }
+    },
+    {
+      "from": [
+        5.5,
+        4.5,
+        5.5
+      ],
+      "to": [
+        10.5,
+        11.5,
+        10.5
+      ],
+      "faces": {
+        "north": {
+          "texture": "#bead"
+        },
+        "south": {
+          "texture": "#bead"
+        },
+        "east": {
+          "texture": "#bead"
+        },
+        "west": {
+          "texture": "#bead"
+        },
+        "up": {
+          "texture": "#bead"
+        },
+        "down": {
+          "texture": "#bead"
+        }
+      }
+    },
+    {
+      "from": [
+        5.5,
+        5.5,
+        4.5
+      ],
+      "to": [
+        10.5,
+        10.5,
+        11.5
+      ],
+      "faces": {
+        "north": {
+          "texture": "#bead"
+        },
+        "south": {
+          "texture": "#bead"
+        },
+        "east": {
+          "texture": "#bead"
+        },
+        "west": {
+          "texture": "#bead"
+        },
+        "up": {
+          "texture": "#bead"
+        },
+        "down": {
+          "texture": "#bead"
         }
       }
     }

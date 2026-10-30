@@ -1,0 +1,20 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "key": {
+    "I": {
+      "item": "create_engines:fuel_injector"
+    },
+    "E": {
+      "item": "create:electron_tube"
+    },
+    "M": {
+      "item": "create:precision_mechanism"
+    }
+  },
+  "pattern": ["IEI", " M "],
+  "result": {
+    "count": 2,
+    "id": "create_engines:precision_injector"
+  }
+}

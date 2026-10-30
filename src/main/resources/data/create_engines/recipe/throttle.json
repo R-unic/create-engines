@@ -1,0 +1,24 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "key": {
+    "S": {
+      "item": "create:iron_sheet"
+    },
+    "M": {
+      "item": "create_engines:intake_manifold"
+    },
+    "A": {
+      "item": "create:andesite_alloy"
+    }
+  },
+  "pattern": [
+    "S",
+    "M",
+    "A"
+  ],
+  "result": {
+    "count": 1,
+    "id": "create_engines:throttle"
+  }
+}

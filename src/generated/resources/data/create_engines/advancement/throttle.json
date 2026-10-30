@@ -1,0 +1,33 @@
+{
+  "parent": "create_engines:pipework",
+  "criteria": {
+    "throttle": {
+      "conditions": {
+        "items": [
+          {
+            "items": "create_engines:throttle"
+          }
+        ]
+      },
+      "trigger": "minecraft:inventory_changed"
+    }
+  },
+  "display": {
+    "description": {
+      "translate": "advancement.create_engines.throttle.desc"
+    },
+    "icon": {
+      "count": 1,
+      "id": "create_engines:throttle"
+    },
+    "title": {
+      "translate": "advancement.create_engines.throttle"
+    }
+  },
+  "requirements": [
+    [
+      "throttle"
+    ]
+  ],
+  "sends_telemetry_event": true
+}

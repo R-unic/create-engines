@@ -1,0 +1,30 @@
+{
+  "parent": "create_engines:four_cylinders",
+  "criteria": {
+    "eight_cylinders": {
+      "conditions": {
+        "event": "eight_cylinders"
+      },
+      "trigger": "create_engines:event"
+    }
+  },
+  "display": {
+    "description": {
+      "translate": "advancement.create_engines.eight_cylinders.desc"
+    },
+    "frame": "goal",
+    "icon": {
+      "count": 1,
+      "id": "create_engines:crank_throw"
+    },
+    "title": {
+      "translate": "advancement.create_engines.eight_cylinders"
+    }
+  },
+  "requirements": [
+    [
+      "eight_cylinders"
+    ]
+  ],
+  "sends_telemetry_event": true
+}

@@ -1,0 +1,33 @@
+{
+  "parent": "create_engines:throttle",
+  "criteria": {
+    "maf_sensor": {
+      "conditions": {
+        "items": [
+          {
+            "items": "create_engines:maf_sensor"
+          }
+        ]
+      },
+      "trigger": "minecraft:inventory_changed"
+    }
+  },
+  "display": {
+    "description": {
+      "translate": "advancement.create_engines.maf_sensor.desc"
+    },
+    "icon": {
+      "count": 1,
+      "id": "create_engines:maf_sensor"
+    },
+    "title": {
+      "translate": "advancement.create_engines.maf_sensor"
+    }
+  },
+  "requirements": [
+    [
+      "maf_sensor"
+    ]
+  ],
+  "sends_telemetry_event": true
+}

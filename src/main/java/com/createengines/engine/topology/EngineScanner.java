@@ -2,7 +2,9 @@ package com.createengines.engine.topology;
 
 import java.util.ArrayDeque;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.Deque;
+import java.util.EnumMap;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
@@ -17,6 +19,8 @@ import com.createengines.content.airflow.ManifoldBlock;
 import com.createengines.content.airflow.Pipes;
 import com.createengines.content.airflow.PortKind;
 import com.createengines.content.airflow.PortOpeningBlock;
+import com.createengines.content.airflow.SensorBlock;
+import com.createengines.content.airflow.ThrottleBlock;
 import com.createengines.content.alternator.AlternatorBlock;
 import com.createengines.content.battery.BatteryBlock;
 import com.createengines.content.camshaft.CamLobeBlock;
@@ -26,7 +30,11 @@ import com.createengines.content.crankshaft.CrankshaftBlock;
 import com.createengines.content.crankshaft.CrankshaftBlockEntity;
 import com.createengines.content.cylinder.CylinderBlock;
 import com.createengines.content.head.CylinderHeadBlock;
+import com.createengines.content.governor.GovernorBlock;
+import com.createengines.content.limiter.RevLimiterBlock;
 import com.createengines.content.starter.StarterBlock;
+import com.createengines.content.sump.SumpBlock;
+import com.createengines.content.turbo.TurbochargerBlock;
 import com.createengines.engine.CrankGeometry;
 import com.createengines.engine.topology.EngineLayout.CamLine;
 import com.createengines.engine.topology.EngineLayout.Cylinder;
@@ -55,9 +63,13 @@ public final class EngineScanner {
 	private final Level level;
 	private final Set<BlockPos> members = new LinkedHashSet<>();
 	private final List<PortNetwork> ports = new ArrayList<>();
-	private final Map<BlockPos, Integer> portIndex = new HashMap<>();
+	/** Known port networks by a member's position; a turbocharger is in one of each kind, so the kinds are kept apart. */
+	private final Map<PortKind, Map<BlockPos, Integer>> portIndex = new EnumMap<>(PortKind.class);
 	private final List<CamLine> camLines = new ArrayList<>();
 	private final Map<BlockPos, Integer> camIndex = new HashMap<>();
+	private final Set<BlockPos> sumps = new LinkedHashSet<>();
+	private final Set<BlockPos> limiters = new LinkedHashSet<>();
+	private final Set<BlockPos> governors = new LinkedHashSet<>();
 	private boolean incomplete;
 
 	private EngineScanner(Level level) {
@@ -81,11 +93,35 @@ public final class EngineScanner {
 		return state.getBlock() instanceof CrankshaftBlock && state.getValue(BlockStateProperties.AXIS) == axis;
 	}
 
-	private @Nullable EngineLayout run(BlockPos seed) {
-		BlockState seedState = state(seed);
-		if (!(seedState.getBlock() instanceof CrankshaftBlock))
-			return null;
-		Axis axis = seedState.getValue(BlockStateProperties.AXIS);
+	/** One straight run of crankshaft blocks. Which way it turns is relative to the line the scan began on, then to the first. */
+	private static final class Line {
+		final Axis axis;
+		final BlockPos start;
+		final List<Segment> segments = new ArrayList<>();
+		int flywheels;
+		int sense;
+
+		Line(Axis axis, BlockPos start, int sense) {
+			this.axis = axis;
+			this.start = start;
+			this.sense = sense;
+		}
+
+		/** Re-expresses this line's direction of rotation as relative to a line that turns {@code base}. */
+		void relativeTo(int base) {
+			sense *= base;
+			segments.replaceAll(s -> new Segment(s.pos(), s.isThrow(), s.throwAngle(), sense));
+		}
+	}
+
+	/** Lines are put in position order, so that every one of an engine's crankshafts finds the same first line. */
+	private static final Comparator<Line> BY_POSITION = Comparator.<Line>comparingInt(line -> line.start.getX())
+		.thenComparingInt(line -> line.start.getY())
+		.thenComparingInt(line -> line.start.getZ());
+
+	/** The whole crank line through {@code seed}, which turns {@code sense} relative to the line the scan began on. */
+	private Line walk(BlockPos seed, int sense) {
+		Axis axis = state(seed).getValue(BlockStateProperties.AXIS);
 		Direction back = Direction.fromAxisAndDirection(axis, AxisDirection.NEGATIVE);
 		Direction forward = back.getOpposite();
 		int maxSegments = CEConfig.MAX_CRANK_SEGMENTS.get();
@@ -94,21 +130,68 @@ public final class EngineScanner {
 		for (int i = 0; i < maxSegments && isCrank(state(start.relative(back)), axis); i++)
 			start = start.relative(back);
 
-		List<Segment> segments = new ArrayList<>();
+		Line line = new Line(axis, start.immutable(), sense);
 		BlockPos cursor = start;
-		while (segments.size() < maxSegments) {
+		while (line.segments.size() < maxSegments) {
 			BlockState state = state(cursor);
 			if (!isCrank(state, axis))
 				break;
 			boolean isThrow = ((CrankshaftBlock) state.getBlock()).isThrow();
 			double throwAngle =
 				isThrow && level.getBlockEntity(cursor) instanceof CrankshaftBlockEntity be ? be.throwAngle() : 0;
-			segments.add(new Segment(cursor.immutable(), isThrow, throwAngle));
+			line.segments.add(new Segment(cursor.immutable(), isThrow, throwAngle, sense));
 			members.add(cursor.immutable());
 			cursor = cursor.relative(forward);
 		}
+		line.flywheels = countFlywheels(start.relative(back), back, axis) + countFlywheels(cursor, forward, axis);
+		return line;
+	}
 
-		int flywheels = countFlywheels(start.relative(back), back, axis) + countFlywheels(cursor, forward, axis);
+	/**
+	 * Adds every crank line that Create's gearing holds at exactly this line's speed (see {@link CrankCoupling}): those
+	 * are cranks of one engine, which share a single rotor.
+	 */
+	private void addCoupledLines(List<Line> lines) {
+		int limit = CEConfig.MAX_COUPLED_LINES.get();
+		if (limit <= 1)
+			return;
+		Set<BlockPos> known = new HashSet<>();
+		for (Segment segment : lines.getFirst().segments)
+			known.add(segment.pos());
+		Map<BlockPos, Integer> coupled = CrankCoupling.find(level, known, CEConfig.MAX_COUPLING_WALK.get());
+		List<BlockPos> found = new ArrayList<>(coupled.keySet());
+		found.sort(Comparator.<BlockPos>comparingInt(pos -> pos.getX())
+			.thenComparingInt(pos -> pos.getY())
+			.thenComparingInt(pos -> pos.getZ()));
+		for (BlockPos pos : found) {
+			if (lines.size() >= limit)
+				break;
+			if (known.contains(pos))
+				continue;
+			Line line = walk(pos, coupled.get(pos));
+			lines.add(line);
+			for (Segment segment : line.segments)
+				known.add(segment.pos());
+		}
+	}
+
+	private @Nullable EngineLayout run(BlockPos seed) {
+		if (!(state(seed).getBlock() instanceof CrankshaftBlock))
+			return null;
+
+		List<Line> lines = new ArrayList<>();
+		lines.add(walk(seed, 1));
+		addCoupledLines(lines);
+		lines.sort(BY_POSITION);
+		// The first line sets the engine's direction: the others are +1 where they turn the way it does
+		int base = lines.getFirst().sense;
+		List<Segment> segments = new ArrayList<>();
+		int flywheels = 0;
+		for (Line line : lines) {
+			line.relativeTo(base);
+			segments.addAll(line.segments);
+			flywheels += line.flywheels;
+		}
 
 		Set<BlockPos> batteries = new LinkedHashSet<>();
 		Set<BlockPos> alternators = new LinkedHashSet<>();
@@ -117,50 +200,30 @@ public final class EngineScanner {
 
 		List<CylinderDraft> drafts = new ArrayList<>();
 		List<BlockPos> starters = new ArrayList<>();
-		for (Segment segment : segments) {
-			for (Direction side : Direction.values()) {
-				if (side.getAxis() == axis)
-					continue;
-				BlockPos neighbour = segment.pos()
-					.relative(side);
-				BlockState state = state(neighbour);
-				if (state.getBlock() instanceof CylinderBlock && state.getValue(CylinderBlock.FACING) == side)
-					drafts.add(scanCylinder(axis, segment, side, neighbour, state));
-				else if (state.getBlock() instanceof StarterBlock
-					&& state.getValue(StarterBlock.FACING) == side.getOpposite()) {
-					starters.add(neighbour);
-					members.add(neighbour);
+		for (Line line : lines) {
+			for (Segment segment : line.segments) {
+				for (Direction side : Direction.values()) {
+					if (side.getAxis() == line.axis)
+						continue;
+					BlockPos neighbour = segment.pos()
+						.relative(side);
+					BlockState state = state(neighbour);
+					if (state.getBlock() instanceof CylinderBlock && state.getValue(CylinderBlock.FACING) == side)
+						drafts.add(scanCylinder(line.axis, segment, side, neighbour, state));
+					else if (state.getBlock() instanceof StarterBlock
+						&& state.getValue(StarterBlock.FACING) == side.getOpposite()) {
+						starters.add(neighbour);
+						members.add(neighbour);
+					}
 				}
 			}
 		}
 
-		// Heads that touch share a fuel gallery
-		List<List<BlockPos>> galleries = new ArrayList<>();
-		Map<BlockPos, Integer> galleryOf = new HashMap<>();
-		Set<BlockPos> heads = new HashSet<>();
+		// Every head on the crankshaft shares one fuel gallery, so fuel piped into any of them runs the whole engine
+		Set<BlockPos> heads = new LinkedHashSet<>();
 		for (CylinderDraft draft : drafts)
 			if (draft.head != null)
 				heads.add(draft.head);
-		for (CylinderDraft draft : drafts) {
-			if (draft.head == null || galleryOf.containsKey(draft.head))
-				continue;
-			List<BlockPos> gallery = new ArrayList<>();
-			Deque<BlockPos> queue = new ArrayDeque<>();
-			queue.add(draft.head);
-			galleryOf.put(draft.head, galleries.size());
-			while (!queue.isEmpty()) {
-				BlockPos head = queue.poll();
-				gallery.add(head);
-				for (Direction direction : Direction.values()) {
-					BlockPos next = head.relative(direction);
-					if (heads.contains(next) && !galleryOf.containsKey(next)) {
-						galleryOf.put(next, galleries.size());
-						queue.add(next);
-					}
-				}
-			}
-			galleries.add(List.copyOf(gallery));
-		}
 
 		for (BlockPos head : heads)
 			addElectricsAround(head, batteries, alternators);
@@ -169,21 +232,44 @@ public final class EngineScanner {
 		for (CylinderDraft draft : drafts) {
 			if (draft.sparkPlug && batteries.isEmpty())
 				draft.faults |= CylinderFault.NO_BATTERY.bit();
-			cylinders.add(draft.build(draft.head == null ? -1 : galleryOf.get(draft.head)));
+			cylinders.add(draft.build());
 		}
 
-		return new EngineLayout(start.immutable(), axis, List.copyOf(segments), List.copyOf(cylinders),
+		Line first = lines.getFirst();
+		return new EngineLayout(first.start, first.axis, List.copyOf(segments), List.copyOf(cylinders),
 			List.copyOf(ports), List.copyOf(camLines), List.copyOf(starters), List.copyOf(batteries),
-			List.copyOf(alternators), List.copyOf(galleries), flywheels, Set.copyOf(members), incomplete);
+			List.copyOf(alternators), List.copyOf(sumps), List.copyOf(limiters), List.copyOf(governors), List.copyOf(heads),
+			turbos(), flywheels, lines.size(), Set.copyOf(members), incomplete);
 	}
 
-	/** Batteries touching {@code pos} on any side supply the engine's spark plugs, and alternators there charge them. */
+	/** Every turbocharger on one of this engine's port networks, with the intake and exhaust network it joins. */
+	private List<EngineLayout.Turbo> turbos() {
+		Map<BlockPos, int[]> joins = new java.util.LinkedHashMap<>();
+		for (int i = 0; i < ports.size(); i++) {
+			PortNetwork network = ports.get(i);
+			for (BlockPos pos : network.turbos()) {
+				int[] join = joins.computeIfAbsent(pos, $ -> new int[] {-1, -1});
+				join[network.kind() == PortKind.INTAKE ? 0 : 1] = i;
+			}
+		}
+		List<EngineLayout.Turbo> turbos = new ArrayList<>();
+		joins.forEach((pos, join) -> turbos.add(new EngineLayout.Turbo(pos, join[0], join[1])));
+		return turbos;
+	}
+
+	/**
+	 * Batteries touching {@code pos} on any side supply the engine's spark plugs, alternators there charge them, and
+	 * oil pans there oil the whole engine.
+	 */
 	private void addElectricsAround(BlockPos pos, Set<BlockPos> batteries, Set<BlockPos> alternators) {
 		for (Direction direction : Direction.values()) {
 			BlockPos neighbour = pos.relative(direction);
 			Block block = state(neighbour).getBlock();
 			if (block instanceof BatteryBlock && batteries.add(neighbour.immutable())
-				|| block instanceof AlternatorBlock && alternators.add(neighbour.immutable()))
+				|| block instanceof AlternatorBlock && alternators.add(neighbour.immutable())
+				|| block instanceof SumpBlock && sumps.add(neighbour.immutable())
+				|| block instanceof RevLimiterBlock && limiters.add(neighbour.immutable())
+				|| block instanceof GovernorBlock && governors.add(neighbour.immutable()))
 				members.add(neighbour.immutable());
 		}
 	}
@@ -218,10 +304,12 @@ public final class EngineScanner {
 		int exhaust = -1;
 		int faults;
 		boolean sparkPlug;
+		int precision;
+		int sense;
 
-		Cylinder build(int gallery) {
+		Cylinder build() {
 			return new Cylinder(pos, throwPos, bore, tdcAngle, head, lobe, camLine, lobeAngle, intake, exhaust,
-				gallery, faults, sparkPlug);
+				faults, sparkPlug, precision, sense);
 		}
 	}
 
@@ -231,13 +319,19 @@ public final class EngineScanner {
 		draft.pos = pos.immutable();
 		draft.throwPos = segment.pos();
 		draft.bore = bore;
-		draft.tdcAngle = CrankGeometry.topDeadCentreAngle(axis, segment.throwAngle(), bore);
+		draft.sense = segment.sense();
+		// In the engine's own frame: a line geared to turn the other way reaches top dead centre at the mirror angle
+		draft.tdcAngle = segment.sense() * CrankGeometry.topDeadCentreAngle(axis, segment.throwAngle(), bore);
 		if (!segment.isThrow())
 			draft.faults |= CylinderFault.NOT_ON_THROW.bit();
 		if (!state.getValue(CylinderBlock.HAS_PISTON))
 			draft.faults |= CylinderFault.NO_PISTON.bit();
 		if (!state.getValue(CylinderBlock.HAS_ROD))
 			draft.faults |= CylinderFault.NO_ROD.bit();
+		if (((CylinderBlock) state.getBlock()).precision())
+			draft.precision |= PrecisionParts.BORE;
+		if (state.getValue(CylinderBlock.FORGED_PISTON))
+			draft.precision |= PrecisionParts.PISTON;
 
 		BlockPos headPos = pos.relative(bore);
 		BlockState head = state(headPos);
@@ -250,6 +344,10 @@ public final class EngineScanner {
 		if (!head.getValue(CylinderHeadBlock.HAS_INJECTOR))
 			draft.faults |= CylinderFault.NO_INJECTOR.bit();
 		draft.sparkPlug = head.getValue(CylinderHeadBlock.HAS_SPARK_PLUG);
+		if (((CylinderHeadBlock) head.getBlock()).precision())
+			draft.precision |= PrecisionParts.HEAD;
+		if (head.getValue(CylinderHeadBlock.FINE_INJECTOR))
+			draft.precision |= PrecisionParts.INJECTOR;
 
 		for (Direction face : Direction.values()) {
 			if (face == bore.getOpposite())
@@ -268,6 +366,9 @@ public final class EngineScanner {
 				draft.exhaust = portNetwork(neighbour, kind);
 		}
 
+		// A cam beside the cylinder block works the valves through pushrods, which leaves the head's faces for pipes
+		if (draft.lobe == null)
+			draft.lobe = lobeBesideBlock(pos, bore);
 		if (draft.lobe == null)
 			draft.faults |= CylinderFault.NO_CAM.bit();
 		else {
@@ -288,6 +389,20 @@ public final class EngineScanner {
 		return draft;
 	}
 
+	/** A cam lobe on one of the sides of the cylinder block at {@code pos}, which is bored towards {@code bore}. */
+	private @Nullable BlockPos lobeBesideBlock(BlockPos pos, Direction bore) {
+		for (Direction face : Direction.values()) {
+			if (face.getAxis() == bore.getAxis())
+				continue;
+			BlockState neighbour = state(pos.relative(face));
+			if (neighbour.getBlock() instanceof CamLobeBlock
+				&& neighbour.getValue(BlockStateProperties.AXIS) != face.getAxis())
+				return pos.relative(face)
+					.immutable();
+		}
+		return null;
+	}
+
 	/**
 	 * The port kind of the duct block reached by stepping {@code towards} from a head, if it connects back: a pipe
 	 * that is open on that side, or an opening whose back is against the head.
@@ -298,11 +413,28 @@ public final class EngineScanner {
 		if (state.getBlock() instanceof PortOpeningBlock opening
 			&& state.getValue(PortOpeningBlock.FACING) == towards)
 			return opening.kind();
+		// A head bolted straight to a turbo uses its compressor face as an intake and its turbine face as an exhaust;
+		// the side faces take either, so they need a pipe to say which
+		if (state.getBlock() instanceof TurbochargerBlock) {
+			Direction facing = state.getValue(TurbochargerBlock.FACING);
+			if (towards.getOpposite() == facing)
+				return PortKind.INTAKE;
+			if (towards.getOpposite() == facing.getOpposite())
+				return PortKind.EXHAUST;
+		}
 		return null;
 	}
 
+	/** Whether the duct block at {@code state}, a pipe or a turbocharger, is open towards {@code direction} for {@code kind}. */
+	private static boolean opensTowards(BlockState state, Direction direction, PortKind kind) {
+		if (state.getBlock() instanceof ManifoldBlock)
+			return state.getValue(ManifoldBlock.CONNECTIONS.get(direction));
+		return state.getBlock() instanceof TurbochargerBlock turbo && turbo.acceptsPipe(state, direction, kind);
+	}
+
 	private int portNetwork(BlockPos start, PortKind kind) {
-		Integer known = portIndex.get(start);
+		Map<BlockPos, Integer> index = portIndex.computeIfAbsent(kind, $ -> new HashMap<>());
+		Integer known = index.get(start);
 		if (known != null)
 			return known;
 
@@ -318,12 +450,13 @@ public final class EngineScanner {
 			queue.add(start.immutable());
 			visited.add(start.immutable());
 		}
-		// Follow the pipes, wherever they are open, to the heads and openings at their ends
+		// Follow the pipes, wherever they are open, to the heads and openings at their ends. A turbocharger is a
+		// junction like any other pipe block: the run goes in at one face and out of another
 		while (!queue.isEmpty() && visited.size() < limit) {
 			BlockPos duct = queue.poll();
 			BlockState ductState = state(duct);
 			for (Direction direction : Direction.values()) {
-				if (!ductState.getValue(ManifoldBlock.CONNECTIONS.get(direction)))
+				if (!opensTowards(ductState, direction, kind))
 					continue;
 				BlockPos next = duct.relative(direction);
 				BlockState state = state(next);
@@ -331,6 +464,9 @@ public final class EngineScanner {
 				if (block instanceof ManifoldBlock manifold && manifold.kind() == kind) {
 					if (state.getValue(ManifoldBlock.CONNECTIONS.get(direction.getOpposite()))
 						&& visited.add(next.immutable()))
+						queue.add(next.immutable());
+				} else if (block instanceof TurbochargerBlock turbo) {
+					if (turbo.acceptsPipe(state, direction.getOpposite(), kind) && visited.add(next.immutable()))
 						queue.add(next.immutable());
 				} else if (block instanceof PortOpeningBlock opening && opening.kind() == kind
 					&& state.getValue(PortOpeningBlock.FACING) == direction)
@@ -352,17 +488,31 @@ public final class EngineScanner {
 			if (PortOpeningBlock.isOpen(level, opening, state(opening)))
 				open++;
 
-		int index = ports.size();
-		ports.add(new PortNetwork(kind, open, Math.max(1, heads.size()), List.copyOf(openings)));
+		List<BlockPos> throttles = new ArrayList<>();
+		List<BlockPos> sensors = new ArrayList<>();
+		List<BlockPos> turbos = new ArrayList<>();
 		for (BlockPos pos : visited) {
-			portIndex.put(pos, index);
+			Block block = state(pos).getBlock();
+			if (block instanceof ThrottleBlock)
+				throttles.add(pos);
+			else if (block instanceof SensorBlock<?>)
+				sensors.add(pos);
+			else if (block instanceof TurbochargerBlock)
+				turbos.add(pos);
+		}
+
+		int number = ports.size();
+		ports.add(new PortNetwork(kind, open, Math.max(1, heads.size()), List.copyOf(openings), List.copyOf(throttles), List.copyOf(sensors),
+			List.copyOf(turbos)));
+		for (BlockPos pos : visited) {
+			index.put(pos, number);
 			members.add(pos);
 		}
 		for (BlockPos pos : openings) {
-			portIndex.put(pos, index);
+			index.put(pos, number);
 			members.add(pos);
 		}
-		return index;
+		return number;
 	}
 
 	private int camLine(BlockPos lobe) {
@@ -419,15 +569,20 @@ public final class EngineScanner {
 				Direction direction = Direction.fromAxisAndDirection(axis, sign);
 				BlockPos cursor = pos;
 				for (int i = 0; i < MAX_SHAFT_WALK * 4 && isCam(level.getBlockState(cursor), axis); i++) {
-					for (Direction side : Direction.values())
-						addHeadSeed(level, cursor.relative(side), level.getBlockState(cursor.relative(side)), seeds);
+					for (Direction side : Direction.values()) {
+						BlockState sideState = level.getBlockState(cursor.relative(side));
+						addHeadSeed(level, cursor.relative(side), sideState, seeds);
+						addCylinderSeed(level, cursor.relative(side), sideState, seeds);
+					}
 					cursor = cursor.relative(direction);
 				}
 			}
-		} else if (block instanceof BatteryBlock || block instanceof AlternatorBlock) {
+		} else if (block instanceof BatteryBlock || block instanceof AlternatorBlock || block instanceof SumpBlock
+			|| block instanceof RevLimiterBlock || block instanceof GovernorBlock) {
 			for (Direction direction : Direction.values())
 				addHeadSeed(level, pos.relative(direction), level.getBlockState(pos.relative(direction)), seeds);
-		} else if (block instanceof ManifoldBlock || block instanceof PortOpeningBlock) {
+		} else if (block instanceof ManifoldBlock || block instanceof PortOpeningBlock
+			|| block instanceof TurbochargerBlock) {
 			Set<BlockPos> visited = new HashSet<>();
 			Deque<BlockPos> queue = new ArrayDeque<>();
 			queue.add(pos);
@@ -439,7 +594,8 @@ public final class EngineScanner {
 					if (!level.isLoaded(next))
 						continue;
 					BlockState nextState = level.getBlockState(next);
-					if (nextState.getBlock() instanceof ManifoldBlock && visited.add(next))
+					if ((nextState.getBlock() instanceof ManifoldBlock || nextState.getBlock() instanceof TurbochargerBlock)
+						&& visited.add(next))
 						queue.add(next);
 					else
 						addHeadSeed(level, next, nextState, seeds);
@@ -480,6 +636,12 @@ public final class EngineScanner {
 		BlockState cylinderState = level.getBlockState(cylinder);
 		if (cylinderState.getBlock() instanceof CylinderBlock && cylinderState.getValue(CylinderBlock.FACING) == outward)
 			addIfCrank(level, cylinder.relative(outward.getOpposite()), seeds);
+	}
+
+	private static void addCylinderSeed(Level level, BlockPos pos, BlockState state, Set<BlockPos> seeds) {
+		if (state.getBlock() instanceof CylinderBlock)
+			addIfCrank(level, pos.relative(state.getValue(CylinderBlock.FACING)
+				.getOpposite()), seeds);
 	}
 
 	private static void addIfCrank(Level level, BlockPos pos, Set<BlockPos> seeds) {

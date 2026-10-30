@@ -22,19 +22,47 @@ public final class Lubrication {
 	/** Extra speed-dependent friction, as a multiple of normal, for a completely dry part. */
 	private static final double DRY_VISCOUS = 3;
 
+	/** Most the oil can be thinned by fuel washing past the rings: it still lubricates, at half strength. */
+	public static final double MAX_DILUTION = 0.5;
+
 	private double film;
+	private double dilution;
 
 	public Lubrication(double film) {
 		this.film = Math.clamp(film, 0, 1);
 	}
 
-	/** Oil film from 0 (dry) to 1 (fully filmed). */
+	/** Oil film from 0 (dry) to 1 (fully filmed), before fuel thins it. */
 	public double film() {
 		return film;
 	}
 
 	public void setFilm(double film) {
 		this.film = Math.clamp(film, 0, 1);
+	}
+
+	/** How much of the oil's strength unburned fuel has taken, 0 to {@link #MAX_DILUTION}. */
+	public double dilution() {
+		return dilution;
+	}
+
+	public void setDilution(double dilution) {
+		this.dilution = Math.clamp(dilution, 0, MAX_DILUTION);
+	}
+
+	/** Unburned fuel washing the film off the cylinder walls and into the oil. */
+	public void dilute(double amount) {
+		setDilution(dilution + amount);
+	}
+
+	/** Fuel boiling back out of the oil once the engine burns what it is given. */
+	public void boilOff(double amount) {
+		setDilution(dilution - amount);
+	}
+
+	/** What the parts actually feel: the film, less the strength fuel has taken from it. */
+	public double effective() {
+		return film * (1 - dilution);
 	}
 
 	/** Multiplier on speed-independent friction at this film. */

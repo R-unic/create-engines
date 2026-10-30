@@ -1,0 +1,33 @@
+{
+  "parent": "create_engines:precision_cylinder",
+  "criteria": {
+    "forged_piston": {
+      "conditions": {
+        "items": [
+          {
+            "items": "create_engines:forged_piston"
+          }
+        ]
+      },
+      "trigger": "minecraft:inventory_changed"
+    }
+  },
+  "display": {
+    "description": {
+      "translate": "advancement.create_engines.forged_piston.desc"
+    },
+    "icon": {
+      "count": 1,
+      "id": "create_engines:forged_piston"
+    },
+    "title": {
+      "translate": "advancement.create_engines.forged_piston"
+    }
+  },
+  "requirements": [
+    [
+      "forged_piston"
+    ]
+  ],
+  "sends_telemetry_event": true
+}

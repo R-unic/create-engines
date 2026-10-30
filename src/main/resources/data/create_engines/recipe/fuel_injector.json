@@ -1,19 +1,24 @@
 {
-  "type": "minecraft:crafting_shapeless",
+  "type": "minecraft:crafting_shaped",
   "category": "misc",
-  "ingredients": [
-    {
-      "item": "create:copper_sheet"
+  "key": {
+    "A": {
+      "item": "create:andesite_alloy"
     },
-    {
+    "P": {
       "item": "create:fluid_pipe"
     },
-    {
-      "item": "create:andesite_alloy"
+    "S": {
+      "item": "create:copper_sheet"
     }
+  },
+  "pattern": [
+    "A",
+    "P",
+    "S"
   ],
   "result": {
-    "count": 1,
+    "count": 2,
     "id": "create_engines:fuel_injector"
   }
 }

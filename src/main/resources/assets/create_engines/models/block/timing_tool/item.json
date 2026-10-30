@@ -1,0 +1,238 @@
+{
+  "parent": "block/block",
+  "textures": {
+    "grip": "create:block/dark_metal_block",
+    "body": "create:block/brass_block",
+    "lens": "minecraft:block/quartz_block_top",
+    "dial": "minecraft:block/iron_block",
+    "needle": "minecraft:block/red_concrete",
+    "cable": "minecraft:block/black_concrete",
+    "particle": "create:block/brass_block"
+  },
+  "elements": [
+    {
+      "from": [
+        6,
+        0,
+        6
+      ],
+      "to": [
+        9,
+        7,
+        10
+      ],
+      "faces": {
+        "north": {
+          "texture": "#grip"
+        },
+        "south": {
+          "texture": "#grip"
+        },
+        "east": {
+          "texture": "#grip"
+        },
+        "west": {
+          "texture": "#grip"
+        },
+        "up": {
+          "texture": "#grip"
+        },
+        "down": {
+          "texture": "#grip"
+        }
+      }
+    },
+    {
+      "from": [
+        5,
+        7,
+        5
+      ],
+      "to": [
+        10,
+        10,
+        11
+      ],
+      "faces": {
+        "north": {
+          "texture": "#body"
+        },
+        "south": {
+          "texture": "#body"
+        },
+        "east": {
+          "texture": "#body"
+        },
+        "west": {
+          "texture": "#body"
+        },
+        "up": {
+          "texture": "#body"
+        },
+        "down": {
+          "texture": "#body"
+        }
+      }
+    },
+    {
+      "from": [
+        4.5,
+        8,
+        3
+      ],
+      "to": [
+        10.5,
+        12,
+        5
+      ],
+      "faces": {
+        "north": {
+          "texture": "#body"
+        },
+        "south": {
+          "texture": "#body"
+        },
+        "east": {
+          "texture": "#body"
+        },
+        "west": {
+          "texture": "#body"
+        },
+        "up": {
+          "texture": "#body"
+        },
+        "down": {
+          "texture": "#body"
+        }
+      }
+    },
+    {
+      "from": [
+        5,
+        8.5,
+        2.2
+      ],
+      "to": [
+        10,
+        11.5,
+        3
+      ],
+      "faces": {
+        "north": {
+          "texture": "#lens"
+        },
+        "south": {
+          "texture": "#lens"
+        },
+        "east": {
+          "texture": "#lens"
+        },
+        "west": {
+          "texture": "#lens"
+        },
+        "up": {
+          "texture": "#lens"
+        },
+        "down": {
+          "texture": "#lens"
+        }
+      }
+    },
+    {
+      "from": [
+        6,
+        10,
+        5.2
+      ],
+      "to": [
+        9,
+        10.6,
+        8
+      ],
+      "faces": {
+        "north": {
+          "texture": "#dial"
+        },
+        "south": {
+          "texture": "#dial"
+        },
+        "east": {
+          "texture": "#dial"
+        },
+        "west": {
+          "texture": "#dial"
+        },
+        "up": {
+          "texture": "#dial"
+        },
+        "down": {
+          "texture": "#dial"
+        }
+      }
+    },
+    {
+      "from": [
+        7.3,
+        10.6,
+        5.5
+      ],
+      "to": [
+        7.7,
+        10.9,
+        7.3
+      ],
+      "faces": {
+        "north": {
+          "texture": "#needle"
+        },
+        "south": {
+          "texture": "#needle"
+        },
+        "east": {
+          "texture": "#needle"
+        },
+        "west": {
+          "texture": "#needle"
+        },
+        "up": {
+          "texture": "#needle"
+        },
+        "down": {
+          "texture": "#needle"
+        }
+      }
+    },
+    {
+      "from": [
+        7,
+        4,
+        10
+      ],
+      "to": [
+        8,
+        5,
+        12.5
+      ],
+      "faces": {
+        "north": {
+          "texture": "#cable"
+        },
+        "south": {
+          "texture": "#cable"
+        },
+        "east": {
+          "texture": "#cable"
+        },
+        "west": {
+          "texture": "#cable"
+        },
+        "up": {
+          "texture": "#cable"
+        },
+        "down": {
+          "texture": "#cable"
+        }
+      }
+    }
+  ]
+}

@@ -1,0 +1,30 @@
+{
+  "parent": "create_engines:timing_tool",
+  "criteria": {
+    "tool_timed": {
+      "conditions": {
+        "event": "tool_timed"
+      },
+      "trigger": "create_engines:event"
+    }
+  },
+  "display": {
+    "description": {
+      "translate": "advancement.create_engines.tool_timed.desc"
+    },
+    "frame": "goal",
+    "icon": {
+      "count": 1,
+      "id": "create_engines:timing_tool"
+    },
+    "title": {
+      "translate": "advancement.create_engines.tool_timed"
+    }
+  },
+  "requirements": [
+    [
+      "tool_timed"
+    ]
+  ],
+  "sends_telemetry_event": true
+}

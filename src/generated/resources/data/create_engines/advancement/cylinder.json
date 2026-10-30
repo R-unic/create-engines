@@ -1,0 +1,33 @@
+{
+  "parent": "create_engines:crankshaft",
+  "criteria": {
+    "cylinder": {
+      "conditions": {
+        "items": [
+          {
+            "items": "create_engines:cylinder"
+          }
+        ]
+      },
+      "trigger": "minecraft:inventory_changed"
+    }
+  },
+  "display": {
+    "description": {
+      "translate": "advancement.create_engines.cylinder.desc"
+    },
+    "icon": {
+      "count": 1,
+      "id": "create_engines:cylinder"
+    },
+    "title": {
+      "translate": "advancement.create_engines.cylinder"
+    }
+  },
+  "requirements": [
+    [
+      "cylinder"
+    ]
+  ],
+  "sends_telemetry_event": true
+}

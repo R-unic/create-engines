@@ -1,0 +1,29 @@
+{
+  "parent": "create_engines:alive",
+  "criteria": {
+    "stalled": {
+      "conditions": {
+        "event": "stalled"
+      },
+      "trigger": "create_engines:event"
+    }
+  },
+  "display": {
+    "description": {
+      "translate": "advancement.create_engines.stalled.desc"
+    },
+    "icon": {
+      "count": 1,
+      "id": "create_engines:starter"
+    },
+    "title": {
+      "translate": "advancement.create_engines.stalled"
+    }
+  },
+  "requirements": [
+    [
+      "stalled"
+    ]
+  ],
+  "sends_telemetry_event": true
+}

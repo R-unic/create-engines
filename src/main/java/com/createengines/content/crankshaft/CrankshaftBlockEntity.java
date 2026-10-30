@@ -11,6 +11,7 @@ import com.createengines.engine.EngineSummary;
 import com.createengines.engine.topology.EngineLayout;
 import com.createengines.engine.topology.EngineMember;
 import com.createengines.engine.topology.EngineTopology;
+import com.createengines.content.GoggleLines;
 import com.createengines.registry.CELang;
 import com.simibubi.create.content.kinetics.base.GeneratingKineticBlockEntity;
 import com.simibubi.create.foundation.blockEntity.behaviour.BlockEntityBehaviour;
@@ -39,6 +40,8 @@ public class CrankshaftBlockEntity extends GeneratingKineticBlockEntity implemen
 	private float publishedSpeed;
 	private float publishedCapacity;
 	private @Nullable BlockPos primaryPos;
+	/** +1 if gearing turns this crank the way the engine's primary turns, -1 if the other way. */
+	private int sense = 1;
 	private @Nullable EngineController controller;
 	private @Nullable EngineController.Motion savedMotion;
 	private @Nullable EngineSummary summary;
@@ -79,6 +82,15 @@ public class CrankshaftBlockEntity extends GeneratingKineticBlockEntity implemen
 			controller.tick();
 	}
 
+	@Override
+	public void onSpeedChanged(float previousSpeed) {
+		super.onSpeedChanged(previousSpeed);
+		// Create's blocks never tell the engine scanner they were placed, but a crank line that gearing has just joined to
+		// a turning network, or cut from one, starts or stops here: look again at once rather than at the next revalidation
+		if (level != null && !level.isClientSide && (previousSpeed == 0) != (getSpeed() == 0))
+			EngineTopology.markDirty(level, worldPosition);
+	}
+
 	// Engine hosting
 
 	public void adoptLayout(EngineLayout layout, @Nullable EngineController.Motion carried) {
@@ -89,7 +101,7 @@ public class CrankshaftBlockEntity extends GeneratingKineticBlockEntity implemen
 			: savedMotion;
 		savedMotion = null;
 		controller = new EngineController(this, layout, motion);
-		setPrimary(worldPosition);
+		setPrimary(worldPosition, 1);
 	}
 
 	public @Nullable EngineController.Motion captureMotion() {
@@ -115,10 +127,11 @@ public class CrankshaftBlockEntity extends GeneratingKineticBlockEntity implemen
 		}
 	}
 
-	public void setPrimary(BlockPos primary) {
-		if (primary.equals(primaryPos))
+	public void setPrimary(BlockPos primary, int sense) {
+		if (primary.equals(primaryPos) && sense == this.sense)
 			return;
 		primaryPos = primary;
+		this.sense = sense;
 		sendData();
 	}
 
@@ -173,14 +186,15 @@ public class CrankshaftBlockEntity extends GeneratingKineticBlockEntity implemen
 	/**
 	 * How far the crank has turned for drawing, in degrees (not wrapped, and before this block's throw angle). Every
 	 * block of an engine's crankshaft takes it from the primary, so that the whole crank, its pistons and its cams
-	 * move as one.
+	 * move as one. A crank that gearing turns the other way follows the primary's mirror image, so a coupled engine's
+	 * banks stay in step with each other.
 	 */
 	public double rotation(float renderTime) {
 		float speed = getTheoreticalSpeed();
 		if (primaryPos != null && !primaryPos.equals(worldPosition) && level != null
 			&& level.getBlockEntity(primaryPos) instanceof CrankshaftBlockEntity primary
-			&& primary.getTheoreticalSpeed() == speed)
-			return rotation.follow(renderTime, primary.rotation.at(renderTime, speed));
+			&& primary.getTheoreticalSpeed() * sense == speed)
+			return rotation.follow(renderTime, sense * primary.rotation.at(renderTime, primary.getTheoreticalSpeed()));
 		return rotation.at(renderTime, speed);
 	}
 
@@ -200,6 +214,7 @@ public class CrankshaftBlockEntity extends GeneratingKineticBlockEntity implemen
 		tag.putFloat("EngineCapacity", publishedCapacity);
 		if (primaryPos != null)
 			tag.put("Primary", NbtUtils.writeBlockPos(primaryPos));
+		tag.putInt("Sense", sense);
 		EngineController.Motion motion = captureMotion();
 		if (motion != null && !clientPacket) {
 			CompoundTag motionTag = new CompoundTag();
@@ -207,6 +222,7 @@ public class CrankshaftBlockEntity extends GeneratingKineticBlockEntity implemen
 			motionTag.putDouble("Omega", motion.omega());
 			motionTag.putInt("Direction", motion.direction());
 			motionTag.putDouble("Film", motion.film());
+			motionTag.putDouble("Dilution", motion.dilution());
 			tag.put("Motion", motionTag);
 		}
 		if (clientPacket && summary != null)
@@ -220,10 +236,11 @@ public class CrankshaftBlockEntity extends GeneratingKineticBlockEntity implemen
 		publishedCapacity = tag.getFloat("EngineCapacity");
 		primaryPos = NbtUtils.readBlockPos(tag, "Primary")
 			.orElse(null);
+		sense = tag.contains("Sense") && tag.getInt("Sense") < 0 ? -1 : 1;
 		if (tag.contains("Motion")) {
 			CompoundTag motion = tag.getCompound("Motion");
 			savedMotion = new EngineController.Motion(motion.getDouble("Angle"), motion.getDouble("Omega"),
-				motion.getInt("Direction"), motion.getDouble("Film"), null);
+				motion.getInt("Direction"), motion.getDouble("Film"), motion.getDouble("Dilution"), null);
 		}
 		if (clientPacket)
 			summary = tag.contains("Summary") ? EngineSummary.read(tag.getCompound("Summary")) : null;
@@ -244,12 +261,12 @@ public class CrankshaftBlockEntity extends GeneratingKineticBlockEntity implemen
 	public boolean addToGoggleTooltip(List<Component> tooltip, boolean isPlayerSneaking) {
 		EngineSummary engine = engineSummary();
 		if (engine != null)
-			addEngineTooltip(tooltip, engine);
+			addEngineTooltip(tooltip, engine, isPlayerSneaking);
 		boolean kinetics = super.addToGoggleTooltip(tooltip, isPlayerSneaking);
 		return engine != null || kinetics;
 	}
 
-	private static void addEngineTooltip(List<Component> tooltip, EngineSummary engine) {
+	private static void addEngineTooltip(List<Component> tooltip, EngineSummary engine, boolean isPlayerSneaking) {
 		CELang.translate("goggles.engine")
 			.forGoggles(tooltip);
 		ChatFormatting stateColour = switch (engine.state()) {
@@ -259,81 +276,82 @@ public class CrankshaftBlockEntity extends GeneratingKineticBlockEntity implemen
 			case OVERLOADED -> ChatFormatting.GOLD;
 			case STALLED, INCOMPLETE -> ChatFormatting.RED;
 		};
-		CELang.translate(engine.state()
+		GoggleLines.add(CELang.translate(engine.state()
 				.langKey())
-			.style(stateColour)
-			.forGoggles(tooltip, 1);
+			.style(stateColour), tooltip, 1);
+		if (engine.lines() > 1)
+			GoggleLines.add(CELang.translate("goggles.coupled", engine.lines())
+				.style(ChatFormatting.GRAY), tooltip, 1);
 		if (engine.state() != EngineState.INCOMPLETE) {
 			int oil = Math.round(engine.lubrication() * 100);
-			CELang.translate("goggles.lubrication", oil)
-				.style(oil < 30 ? ChatFormatting.RED : oil < 70 ? ChatFormatting.GOLD : ChatFormatting.GREEN)
-				.forGoggles(tooltip, 1);
+			GoggleLines.add(CELang.translate("goggles.lubrication", oil)
+				.style(oil < 30 ? ChatFormatting.RED : oil < 70 ? ChatFormatting.GOLD : ChatFormatting.GREEN), tooltip, 1);
 			if (oil < 30)
-				CELang.translate("goggles.lubrication.dry")
-					.style(ChatFormatting.GRAY)
-					.forGoggles(tooltip, 2);
+				GoggleLines.add(CELang.translate("goggles.lubrication.dry")
+					.style(ChatFormatting.GRAY), tooltip, 2);
+			int thinned = Math.round(engine.thinning() * 100);
+			if (thinned >= 5) {
+				GoggleLines.add(CELang.translate("goggles.lubrication.thinned", thinned)
+					.style(ChatFormatting.GOLD), tooltip, 1);
+				if (isPlayerSneaking)
+					GoggleLines.add(CELang.translate("goggles.lubrication.thinned.hint")
+						.style(ChatFormatting.DARK_GRAY), tooltip, 2);
+			}
 		}
 		if (engine.cylinders() == 0) {
-			CELang.translate("goggles.no_cylinders")
-				.style(ChatFormatting.GRAY)
-				.forGoggles(tooltip, 1);
+			GoggleLines.add(CELang.translate("goggles.no_cylinders")
+				.style(ChatFormatting.GRAY), tooltip, 1);
 			return;
 		}
 		if (engine.state() != EngineState.STALLED) {
-			CELang.translate("goggles.speed")
-				.style(ChatFormatting.GRAY)
-				.forGoggles(tooltip, 1);
-			CELang.translate("goggles.rpm", Math.round(engine.rpm()))
-				.style(ChatFormatting.AQUA)
-				.forGoggles(tooltip, 2);
-			CELang.translate("goggles.available_torque")
-				.style(ChatFormatting.GRAY)
-				.forGoggles(tooltip, 1);
-			CELang.translate("goggles.su_per_rpm", format(engine.availableTorque()))
-				.style(ChatFormatting.AQUA)
-				.forGoggles(tooltip, 2);
-			CELang.translate("goggles.load")
-				.style(ChatFormatting.GRAY)
-				.forGoggles(tooltip, 1);
-			CELang.translate("goggles.su_per_rpm", format(engine.loadTorque()))
-				.style(engine.loadTorque() > engine.availableTorque() ? ChatFormatting.GOLD : ChatFormatting.AQUA)
-				.forGoggles(tooltip, 2);
-			CELang.translate("goggles.fuel_use")
-				.style(ChatFormatting.GRAY)
-				.forGoggles(tooltip, 1);
-			CELang.translate("goggles.mb_per_minute", format(engine.fuelPerMinute()))
-				.style(ChatFormatting.AQUA)
-				.forGoggles(tooltip, 2);
+			GoggleLines.add(CELang.translate("goggles.speed")
+				.style(ChatFormatting.GRAY), tooltip, 1);
+			GoggleLines.add(CELang.translate("goggles.rpm", Math.round(engine.rpm()))
+				.style(ChatFormatting.AQUA), tooltip, 2);
+			GoggleLines.add(CELang.translate("goggles.available_torque")
+				.style(ChatFormatting.GRAY), tooltip, 1);
+			GoggleLines.add(CELang.translate("goggles.su_per_rpm", format(engine.availableTorque()))
+				.style(ChatFormatting.AQUA), tooltip, 2);
+			GoggleLines.add(CELang.translate("goggles.load")
+				.style(ChatFormatting.GRAY), tooltip, 1);
+			GoggleLines.add(CELang.translate("goggles.su_per_rpm", format(engine.loadTorque()))
+				.style(engine.loadTorque() > engine.availableTorque() ? ChatFormatting.GOLD : ChatFormatting.AQUA), tooltip, 2);
+			GoggleLines.add(CELang.translate("goggles.fuel_use")
+				.style(ChatFormatting.GRAY), tooltip, 1);
+			GoggleLines.add(CELang.translate("goggles.mb_per_minute", format(engine.fuelPerMinute()))
+				.style(ChatFormatting.AQUA), tooltip, 2);
 		}
-		CELang.translate("goggles.firing", engine.firing(), engine.cylinders())
-			.style(engine.firing() == engine.cylinders() ? ChatFormatting.GREEN : ChatFormatting.GOLD)
-			.forGoggles(tooltip, 1);
+		GoggleLines.add(CELang.translate("goggles.firing", engine.firing(), engine.cylinders())
+			.style(engine.firing() == engine.cylinders() ? ChatFormatting.GREEN : ChatFormatting.GOLD), tooltip, 1);
 		float[] intervals = engine.firingIntervals();
 		if (intervals.length > 0) {
 			StringBuilder text = new StringBuilder();
-			for (float interval : intervals) {
-				if (!text.isEmpty())
-					text.append(" / ");
-				text.append(Math.round(interval))
-					.append("°");
-			}
-			CELang.translate("goggles.firing_intervals", text.toString())
-				.style(ChatFormatting.GRAY)
-				.forGoggles(tooltip, 1);
+			boolean even = true;
+			for (float interval : intervals)
+				even &= Math.abs(interval - intervals[0]) < 1;
+			if (even && intervals.length > 2)
+				text.append(Math.round(intervals[0]))
+					.append("° apart, all even");
+			else
+				for (float interval : intervals) {
+					if (!text.isEmpty())
+						text.append(" / ");
+					text.append(Math.round(interval))
+						.append("°");
+				}
+			GoggleLines.add(CELang.translate("goggles.firing_intervals", text.toString())
+				.style(ChatFormatting.GRAY), tooltip, 1);
 		}
 		if (engine.state() != EngineState.STALLED) {
 			int ripple = Math.round(engine.ripple() * 100);
-			CELang.translate("goggles.ripple", ripple)
-				.style(ripple > 15 ? ChatFormatting.GOLD : ChatFormatting.GRAY)
-				.forGoggles(tooltip, 1);
+			GoggleLines.add(CELang.translate("goggles.ripple", ripple)
+				.style(ripple > 15 ? ChatFormatting.GOLD : ChatFormatting.GRAY), tooltip, 1);
 		}
-		CELang.translate("goggles.inertia", format(engine.inertia()))
-			.style(ChatFormatting.DARK_GRAY)
-			.forGoggles(tooltip, 1);
+		GoggleLines.add(CELang.translate("goggles.inertia", format(engine.inertia()))
+			.style(ChatFormatting.DARK_GRAY), tooltip, 1);
 		if (engine.starterEngaged())
-			CELang.translate("goggles.starter_engaged")
-				.style(ChatFormatting.YELLOW)
-				.forGoggles(tooltip, 1);
+			GoggleLines.add(CELang.translate("goggles.starter_engaged")
+				.style(ChatFormatting.YELLOW), tooltip, 1);
 	}
 
 	public static String format(double value) {

@@ -1,0 +1,30 @@
+{
+  "parent": "create_engines:four_cylinders",
+  "criteria": {
+    "even_firing": {
+      "conditions": {
+        "event": "even_firing"
+      },
+      "trigger": "create_engines:event"
+    }
+  },
+  "display": {
+    "description": {
+      "translate": "advancement.create_engines.even_firing.desc"
+    },
+    "frame": "goal",
+    "icon": {
+      "count": 1,
+      "id": "create_engines:cam_lobe"
+    },
+    "title": {
+      "translate": "advancement.create_engines.even_firing"
+    }
+  },
+  "requirements": [
+    [
+      "even_firing"
+    ]
+  ],
+  "sends_telemetry_event": true
+}

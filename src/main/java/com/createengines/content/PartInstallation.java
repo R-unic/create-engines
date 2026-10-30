@@ -1,5 +1,7 @@
 package com.createengines.content;
 
+import org.jetbrains.annotations.Nullable;
+
 import com.tterrag.registrate.util.entry.ItemEntry;
 
 import net.minecraft.core.BlockPos;
@@ -18,10 +20,29 @@ import net.minecraft.world.level.block.state.properties.BooleanProperty;
  * Engine parts that are smaller than a block (pistons, connecting rods, injectors) are installed into their housing
  * block by right-clicking, removed by sneak-right-clicking with an empty hand, and dropped when the housing breaks.
  * Each installed part is a block state property, so installing one changes the block and the engine rescans.
+ * <p>
+ * A slot can also take a precision version of its part. That fills the same property and sets a second one beside it,
+ * so everything that asks only whether a piston or an injector is fitted needn't care which it is.
  */
 public final class PartInstallation {
 
-	public record Slot(BooleanProperty property, ItemEntry<Item> item) {
+	/**
+	 * @param property  set while any part is fitted in this slot
+	 * @param item      the ordinary part
+	 * @param grade     set as well as {@code property} while the precision part is fitted, or null if there is none
+	 * @param gradeItem the precision part
+	 */
+	public record Slot(BooleanProperty property, ItemEntry<Item> item, @Nullable BooleanProperty grade,
+					   @Nullable ItemEntry<Item> gradeItem) {
+
+		public Slot(BooleanProperty property, ItemEntry<Item> item) {
+			this(property, item, null, null);
+		}
+
+		/** The item that comes out of this slot as it stands in {@code state}. */
+		ItemStack fitted(BlockState state) {
+			return grade != null && state.getValue(grade) ? gradeItem.asStack() : item.asStack();
+		}
 	}
 
 	private PartInstallation() {
@@ -30,10 +51,18 @@ public final class PartInstallation {
 	public static ItemInteractionResult tryInstall(ItemStack stack, BlockState state, Level level, BlockPos pos,
 												   Player player, Slot... slots) {
 		for (Slot slot : slots) {
-			if (!slot.item().isIn(stack) || state.getValue(slot.property()))
+			if (state.getValue(slot.property()))
+				continue;
+			BlockState next;
+			if (slot.item().isIn(stack))
+				next = state.setValue(slot.property(), true);
+			else if (slot.gradeItem() != null && slot.gradeItem().isIn(stack))
+				next = state.setValue(slot.property(), true)
+					.setValue(slot.grade(), true);
+			else
 				continue;
 			if (!level.isClientSide) {
-				level.setBlockAndUpdate(pos, state.setValue(slot.property(), true));
+				level.setBlockAndUpdate(pos, next);
 				if (!player.isCreative())
 					stack.shrink(1);
 				level.playSound(null, pos, SoundEvents.NETHERITE_BLOCK_PLACE, SoundSource.BLOCKS, 0.6f, 1.4f);
@@ -52,10 +81,14 @@ public final class PartInstallation {
 			if (!state.getValue(slot.property()))
 				continue;
 			if (!level.isClientSide) {
-				level.setBlockAndUpdate(pos, state.setValue(slot.property(), false));
+				ItemStack part = slot.fitted(state);
+				BlockState next = state.setValue(slot.property(), false);
+				if (slot.grade() != null)
+					next = next.setValue(slot.grade(), false);
+				level.setBlockAndUpdate(pos, next);
 				if (!player.isCreative())
 					player.getInventory()
-						.placeItemBackInInventory(slot.item().asStack());
+						.placeItemBackInInventory(part);
 				level.playSound(null, pos, SoundEvents.NETHERITE_BLOCK_BREAK, SoundSource.BLOCKS, 0.6f, 1.4f);
 			}
 			return true;
@@ -68,6 +101,6 @@ public final class PartInstallation {
 			return;
 		for (Slot slot : slots)
 			if (state.getValue(slot.property()))
-				Block.popResource(level, pos, slot.item().asStack());
+				Block.popResource(level, pos, slot.fitted(state));
 	}
 }

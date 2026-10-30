@@ -9,8 +9,9 @@ import net.minecraft.world.phys.shapes.VoxelShape;
 
 /**
  * A set of cam lobes (intake, exhaust and unit-injector) on the camshaft. It works the valves and injector of every
- * cylinder head touching its sides. Its lobe angle decides when, relative to the crank, that cylinder breathes and
- * fires.
+ * cylinder it touches on a side, either at the head or, through pushrods, at the cylinder block below it: a cam beside
+ * the block leaves the head's faces free for pipes. Its lobe angle decides when, relative to the crank, that cylinder
+ * breathes and fires.
  */
 public class CamLobeBlock extends CamshaftBlock {
 

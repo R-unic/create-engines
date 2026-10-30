@@ -1,0 +1,33 @@
+{
+  "parent": "create_engines:pipework",
+  "criteria": {
+    "lambda_sensor": {
+      "conditions": {
+        "items": [
+          {
+            "items": "create_engines:lambda_sensor"
+          }
+        ]
+      },
+      "trigger": "minecraft:inventory_changed"
+    }
+  },
+  "display": {
+    "description": {
+      "translate": "advancement.create_engines.lambda_sensor.desc"
+    },
+    "icon": {
+      "count": 1,
+      "id": "create_engines:lambda_sensor"
+    },
+    "title": {
+      "translate": "advancement.create_engines.lambda_sensor"
+    }
+  },
+  "requirements": [
+    [
+      "lambda_sensor"
+    ]
+  ],
+  "sends_telemetry_event": true
+}

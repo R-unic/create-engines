@@ -1,19 +1,21 @@
 {
-  "type": "minecraft:crafting_shapeless",
+  "type": "minecraft:crafting_shaped",
   "category": "misc",
-  "ingredients": [
-    {
-      "item": "minecraft:iron_ingot"
-    },
-    {
-      "item": "minecraft:iron_ingot"
-    },
-    {
+  "key": {
+    "S": {
       "item": "create:iron_sheet"
+    },
+    "I": {
+      "item": "minecraft:iron_ingot"
     }
+  },
+  "pattern": [
+    "S",
+    "I",
+    "I"
   ],
   "result": {
-    "count": 1,
+    "count": 2,
     "id": "create_engines:piston"
   }
 }

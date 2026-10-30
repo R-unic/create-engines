@@ -17,7 +17,7 @@ import net.neoforged.neoforge.fluids.capability.IFluidHandler.FluidAction;
 import net.neoforged.neoforge.fluids.capability.templates.FluidTank;
 
 /**
- * The fuel gallery shared by cylinder heads that touch each other. Injectors draw fractions of a millibucket; the
+ * The fuel gallery shared by every cylinder head on a crankshaft. Injectors draw fractions of a millibucket; the
  * gallery takes whole millibuckets from whichever head tanks hold fuel and keeps the change.
  */
 public final class GalleryFuelSupply implements FuelSupply {

@@ -5,6 +5,7 @@ import java.util.List;
 import org.jetbrains.annotations.Nullable;
 
 import com.createengines.engine.topology.EngineMember;
+import com.createengines.content.GoggleLines;
 import com.createengines.registry.CELang;
 import com.simibubi.create.api.equipment.goggles.IHaveGoggleInformation;
 import com.simibubi.create.foundation.blockEntity.SmartBlockEntity;
@@ -115,17 +116,14 @@ public class BatteryBlockEntity extends SmartBlockEntity implements IHaveGoggleI
 		CELang.translate("goggles.battery")
 			.forGoggles(tooltip);
 		int percent = Math.round(chargeFraction() * 100);
-		CELang.translate("goggles.battery.charge", percent)
-			.style(percent == 0 ? ChatFormatting.RED : percent < 20 ? ChatFormatting.GOLD : ChatFormatting.GREEN)
-			.forGoggles(tooltip, 1);
+		GoggleLines.add(CELang.translate("goggles.battery.charge", percent)
+			.style(percent == 0 ? ChatFormatting.RED : percent < 20 ? ChatFormatting.GOLD : ChatFormatting.GREEN), tooltip, 1);
 		if (percent == 0)
-			CELang.translate("goggles.battery.flat")
-				.style(ChatFormatting.GRAY)
-				.forGoggles(tooltip, 1);
+			GoggleLines.add(CELang.translate("goggles.battery.flat")
+				.style(ChatFormatting.GRAY), tooltip, 1);
 		if (primaryPos == null)
-			CELang.translate("goggles.battery.no_engine")
-				.style(ChatFormatting.GOLD)
-				.forGoggles(tooltip, 1);
+			GoggleLines.add(CELang.translate("goggles.battery.no_engine")
+				.style(ChatFormatting.GOLD), tooltip, 1);
 		return true;
 	}
 }

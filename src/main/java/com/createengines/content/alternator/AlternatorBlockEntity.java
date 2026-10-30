@@ -9,6 +9,7 @@ import org.jetbrains.annotations.Nullable;
 
 import com.createengines.content.battery.BatteryBlockEntity;
 import com.createengines.engine.topology.EngineMember;
+import com.createengines.content.GoggleLines;
 import com.createengines.registry.CELang;
 import com.simibubi.create.content.kinetics.base.KineticBlockEntity;
 
@@ -128,9 +129,8 @@ public class AlternatorBlockEntity extends KineticBlockEntity implements EngineM
 			key = "goggles.alternator.idle";
 			colour = ChatFormatting.GRAY;
 		}
-		CELang.translate(key)
-			.style(colour)
-			.forGoggles(tooltip, 1);
+		GoggleLines.add(CELang.translate(key)
+			.style(colour), tooltip, 1);
 		super.addToGoggleTooltip(tooltip, isPlayerSneaking);
 		return true;
 	}

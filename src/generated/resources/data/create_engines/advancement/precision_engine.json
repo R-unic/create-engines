@@ -1,0 +1,30 @@
+{
+  "parent": "create_engines:precision_injector",
+  "criteria": {
+    "precision_engine": {
+      "conditions": {
+        "event": "precision_engine"
+      },
+      "trigger": "create_engines:event"
+    }
+  },
+  "display": {
+    "description": {
+      "translate": "advancement.create_engines.precision_engine.desc"
+    },
+    "frame": "goal",
+    "icon": {
+      "count": 1,
+      "id": "create_engines:precision_cylinder"
+    },
+    "title": {
+      "translate": "advancement.create_engines.precision_engine"
+    }
+  },
+  "requirements": [
+    [
+      "precision_engine"
+    ]
+  ],
+  "sends_telemetry_event": true
+}

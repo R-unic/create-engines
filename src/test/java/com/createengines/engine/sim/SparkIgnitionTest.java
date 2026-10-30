@@ -97,7 +97,8 @@ class SparkIgnitionTest {
 	@Test
 	void aSparkCannotLightAMixtureDrownedInFuel() {
 		CycleStats cycle = runAt(160, GASOLINE, 2, IgnitionSource.UNLIMITED).lastCycle();
-		assertEquals(CycleResult.TOO_RICH, cycle.result);
+		assertTrue(cycle.result == CycleResult.TOO_RICH || cycle.result == CycleResult.FOULED, "was " + cycle.result);
+		assertEquals(0, cycle.fuelBurned);
 	}
 
 	/** Compression ignition doesn't care about the mixture's limits: rich diesel just smokes. */

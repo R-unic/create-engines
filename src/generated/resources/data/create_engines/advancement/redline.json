@@ -1,0 +1,30 @@
+{
+  "parent": "create_engines:high_revs",
+  "criteria": {
+    "redline": {
+      "conditions": {
+        "event": "redline"
+      },
+      "trigger": "create_engines:event"
+    }
+  },
+  "display": {
+    "description": {
+      "translate": "advancement.create_engines.redline.desc"
+    },
+    "frame": "goal",
+    "icon": {
+      "count": 1,
+      "id": "create_engines:camshaft"
+    },
+    "title": {
+      "translate": "advancement.create_engines.redline"
+    }
+  },
+  "requirements": [
+    [
+      "redline"
+    ]
+  ],
+  "sends_telemetry_event": true
+}

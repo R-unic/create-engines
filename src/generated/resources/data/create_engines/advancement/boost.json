@@ -1,0 +1,29 @@
+{
+  "parent": "create_engines:turbocharger",
+  "criteria": {
+    "boost": {
+      "conditions": {
+        "event": "boost"
+      },
+      "trigger": "create_engines:event"
+    }
+  },
+  "display": {
+    "description": {
+      "translate": "advancement.create_engines.boost.desc"
+    },
+    "icon": {
+      "count": 1,
+      "id": "create_engines:turbocharger"
+    },
+    "title": {
+      "translate": "advancement.create_engines.boost"
+    }
+  },
+  "requirements": [
+    [
+      "boost"
+    ]
+  ],
+  "sends_telemetry_event": true
+}

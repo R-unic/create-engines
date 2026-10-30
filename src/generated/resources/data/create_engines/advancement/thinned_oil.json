@@ -1,0 +1,29 @@
+{
+  "parent": "create_engines:smoke_signals",
+  "criteria": {
+    "thinned_oil": {
+      "conditions": {
+        "event": "thinned_oil"
+      },
+      "trigger": "create_engines:event"
+    }
+  },
+  "display": {
+    "description": {
+      "translate": "advancement.create_engines.thinned_oil.desc"
+    },
+    "icon": {
+      "count": 1,
+      "id": "create_engines:engine_oil_bucket"
+    },
+    "title": {
+      "translate": "advancement.create_engines.thinned_oil"
+    }
+  },
+  "requirements": [
+    [
+      "thinned_oil"
+    ]
+  ],
+  "sends_telemetry_event": true
+}

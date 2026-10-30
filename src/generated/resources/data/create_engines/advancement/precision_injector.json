@@ -1,0 +1,33 @@
+{
+  "parent": "create_engines:precision_head",
+  "criteria": {
+    "precision_injector": {
+      "conditions": {
+        "items": [
+          {
+            "items": "create_engines:precision_injector"
+          }
+        ]
+      },
+      "trigger": "minecraft:inventory_changed"
+    }
+  },
+  "display": {
+    "description": {
+      "translate": "advancement.create_engines.precision_injector.desc"
+    },
+    "icon": {
+      "count": 1,
+      "id": "create_engines:precision_injector"
+    },
+    "title": {
+      "translate": "advancement.create_engines.precision_injector"
+    }
+  },
+  "requirements": [
+    [
+      "precision_injector"
+    ]
+  ],
+  "sends_telemetry_event": true
+}

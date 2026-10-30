@@ -1,0 +1,33 @@
+{
+  "parent": "create_engines:camshaft",
+  "criteria": {
+    "timing_tool": {
+      "conditions": {
+        "items": [
+          {
+            "items": "create_engines:timing_tool"
+          }
+        ]
+      },
+      "trigger": "minecraft:inventory_changed"
+    }
+  },
+  "display": {
+    "description": {
+      "translate": "advancement.create_engines.timing_tool.desc"
+    },
+    "icon": {
+      "count": 1,
+      "id": "create_engines:timing_tool"
+    },
+    "title": {
+      "translate": "advancement.create_engines.timing_tool"
+    }
+  },
+  "requirements": [
+    [
+      "timing_tool"
+    ]
+  ],
+  "sends_telemetry_event": true
+}

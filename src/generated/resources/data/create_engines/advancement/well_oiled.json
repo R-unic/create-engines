@@ -1,0 +1,29 @@
+{
+  "parent": "create_engines:alive",
+  "criteria": {
+    "well_oiled": {
+      "conditions": {
+        "event": "well_oiled"
+      },
+      "trigger": "create_engines:event"
+    }
+  },
+  "display": {
+    "description": {
+      "translate": "advancement.create_engines.well_oiled.desc"
+    },
+    "icon": {
+      "count": 1,
+      "id": "create_engines:engine_oil_bucket"
+    },
+    "title": {
+      "translate": "advancement.create_engines.well_oiled"
+    }
+  },
+  "requirements": [
+    [
+      "well_oiled"
+    ]
+  ],
+  "sends_telemetry_event": true
+}

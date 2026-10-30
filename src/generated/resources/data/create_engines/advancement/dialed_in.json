@@ -1,0 +1,30 @@
+{
+  "parent": "create_engines:alive",
+  "criteria": {
+    "dialed_in": {
+      "conditions": {
+        "event": "dialed_in"
+      },
+      "trigger": "create_engines:event"
+    }
+  },
+  "display": {
+    "description": {
+      "translate": "advancement.create_engines.dialed_in.desc"
+    },
+    "frame": "goal",
+    "icon": {
+      "count": 1,
+      "id": "create_engines:cylinder_head"
+    },
+    "title": {
+      "translate": "advancement.create_engines.dialed_in"
+    }
+  },
+  "requirements": [
+    [
+      "dialed_in"
+    ]
+  ],
+  "sends_telemetry_event": true
+}

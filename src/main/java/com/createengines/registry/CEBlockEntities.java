@@ -3,6 +3,9 @@ package com.createengines.registry;
 import static com.createengines.CreateEngines.REGISTRATE;
 
 import com.createengines.content.EnginePartRenderers;
+import com.createengines.content.airflow.LambdaSensorBlockEntity;
+import com.createengines.content.airflow.MafSensorBlockEntity;
+import com.createengines.content.airflow.ThrottleBlockEntity;
 import com.createengines.content.alternator.AlternatorBlockEntity;
 import com.createengines.content.alternator.AlternatorVisual;
 import com.createengines.content.battery.BatteryBlockEntity;
@@ -14,9 +17,17 @@ import com.createengines.content.cylinder.CylinderBlockEntity;
 import com.createengines.content.cylinder.CylinderVisual;
 import com.createengines.content.head.CylinderHeadBlockEntity;
 import com.createengines.content.head.CylinderHeadVisual;
+import com.createengines.content.governor.GovernorBlockEntity;
+import com.createengines.content.limiter.RevLimiterBlockEntity;
 import com.createengines.content.starter.StarterBlockEntity;
 import com.createengines.content.starter.StarterRenderer;
 import com.createengines.content.starter.StarterVisual;
+import com.createengines.content.sump.SumpBlockEntity;
+import com.createengines.content.transmission.TransmissionBlockEntity;
+import com.createengines.content.turbo.TurbochargerBlockEntity;
+import com.createengines.content.turbo.TurbochargerRenderer;
+import com.simibubi.create.content.kinetics.transmission.SplitShaftRenderer;
+import com.simibubi.create.content.kinetics.transmission.SplitShaftVisual;
 import com.simibubi.create.content.kinetics.base.KineticBlockEntityRenderer;
 import com.tterrag.registrate.util.entry.BlockEntityEntry;
 
@@ -42,15 +53,40 @@ public final class CEBlockEntities {
 	public static final BlockEntityEntry<CylinderBlockEntity> CYLINDER = REGISTRATE
 		.blockEntity("cylinder", CylinderBlockEntity::new)
 		.visual(() -> CylinderVisual::new)
-		.validBlocks(CEBlocks.CYLINDER)
+		.validBlocks(CEBlocks.CYLINDER, CEBlocks.PRECISION_CYLINDER)
 		.renderer(() -> EnginePartRenderers.Cylinder::new)
 		.register();
 
 	public static final BlockEntityEntry<CylinderHeadBlockEntity> CYLINDER_HEAD = REGISTRATE
 		.blockEntity("cylinder_head", CylinderHeadBlockEntity::new)
 		.visual(() -> CylinderHeadVisual::new)
-		.validBlocks(CEBlocks.CYLINDER_HEAD)
+		.validBlocks(CEBlocks.CYLINDER_HEAD, CEBlocks.PRECISION_CYLINDER_HEAD)
 		.renderer(() -> EnginePartRenderers.Head::new)
+		.register();
+
+	public static final BlockEntityEntry<ThrottleBlockEntity> THROTTLE = REGISTRATE
+		.blockEntity("throttle", ThrottleBlockEntity::new)
+		.validBlocks(CEBlocks.THROTTLE)
+		.register();
+
+	public static final BlockEntityEntry<MafSensorBlockEntity> MAF_SENSOR = REGISTRATE
+		.blockEntity("maf_sensor", MafSensorBlockEntity::new)
+		.validBlocks(CEBlocks.MAF_SENSOR)
+		.register();
+
+	public static final BlockEntityEntry<LambdaSensorBlockEntity> LAMBDA_SENSOR = REGISTRATE
+		.blockEntity("lambda_sensor", LambdaSensorBlockEntity::new)
+		.validBlocks(CEBlocks.LAMBDA_SENSOR)
+		.register();
+
+	public static final BlockEntityEntry<RevLimiterBlockEntity> REV_LIMITER = REGISTRATE
+		.blockEntity("rev_limiter", RevLimiterBlockEntity::new)
+		.validBlocks(CEBlocks.REV_LIMITER)
+		.register();
+
+	public static final BlockEntityEntry<GovernorBlockEntity> GOVERNOR = REGISTRATE
+		.blockEntity("governor", GovernorBlockEntity::new)
+		.validBlocks(CEBlocks.GOVERNOR)
 		.register();
 
 	public static final BlockEntityEntry<StarterBlockEntity> STARTER = REGISTRATE
@@ -72,6 +108,24 @@ public final class CEBlockEntities {
 		.renderer(() -> KineticBlockEntityRenderer::new)
 		.register();
 
+	public static final BlockEntityEntry<SumpBlockEntity> SUMP = REGISTRATE
+		.blockEntity("sump", SumpBlockEntity::new)
+		.validBlocks(CEBlocks.SUMP)
+		.register();
+
+	public static final BlockEntityEntry<TurbochargerBlockEntity> TURBOCHARGER = REGISTRATE
+		.blockEntity("turbocharger", TurbochargerBlockEntity::new)
+		.validBlocks(CEBlocks.TURBOCHARGER)
+		.renderer(() -> TurbochargerRenderer::new)
+		.register();
+
+	public static final BlockEntityEntry<TransmissionBlockEntity> TRANSMISSION = REGISTRATE
+		.blockEntity("transmission", TransmissionBlockEntity::new)
+		.visual(() -> SplitShaftVisual::new, false)
+		.validBlocks(CEBlocks.TRANSMISSION)
+		.renderer(() -> SplitShaftRenderer::new)
+		.register();
+
 	private CEBlockEntities() {
 	}
 
@@ -81,5 +135,6 @@ public final class CEBlockEntities {
 	public static void registerCapabilities(RegisterCapabilitiesEvent event) {
 		event.registerBlockEntity(Capabilities.FluidHandler.BLOCK, CYLINDER_HEAD.get(),
 			(be, side) -> be.fluidCapability());
+		event.registerBlockEntity(Capabilities.FluidHandler.BLOCK, SUMP.get(), (be, side) -> be.fluidCapability());
 	}
 }

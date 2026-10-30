@@ -1,0 +1,30 @@
+{
+  "parent": "create_engines:cranking",
+  "criteria": {
+    "alive": {
+      "conditions": {
+        "event": "engine_running"
+      },
+      "trigger": "create_engines:event"
+    }
+  },
+  "display": {
+    "description": {
+      "translate": "advancement.create_engines.alive.desc"
+    },
+    "frame": "goal",
+    "icon": {
+      "count": 1,
+      "id": "create_engines:cylinder"
+    },
+    "title": {
+      "translate": "advancement.create_engines.alive"
+    }
+  },
+  "requirements": [
+    [
+      "alive"
+    ]
+  ],
+  "sends_telemetry_event": true
+}

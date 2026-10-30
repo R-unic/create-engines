@@ -1,0 +1,30 @@
+{
+  "parent": "create_engines:eight_cylinders",
+  "criteria": {
+    "twelve_cylinders": {
+      "conditions": {
+        "event": "twelve_cylinders"
+      },
+      "trigger": "create_engines:event"
+    }
+  },
+  "display": {
+    "description": {
+      "translate": "advancement.create_engines.twelve_cylinders.desc"
+    },
+    "frame": "challenge",
+    "icon": {
+      "count": 1,
+      "id": "create_engines:crank_throw"
+    },
+    "title": {
+      "translate": "advancement.create_engines.twelve_cylinders"
+    }
+  },
+  "requirements": [
+    [
+      "twelve_cylinders"
+    ]
+  ],
+  "sends_telemetry_event": true
+}

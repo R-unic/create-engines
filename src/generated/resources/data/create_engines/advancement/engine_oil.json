@@ -1,0 +1,33 @@
+{
+  "parent": "create_engines:diesel",
+  "criteria": {
+    "engine_oil": {
+      "conditions": {
+        "items": [
+          {
+            "items": "create_engines:engine_oil_bucket"
+          }
+        ]
+      },
+      "trigger": "minecraft:inventory_changed"
+    }
+  },
+  "display": {
+    "description": {
+      "translate": "advancement.create_engines.engine_oil.desc"
+    },
+    "icon": {
+      "count": 1,
+      "id": "create_engines:engine_oil_bucket"
+    },
+    "title": {
+      "translate": "advancement.create_engines.engine_oil"
+    }
+  },
+  "requirements": [
+    [
+      "engine_oil"
+    ]
+  ],
+  "sends_telemetry_event": true
+}

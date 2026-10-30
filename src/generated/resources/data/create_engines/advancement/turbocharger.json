@@ -1,0 +1,33 @@
+{
+  "parent": "create_engines:pipework",
+  "criteria": {
+    "turbocharger": {
+      "conditions": {
+        "items": [
+          {
+            "items": "create_engines:turbocharger"
+          }
+        ]
+      },
+      "trigger": "minecraft:inventory_changed"
+    }
+  },
+  "display": {
+    "description": {
+      "translate": "advancement.create_engines.turbocharger.desc"
+    },
+    "icon": {
+      "count": 1,
+      "id": "create_engines:turbocharger"
+    },
+    "title": {
+      "translate": "advancement.create_engines.turbocharger"
+    }
+  },
+  "requirements": [
+    [
+      "turbocharger"
+    ]
+  ],
+  "sends_telemetry_event": true
+}

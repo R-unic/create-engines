@@ -1,0 +1,33 @@
+{
+  "parent": "create_engines:cylinder_head",
+  "criteria": {
+    "pipework": {
+      "conditions": {
+        "items": [
+          {
+            "items": "create_engines:intake_manifold"
+          }
+        ]
+      },
+      "trigger": "minecraft:inventory_changed"
+    }
+  },
+  "display": {
+    "description": {
+      "translate": "advancement.create_engines.pipework.desc"
+    },
+    "icon": {
+      "count": 1,
+      "id": "create_engines:intake_manifold"
+    },
+    "title": {
+      "translate": "advancement.create_engines.pipework"
+    }
+  },
+  "requirements": [
+    [
+      "pipework"
+    ]
+  ],
+  "sends_telemetry_event": true
+}

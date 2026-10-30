@@ -14,7 +14,7 @@ import net.neoforged.neoforge.fluids.capability.IFluidHandler.FluidAction;
 import net.neoforged.neoforge.fluids.capability.templates.FluidTank;
 
 /**
- * The oil gallery shared by cylinder heads that touch each other, which feeds the whole engine. The engine draws
+ * The oil gallery shared by every cylinder head on a crankshaft, which feeds the whole engine. The engine draws
  * fractions of a millibucket; the gallery takes whole millibuckets from whichever head tanks hold oil and keeps the
  * change.
  */

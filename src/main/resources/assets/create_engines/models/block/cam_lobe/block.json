@@ -4,6 +4,7 @@
     "axis": "create:block/axis",
     "end": "create:block/axis_top",
     "lobe": "minecraft:block/iron_block",
+    "bearing": "create:block/andesite_casing",
     "particle": "minecraft:block/iron_block"
   },
   "elements": [
@@ -43,10 +44,42 @@
       "from": [
         4,
         3,
-        4
+        5.5
       ],
       "to": [
         12,
+        13,
+        10.5
+      ],
+      "faces": {
+        "north": {
+          "texture": "#lobe"
+        },
+        "south": {
+          "texture": "#lobe"
+        },
+        "east": {
+          "texture": "#lobe"
+        },
+        "west": {
+          "texture": "#lobe"
+        },
+        "up": {
+          "texture": "#lobe"
+        },
+        "down": {
+          "texture": "#lobe"
+        }
+      }
+    },
+    {
+      "from": [
+        5.5,
+        3,
+        4
+      ],
+      "to": [
+        10.5,
         13,
         12
       ],
@@ -73,12 +106,44 @@
     },
     {
       "from": [
-        5,
+        4.75,
+        3,
+        4.75
+      ],
+      "to": [
+        11.25,
+        13,
+        11.25
+      ],
+      "faces": {
+        "north": {
+          "texture": "#lobe"
+        },
+        "south": {
+          "texture": "#lobe"
+        },
+        "east": {
+          "texture": "#lobe"
+        },
+        "west": {
+          "texture": "#lobe"
+        },
+        "up": {
+          "texture": "#lobe"
+        },
+        "down": {
+          "texture": "#lobe"
+        }
+      }
+    },
+    {
+      "from": [
+        6.5,
         3,
         12
       ],
       "to": [
-        11,
+        9.5,
         13,
         13.5
       ],
@@ -100,6 +165,102 @@
         },
         "down": {
           "texture": "#lobe"
+        }
+      }
+    },
+    {
+      "from": [
+        7.25,
+        3,
+        13.5
+      ],
+      "to": [
+        8.75,
+        13,
+        14.5
+      ],
+      "faces": {
+        "north": {
+          "texture": "#lobe"
+        },
+        "south": {
+          "texture": "#lobe"
+        },
+        "east": {
+          "texture": "#lobe"
+        },
+        "west": {
+          "texture": "#lobe"
+        },
+        "up": {
+          "texture": "#lobe"
+        },
+        "down": {
+          "texture": "#lobe"
+        }
+      }
+    },
+    {
+      "from": [
+        5.5,
+        2,
+        5.5
+      ],
+      "to": [
+        10.5,
+        3,
+        10.5
+      ],
+      "faces": {
+        "north": {
+          "texture": "#bearing"
+        },
+        "south": {
+          "texture": "#bearing"
+        },
+        "east": {
+          "texture": "#bearing"
+        },
+        "west": {
+          "texture": "#bearing"
+        },
+        "up": {
+          "texture": "#bearing"
+        },
+        "down": {
+          "texture": "#bearing"
+        }
+      }
+    },
+    {
+      "from": [
+        5.5,
+        13,
+        5.5
+      ],
+      "to": [
+        10.5,
+        14,
+        10.5
+      ],
+      "faces": {
+        "north": {
+          "texture": "#bearing"
+        },
+        "south": {
+          "texture": "#bearing"
+        },
+        "east": {
+          "texture": "#bearing"
+        },
+        "west": {
+          "texture": "#bearing"
+        },
+        "up": {
+          "texture": "#bearing"
+        },
+        "down": {
+          "texture": "#bearing"
         }
       }
     }

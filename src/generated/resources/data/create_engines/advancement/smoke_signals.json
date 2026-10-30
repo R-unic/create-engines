@@ -1,0 +1,29 @@
+{
+  "parent": "create_engines:alive",
+  "criteria": {
+    "smoke_signals": {
+      "conditions": {
+        "event": "smoke_signals"
+      },
+      "trigger": "create_engines:event"
+    }
+  },
+  "display": {
+    "description": {
+      "translate": "advancement.create_engines.smoke_signals.desc"
+    },
+    "icon": {
+      "count": 1,
+      "id": "create_engines:exhaust_outlet"
+    },
+    "title": {
+      "translate": "advancement.create_engines.smoke_signals"
+    }
+  },
+  "requirements": [
+    [
+      "smoke_signals"
+    ]
+  ],
+  "sends_telemetry_event": true
+}

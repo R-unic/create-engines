@@ -1,0 +1,33 @@
+{
+  "parent": "create_engines:cylinder_head",
+  "criteria": {
+    "camshaft": {
+      "conditions": {
+        "items": [
+          {
+            "items": "create_engines:camshaft"
+          }
+        ]
+      },
+      "trigger": "minecraft:inventory_changed"
+    }
+  },
+  "display": {
+    "description": {
+      "translate": "advancement.create_engines.camshaft.desc"
+    },
+    "icon": {
+      "count": 1,
+      "id": "create_engines:camshaft"
+    },
+    "title": {
+      "translate": "advancement.create_engines.camshaft"
+    }
+  },
+  "requirements": [
+    [
+      "camshaft"
+    ]
+  ],
+  "sends_telemetry_event": true
+}

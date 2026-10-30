@@ -1,5 +1,6 @@
 package com.createengines.engine.sim;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
@@ -18,6 +19,10 @@ public final class EngineSimulation {
 	private static final double MAX_STEP_DEGREES = 4;
 	/** Below this the crank is considered stopped. */
 	private static final double STALL_OMEGA = rpmToOmega(2);
+	/** Oil strength lost per rotor cycle, times how far the unburned share of the fuel is past what counts as rich. */
+	private static final double DILUTION_PER_CYCLE = 0.06;
+	/** Oil strength regained per rotor cycle spent burning what it is given. */
+	private static final double BOIL_OFF_PER_CYCLE = 0.04;
 
 	private final List<CylinderModel> cylinders;
 	private final List<Camshaft> camshafts;
@@ -25,6 +30,9 @@ public final class EngineSimulation {
 	private final double baseFriction;
 	private final double baseViscousFriction;
 	private final Lubrication lubrication = new Lubrication(1);
+	private final List<Turbocharger> turbos = new ArrayList<>();
+
+	private boolean washesOil = true;
 
 	private double inertia;
 	/** Rotor angle in [0, 720), always increasing in the direction of travel. */
@@ -105,6 +113,11 @@ public final class EngineSimulation {
 	 * @param maxOmega hard speed ceiling (Create's maximum rotation speed)
 	 */
 	public void tickCranked(double loadTorque, double maxOmega, double floorOmega, int floorDirection) {
+		runCranked(loadTorque, maxOmega, floorOmega, floorDirection);
+		endTick();
+	}
+
+	private void runCranked(double loadTorque, double maxOmega, double floorOmega, int floorDirection) {
 		crankingWork = 0;
 		crankingAngle = 0;
 		if (floorOmega > STALL_OMEGA) {
@@ -147,16 +160,39 @@ public final class EngineSimulation {
 	public void tickDriven(double drivenOmega, int drivenDirection) {
 		setDirection(drivenDirection);
 		omega = drivenOmega;
-		if (omega <= STALL_OMEGA)
-			return;
-		double remaining = TICK;
-		while (remaining > 1e-9) {
-			double delta = Math.min(MAX_STEP_DEGREES, Math.toDegrees(omega * remaining));
-			double dt = Math.toRadians(delta) / omega;
-			advance(delta, dt);
-			cycleFrictionWork += frictionTorque() * Math.toRadians(delta);
-			remaining -= dt;
+		if (omega > STALL_OMEGA) {
+			double remaining = TICK;
+			while (remaining > 1e-9) {
+				double delta = Math.min(MAX_STEP_DEGREES, Math.toDegrees(omega * remaining));
+				double dt = Math.toRadians(delta) / omega;
+				advance(delta, dt);
+				cycleFrictionWork += frictionTorque() * Math.toRadians(delta);
+				remaining -= dt;
+			}
 		}
+		endTick();
+	}
+
+	/** Closes the tick's heat accounting and lets each turbo spool on it; they spin down even while the crank is stopped. */
+	private void endTick() {
+		for (CylinderModel cylinder : cylinders)
+			cylinder.endTick();
+		for (Turbocharger turbo : turbos)
+			turbo.tick(TICK);
+	}
+
+	/** Whether unburned fuel thins the oil as it runs. A dynamometer measures the oil as it is and leaves it alone. */
+	public void setWashesOil(boolean washesOil) {
+		this.washesOil = washesOil;
+	}
+
+	/** Adds a turbocharger, which is ticked with the engine. */
+	public void addTurbo(Turbocharger turbo) {
+		turbos.add(turbo);
+	}
+
+	public List<Turbocharger> turbos() {
+		return turbos;
 	}
 
 	private double advance(double delta, double dt) {
@@ -192,6 +228,7 @@ public final class EngineSimulation {
 		ripple = mean > 0 ? (cycleOmegaMax - cycleOmegaMin) / mean : 0;
 		fuelRate = cycleTime > 0 ? cycleFuel / cycleTime : 0;
 		hasCompletedCycle = true;
+		washOil();
 
 		cycleProgress = 0;
 		cycleGasWork = 0;
@@ -200,6 +237,32 @@ public final class EngineSimulation {
 		cycleOmegaMax = 0;
 		cycleFuel = 0;
 		cycleTime = 0;
+	}
+
+	/**
+	 * Fuel the cylinders failed to burn washes the oil off their walls and into the sump, thinning it for every part of
+	 * the engine however well it is supplied; an engine that burns what it is given boils the fuel back out. Fuel is
+	 * only counted from cylinders that took some in, so one with nothing injected neither washes nor cleans.
+	 */
+	private void washOil() {
+		if (!washesOil)
+			return;
+		double unburned = 0;
+		int injecting = 0;
+		for (CylinderModel cylinder : cylinders) {
+			CycleStats last = cylinder.lastCycle();
+			if (last.fuelInjected <= 0)
+				continue;
+			injecting++;
+			unburned += last.unburnedFraction();
+		}
+		if (injecting == 0)
+			return;
+		double mean = unburned / injecting;
+		if (mean > Mixture.RICH_UNBURNED)
+			lubrication.dilute((mean - Mixture.RICH_UNBURNED) * DILUTION_PER_CYCLE);
+		else
+			lubrication.boilOff(BOIL_OFF_PER_CYCLE);
 	}
 
 	private void stall() {
@@ -217,7 +280,7 @@ public final class EngineSimulation {
 	}
 
 	public double frictionTorque() {
-		double film = lubrication.film();
+		double film = lubrication.effective();
 		double friction = baseFriction * Lubrication.staticFactor(film)
 			+ baseViscousFriction * omega * Lubrication.viscousFactor(film);
 		for (CylinderModel cylinder : cylinders)
@@ -249,9 +312,11 @@ public final class EngineSimulation {
 			double scale = 1;
 			FuelSpec fuel = cylinder.fuelSupply.fuel();
 			if (last.result.fired() && last.fuelBurned > 0 && fuel != null) {
-				double fullShot = cylinder.spec.maxFuelPerShot() * cylinder.metering;
+				double fullShot = cylinder.spec.maxFuelPerShot() * cylinder.metering * cylinder.fuelTrim;
 				double airLimit = last.freshAirAtInjection / fuel.airPerMb();
-				scale = Math.max(1, Math.min(fullShot, airLimit) / last.fuelBurned);
+				// A MAF sensor holds the shot below what the air could burn if it is set to a leaner mixture
+				double matched = cylinder.airMatch > 0 ? airLimit * cylinder.airMatch : airLimit;
+				scale = Math.max(1, Math.min(fullShot, Math.min(airLimit, matched)) / last.fuelBurned);
 			}
 			work += last.work * scale;
 		}

@@ -1,0 +1,29 @@
+{
+  "parent": "create_engines:alive",
+  "criteria": {
+    "four_cylinders": {
+      "conditions": {
+        "event": "four_cylinders"
+      },
+      "trigger": "create_engines:event"
+    }
+  },
+  "display": {
+    "description": {
+      "translate": "advancement.create_engines.four_cylinders.desc"
+    },
+    "icon": {
+      "count": 1,
+      "id": "create_engines:crank_throw"
+    },
+    "title": {
+      "translate": "advancement.create_engines.four_cylinders"
+    }
+  },
+  "requirements": [
+    [
+      "four_cylinders"
+    ]
+  ],
+  "sends_telemetry_event": true
+}

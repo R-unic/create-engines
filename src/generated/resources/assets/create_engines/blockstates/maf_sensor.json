@@ -1,0 +1,57 @@
+{
+  "multipart": [
+    {
+      "apply": {
+        "model": "create_engines:block/maf_sensor/core"
+      }
+    },
+    {
+      "apply": {
+        "model": "create_engines:block/maf_sensor/arm_down"
+      },
+      "when": {
+        "down": "true"
+      }
+    },
+    {
+      "apply": {
+        "model": "create_engines:block/maf_sensor/arm_up"
+      },
+      "when": {
+        "up": "true"
+      }
+    },
+    {
+      "apply": {
+        "model": "create_engines:block/maf_sensor/arm_north"
+      },
+      "when": {
+        "north": "true"
+      }
+    },
+    {
+      "apply": {
+        "model": "create_engines:block/maf_sensor/arm_south"
+      },
+      "when": {
+        "south": "true"
+      }
+    },
+    {
+      "apply": {
+        "model": "create_engines:block/maf_sensor/arm_west"
+      },
+      "when": {
+        "west": "true"
+      }
+    },
+    {
+      "apply": {
+        "model": "create_engines:block/maf_sensor/arm_east"
+      },
+      "when": {
+        "east": "true"
+      }
+    }
+  ]
+}

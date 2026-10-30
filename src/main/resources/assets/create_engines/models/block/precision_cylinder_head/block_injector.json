@@ -1,0 +1,367 @@
+{
+  "parent": "block/block",
+  "textures": {
+    "side": "create:block/brass_casing",
+    "top": "create:block/brass_block",
+    "cover": "create:block/dark_metal_block",
+    "injector": "create:block/brass_block",
+    "ceramic": "minecraft:block/quartz_block_top",
+    "terminal": "create:block/industrial_iron_block",
+    "bolt": "minecraft:block/iron_block",
+    "particle": "create:block/brass_casing"
+  },
+  "elements": [
+    {
+      "from": [
+        0,
+        0,
+        0
+      ],
+      "to": [
+        16,
+        14,
+        16
+      ],
+      "faces": {
+        "north": {
+          "texture": "#side"
+        },
+        "south": {
+          "texture": "#side"
+        },
+        "east": {
+          "texture": "#side"
+        },
+        "west": {
+          "texture": "#side"
+        },
+        "up": {
+          "texture": "#top"
+        },
+        "down": {
+          "texture": "#side"
+        }
+      }
+    },
+    {
+      "from": [
+        1,
+        14,
+        1
+      ],
+      "to": [
+        15,
+        16,
+        15
+      ],
+      "faces": {
+        "north": {
+          "texture": "#top"
+        },
+        "south": {
+          "texture": "#top"
+        },
+        "east": {
+          "texture": "#top"
+        },
+        "west": {
+          "texture": "#top"
+        },
+        "up": {
+          "texture": "#top"
+        },
+        "down": {
+          "texture": "#top"
+        }
+      }
+    },
+    {
+      "from": [
+        2.5,
+        16,
+        2.5
+      ],
+      "to": [
+        6.5,
+        17.5,
+        13.5
+      ],
+      "faces": {
+        "north": {
+          "texture": "#cover"
+        },
+        "south": {
+          "texture": "#cover"
+        },
+        "east": {
+          "texture": "#cover"
+        },
+        "west": {
+          "texture": "#cover"
+        },
+        "up": {
+          "texture": "#cover"
+        },
+        "down": {
+          "texture": "#cover"
+        }
+      }
+    },
+    {
+      "from": [
+        9.5,
+        16,
+        2.5
+      ],
+      "to": [
+        13.5,
+        17.5,
+        13.5
+      ],
+      "faces": {
+        "north": {
+          "texture": "#cover"
+        },
+        "south": {
+          "texture": "#cover"
+        },
+        "east": {
+          "texture": "#cover"
+        },
+        "west": {
+          "texture": "#cover"
+        },
+        "up": {
+          "texture": "#cover"
+        },
+        "down": {
+          "texture": "#cover"
+        }
+      }
+    },
+    {
+      "from": [
+        4.0,
+        17.5,
+        3.0
+      ],
+      "to": [
+        5.0,
+        18.1,
+        4.0
+      ],
+      "faces": {
+        "north": {
+          "texture": "#bolt"
+        },
+        "south": {
+          "texture": "#bolt"
+        },
+        "east": {
+          "texture": "#bolt"
+        },
+        "west": {
+          "texture": "#bolt"
+        },
+        "up": {
+          "texture": "#bolt"
+        },
+        "down": {
+          "texture": "#bolt"
+        }
+      }
+    },
+    {
+      "from": [
+        4.0,
+        17.5,
+        7.5
+      ],
+      "to": [
+        5.0,
+        18.1,
+        8.5
+      ],
+      "faces": {
+        "north": {
+          "texture": "#bolt"
+        },
+        "south": {
+          "texture": "#bolt"
+        },
+        "east": {
+          "texture": "#bolt"
+        },
+        "west": {
+          "texture": "#bolt"
+        },
+        "up": {
+          "texture": "#bolt"
+        },
+        "down": {
+          "texture": "#bolt"
+        }
+      }
+    },
+    {
+      "from": [
+        4.0,
+        17.5,
+        12.0
+      ],
+      "to": [
+        5.0,
+        18.1,
+        13.0
+      ],
+      "faces": {
+        "north": {
+          "texture": "#bolt"
+        },
+        "south": {
+          "texture": "#bolt"
+        },
+        "east": {
+          "texture": "#bolt"
+        },
+        "west": {
+          "texture": "#bolt"
+        },
+        "up": {
+          "texture": "#bolt"
+        },
+        "down": {
+          "texture": "#bolt"
+        }
+      }
+    },
+    {
+      "from": [
+        11.0,
+        17.5,
+        3.0
+      ],
+      "to": [
+        12.0,
+        18.1,
+        4.0
+      ],
+      "faces": {
+        "north": {
+          "texture": "#bolt"
+        },
+        "south": {
+          "texture": "#bolt"
+        },
+        "east": {
+          "texture": "#bolt"
+        },
+        "west": {
+          "texture": "#bolt"
+        },
+        "up": {
+          "texture": "#bolt"
+        },
+        "down": {
+          "texture": "#bolt"
+        }
+      }
+    },
+    {
+      "from": [
+        11.0,
+        17.5,
+        7.5
+      ],
+      "to": [
+        12.0,
+        18.1,
+        8.5
+      ],
+      "faces": {
+        "north": {
+          "texture": "#bolt"
+        },
+        "south": {
+          "texture": "#bolt"
+        },
+        "east": {
+          "texture": "#bolt"
+        },
+        "west": {
+          "texture": "#bolt"
+        },
+        "up": {
+          "texture": "#bolt"
+        },
+        "down": {
+          "texture": "#bolt"
+        }
+      }
+    },
+    {
+      "from": [
+        11.0,
+        17.5,
+        12.0
+      ],
+      "to": [
+        12.0,
+        18.1,
+        13.0
+      ],
+      "faces": {
+        "north": {
+          "texture": "#bolt"
+        },
+        "south": {
+          "texture": "#bolt"
+        },
+        "east": {
+          "texture": "#bolt"
+        },
+        "west": {
+          "texture": "#bolt"
+        },
+        "up": {
+          "texture": "#bolt"
+        },
+        "down": {
+          "texture": "#bolt"
+        }
+      }
+    },
+    {
+      "from": [
+        11,
+        16,
+        2
+      ],
+      "to": [
+        14,
+        17.5,
+        5
+      ],
+      "faces": {
+        "north": {
+          "texture": "#injector"
+        },
+        "south": {
+          "texture": "#injector"
+        },
+        "east": {
+          "texture": "#injector"
+        },
+        "west": {
+          "texture": "#injector"
+        },
+        "up": {
+          "texture": "#injector"
+        },
+        "down": {
+          "texture": "#injector"
+        }
+      }
+    }
+  ]
+}

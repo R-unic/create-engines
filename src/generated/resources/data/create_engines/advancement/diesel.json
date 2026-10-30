@@ -1,0 +1,33 @@
+{
+  "parent": "create_engines:cylinder_head",
+  "criteria": {
+    "diesel": {
+      "conditions": {
+        "items": [
+          {
+            "items": "create_engines:diesel_bucket"
+          }
+        ]
+      },
+      "trigger": "minecraft:inventory_changed"
+    }
+  },
+  "display": {
+    "description": {
+      "translate": "advancement.create_engines.diesel.desc"
+    },
+    "icon": {
+      "count": 1,
+      "id": "create_engines:diesel_bucket"
+    },
+    "title": {
+      "translate": "advancement.create_engines.diesel"
+    }
+  },
+  "requirements": [
+    [
+      "diesel"
+    ]
+  ],
+  "sends_telemetry_event": true
+}

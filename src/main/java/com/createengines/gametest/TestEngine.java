@@ -137,6 +137,37 @@ public final class TestEngine {
 			level.setBlock(origin.offset(ALTERNATOR), axisX(CEBlocks.ALTERNATOR.getDefaultState()), Block.UPDATE_ALL);
 	}
 
+	/** The second crank line of the coupled engine: its throw, and the cylinder and head over it. */
+	public static final BlockPos THROW_2 = new BlockPos(4, 2, 4);
+	public static final BlockPos CYLINDER_2 = new BlockPos(4, 3, 4);
+	public static final BlockPos HEAD_2 = new BlockPos(4, 4, 4);
+
+	/**
+	 * Adds a second crank line two blocks behind the first, geared to it by a row of three small cogwheels at the west
+	 * end (which turns it the same way), so the two are one engine. It carries a cylinder of its own, worked by a lobe on
+	 * the first line's camshaft from the other side. Call after {@link #build}; the engine then needs timing.
+	 */
+	public static void addCoupledLine(Level level, BlockPos origin) {
+		BiConsumer<BlockPos, BlockState> set = (pos, state) -> level.setBlock(origin.offset(pos), state, Block.UPDATE_ALL);
+		for (int x = 1; x <= 3; x++)
+			set.accept(new BlockPos(x, 2, 4), axisX(CEBlocks.CRANKSHAFT.getDefaultState()));
+		set.accept(THROW_2, axisX(CEBlocks.CRANK_THROW.getDefaultState()));
+		set.accept(CYLINDER_2, CEBlocks.CYLINDER.getDefaultState()
+			.setValue(CylinderBlock.FACING, Direction.UP)
+			.setValue(CylinderBlock.HAS_PISTON, true)
+			.setValue(CylinderBlock.HAS_ROD, true));
+		set.accept(HEAD_2, CEBlocks.CYLINDER_HEAD.getDefaultState()
+			.setValue(CylinderHeadBlock.FACING, Direction.UP)
+			.setValue(CylinderHeadBlock.HAS_INJECTOR, true));
+		set.accept(new BlockPos(3, 4, 4), CEBlocks.AIR_INTAKE.getDefaultState()
+			.setValue(PortOpeningBlock.FACING, Direction.WEST));
+		set.accept(new BlockPos(5, 4, 4), CEBlocks.EXHAUST_OUTLET.getDefaultState()
+			.setValue(PortOpeningBlock.FACING, Direction.EAST));
+		set.accept(new BlockPos(4, 4, 3), axisX(CEBlocks.CAM_LOBE.getDefaultState()));
+		for (int z = 2; z <= 4; z++)
+			set.accept(new BlockPos(0, 2, z), axisX(AllBlocks.COGWHEEL.getDefaultState()));
+	}
+
 	private TestEngine() {
 	}
 }

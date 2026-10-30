@@ -4,6 +4,7 @@ import java.util.List;
 
 import com.createengines.registry.CEDataMaps;
 import com.createengines.registry.CEFluids;
+import com.createengines.content.GoggleLines;
 import com.createengines.registry.CELang;
 import com.simibubi.create.api.equipment.goggles.IHaveGoggleInformation;
 import com.simibubi.create.foundation.blockEntity.SmartBlockEntity;
@@ -23,7 +24,7 @@ import net.neoforged.neoforge.fluids.capability.IFluidHandler;
 
 /**
  * Holds this head's share of the engine's fuel gallery and oil gallery. Fill it with Create pipes from any face:
- * fuel goes to the fuel tank and engine oil to the oil tank, and each is shared with every head touching this one.
+ * fuel goes to the fuel tank and engine oil to the oil tank, and each is shared with every other head on the same crankshaft.
  * <p>
  * Its injector is metered by hand with a value box: how much fuel each shot delivers, as a share of the usual shot.
  * Nothing matches it to the air the cylinder breathes, so a setting that suits one speed runs rich above it and lean
@@ -99,30 +100,24 @@ public class CylinderHeadBlockEntity extends SmartBlockEntity implements IHaveGo
 			.forGoggles(tooltip);
 		BlockState state = getBlockState();
 		if (!state.getValue(CylinderHeadBlock.HAS_INJECTOR))
-			CELang.translate("goggles.head.no_injector")
-				.style(ChatFormatting.GOLD)
-				.forGoggles(tooltip, 1);
+			GoggleLines.add(CELang.translate("goggles.head.no_injector")
+				.style(ChatFormatting.GOLD), tooltip, 1);
 		else {
-			CELang.translate("goggles.head.metering", Math.round(meteringFraction() * 100))
-				.style(ChatFormatting.AQUA)
-				.forGoggles(tooltip, 1);
+			GoggleLines.add(CELang.translate("goggles.head.metering", Math.round(meteringFraction() * 100))
+				.style(ChatFormatting.AQUA), tooltip, 1);
 			if (isPlayerSneaking)
-				CELang.translate("goggles.head.metering.hint")
-					.style(ChatFormatting.DARK_GRAY)
-					.forGoggles(tooltip, 2);
+				GoggleLines.add(CELang.translate("goggles.head.metering.hint")
+					.style(ChatFormatting.DARK_GRAY), tooltip, 2);
 		}
 		if (state.getValue(CylinderHeadBlock.HAS_SPARK_PLUG))
-			CELang.translate("goggles.head.spark_plug")
-				.style(ChatFormatting.GRAY)
-				.forGoggles(tooltip, 1);
+			GoggleLines.add(CELang.translate("goggles.head.spark_plug")
+				.style(ChatFormatting.GRAY), tooltip, 1);
 		else if (isPlayerSneaking)
-			CELang.translate("goggles.head.no_spark_plug")
-				.style(ChatFormatting.DARK_GRAY)
-				.forGoggles(tooltip, 1);
+			GoggleLines.add(CELang.translate("goggles.head.no_spark_plug")
+				.style(ChatFormatting.DARK_GRAY), tooltip, 1);
 		if (oilTank().isEmpty())
-			CELang.translate("goggles.head.oil")
-				.style(ChatFormatting.GRAY)
-				.forGoggles(tooltip, 1);
+			GoggleLines.add(CELang.translate("goggles.head.oil")
+				.style(ChatFormatting.GRAY), tooltip, 1);
 		containedFluidTooltip(tooltip, isPlayerSneaking, fluidCapability());
 		return true;
 	}

@@ -4,6 +4,9 @@ import com.createengines.content.camshaft.CamshaftBlockEntity;
 import com.createengines.content.crankshaft.CrankshaftBlockEntity;
 import com.createengines.content.cylinder.CylinderBlock;
 import com.createengines.content.head.CylinderHeadBlock;
+import com.createengines.content.turbo.TurbochargerBlockEntity;
+import com.createengines.engine.CrankGeometry;
+import com.createengines.engine.TurboStatus;
 import com.createengines.registry.CEFluids;
 import com.createengines.registry.CEItems;
 import com.simibubi.create.content.fluids.tank.FluidTankBlockEntity;
@@ -16,7 +19,10 @@ import net.createmod.ponder.api.scene.SceneBuildingUtil;
 import net.createmod.ponder.api.scene.Selection;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.core.Direction.Axis;
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.neoforged.neoforge.fluids.FluidStack;
 import net.neoforged.neoforge.fluids.capability.IFluidHandler.FluidAction;
 
@@ -228,7 +234,7 @@ public final class EngineScenes {
 		scene.overlay()
 			.showText(90)
 			.attachKeyFrame()
-			.text("The head's other faces are its connections: an intake, an exhaust, and a Cam Lobe to work the valves and injector.")
+			.text("The head's other faces are its connections: an intake and an exhaust. A Cam Lobe touching the head, or the cylinder below it, works the valves and injector.")
 			.pointAt(util.vector()
 				.blockSurface(head, Direction.WEST))
 			.placeNearTarget();
@@ -236,7 +242,7 @@ public final class EngineScenes {
 
 		scene.overlay()
 			.showText(90)
-			.text("Fuel is piped into any face of a head. Heads that touch share their fuel, so one pipe can feed a whole bank.")
+			.text("Fuel is piped into any face of a head. Every head on the crankshaft shares its fuel, so one pipe can feed the whole engine.")
 			.pointAt(util.vector()
 				.blockSurface(head, Direction.EAST))
 			.placeNearTarget();
@@ -299,7 +305,7 @@ public final class EngineScenes {
 		scene.overlay()
 			.showText(80)
 			.attachKeyFrame()
-			.text("A Cam Lobe touching a cylinder head opens its valves and fires its injector as the camshaft turns.")
+			.text("A Cam Lobe touching a cylinder head, or the cylinder block below it, opens its valves and fires its injector as the camshaft turns.")
 			.pointAt(util.vector()
 				.blockSurface(util.grid()
 					.at(2, 3, 3), Direction.WEST))
@@ -349,7 +355,7 @@ public final class EngineScenes {
 			.setKineticSpeed(camTrain, -16);
 		scene.overlay()
 			.showText(100)
-			.text("Two angles 180° apart both work: each picks which crank revolution the cylinder fires on. This is how firing order is set.")
+			.text("Two angles 180° apart both work: each picks which crank revolution the cylinder fires on. This is how firing order is set; the next page shows how.")
 			.pointAt(util.vector()
 				.blockSurface(util.grid()
 					.at(2, 3, 3), Direction.UP))
@@ -365,6 +371,220 @@ public final class EngineScenes {
 				.topOf(4, 3, 3))
 			.placeNearTarget();
 		scene.idle(100);
+		scene.markAsFinished();
+	}
+
+	/**
+	 * The lobe step that times a cylinder bored along {@code bore} from a throw set to {@code throwSteps}, so that the
+	 * scene's angles are worked out the way a player works them out. {@code secondTurn} is the lobe 180° on, which fires
+	 * the cylinder a crank revolution later.
+	 */
+	private static int lobeFor(int throwSteps, Direction bore, boolean secondTurn) {
+		double tdc = CrankGeometry.topDeadCentreAngle(Axis.X, throwSteps * CrankshaftBlockEntity.THROW_ANGLE_STEP, bore);
+		double lobe = ((tdc / 2) % 180 + 180) % 180 + (secondTurn ? 180 : 0);
+		int steps = (int) (360 / CamshaftBlockEntity.LOBE_ANGLE_STEP);
+		return (int) Math.round(lobe / CamshaftBlockEntity.LOBE_ANGLE_STEP) % steps;
+	}
+
+	public static void firingOrder(SceneBuilder builder, SceneBuildingUtil util) {
+		CreateSceneBuilder scene = new CreateSceneBuilder(builder);
+		scene.title("firing_order", "Choosing a Firing Order");
+		scene.configureBasePlate(0, 0, 8);
+		scene.world()
+			.showSection(util.select()
+				.layer(0), Direction.UP);
+
+		Selection crank = util.select()
+			.fromTo(1, 1, 3, 6, 1, 3);
+		Selection engine = util.select()
+			.fromTo(2, 2, 3, 5, 3, 3)
+			.add(util.select()
+				.fromTo(2, 3, 2, 5, 3, 2))
+			.add(util.select()
+				.fromTo(2, 3, 4, 5, 3, 4));
+		Selection cam = util.select()
+			.fromTo(1, 4, 3, 6, 4, 3);
+
+		// Cylinders 1 and 4 sit on throws at 0°, 2 and 3 on throws at 180°: a flat-plane crank
+		int[] throwSteps = {0, THROW_HALF_TURN, THROW_HALF_TURN, 0};
+		for (int i = 0; i < 4; i++) {
+			setThrow(scene, util.select()
+				.position(2 + i, 1, 3), throwSteps[i]);
+			setLobe(scene, util.select()
+				.position(2 + i, 4, 3), lobeFor(throwSteps[i], Direction.UP, false));
+		}
+		scene.world()
+			.showSection(crank, Direction.DOWN);
+		scene.world()
+			.showSection(engine, Direction.DOWN);
+		scene.world()
+			.showSection(cam, Direction.DOWN);
+		scene.world()
+			.setKineticSpeed(crank, 32);
+		scene.world()
+			.setKineticSpeed(cam, 16);
+		scene.idle(20);
+
+		scene.overlay()
+			.showText(110)
+			.attachKeyFrame()
+			.text("Four cylinders on one crank. Each cam lobe times its cylinder to its own piston, so every one fires. When it fires is set by the lobe angles.")
+			.pointAt(util.vector()
+				.topOf(2, 4, 3))
+			.placeNearTarget();
+		scene.idle(120);
+
+		scene.overlay()
+			.showText(110)
+			.colored(PonderPalette.RED)
+			.text("Cylinders 1 and 4 reach top dead centre together, and so do 2 and 3. Timed this simply they fire in pairs: two kicks in two turns, and a lumpy engine.")
+			.pointAt(util.vector()
+				.topOf(3, 4, 3))
+			.placeNearTarget();
+		scene.idle(120);
+
+		setLobe(scene, util.select()
+			.position(4, 4, 3), lobeFor(THROW_HALF_TURN, Direction.UP, true));
+		setLobe(scene, util.select()
+			.position(5, 4, 3), lobeFor(0, Direction.UP, true));
+		scene.overlay()
+			.showText(120)
+			.attachKeyFrame()
+			.colored(PonderPalette.BLUE)
+			.text("A lobe angle 180° further round times a cylinder just as well, but fires it on the next crank turn instead. Cylinders 3 and 4 are moved on to the second turn.")
+			.pointAt(util.vector()
+				.topOf(4, 4, 3))
+			.placeNearTarget();
+		scene.idle(130);
+
+		scene.overlay()
+			.showText(110)
+			.colored(PonderPalette.GREEN)
+			.text("Now they fire one after another in the order 1, 3, 4, 2, a power stroke every 180°. Goggles on the crankshaft show the firing intervals.")
+			.pointAt(util.vector()
+				.topOf(1, 1, 3))
+			.placeNearTarget();
+		scene.idle(120);
+
+		scene.overlay()
+			.showText(130)
+			.attachKeyFrame()
+			.text("To plan one by hand: read each piston's top dead centre angle from goggles, halve it for the lobe angle, then add 180° to some lobes so the firings land 720° ÷ cylinders apart. A Timing Tool does all of this for you.")
+			.pointAt(util.vector()
+				.topOf(5, 4, 3))
+			.placeNearTarget();
+		scene.idle(140);
+		scene.markAsFinished();
+	}
+
+	public static void compactV(SceneBuilder builder, SceneBuildingUtil util) {
+		CreateSceneBuilder scene = new CreateSceneBuilder(builder);
+		scene.title("compact_v", "Packing a V Engine");
+		scene.configureBasePlate(0, 0, 6);
+		scene.world()
+			.showSection(util.select()
+				.layer(0), Direction.UP);
+
+		Selection crank = util.select()
+			.fromTo(1, 2, 3, 4, 2, 3);
+		Selection upright = util.select()
+			.fromTo(2, 3, 3, 3, 4, 3);
+		Selection uprightPipes = util.select()
+			.fromTo(2, 4, 2, 3, 4, 2)
+			.add(util.select()
+				.fromTo(2, 4, 4, 3, 4, 4));
+		Selection north = util.select()
+			.fromTo(2, 2, 1, 3, 2, 2);
+		Selection northPipes = util.select()
+			.fromTo(2, 3, 1, 3, 3, 1)
+			.add(util.select()
+				.fromTo(2, 1, 1, 3, 1, 1));
+		Selection uprightCam = util.select()
+			.fromTo(1, 3, 4, 4, 3, 4);
+		Selection northCam = util.select()
+			.fromTo(1, 1, 2, 4, 1, 2);
+
+		// The second throw is turned half way round, as in a crossplane V
+		int[] throwSteps = {0, THROW_HALF_TURN};
+		for (int i = 0; i < 2; i++) {
+			setThrow(scene, util.select()
+				.position(2 + i, 2, 3), throwSteps[i]);
+			setLobe(scene, util.select()
+				.position(2 + i, 3, 4), lobeFor(throwSteps[i], Direction.UP, false));
+			setLobe(scene, util.select()
+				.position(2 + i, 1, 2), lobeFor(throwSteps[i], Direction.NORTH, false));
+		}
+		scene.world()
+			.showSection(crank, Direction.DOWN);
+		scene.idle(10);
+		scene.world()
+			.showSection(upright, Direction.DOWN);
+		scene.world()
+			.showSection(north, Direction.SOUTH);
+		scene.idle(15);
+		scene.overlay()
+			.showText(90)
+			.attachKeyFrame()
+			.text("A V is two banks of cylinders on the same crank throws: here one bank points up and the other north.")
+			.pointAt(util.vector()
+				.topOf(2, 4, 3))
+			.placeNearTarget();
+		scene.idle(100);
+
+		scene.world()
+			.showSection(uprightPipes, Direction.DOWN);
+		scene.world()
+			.showSection(northPipes, Direction.SOUTH);
+		scene.idle(15);
+		scene.overlay()
+			.showText(110)
+			.attachKeyFrame()
+			.text("Every head needs an intake and an exhaust, and every head shares fuel, so a tight bank soon runs out of free faces for a camshaft as well.")
+			.pointAt(util.vector()
+				.blockSurface(util.grid()
+					.at(2, 4, 3), Direction.NORTH))
+			.placeNearTarget();
+		scene.idle(120);
+
+		scene.world()
+			.showSection(uprightCam, Direction.NORTH);
+		scene.world()
+			.showSection(northCam, Direction.UP);
+		scene.world()
+			.setKineticSpeed(crank, 32);
+		scene.world()
+			.setKineticSpeed(uprightCam, 16);
+		scene.world()
+			.setKineticSpeed(northCam, 16);
+		scene.idle(15);
+		scene.overlay()
+			.showText(120)
+			.attachKeyFrame()
+			.colored(PonderPalette.GREEN)
+			.text("A Cam Lobe works a cylinder from beside its block as well as beside its head, through pushrods. Put each bank's camshaft on the block and the heads keep their faces for pipes.")
+			.pointAt(util.vector()
+				.blockSurface(util.grid()
+					.at(2, 3, 4), Direction.WEST))
+			.placeNearTarget();
+		scene.idle(130);
+
+		scene.overlay()
+			.showText(120)
+			.colored(PonderPalette.BLUE)
+			.text("The two cylinders on one throw reach top dead centre at different angles, so each bank has its own camshaft and lobe angles. Goggles show when a cylinder is on time.")
+			.pointAt(util.vector()
+				.blockSurface(util.grid()
+					.at(2, 1, 2), Direction.WEST))
+			.placeNearTarget();
+		scene.idle(130);
+
+		scene.overlay()
+			.showText(100)
+			.text("Add a throw with a cylinder on each side for every two cylinders: six throws make a V12.")
+			.pointAt(util.vector()
+				.topOf(3, 4, 3))
+			.placeNearTarget();
+		scene.idle(110);
 		scene.markAsFinished();
 	}
 
@@ -565,6 +785,955 @@ public final class EngineScenes {
 		scene.markAsFinished();
 	}
 
+	public static void mafSensor(SceneBuilder builder, SceneBuildingUtil util) {
+		CreateSceneBuilder scene = new CreateSceneBuilder(builder);
+		scene.title("maf_sensor", "Matching Fuel to Air with a MAF Sensor");
+		scene.configureBasePlate(0, 0, 6);
+		scene.world()
+			.showSection(util.select()
+				.layer(0), Direction.UP);
+
+		Selection crank = util.select()
+			.fromTo(1, 1, 3, 3, 1, 3);
+		Selection cam = util.select()
+			.fromTo(1, 4, 3, 3, 4, 3);
+		Selection engine = util.select()
+			.fromTo(2, 2, 3, 2, 3, 3)
+			.add(cam)
+			.add(util.select()
+				.position(2, 3, 4));
+		Selection airIntake = util.select()
+			.position(2, 3, 1);
+		Selection body = util.select()
+			.position(2, 3, 2);
+		Selection lamp = util.select()
+			.position(3, 3, 2);
+		BlockPos sensor = util.grid()
+			.at(2, 3, 2);
+
+		setThrow(scene, util.select()
+			.position(2, 1, 3), 0);
+		setLobe(scene, util.select()
+			.position(2, 4, 3), LOBE_FOR_UPRIGHT_CYLINDER);
+		scene.world()
+			.showSection(crank, Direction.DOWN);
+		scene.world()
+			.showSection(engine, Direction.DOWN);
+		scene.world()
+			.showSection(airIntake, Direction.SOUTH);
+		scene.world()
+			.setKineticSpeed(crank, 96);
+		scene.world()
+			.setKineticSpeed(cam, 48);
+		scene.idle(20);
+
+		scene.overlay()
+			.showText(110)
+			.colored(PonderPalette.RED)
+			.text("An injector delivers the shot it was set to, however much air the cylinder breathed. Breathing falls as the engine speeds up, so a shot that suits slow running is rich at speed.")
+			.pointAt(util.vector()
+				.topOf(2, 3, 3))
+			.placeNearTarget();
+		scene.idle(120);
+
+		scene.world()
+			.showSection(body, Direction.SOUTH);
+		scene.idle(15);
+		scene.overlay()
+			.showText(100)
+			.attachKeyFrame()
+			.text("A MAF Sensor is a length of intake pipe that weighs the air each cylinder behind it breathes.")
+			.pointAt(util.vector()
+				.topOf(sensor))
+			.placeNearTarget();
+		scene.idle(110);
+
+		scene.overlay()
+			.showText(120)
+			.attachKeyFrame()
+			.colored(PonderPalette.GREEN)
+			.text("Every injector on its network is capped at the fuel that air can burn. It only ever cuts: Fuel Metering stays the most a cylinder gets, so set it high and the sensor trims the shot back as the engine speeds up.")
+			.pointAt(util.vector()
+				.topOf(2, 3, 3))
+			.placeNearTarget();
+		scene.idle(130);
+
+		scene.overlay()
+			.showControls(util.vector()
+				.blockSurface(sensor, Direction.WEST), Pointing.RIGHT, 40)
+			.rightClick();
+		scene.idle(10);
+		scene.overlay()
+			.showText(100)
+			.attachKeyFrame()
+			.colored(PonderPalette.BLUE)
+			.text("Its Mixture Target, set with the value panel, is how lean or rich it holds the shot: 80% to 125% of balanced.")
+			.pointAt(util.vector()
+				.blockSurface(sensor, Direction.WEST))
+			.placeNearTarget();
+		scene.idle(110);
+
+		scene.world()
+			.showSection(lamp, Direction.DOWN);
+		scene.idle(15);
+		scene.world()
+			.modifyBlock(util.grid()
+				.at(3, 3, 2), state -> state.setValue(BlockStateProperties.LIT, true), false);
+		scene.effects()
+			.indicateRedstone(util.grid()
+				.at(3, 3, 2));
+		scene.overlay()
+			.showText(110)
+			.attachKeyFrame()
+			.text("It also puts the size of the breath out as redstone: 15 for a boosted cylinder half again as full as its bore. Goggles show the air charge and how much fuel is being cut.")
+			.pointAt(util.vector()
+				.topOf(3, 3, 2))
+			.placeNearTarget();
+		scene.idle(120);
+		scene.markAsFinished();
+	}
+
+	public static void lambdaSensor(SceneBuilder builder, SceneBuildingUtil util) {
+		CreateSceneBuilder scene = new CreateSceneBuilder(builder);
+		scene.title("lambda_sensor", "Reading the Exhaust with a Lambda Sensor");
+		scene.configureBasePlate(0, 0, 6);
+		scene.world()
+			.showSection(util.select()
+				.layer(0), Direction.UP);
+
+		Selection crank = util.select()
+			.fromTo(1, 1, 3, 3, 1, 3);
+		Selection cam = util.select()
+			.fromTo(1, 4, 3, 3, 4, 3);
+		Selection engine = util.select()
+			.fromTo(2, 2, 3, 2, 3, 3)
+			.add(cam)
+			.add(util.select()
+				.position(2, 3, 2));
+		Selection outlet = util.select()
+			.position(2, 3, 5);
+		Selection body = util.select()
+			.position(2, 3, 4);
+		Selection lamp = util.select()
+			.position(3, 3, 4);
+		BlockPos sensor = util.grid()
+			.at(2, 3, 4);
+
+		setThrow(scene, util.select()
+			.position(2, 1, 3), 0);
+		setLobe(scene, util.select()
+			.position(2, 4, 3), LOBE_FOR_UPRIGHT_CYLINDER);
+		scene.world()
+			.showSection(crank, Direction.DOWN);
+		scene.world()
+			.showSection(engine, Direction.DOWN);
+		scene.world()
+			.showSection(outlet, Direction.NORTH);
+		scene.world()
+			.setKineticSpeed(crank, 64);
+		scene.world()
+			.setKineticSpeed(cam, 32);
+		scene.idle(20);
+
+		scene.world()
+			.showSection(body, Direction.NORTH);
+		scene.idle(15);
+		scene.overlay()
+			.showText(100)
+			.attachKeyFrame()
+			.text("A Lambda Sensor is a length of exhaust pipe that reads the mixture the cylinders feeding it burned, from what the exhaust gas still holds.")
+			.pointAt(util.vector()
+				.topOf(sensor))
+			.placeNearTarget();
+		scene.idle(110);
+
+		scene.world()
+			.showSection(lamp, Direction.DOWN);
+		scene.idle(15);
+		scene.world()
+			.modifyBlock(util.grid()
+				.at(3, 3, 4), state -> state.setValue(BlockStateProperties.LIT, true), false);
+		scene.effects()
+			.indicateRedstone(util.grid()
+				.at(3, 3, 4));
+		scene.overlay()
+			.showText(120)
+			.attachKeyFrame()
+			.colored(PonderPalette.GREEN)
+			.text("Its redstone output is the mixture: 8 for balanced, 6 to 9 across the balanced band, lower for lean, higher for rich, and 15 at twice the fuel the air could burn.")
+			.pointAt(util.vector()
+				.topOf(3, 3, 4))
+			.placeNearTarget();
+		scene.idle(130);
+
+		scene.overlay()
+			.showText(120)
+			.attachKeyFrame()
+			.text("It changes nothing by itself. Feed it through a comparator to a camshaft's fuel rack, where redstone closes the rack, and rich running cuts its own fuel.")
+			.pointAt(util.vector()
+				.topOf(sensor))
+			.placeNearTarget();
+		scene.idle(130);
+		scene.markAsFinished();
+	}
+
+	public static void revLimiter(SceneBuilder builder, SceneBuildingUtil util) {
+		CreateSceneBuilder scene = new CreateSceneBuilder(builder);
+		scene.title("rev_limiter", "Limiting an Engine's Speed");
+		scene.configureBasePlate(0, 0, 6);
+		scene.world()
+			.showSection(util.select()
+				.layer(0), Direction.UP);
+
+		Selection crank = util.select()
+			.fromTo(1, 1, 3, 3, 1, 3);
+		Selection cam = util.select()
+			.fromTo(1, 4, 3, 3, 4, 3);
+		Selection engine = util.select()
+			.fromTo(2, 2, 3, 2, 3, 3)
+			.add(cam)
+			.add(util.select()
+				.fromTo(2, 3, 2, 2, 3, 2))
+			.add(util.select()
+				.position(2, 3, 4));
+		Selection limiter = util.select()
+			.position(3, 2, 3);
+		Selection lamp = util.select()
+			.position(4, 2, 3);
+		BlockPos block = util.grid()
+			.at(3, 2, 3);
+
+		setThrow(scene, util.select()
+			.position(2, 1, 3), 0);
+		setLobe(scene, util.select()
+			.position(2, 4, 3), LOBE_FOR_UPRIGHT_CYLINDER);
+		scene.world()
+			.showSection(crank, Direction.DOWN);
+		scene.world()
+			.showSection(engine, Direction.DOWN);
+		scene.world()
+			.setKineticSpeed(crank, 64);
+		scene.world()
+			.setKineticSpeed(cam, 32);
+		scene.idle(20);
+
+		scene.world()
+			.showSection(limiter, Direction.DOWN);
+		scene.idle(15);
+		scene.overlay()
+			.showText(110)
+			.attachKeyFrame()
+			.text("A Rev Limiter set against a crankshaft block or a cylinder head holds every injector shut once the engine reaches the speed it is set to.")
+			.pointAt(util.vector()
+				.topOf(block))
+			.placeNearTarget();
+		scene.world()
+			.setKineticSpeed(crank, 96);
+		scene.world()
+			.setKineticSpeed(cam, 48);
+		scene.idle(120);
+
+		scene.world()
+			.setKineticSpeed(crank, 72);
+		scene.world()
+			.setKineticSpeed(cam, 36);
+		scene.overlay()
+			.showControls(util.vector()
+				.blockSurface(block, Direction.NORTH), Pointing.RIGHT, 40)
+			.rightClick();
+		scene.idle(10);
+		scene.overlay()
+			.showText(120)
+			.attachKeyFrame()
+			.colored(PonderPalette.BLUE)
+			.text("Its Rev Limit is set with the value panel, in steps of 5 RPM. Fuel returns a few percent below the limit, so the engine bounces off it instead of revving on.")
+			.pointAt(util.vector()
+				.blockSurface(block, Direction.NORTH))
+			.placeNearTarget();
+		scene.idle(130);
+
+		scene.world()
+			.showSection(lamp, Direction.DOWN);
+		scene.idle(15);
+		scene.world()
+			.modifyBlock(util.grid()
+				.at(4, 2, 3), state -> state.setValue(BlockStateProperties.LIT, true), false);
+		scene.effects()
+			.indicateRedstone(util.grid()
+				.at(4, 2, 3));
+		scene.overlay()
+			.showText(110)
+			.attachKeyFrame()
+			.text("Its redstone output is how near the engine is to its limit, 15 at it: a tachometer. A cylinder that was cut reads \"Fuel cut by the rev limiter\" in goggles, not a fault.")
+			.pointAt(util.vector()
+				.topOf(4, 2, 3))
+			.placeNearTarget();
+		scene.idle(120);
+		scene.markAsFinished();
+	}
+
+	public static void governor(SceneBuilder builder, SceneBuildingUtil util) {
+		CreateSceneBuilder scene = new CreateSceneBuilder(builder);
+		scene.title("governor", "Holding an Engine at a Speed");
+		scene.configureBasePlate(0, 0, 6);
+		scene.world()
+			.showSection(util.select()
+				.layer(0), Direction.UP);
+
+		Selection crank = util.select()
+			.fromTo(1, 1, 3, 3, 1, 3);
+		Selection cam = util.select()
+			.fromTo(1, 4, 3, 3, 4, 3);
+		Selection engine = util.select()
+			.fromTo(2, 2, 3, 2, 3, 3)
+			.add(cam)
+			.add(util.select()
+				.fromTo(2, 3, 2, 2, 3, 2))
+			.add(util.select()
+				.position(2, 3, 4));
+		Selection governor = util.select()
+			.position(3, 2, 3);
+		Selection lamp = util.select()
+			.position(4, 2, 3);
+		BlockPos block = util.grid()
+			.at(3, 2, 3);
+
+		setThrow(scene, util.select()
+			.position(2, 1, 3), 0);
+		setLobe(scene, util.select()
+			.position(2, 4, 3), LOBE_FOR_UPRIGHT_CYLINDER);
+		scene.world()
+			.showSection(crank, Direction.DOWN);
+		scene.world()
+			.showSection(engine, Direction.DOWN);
+		scene.world()
+			.setKineticSpeed(crank, 64);
+		scene.world()
+			.setKineticSpeed(cam, 32);
+		scene.idle(20);
+
+		scene.overlay()
+			.showText(110)
+			.attachKeyFrame()
+			.colored(PonderPalette.RED)
+			.text("An engine's speed depends on its load: let go of it and it races, load it and it lugs down. Everything it drives runs at whatever pace that happens to be.")
+			.pointAt(util.vector()
+				.topOf(2, 3, 3))
+			.placeNearTarget();
+		scene.world()
+			.setKineticSpeed(crank, 112);
+		scene.world()
+			.setKineticSpeed(cam, 56);
+		scene.idle(120);
+
+		scene.world()
+			.setKineticSpeed(crank, 64);
+		scene.world()
+			.setKineticSpeed(cam, 32);
+		scene.world()
+			.showSection(governor, Direction.DOWN);
+		scene.idle(15);
+		scene.overlay()
+			.showText(120)
+			.attachKeyFrame()
+			.text("A Governor set against a crankshaft block or a cylinder head moves the fuel rack to hold the crank at a set speed: it eases the fuel off as the engine speeds up and opens it as it slows.")
+			.pointAt(util.vector()
+				.topOf(block))
+			.placeNearTarget();
+		scene.idle(130);
+
+		scene.overlay()
+			.showControls(util.vector()
+				.blockSurface(block, Direction.NORTH), Pointing.RIGHT, 40)
+			.rightClick();
+		scene.idle(10);
+		scene.overlay()
+			.showText(110)
+			.attachKeyFrame()
+			.colored(PonderPalette.BLUE)
+			.text("Its Governed Speed is set with the value panel, in steps of 5 RPM. A spark engine is governed on its throttle instead, because a charge that is too lean will not light.")
+			.pointAt(util.vector()
+				.blockSurface(block, Direction.NORTH))
+			.placeNearTarget();
+		scene.idle(120);
+
+		scene.overlay()
+			.showText(110)
+			.colored(PonderPalette.GREEN)
+			.text("It holds the speed with the torque in hand, so the engine's rating is untouched. If the load is more than the engine can carry at that speed, the rack stays wide open and the engine slows.")
+			.pointAt(util.vector()
+				.topOf(block))
+			.placeNearTarget();
+		scene.idle(120);
+
+		scene.world()
+			.showSection(lamp, Direction.DOWN);
+		scene.idle(15);
+		scene.world()
+			.modifyBlock(util.grid()
+				.at(4, 2, 3), state -> state.setValue(BlockStateProperties.LIT, true), false);
+		scene.effects()
+			.indicateRedstone(util.grid()
+				.at(4, 2, 3));
+		scene.overlay()
+			.showText(110)
+			.attachKeyFrame()
+			.text("Its redstone output is how far open the rack is held, 15 wide open and 0 shut, so it reads as a load meter. Fit a Rev Limiter as well to stop a runaway.")
+			.pointAt(util.vector()
+				.topOf(4, 2, 3))
+			.placeNearTarget();
+		scene.idle(120);
+		scene.markAsFinished();
+	}
+
+	public static void timingTool(SceneBuilder builder, SceneBuildingUtil util) {
+		CreateSceneBuilder scene = new CreateSceneBuilder(builder);
+		scene.title("timing_tool", "Setting a Firing Order");
+		scene.configureBasePlate(0, 0, 8);
+		scene.world()
+			.showSection(util.select()
+				.layer(0), Direction.UP);
+
+		Selection crank = util.select()
+			.fromTo(1, 1, 3, 6, 1, 3);
+		Selection engine = util.select()
+			.fromTo(2, 2, 3, 5, 3, 3)
+			.add(util.select()
+				.fromTo(2, 3, 2, 5, 3, 2))
+			.add(util.select()
+				.fromTo(2, 3, 4, 5, 3, 4));
+		Selection cam = util.select()
+			.fromTo(1, 4, 3, 6, 4, 3);
+
+		int[] throwSteps = {0, THROW_HALF_TURN, THROW_HALF_TURN, 0};
+		for (int i = 0; i < 4; i++) {
+			setThrow(scene, util.select()
+				.position(2 + i, 1, 3), throwSteps[i]);
+			setLobe(scene, util.select()
+				.position(2 + i, 4, 3), lobeFor(throwSteps[i], Direction.UP, false));
+		}
+		scene.world()
+			.showSection(crank, Direction.DOWN);
+		scene.world()
+			.showSection(engine, Direction.DOWN);
+		scene.world()
+			.showSection(cam, Direction.DOWN);
+		scene.world()
+			.setKineticSpeed(crank, 32);
+		scene.world()
+			.setKineticSpeed(cam, 16);
+		scene.idle(20);
+
+		scene.overlay()
+			.showText(110)
+			.attachKeyFrame()
+			.colored(PonderPalette.RED)
+			.text("Set by hand, every crank throw and every cam lobe is a value to work out. Built like this, the cylinders fire in pairs and the engine is lumpy.")
+			.pointAt(util.vector()
+				.topOf(3, 4, 3))
+			.placeNearTarget();
+		scene.idle(120);
+
+		scene.overlay()
+			.showControls(util.vector()
+				.blockSurface(util.grid()
+					.at(3, 1, 3), Direction.NORTH), Pointing.RIGHT, 50)
+			.rightClick()
+			.withItem(CEItems.TIMING_TOOL.asStack());
+		scene.idle(15);
+		setLobe(scene, util.select()
+			.position(4, 4, 3), lobeFor(THROW_HALF_TURN, Direction.UP, true));
+		setLobe(scene, util.select()
+			.position(5, 4, 3), lobeFor(0, Direction.UP, true));
+		scene.overlay()
+			.showText(130)
+			.attachKeyFrame()
+			.colored(PonderPalette.GREEN)
+			.text("Use a Timing Tool on any block of the engine. It works out the most even firing the layout allows and sets every throw and lobe to it, then tells you the firing order.")
+			.pointAt(util.vector()
+				.topOf(4, 4, 3))
+			.placeNearTarget();
+		scene.idle(140);
+
+		scene.overlay()
+			.showText(130)
+			.attachKeyFrame()
+			.colored(PonderPalette.BLUE)
+			.text("Sneak-use it to change what it may set: any throw angle (smooth), quarter turns (cross-plane V8), half turns (flat-plane), or cams only, which leaves the crank as built and just times the lobes.")
+			.pointAt(util.vector()
+				.topOf(2, 4, 3))
+			.placeNearTarget();
+		scene.idle(140);
+
+		scene.overlay()
+			.showText(120)
+			.colored(PonderPalette.WHITE)
+			.text("Some layouts can't fire evenly, such as a 90° V12, and a cam lobe shared by two cylinders can only time one of them. The tool says so, and gets as close as it can.")
+			.pointAt(util.vector()
+				.topOf(5, 4, 3))
+			.placeNearTarget();
+		scene.idle(130);
+		scene.markAsFinished();
+	}
+
+	public static void coupledCranks(SceneBuilder builder, SceneBuildingUtil util) {
+		CreateSceneBuilder scene = new CreateSceneBuilder(builder);
+		scene.title("coupled_cranks", "Coupled Crankshafts");
+		scene.configureBasePlate(0, 0, 6);
+		scene.world()
+			.showSection(util.select()
+				.layer(0), Direction.UP);
+
+		Selection crankA = util.select()
+			.fromTo(1, 1, 2, 3, 1, 2);
+		Selection crankB = util.select()
+			.fromTo(1, 1, 3, 4, 1, 3);
+		Selection engineA = util.select()
+			.fromTo(2, 2, 2, 2, 3, 2)
+			.add(util.select()
+				.position(2, 3, 1))
+			.add(util.select()
+				.position(1, 3, 2));
+		Selection engineB = util.select()
+			.fromTo(3, 2, 3, 3, 3, 3)
+			.add(util.select()
+				.position(3, 3, 4))
+			.add(util.select()
+				.position(4, 3, 3));
+		Selection camA = util.select()
+			.fromTo(1, 4, 2, 3, 4, 2);
+		Selection camB = util.select()
+			.fromTo(2, 4, 3, 4, 4, 3);
+		Selection gears = util.select()
+			.fromTo(0, 1, 2, 0, 1, 3);
+
+		setThrow(scene, util.select()
+			.position(2, 1, 2), 0);
+		setThrow(scene, util.select()
+			.position(3, 1, 3), THROW_HALF_TURN);
+		setLobe(scene, util.select()
+			.position(2, 4, 2), LOBE_FOR_UPRIGHT_CYLINDER);
+		setLobe(scene, util.select()
+			.position(3, 4, 3), lobeFor(THROW_HALF_TURN, Direction.UP, true));
+
+		scene.world()
+			.showSection(crankA, Direction.DOWN);
+		scene.world()
+			.showSection(engineA, Direction.DOWN);
+		scene.world()
+			.showSection(camA, Direction.DOWN);
+		scene.idle(10);
+		scene.world()
+			.showSection(crankB, Direction.DOWN);
+		scene.world()
+			.showSection(engineB, Direction.DOWN);
+		scene.world()
+			.showSection(camB, Direction.DOWN);
+		scene.idle(15);
+
+		scene.overlay()
+			.showText(110)
+			.attachKeyFrame()
+			.colored(PonderPalette.RED)
+			.text("A crankshaft is an engine. A second line of crank blocks beside it is a second engine, however close: each has its own speed and its own firing.")
+			.pointAt(util.vector()
+				.topOf(3, 1, 3))
+			.placeNearTarget();
+		scene.idle(120);
+
+		scene.world()
+			.showSection(gears, Direction.EAST);
+		scene.idle(10);
+		scene.overlay()
+			.showText(120)
+			.attachKeyFrame()
+			.colored(PonderPalette.GREEN)
+			.text("Gear them together one to one and they become one engine, sharing a single set of revs. Any Create gearing does it: cogwheels, chain drives, gearboxes, belts.")
+			.pointAt(util.vector()
+				.centerOf(0, 1, 2))
+			.placeNearTarget();
+		scene.world()
+			.setKineticSpeed(crankA, 32);
+		scene.world()
+			.setKineticSpeed(gears, 32);
+		scene.world()
+			.setKineticSpeed(crankB, -32);
+		scene.world()
+			.setKineticSpeed(camA, 16);
+		scene.world()
+			.setKineticSpeed(camB, -16);
+		scene.idle(130);
+
+		scene.overlay()
+			.showText(120)
+			.attachKeyFrame()
+			.colored(PonderPalette.BLUE)
+			.text("Two meshed cogwheels turn the second crank the other way; the engine allows for it. Each throw's angle still sets its own piston's place in the cycle, and the Timing Tool sets the throws and lobes on every line at once.")
+			.pointAt(util.vector()
+				.topOf(3, 1, 3))
+			.placeNearTarget();
+		scene.idle(130);
+
+		scene.overlay()
+			.showText(120)
+			.attachKeyFrame()
+			.text("Fuel, oil, batteries, sensors and every cylinder on either crank belong to the one engine. It is rated and fired as a whole, so wide W, H and X layouts, or more cylinders than one crank can carry, are just more lines.")
+			.pointAt(util.vector()
+				.topOf(2, 3, 2))
+			.placeNearTarget();
+		scene.idle(130);
+
+		scene.overlay()
+			.showText(110)
+			.colored(PonderPalette.WHITE)
+			.text("Only an exact one-to-one ratio couples. Cranks geared two to one, say, stay separate engines feeding one network, and the faster one wins. Goggles show how many crankshafts an engine has.")
+			.pointAt(util.vector()
+				.centerOf(0, 1, 3))
+			.placeNearTarget();
+		scene.idle(120);
+		scene.markAsFinished();
+	}
+
+	public static void precisionParts(SceneBuilder builder, SceneBuildingUtil util) {
+		CreateSceneBuilder scene = new CreateSceneBuilder(builder);
+		scene.title("precision_parts", "Precision Parts");
+		scene.configureBasePlate(0, 0, 5);
+		scene.world()
+			.showSection(util.select()
+				.layer(0), Direction.UP);
+
+		Selection crank = util.select()
+			.fromTo(1, 1, 2, 3, 1, 2);
+		Selection cams = util.select()
+			.fromTo(1, 4, 2, 3, 4, 2);
+		Selection cylinder = util.select()
+			.position(2, 2, 2);
+		Selection head = util.select()
+			.position(2, 3, 2);
+		Selection pipes = util.select()
+			.position(2, 3, 1)
+			.add(util.select()
+				.position(2, 3, 3));
+
+		setThrow(scene, util.select()
+			.position(2, 1, 2), 0);
+		setLobe(scene, util.select()
+			.position(2, 4, 2), LOBE_FOR_UPRIGHT_CYLINDER);
+		scene.world()
+			.showSection(crank, Direction.DOWN);
+		scene.world()
+			.showSection(cams, Direction.DOWN);
+		scene.idle(10);
+		scene.world()
+			.showSection(cylinder, Direction.DOWN);
+		scene.idle(10);
+		scene.overlay()
+			.showText(110)
+			.attachKeyFrame()
+			.text("A Precision Cylinder has a machined liner. It squeezes the charge harder and rubs less, so each stroke makes more work for the same fuel.")
+			.pointAt(util.vector()
+				.topOf(2, 2, 2))
+			.placeNearTarget();
+		scene.idle(120);
+
+		scene.world()
+			.showSection(head, Direction.DOWN);
+		scene.world()
+			.showSection(pipes, Direction.DOWN);
+		scene.idle(10);
+		scene.overlay()
+			.showText(120)
+			.attachKeyFrame()
+			.text("A Precision Cylinder Head has four valves and a pent roof. It breathes about half as freely again, which matters most at speed, and lights the charge sooner.")
+			.pointAt(util.vector()
+				.topOf(2, 3, 2))
+			.placeNearTarget();
+		scene.world()
+			.setKineticSpeed(crank, 64);
+		scene.world()
+			.setKineticSpeed(cams, 32);
+		scene.idle(130);
+
+		scene.overlay()
+			.showText(120)
+			.attachKeyFrame()
+			.colored(PonderPalette.BLUE)
+			.text("Two parts are installed like their ordinary versions: a Forged Piston, which is lighter and drags less, and a Precision Injector, which atomises the fuel so it ignites sooner and burns faster.")
+			.pointAt(util.vector()
+				.topOf(2, 2, 2))
+			.placeNearTarget();
+		scene.idle(130);
+
+		scene.overlay()
+			.showText(120)
+			.colored(PonderPalette.GREEN)
+			.text("Each part helps on its own and they add up. A fully precision engine rates well over half as much again as a crude one, and a turbocharger multiplies that. They are made from Precision Mechanisms.")
+			.pointAt(util.vector()
+				.topOf(2, 3, 2))
+			.placeNearTarget();
+		scene.idle(130);
+		scene.markAsFinished();
+	}
+
+	public static void throttle(SceneBuilder builder, SceneBuildingUtil util) {
+		CreateSceneBuilder scene = new CreateSceneBuilder(builder);
+		scene.title("throttle", "Throttling an Engine");
+		scene.configureBasePlate(0, 0, 6);
+		scene.world()
+			.showSection(util.select()
+				.layer(0), Direction.UP);
+
+		Selection crank = util.select()
+			.fromTo(1, 1, 3, 3, 1, 3);
+		Selection cam = util.select()
+			.fromTo(1, 4, 3, 3, 4, 3);
+		Selection engine = util.select()
+			.fromTo(2, 2, 3, 2, 3, 3)
+			.add(cam)
+			.add(util.select()
+				.position(2, 3, 4));
+		Selection airIntake = util.select()
+			.position(2, 3, 1);
+		Selection body = util.select()
+			.position(2, 3, 2);
+		Selection pedal = util.select()
+			.fromTo(3, 2, 2, 3, 3, 2);
+		BlockPos throttle = util.grid()
+			.at(2, 3, 2);
+
+		setThrow(scene, util.select()
+			.position(2, 1, 3), 0);
+		setLobe(scene, util.select()
+			.position(2, 4, 3), LOBE_FOR_UPRIGHT_CYLINDER);
+		scene.world()
+			.showSection(crank, Direction.DOWN);
+		scene.world()
+			.showSection(engine, Direction.DOWN);
+		scene.world()
+			.showSection(airIntake, Direction.SOUTH);
+		scene.world()
+			.setKineticSpeed(crank, 64);
+		scene.world()
+			.setKineticSpeed(cam, 32);
+		scene.idle(20);
+
+		scene.world()
+			.showSection(body, Direction.SOUTH);
+		scene.idle(15);
+		scene.overlay()
+			.showText(100)
+			.attachKeyFrame()
+			.text("A Throttle Body is a length of intake pipe with a valve in it. Close it and every cylinder behind it draws less air.")
+			.pointAt(util.vector()
+				.topOf(throttle))
+			.placeNearTarget();
+		scene.idle(110);
+
+		scene.overlay()
+			.showControls(util.vector()
+				.blockSurface(throttle, Direction.WEST), Pointing.RIGHT, 40)
+			.rightClick();
+		scene.idle(10);
+		scene.overlay()
+			.showText(100)
+			.attachKeyFrame()
+			.colored(PonderPalette.BLUE)
+			.text("Its Idle Stop, set with the value panel, is how far open the valve rests with no signal.")
+			.pointAt(util.vector()
+				.blockSurface(throttle, Direction.WEST))
+			.placeNearTarget();
+		scene.world()
+			.setKineticSpeed(crank, 24);
+		scene.world()
+			.setKineticSpeed(cam, 12);
+		scene.idle(110);
+
+		scene.world()
+			.showSection(pedal, Direction.DOWN);
+		scene.idle(15);
+		scene.world()
+			.toggleRedstonePower(pedal);
+		scene.effects()
+			.indicateRedstone(util.grid()
+				.at(3, 3, 2));
+		scene.world()
+			.setKineticSpeed(crank, 96);
+		scene.world()
+			.setKineticSpeed(cam, 48);
+		scene.overlay()
+			.showText(110)
+			.attachKeyFrame()
+			.text("Redstone opens it, evenly from the idle stop at no signal to wide open at full strength. A lever, comparator or pedal works like a gas pedal.")
+			.pointAt(util.vector()
+				.topOf(3, 3, 2))
+			.placeNearTarget();
+		scene.idle(120);
+
+		scene.world()
+			.toggleRedstonePower(pedal);
+		scene.world()
+			.setKineticSpeed(crank, 24);
+		scene.world()
+			.setKineticSpeed(cam, 12);
+		scene.overlay()
+			.showText(110)
+			.text("Less air means less power: a throttled engine runs slower and has less torque to spare. Nearly shut, the piston spends more dragging air through the valve than it earns.")
+			.pointAt(util.vector()
+				.topOf(2, 2, 3))
+			.placeNearTarget();
+		scene.idle(120);
+
+		scene.overlay()
+			.showText(110)
+			.attachKeyFrame()
+			.colored(PonderPalette.GREEN)
+			.text("Its linkage trims every injector's fuel along with the air, so closing it does not flood the engine. Fuel Metering is still tuned for the speed the engine runs at.")
+			.pointAt(util.vector()
+				.blockSurface(util.grid()
+					.at(2, 3, 3), Direction.EAST))
+			.placeNearTarget();
+		scene.idle(120);
+
+		scene.overlay()
+			.showText(90)
+			.text("Throttle bodies in one intake line act together: the most closed one governs every cylinder behind it.")
+			.pointAt(util.vector()
+				.topOf(throttle))
+			.placeNearTarget();
+		scene.idle(100);
+		scene.markAsFinished();
+	}
+
+	public static void mixture(SceneBuilder builder, SceneBuildingUtil util) {
+		CreateSceneBuilder scene = new CreateSceneBuilder(builder);
+		scene.title("mixture", "Tuning the Fuel Mixture");
+		scene.configureBasePlate(0, 0, 6);
+		scene.world()
+			.showSection(util.select()
+				.layer(0), Direction.UP);
+
+		Selection crank = util.select()
+			.fromTo(1, 1, 3, 3, 1, 3);
+		Selection cam = util.select()
+			.fromTo(1, 4, 3, 3, 4, 3);
+		Selection engine = util.select()
+			.fromTo(2, 2, 3, 2, 3, 3)
+			.add(cam)
+			.add(util.select()
+				.fromTo(2, 3, 2, 2, 3, 2))
+			.add(util.select()
+				.position(2, 3, 4));
+		BlockPos head = util.grid()
+			.at(2, 3, 3);
+
+		setThrow(scene, util.select()
+			.position(2, 1, 3), 0);
+		setLobe(scene, util.select()
+			.position(2, 4, 3), LOBE_FOR_UPRIGHT_CYLINDER);
+		scene.world()
+			.showSection(crank, Direction.DOWN);
+		scene.world()
+			.showSection(engine, Direction.DOWN);
+		scene.world()
+			.setKineticSpeed(crank, 48);
+		scene.world()
+			.setKineticSpeed(cam, 24);
+		scene.idle(20);
+
+		scene.overlay()
+			.showText(100)
+			.attachKeyFrame()
+			.text("A Fuel Injector delivers the same shot however much air the cylinder drew in. Fuel Metering sets that shot as a share of the usual one.")
+			.pointAt(util.vector()
+				.topOf(head))
+			.placeNearTarget();
+		scene.idle(110);
+
+		scene.overlay()
+			.showControls(util.vector()
+				.blockSurface(head, Direction.EAST), Pointing.RIGHT, 40)
+			.rightClick();
+		scene.idle(10);
+		scene.overlay()
+			.showText(90)
+			.attachKeyFrame()
+			.colored(PonderPalette.BLUE)
+			.text("Turn the dial on the cylinder head's value panel. Each head has its own.")
+			.pointAt(util.vector()
+				.blockSurface(head, Direction.EAST))
+			.placeNearTarget();
+		scene.idle(100);
+
+		scene.world()
+			.setKineticSpeed(crank, 128);
+		scene.world()
+			.setKineticSpeed(cam, 64);
+		scene.overlay()
+			.showText(110)
+			.attachKeyFrame()
+			.colored(PonderPalette.RED)
+			.text("A cylinder breathes less air the faster it turns, so a setting that is right at one speed is rich above it: fuel wasted, black smoke, less power.")
+			.pointAt(util.vector()
+				.topOf(2, 3, 4))
+			.placeNearTarget();
+		scene.idle(120);
+
+		scene.world()
+			.setKineticSpeed(crank, 16);
+		scene.world()
+			.setKineticSpeed(cam, 8);
+		scene.overlay()
+			.showText(100)
+			.colored(PonderPalette.RED)
+			.text("Too little fuel is just as bad. A lean cylinder is weak, and a spark engine cannot light a mixture that is too thin or too rich.")
+			.pointAt(util.vector()
+				.topOf(head))
+			.placeNearTarget();
+		scene.idle(110);
+
+		scene.world()
+			.setKineticSpeed(crank, 48);
+		scene.world()
+			.setKineticSpeed(cam, 24);
+		scene.overlay()
+			.showText(110)
+			.attachKeyFrame()
+			.colored(PonderPalette.GREEN)
+			.text("Goggles on a cylinder read its air-fuel mixture. Balanced is the target; 2× rich means twice the fuel the air can burn, and 2× lean means half.")
+			.pointAt(util.vector()
+				.blockSurface(head, Direction.EAST))
+			.placeNearTarget();
+		scene.idle(120);
+
+		scene.overlay()
+			.showText(120)
+			.attachKeyFrame()
+			.colored(PonderPalette.BLUE)
+			.text("Scale Fuel Metering by the reading. At 2× rich, halve it; at 2× lean, double it. Do it with the engine at the speed and load it will really work at, and check again.")
+			.pointAt(util.vector()
+				.blockSurface(head, Direction.EAST))
+			.placeNearTarget();
+		scene.idle(130);
+
+		scene.overlay()
+			.showText(120)
+			.colored(PonderPalette.GREEN)
+			.text("Anything that changes the air changes the mixture. A turbocharger packs in more air, so raise the metering to match. A Throttle Body cuts the air and trims the shot with it.")
+			.pointAt(util.vector()
+				.topOf(2, 3, 4))
+			.placeNearTarget();
+		scene.idle(130);
+
+		scene.overlay()
+			.showText(90)
+			.text("To cut fuel to every injector at once, power the camshaft with redstone. A Throttle Body trims it with the air.")
+			.pointAt(util.vector()
+				.topOf(2, 4, 3))
+			.placeNearTarget();
+		scene.idle(100);
+		scene.markAsFinished();
+	}
+
 	public static void lubrication(SceneBuilder builder, SceneBuildingUtil util) {
 		CreateSceneBuilder scene = new CreateSceneBuilder(builder);
 		scene.title("lubrication", "Keeping an Engine Oiled");
@@ -618,7 +1787,7 @@ public final class EngineScenes {
 		scene.overlay()
 			.showText(100)
 			.attachKeyFrame()
-			.text("Pipe Engine Oil into any face of a Cylinder Head. It has a second tank for oil, apart from the fuel. Heads that touch share it.")
+			.text("Pipe Engine Oil into any face of a Cylinder Head. It has a second tank for oil, apart from the fuel. Every head on the crankshaft shares it.")
 			.pointAt(util.vector()
 				.blockSurface(head, Direction.EAST))
 			.placeNearTarget();
@@ -657,6 +1826,379 @@ public final class EngineScenes {
 			.text("Engine Oil is made by heating Plant Oil with a Slime Ball in a Mechanical Mixer over a Blaze Burner.")
 			.pointAt(util.vector()
 				.blockSurface(tank, Direction.EAST))
+			.placeNearTarget();
+		scene.idle(100);
+		scene.markAsFinished();
+	}
+
+	public static void turbocharger(SceneBuilder builder, SceneBuildingUtil util) {
+		CreateSceneBuilder scene = new CreateSceneBuilder(builder);
+		scene.title("turbocharger", "Forced Induction");
+		scene.configureBasePlate(0, 0, 7);
+		scene.world()
+			.showSection(util.select()
+				.layer(0), Direction.UP);
+
+		Selection crank = util.select()
+			.fromTo(1, 1, 3, 3, 1, 3);
+		Selection cam = util.select()
+			.fromTo(1, 4, 3, 3, 4, 3);
+		Selection engine = util.select()
+			.fromTo(2, 2, 3, 2, 3, 3)
+			.add(cam);
+		Selection turbo = util.select()
+			.position(1, 3, 3);
+		Selection airIntake = util.select()
+			.position(0, 3, 3);
+		Selection outlet = util.select()
+			.position(1, 3, 4);
+		Selection intakePipes = util.select()
+			.fromTo(1, 3, 2, 2, 3, 2);
+		Selection redstone = util.select()
+			.position(1, 2, 3);
+		BlockPos turboPos = util.grid()
+			.at(1, 3, 3);
+
+		setThrow(scene, util.select()
+			.position(2, 1, 3), 0);
+		setLobe(scene, util.select()
+			.position(2, 4, 3), LOBE_FOR_UPRIGHT_CYLINDER);
+		scene.world()
+			.showSection(crank, Direction.DOWN);
+		scene.world()
+			.showSection(engine, Direction.DOWN);
+		scene.world()
+			.setKineticSpeed(crank, 64);
+		scene.world()
+			.setKineticSpeed(cam, 32);
+		scene.idle(20);
+
+		scene.world()
+			.showSection(turbo, Direction.EAST);
+		scene.idle(15);
+		scene.overlay()
+			.showText(110)
+			.attachKeyFrame()
+			.text("A Turbocharger sits in the exhaust line and the intake line at once. Exhaust spins its turbine, and the compressor on the shaft's other end pushes air into the engine.")
+			.pointAt(util.vector()
+				.topOf(turboPos))
+			.placeNearTarget();
+		scene.idle(120);
+
+		scene.world()
+			.showSection(outlet, Direction.NORTH);
+		scene.idle(10);
+		scene.overlay()
+			.showText(100)
+			.text("Exhaust pipes join its turbine face and its sides. Here the head's exhaust blows straight into the turbine, and an Exhaust Outlet carries it away.")
+			.pointAt(util.vector()
+				.blockSurface(turboPos, Direction.EAST))
+			.placeNearTarget();
+		scene.idle(110);
+
+		scene.world()
+			.showSection(airIntake, Direction.EAST);
+		scene.world()
+			.showSection(intakePipes, Direction.SOUTH);
+		scene.idle(15);
+		scene.overlay()
+			.showText(110)
+			.attachKeyFrame()
+			.text("Intake pipes join its compressor face and its sides. Air comes in at the front and leaves by a pipe to the head, so every cylinder on that line is boosted.")
+			.pointAt(util.vector()
+				.blockSurface(turboPos, Direction.WEST))
+			.placeNearTarget();
+		scene.idle(120);
+
+		scene.world()
+			.modifyBlockEntityNBT(turbo, TurbochargerBlockEntity.class,
+				nbt -> nbt.put("Status", new TurboStatus(0.7f, 0.6f, 0.1f, 1.3f, true, true).write()));
+		scene.world()
+			.setKineticSpeed(crank, 96);
+		scene.world()
+			.setKineticSpeed(cam, 48);
+		scene.overlay()
+			.showText(110)
+			.attachKeyFrame()
+			.colored(PonderPalette.GREEN)
+			.text("It runs on the heat of the exhaust, so it spools up a moment after the engine fires and fades if the fuel stops. Goggles show its boost and wheel speed.")
+			.pointAt(util.vector()
+				.topOf(turboPos))
+			.placeNearTarget();
+		scene.idle(120);
+
+		scene.overlay()
+			.showControls(util.vector()
+				.blockSurface(util.grid()
+					.at(2, 3, 3), Direction.NORTH), Pointing.RIGHT, 40)
+			.rightClick();
+		scene.idle(10);
+		scene.overlay()
+			.showText(110)
+			.attachKeyFrame()
+			.colored(PonderPalette.BLUE)
+			.text("More air only helps if there is fuel for it. Turn the head's Fuel Metering up to burn it; left alone, the same shot just runs leaner.")
+			.pointAt(util.vector()
+				.blockSurface(util.grid()
+					.at(2, 3, 3), Direction.NORTH))
+			.placeNearTarget();
+		scene.idle(120);
+
+		scene.overlay()
+			.showText(110)
+			.colored(PonderPalette.RED)
+			.text("Squeezing air heats it, and the turbine holds the exhaust up, so the cylinders push against back-pressure. Under hard boost a spark engine's gasoline can light before the spark.")
+			.pointAt(util.vector()
+				.topOf(2, 3, 3))
+			.placeNearTarget();
+		scene.idle(120);
+
+		scene.overlay()
+			.showControls(util.vector()
+				.blockSurface(turboPos, Direction.NORTH), Pointing.RIGHT, 40)
+			.rightClick();
+		scene.idle(10);
+		scene.overlay()
+			.showText(100)
+			.attachKeyFrame()
+			.colored(PonderPalette.BLUE)
+			.text("Its wastegate vents exhaust round the turbine to hold the boost at the limit set on its value panel.")
+			.pointAt(util.vector()
+				.blockSurface(turboPos, Direction.NORTH))
+			.placeNearTarget();
+		scene.idle(110);
+
+		scene.world()
+			.showSection(redstone, Direction.UP);
+		scene.idle(10);
+		scene.effects()
+			.indicateRedstone(util.grid()
+				.at(1, 2, 3));
+		scene.world()
+			.modifyBlockEntityNBT(turbo, TurbochargerBlockEntity.class,
+				nbt -> nbt.put("Status", new TurboStatus(0.1f, 0.02f, 1f, 1.01f, true, true).write()));
+		scene.overlay()
+			.showText(100)
+			.text("A redstone signal on the turbocharger opens the wastegate fully and dumps the boost, like a blow-off valve.")
+			.pointAt(util.vector()
+				.blockSurface(turboPos, Direction.DOWN))
+			.placeNearTarget();
+		scene.idle(110);
+		scene.markAsFinished();
+	}
+
+	public static void transmission(SceneBuilder builder, SceneBuildingUtil util) {
+		CreateSceneBuilder scene = new CreateSceneBuilder(builder);
+		scene.title("transmission", "Gearing with a Transmission");
+		scene.configureBasePlate(0, 0, 8);
+		scene.world()
+			.showSection(util.select()
+				.layer(0), Direction.UP);
+
+		Selection input = util.select()
+			.fromTo(0, 1, 2, 1, 1, 2);
+		Selection box = util.select()
+			.position(2, 1, 2);
+		Selection output = util.select()
+			.fromTo(3, 1, 2, 5, 1, 2);
+		Selection lever = util.select()
+			.position(2, 1, 3);
+		BlockPos boxPos = util.grid()
+			.at(2, 1, 2);
+
+		scene.world()
+			.showSection(input, Direction.DOWN);
+		scene.world()
+			.setKineticSpeed(input, 64);
+		scene.idle(10);
+		scene.world()
+			.showSection(box, Direction.DOWN);
+		scene.world()
+			.showSection(output, Direction.DOWN);
+		scene.world()
+			.setKineticSpeed(box, 64);
+		scene.world()
+			.setKineticSpeed(output, 16);
+		scene.idle(15);
+		scene.overlay()
+			.showText(110)
+			.attachKeyFrame()
+			.text("A Transmission is a gearbox with selectable gears. Rotation goes in at one end of its shaft and comes out of the other at the speed of the gear it is in.")
+			.pointAt(util.vector()
+				.topOf(boxPos))
+			.placeNearTarget();
+		scene.idle(120);
+
+		scene.overlay()
+			.showText(120)
+			.attachKeyFrame()
+			.colored(PonderPalette.GREEN)
+			.text("In first gear the output turns four times slower than the input. A load behind it asks the engine for a quarter of the torque it would direct, so an engine can carry a heavier load, slowly.")
+			.pointAt(util.vector()
+				.topOf(4, 1, 2))
+			.placeNearTarget();
+		scene.idle(130);
+
+		scene.overlay()
+			.showControls(util.vector()
+				.blockSurface(boxPos, Direction.NORTH), Pointing.RIGHT, 40)
+			.rightClick();
+		scene.idle(10);
+		scene.world()
+			.setKineticSpeed(output, 40);
+		scene.overlay()
+			.showText(110)
+			.attachKeyFrame()
+			.colored(PonderPalette.BLUE)
+			.text("The value panel picks the gear. Third turns the output at five eighths of the input...")
+			.pointAt(util.vector()
+				.blockSurface(boxPos, Direction.NORTH))
+			.placeNearTarget();
+		scene.idle(120);
+
+		scene.world()
+			.setKineticSpeed(output, 64);
+		scene.overlay()
+			.showText(90)
+			.text("...and fourth drives it direct. Faster output, but the load asks the crank for its full torque.")
+			.pointAt(util.vector()
+				.topOf(4, 1, 2))
+			.placeNearTarget();
+		scene.idle(100);
+
+		scene.world()
+			.setKineticSpeed(output, 0);
+		scene.overlay()
+			.showText(90)
+			.text("Neutral lets nothing through, so an engine can start with no load on it.")
+			.pointAt(util.vector()
+				.topOf(4, 1, 2))
+			.placeNearTarget();
+		scene.idle(100);
+
+		scene.world()
+			.setKineticSpeed(output, -21);
+		scene.overlay()
+			.showText(90)
+			.text("Reverse turns the output slowly the other way.")
+			.pointAt(util.vector()
+				.topOf(4, 1, 2))
+			.placeNearTarget();
+		scene.idle(100);
+
+		scene.world()
+			.showSection(lever, Direction.DOWN);
+		scene.idle(10);
+		scene.world()
+			.setKineticSpeed(output, 16);
+		scene.world()
+			.toggleRedstonePower(lever);
+		scene.effects()
+			.indicateRedstone(util.grid()
+				.at(2, 1, 3));
+		scene.overlay()
+			.showText(120)
+			.attachKeyFrame()
+			.colored(PonderPalette.RED)
+			.text("A redstone signal picks the gear instead of the panel: strength 1 is neutral, 2 to 5 are first to fourth, and 6 or more is reverse. Shifting briefly cuts the output off.")
+			.pointAt(util.vector()
+				.topOf(2, 1, 3))
+			.placeNearTarget();
+		scene.idle(130);
+		scene.markAsFinished();
+	}
+
+	public static void sump(SceneBuilder builder, SceneBuildingUtil util) {
+		CreateSceneBuilder scene = new CreateSceneBuilder(builder);
+		scene.title("sump", "An Oil Sump");
+		scene.configureBasePlate(0, 0, 6);
+		scene.world()
+			.showSection(util.select()
+				.layer(0), Direction.UP);
+
+		Selection crank = util.select()
+			.fromTo(1, 2, 3, 3, 2, 3);
+		Selection engine = util.select()
+			.fromTo(2, 3, 3, 2, 4, 3);
+		Selection sump = util.select()
+			.position(3, 1, 3);
+		Selection plumbing = util.select()
+			.fromTo(4, 1, 3, 5, 1, 3);
+		BlockPos sumpPos = util.grid()
+			.at(3, 1, 3);
+		BlockPos tank = util.grid()
+			.at(5, 1, 3);
+		scene.world()
+			.modifyBlockEntity(tank, FluidTankBlockEntity.class, be -> be.getTankInventory()
+				.fill(new FluidStack(CEFluids.ENGINE_OIL.get()
+					.getSource(), 4000), FluidAction.EXECUTE));
+		scene.idle(10);
+
+		scene.world()
+			.showSection(crank, Direction.DOWN);
+		scene.world()
+			.showSection(engine, Direction.DOWN);
+		scene.world()
+			.setKineticSpeed(crank, 32);
+		scene.idle(15);
+		scene.overlay()
+			.showText(100)
+			.attachKeyFrame()
+			.text("Engine oil lubricates the whole engine, not one cylinder, so it needs only one place to come in. A head's faces are better spent on intake, exhaust and fuel.")
+			.pointAt(util.vector()
+				.blockSurface(util.grid()
+					.at(2, 4, 3), Direction.EAST))
+			.placeNearTarget();
+		scene.idle(110);
+
+		scene.world()
+			.showSection(sump, Direction.UP);
+		scene.idle(15);
+		scene.overlay()
+			.showText(110)
+			.attachKeyFrame()
+			.text("An Oil Sump set against any crankshaft block or cylinder head is the engine's oil pan. It holds a litre of oil, and the engine draws on it as it turns.")
+			.pointAt(util.vector()
+				.blockSurface(sumpPos, Direction.NORTH))
+			.placeNearTarget();
+		scene.idle(120);
+
+		scene.overlay()
+			.showControls(util.vector()
+				.blockSurface(sumpPos, Direction.UP), Pointing.DOWN, 50)
+			.rightClick()
+			.withItem(new ItemStack(CEFluids.ENGINE_OIL.getBucket()
+				.orElseThrow()));
+		scene.idle(15);
+		scene.world()
+			.setKineticSpeed(crank, 96);
+		scene.overlay()
+			.showText(100)
+			.attachKeyFrame()
+			.colored(PonderPalette.GREEN)
+			.text("Fill it by hand with a bucket of Engine Oil. The film builds within seconds and friction drops.")
+			.pointAt(util.vector()
+				.blockSurface(sumpPos, Direction.UP))
+			.placeNearTarget();
+		scene.idle(110);
+
+		scene.world()
+			.showSection(plumbing, Direction.WEST);
+		scene.idle(15);
+		scene.overlay()
+			.showText(110)
+			.attachKeyFrame()
+			.text("Or pipe oil into any of its faces from a tank. Pipes carry one fluid at a time, so a sump takes the oil line and the head keeps its fuel line.")
+			.pointAt(util.vector()
+				.blockSurface(tank, Direction.UP))
+			.placeNearTarget();
+		scene.idle(120);
+
+		scene.overlay()
+			.showText(90)
+			.text("Cylinder heads still take oil too, and the sump is drawn on first. Goggles on the sump show what is left.")
+			.pointAt(util.vector()
+				.topOf(sumpPos))
 			.placeNearTarget();
 		scene.idle(100);
 		scene.markAsFinished();

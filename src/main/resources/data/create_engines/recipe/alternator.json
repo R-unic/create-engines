@@ -1,22 +1,24 @@
 {
-  "type": "minecraft:crafting_shapeless",
+  "type": "minecraft:crafting_shaped",
   "category": "misc",
-  "ingredients": [
-    {
-      "item": "create:andesite_casing"
-    },
-    {
+  "key": {
+    "S": {
       "item": "create:shaft"
     },
-    {
+    "C": {
       "item": "minecraft:copper_ingot"
     },
-    {
-      "item": "minecraft:copper_ingot"
+    "K": {
+      "item": "create:andesite_casing"
     },
-    {
+    "R": {
       "item": "minecraft:redstone"
     }
+  },
+  "pattern": [
+    " S ",
+    "CKC",
+    " R "
   ],
   "result": {
     "count": 1,

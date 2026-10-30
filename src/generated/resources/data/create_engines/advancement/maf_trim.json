@@ -1,0 +1,29 @@
+{
+  "parent": "create_engines:maf_sensor",
+  "criteria": {
+    "maf_trim": {
+      "conditions": {
+        "event": "maf_trim"
+      },
+      "trigger": "create_engines:event"
+    }
+  },
+  "display": {
+    "description": {
+      "translate": "advancement.create_engines.maf_trim.desc"
+    },
+    "icon": {
+      "count": 1,
+      "id": "create_engines:maf_sensor"
+    },
+    "title": {
+      "translate": "advancement.create_engines.maf_trim"
+    }
+  },
+  "requirements": [
+    [
+      "maf_trim"
+    ]
+  ],
+  "sends_telemetry_event": true
+}

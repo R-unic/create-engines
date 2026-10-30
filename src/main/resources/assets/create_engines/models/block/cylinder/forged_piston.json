@@ -1,0 +1,139 @@
+{
+  "parent": "block/block",
+  "textures": {
+    "piston": "create:block/dark_metal_block",
+    "ring": "create:block/brass_block",
+    "pin": "minecraft:block/iron_block",
+    "particle": "create:block/dark_metal_block"
+  },
+  "elements": [
+    {
+      "from": [
+        3,
+        -2,
+        3
+      ],
+      "to": [
+        13,
+        6,
+        13
+      ],
+      "faces": {
+        "north": {
+          "texture": "#piston"
+        },
+        "south": {
+          "texture": "#piston"
+        },
+        "east": {
+          "texture": "#piston"
+        },
+        "west": {
+          "texture": "#piston"
+        },
+        "up": {
+          "texture": "#piston"
+        },
+        "down": {
+          "texture": "#piston"
+        }
+      }
+    },
+    {
+      "from": [
+        2.9,
+        4,
+        2.9
+      ],
+      "to": [
+        13.1,
+        4.6,
+        13.1
+      ],
+      "faces": {
+        "north": {
+          "texture": "#ring"
+        },
+        "south": {
+          "texture": "#ring"
+        },
+        "east": {
+          "texture": "#ring"
+        },
+        "west": {
+          "texture": "#ring"
+        },
+        "up": {
+          "texture": "#ring"
+        },
+        "down": {
+          "texture": "#ring"
+        }
+      }
+    },
+    {
+      "from": [
+        2.9,
+        3,
+        2.9
+      ],
+      "to": [
+        13.1,
+        3.4,
+        13.1
+      ],
+      "faces": {
+        "north": {
+          "texture": "#ring"
+        },
+        "south": {
+          "texture": "#ring"
+        },
+        "east": {
+          "texture": "#ring"
+        },
+        "west": {
+          "texture": "#ring"
+        },
+        "up": {
+          "texture": "#ring"
+        },
+        "down": {
+          "texture": "#ring"
+        }
+      }
+    },
+    {
+      "from": [
+        6.5,
+        -1,
+        2.6
+      ],
+      "to": [
+        9.5,
+        2,
+        13.4
+      ],
+      "faces": {
+        "north": {
+          "texture": "#pin"
+        },
+        "south": {
+          "texture": "#pin"
+        },
+        "east": {
+          "texture": "#pin"
+        },
+        "west": {
+          "texture": "#pin"
+        },
+        "up": {
+          "texture": "#pin"
+        },
+        "down": {
+          "texture": "#pin"
+        }
+      }
+    }
+  ]
+}

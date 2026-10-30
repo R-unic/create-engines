@@ -1,0 +1,33 @@
+{
+  "parent": "create_engines:rev_limiter",
+  "criteria": {
+    "governor": {
+      "conditions": {
+        "items": [
+          {
+            "items": "create_engines:governor"
+          }
+        ]
+      },
+      "trigger": "minecraft:inventory_changed"
+    }
+  },
+  "display": {
+    "description": {
+      "translate": "advancement.create_engines.governor.desc"
+    },
+    "icon": {
+      "count": 1,
+      "id": "create_engines:governor"
+    },
+    "title": {
+      "translate": "advancement.create_engines.governor"
+    }
+  },
+  "requirements": [
+    [
+      "governor"
+    ]
+  ],
+  "sends_telemetry_event": true
+}

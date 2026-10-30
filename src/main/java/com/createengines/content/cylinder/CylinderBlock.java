@@ -38,15 +38,31 @@ public class CylinderBlock extends DirectionalBlock implements IBE<CylinderBlock
 
 	public static final BooleanProperty HAS_PISTON = BooleanProperty.create("piston");
 	public static final BooleanProperty HAS_ROD = BooleanProperty.create("connecting_rod");
+	/** Set with {@link #HAS_PISTON} when the piston is a forged precision one. */
+	public static final BooleanProperty FORGED_PISTON = BooleanProperty.create("forged_piston");
 
-	private static final Slot[] PARTS =
-		{new Slot(HAS_PISTON, CEItems.PISTON), new Slot(HAS_ROD, CEItems.CONNECTING_ROD)};
+	private static final Slot[] PARTS = {new Slot(HAS_PISTON, CEItems.PISTON, FORGED_PISTON, CEItems.FORGED_PISTON),
+		new Slot(HAS_ROD, CEItems.CONNECTING_ROD)};
+
+	private final boolean precision;
 
 	public CylinderBlock(Properties properties) {
+		this(properties, false);
+	}
+
+	/** @param precision a machined, liner-bored cylinder: higher compression and less wall friction */
+	public CylinderBlock(Properties properties, boolean precision) {
 		super(properties);
+		this.precision = precision;
 		registerDefaultState(defaultBlockState().setValue(FACING, Direction.UP)
 			.setValue(HAS_PISTON, false)
+			.setValue(FORGED_PISTON, false)
 			.setValue(HAS_ROD, false));
+	}
+
+	/** Whether this is the precision cylinder. */
+	public boolean precision() {
+		return precision;
 	}
 
 	@Override
@@ -56,7 +72,7 @@ public class CylinderBlock extends DirectionalBlock implements IBE<CylinderBlock
 
 	@Override
 	protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {
-		builder.add(FACING, HAS_PISTON, HAS_ROD);
+		builder.add(FACING, HAS_PISTON, FORGED_PISTON, HAS_ROD);
 	}
 
 	@Override

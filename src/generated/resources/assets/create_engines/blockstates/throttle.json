@@ -1,0 +1,57 @@
+{
+  "multipart": [
+    {
+      "apply": {
+        "model": "create_engines:block/throttle/core"
+      }
+    },
+    {
+      "apply": {
+        "model": "create_engines:block/throttle/arm_down"
+      },
+      "when": {
+        "down": "true"
+      }
+    },
+    {
+      "apply": {
+        "model": "create_engines:block/throttle/arm_up"
+      },
+      "when": {
+        "up": "true"
+      }
+    },
+    {
+      "apply": {
+        "model": "create_engines:block/throttle/arm_north"
+      },
+      "when": {
+        "north": "true"
+      }
+    },
+    {
+      "apply": {
+        "model": "create_engines:block/throttle/arm_south"
+      },
+      "when": {
+        "south": "true"
+      }
+    },
+    {
+      "apply": {
+        "model": "create_engines:block/throttle/arm_west"
+      },
+      "when": {
+        "west": "true"
+      }
+    },
+    {
+      "apply": {
+        "model": "create_engines:block/throttle/arm_east"
+      },
+      "when": {
+        "east": "true"
+      }
+    }
+  ]
+}

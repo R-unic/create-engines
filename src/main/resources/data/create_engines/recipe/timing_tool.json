@@ -1,0 +1,23 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "key": {
+    "E": {
+      "item": "create:electron_tube"
+    },
+    "B": {
+      "item": "create:brass_sheet"
+    },
+    "R": {
+      "item": "minecraft:redstone"
+    },
+    "I": {
+      "item": "create:iron_sheet"
+    }
+  },
+  "pattern": ["EB", "RI"],
+  "result": {
+    "count": 1,
+    "id": "create_engines:timing_tool"
+  }
+}

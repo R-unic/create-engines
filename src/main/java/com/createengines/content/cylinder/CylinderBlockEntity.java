@@ -14,8 +14,10 @@ import com.createengines.engine.CylinderStatus;
 import com.createengines.engine.sim.CamProfile;
 import com.createengines.engine.sim.CycleResult;
 import com.createengines.engine.sim.CylinderModel;
+import com.createengines.engine.sim.Mixture;
 import com.createengines.engine.topology.CylinderFault;
 import com.createengines.engine.topology.EngineMember;
+import com.createengines.content.GoggleLines;
 import com.createengines.registry.CELang;
 import com.createengines.registry.CESounds;
 import com.simibubi.create.api.equipment.goggles.IHaveGoggleInformation;
@@ -50,8 +52,8 @@ public class CylinderBlockEntity extends SmartBlockEntity implements IHaveGoggle
 	private static final double LATERAL = 0.26;
 
 	/** Mixtures within these equivalence ratios read as balanced. */
-	private static final float LEAN_MIXTURE = 0.8f;
-	private static final float RICH_MIXTURE = 1.25f;
+	private static final float LEAN_MIXTURE = (float) Mixture.LEAN_BAND;
+	private static final float RICH_MIXTURE = (float) Mixture.RICH_BAND;
 
 	private @Nullable CylinderStatus status;
 	private double lastCamCycle = Double.NaN;
@@ -217,7 +219,7 @@ public class CylinderBlockEntity extends SmartBlockEntity implements IHaveGoggle
 	/** Fuel went in and nothing lit it: it leaves the cylinder as it came. */
 	private static boolean unlit(CycleResult result) {
 		return result == CycleResult.NO_IGNITION || result == CycleResult.NO_SPARK
-			|| result == CycleResult.TOO_LEAN || result == CycleResult.TOO_RICH;
+			|| result == CycleResult.TOO_LEAN || result == CycleResult.TOO_RICH || result == CycleResult.FOULED;
 	}
 
 	/** A random spot inside the bore {@code distance} from the block's centre along it, towards the head if positive. */
@@ -310,52 +312,51 @@ public class CylinderBlockEntity extends SmartBlockEntity implements IHaveGoggle
 		if (current != null && !CylinderFault.disables(faults)) {
 			CycleResult result = current.result();
 			ChatFormatting colour = result.fired() ? ChatFormatting.GREEN
-				: result == CycleResult.NONE ? ChatFormatting.GRAY : ChatFormatting.RED;
-			CELang.translate("goggles.cycle." + result.name()
+				: result == CycleResult.NONE ? ChatFormatting.GRAY
+					: result == CycleResult.FUEL_CUT ? ChatFormatting.GOLD : ChatFormatting.RED;
+			GoggleLines.add(CELang.translate("goggles.cycle." + result.name()
 					.toLowerCase(java.util.Locale.ROOT))
-				.style(colour)
-				.forGoggles(tooltip, 1);
+				.style(colour), tooltip, 1);
 			if (current.rich())
-				CELang.translate("goggles.cycle.rich")
-					.style(ChatFormatting.GOLD)
-					.forGoggles(tooltip, 1);
+				GoggleLines.add(CELang.translate("goggles.cycle.rich")
+					.style(ChatFormatting.GOLD), tooltip, 1);
 			if (current.lean())
-				CELang.translate("goggles.cycle.lean")
-					.style(ChatFormatting.GOLD)
-					.forGoggles(tooltip, 1);
+				GoggleLines.add(CELang.translate("goggles.cycle.lean")
+					.style(ChatFormatting.GOLD), tooltip, 1);
 			if (!Float.isNaN(current.mixture()))
-				CELang.translate("goggles.mixture", mixture(current.mixture()))
+				GoggleLines.add(CELang.translate("goggles.mixture", mixture(current.mixture()))
 					.style(current.mixture() < LEAN_MIXTURE || current.mixture() > RICH_MIXTURE ? ChatFormatting.GOLD
-						: ChatFormatting.GRAY)
-					.forGoggles(tooltip, 1);
-			if (current.sparkPlug())
-				CELang.translate("goggles.ignition.spark")
-					.style(ChatFormatting.GRAY)
-					.forGoggles(tooltip, 1);
-			else if (!Float.isNaN(current.chargeTemp()) && !Float.isNaN(current.ignitionTemp()))
-				CELang.translate("goggles.compression", temperature(current.chargeTemp()),
+						: ChatFormatting.GRAY), tooltip, 1);
+			if (current.sparkPlug()) {
+				GoggleLines.add(CELang.translate("goggles.ignition.spark")
+					.style(ChatFormatting.GRAY), tooltip, 1);
+				int soot = Math.round(current.fouling() * 100);
+				if (soot >= 5) {
+					GoggleLines.add(CELang.translate("goggles.fouling", soot)
+						.style(soot >= 50 ? ChatFormatting.RED : ChatFormatting.GOLD), tooltip, 1);
+					if (isPlayerSneaking)
+						GoggleLines.add(CELang.translate("goggles.fouling.hint")
+							.style(ChatFormatting.DARK_GRAY), tooltip, 2);
+				}
+			} else if (!Float.isNaN(current.chargeTemp()) && !Float.isNaN(current.ignitionTemp()))
+				GoggleLines.add(CELang.translate("goggles.compression", temperature(current.chargeTemp()),
 						temperature(current.ignitionTemp()))
-					.style(current.chargeTemp() >= current.ignitionTemp() ? ChatFormatting.GRAY : ChatFormatting.GOLD)
-					.forGoggles(tooltip, 1);
+					.style(current.chargeTemp() >= current.ignitionTemp() ? ChatFormatting.GRAY : ChatFormatting.GOLD), tooltip, 1);
 			if (!Float.isNaN(current.timingError()))
-				CELang.translate("goggles.timing", CamshaftBlockEntity.timingText(current.timingError()))
-					.style(Math.abs(current.timingError()) < 7.5f ? ChatFormatting.GRAY : ChatFormatting.GOLD)
-					.forGoggles(tooltip, 1);
+				GoggleLines.add(CELang.translate("goggles.timing", CamshaftBlockEntity.timingText(current.timingError()))
+					.style(Math.abs(current.timingError()) < 7.5f ? ChatFormatting.GRAY : ChatFormatting.GOLD), tooltip, 1);
 			else if (current.lobe() != null)
-				CELang.translate("goggles.timing", CELang.translate("goggles.timing.unlocked")
+				GoggleLines.add(CELang.translate("goggles.timing", CELang.translate("goggles.timing.unlocked")
 						.component())
-					.style(ChatFormatting.RED)
-					.forGoggles(tooltip, 1);
-			CELang.translate("goggles.phase", Math.round(((current.tdcAngle() % 360) + 360) % 360))
-				.style(ChatFormatting.DARK_GRAY)
-				.forGoggles(tooltip, 1);
+					.style(ChatFormatting.RED), tooltip, 1);
+			GoggleLines.add(CELang.translate("goggles.phase", Math.round(((current.tdcAngle() % 360) + 360) % 360))
+				.style(ChatFormatting.DARK_GRAY), tooltip, 1);
 		}
 
 		for (CylinderFault fault : CylinderFault.values())
 			if (fault.in(faults))
-				CELang.translate(fault.langKey())
-					.style(fault.disablesCylinder ? ChatFormatting.RED : ChatFormatting.GOLD)
-					.forGoggles(tooltip, 1);
+				GoggleLines.add(CELang.translate(fault.langKey())
+					.style(fault.disablesCylinder ? ChatFormatting.RED : ChatFormatting.GOLD), tooltip, 1);
 		return true;
 	}
 

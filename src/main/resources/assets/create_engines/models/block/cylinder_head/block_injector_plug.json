@@ -4,9 +4,9 @@
     "side": "create:block/copper_casing",
     "top": "minecraft:block/cut_copper",
     "injector": "create:block/brass_block",
-    "particle": "create:block/copper_casing",
     "ceramic": "minecraft:block/quartz_block_top",
-    "terminal": "create:block/industrial_iron_block"
+    "terminal": "create:block/industrial_iron_block",
+    "particle": "create:block/copper_casing"
   },
   "elements": [
     {
@@ -37,7 +37,7 @@
           "texture": "#top"
         },
         "down": {
-          "texture": "#top"
+          "texture": "#side"
         }
       }
     },
@@ -86,58 +86,22 @@
       ],
       "faces": {
         "north": {
-          "texture": "#injector",
-          "uv": [
-            0,
-            0,
-            3,
-            1.5
-          ]
+          "texture": "#injector"
         },
         "south": {
-          "texture": "#injector",
-          "uv": [
-            0,
-            0,
-            3,
-            1.5
-          ]
+          "texture": "#injector"
         },
         "east": {
-          "texture": "#injector",
-          "uv": [
-            0,
-            0,
-            3,
-            1.5
-          ]
+          "texture": "#injector"
         },
         "west": {
-          "texture": "#injector",
-          "uv": [
-            0,
-            0,
-            3,
-            1.5
-          ]
+          "texture": "#injector"
         },
         "up": {
-          "texture": "#injector",
-          "uv": [
-            0,
-            0,
-            3,
-            3
-          ]
+          "texture": "#injector"
         },
         "down": {
-          "texture": "#injector",
-          "uv": [
-            0,
-            0,
-            3,
-            3
-          ]
+          "texture": "#injector"
         }
       }
     },

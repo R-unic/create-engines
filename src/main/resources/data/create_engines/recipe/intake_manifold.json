@@ -1,16 +1,16 @@
 {
-  "type": "minecraft:crafting_shapeless",
+  "type": "minecraft:crafting_shaped",
   "category": "misc",
-  "ingredients": [
-    {
+  "key": {
+    "S": {
       "item": "create:copper_sheet"
     },
-    {
-      "item": "create:copper_sheet"
-    },
-    {
+    "P": {
       "item": "create:fluid_pipe"
     }
+  },
+  "pattern": [
+    "SPS"
   ],
   "result": {
     "count": 2,

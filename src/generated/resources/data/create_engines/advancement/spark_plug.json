@@ -1,0 +1,33 @@
+{
+  "parent": "create_engines:cylinder_head",
+  "criteria": {
+    "spark_plug": {
+      "conditions": {
+        "items": [
+          {
+            "items": "create_engines:spark_plug"
+          }
+        ]
+      },
+      "trigger": "minecraft:inventory_changed"
+    }
+  },
+  "display": {
+    "description": {
+      "translate": "advancement.create_engines.spark_plug.desc"
+    },
+    "icon": {
+      "count": 1,
+      "id": "create_engines:spark_plug"
+    },
+    "title": {
+      "translate": "advancement.create_engines.spark_plug"
+    }
+  },
+  "requirements": [
+    [
+      "spark_plug"
+    ]
+  ],
+  "sends_telemetry_event": true
+}

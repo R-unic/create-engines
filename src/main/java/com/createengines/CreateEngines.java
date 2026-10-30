@@ -2,6 +2,9 @@ package com.createengines;
 
 import org.slf4j.Logger;
 
+import com.createengines.advancement.CEAdvancements;
+import com.createengines.advancement.CETriggers;
+import com.createengines.advancement.Operators;
 import com.createengines.config.CEConfig;
 import com.createengines.engine.topology.EngineTopology;
 import com.createengines.registry.CEBlockEntities;
@@ -38,12 +41,14 @@ public class CreateEngines {
 		REGISTRATE.registerEventListeners(modEventBus);
 
 		CECreativeTabs.register(modEventBus);
+		CETriggers.register(modEventBus);
 		CEBlocks.register();
 		CEItems.register();
 		CEFluids.register();
 		CEBlockEntities.register();
 		CESounds.register(modEventBus);
 		CELang.register();
+		CEAdvancements.register();
 
 		modEventBus.addListener(CEDataMaps::register);
 		modEventBus.addListener(CEBlockEntities::registerCapabilities);
@@ -51,6 +56,9 @@ public class CreateEngines {
 
 		NeoForge.EVENT_BUS.addListener(EngineTopology::onLevelTick);
 		NeoForge.EVENT_BUS.addListener(EngineTopology::onLevelUnload);
+		NeoForge.EVENT_BUS.addListener(Operators::onBlockPlaced);
+		NeoForge.EVENT_BUS.addListener(Operators::onBlockUsed);
+		NeoForge.EVENT_BUS.addListener(Operators::onBlockBroken);
 	}
 
 	public static ResourceLocation asResource(String path) {

@@ -1,6 +1,7 @@
 package com.createengines.client;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.function.Supplier;
 
@@ -10,10 +11,17 @@ import com.createengines.content.airflow.ManifoldBlock;
 import com.createengines.content.airflow.PortOpeningBlock;
 import com.createengines.content.crankshaft.CrankshaftBlockEntity;
 import com.createengines.content.cylinder.CylinderBlock;
+import com.createengines.content.governor.GovernorBlockEntity;
+import com.createengines.content.tool.TimingToolItem;
+import com.createengines.engine.topology.FiringPlanner;
+import com.createengines.content.head.CylinderHeadBlock;
+import com.createengines.content.head.CylinderHeadBlockEntity;
+import com.createengines.content.limiter.RevLimiterBlockEntity;
 import com.createengines.engine.CrankGeometry;
 import com.createengines.gametest.TestEngine;
 import com.createengines.registry.CEBlocks;
 import com.createengines.registry.CEFluids;
+import com.createengines.registry.CEItems;
 
 import net.createmod.catnip.animation.AnimationTickHolder;
 import net.createmod.catnip.gui.ScreenOpener;
@@ -39,6 +47,8 @@ import net.minecraft.world.level.WorldDataConfiguration;
 import net.minecraft.world.level.levelgen.Heightmap;
 import net.minecraft.world.level.levelgen.WorldOptions;
 import net.minecraft.world.level.levelgen.presets.WorldPresets;
+import net.neoforged.neoforge.fluids.FluidStack;
+import net.neoforged.neoforge.fluids.capability.IFluidHandler;
 import net.neoforged.neoforge.client.event.ClientTickEvent;
 import net.neoforged.neoforge.client.event.RenderFrameEvent;
 import net.neoforged.neoforge.common.NeoForge;
@@ -51,6 +61,8 @@ import net.neoforged.neoforge.common.NeoForge;
 public final class VisualSmokeTest {
 
 	private static final String PROPERTY = "create_engines.visualSmokeTest";
+	/** Run only the newest Ponder pages (gradle {@code -PsmokeScenes}), for a short check of those. */
+	private static final String SCENES_ONLY = "create_engines.visualSmokeTest.scenes";
 
 	private record Step(int tick, Runnable action) {
 	}
@@ -90,6 +102,19 @@ public final class VisualSmokeTest {
 				TestEngine.build(level, origin, true);
 			});
 		}));
+
+		if (Boolean.getBoolean(SCENES_ONLY)) {
+			// Goggle lines that used to run off the screen, then the new pages
+			STEPS.add(new Step(100, () -> {
+				Minecraft.getInstance().options.hideGui = false;
+				server(server -> command(server, "item replace entity @a armor.head with create:goggles"));
+			}));
+			goggles("head", 110, 4.5, 4.0, 1.0, 45, 0);
+			goggles("crankshaft", 130, 1.5, 2.0, 0.4, 0, 28);
+			goggles("cylinder", 150, 2.5, 2.0, -0.5, 0, 2.3f);
+			management(200);
+			return;
+		}
 
 		// Cranking on the starter: from the intake side, then from the camshaft side
 		frames("cranking_front", 100, 2.5, 2.0, -1.2, 0, 9.5f);
@@ -167,7 +192,7 @@ public final class VisualSmokeTest {
 					.west(), CEBlocks.AIR_INTAKE.getDefaultState()
 						.setValue(PortOpeningBlock.FACING, Direction.WEST),
 					3);
-				level.setBlock(intake, pipe(CEBlocks.INTAKE_MANIFOLD.get(), Direction.SOUTH, Direction.NORTH), 3);
+				level.setBlock(intake, pipe(CEBlocks.THROTTLE.get(), Direction.SOUTH, Direction.NORTH), 3);
 				BlockPos exhaust = spark.offset(TestEngine.EXHAUST);
 				level.setBlock(exhaust.above(2), CEBlocks.EXHAUST_OUTLET.getDefaultState()
 					.setValue(PortOpeningBlock.FACING, Direction.UP), 3);
@@ -187,7 +212,192 @@ public final class VisualSmokeTest {
 		goggles("spark_head", 5045, SPARK_OFFSET.getX() + 4.5, 4.0, 1.0, 45, 0);
 		goggles("spark_cylinder", 5065, SPARK_OFFSET.getX() + 2.5, 2.0, -0.5, 0, 2.3f);
 		ponder("spark", 5100, CEBlocks.ALTERNATOR::asStack, 250, 450, 650);
-		STEPS.add(new Step(5900, () -> Minecraft.getInstance()
+		ponder("throttle", 5900, CEBlocks.THROTTLE::asStack, 250, 650, 1000);
+		ponder("mixture", 7050, CEItems.FUEL_INJECTOR::asStack, 250, 650);
+		// Blocks added later, standing in the world: a turbo, an oil sump and a motor-driven transmission
+		STEPS.add(new Step(7720, () -> {
+			Minecraft.getInstance().options.hideGui = true;
+			server(server -> {
+				var level = server.overworld();
+				BlockPos base = origin.offset(24, 0, 0);
+				var x = net.minecraft.world.level.block.state.properties.BlockStateProperties.AXIS;
+				level.setBlock(base.offset(0, 1, 0), CEBlocks.TURBOCHARGER.getDefaultState()
+					.setValue(com.createengines.content.turbo.TurbochargerBlock.FACING, Direction.WEST), 3);
+				level.setBlock(base.offset(2, 1, 0), CEBlocks.SUMP.getDefaultState(), 3);
+				level.setBlock(base.offset(0, 1, 3), com.simibubi.create.AllBlocks.CREATIVE_MOTOR.getDefaultState()
+					.setValue(com.simibubi.create.content.kinetics.motor.CreativeMotorBlock.FACING, Direction.EAST), 3);
+				if (level.getBlockEntity(base.offset(0, 1, 3)) instanceof com.simibubi.create.content.kinetics.motor.CreativeMotorBlockEntity motor)
+					motor.generatedSpeed.setValue(64);
+				level.setBlock(base.offset(1, 1, 3), com.simibubi.create.AllBlocks.SHAFT.getDefaultState()
+					.setValue(x, Direction.Axis.X), 3);
+				level.setBlock(base.offset(2, 1, 3), CEBlocks.TRANSMISSION.getDefaultState()
+					.setValue(x, Direction.Axis.X), 3);
+				level.setBlock(base.offset(3, 1, 3), com.simibubi.create.AllBlocks.SHAFT.getDefaultState()
+					.setValue(x, Direction.Axis.X), 3);
+			});
+		}));
+		frames("turbo_sump", 7740, 24 + 1.5, 2.6, -2.5, 0, 18);
+		frames("transmission", 7790, 24 + 2.5, 2.6, 0.2, 0, 25);
+		// The new Ponder scenes
+		ponder("turbocharger", 7850, CEBlocks.TURBOCHARGER::asStack, 250, 650, 1000);
+		ponder("transmission", 8900, CEBlocks.TRANSMISSION::asStack, 250, 650, 900);
+		ponder("sump", 9850, CEBlocks.SUMP::asStack, 250, 450, 650);
+		newScenes(10600);
+	}
+
+	/** The firing order, compact V and mixture pages, from {@code start}; then quits. */
+	private static void newScenes(int start) {
+		ponderScene("firing_order", start, CEBlocks.CAM_LOBE::asStack, 1, 250, 450, 700);
+		ponderScene("compact_v", start + 800, CEBlocks.CAM_LOBE::asStack, 2, 250, 450, 700);
+		ponder("mixture", start + 1600, CEItems.FUEL_INJECTOR::asStack, 500, 750, 900, 1000);
+		management(start + 2700);
+	}
+
+	/** Where the engine-management engine stands, relative to the first. */
+	private static final BlockPos MANAGEMENT_OFFSET = new BlockPos(36, 0, 0);
+
+	/**
+	 * A fresh engine with a MAF sensor in its intake, a lambda sensor in its exhaust and a rev limiter on its crank,
+	 * the injector turned up so the sensor has something to cut and the limit set where the engine will reach it; then
+	 * their Ponder pages, and the end of the run.
+	 */
+	private static void management(int start) {
+		int dx = MANAGEMENT_OFFSET.getX();
+		STEPS.add(new Step(start, () -> {
+			Minecraft.getInstance().options.hideGui = true;
+			server(server -> {
+				var level = server.overworld();
+				BlockPos at = origin.offset(MANAGEMENT_OFFSET);
+				TestEngine.build(level, at, true);
+				BlockPos intake = at.offset(TestEngine.AIR_INTAKE);
+				level.removeBlock(intake, false);
+				level.setBlock(intake, pipe(CEBlocks.MAF_SENSOR.get(), Direction.SOUTH, Direction.WEST), 3);
+				level.setBlock(intake.west(), CEBlocks.AIR_INTAKE.getDefaultState()
+					.setValue(PortOpeningBlock.FACING, Direction.WEST), 3);
+				BlockPos exhaust = at.offset(TestEngine.EXHAUST);
+				level.removeBlock(exhaust, false);
+				level.setBlock(exhaust.above(), CEBlocks.EXHAUST_OUTLET.getDefaultState()
+					.setValue(PortOpeningBlock.FACING, Direction.UP), 3);
+				level.setBlock(exhaust, pipe(CEBlocks.LAMBDA_SENSOR.get(), Direction.EAST, Direction.UP), 3);
+				BlockPos limiter = at.offset(3, 3, 2);
+				level.setBlock(limiter, CEBlocks.REV_LIMITER.getDefaultState(), 3);
+				if (level.getBlockEntity(limiter) instanceof RevLimiterBlockEntity be)
+					be.limit.setValue(80 / RevLimiterBlockEntity.LIMIT_STEP);
+				if (level.getBlockEntity(at.offset(TestEngine.HEAD)) instanceof CylinderHeadBlockEntity head)
+					head.metering.setValue(CylinderHeadBlockEntity.MAX_METERING);
+			});
+		}));
+		STEPS.add(new Step(start + 250, () -> server(server -> server.overworld()
+			.removeBlock(origin.offset(MANAGEMENT_OFFSET)
+				.offset(TestEngine.STARTER_POWER), false))));
+		STEPS.add(new Step(start + 520, () -> view(dx - 2.5, 6.5, -1.5, -55, 37)));
+		STEPS.add(new Step(start + 535, () -> shot("management_overview")));
+		STEPS.add(new Step(start + 540, () -> {
+			Minecraft.getInstance().options.hideGui = false;
+			server(server -> command(server, "item replace entity @a armor.head with create:goggles"));
+		}));
+		goggles("maf", start + 560, dx + 2.5, 5.0, -1.0, 0, 11);
+		goggles("lambda", start + 590, dx - 1.5, 4.7, 2.5, -90, 4);
+		goggles("limiter", start + 620, dx + 3.5, 4.5, -0.5, 0, 18);
+		goggles("management_cylinder", start + 650, dx + 2.5, 2.0, -0.5, 0, 2.3f);
+		ponder("maf_sensor", start + 700, CEBlocks.MAF_SENSOR::asStack, 250, 650, 1000);
+		ponder("lambda_sensor", start + 1800, CEBlocks.LAMBDA_SENSOR::asStack, 250, 550);
+		ponder("rev_limiter", start + 2600, CEBlocks.REV_LIMITER::asStack, 250, 550, 800);
+		precision(start + 3600);
+	}
+
+	/** Where the precision engine stands, relative to the first. */
+	private static final BlockPos PRECISION_OFFSET = new BlockPos(72, 0, 0);
+
+	/**
+	 * A fresh engine built from precision parts under a governor, then the pages for the governor, the timing tool and
+	 * the precision parts, and the end of the run.
+	 */
+	private static void precision(int start) {
+		int dx = PRECISION_OFFSET.getX();
+		STEPS.add(new Step(start, () -> {
+			Minecraft.getInstance().options.hideGui = true;
+			server(server -> {
+				var level = server.overworld();
+				BlockPos at = origin.offset(PRECISION_OFFSET);
+				TestEngine.build(level, at, true);
+				level.setBlock(at.offset(TestEngine.CYLINDER), CEBlocks.PRECISION_CYLINDER.getDefaultState()
+					.setValue(CylinderBlock.FACING, Direction.UP)
+					.setValue(CylinderBlock.HAS_PISTON, true)
+					.setValue(CylinderBlock.FORGED_PISTON, true)
+					.setValue(CylinderBlock.HAS_ROD, true), 3);
+				level.setBlock(at.offset(TestEngine.HEAD), CEBlocks.PRECISION_CYLINDER_HEAD.getDefaultState()
+					.setValue(CylinderHeadBlock.FACING, Direction.UP)
+					.setValue(CylinderHeadBlock.HAS_INJECTOR, true)
+					.setValue(CylinderHeadBlock.FINE_INJECTOR, true), 3);
+				if (level.getBlockEntity(at.offset(TestEngine.HEAD)) instanceof CylinderHeadBlockEntity head) {
+					head.tank()
+						.fill(new FluidStack(CEFluids.DIESEL.get()
+							.getSource(), 250), IFluidHandler.FluidAction.EXECUTE);
+					head.oilTank()
+						.fill(new FluidStack(CEFluids.ENGINE_OIL.get()
+							.getSource(), 250), IFluidHandler.FluidAction.EXECUTE);
+				}
+				BlockPos governor = at.offset(3, 3, 2);
+				level.setBlock(governor, CEBlocks.GOVERNOR.getDefaultState(), 3);
+				if (level.getBlockEntity(governor) instanceof GovernorBlockEntity be)
+					be.target.setValue(80 / GovernorBlockEntity.TARGET_STEP);
+			});
+		}));
+		STEPS.add(new Step(start + 250, () -> server(server -> server.overworld()
+			.removeBlock(origin.offset(PRECISION_OFFSET)
+				.offset(TestEngine.STARTER_POWER), false))));
+		STEPS.add(new Step(start + 520, () -> view(dx - 2.5, 6.5, -1.5, -55, 37)));
+		STEPS.add(new Step(start + 535, () -> shot("precision_overview")));
+		STEPS.add(new Step(start + 540, () -> {
+			Minecraft.getInstance().options.hideGui = false;
+			server(server -> command(server, "item replace entity @a armor.head with create:goggles"));
+		}));
+		goggles("governor", start + 560, dx + 3.5, 4.5, -0.5, 0, 18);
+		goggles("precision_head", start + 590, dx + 2.5, 5.0, -1.0, 0, 11);
+		goggles("precision_cylinder", start + 620, dx + 2.5, 2.0, -0.5, 0, 2.3f);
+		ponder("governor", start + 700, CEBlocks.GOVERNOR::asStack, 250, 550, 800);
+		ponder("timing_tool", start + 1700, CEItems.TIMING_TOOL::asStack, 250, 550, 800);
+		ponder("precision_parts", start + 2700, CEBlocks.PRECISION_CYLINDER::asStack, 250, 550, 800);
+		coupled(start + 3700);
+	}
+
+	/** Where the coupled engine stands, relative to the first. */
+	private static final BlockPos COUPLED_OFFSET = new BlockPos(96, 0, 0);
+
+	/** Two crank lines geared together, timed as one engine, then the page for coupled crankshafts and the end of the run. */
+	private static void coupled(int start) {
+		int dx = COUPLED_OFFSET.getX();
+		STEPS.add(new Step(start, () -> {
+			Minecraft.getInstance().options.hideGui = true;
+			server(server -> {
+				var level = server.overworld();
+				BlockPos at = origin.offset(COUPLED_OFFSET);
+				TestEngine.build(level, at, true);
+				TestEngine.addCoupledLine(level, at);
+				if (level.getBlockEntity(at.offset(TestEngine.HEAD)) instanceof CylinderHeadBlockEntity head)
+					head.oilTank()
+						.fill(new FluidStack(CEFluids.ENGINE_OIL.get()
+							.getSource(), 250), IFluidHandler.FluidAction.EXECUTE);
+			});
+		}));
+		// The new line is found on the next rescan; time both lines once it has been
+		STEPS.add(new Step(start + 140, () -> server(server -> TimingToolItem.apply(server.overworld(),
+			origin.offset(COUPLED_OFFSET)
+				.offset(TestEngine.THROW_2),
+			FiringPlanner.Style.SMOOTH))));
+		STEPS.add(new Step(start + 250, () -> server(server -> server.overworld()
+			.removeBlock(origin.offset(COUPLED_OFFSET)
+				.offset(TestEngine.STARTER_POWER), false))));
+		STEPS.add(new Step(start + 520, () -> view(dx - 2.5, 6.5, -1.5, -55, 37)));
+		STEPS.add(new Step(start + 535, () -> shot("coupled_overview")));
+		STEPS.add(new Step(start + 540, () -> {
+			Minecraft.getInstance().options.hideGui = false;
+			server(server -> command(server, "item replace entity @a armor.head with create:goggles"));
+		}));
+		goggles("coupled", start + 560, dx + 2.5, 4.0, 7.0, 180, 31);
+		ponderScene("coupled_cranks", start + 700, CEBlocks.CRANKSHAFT::asStack, 1, 250, 550, 800, 1100);
+		STEPS.add(new Step(start + 2100, () -> Minecraft.getInstance()
 			.stop()));
 	}
 
@@ -209,6 +419,25 @@ public final class VisualSmokeTest {
 
 	private static void ponder(String name, int tick, Supplier<ItemStack> component, int... shotsAfter) {
 		STEPS.add(new Step(tick, () -> ScreenOpener.open(PonderUI.of(component.get()))));
+		for (int after : shotsAfter)
+			STEPS.add(new Step(tick + after, () -> shot("ponder_" + name + "_" + after)));
+		STEPS.add(new Step(tick + shotsAfter[shotsAfter.length - 1] + 5, () -> Minecraft.getInstance()
+			.setScreen(null)));
+	}
+
+	/** As {@link #ponder}, for the {@code scene}th page of a component with several. */
+	private static void ponderScene(String name, int tick, Supplier<ItemStack> component, int scene, int... shotsAfter) {
+		STEPS.add(new Step(tick, () -> {
+			PonderUI ui = PonderUI.of(component.get());
+			try {
+				var scenes = PonderUI.class.getDeclaredField("scenes");
+				scenes.setAccessible(true);
+				Collections.swap((List<?>) scenes.get(ui), 0, scene);
+			} catch (ReflectiveOperationException | RuntimeException e) {
+				CreateEngines.LOGGER.error("Could not pick the {} Ponder scene", name, e);
+			}
+			ScreenOpener.open(ui);
+		}));
 		for (int after : shotsAfter)
 			STEPS.add(new Step(tick + after, () -> shot("ponder_" + name + "_" + after)));
 		STEPS.add(new Step(tick + shotsAfter[shotsAfter.length - 1] + 5, () -> Minecraft.getInstance()

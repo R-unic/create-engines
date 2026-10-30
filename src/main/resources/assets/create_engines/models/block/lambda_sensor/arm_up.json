@@ -1,0 +1,337 @@
+{
+  "parent": "block/block",
+  "textures": {
+    "pipe": "create:block/dark_metal_block",
+    "bead": "create:block/industrial_iron_block",
+    "flange": "create:block/industrial_iron_block",
+    "gasket": "create:block/dark_metal_block",
+    "wrap": "minecraft:block/smooth_stone",
+    "boss": "minecraft:block/iron_block",
+    "ceramic": "minecraft:block/quartz_block_top",
+    "wire": "create:block/dark_metal_block",
+    "bolt": "create:block/brass_block",
+    "particle": "create:block/dark_metal_block"
+  },
+  "elements": [
+    {
+      "from": [
+        5,
+        11,
+        5
+      ],
+      "to": [
+        11,
+        14,
+        11
+      ],
+      "faces": {
+        "north": {
+          "texture": "#pipe"
+        },
+        "south": {
+          "texture": "#pipe"
+        },
+        "east": {
+          "texture": "#pipe"
+        },
+        "west": {
+          "texture": "#pipe"
+        },
+        "up": {
+          "texture": "#pipe"
+        },
+        "down": {
+          "texture": "#pipe"
+        }
+      }
+    },
+    {
+      "from": [
+        4.5,
+        13.1,
+        4.5
+      ],
+      "to": [
+        11.5,
+        13.8,
+        11.5
+      ],
+      "faces": {
+        "north": {
+          "texture": "#bead"
+        },
+        "south": {
+          "texture": "#bead"
+        },
+        "east": {
+          "texture": "#bead"
+        },
+        "west": {
+          "texture": "#bead"
+        },
+        "up": {
+          "texture": "#bead"
+        },
+        "down": {
+          "texture": "#bead"
+        }
+      }
+    },
+    {
+      "from": [
+        3.5,
+        14.5,
+        3.5
+      ],
+      "to": [
+        12.5,
+        16,
+        12.5
+      ],
+      "faces": {
+        "north": {
+          "texture": "#flange"
+        },
+        "south": {
+          "texture": "#flange"
+        },
+        "east": {
+          "texture": "#flange"
+        },
+        "west": {
+          "texture": "#flange"
+        },
+        "up": {
+          "texture": "#flange"
+        },
+        "down": {
+          "texture": "#flange"
+        }
+      }
+    },
+    {
+      "from": [
+        4,
+        13.8,
+        4
+      ],
+      "to": [
+        12,
+        14.5,
+        12
+      ],
+      "faces": {
+        "north": {
+          "texture": "#gasket"
+        },
+        "south": {
+          "texture": "#gasket"
+        },
+        "east": {
+          "texture": "#gasket"
+        },
+        "west": {
+          "texture": "#gasket"
+        },
+        "up": {
+          "texture": "#gasket"
+        },
+        "down": {
+          "texture": "#gasket"
+        }
+      }
+    },
+    {
+      "from": [
+        4.75,
+        12.1,
+        4.75
+      ],
+      "to": [
+        11.25,
+        12.8,
+        11.25
+      ],
+      "faces": {
+        "north": {
+          "texture": "#wrap"
+        },
+        "south": {
+          "texture": "#wrap"
+        },
+        "east": {
+          "texture": "#wrap"
+        },
+        "west": {
+          "texture": "#wrap"
+        },
+        "up": {
+          "texture": "#wrap"
+        },
+        "down": {
+          "texture": "#wrap"
+        }
+      }
+    },
+    {
+      "from": [
+        4.75,
+        11.1,
+        4.75
+      ],
+      "to": [
+        11.25,
+        11.8,
+        11.25
+      ],
+      "faces": {
+        "north": {
+          "texture": "#wrap"
+        },
+        "south": {
+          "texture": "#wrap"
+        },
+        "east": {
+          "texture": "#wrap"
+        },
+        "west": {
+          "texture": "#wrap"
+        },
+        "up": {
+          "texture": "#wrap"
+        },
+        "down": {
+          "texture": "#wrap"
+        }
+      }
+    },
+    {
+      "from": [
+        4.2,
+        16,
+        4.2
+      ],
+      "to": [
+        5.2,
+        16.3,
+        5.2
+      ],
+      "faces": {
+        "north": {
+          "texture": "#bolt"
+        },
+        "south": {
+          "texture": "#bolt"
+        },
+        "east": {
+          "texture": "#bolt"
+        },
+        "west": {
+          "texture": "#bolt"
+        },
+        "up": {
+          "texture": "#bolt"
+        },
+        "down": {
+          "texture": "#bolt"
+        }
+      }
+    },
+    {
+      "from": [
+        4.2,
+        16,
+        10.8
+      ],
+      "to": [
+        5.2,
+        16.3,
+        11.8
+      ],
+      "faces": {
+        "north": {
+          "texture": "#bolt"
+        },
+        "south": {
+          "texture": "#bolt"
+        },
+        "east": {
+          "texture": "#bolt"
+        },
+        "west": {
+          "texture": "#bolt"
+        },
+        "up": {
+          "texture": "#bolt"
+        },
+        "down": {
+          "texture": "#bolt"
+        }
+      }
+    },
+    {
+      "from": [
+        10.8,
+        16,
+        4.2
+      ],
+      "to": [
+        11.8,
+        16.3,
+        5.2
+      ],
+      "faces": {
+        "north": {
+          "texture": "#bolt"
+        },
+        "south": {
+          "texture": "#bolt"
+        },
+        "east": {
+          "texture": "#bolt"
+        },
+        "west": {
+          "texture": "#bolt"
+        },
+        "up": {
+          "texture": "#bolt"
+        },
+        "down": {
+          "texture": "#bolt"
+        }
+      }
+    },
+    {
+      "from": [
+        10.8,
+        16,
+        10.8
+      ],
+      "to": [
+        11.8,
+        16.3,
+        11.8
+      ],
+      "faces": {
+        "north": {
+          "texture": "#bolt"
+        },
+        "south": {
+          "texture": "#bolt"
+        },
+        "east": {
+          "texture": "#bolt"
+        },
+        "west": {
+          "texture": "#bolt"
+        },
+        "up": {
+          "texture": "#bolt"
+        },
+        "down": {
+          "texture": "#bolt"
+        }
+      }
+    }
+  ]
+}

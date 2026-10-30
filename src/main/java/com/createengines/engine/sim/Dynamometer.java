@@ -20,6 +20,8 @@ public final class Dynamometer {
 	public static final double[] SPEEDS = {16, 32, 48, 64, 80, 96, 112, 128, 144, 160, 176, 192, 208, 224, 240, 256};
 	/** Rotor cycles to run at each speed: the first settles the fresh gas, the last is measured. */
 	private static final int CYCLES = 2;
+	/** Extra ticks to let a turbo spool up to the boost this speed gives, about five seconds. */
+	private static final int TURBO_WARMUP_TICKS = 100;
 
 	private Dynamometer() {
 	}
@@ -46,11 +48,13 @@ public final class Dynamometer {
 
 	private static double measure(EngineSimulation engine, double rpm) {
 		Map<Camshaft, Camshaft> camshafts = new IdentityHashMap<>();
+		Map<CylinderModel, CylinderModel> copyOf = new IdentityHashMap<>();
 		List<CylinderModel> copies = new ArrayList<>();
 		for (CylinderModel cylinder : engine.cylinders()) {
 			Camshaft live = cylinder.camshaft();
 			Camshaft camshaft = live == null ? null : camshafts.computeIfAbsent(live, c -> new Camshaft());
 			CylinderModel copy = cylinder.copyOnto(camshaft);
+			copyOf.put(cylinder, copy);
 			copy.rack = 1;
 			copy.ignition = cylinder.ignition.installed() && cylinder.ignition.powered() ? IgnitionSource.UNLIMITED
 				: IgnitionSource.NONE;
@@ -60,16 +64,24 @@ public final class Dynamometer {
 		}
 		EngineSimulation dyno =
 			new EngineSimulation(copies, engine.baseInertia(), engine.baseFriction(), engine.baseViscousFriction());
+		// Turbos start at rest and build the boost this speed gives; the live engine's boost and dump don't carry over
+		for (Turbocharger turbo : engine.turbos())
+			dyno.addTurbo(turbo.copyOnto(copyOf));
 		dyno.lubrication()
 			.setFilm(engine.lubrication()
 				.film());
+		dyno.lubrication()
+			.setDilution(engine.lubrication()
+				.dilution());
+		dyno.setWashesOil(false);
 		dyno.restore(0, 0, engine.direction());
 		for (CylinderModel copy : copies)
 			copy.resetGas(copy.pistonAngle(0, engine.direction()));
 
 		double omega = EngineSimulation.rpmToOmega(rpm);
 		double degreesPerTick = Math.toDegrees(omega * EngineSimulation.TICK);
-		int ticks = (int) Math.ceil(CYCLES * SimMath.CYCLE / degreesPerTick) + 1;
+		int ticks = (int) Math.ceil(CYCLES * SimMath.CYCLE / degreesPerTick) + 1
+			+ (engine.turbos().isEmpty() ? 0 : TURBO_WARMUP_TICKS);
 		for (int t = 0; t < ticks; t++)
 			dyno.tickDriven(omega, engine.direction());
 		return dyno.netTorque();

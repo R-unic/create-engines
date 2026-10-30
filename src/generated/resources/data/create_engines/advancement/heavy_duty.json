@@ -1,0 +1,30 @@
+{
+  "parent": "create_engines:alive",
+  "criteria": {
+    "heavy_duty": {
+      "conditions": {
+        "event": "heavy_duty"
+      },
+      "trigger": "create_engines:event"
+    }
+  },
+  "display": {
+    "description": {
+      "translate": "advancement.create_engines.heavy_duty.desc"
+    },
+    "frame": "goal",
+    "icon": {
+      "count": 1,
+      "id": "create_engines:alternator"
+    },
+    "title": {
+      "translate": "advancement.create_engines.heavy_duty"
+    }
+  },
+  "requirements": [
+    [
+      "heavy_duty"
+    ]
+  ],
+  "sends_telemetry_event": true
+}

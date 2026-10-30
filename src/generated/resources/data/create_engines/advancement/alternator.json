@@ -1,0 +1,33 @@
+{
+  "parent": "create_engines:battery",
+  "criteria": {
+    "alternator": {
+      "conditions": {
+        "items": [
+          {
+            "items": "create_engines:alternator"
+          }
+        ]
+      },
+      "trigger": "minecraft:inventory_changed"
+    }
+  },
+  "display": {
+    "description": {
+      "translate": "advancement.create_engines.alternator.desc"
+    },
+    "icon": {
+      "count": 1,
+      "id": "create_engines:alternator"
+    },
+    "title": {
+      "translate": "advancement.create_engines.alternator"
+    }
+  },
+  "requirements": [
+    [
+      "alternator"
+    ]
+  ],
+  "sends_telemetry_event": true
+}
