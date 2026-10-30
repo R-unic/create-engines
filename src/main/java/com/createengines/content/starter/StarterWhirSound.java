@@ -1,14 +1,14 @@
 package com.createengines.content.starter;
 
-import java.util.Collections;
 import java.util.IdentityHashMap;
-import java.util.Set;
+import java.util.Map;
 
 import com.createengines.registry.CESounds;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.resources.sounds.AbstractTickableSoundInstance;
 import net.minecraft.client.resources.sounds.SoundInstance;
+import net.minecraft.client.sounds.SoundManager;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.util.Mth;
 
@@ -19,7 +19,7 @@ import net.minecraft.util.Mth;
  */
 public final class StarterWhirSound extends AbstractTickableSoundInstance {
 
-	private static final Set<StarterBlockEntity> PLAYING = Collections.newSetFromMap(new IdentityHashMap<>());
+	private static final Map<StarterBlockEntity, StarterWhirSound> PLAYING = new IdentityHashMap<>();
 	private static final float SPIN_UP = 0.12f;
 	private static final float SPIN_DOWN = 0.18f;
 
@@ -41,12 +41,25 @@ public final class StarterWhirSound extends AbstractTickableSoundInstance {
 			.getZ() + 0.5;
 	}
 
-	/** Starts this starter's whir unless it is already going. */
+	/**
+	 * Starts this starter's whir unless it is already going. An instance the sound engine declined to start (master
+	 * volume at zero, no free channel) never ticks to finish itself, so a dead one is replaced.
+	 */
 	public static void ensurePlaying(StarterBlockEntity starter) {
-		if (PLAYING.add(starter))
-			Minecraft.getInstance()
-				.getSoundManager()
-				.play(new StarterWhirSound(starter));
+		SoundManager sounds = Minecraft.getInstance()
+			.getSoundManager();
+		StarterWhirSound current = PLAYING.get(starter);
+		if (current != null && !current.isStopped() && sounds.isActive(current))
+			return;
+		StarterWhirSound whir = new StarterWhirSound(starter);
+		PLAYING.put(starter, whir);
+		sounds.play(whir);
+	}
+
+	/** The whir fades in from nothing, which the sound engine would otherwise skip as inaudible. */
+	@Override
+	public boolean canStartSilent() {
+		return true;
 	}
 
 	@Override
@@ -66,7 +79,7 @@ public final class StarterWhirSound extends AbstractTickableSoundInstance {
 	}
 
 	private void finish() {
-		PLAYING.remove(starter);
+		PLAYING.remove(starter, this);
 		stop();
 	}
 }
