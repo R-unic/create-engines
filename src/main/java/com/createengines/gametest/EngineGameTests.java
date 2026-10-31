@@ -1679,6 +1679,26 @@ public class EngineGameTests {
 		helper.succeed();
 	}
 
+	/** The boost limit and the anti-lag setting are both scroll values: saving must keep them apart. */
+	@GameTest(template = "empty")
+	public static void aTurbochargerSavesItsBoostLimitAndAntiLagSeparately(GameTestHelper helper) {
+		BlockPos pos = new BlockPos(1, 1, 1);
+		helper.setBlock(pos, CEBlocks.TURBOCHARGER.getDefaultState()
+			.setValue(TurbochargerBlock.FACING, Direction.UP));
+		TurbochargerBlockEntity turbo = helper.getBlockEntity(pos);
+		turbo.limit.setValue(9);
+		turbo.antiLag.setValue(2);
+		net.minecraft.nbt.CompoundTag saved = turbo.saveWithoutMetadata(helper.getLevel()
+			.registryAccess());
+		turbo.limit.setValue(3);
+		turbo.antiLag.setValue(0);
+		turbo.handleUpdateTag(saved, helper.getLevel()
+			.registryAccess());
+		helper.assertTrue(turbo.limit.getValue() == 9, "Boost limit: " + turbo.limit.getValue());
+		helper.assertTrue(turbo.antiLag.getValue() == 2, "Anti-lag: " + turbo.antiLag.getValue());
+		helper.succeed();
+	}
+
 	/** A dynamometer against the engine shows its measured curve. */
 	@GameTest(template = "empty", timeoutTicks = 900)
 	public static void aDynamometerShowsTheEnginesCurve(GameTestHelper helper) {

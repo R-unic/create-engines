@@ -42,6 +42,7 @@ public class TurbochargerBlockEntity extends SmartBlockEntity implements IHaveGo
 	public static final int DEFAULT_LIMIT = (int) Math.round(Turbocharger.DEFAULT_LIMIT * 10);
 	private static final BehaviourType<ScrollValueBehaviour> LIMIT_TYPE = new BehaviourType<>("turbo_limit");
 	private static final BehaviourType<ScrollValueBehaviour> ANTI_LAG_TYPE = new BehaviourType<>("turbo_anti_lag");
+	private static final String ANTI_LAG_KEY = "AntiLag";
 	/** Wheel degrees turned per tick at design speed. */
 	private static final float WHEEL_DEGREES_PER_TICK = 60;
 
@@ -76,6 +77,24 @@ public class TurbochargerBlockEntity extends SmartBlockEntity implements IHaveGo
 			@Override
 			public BehaviourType<?> getType() {
 				return ANTI_LAG_TYPE;
+			}
+
+			/**
+			 * Create saves every scroll value under the same key, and the boost limit is one already: this one keeps
+			 * its own, or the two would overwrite each other whenever the block is saved or sent to a client.
+			 */
+			@Override
+			public void write(CompoundTag nbt, HolderLookup.Provider registries, boolean clientPacket) {
+				CompoundTag scratch = new CompoundTag();
+				super.write(scratch, registries, clientPacket);
+				nbt.putInt(ANTI_LAG_KEY, scratch.getInt("ScrollValue"));
+			}
+
+			@Override
+			public void read(CompoundTag nbt, HolderLookup.Provider registries, boolean clientPacket) {
+				CompoundTag scratch = new CompoundTag();
+				scratch.putInt("ScrollValue", nbt.getInt(ANTI_LAG_KEY));
+				super.read(scratch, registries, clientPacket);
 			}
 		};
 		antiLag.between(0, Turbocharger.MAX_ANTI_LAG);
