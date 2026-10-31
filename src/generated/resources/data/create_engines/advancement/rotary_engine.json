@@ -1,0 +1,30 @@
+{
+  "parent": "create_engines:rotor_housing",
+  "criteria": {
+    "rotary_engine": {
+      "conditions": {
+        "event": "rotary_engine"
+      },
+      "trigger": "create_engines:event"
+    }
+  },
+  "display": {
+    "description": {
+      "translate": "advancement.create_engines.rotary_engine.desc"
+    },
+    "frame": "goal",
+    "icon": {
+      "count": 1,
+      "id": "create_engines:rotor"
+    },
+    "title": {
+      "translate": "advancement.create_engines.rotary_engine"
+    }
+  },
+  "requirements": [
+    [
+      "rotary_engine"
+    ]
+  ],
+  "sends_telemetry_event": true
+}

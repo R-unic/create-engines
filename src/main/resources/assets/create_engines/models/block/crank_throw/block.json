@@ -3,11 +3,11 @@
   "textures": {
     "axis": "create:block/axis",
     "end": "create:block/axis_top",
-    "web": "create:block/industrial_iron_block",
-    "pin": "minecraft:block/iron_block",
-    "weight": "create:block/dark_metal_block",
+    "web": "create_engines:block/cast_iron",
+    "pin": "create_engines:block/steel",
+    "weight": "create_engines:block/black_oxide",
     "collar": "create:block/andesite_casing",
-    "particle": "create:block/industrial_iron_block"
+    "particle": "create_engines:block/cast_iron"
   },
   "elements": [
     {

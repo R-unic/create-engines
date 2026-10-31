@@ -4,8 +4,8 @@
     "axis": "create:block/axis",
     "end": "create:block/axis_top",
     "collar": "create:block/andesite_casing",
-    "journal": "create:block/industrial_iron_block",
-    "bolt": "create:block/brass_block",
+    "journal": "create_engines:block/cast_iron",
+    "bolt": "create_engines:block/brass",
     "particle": "create:block/andesite_casing"
   },
   "elements": [

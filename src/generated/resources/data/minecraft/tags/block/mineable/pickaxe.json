@@ -2,6 +2,7 @@
   "values": [
     "create_engines:crankshaft",
     "create_engines:crank_throw",
+    "create_engines:rotor_housing",
     "create_engines:cylinder",
     "create_engines:cylinder_head",
     "create_engines:precision_cylinder",
@@ -20,8 +21,11 @@
     "create_engines:starter",
     "create_engines:battery",
     "create_engines:alternator",
+    "create_engines:cast_flywheel",
+    "create_engines:dyno",
     "create_engines:sump",
     "create_engines:turbocharger",
+    "create_engines:variable_turbocharger",
     "create_engines:supercharger",
     "create_engines:intercooler",
     "create_engines:transmission"

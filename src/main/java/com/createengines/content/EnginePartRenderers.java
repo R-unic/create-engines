@@ -9,6 +9,8 @@ import com.createengines.content.crankshaft.CrankThrowBlock;
 import com.createengines.content.crankshaft.CrankshaftBlockEntity;
 import com.createengines.content.cylinder.CylinderBlockEntity;
 import com.createengines.content.head.CylinderHeadBlockEntity;
+import com.createengines.content.rotor.RotorHousingBlock;
+import com.createengines.content.rotor.RotorHousingBlockEntity;
 import com.createengines.registry.CEPartialModels;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.simibubi.create.foundation.blockEntity.renderer.SafeBlockEntityRenderer;
@@ -77,6 +79,22 @@ public final class EnginePartRenderers {
 				: CEPartialModels.CRANKSHAFT;
 			draw(model, state, EnginePoses.rotatingPart(state.getValue(BlockStateProperties.AXIS),
 				EnginePoses.crankAngle(be, renderTime)), ms, buffer, light);
+		}
+	}
+
+	public static class RotorHousing extends Base<RotorHousingBlockEntity> {
+		public RotorHousing(BlockEntityRendererProvider.Context context) {
+			super(context);
+		}
+
+		@Override
+		protected void render(RotorHousingBlockEntity be, float renderTime, PoseStack ms, MultiBufferSource buffer,
+							  int light) {
+			BlockState state = be.getBlockState();
+			draw(CEPartialModels.ROTOR_ECCENTRIC, state, EnginePoses.rotatingPart(state.getValue(BlockStateProperties.AXIS),
+				EnginePoses.crankAngle(be, renderTime)), ms, buffer, light);
+			if (state.getValue(RotorHousingBlock.HAS_ROTOR))
+				draw(CEPartialModels.ROTOR, state, EnginePoses.rotor(be, renderTime), ms, buffer, light);
 		}
 	}
 

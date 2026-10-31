@@ -1,0 +1,30 @@
+{
+  "parent": "create_engines:rotary_engine",
+  "criteria": {
+    "twin_rotors": {
+      "conditions": {
+        "event": "twin_rotors"
+      },
+      "trigger": "create_engines:event"
+    }
+  },
+  "display": {
+    "description": {
+      "translate": "advancement.create_engines.twin_rotors.desc"
+    },
+    "frame": "goal",
+    "icon": {
+      "count": 1,
+      "id": "create_engines:rotor_housing"
+    },
+    "title": {
+      "translate": "advancement.create_engines.twin_rotors"
+    }
+  },
+  "requirements": [
+    [
+      "twin_rotors"
+    ]
+  ],
+  "sends_telemetry_event": true
+}

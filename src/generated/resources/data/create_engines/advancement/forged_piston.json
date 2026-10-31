@@ -3,13 +3,9 @@
   "criteria": {
     "forged_piston": {
       "conditions": {
-        "items": [
-          {
-            "items": "create_engines:forged_piston"
-          }
-        ]
+        "event": "precision_piston"
       },
-      "trigger": "minecraft:inventory_changed"
+      "trigger": "create_engines:event"
     }
   },
   "display": {

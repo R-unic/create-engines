@@ -64,6 +64,12 @@ public final class VisualSmokeTest {
 	/** Run only the newest Ponder pages (gradle {@code -PsmokeScenes}), for a short check of those. */
 	private static final String SCENES_ONLY = "create_engines.visualSmokeTest.scenes";
 
+	/** Run only the twin-rotor engine (gradle {@code -PsmokeRotary}), for a short look at the rotary parts. */
+	private static final String ROTARY_ONLY = "create_engines.visualSmokeTest.rotary";
+
+	/** Run only the flywheel, dynamometer, variable turbo and bank builder (gradle {@code -PsmokeNewParts}). */
+	private static final String NEW_PARTS_ONLY = "create_engines.visualSmokeTest.newParts";
+
 	private record Step(int tick, Runnable action) {
 	}
 
@@ -102,6 +108,16 @@ public final class VisualSmokeTest {
 				TestEngine.build(level, origin, true);
 			});
 		}));
+
+		if (Boolean.getBoolean(ROTARY_ONLY)) {
+			rotaryBench(100);
+			return;
+		}
+
+		if (Boolean.getBoolean(NEW_PARTS_ONLY)) {
+			newParts(100);
+			return;
+		}
 
 		if (Boolean.getBoolean(SCENES_ONLY)) {
 			// Goggle lines that used to run off the screen, then the new pages
@@ -400,6 +416,126 @@ public final class VisualSmokeTest {
 		goggles("coupled", start + 560, dx + 2.5, 4.0, 7.0, 180, 31);
 		ponderScene("coupled_cranks", start + 700, CEBlocks.CRANKSHAFT::asStack, 1, 250, 550, 800, 1100);
 		STEPS.add(new Step(start + 2100, () -> Minecraft.getInstance()
+			.stop()));
+	}
+
+	/** Where the twin-rotor engine stands, relative to the first. */
+	private static final BlockPos ROTARY_OFFSET = new BlockPos(108, 0, 0);
+
+	/**
+	 * A bare rotor housing turned slowly by a motor on its west end, filmed down its open east end and from the side, to
+	 * look at how the rotor sits and moves in it.
+	 */
+	private static void rotaryBench(int start) {
+		int dx = ROTARY_OFFSET.getX() + 20;
+		STEPS.add(new Step(start, () -> {
+			Minecraft.getInstance().options.hideGui = true;
+			server(server -> {
+				var level = server.overworld();
+				BlockPos at = origin.offset(dx, 0, 0);
+				level.setBlock(at.offset(2, 2, 2), com.createengines.registry.CEBlocks.ROTOR_HOUSING.getDefaultState()
+					.setValue(net.minecraft.world.level.block.state.properties.BlockStateProperties.AXIS,
+						net.minecraft.core.Direction.Axis.X)
+					.setValue(com.createengines.content.rotor.RotorHousingBlock.HAS_ROTOR, true), 3);
+				level.setBlock(at.offset(1, 2, 2), com.simibubi.create.AllBlocks.CREATIVE_MOTOR.getDefaultState()
+					.setValue(com.simibubi.create.content.kinetics.motor.CreativeMotorBlock.FACING,
+						net.minecraft.core.Direction.EAST), 3);
+				if (level.getBlockEntity(at.offset(1, 2, 2)) instanceof com.simibubi.create.content.kinetics.motor.CreativeMotorBlockEntity motor)
+					motor.generatedSpeed.setValue(8);
+			});
+		}));
+		for (int i = 0; i < 8; i++) {
+			int frame = i;
+			STEPS.add(new Step(start + 60 + i * 14, () -> view(dx + 4.0, 1.0, 2.5, 90, 0)));
+			STEPS.add(new Step(start + 70 + i * 14, () -> shot("bench_end_" + frame)));
+		}
+		STEPS.add(new Step(start + 60 + 8 * 14, () -> view(dx + 2.5, 1.0, 4.6, 180, 0)));
+		for (int i = 0; i < 4; i++) {
+			int frame = i;
+			STEPS.add(new Step(start + 70 + 8 * 14 + i * 14, () -> shot("bench_side_" + frame)));
+		}
+		STEPS.add(new Step(start + 300, () -> Minecraft.getInstance()
+			.stop()));
+	}
+
+	/** A twin-rotor engine, running, from the side, from above and through goggles; then the end of the run. */
+	private static void rotary(int start) {
+		int dx = ROTARY_OFFSET.getX();
+		STEPS.add(new Step(start, () -> {
+			Minecraft.getInstance().options.hideGui = true;
+			server(server -> {
+				var level = server.overworld();
+				BlockPos at = origin.offset(ROTARY_OFFSET);
+				TestEngine.buildRotary(level, at, true);
+				TestEngine.addSecondRotor(level, at);
+			});
+		}));
+		// The second rotor is found on the next rescan; release the starter once both are running
+		STEPS.add(new Step(start + 300, () -> server(server -> server.overworld()
+			.removeBlock(origin.offset(ROTARY_OFFSET)
+				.offset(TestEngine.STARTER_POWER), false))));
+		STEPS.add(new Step(start + 400, () -> view(dx - 2.5, 6.5, -1.5, -55, 37)));
+		STEPS.add(new Step(start + 415, () -> shot("rotary_overview")));
+		frames("rotary_side", start + 440, dx + 3.0, 2.5, 5.0, 180, 3);
+		frames("rotary_slant", start + 480, dx + 5.5, 4.2, 5.0, 160, 25);
+		STEPS.add(new Step(start + 520, () -> {
+			Minecraft.getInstance().options.hideGui = false;
+			server(server -> command(server, "item replace entity @a armor.head with create:goggles"));
+		}));
+		goggles("rotor", start + 540, dx + 2.5, 2.5, 4.5, 180, 8);
+		// The new items in the hotbar, beside a cylinder head to compare with
+		STEPS.add(new Step(start + 570, () -> server(server -> {
+			command(server, "item replace entity @a hotbar.0 with create_engines:rotor_housing");
+			command(server, "item replace entity @a hotbar.1 with create_engines:rotor");
+			command(server, "item replace entity @a hotbar.2 with create_engines:cylinder_head");
+		})));
+		STEPS.add(new Step(start + 580, () -> shot("rotary_hotbar")));
+		ponder("rotor", start + 600, CEBlocks.ROTOR_HOUSING::asStack, 100, 250, 400, 560, 760, 900, 1020);
+		STEPS.add(new Step(start + 1700, () -> Minecraft.getInstance()
+			.stop()));
+	}
+
+	/** The flywheel, dynamometer and variable turbo beside the test engine, a goggle readout, the new items and pages. */
+	private static void newParts(int start) {
+		STEPS.add(new Step(start, () -> {
+			Minecraft.getInstance().options.hideGui = true;
+			server(server -> {
+				var level = server.overworld();
+				level.setBlock(origin.offset(0, 2, 2), CEBlocks.CAST_FLYWHEEL.getDefaultState()
+					.setValue(net.minecraft.world.level.block.state.properties.BlockStateProperties.AXIS,
+						net.minecraft.core.Direction.Axis.X), 3);
+				level.setBlock(origin.offset(2, 2, 1), CEBlocks.DYNO.getDefaultState(), 3);
+				level.setBlock(origin.offset(4, 0, 0), CEBlocks.VARIABLE_TURBOCHARGER.getDefaultState()
+					.setValue(com.createengines.content.turbo.TurbochargerBlock.FACING, Direction.UP), 3);
+				level.setBlock(origin.offset(6, 0, 0), CEBlocks.TURBOCHARGER.getDefaultState()
+					.setValue(com.createengines.content.turbo.TurbochargerBlock.FACING, Direction.UP), 3);
+			});
+		}));
+		STEPS.add(new Step(start + 300, () -> server(server -> server.overworld()
+			.removeBlock(origin.offset(TestEngine.STARTER_POWER), false))));
+		STEPS.add(new Step(start + 500, () -> view(-2.5, 6.5, -1.5, -55, 37)));
+		STEPS.add(new Step(start + 515, () -> shot("newparts_overview")));
+		frames("newparts_front", start + 540, 3.5, 2.5, -2.5, 0, 12);
+		frames("newparts_flywheel", start + 580, -2.0, 3.0, 0.5, -45, 18);
+		frames("newparts_turbos", start + 620, 5.0, 2.5, -2.5, 0, 14);
+		STEPS.add(new Step(start + 660, () -> {
+			Minecraft.getInstance().options.hideGui = false;
+			server(server -> {
+				command(server, "item replace entity @a armor.head with create:goggles");
+				command(server, "item replace entity @a hotbar.0 with create_engines:cast_flywheel");
+				command(server, "item replace entity @a hotbar.1 with create_engines:dyno");
+				command(server, "item replace entity @a hotbar.2 with create_engines:variable_turbocharger");
+				command(server, "item replace entity @a hotbar.3 with create_engines:bank_builder");
+				command(server, "item replace entity @a hotbar.4 with create_engines:timing_tool");
+			});
+		}));
+		goggles("dyno", start + 680, 2.5, 3.0, -1.2, 0, 25);
+		STEPS.add(new Step(start + 720, () -> shot("newparts_hotbar")));
+		ponder("flywheel", start + 740, CEBlocks.CAST_FLYWHEEL::asStack, 150, 450, 800);
+		ponder("bank_builder", start + 1800, CEItems.BANK_BUILDER::asStack, 150, 450, 800, 1100);
+		ponder("dyno", start + 3100, CEBlocks.DYNO::asStack, 250, 600, 950);
+		ponder("turbo_tuning", start + 4300, CEBlocks.VARIABLE_TURBOCHARGER::asStack, 250, 650, 1000, 1350);
+		STEPS.add(new Step(start + 5800, () -> Minecraft.getInstance()
 			.stop()));
 	}
 

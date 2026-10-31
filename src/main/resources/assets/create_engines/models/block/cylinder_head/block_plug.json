@@ -3,9 +3,9 @@
   "textures": {
     "side": "create:block/copper_casing",
     "top": "minecraft:block/cut_copper",
-    "injector": "create:block/brass_block",
-    "ceramic": "minecraft:block/quartz_block_top",
-    "terminal": "create:block/industrial_iron_block",
+    "injector": "create_engines:block/brass",
+    "ceramic": "create_engines:block/ceramic",
+    "terminal": "create_engines:block/cast_iron",
     "particle": "create:block/copper_casing"
   },
   "elements": [

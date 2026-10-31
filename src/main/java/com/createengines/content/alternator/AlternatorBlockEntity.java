@@ -7,6 +7,8 @@ import java.util.Set;
 
 import org.jetbrains.annotations.Nullable;
 
+import com.createengines.advancement.Achievements;
+import com.createengines.advancement.Milestone;
 import com.createengines.content.battery.BatteryBlockEntity;
 import com.createengines.engine.topology.EngineMember;
 import com.createengines.content.GoggleLines;
@@ -93,6 +95,8 @@ public class AlternatorBlockEntity extends KineticBlockEntity implements EngineM
 		batteriesFound = batteries.size();
 		if (wanted != charging) {
 			charging = wanted;
+			if (wanted)
+				Achievements.award(level, List.of(worldPosition), Milestone.ALTERNATOR_CHARGING);
 			if (hasNetwork())
 				getOrCreateNetwork().updateStressFor(this, calculateStressApplied());
 			sendData();

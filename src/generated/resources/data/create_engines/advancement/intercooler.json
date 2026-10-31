@@ -3,13 +3,9 @@
   "criteria": {
     "intercooler": {
       "conditions": {
-        "items": [
-          {
-            "items": "create_engines:intercooler"
-          }
-        ]
+        "event": "cooled_charge"
       },
-      "trigger": "minecraft:inventory_changed"
+      "trigger": "create_engines:event"
     }
   },
   "display": {

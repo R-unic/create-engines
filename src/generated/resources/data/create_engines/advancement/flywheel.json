@@ -1,28 +1,28 @@
 {
-  "parent": "create_engines:transmission",
+  "parent": "create_engines:alive",
   "criteria": {
-    "shifted": {
+    "flywheel": {
       "conditions": {
-        "event": "shifted"
+        "event": "flywheel_smooth"
       },
       "trigger": "create_engines:event"
     }
   },
   "display": {
     "description": {
-      "translate": "advancement.create_engines.shifted.desc"
+      "translate": "advancement.create_engines.flywheel.desc"
     },
     "icon": {
       "count": 1,
-      "id": "create_engines:transmission"
+      "id": "create_engines:cast_flywheel"
     },
     "title": {
-      "translate": "advancement.create_engines.shifted"
+      "translate": "advancement.create_engines.flywheel"
     }
   },
   "requirements": [
     [
-      "shifted"
+      "flywheel"
     ]
   ],
   "sends_telemetry_event": true

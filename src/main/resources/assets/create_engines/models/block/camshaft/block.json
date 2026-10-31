@@ -4,7 +4,7 @@
     "axis": "create:block/axis",
     "end": "create:block/axis_top",
     "bearing": "create:block/andesite_casing",
-    "groove": "create:block/dark_metal_block",
+    "groove": "create_engines:block/black_oxide",
     "particle": "create:block/axis"
   },
   "elements": [

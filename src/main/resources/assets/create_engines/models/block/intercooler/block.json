@@ -2,9 +2,9 @@
   "parent": "block/block",
   "textures": {
     "tank": "create:block/copper_casing",
-    "core": "create:block/dark_metal_block",
-    "fin": "create:block/industrial_iron_block",
-    "stub": "create:block/brass_block",
+    "core": "create_engines:block/black_oxide",
+    "fin": "create_engines:block/cast_iron",
+    "stub": "create_engines:block/brass",
     "particle": "create:block/copper_casing"
   },
   "elements": [

@@ -3,13 +3,9 @@
   "criteria": {
     "diesel": {
       "conditions": {
-        "items": [
-          {
-            "items": "create_engines:diesel_bucket"
-          }
-        ]
+        "event": "diesel_burned"
       },
-      "trigger": "minecraft:inventory_changed"
+      "trigger": "create_engines:event"
     }
   },
   "display": {

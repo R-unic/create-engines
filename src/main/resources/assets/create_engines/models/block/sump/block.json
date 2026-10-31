@@ -1,12 +1,12 @@
 {
   "parent": "block/block",
   "textures": {
-    "pan": "create:block/dark_metal_block",
-    "flange": "create:block/industrial_iron_block",
-    "rib": "minecraft:block/iron_block",
-    "bolt": "create:block/brass_block",
+    "pan": "create_engines:block/black_oxide",
+    "flange": "create_engines:block/cast_iron",
+    "rib": "create_engines:block/steel",
+    "bolt": "create_engines:block/brass",
     "cap": "minecraft:block/copper_block",
-    "particle": "create:block/dark_metal_block"
+    "particle": "create_engines:block/black_oxide"
   },
   "elements": [
     {

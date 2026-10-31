@@ -2,10 +2,10 @@
   "parent": "block/block",
   "textures": {
     "casing": "create:block/andesite_casing",
-    "band": "create:block/brass_block",
-    "cover": "create:block/industrial_iron_block",
-    "dial": "create:block/dark_metal_block",
-    "bolt": "create:block/brass_block",
+    "band": "create_engines:block/brass",
+    "cover": "create_engines:block/cast_iron",
+    "dial": "create_engines:block/black_oxide",
+    "bolt": "create_engines:block/brass",
     "particle": "create:block/andesite_casing"
   },
   "elements": [

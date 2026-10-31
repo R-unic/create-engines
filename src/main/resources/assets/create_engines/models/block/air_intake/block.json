@@ -3,8 +3,8 @@
   "render_type": "minecraft:cutout",
   "textures": {
     "body": "create:block/copper_casing",
-    "rim": "create:block/industrial_iron_block",
-    "bolt": "create:block/brass_block",
+    "rim": "create_engines:block/cast_iron",
+    "bolt": "create_engines:block/brass",
     "grille": "minecraft:block/iron_trapdoor",
     "particle": "create:block/copper_casing"
   },

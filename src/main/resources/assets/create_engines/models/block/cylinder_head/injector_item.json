@@ -1,10 +1,10 @@
 {
   "parent": "block/block",
   "textures": {
-    "body": "create:block/brass_block",
+    "body": "create_engines:block/brass",
     "cap": "minecraft:block/cut_copper",
-    "nozzle": "minecraft:block/iron_block",
-    "particle": "create:block/brass_block"
+    "nozzle": "create_engines:block/steel",
+    "particle": "create_engines:block/brass"
   },
   "elements": [
     {

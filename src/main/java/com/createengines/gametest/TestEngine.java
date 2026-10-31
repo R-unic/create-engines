@@ -7,6 +7,8 @@ import com.createengines.content.camshaft.CamshaftBlockEntity;
 import com.createengines.content.cylinder.CylinderBlock;
 import com.createengines.content.head.CylinderHeadBlock;
 import com.createengines.content.head.CylinderHeadBlockEntity;
+import com.createengines.content.rotor.RotorHousingBlock;
+import com.createengines.content.rotor.RotorHousingBlockEntity;
 import com.createengines.content.starter.StarterBlock;
 import com.createengines.engine.CrankGeometry;
 import com.createengines.registry.CEBlocks;
@@ -135,6 +137,67 @@ public final class TestEngine {
 		if (battery)
 			level.setBlock(origin.offset(BATTERY), CEBlocks.BATTERY.getDefaultState(), Block.UPDATE_ALL);
 			level.setBlock(origin.offset(ALTERNATOR), axisX(CEBlocks.ALTERNATOR.getDefaultState()), Block.UPDATE_ALL);
+	}
+
+	/** The rotor housing of {@link #buildRotary}, where the throw is on the piston engines. */
+	public static final BlockPos HOUSING = THROW;
+	public static final BlockPos ROTARY_INTAKE = new BlockPos(2, 2, 1);
+	public static final BlockPos ROTARY_EXHAUST = new BlockPos(2, 3, 2);
+
+	/**
+	 * A single-rotor engine: the same crankshaft, starter and battery as the spark engine, with a rotor housing where the
+	 * throw was. It has no camshaft. Its intake is on the housing's north face and its exhaust on its top.
+	 */
+	public static void buildRotary(Level level, BlockPos origin, boolean sparkPlug) {
+		BiConsumer<BlockPos, BlockState> set = (pos, state) -> level.setBlock(origin.offset(pos), state, Block.UPDATE_ALL);
+		set.accept(PRIMARY, axisX(CEBlocks.CRANKSHAFT.getDefaultState()));
+		set.accept(HOUSING, axisX(CEBlocks.ROTOR_HOUSING.getDefaultState())
+			.setValue(RotorHousingBlock.HAS_ROTOR, true)
+			.setValue(RotorHousingBlock.HAS_INJECTOR, true)
+			.setValue(RotorHousingBlock.HAS_SPARK_PLUG, sparkPlug));
+		set.accept(new BlockPos(3, 2, 2), axisX(CEBlocks.CRANKSHAFT.getDefaultState()));
+		set.accept(new BlockPos(4, 2, 2), axisX(AllBlocks.SHAFT.getDefaultState()));
+		set.accept(new BlockPos(5, 2, 2), axisX(AllBlocks.COGWHEEL.getDefaultState()));
+		set.accept(ROTARY_INTAKE, CEBlocks.AIR_INTAKE.getDefaultState()
+			.setValue(PortOpeningBlock.FACING, Direction.NORTH));
+		set.accept(ROTARY_EXHAUST, CEBlocks.EXHAUST_OUTLET.getDefaultState()
+			.setValue(PortOpeningBlock.FACING, Direction.UP));
+
+		set.accept(STARTER, CEBlocks.STARTER.getDefaultState()
+			.setValue(StarterBlock.FACING, Direction.UP));
+		set.accept(MOTOR, AllBlocks.CREATIVE_MOTOR.getDefaultState()
+			.setValue(CreativeMotorBlock.FACING, Direction.UP));
+		set.accept(STARTER_POWER, Blocks.REDSTONE_BLOCK.defaultBlockState());
+		set.accept(BATTERY, CEBlocks.BATTERY.getDefaultState());
+		set.accept(ALTERNATOR, axisX(CEBlocks.ALTERNATOR.getDefaultState()));
+		CreativeMotorBlockEntity motor = (CreativeMotorBlockEntity) level.getBlockEntity(origin.offset(MOTOR));
+		motor.generatedSpeed.setValue(MOTOR_RPM);
+
+		RotorHousingBlockEntity housing = (RotorHousingBlockEntity) level.getBlockEntity(origin.offset(HOUSING));
+		housing.oilTank()
+			.fill(new FluidStack(CEFluids.ENGINE_OIL.get()
+				.getSource(), 250), FluidAction.EXECUTE);
+		housing.tank()
+			.fill(new FluidStack(CEFluids.GASOLINE.get()
+				.getSource(), 250), FluidAction.EXECUTE);
+	}
+
+	/** The second rotor of {@link #addSecondRotor}, beside the first on the same shaft. */
+	public static final BlockPos HOUSING_2 = new BlockPos(3, 2, 2);
+
+	/** Makes {@link #buildRotary} a twin-rotor engine: a second housing, half a turn round, with its own ports. */
+	public static void addSecondRotor(Level level, BlockPos origin) {
+		BiConsumer<BlockPos, BlockState> set = (pos, state) -> level.setBlock(origin.offset(pos), state, Block.UPDATE_ALL);
+		set.accept(HOUSING_2, axisX(CEBlocks.ROTOR_HOUSING.getDefaultState())
+			.setValue(RotorHousingBlock.HAS_ROTOR, true)
+			.setValue(RotorHousingBlock.HAS_INJECTOR, true)
+			.setValue(RotorHousingBlock.HAS_SPARK_PLUG, true));
+		set.accept(HOUSING_2.north(), CEBlocks.AIR_INTAKE.getDefaultState()
+			.setValue(PortOpeningBlock.FACING, Direction.NORTH));
+		set.accept(HOUSING_2.above(), CEBlocks.EXHAUST_OUTLET.getDefaultState()
+			.setValue(PortOpeningBlock.FACING, Direction.UP));
+		RotorHousingBlockEntity housing = (RotorHousingBlockEntity) level.getBlockEntity(origin.offset(HOUSING_2));
+		housing.throwAngle.setValue(180 / RotorHousingBlockEntity.THROW_ANGLE_STEP);
 	}
 
 	/** The second crank line of the coupled engine: its throw, and the cylinder and head over it. */

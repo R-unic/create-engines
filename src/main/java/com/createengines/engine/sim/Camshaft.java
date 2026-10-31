@@ -27,7 +27,7 @@ public final class Camshaft {
 	}
 
 	void advance(double rotorDegrees) {
-		angle = (angle + ratio * rotorDegrees) % 360;
+		angle = SimMath.wrap(angle + ratio * rotorDegrees, 360);
 	}
 
 	public double angle() {

@@ -1,0 +1,23 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "key": {
+    "S": {
+      "item": "create:brass_sheet"
+    },
+    "C": {
+      "item": "create:copper_casing"
+    },
+    "T": {
+      "item": "create_engines:crank_throw"
+    }
+  },
+  "pattern": [
+    "SC",
+    "T "
+  ],
+  "result": {
+    "count": 1,
+    "id": "create_engines:rotor_housing"
+  }
+}

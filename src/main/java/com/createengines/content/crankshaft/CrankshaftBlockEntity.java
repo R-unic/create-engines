@@ -15,6 +15,7 @@ import com.createengines.content.GoggleLines;
 import com.createengines.registry.CELang;
 import com.simibubi.create.content.kinetics.base.GeneratingKineticBlockEntity;
 import com.simibubi.create.foundation.blockEntity.behaviour.BlockEntityBehaviour;
+import com.simibubi.create.foundation.blockEntity.behaviour.ValueBoxTransform;
 import com.simibubi.create.foundation.blockEntity.behaviour.scrollValue.ScrollValueBehaviour;
 
 import net.minecraft.ChatFormatting;
@@ -57,11 +58,16 @@ public class CrankshaftBlockEntity extends GeneratingKineticBlockEntity implemen
 		if (!(getBlockState().getBlock() instanceof CrankshaftBlock crank) || !crank.isThrow())
 			return;
 		throwAngle = new ScrollValueBehaviour(CELang.translate("value.throw_angle")
-			.component(), this, new SideValueBox(14.5f));
+			.component(), this, throwAngleBox());
 		throwAngle.between(0, 360 / THROW_ANGLE_STEP - 1);
 		throwAngle.withFormatter(v -> v * THROW_ANGLE_STEP + "°");
 		throwAngle.withCallback(v -> EngineTopology.markDirty(level, worldPosition));
 		behaviours.add(throwAngle);
+	}
+
+	/** Where the throw angle's value box sits on each side of the block. */
+	protected ValueBoxTransform throwAngleBox() {
+		return new SideValueBox(14.5f);
 	}
 
 	/** Angle of this throw's crank pin, in degrees. Zero for plain journals. */
@@ -102,6 +108,11 @@ public class CrankshaftBlockEntity extends GeneratingKineticBlockEntity implemen
 		savedMotion = null;
 		controller = new EngineController(this, layout, motion);
 		setPrimary(worldPosition, 1);
+	}
+
+	/** The engine this crankshaft hosts, if it is the primary of a built one. */
+	public @Nullable EngineController controller() {
+		return controller;
 	}
 
 	public @Nullable EngineController.Motion captureMotion() {
@@ -351,6 +362,10 @@ public class CrankshaftBlockEntity extends GeneratingKineticBlockEntity implemen
 			int ripple = Math.round(engine.ripple() * 100);
 			GoggleLines.add(CELang.translate("goggles.ripple", ripple)
 				.style(ripple > 15 ? ChatFormatting.GOLD : ChatFormatting.GRAY), tooltip, 1);
+			int lost = Math.round(engine.roughness() * 100);
+			if (lost >= 2)
+				GoggleLines.add(CELang.translate("goggles.roughness", lost)
+					.style(ChatFormatting.GOLD), tooltip, 1);
 		}
 		GoggleLines.add(CELang.translate("goggles.inertia", format(engine.inertia()))
 			.style(ChatFormatting.DARK_GRAY), tooltip, 1);

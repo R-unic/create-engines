@@ -30,7 +30,7 @@ import net.neoforged.neoforge.fluids.capability.IFluidHandler;
  * Nothing matches it to the air the cylinder breathes, so a setting that suits one speed runs rich above it and lean
  * below it.
  */
-public class CylinderHeadBlockEntity extends SmartBlockEntity implements IHaveGoggleInformation {
+public class CylinderHeadBlockEntity extends SmartBlockEntity implements IHaveGoggleInformation, GalleryMember {
 
 	public static final int CAPACITY = 250;
 	/** Metering is set in tenths of the usual shot, from a tenth of it to twice it. */
@@ -76,14 +76,17 @@ public class CylinderHeadBlockEntity extends SmartBlockEntity implements IHaveGo
 	}
 
 	/** The share of the usual injector shot this head delivers, 1 being the usual shot. */
+	@Override
 	public double meteringFraction() {
 		return Math.max(MIN_METERING, metering.getValue()) * METERING_STEP / 100d;
 	}
 
+	@Override
 	public SmartFluidTank tank() {
 		return tank.getPrimaryHandler();
 	}
 
+	@Override
 	public SmartFluidTank oilTank() {
 		return oil.getPrimaryHandler();
 	}

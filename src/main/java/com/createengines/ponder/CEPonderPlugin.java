@@ -73,7 +73,17 @@ public class CEPonderPlugin implements PonderPlugin {
 			.addStoryBoard("supercharger", EngineScenes::supercharger);
 		scenes.forComponents(CEBlocks.TRANSMISSION)
 			.addStoryBoard("transmission", EngineScenes::transmission);
+		scenes.forComponents(CEBlocks.ROTOR_HOUSING, CEItems.ROTOR)
+			.addStoryBoard("rotor", EngineScenes::rotor);
 		scenes.forComponents(CEBlocks.SUMP)
 			.addStoryBoard("sump", EngineScenes::sump);
+		scenes.forComponents(CEBlocks.CAST_FLYWHEEL)
+			.addStoryBoard("flywheel", EngineScenes::flywheel);
+		scenes.forComponents(CEItems.BANK_BUILDER)
+			.addStoryBoard("bank_builder", EngineScenes::bankBuilder);
+		scenes.forComponents(CEBlocks.DYNO)
+			.addStoryBoard("dyno", EngineScenes::dyno);
+		scenes.forComponents(CEBlocks.VARIABLE_TURBOCHARGER, CEBlocks.TURBOCHARGER)
+			.addStoryBoard("turbo_tuning", EngineScenes::turboTuning);
 	}
 }

@@ -58,7 +58,39 @@ public enum Milestone {
 	TOOL_TIMED,
 	// Big engines and coupled cranks
 	SIXTEEN_CYLINDERS,
-	COUPLED_CRANKS;
+	COUPLED_CRANKS,
+	// Parts doing their job in a running engine
+	CAMSHAFT_TIMED,
+	PIPED_ENGINE,
+	THROTTLED,
+	DIESEL_BURNED,
+	GASOLINE_BURNED,
+	OILED,
+	SUMP_OILING,
+	MAF_READING,
+	LAMBDA_READING,
+	GOVERNOR_ACTIVE,
+	PRECISION_BORE,
+	PRECISION_HEAD,
+	PRECISION_PISTON,
+	PRECISION_INJECTOR,
+	ALTERNATOR_CHARGING,
+	TOOL_USED,
+	FUEL_TUNED,
+	// Laying out banks of cylinders
+	BANK_BUILT,
+	DYNO_RUN,
+	VEE_ENGINE,
+	FLAT_ENGINE,
+	// Flywheels, variable-geometry turbos and anti-lag
+	FLYWHEEL_SMOOTH,
+	VARIABLE_VANES,
+	ANTI_LAG,
+	// Wankel rotors
+	ROTOR_HOUSING_TURNED,
+	ROTARY_ENGINE,
+	ROTARY_REVS,
+	TWIN_ROTORS;
 
 	/** The name the advancement's criterion carries. */
 	public String id() {

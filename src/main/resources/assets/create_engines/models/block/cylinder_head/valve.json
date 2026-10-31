@@ -1,9 +1,9 @@
 {
   "parent": "block/block",
   "textures": {
-    "stem": "minecraft:block/iron_block",
-    "cap": "create:block/brass_block",
-    "particle": "minecraft:block/iron_block"
+    "stem": "create_engines:block/steel",
+    "cap": "create_engines:block/brass",
+    "particle": "create_engines:block/steel"
   },
   "elements": [
     {

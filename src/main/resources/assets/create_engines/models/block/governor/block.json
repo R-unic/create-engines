@@ -1,14 +1,14 @@
 {
   "parent": "block/block",
   "textures": {
-    "plate": "create:block/industrial_iron_block",
+    "plate": "create_engines:block/cast_iron",
     "body": "create:block/brass_casing",
-    "lid": "create:block/brass_block",
-    "spindle": "minecraft:block/iron_block",
-    "ball": "minecraft:block/red_concrete",
-    "arm": "create:block/industrial_iron_block",
-    "vent": "minecraft:block/iron_block",
-    "bolt": "create:block/brass_block",
+    "lid": "create_engines:block/brass",
+    "spindle": "create_engines:block/steel",
+    "ball": "create_engines:block/enamel_red",
+    "arm": "create_engines:block/cast_iron",
+    "vent": "create_engines:block/steel",
+    "bolt": "create_engines:block/brass",
     "particle": "create:block/brass_casing"
   },
   "elements": [

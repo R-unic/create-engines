@@ -1,5 +1,5 @@
 {
-  "parent": "create_engines:cranking",
+  "parent": "create_engines:starter",
   "criteria": {
     "alive": {
       "conditions": {

@@ -2,12 +2,12 @@
   "parent": "block/block",
   "textures": {
     "side": "create:block/brass_casing",
-    "top": "create:block/brass_block",
-    "cover": "create:block/dark_metal_block",
-    "injector": "create:block/brass_block",
-    "ceramic": "minecraft:block/quartz_block_top",
-    "terminal": "create:block/industrial_iron_block",
-    "bolt": "minecraft:block/iron_block",
+    "top": "create_engines:block/brass",
+    "cover": "create_engines:block/black_oxide",
+    "injector": "create_engines:block/brass",
+    "ceramic": "create_engines:block/ceramic",
+    "terminal": "create_engines:block/cast_iron",
+    "bolt": "create_engines:block/steel",
     "particle": "create:block/brass_casing"
   },
   "elements": [

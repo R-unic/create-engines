@@ -1,5 +1,5 @@
 {
-  "parent": "create_engines:supercharged",
+  "parent": "create_engines:supercharger",
   "criteria": {
     "twincharged": {
       "conditions": {

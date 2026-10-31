@@ -1,28 +1,29 @@
 {
   "parent": "create_engines:turbocharger",
   "criteria": {
-    "boost": {
+    "anti_lag": {
       "conditions": {
-        "event": "boost"
+        "event": "anti_lag"
       },
       "trigger": "create_engines:event"
     }
   },
   "display": {
     "description": {
-      "translate": "advancement.create_engines.boost.desc"
+      "translate": "advancement.create_engines.anti_lag.desc"
     },
+    "frame": "goal",
     "icon": {
       "count": 1,
       "id": "create_engines:turbocharger"
     },
     "title": {
-      "translate": "advancement.create_engines.boost"
+      "translate": "advancement.create_engines.anti_lag"
     }
   },
   "requirements": [
     [
-      "boost"
+      "anti_lag"
     ]
   ],
   "sends_telemetry_event": true

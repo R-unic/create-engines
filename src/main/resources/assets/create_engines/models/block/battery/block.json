@@ -2,11 +2,11 @@
   "parent": "block/block",
   "textures": {
     "body": "create:block/zinc_block",
-    "band": "create:block/brass_block",
+    "band": "create_engines:block/brass",
     "cap": "create:block/andesite_casing",
-    "pole": "create:block/industrial_iron_block",
-    "lid": "create:block/dark_metal_block",
-    "vent": "minecraft:block/iron_block",
+    "pole": "create_engines:block/cast_iron",
+    "lid": "create_engines:block/black_oxide",
+    "vent": "create_engines:block/steel",
     "particle": "create:block/zinc_block"
   },
   "elements": [

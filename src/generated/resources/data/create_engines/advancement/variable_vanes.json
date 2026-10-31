@@ -1,0 +1,29 @@
+{
+  "parent": "create_engines:turbocharger",
+  "criteria": {
+    "variable_vanes": {
+      "conditions": {
+        "event": "variable_vanes"
+      },
+      "trigger": "create_engines:event"
+    }
+  },
+  "display": {
+    "description": {
+      "translate": "advancement.create_engines.variable_vanes.desc"
+    },
+    "icon": {
+      "count": 1,
+      "id": "create_engines:variable_turbocharger"
+    },
+    "title": {
+      "translate": "advancement.create_engines.variable_vanes"
+    }
+  },
+  "requirements": [
+    [
+      "variable_vanes"
+    ]
+  ],
+  "sends_telemetry_event": true
+}

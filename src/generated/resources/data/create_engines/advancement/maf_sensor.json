@@ -3,13 +3,9 @@
   "criteria": {
     "maf_sensor": {
       "conditions": {
-        "items": [
-          {
-            "items": "create_engines:maf_sensor"
-          }
-        ]
+        "event": "maf_reading"
       },
-      "trigger": "minecraft:inventory_changed"
+      "trigger": "create_engines:event"
     }
   },
   "display": {

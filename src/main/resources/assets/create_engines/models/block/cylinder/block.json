@@ -2,7 +2,7 @@
   "parent": "block/block",
   "textures": {
     "frame": "create:block/andesite_casing",
-    "rim": "create:block/industrial_iron_block",
+    "rim": "create_engines:block/cast_iron",
     "particle": "create:block/andesite_casing"
   },
   "elements": [

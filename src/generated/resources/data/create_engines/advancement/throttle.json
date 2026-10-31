@@ -3,13 +3,9 @@
   "criteria": {
     "throttle": {
       "conditions": {
-        "items": [
-          {
-            "items": "create_engines:throttle"
-          }
-        ]
+        "event": "throttled"
       },
-      "trigger": "minecraft:inventory_changed"
+      "trigger": "create_engines:event"
     }
   },
   "display": {

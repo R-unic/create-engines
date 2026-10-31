@@ -3,13 +3,9 @@
   "criteria": {
     "timing_tool": {
       "conditions": {
-        "items": [
-          {
-            "items": "create_engines:timing_tool"
-          }
-        ]
+        "event": "tool_used"
       },
-      "trigger": "minecraft:inventory_changed"
+      "trigger": "create_engines:event"
     }
   },
   "display": {

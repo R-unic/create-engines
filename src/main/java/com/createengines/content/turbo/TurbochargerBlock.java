@@ -46,6 +46,11 @@ public class TurbochargerBlock extends DirectionalBlock implements InlineDuct, I
 		registerDefaultState(defaultBlockState().setValue(FACING, Direction.UP));
 	}
 
+	/** Whether the turbine has a ring of variable vanes. */
+	public boolean variableGeometry() {
+		return false;
+	}
+
 	@Override
 	public boolean acceptsPipe(BlockState state, Direction side, PortKind kind) {
 		Direction facing = state.getValue(FACING);

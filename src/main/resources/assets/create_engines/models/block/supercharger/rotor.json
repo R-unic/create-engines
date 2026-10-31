@@ -1,9 +1,9 @@
 {
   "parent": "block/block",
   "textures": {
-    "shaft": "create:block/industrial_iron_block",
-    "lobe": "create:block/brass_block",
-    "particle": "create:block/brass_block"
+    "shaft": "create_engines:block/cast_iron",
+    "lobe": "create_engines:block/brass",
+    "particle": "create_engines:block/brass"
   },
   "elements": [
     {

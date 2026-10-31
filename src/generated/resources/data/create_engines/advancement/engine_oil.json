@@ -3,13 +3,9 @@
   "criteria": {
     "engine_oil": {
       "conditions": {
-        "items": [
-          {
-            "items": "create_engines:engine_oil_bucket"
-          }
-        ]
+        "event": "oiled"
       },
-      "trigger": "minecraft:inventory_changed"
+      "trigger": "create_engines:event"
     }
   },
   "display": {

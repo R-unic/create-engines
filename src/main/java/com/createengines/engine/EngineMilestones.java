@@ -4,6 +4,7 @@ import java.util.EnumSet;
 import java.util.Set;
 
 import com.createengines.advancement.Milestone;
+import com.createengines.engine.topology.PrecisionParts;
 
 /**
  * Works out which {@link Milestone}s an engine has reached from a snapshot of how it is doing. Kept free of the
@@ -115,6 +116,74 @@ public final class EngineMilestones {
 		return true;
 	}
 
+	/** Rotors that have to be firing together for an engine to count as having several. */
+	public static final int TWIN_ROTORS = 2;
+
+	/**
+	 * What an engine's Wankel rotors are doing.
+	 *
+	 * @param running       the engine is running on its own power
+	 * @param rpm           its speed
+	 * @param rotorsFiring  rotor housings with a chamber that lit last cycle
+	 */
+	public record Rotary(boolean running, float rpm, int rotorsFiring) {
+	}
+
+	public static Set<Milestone> reachedRotary(Rotary r) {
+		Set<Milestone> reached = EnumSet.noneOf(Milestone.class);
+		if (!r.running() || r.rotorsFiring() < 1)
+			return reached;
+		reached.add(Milestone.ROTARY_ENGINE);
+		if (r.rpm() >= HIGH_REVS)
+			reached.add(Milestone.ROTARY_REVS);
+		if (r.rotorsFiring() >= TWIN_ROTORS)
+			reached.add(Milestone.TWIN_ROTORS);
+		return reached;
+	}
+
+	/** Speed a flywheel has to be carrying an engine through its strokes at, to count. */
+	public static final float FLYWHEEL_RPM = 30;
+	/** Share of its rating an engine may lose to rough running and still count as smooth. */
+	public static final float SMOOTH_LOSS = 0.02f;
+	/** How far a variable turbo's vanes have to be closed, making boost, to count as catching a thin exhaust. */
+	public static final float VANES_CLOSING = 0.2f;
+
+	/**
+	 * What an engine's mass and turbo mechanics are doing.
+	 *
+	 * @param running         the engine is running on its own power
+	 * @param rpm             its speed
+	 * @param flywheelInertia inertia of the flywheels on its crankshaft's line
+	 * @param roughness       share of its rating that rough running takes off
+	 * @param vaneBoost       a variable-geometry turbo is making boost with its vanes partly closed
+	 * @param antiLagBoost    anti-lag is burning fuel in an exhaust and a turbo is making boost
+	 * @param firing          cylinders firing
+	 * @param vee             two firing cylinders share a throw a quarter turn apart
+	 * @param flat            two firing cylinders share a throw on opposite sides
+	 * @param dynoRead        a dynamometer block is showing this engine's finished torque curve
+	 */
+	public record Mechanics(boolean running, float rpm, double flywheelInertia, float roughness, boolean vaneBoost,
+							boolean antiLagBoost, int firing, boolean vee, boolean flat, boolean dynoRead) {
+	}
+
+	public static Set<Milestone> reachedMechanics(Mechanics m) {
+		Set<Milestone> reached = EnumSet.noneOf(Milestone.class);
+		if (m.running() && m.flywheelInertia() > 0 && m.rpm() >= FLYWHEEL_RPM && m.roughness() <= SMOOTH_LOSS)
+			reached.add(Milestone.FLYWHEEL_SMOOTH);
+		if (m.running() && m.firing() >= EVEN_FIRING_CYLINDERS && m.vee())
+			reached.add(Milestone.VEE_ENGINE);
+		if (m.running() && m.firing() >= EVEN_FIRING_CYLINDERS && m.flat())
+			reached.add(Milestone.FLAT_ENGINE);
+		if (m.running() && m.dynoRead())
+			reached.add(Milestone.DYNO_RUN);
+		if (m.vaneBoost())
+			reached.add(Milestone.VARIABLE_VANES);
+		// Off the throttle the engine is not running on its own power, so this is not tied to it
+		if (m.antiLagBoost())
+			reached.add(Milestone.ANTI_LAG);
+		return reached;
+	}
+
 	/** Boost one stage has to make to count towards stacking boost. */
 	public static final float STAGE_BOOST = 0.2f;
 
@@ -146,6 +215,72 @@ public final class EngineMilestones {
 			reached.add(Milestone.TWINCHARGED);
 		if (i.cooledBoost() >= BOOST)
 			reached.add(Milestone.COOLED_CHARGE);
+		return reached;
+	}
+
+	/** Lubrication an engine needs for oil to count as doing its job. */
+	public static final float OILED = 0.5f;
+	/** Throttle opening below which a throttle body counts as throttling the intake. */
+	public static final float THROTTLING = 0.95f;
+
+	/**
+	 * Which parts a running engine is putting to work. Each is about the part doing its job, not being fitted: an
+	 * advancement for a part goes to whoever runs an engine that uses it.
+	 *
+	 * @param running        the engine is running on its own power
+	 * @param camTimed       a firing cylinder has its valves opened by a camshaft
+	 * @param piped          a firing cylinder breathes in and out through piped intake and exhaust
+	 * @param throttled      a firing cylinder's intake is held partly closed by a throttle body
+	 * @param diesel         the engine is burning diesel
+	 * @param gasoline       the engine is burning gasoline
+	 * @param lubrication    how well oiled the engine is, 0 to 1
+	 * @param sump           an oil sump is on the engine
+	 * @param mafReading     a MAF sensor is reading the air that cylinders draw
+	 * @param lambdaReading  a lambda sensor is reading the exhaust of cylinders that fired
+	 * @param governing      a governor is pulling the fuel rack back to hold the engine's speed
+	 * @param precision      {@link PrecisionParts} bits of the precision parts in firing cylinders
+	 * @param rotorHousingTurning a rotor housing is in a crankshaft that is turning, running or not
+	 */
+	public record Parts(boolean running, boolean camTimed, boolean piped, boolean throttled, boolean diesel,
+						boolean gasoline, float lubrication, boolean sump, boolean mafReading, boolean lambdaReading,
+						boolean governing, int precision, boolean rotorHousingTurning) {
+	}
+
+	public static Set<Milestone> reachedParts(Parts p) {
+		Set<Milestone> reached = EnumSet.noneOf(Milestone.class);
+		if (p.rotorHousingTurning())
+			reached.add(Milestone.ROTOR_HOUSING_TURNED);
+		if (!p.running())
+			return reached;
+		if (p.camTimed())
+			reached.add(Milestone.CAMSHAFT_TIMED);
+		if (p.piped())
+			reached.add(Milestone.PIPED_ENGINE);
+		if (p.throttled())
+			reached.add(Milestone.THROTTLED);
+		if (p.diesel())
+			reached.add(Milestone.DIESEL_BURNED);
+		if (p.gasoline())
+			reached.add(Milestone.GASOLINE_BURNED);
+		if (p.lubrication() >= OILED) {
+			reached.add(Milestone.OILED);
+			if (p.sump())
+				reached.add(Milestone.SUMP_OILING);
+		}
+		if (p.mafReading())
+			reached.add(Milestone.MAF_READING);
+		if (p.lambdaReading())
+			reached.add(Milestone.LAMBDA_READING);
+		if (p.governing())
+			reached.add(Milestone.GOVERNOR_ACTIVE);
+		if (PrecisionParts.has(p.precision(), PrecisionParts.BORE))
+			reached.add(Milestone.PRECISION_BORE);
+		if (PrecisionParts.has(p.precision(), PrecisionParts.HEAD))
+			reached.add(Milestone.PRECISION_HEAD);
+		if (PrecisionParts.has(p.precision(), PrecisionParts.PISTON))
+			reached.add(Milestone.PRECISION_PISTON);
+		if (PrecisionParts.has(p.precision(), PrecisionParts.INJECTOR))
+			reached.add(Milestone.PRECISION_INJECTOR);
 		return reached;
 	}
 

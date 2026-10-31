@@ -1,0 +1,29 @@
+{
+  "parent": "create_engines:crankshaft",
+  "criteria": {
+    "rotor_housing": {
+      "conditions": {
+        "event": "rotor_housing_turned"
+      },
+      "trigger": "create_engines:event"
+    }
+  },
+  "display": {
+    "description": {
+      "translate": "advancement.create_engines.rotor_housing.desc"
+    },
+    "icon": {
+      "count": 1,
+      "id": "create_engines:rotor_housing"
+    },
+    "title": {
+      "translate": "advancement.create_engines.rotor_housing"
+    }
+  },
+  "requirements": [
+    [
+      "rotor_housing"
+    ]
+  ],
+  "sends_telemetry_event": true
+}

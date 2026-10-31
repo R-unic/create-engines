@@ -1,9 +1,9 @@
 {
   "parent": "block/block",
   "textures": {
-    "piston": "minecraft:block/iron_block",
-    "ring": "create:block/industrial_iron_block",
-    "particle": "minecraft:block/iron_block"
+    "piston": "create_engines:block/steel",
+    "ring": "create_engines:block/cast_iron",
+    "particle": "create_engines:block/steel"
   },
   "elements": [
     {

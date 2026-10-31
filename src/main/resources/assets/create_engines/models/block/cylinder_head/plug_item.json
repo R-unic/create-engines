@@ -1,9 +1,9 @@
 {
   "parent": "block/block",
   "textures": {
-    "ceramic": "minecraft:block/quartz_block_top",
-    "terminal": "create:block/industrial_iron_block",
-    "particle": "minecraft:block/quartz_block_top"
+    "ceramic": "create_engines:block/ceramic",
+    "terminal": "create_engines:block/cast_iron",
+    "particle": "create_engines:block/ceramic"
   },
   "elements": [
     {

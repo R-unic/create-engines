@@ -15,15 +15,19 @@ import com.createengines.content.camshaft.CamshaftBlock;
 import com.createengines.content.crankshaft.CrankThrowBlock;
 import com.createengines.content.crankshaft.CrankshaftBlock;
 import com.createengines.content.cylinder.CylinderBlock;
+import com.createengines.content.dyno.DynoBlock;
+import com.createengines.content.flywheel.CastFlywheelBlock;
 import com.createengines.content.governor.GovernorBlock;
 import com.createengines.content.head.CylinderHeadBlock;
 import com.createengines.content.intercooler.IntercoolerBlock;
 import com.createengines.content.limiter.RevLimiterBlock;
+import com.createengines.content.rotor.RotorHousingBlock;
 import com.createengines.content.starter.StarterBlock;
 import com.createengines.content.sump.SumpBlock;
 import com.createengines.content.supercharger.SuperchargerBlock;
 import com.createengines.content.transmission.TransmissionBlock;
 import com.createengines.content.turbo.TurbochargerBlock;
+import com.createengines.content.turbo.VariableTurbochargerBlock;
 import com.simibubi.create.foundation.data.AssetLookup;
 import com.simibubi.create.foundation.data.BlockStateGen;
 import com.simibubi.create.foundation.data.ModelGen;
@@ -63,6 +67,28 @@ public final class CEBlocks {
 		.item()
 		.transform(ModelGen.customItemModel())
 		.register();
+
+	/**
+	 * A Wankel rotor housing: a crankshaft link that is its own cylinder and head, with ports instead of valves. It
+	 * takes a rotor, an injector and a spark plug by hand, like a head.
+	 */
+	public static final BlockEntry<RotorHousingBlock> ROTOR_HOUSING =
+		REGISTRATE.block("rotor_housing", RotorHousingBlock::new)
+			.initialProperties(SharedProperties::softMetal)
+			.properties(p -> p.noOcclusion()
+				.mapColor(MapColor.COLOR_ORANGE))
+			.transform(TagGen.pickaxeOnly())
+			.blockstate((c, p) -> BlockStateGen.axisBlock(c, p, s -> {
+				boolean injector = s.getValue(RotorHousingBlock.HAS_INJECTOR);
+				boolean plug = s.getValue(RotorHousingBlock.HAS_SPARK_PLUG);
+				if (injector && plug)
+					return AssetLookup.partialBaseModel(c, p, "injector", "plug");
+				return plug ? AssetLookup.partialBaseModel(c, p, "plug")
+					: AssetLookup.partialBaseModel(c, p, injector ? "injector" : "");
+			}))
+			.item()
+			.transform(ModelGen.customItemModel())
+			.register();
 
 	public static final BlockEntry<CylinderBlock> CYLINDER = REGISTRATE.block("cylinder", CylinderBlock::new)
 		.initialProperties(SharedProperties::softMetal)
@@ -278,6 +304,29 @@ public final class CEBlocks {
 		.transform(ModelGen.customItemModel())
 		.register();
 
+	/** An iron disc on the crankshaft's line: cheap rotating mass that evens out the engine's power strokes. */
+	public static final BlockEntry<CastFlywheelBlock> CAST_FLYWHEEL =
+		REGISTRATE.block("cast_flywheel", CastFlywheelBlock::new)
+			.initialProperties(SharedProperties::softMetal)
+			.properties(p -> p.noOcclusion()
+				.mapColor(MapColor.METAL))
+			.transform(TagGen.pickaxeOnly())
+			.blockstate((c, p) -> BlockStateGen.axisBlock(c, p, s -> AssetLookup.partialBaseModel(c, p)))
+			.item()
+			.transform(ModelGen.customItemModel())
+			.register();
+
+	/** Set against an engine, it shows the engine's torque and power curves. */
+	public static final BlockEntry<DynoBlock> DYNO = REGISTRATE.block("dyno", DynoBlock::new)
+		.initialProperties(SharedProperties::softMetal)
+		.properties(p -> p.noOcclusion()
+			.mapColor(MapColor.METAL))
+		.transform(TagGen.pickaxeOnly())
+		.blockstate((c, p) -> BlockStateGen.simpleBlock(c, p, s -> AssetLookup.partialBaseModel(c, p)))
+		.item()
+		.transform(ModelGen.customItemModel())
+		.register();
+
 	public static final BlockEntry<SumpBlock> SUMP = REGISTRATE.block("sump", SumpBlock::new)
 		.initialProperties(SharedProperties::softMetal)
 		.properties(p -> p.noOcclusion()
@@ -293,6 +342,19 @@ public final class CEBlocks {
 			.initialProperties(SharedProperties::copperMetal)
 			.properties(p -> p.noOcclusion()
 				.mapColor(MapColor.COLOR_ORANGE))
+			.transform(TagGen.pickaxeOnly())
+			.blockstate((c, p) -> BlockStateGen.directionalBlockIgnoresWaterlogged(c, p,
+				s -> AssetLookup.partialBaseModel(c, p)))
+			.item()
+			.transform(ModelGen.customItemModel())
+			.register();
+
+	/** A turbocharger whose turbine has variable vanes: it spools sooner and chokes the exhaust less at full flow. */
+	public static final BlockEntry<VariableTurbochargerBlock> VARIABLE_TURBOCHARGER =
+		REGISTRATE.block("variable_turbocharger", VariableTurbochargerBlock::new)
+			.initialProperties(SharedProperties::copperMetal)
+			.properties(p -> p.noOcclusion()
+				.mapColor(MapColor.GOLD))
 			.transform(TagGen.pickaxeOnly())
 			.blockstate((c, p) -> BlockStateGen.directionalBlockIgnoresWaterlogged(c, p,
 				s -> AssetLookup.partialBaseModel(c, p)))

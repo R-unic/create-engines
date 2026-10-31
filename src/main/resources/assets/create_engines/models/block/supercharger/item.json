@@ -2,13 +2,13 @@
   "parent": "block/block",
   "textures": {
     "housing": "create:block/andesite_casing",
-    "plate": "create:block/industrial_iron_block",
-    "fin": "create:block/dark_metal_block",
-    "bolt": "create:block/brass_block",
+    "plate": "create_engines:block/cast_iron",
+    "fin": "create_engines:block/black_oxide",
+    "bolt": "create_engines:block/brass",
     "flange": "create:block/copper_casing",
-    "particle": "create:block/brass_block",
-    "shaft": "create:block/industrial_iron_block",
-    "lobe": "create:block/brass_block"
+    "particle": "create_engines:block/brass",
+    "shaft": "create_engines:block/cast_iron",
+    "lobe": "create_engines:block/brass"
   },
   "elements": [
     {

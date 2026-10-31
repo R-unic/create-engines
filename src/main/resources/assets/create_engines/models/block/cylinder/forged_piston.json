@@ -1,10 +1,10 @@
 {
   "parent": "block/block",
   "textures": {
-    "piston": "create:block/dark_metal_block",
-    "ring": "create:block/brass_block",
-    "pin": "minecraft:block/iron_block",
-    "particle": "create:block/dark_metal_block"
+    "piston": "create_engines:block/black_oxide",
+    "ring": "create_engines:block/brass",
+    "pin": "create_engines:block/steel",
+    "particle": "create_engines:block/black_oxide"
   },
   "elements": [
     {

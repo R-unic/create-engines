@@ -12,12 +12,15 @@ import com.createengines.advancement.CETriggers;
 import com.createengines.advancement.Milestone;
 import com.createengines.content.camshaft.CamshaftBlockEntity;
 import com.createengines.content.crankshaft.CrankshaftBlockEntity;
+import com.createengines.content.rotor.RotorHousingBlockEntity;
+import com.createengines.engine.EngineController;
 import com.createengines.engine.topology.CylinderFault;
 import com.createengines.engine.topology.EngineLayout;
 import com.createengines.engine.topology.EngineScanner;
 import com.createengines.engine.topology.FiringPlanner;
 import com.createengines.engine.topology.FiringPlanner.Plan;
 import com.createengines.engine.topology.FiringPlanner.Style;
+import com.createengines.engine.topology.RotorPlanner;
 import com.createengines.registry.CELang;
 
 import net.minecraft.ChatFormatting;
@@ -58,22 +61,38 @@ public class TimingToolItem extends Item {
 		super(properties);
 	}
 
-	public static Style style(ItemStack stack) {
+	/** The styles of timing, then one more mode that tunes fuel instead of timing. */
+	private static final int MODES = STYLES.length + 1;
+	private static final int TUNE = STYLES.length;
+
+	private static int mode(ItemStack stack) {
 		CustomData data = stack.get(DataComponents.CUSTOM_DATA);
 		if (data == null)
-			return Style.SMOOTH;
-		int index = data.copyTag()
-			.getInt(STYLE_TAG);
-		return STYLES[Math.floorMod(index, STYLES.length)];
+			return 0;
+		return Math.floorMod(data.copyTag()
+			.getInt(STYLE_TAG), MODES);
 	}
 
-	private static void setStyle(ItemStack stack, Style style) {
-		CustomData.update(DataComponents.CUSTOM_DATA, stack, tag -> tag.putInt(STYLE_TAG, style.ordinal()));
+	/** The style the tool times with; in tuning mode it is not used. */
+	public static Style style(ItemStack stack) {
+		int mode = mode(stack);
+		return mode == TUNE ? Style.SMOOTH : STYLES[mode];
 	}
 
-	private static Component styleName(Style style) {
-		return CELang.translate("tool.timing_tool.style." + style.name()
-			.toLowerCase(java.util.Locale.ROOT))
+	/** Whether the tool is set to tune fuel rather than set a firing order. */
+	public static boolean tuning(ItemStack stack) {
+		return mode(stack) == TUNE;
+	}
+
+	private static void setMode(ItemStack stack, int mode) {
+		CustomData.update(DataComponents.CUSTOM_DATA, stack, tag -> tag.putInt(STYLE_TAG, mode));
+	}
+
+	private static Component modeName(ItemStack stack) {
+		int mode = mode(stack);
+		String name = mode == TUNE ? "tune" : STYLES[mode].name()
+			.toLowerCase(java.util.Locale.ROOT);
+		return CELang.translate("tool.timing_tool.style." + name)
 			.component();
 	}
 
@@ -97,24 +116,27 @@ public class TimingToolItem extends Item {
 			cycle(stack, level, player);
 			return InteractionResult.sidedSuccess(level.isClientSide);
 		}
-		if (!level.isClientSide)
-			time(level, context.getClickedPos(), stack, player);
+		if (!level.isClientSide) {
+			if (tuning(stack))
+				tune(level, context.getClickedPos(), player);
+			else
+				time(level, context.getClickedPos(), stack, player);
+		}
 		return InteractionResult.sidedSuccess(level.isClientSide);
 	}
 
 	private static void cycle(ItemStack stack, Level level, Player player) {
-		Style next = STYLES[(style(stack).ordinal() + 1) % STYLES.length];
 		if (level.isClientSide)
 			return;
-		setStyle(stack, next);
-		player.displayClientMessage(CELang.translate("tool.timing_tool.style", styleName(next))
+		setMode(stack, (mode(stack) + 1) % MODES);
+		player.displayClientMessage(CELang.translate("tool.timing_tool.style", modeName(stack))
 			.component(), true);
 		level.playSound(null, player.blockPosition(), SoundEvents.UI_BUTTON_CLICK.value(), SoundSource.PLAYERS, 0.5f, 1.4f);
 	}
 
 	@Override
 	public void appendHoverText(ItemStack stack, TooltipContext context, List<Component> tooltip, TooltipFlag flag) {
-		tooltip.add(CELang.translate("tool.timing_tool.style", styleName(style(stack)))
+		tooltip.add(CELang.translate("tool.timing_tool.style", modeName(stack))
 			.component()
 			.copy()
 			.withStyle(ChatFormatting.AQUA));
@@ -136,7 +158,66 @@ public class TimingToolItem extends Item {
 	 * What timing an engine did: the plan it set, and how many cylinders were left out of it. The plan is null if the
 	 * engine had no working cylinder with a cam lobe to time. {@code lines} is how many crankshafts it was timed across.
 	 */
-	public record Result(@Nullable Plan plan, int skipped, int cylinders, int lines) {
+	public record Result(@Nullable Plan plan, int skipped, int cylinders, int lines, int rotors,
+						 double rotorDeviation) {
+
+		public Result(@Nullable Plan plan, int skipped, int cylinders, int lines) {
+			this(plan, skipped, cylinders, lines, 0, 0);
+		}
+
+		/** Whether the rotors, with the cylinders already timed, fire evenly round the cycle. */
+		public boolean rotorsEven() {
+			return rotors > 0 && rotorDeviation < 0.5;
+		}
+	}
+
+	/** A rotor housing to time: its entity, and which way its crank line turns relative to the engine. */
+	private record RotorJob(RotorHousingBlockEntity housing, int sense) {
+	}
+
+	/**
+	 * Tunes the fuel of the engine the block at {@code clicked} belongs to, at the speed it is turning now (see
+	 * {@link EngineController#tuneFuel}). Returns null if the block is not part of a built engine.
+	 */
+	public static @Nullable EngineController.Tuning tuneFuel(Level level, BlockPos clicked) {
+		Set<BlockPos> seeds = EngineScanner.crankSeeds(level, clicked);
+		EngineLayout layout = seeds.isEmpty() ? null : EngineScanner.scan(level, seeds.iterator()
+			.next());
+		if (layout == null || !(level.getBlockEntity(layout.primary()) instanceof CrankshaftBlockEntity crank)
+			|| crank.controller() == null)
+			return null;
+		return crank.controller()
+			.tuneFuel(level);
+	}
+
+	private static void tune(Level level, BlockPos clicked, Player player) {
+		EngineController.Tuning tuning = tuneFuel(level, clicked);
+		if (tuning == null) {
+			tell(player, CELang.translate("tool.timing_tool.no_engine")
+				.component(), ChatFormatting.RED);
+			return;
+		}
+		if (tuning.rpm() == 0) {
+			tell(player, CELang.translate("tool.timing_tool.tune.stopped")
+				.component(), ChatFormatting.GOLD);
+			return;
+		}
+		if (tuning.tuned() == 0) {
+			tell(player, CELang.translate("tool.timing_tool.tune.nothing")
+				.component(), ChatFormatting.GOLD);
+			return;
+		}
+		tell(player, CELang.translate("tool.timing_tool.tune.done", tuning.tuned(), tuning.rpm())
+			.component(), ChatFormatting.GREEN);
+		if (tuning.skipped() > 0)
+			player.displayClientMessage(CELang.translate("tool.timing_tool.tune.skipped", tuning.skipped())
+				.component()
+				.copy()
+				.withStyle(ChatFormatting.GRAY), false);
+		level.playSound(null, clicked, SoundEvents.NETHERITE_BLOCK_PLACE, SoundSource.BLOCKS, 0.7f, 1.4f);
+		if (player instanceof ServerPlayer server)
+			CETriggers.EVENT.get()
+				.trigger(server, Milestone.FUEL_TUNED);
 	}
 
 	private static void time(Level level, BlockPos clicked, ItemStack stack, Player player) {
@@ -146,27 +227,36 @@ public class TimingToolItem extends Item {
 				.component(), ChatFormatting.RED);
 			return;
 		}
-		if (result.plan() == null) {
+		if (result.plan() == null && result.rotors() == 0) {
 			tell(player, CELang.translate("tool.timing_tool.no_cylinders")
 				.component(), ChatFormatting.RED);
 			return;
 		}
-		report(player, result.plan(), result.skipped());
+		if (result.plan() != null)
+			report(player, result.plan(), result.skipped());
+		if (result.rotors() > 0)
+			reportRotors(player, result, result.plan() == null);
 		if (result.lines() > 1)
 			player.displayClientMessage(CELang.translate("tool.timing_tool.coupled", result.lines())
 				.component()
 				.copy()
 				.withStyle(ChatFormatting.GRAY), false);
 		level.playSound(null, clicked, SoundEvents.NETHERITE_BLOCK_PLACE, SoundSource.BLOCKS, 0.7f, 1.8f);
+		if (player instanceof ServerPlayer server)
+			CETriggers.EVENT.get()
+				.trigger(server, Milestone.TOOL_USED);
 		Plan plan = result.plan();
-		if (plan.even() && plan.order().length >= 4 && plan.mistimed() == 0 && player instanceof ServerPlayer server)
+		boolean pistonsTimed = plan != null && plan.even() && plan.order().length >= 4 && plan.mistimed() == 0;
+		boolean rotorsTimed = result.rotorsEven() && result.rotors() >= 2 && (plan == null || plan.even());
+		if ((pistonsTimed || rotorsTimed) && player instanceof ServerPlayer server)
 			CETriggers.EVENT.get()
 				.trigger(server, Milestone.TOOL_TIMED);
 	}
 
 	/**
 	 * Times the engine that the block at {@code clicked} belongs to: works out the plan for {@code style} and sets every
-	 * throw and lobe to it. Returns null if the block is not part of an engine.
+	 * throw and lobe to it, and then each rotor's eccentric so that the rotors fill in between the cylinders. Returns null
+	 * if the block is not part of an engine.
 	 */
 	public static @Nullable Result apply(Level level, BlockPos clicked, Style style) {
 		Set<BlockPos> seeds = EngineScanner.crankSeeds(level, clicked);
@@ -175,11 +265,16 @@ public class TimingToolItem extends Item {
 		if (layout == null)
 			return null;
 		Job job = plan(level, layout);
-		if (job.cylinders()
-			.isEmpty())
-			return new Result(null, job.skipped(), 0, layout.lines());
-
 		int direction = direction(level, layout);
+		List<RotorJob> rotorJobs = rotors(level, layout);
+		if (job.cylinders()
+			.isEmpty()) {
+			if (rotorJobs.isEmpty())
+				return new Result(null, job.skipped(), 0, layout.lines());
+			double deviation = timeRotors(rotorJobs, style, direction, new double[0]);
+			return new Result(null, job.skipped(), 0, layout.lines(), rotorJobs.size(), deviation);
+		}
+
 		double[] throwAngles = new double[job.throwEntities()
 			.size()];
 		for (int i = 0; i < throwAngles.length; i++)
@@ -206,8 +301,42 @@ public class TimingToolItem extends Item {
 			job.lobeEntities()
 				.get(i).lobeAngle.setValue((int) Math.round(plan.lobeAngles()[i] / FiringPlanner.LOBE_STEP));
 
+		double deviation = rotorJobs.isEmpty() ? 0 : timeRotors(rotorJobs, style, direction, plan.fireAngles());
 		return new Result(plan, job.skipped(), job.cylinders()
-			.size(), layout.lines());
+			.size(), layout.lines(), rotorJobs.size(), deviation);
+	}
+
+	/** The working rotor housings of an engine, one entry each, in the order the scanner found them. */
+	private static List<RotorJob> rotors(Level level, EngineLayout layout) {
+		List<RotorJob> found = new ArrayList<>();
+		for (EngineLayout.Cylinder cylinder : layout.cylinders())
+			if (cylinder.rotary() && cylinder.chamber() == 0 && !CylinderFault.disables(cylinder.faults())
+				&& level.getBlockEntity(cylinder.pos()) instanceof RotorHousingBlockEntity housing
+				&& housing.throwAngle != null)
+				found.add(new RotorJob(housing, cylinder.sense()));
+		return found;
+	}
+
+	/**
+	 * Sets each rotor's eccentric so that the rotors, with the cylinders firing at {@code fixed}, fire as evenly as the
+	 * style allows. A rotor has no cam, so cams-only leaves the eccentrics as built. Returns how far from even the
+	 * engine's firings are.
+	 */
+	private static double timeRotors(List<RotorJob> jobs, Style style, int direction, double[] fixed) {
+		double[] current = new double[jobs.size()];
+		for (int i = 0; i < current.length; i++)
+			current[i] = RotorPlanner.phaseOf(jobs.get(i)
+				.housing()
+				.throwAngle(), jobs.get(i)
+					.sense(),
+				direction);
+		RotorPlanner.Plan plan = RotorPlanner.solve(style.stride(), fixed, current);
+		if (style != Style.CAMS_ONLY)
+			for (int i = 0; i < current.length; i++)
+				jobs.get(i)
+					.housing().throwAngle.setValue(throwStep(RotorPlanner.eccentricFor(plan.phases()[i], jobs.get(i)
+						.sense(), direction)));
+		return plan.deviation();
 	}
 
 	private static double wrap(double angle) {
@@ -236,6 +365,9 @@ public class TimingToolItem extends Item {
 		List<CamshaftBlockEntity> lobeEntities = new ArrayList<>();
 		int skipped = 0;
 		for (EngineLayout.Cylinder cylinder : layout.cylinders()) {
+			// A rotor has no cam, and is timed by its own eccentric (see timeRotors)
+			if (cylinder.rotary())
+				continue;
 			BlockPos lobe = cylinder.lobe();
 			if (CylinderFault.disables(cylinder.faults()) || lobe == null
 				|| !(level.getBlockEntity(cylinder.throwPos()) instanceof CrankshaftBlockEntity crank)
@@ -294,6 +426,21 @@ public class TimingToolItem extends Item {
 				.component()
 				.copy()
 				.withStyle(ChatFormatting.GRAY), false);
+	}
+
+	private static void reportRotors(Player player, Result result, boolean alone) {
+		Component message = result.rotors() < 2 && alone ? CELang.translate("tool.timing_tool.rotor")
+			.component()
+			: result.rotorsEven() ? CELang.translate("tool.timing_tool.rotors.even", result.rotors())
+				.component()
+				: CELang.translate("tool.timing_tool.rotors.uneven", result.rotors(), Math.round(result.rotorDeviation()))
+					.component();
+		ChatFormatting colour = result.rotors() < 2 && alone || result.rotorsEven() ? ChatFormatting.GREEN : ChatFormatting.GOLD;
+		if (alone)
+			tell(player, message, colour);
+		else
+			player.displayClientMessage(message.copy()
+				.withStyle(colour), false);
 	}
 
 	/** The gaps between firings, in degrees, in firing order, for the message. */

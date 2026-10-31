@@ -3,9 +3,12 @@ package com.createengines.engine;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.EnumMap;
+import java.util.HashSet;
 import java.util.IdentityHashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import org.jetbrains.annotations.Nullable;
 
@@ -22,11 +25,14 @@ import com.createengines.content.camshaft.CamshaftBlockEntity;
 import com.createengines.content.crankshaft.CrankshaftBlockEntity;
 import com.createengines.content.cylinder.CylinderBlockEntity;
 import com.createengines.content.head.CylinderHeadBlockEntity;
+import com.createengines.content.head.GalleryMember;
 import com.createengines.content.governor.GovernorBlockEntity;
+import com.createengines.content.rotor.RotorHousingBlockEntity;
 import com.createengines.content.limiter.RevLimiterBlockEntity;
 import com.createengines.content.starter.StarterBlockEntity;
 import com.createengines.content.sump.SumpBlockEntity;
 import com.createengines.content.supercharger.SuperchargerBlockEntity;
+import com.createengines.content.turbo.TurbochargerBlock;
 import com.createengines.content.turbo.TurbochargerBlockEntity;
 import com.createengines.engine.sim.CamProfile;
 import com.createengines.engine.sim.Camshaft;
@@ -42,6 +48,7 @@ import com.createengines.engine.sim.Governor;
 import com.createengines.engine.sim.IgnitionSource;
 import com.createengines.engine.sim.Mixture;
 import com.createengines.engine.sim.RevLimiter;
+import com.createengines.engine.sim.Roughness;
 import com.createengines.engine.sim.Sensors;
 import com.createengines.engine.sim.Throttle;
 import com.createengines.engine.sim.Intercooler;
@@ -54,10 +61,14 @@ import com.createengines.engine.topology.EngineLayout.CamLine;
 import com.createengines.engine.topology.EngineLayout.Cylinder;
 import com.createengines.engine.topology.EngineLayout.Turbo;
 import com.createengines.engine.topology.PrecisionParts;
+import com.createengines.registry.CEFluids;
+import com.simibubi.create.foundation.blockEntity.behaviour.scrollValue.ScrollValueBehaviour;
 import com.simibubi.create.infrastructure.config.AllConfigs;
 
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.material.Fluid;
 
 /**
  * Runs one engine: owns its simulation and couples it to Create's kinetic network through the primary crankshaft
@@ -91,6 +102,11 @@ public final class EngineController {
 	private static final double RATING_MARGIN = 0.9;
 	/** Ticks before the same milestone is reported again, for an operator who was offline when it was first reached. */
 	private static final int MILESTONE_COOLDOWN = 200;
+	/**
+	 * Mixture {@link #tuneFuel} aims for. A little lean of balanced, because an engine that burns cleaner speeds up, and
+	 * breathes less as it does, so it drifts richer after the tune.
+	 */
+	private static final double TUNE_MIXTURE = 0.9;
 	/** How close to its setting, as a share of it, a governed engine has to be held to count as on speed. */
 	private static final double GOVERNED_BAND = 0.03;
 	/** Ticks a governor has to hold an engine on its setting under load for it to count, ten seconds. */
@@ -115,11 +131,18 @@ public final class EngineController {
 	private final double oilParts;
 
 	private int ticks;
+	/** The tick a dynamometer block last read this engine's curve. */
+	private int dynoReadTick = -1000;
 	private int ticksSincePublish = PUBLISH_INTERVAL;
 	private int ticksSinceCapacity = CAPACITY_INTERVAL;
 	private double smoothedLoad;
 	private double[] torqueCurve = new double[Dynamometer.SPEEDS.length];
+	/** The free-running speed ripple at each speed of {@link #torqueCurve}, which roughness holds the rating back by. */
+	private double[] rippleCurve = new double[Dynamometer.SPEEDS.length];
 	private @Nullable List<Object> ratingKey;
+	/** The torque curve being measured, a speed a tick, and whether {@link #torqueCurve} has ever been a whole one. */
+	private Dynamometer.@Nullable Measurement rating;
+	private boolean rated;
 	private boolean cranking;
 	private @Nullable BlockPos activeStarter;
 	private EngineState previousState = EngineState.STALLED;
@@ -132,6 +155,11 @@ public final class EngineController {
 	private boolean limiting;
 	private boolean mafTrimming;
 	private boolean lambdaPresent;
+	private boolean mafReading;
+	private boolean lambdaReading;
+	private boolean governing;
+	/** The fuel gallery shared by every head, for telling which fuel the engine burns. */
+	private final GalleryFuelSupply fuels;
 
 	public EngineController(CrankshaftBlockEntity primary, EngineLayout layout, @Nullable Motion motion) {
 		this.primary = primary;
@@ -149,7 +177,8 @@ public final class EngineController {
 		Arrays.fill(portOpening, 1);
 
 		// Every head's tank feeds every injector, so fuel piped into any one head runs the whole engine
-		FuelSupply fuelGallery = new GalleryFuelSupply(level, layout.heads());
+		GalleryFuelSupply fuelGallery = new GalleryFuelSupply(level, layout.heads());
+		fuels = fuelGallery;
 		OilSupply oilGallery = new GalleryOilSupply(level, layout.heads());
 		// The pans are the engine's reserve and are drawn on first; the head tanks top up what they cannot give
 		OilSupply pans = new SumpOilSupply(level, layout.sumps());
@@ -181,8 +210,12 @@ public final class EngineController {
 			}
 			parts++;
 			Camshaft camshaft = cylinder.camLine() >= 0 ? camshafts.get(cylinder.camLine()) : null;
-			CylinderModel model = new CylinderModel(PrecisionParts.spec(cylinder.precision()), CamProfile.BASIC,
-				cylinder.tdcAngle(), camshaft, cylinder.lobeAngle());
+			// A rotor's ports are cut in its housing, so it needs no camshaft to time them
+			CylinderModel model = cylinder.rotary()
+				? CylinderModel.rotary(PrecisionParts.rotarySpec(cylinder.precision()), CamProfile.ROTARY,
+					cylinder.tdcAngle(), cylinder.chamber())
+				: new CylinderModel(PrecisionParts.spec(cylinder.precision()), CamProfile.BASIC, cylinder.tdcAngle(),
+					camshaft, cylinder.lobeAngle());
 			model.fuelSupply = CylinderFault.NO_INJECTOR.in(cylinder.faults()) ? FuelSupply.NONE : fuelGallery;
 			model.ignition = cylinder.sparkPlug() ? plugs : IgnitionSource.NONE;
 			model.intakeFactor = flow(cylinder.intake());
@@ -193,7 +226,7 @@ public final class EngineController {
 
 		oilParts = parts;
 
-		double inertia = idleInertia + layout.flywheels() * CEConfig.FLYWHEEL_INERTIA.get();
+		double inertia = idleInertia + layout.flywheelInertia();
 		for (EngineLayout.Segment segment : layout.segments())
 			inertia += segment.isThrow() ? CEConfig.THROW_INERTIA.get() : CEConfig.JOURNAL_INERTIA.get();
 		double friction = idleStatic + layout.segments()
@@ -220,6 +253,9 @@ public final class EngineController {
 				.filter(other -> other.exhaust() == turbo.exhaust() && other.exhaustParallel())
 				.count() : 1;
 			Turbocharger unit = new Turbocharger(turbine, compressor, 1d / Math.max(1, sharing));
+			unit.variableGeometry = level.getBlockState(turbo.pos())
+				.getBlock() instanceof TurbochargerBlock block && block.variableGeometry();
+			unit.antiLagFuel = fuelGallery;
 			unit.parallelTurbine = turbo.exhaustParallel();
 			unit.parallelCompressor = turbo.intakeParallel();
 			if (turbo.intakeParallel())
@@ -240,12 +276,22 @@ public final class EngineController {
 			.setFilm(motion == null ? 0 : motion.film());
 		sim.lubrication()
 			.setDilution(motion == null ? 0 : motion.dilution());
-		if (motion != null)
+		if (motion != null) {
 			sim.restore(motion.angle(), motion.omega(), motion.direction());
+			// Rotor chambers repeat every three turns, so carrying only the angle could swap their gas between them
+			if (motion.source() != null)
+				sim.restoreRotary(motion.source().sim.rotaryAngle());
+		}
 		for (CylinderModel model : working)
-			model.resetGas(model.pistonAngle(sim.angle(), sim.direction()));
-		if (motion != null && motion.source() != null)
+			model.resetGas(model.pistonAngle(sim.angle(), sim.rotaryAngle(), sim.direction()));
+		if (motion != null && motion.source() != null) {
 			carryCylinders(motion.source());
+			// A rebuilt engine is re-rated from scratch, but until that is done it is still the engine it was: dropping
+			// its rating to nothing for the moment that takes would overstress everything it was driving
+			torqueCurve = motion.source().torqueCurve;
+			rippleCurve = motion.source().rippleCurve;
+			rated = motion.source().rated;
+		}
 	}
 
 	/** How many compressors, turbo or blower, sit side by side on intake network {@code port} and share its air. */
@@ -348,6 +394,7 @@ public final class EngineController {
 			readFuelRacks(level);
 		if (ticks % RATING_INTERVAL == 1)
 			updateRating();
+		continueRating();
 
 		// Anything turning the crank harder than the engine itself: another kinetic source, or a starter
 		double floor = 0;
@@ -455,8 +502,25 @@ public final class EngineController {
 				.pos()) instanceof TurbochargerBlockEntity be) {
 				turbo.limit = be.boostLimit();
 				turbo.dump = be.dumping();
+				turbo.antiLag = be.antiLagLevel();
+				turbo.offThrottle = !sim.isStopped() && offThrottle(turbo);
 			}
 		}
+	}
+
+	/**
+	 * Whether every cylinder feeding a turbo's turbine is off the throttle: its fuel cut by a limiter, its rack shut by
+	 * redstone, its throttle closed or its governor holding it back. Then there is hardly any heat in the exhaust, and
+	 * anti-lag has something to do.
+	 */
+	private static boolean offThrottle(Turbocharger turbo) {
+		if (turbo.turbine()
+			.isEmpty())
+			return false;
+		for (CylinderModel cylinder : turbo.turbine())
+			if (!(cylinder.fuelCut || cylinder.rack < 0.3 || cylinder.fuelTrim < 0.3 || cylinder.governor < 0.3))
+				return false;
+		return true;
 	}
 
 	/**
@@ -502,11 +566,61 @@ public final class EngineController {
 			BlockPos head = layout.cylinders()
 				.get(i)
 				.head();
-			if (model != null && head != null && level.getBlockEntity(head) instanceof CylinderHeadBlockEntity be)
+			if (model != null && head != null && level.getBlockEntity(head) instanceof GalleryMember be)
 				model.metering = be.meteringFraction();
 			if (model != null)
 				model.airMatch = airMatch(level, i);
 		}
+	}
+
+	/** How many injectors {@link #tuneFuel} set, how many it left alone, and the speed it tuned them at. */
+	public record Tuning(int tuned, int skipped, int rpm) {
+	}
+
+	/**
+	 * Sets every injector's metering to what gave a balanced mixture over the last cycle at the speed the engine is
+	 * turning now, so that a beginner does not have to dial each head in by hand. Heads whose shot is already held by a
+	 * MAF sensor or a closed rack, and cylinders that did not inject, are left alone. A stopped engine tunes nothing.
+	 * Breathing falls with speed, so the result is right at this speed and drifts richer above it.
+	 */
+	public Tuning tuneFuel(Level level) {
+		if (sim.isStopped())
+			return new Tuning(0, 0, 0);
+		Map<BlockPos, double[]> readings = new LinkedHashMap<>();
+		int skipped = 0;
+		for (int i = 0; i < models.size(); i++) {
+			CylinderModel model = models.get(i);
+			BlockPos head = layout.cylinders()
+				.get(i)
+				.head();
+			if (model == null || head == null)
+				continue;
+			CycleStats last = model.lastCycle();
+			if (last.fuelInjected <= 0 || last.equivalence <= 0 || model.airMatch > 0 || model.rack < 0.99) {
+				skipped++;
+				continue;
+			}
+			double[] sum = readings.computeIfAbsent(head, $ -> new double[2]);
+			sum[0] += last.equivalence;
+			sum[1]++;
+		}
+		int tuned = 0;
+		for (Map.Entry<BlockPos, double[]> entry : readings.entrySet()) {
+			ScrollValueBehaviour metering =
+				switch (level.getBlockEntity(entry.getKey())) {
+					case CylinderHeadBlockEntity head -> head.metering;
+					case RotorHousingBlockEntity housing -> housing.metering;
+					case null, default -> null;
+				};
+			if (metering == null)
+				continue;
+			double mixture = entry.getValue()[0] / entry.getValue()[1];
+			int steps = (int) Math.round(Math.max(1, metering.getValue()) * TUNE_MIXTURE / mixture);
+			metering.setValue(Math.clamp(steps, CylinderHeadBlockEntity.MIN_METERING,
+				CylinderHeadBlockEntity.MAX_METERING));
+			tuned++;
+		}
+		return new Tuning(tuned, skipped + readings.size() - tuned, (int) Math.round(sim.rpm()));
 	}
 
 	/**
@@ -569,6 +683,7 @@ public final class EngineController {
 		boolean holding = fitted && !sim.isStopped() && Math.abs(sim.rpm() - target) <= GOVERNED_BAND * target
 			&& position > 0.05 && position < 0.95;
 		governedTicks = holding ? governedTicks + 1 : 0;
+		governing = fitted && !sim.isStopped() && position < 0.95;
 		float rpm = (float) sim.rpm();
 		for (BlockPos pos : layout.governors())
 			if (level.getBlockEntity(pos) instanceof GovernorBlockEntity be)
@@ -583,6 +698,8 @@ public final class EngineController {
 	private void readSensors(Level level) {
 		mafTrimming = false;
 		lambdaPresent = false;
+		mafReading = false;
+		lambdaReading = false;
 		boolean running = !sim.isStopped();
 		for (int port = 0; port < layout.ports()
 			.size(); port++) {
@@ -616,10 +733,13 @@ public final class EngineController {
 			float meanCharge = breathing == 0 ? 0 : (float) (charge / breathing);
 			float meanCut = breathing == 0 ? 0 : (float) (cut / breathing);
 			float meanMixture = firing == 0 ? Float.NaN : (float) (mixture / firing);
-			if (intake)
+			if (intake) {
+				mafReading |= breathing > 0;
 				mafTrimming |= breathing > 0 && meanCut >= EngineMilestones.MAF_TRIMMING;
-			else
+			} else {
 				lambdaPresent = true;
+				lambdaReading |= firing > 0;
+			}
 			for (BlockPos pos : network.sensors()) {
 				var be = level.getBlockEntity(pos);
 				if (be instanceof MafSensorBlockEntity maf && intake)
@@ -675,14 +795,62 @@ public final class EngineController {
 		key.add(sim.intercoolers()
 			.size());
 		key.add(sim.direction());
+		// The curve runs as fast as the network is allowed to turn, so a raised limit has to be measured for
+		float maxRpm = AllConfigs.server().kinetics.maxRotationSpeed.get();
+		key.add(maxRpm);
 		if (key.equals(ratingKey))
 			return;
 		ratingKey = key;
-		torqueCurve = Dynamometer.torqueCurve(sim);
+		rating = new Dynamometer.Measurement(sim, maxRpm);
+	}
+
+	/**
+	 * Measures one more speed of the torque curve being re-measured. The curve in use stays the old one until the new
+	 * one is whole, except for an engine that has none yet, which uses its new one as it fills: it is measured from the
+	 * slowest speed up, so the speeds it is turning at are there first.
+	 */
+	private void continueRating() {
+		if (rating == null)
+			return;
+		boolean done = rating.advance();
+		if (done || !rated) {
+			torqueCurve = rating.curve();
+			rippleCurve = rating.ripples();
+		}
+		if (done) {
+			rating = null;
+			rated = true;
+		}
+	}
+
+	/**
+	 * The engine's torque curve as the network can use it.
+	 *
+	 * @param rpm      the speeds it was measured at
+	 * @param torque   stress capacity per RPM the engine can be rated for at each, after roughness and the rating margin
+	 * @param current  the engine's speed now
+	 * @param complete the whole curve has been measured
+	 */
+	public record Curve(float[] rpm, float[] torque, float current, boolean complete) {
+	}
+
+	/** What a dynamometer block shows; asking for it counts as a dynamometer reading this engine. */
+	public Curve curve() {
+		dynoReadTick = ticks;
+		float maxRpm = AllConfigs.server().kinetics.maxRotationSpeed.get();
+		int points = Dynamometer.pointCount(maxRpm);
+		float[] rpm = new float[points];
+		float[] torque = new float[points];
+		double scale = CEConfig.STRESS_PER_TORQUE.get() * RATING_MARGIN;
+		for (int i = 0; i < points; i++) {
+			rpm[i] = (float) Dynamometer.speed(i);
+			torque[i] = (float) (Math.max(0, torqueCurve[i]) * Roughness.smoothness(rippleCurve[i]) * scale);
+		}
+		return new Curve(rpm, torque, (float) sim.rpm(), rated && rating == null);
 	}
 
 	private double ratedTorque() {
-		return sim.isStopped() ? 0 : Dynamometer.peakTorque(torqueCurve, sim.rpm()) * RATING_MARGIN;
+		return sim.isStopped() ? 0 : Dynamometer.ratedTorque(torqueCurve, rippleCurve, sim.rpm()) * RATING_MARGIN;
 	}
 
 	private void publishCapacity(double torqueScale) {
@@ -725,6 +893,17 @@ public final class EngineController {
 			if (camshaft != null && camshaft.isPhaseLocked())
 				firingAngles.add((float) model.firingRotorAngle());
 		}
+		// A rotor fires once a turn of the shaft, which in the engine's 720 degrees is twice; its three chambers are the
+		// same event, so only the first is listed
+		for (int i = 0; i < models.size(); i++) {
+			Cylinder placed = layout.cylinders()
+				.get(i);
+			if (models.get(i) == null || !placed.rotary() || placed.chamber() != 0)
+				continue;
+			float angle = (float) (((sim.direction() * placed.tdcAngle() + 180) % 360 + 360) % 360);
+			firingAngles.add(angle);
+			firingAngles.add(angle + 360);
+		}
 		firingAngles.sort(Float::compare);
 		float[] angles = new float[firingAngles.size()];
 		for (int i = 0; i < angles.length; i++)
@@ -734,7 +913,8 @@ public final class EngineController {
 			working, (float) sim.inertia(), (float) sim.lubrication()
 				.effective(),
 			activeStarter != null, angles, layout.lines(), (float) sim.lubrication()
-				.dilution());
+				.dilution(),
+			(float) (sim.isStopped() ? 0 : Dynamometer.roughnessLoss(torqueCurve, rippleCurve, sim.rpm())));
 	}
 
 	private void syncDiagnostics(Level level, double torqueScale) {
@@ -751,6 +931,11 @@ public final class EngineController {
 		for (int i = 0; i < models.size(); i++) {
 			Cylinder cylinder = layout.cylinders()
 				.get(i);
+			if (cylinder.rotary()) {
+				if (level.getBlockEntity(cylinder.pos()) instanceof RotorHousingBlockEntity housing)
+					housing.updateChamber(cylinder.chamber(), status(cylinder, models.get(i)));
+				continue;
+			}
 			if (!(level.getBlockEntity(cylinder.pos()) instanceof CylinderBlockEntity be))
 				continue;
 			CylinderModel model = models.get(i);
@@ -807,6 +992,21 @@ public final class EngineController {
 		}
 	}
 
+	/** What a rotor chamber shows through goggles and effects. */
+	private CylinderStatus status(Cylinder cylinder, @Nullable CylinderModel model) {
+		CycleStats last = model == null ? null : model.lastCycle();
+		FuelSpec fuel = model == null ? null : model.fuelSupply.fuel();
+		List<BlockPos> outlets = cylinder.exhaust() < 0 ? List.of() : layout.ports()
+			.get(cylinder.exhaust())
+			.outlets();
+		return new CylinderStatus(layout.primary(), cylinder.faults(),
+			last == null ? CycleResult.NONE : last.result, last != null && last.rich(), (float) cylinder.tdcAngle(),
+			Float.NaN, last == null || last.fuelInjected <= 0 ? Float.NaN : (float) last.compressionTemp,
+			fuel == null ? Float.NaN : (float) fuel.autoignitionTemp(), null, outlets, last != null && last.lean(),
+			last == null || last.equivalence <= 0 ? Float.NaN : (float) last.equivalence, cylinder.sparkPlug(),
+			model == null ? 0 : (float) model.fouling());
+	}
+
 	private void syncSuperchargers(Level level) {
 		for (int i = 0; i < blowers.size(); i++) {
 			Supercharger blower = blowers.get(i);
@@ -828,7 +1028,8 @@ public final class EngineController {
 					(float) turbo.backPressure(), (float) charge(turbo), !turbo.compressor()
 						.isEmpty(),
 					!turbo.turbine()
-						.isEmpty()));
+						.isEmpty(),
+					(float) turbo.vanes(), turbo.antiLagging()));
 		}
 	}
 
@@ -892,6 +1093,9 @@ public final class EngineController {
 		}
 		float rpm = (float) sim.rpm();
 		reportInduction(level, state);
+		reportRotary(level, state);
+		reportMechanics(level, state);
+		reportParts(level, state, firing);
 		EngineMilestones.Snapshot snapshot = new EngineMilestones.Snapshot(state, previousState, rpm,
 			activeStarter != null, firing, primary.publishedCapacity() * rpm, sparkFiring, (float) sim.lubrication()
 				.effective(),
@@ -902,13 +1106,105 @@ public final class EngineController {
 			governedTicks >= GOVERNED_TICKS, precision && cylinders >= EngineMilestones.EVEN_FIRING_CYLINDERS,
 			layout.lines() > 1);
 		previousState = state;
-		for (Milestone milestone : EngineMilestones.reached(snapshot)) {
+		award(level, EngineMilestones.reached(snapshot));
+	}
+
+	/** Credits the operator with each milestone, skipping any reported within the last {@link #MILESTONE_COOLDOWN} ticks. */
+	private void award(Level level, Set<Milestone> reached) {
+		for (Milestone milestone : reached) {
 			Integer last = milestoneTicks.get(milestone);
 			if (last != null && ticks - last < MILESTONE_COOLDOWN)
 				continue;
 			milestoneTicks.put(milestone, ticks);
 			Achievements.award(level, layout.members(), milestone);
 		}
+	}
+
+	/**
+	 * Credits the operator with the parts the engine is putting to work: the camshaft that times it, the pipes it
+	 * breathes through, the throttle, the fuel and oil it burns, its sensors and governor, and its precision parts.
+	 */
+	private void reportParts(Level level, EngineState state, int firing) {
+		boolean camTimed = false;
+		boolean piped = false;
+		boolean throttled = false;
+		int precision = 0;
+		for (int i = 0; i < models.size(); i++) {
+			CylinderModel model = models.get(i);
+			if (model == null || !model.lastCycle().result.fired())
+				continue;
+			Cylinder placed = layout.cylinders()
+				.get(i);
+			camTimed |= model.camshaft() != null && model.camshaft()
+				.isPhaseLocked();
+			piped |= placed.intake() >= 0 && placed.exhaust() >= 0;
+			throttled |= placed.intake() >= 0 && portOpening[placed.intake()] < EngineMilestones.THROTTLING;
+			precision |= placed.precision();
+		}
+		Fluid fuel = fuels.fluid();
+		boolean rotorHousing = false;
+		for (Cylinder placed : layout.cylinders())
+			rotorHousing |= placed.rotary();
+		award(level, EngineMilestones.reachedParts(new EngineMilestones.Parts(state == EngineState.RUNNING && firing > 0,
+			camTimed, piped, throttled, fuel != null && fuel.isSame(CEFluids.DIESEL.get()),
+			fuel != null && fuel.isSame(CEFluids.GASOLINE.get()), (float) sim.lubrication()
+				.effective(),
+			!layout.sumps()
+				.isEmpty(),
+			mafReading, lambdaReading, governing, precision, rotorHousing && !sim.isStopped())));
+	}
+
+	/** Credits the operator with a flywheel that smooths a running engine, variable vanes at work, and anti-lag. */
+	private void reportMechanics(Level level, EngineState state) {
+		boolean vaneBoost = false;
+		boolean antiLagBoost = false;
+		for (Turbocharger turbo : turbos) {
+			vaneBoost |= turbo.variableGeometry && turbo.boost() >= EngineMilestones.STAGE_BOOST
+				&& turbo.vanes() >= EngineMilestones.VANES_CLOSING;
+			antiLagBoost |= turbo.antiLagging() && turbo.boost() >= EngineMilestones.STAGE_BOOST;
+		}
+		float roughness = (float) (sim.isStopped() ? 0 : Dynamometer.roughnessLoss(torqueCurve, rippleCurve, sim.rpm()));
+		// Banks: firing pistons that share a throw, on sides a quarter turn apart (a vee) or opposite (flat)
+		Map<BlockPos, List<Direction>> bores = new java.util.HashMap<>();
+		int firing = 0;
+		for (int i = 0; i < models.size(); i++) {
+			CylinderModel model = models.get(i);
+			Cylinder placed = layout.cylinders()
+				.get(i);
+			if (model == null || placed.rotary() || !model.lastCycle().result.fired())
+				continue;
+			firing++;
+			bores.computeIfAbsent(placed.throwPos(), $ -> new ArrayList<>())
+				.add(placed.bore());
+		}
+		boolean vee = false;
+		boolean flat = false;
+		for (List<Direction> sides : bores.values())
+			for (int a = 0; a < sides.size(); a++)
+				for (int b = a + 1; b < sides.size(); b++) {
+					flat |= sides.get(a) == sides.get(b)
+						.getOpposite();
+					vee |= sides.get(a)
+						.getAxis() != sides.get(b)
+							.getAxis();
+				}
+		award(level, EngineMilestones.reachedMechanics(new EngineMilestones.Mechanics(state == EngineState.RUNNING,
+			(float) sim.rpm(), layout.flywheelInertia(), roughness, vaneBoost, antiLagBoost, firing, vee, flat,
+			ticks - dynoReadTick < 2 * SYNC_INTERVAL && rated && rating == null)));
+	}
+
+	/** Credits the operator with a running rotary engine, a high-revving one, and one with several rotors. */
+	private void reportRotary(Level level, EngineState state) {
+		Set<BlockPos> firing = new HashSet<>();
+		for (int i = 0; i < models.size(); i++) {
+			CylinderModel model = models.get(i);
+			Cylinder placed = layout.cylinders()
+				.get(i);
+			if (model != null && placed.rotary() && model.lastCycle().result.fired())
+				firing.add(placed.pos());
+		}
+		award(level, EngineMilestones.reachedRotary(
+			new EngineMilestones.Rotary(state == EngineState.RUNNING, (float) sim.rpm(), firing.size())));
 	}
 
 	/** Credits the operator with boost from superchargers, stacked stages and intercoolers. */
@@ -946,14 +1242,8 @@ public final class EngineController {
 			for (CylinderModel cylinder : cooler.charge())
 				if (cylinder.lastCycle().result.fired())
 					cooled = Math.max(cooled, (float) (cylinder.intakePressure - 1));
-		for (Milestone milestone : EngineMilestones.reachedInduction(new EngineMilestones.Induction(
-			state == EngineState.RUNNING, blowerBoost, turboStages, blowerStages, twinStages, cooled))) {
-			Integer last = milestoneTicks.get(milestone);
-			if (last != null && ticks - last < MILESTONE_COOLDOWN)
-				continue;
-			milestoneTicks.put(milestone, ticks);
-			Achievements.award(level, layout.members(), milestone);
-		}
+		award(level, EngineMilestones.reachedInduction(new EngineMilestones.Induction(
+			state == EngineState.RUNNING, blowerBoost, turboStages, blowerStages, twinStages, cooled)));
 	}
 
 	/** Called when this engine is being replaced or dismantled: stop driving the network. */

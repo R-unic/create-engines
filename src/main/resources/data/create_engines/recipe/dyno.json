@@ -1,0 +1,27 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "key": {
+    "I": {
+      "item": "create:iron_sheet"
+    },
+    "K": {
+      "item": "create:andesite_casing"
+    },
+    "S": {
+      "item": "create:shaft"
+    },
+    "R": {
+      "item": "minecraft:redstone"
+    }
+  },
+  "pattern": [
+    " R ",
+    "ISI",
+    "IKI"
+  ],
+  "result": {
+    "count": 1,
+    "id": "create_engines:dyno"
+  }
+}

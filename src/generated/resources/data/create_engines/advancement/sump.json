@@ -3,13 +3,9 @@
   "criteria": {
     "sump": {
       "conditions": {
-        "items": [
-          {
-            "items": "create_engines:sump"
-          }
-        ]
+        "event": "sump_oiling"
       },
-      "trigger": "minecraft:inventory_changed"
+      "trigger": "create_engines:event"
     }
   },
   "display": {

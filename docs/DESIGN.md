@@ -59,6 +59,7 @@ before relying on it.
 | Firing order tool | A **Timing Tool** (item) sets an engine's throws and cam lobes for the player. `engine.topology.FiringPlanner` (pure Java) takes each working cylinder's throw, bore offset and lobe and searches throw angles (15 degree steps) and the crank revolution each cylinder fires on by simulated annealing, minimising uneven spacing, then neighbours firing in a row, with a penalty for a cylinder sharing a lobe with another it fires at a different time. Four styles, changed by sneak-use: smooth (any angle), cross-plane (quarter turns), flat-plane (half turns) and cams only (throws left alone, lobes chosen exactly). It reports the firing order and spacing in the action bar, says when a layout cannot fire evenly (a 90 degree V12) or when a lobe is shared, and counts any cylinder it skipped. Achievements: Timing Light, Right on Time. |
 | Precision parts | Four parts that each improve the crude cylinder in one way, and add up (`CylinderSpec.build`, `PrecisionParts`): a **Precision Cylinder** block (machined liner: 1.2x compression, 0.7x static and 0.8x viscous wall friction), a **Precision Cylinder Head** block (four valves: 1.5x valve flow, 0.8x ignition delay), a **Forged Piston** item (0.7x inertia, 0.8x and 0.7x friction) and a **Precision Injector** item (0.8x ignition delay, 0.7x burn time). The two items install into the same slots as the ordinary piston and injector: `PartInstallation.Slot` sets the slot's own property and a second grade property beside it, so everything that asks only whether a piston or injector is fitted is untouched. Recipes consume Create's Precision Mechanism (pistons and injectors come two to a craft) and need the crude part first. On a straight-12 on gasoline each part is worth 3 to 30 percent of peak power (the head most, as it helps at speed) and all four about 60 percent, before a turbo. Achievements: Tighter Tolerances, Four Valves a Cylinder, Forged in Fire, Common Rail, Blueprinted. |
 | Coupled crankshafts | Crank lines that Create's gearing holds at exactly the same speed are one engine. `EngineScanner` finds them by walking the kinetic connections out from the crank (`CrankCoupling`, which asks Create's `RotationPropagator`, by reflection, which blocks are connected and by what speed ratio, so cogwheels, gearboxes, chain drives, belts and bevels all couple, and so does an engine that is standing still). Any crank block at a ratio of exactly +1 or -1 within `maxCouplingWalk` kinetic blocks joins, up to `maxCoupledLines` lines. The lines are put in position order, and the first line's start is the primary: the only generator, with the other lines carrying rotation. Each line has a *sense*, +1 if the gearing turns it the way the first line turns and -1 if the other way, and a cylinder's top dead centre in the engine's frame is its sense times its own, so the simulation needs no knowledge of coupling at all: every cylinder of every line is on the one rotor by the usual formula. Drawing follows, a line being shown at the primary's angle times its sense (Create draws a shaft at time times speed, so no phase offset arises). The Timing Tool plans a reversed line as its mirror image, flipping the sign of both its bore offsets and its throw angles, and a starter turns the engine the way its line's sense gives. Batteries, oil pans, governors, limiters and starters touching any line belong to the engine; fuel and oil are one gallery. Goggles name the count. Achievements: In Step (four or more cylinders firing on coupled cranks), Hypercar Money (sixteen firing cylinders). |
+| Rotary engines | A **Rotor Housing** is a Wankel: a link of the crankshaft line (it extends `CrankshaftBlock`, so it carries rotation, sets its **eccentric angle** in a value box like a throw, and is found by the same line walk) that is also its own cylinder and its own head. Right-click it with an **Engine Rotor**, a Fuel Injector (or Precision Injector) and a Spark Plug; sneak-right-click removes them. It is plumbed like a head: an intake pipe or Air Intake on one side, an exhaust on another (`AirflowPort`, the scanner counts it as a head on the pipe networks), fuel and oil piped in on any side, shared along the crank like a head's (`GalleryMember`, the interface the head and the housing both implement). There is **no camshaft and no valve**: the ports are cut in the housing, so `CamProfile.ROTARY` times them from the chamber's own cycle angle. The rotor turns at a third of the shaft and a chamber goes through two volume cycles per rotor turn, so a chamber's four-stroke cycle is **1080 shaft degrees** and its cycle angle is 2/3 of the shaft's (`CylinderModel.rotary`, `ROTARY_SCALE`); its three chambers are 360 shaft degrees apart, so a rotor fires **once a shaft turn, as often as two pistons**. The scanner turns one housing into three `EngineLayout.Cylinder` entries (`chamber` 0 to 2; -1 is a piston), so everything downstream (controller, dynamometer, turbos, intake and exhaust networks, MAF and lambda sensors, governor, limiter, goggles) sees three chambers and needed no change; a housing with no rotor is one disabled entry that drags nothing. Because 720 is not a multiple of 1080, `EngineSimulation` keeps a second angle (`rotaryAngle`, wrapped at 1080) that the chambers are timed from, and a rebuilt engine takes it from the engine it replaces so the chambers' gas stays with the right face. `CylinderSpec.ROTARY` is a chamber 0.65 of an ordinary cylinder's swept volume (`displacement`, a new spec field: gas, work and shot size scale with it), with lower compression (9.5), ports that breathe better than valves (32 against 20, so it keeps its torque at speed where a piston chokes), a slow burn (0.09 s against 0.06) and more wall friction but little inertia. A chamber **never compression-ignites** (`ported` chambers skip autoignition), so the housing needs a spark plug (`CylinderFault.NO_PLUG`) and a battery like any spark engine. `RotorEngine` numbers, on gasoline at 200% metering and a MAF sensor: one rotor peaks at about 2.2 cylinders' worth of power and is flat to 224 RPM (`RotaryEngineTest`). A housing has no cam, so the Timing Tool skips it (set the eccentric angles by hand: 180 degrees for two rotors, 120 for three) and a camshaft's redstone fuel rack does not reach it (use a Rev Limiter or Governor). The casing is an ordinary block model (open frame, so the rotor shows); `RotorHousingVisual` and `EnginePartRenderers.RotorHousing` draw the eccentric and the rotor, whose centre rides the eccentric and which spins at a third of its angle (`EnginePoses.rotor`, drawn with an exaggerated eccentricity). Bang and exhaust smoke follow the drawn shaft (`RotorHousingBlockEntity.tickClient`). Recipes: brass sheets, a copper casing and a crank throw for the housing, brass sheets and iron for the rotor. Achievements: Going in Circles, Triangle Offense, Valve? What Valve? (`ROTARY_ENGINE`), Apex Predator (`ROTARY_REVS`), Two Triangles (`TWIN_ROTORS`). |
 | Cost against output | Output is linear in cylinders: about 3.6k SU a cylinder on diesel and 5k on gasoline at the best speed, 8.5k with precision parts, 12k with a turbo on top. A Create steam engine is 11 items (a gold sheet, an andesite alloy, a copper block) for 16k SU, with a boiler and a burner to feed it. A working cylinder with its crank throw, cam lobe and ports used to cost about 28 items, so to keep the investment honest the cylinder, cylinder head, piston, connecting rod and fuel injector are now crafted two at a time (about 20 items a cylinder). What a large engine buys is not cheaper power per item but power in one compact place with no water and no boiler, which scales to many steam engines' worth on one crank or on coupled ones. |
 | Output against steam | The server config `stressPerTorque` is 100 (it was 40). A Create steam engine is 1024 SU/RPM at 16 RPM, 16384 SU, for a boiler and a heat source; combustion is meant to be well ahead of it for the cost of building and fuelling a large engine. `CombustionOutputTest` pins the dyno peak power at this calibration: a four-cylinder diesel is about one steam engine, a straight-12 on gasoline with a MAF sensor about four (roughly 60k SU), a full precision straight-12 about six and a turbo on top of that more than twelve. Refined fuel matters: gasoline is worth over a fifth more than diesel in the same engine. Advancements track it: Heavy Duty is 16384 SU (one steam engine), Steam Is for Kettles is 65536. Existing worlds keep the `stressPerTorque` they saved (40), and need the config value changed to see the new numbers. |
 | Names | Display name "Create: Engine Engineer"; mod id `create_engines`; package `com.createengines`. |
@@ -106,6 +107,7 @@ before relying on it.
   the automatic mixture matching removed above: a throttled engine is no longer flooded by closing the valve, but a
   mixture tuned for one speed still drifts rich above it. The rack (redstone on the camshaft) still cuts fuel alone.
   Parallel throttles on one network are not modelled: the network takes the minimum.
+- **Rotors are not planned.** The Timing Tool leaves a rotor housing alone, so a multi-rotor engine's eccentric angles are set by hand, and rotary firing intervals are only listed in goggles, not checked for evenness by any milestone. A rotor's chamber is a sine of the shaft angle and a real Wankel's is not (its apex seals, side seals and port shapes are not modelled), and there is no apex-seal wear. Rotors cannot be mixed with piston cylinders on one housing, but a crankshaft line can hold both kinds of block.
 - **Cam direction is ignored**: only the speed ratio's magnitude is checked, because Create gearing flips direction
   freely.
 - **Only an exact one-to-one gearing couples crankshafts.** Cranks geared at any other ratio are still separate engines
@@ -120,11 +122,55 @@ before relying on it.
 - **Spark timing is fixed.** A spark engine's timing is the cam lobe's angle plus a fixed advance; there is no
   distributor and no ignition-advance dial. There is also no knock: pre-ignition of gasoline at high speed just falls
   out of the compression temperature.
-- **No knock, no turbo damage.** Compressing the air heats it, and only an Intercooler cools it again; excess boost shows as pre-ignition in a spark engine and as waste in a rich one, and nothing breaks, however many stages are stacked. Series and parallel are told apart per stage by whether the air can go round it (see *Series and parallel*), not per cylinder: a stage on a side branch next to a clear path to an opening counts as parallel, and two stages on one branch that both have a bypass are treated as a bank and not as a pair in series. A supercharger's boost has no flow limit and no surge. Nitrous, variable-geometry turbos and anti-lag are not modelled. The transmission has no clutch slip and no synchro, and its gears are fixed at four forward and one reverse.
+- **No knock, no turbo damage.** Compressing the air heats it, and only an Intercooler cools it again; excess boost shows as pre-ignition in a spark engine and as waste in a rich one, and nothing breaks, however many stages are stacked. Series and parallel are told apart per stage by whether the air can go round it (see *Series and parallel*), not per cylinder: a stage on a side branch next to a clear path to an opening counts as parallel, and two stages on one branch that both have a bypass are treated as a bank and not as a pair in series. A supercharger's boost has no flow limit and no surge. Nitrous is not modelled; variable-geometry turbos and anti-lag are (see *Early game, flywheels, banks, dyno and turbo mechanics*). The transmission has no clutch slip and no synchro, and its gears are fixed at four forward and one reverse.
 - The turbocharger, transmission and sump have Ponder scenes and smoke-test screenshots (a real-world turbo, sump and motor-driven transmission). The turbo's wheel speed in Ponder comes from NBT set by the scene, not an engine; a running turbo spinning in a real world has not been watched by hand.
 - Series detection is covered by the twin-turbo GameTest (a compound pair must still multiply); detecting a parallel bank in a real built world has only the unit-tested simulation behind it, no GameTest or hand test.
 - Not yet tested in-game by hand: wrenching pipes, placing a spark engine by a player, placing and wiring an engine by a player, multi-cylinder builds beyond the Ponder
   scenes, and the fluid pipe to head connection (the head exposes a fluid capability on every face).
+
+### Early game, flywheels, banks, dyno and turbo mechanics (2026-10-31)
+
+The mod's shape: a combustion engine is reachable early as a crude contraption (copper-age parts, forgiving of mistakes)
+and is the end-game power source (precision parts, forced induction, big layouts). Rotary engines are a place in the
+mix, not a better piston engine.
+
+- **Soot is forgiving.** Plug fouling (`CylinderModel`) builds only from a rich *burn*, falls on every clean burn, and a
+  plug that stops lighting scrubs itself a little each cycle it still sparks, so a flooded spark engine coughs and
+  stutters instead of locking out. A fully sooted plug still lights up to about 1.4 times balanced.
+- **Tuning is one click.** The Timing Tool has a tune mode (sneak-use cycles through the four timing styles and then
+  *Tune fuel*). Used on a running engine it sets every injector (`EngineController.tuneFuel`) from the mixture each head
+  last burned, aiming a little lean (`TUNE_MIXTURE` 0.9) because a cleaner burn speeds the engine up and it breathes
+  less. Heads held by a MAF sensor or a closed rack are left alone. Goggles on a cylinder or rotor housing whose
+  mixture is off also suggest a metering figure (`GalleryMember.balancedMetering`).
+- **Roughness costs rating.** `EngineSimulation.trackSwing` measures, in the dynamometer's driven runs, how far the crank's
+  energy swings over a cycle, and `predictedRipple` turns that into a speed ripple for the engine's real inertia. The
+  rated torque is the best of `torque * Roughness.smoothness(ripple)` over the speeds at or below the current one
+  (`Dynamometer.ratedTorque`): free below 4% ripple, then one-for-one to a cap of 40%. Mass, more cylinders and even
+  firing all lower the ripple, and a faster engine surges less. Goggles on a crankshaft show the cost.
+- **Flywheels.** The Create Flywheel (inertia 1.5, `flywheelInertia`) and the Cast Flywheel (iron, inertia 1.0,
+  `castFlywheelInertia`) both count when on the crank's shaft line. Mass also costs spin-up and starter effort.
+- **Variable-geometry turbo** (`VariableTurbochargerBlock`, same block entity): vanes close when the exhaust heat is thin
+  (`VANES_OPEN_HEAT`), catching up to half again as much of it, and restrict the exhaust between 0.7 times (open) and 1.3
+  times (closed) a fixed turbine's back-pressure.
+- **Anti-lag** (a 0 to 3 setting beside the boost limit): while every cylinder on the turbine is off the throttle (fuel
+  cut, rack shut, throttle closed or governed back) and the engine is turning, it draws `ANTI_LAG_FUEL` mB per second per
+  level from the fuel gallery and adds `ANTI_LAG_HEAT` per level to the turbine. The wastegate was already a boost limit
+  dial plus a redstone dump.
+- **Bank Builder** (`BankBuilderItem`): use on a crank throw to place a cylinder and head, and fit pistons, rods and
+  injectors from the player's inventory, on the clicked face of every throw: inline (that face), vee (and the face a
+  quarter turn round the crank) or flat (and the opposite face). Spark plugs, pipes, cams and fuel stay the builder's.
+  Blocked places and missing blocks are reported. It does not yet give a vee a shared valley cam: a lobe touching two
+  cylinders still has one angle, so each bank has its own camshaft (see *compact engines*).
+- **Dynamometer block** (`DynoBlock`): set against any block of an engine, goggles draw its torque and power curves as
+  bars, with peaks and the powerband, from the rating the engine itself uses. Redstone rises as the engine climbs to the
+  speed of its peak power.
+- **Rotary balance.** Pinned in `RotaryNicheTest`: a rotor is weak at low speed next to the cylinders it is worth at high
+  speed, about half again thirstier than precision pistons, and runs out of breath sooner at high speed. Its recipe now
+  needs a precision mechanism, the same cost as a precision cylinder, so a rotor is a mid-game compact option that
+  precision pistons with boost still outclass.
+- **Art.** `tools/generate_textures.py` draws the mod's own metals (cast iron, brushed steel, black oxide, brass, enamel,
+  ceramic, a screen, a riveted plate) and `tools/generate_models.py` uses them in place of Create's and vanilla's for
+  engine internals; casings, shafts and pipes keep Create's textures. Models are still boxes.
 
 ---
 
@@ -184,8 +230,9 @@ So a block's *per-RPM* stress value is a torque, and SU is power. That gives a c
 
 - **Engine torque (internal) → `calculateAddedStressCapacity()`** (SU per RPM), with one calibration constant.
 - **Crank RPM = Create RPM, 1:1.** The crank, the shafts coming off it, and the piston animation all agree, and gears
-  downstream behave normally. Create's default 256 RPM cap is a hard ceiling. Engines are "slow and heavy" by Minecraft
-  standards; that is the right feel for Create.
+  downstream behave normally. Create's maximum rotation speed (default 256 RPM, a server setting) is a hard ceiling, and
+  we recommend raising it (see §5.1). Engines are "slow and heavy" by Minecraft standards at the default; that is the
+  right feel for Create.
 - **Load torque at the crank = `stress / |speed|`**, where `stress` is the network total our BE receives via
   `updateFromNetwork`. Because every consumer's demand is `impact × its own |speed|`, gearing up downstream
   automatically multiplies the load torque the crank feels. **This is why transmissions will be meaningful later
@@ -372,7 +419,7 @@ plugin API until a second engine type actually exists.
 
 ```
 Δt = 1/20 s
-steps = ceil(|ω|·Δt / 5°)          // fixed max crank-angle step, ~16 sub-steps at 256 RPM
+steps = ceil(|ω|·Δt / dθmax)       // dθmax = 4° up to ~640 RPM (~19 sub-steps at 256), then grows to cap a tick at 64 steps, never past 16°
 for each sub-step (dθ, dt = dθ/ω):
     for each cylinder:
         advance GasState over [ψ, ψ+dθ]:
@@ -388,8 +435,28 @@ for each sub-step (dθ, dt = dθ/ω):
 record per-cycle stats: work per cylinder, fired/misfire reason, peak p, ω_min/ω_max, fuel used
 ```
 
-Cost: about 16 sub-steps × 12 cylinders × a few dozen flops is negligible. Energy-based integration stays stable at
-large crank-angle steps and handles stalling mid-tick naturally. If KE goes negative partway through, the crank stops at
+Cost: about 20 sub-steps × 12 cylinders × a few dozen flops is negligible. Energy-based integration stays stable at
+large crank-angle steps and handles stalling mid-tick naturally.
+
+**Running above Create's default 256 RPM limit.** The limit is a server setting (`kinetics.maxRotationSpeed` in
+`create-server.toml`), and we recommend raising it: nothing in the mod assumes 256. The simulation is kept cheap so that
+a tick costs roughly the same whatever the speed:
+
+- Sub-steps are 4° (the calibrated resolution) up to about 640 RPM. Faster, they widen so a tick is at most 64 steps, up
+  to a ceiling of 16°. Gas exchange and burning are timed in seconds, so a fast engine changes little over a few more
+  degrees: torque measured with 16° steps agrees with 4° steps to within about 0.6% from 1000 RPM up (but not below
+  roughly 500 RPM, where combustion timing is sensitive to the step, which is why 4° is kept there).
+- Slider-crank volume, its adiabatic heating factor and each valve's lift curve are read from tables (0.125° spacing,
+  linear interpolation, exact to a few parts in a million) built once per cylinder shape, not recomputed with
+  `sin`/`cos`/`sqrt`/`pow` at every step. Valve flow uses a series for `1 − e^−x` when `x` is small, and friction is summed
+  once per tick instead of once per step. An eight-cylinder engine ticks in ~10 µs at 256 RPM, ~40 µs at 4096 and ~90 µs at
+  8192, where it took ~30, ~415 and ~840 µs before.
+- The dynamometer measures up to the configured limit (points every 16 RPM to 256, then 320, 384, 448, 512, 640, 768,
+  1024, 1536, 2048, 3072, 4096, 6144, 8192), and measures one speed per tick, slowest first, instead of the whole curve in
+  one tick. A rebuilt engine keeps its old curve until the new one is whole.
+- On the client, each cylinder's bang and exhaust puff is limited to once every 3 and 2 ticks (invisible at Create speeds,
+  where a cylinder fires about twice a second), and a cam that turns more than half a cycle between frames counts every
+  firing as passed instead of silencing the effects, which used to stop them above about 600 RPM at 30 fps. If KE goes negative partway through, the crank stops at
 that angle, typically just before a compression TDC, which is exactly where real engines stall.
 
 ### 5.2 Constants (per tier, in config, not datapacks yet)

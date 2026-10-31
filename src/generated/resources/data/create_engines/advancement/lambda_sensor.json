@@ -3,13 +3,9 @@
   "criteria": {
     "lambda_sensor": {
       "conditions": {
-        "items": [
-          {
-            "items": "create_engines:lambda_sensor"
-          }
-        ]
+        "event": "lambda_reading"
       },
-      "trigger": "minecraft:inventory_changed"
+      "trigger": "create_engines:event"
     }
   },
   "display": {

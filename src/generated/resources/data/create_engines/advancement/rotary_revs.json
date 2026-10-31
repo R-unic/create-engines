@@ -1,0 +1,29 @@
+{
+  "parent": "create_engines:rotary_engine",
+  "criteria": {
+    "rotary_revs": {
+      "conditions": {
+        "event": "rotary_revs"
+      },
+      "trigger": "create_engines:event"
+    }
+  },
+  "display": {
+    "description": {
+      "translate": "advancement.create_engines.rotary_revs.desc"
+    },
+    "icon": {
+      "count": 1,
+      "id": "create_engines:rotor"
+    },
+    "title": {
+      "translate": "advancement.create_engines.rotary_revs"
+    }
+  },
+  "requirements": [
+    [
+      "rotary_revs"
+    ]
+  ],
+  "sends_telemetry_event": true
+}

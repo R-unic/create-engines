@@ -15,7 +15,11 @@ public enum CylinderFault {
 	/** The head has a spark plug but no battery touches the engine to fire it. */
 	NO_BATTERY(false),
 	/** A plain shaft splits the camshaft, so the lobe is left with no cam to turn it in time. */
-	BROKEN_CAM(false);
+	BROKEN_CAM(false),
+	/** A rotor housing with no rotor in it: nothing is working in the chamber, and nothing drags on the shaft. */
+	NO_ROTOR(true),
+	/** A rotor housing with no spark plug: its chamber is too long and thin for the charge to light itself. */
+	NO_PLUG(false);
 
 	/** Without this the cylinder is not a working piston at all and is left out of the simulation. */
 	public final boolean disablesCylinder;
@@ -49,7 +53,7 @@ public enum CylinderFault {
 	 * Zero if nothing is connected to the crank.
 	 */
 	public static double dragOnCrank(int faults) {
-		if (NOT_ON_THROW.in(faults) || NO_ROD.in(faults))
+		if (NOT_ON_THROW.in(faults) || NO_ROD.in(faults) || NO_ROTOR.in(faults))
 			return 0;
 		return NO_PISTON.in(faults) ? 0.5 : 1;
 	}

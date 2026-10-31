@@ -21,7 +21,7 @@ import org.jetbrains.annotations.Nullable;
  */
 public final class CylinderModel {
 
-	private static final double GAMMA = 1.3;
+	static final double GAMMA = 1.3;
 	/** Moles of breathed-out gas it takes to replace what the exhaust port is holding. */
 	private static final double EXHAUST_MEMORY = 1;
 	/** Seconds for the gas in the exhaust port to leave and be replaced by ambient air. */
@@ -37,20 +37,50 @@ public final class CylinderModel {
 	 * a rich mixture makes less pressure for the fuel it wastes.
 	 */
 	private static final double FUEL_HEAT_CAPACITY = 1.5;
-	/** Soot a plug gains per cycle, times the share of that cycle's fuel the air couldn't burn. */
-	private static final double FOULING_RATE = 0.2;
+	/** Soot a plug gains per cycle that burns rich, times the share of that cycle's fuel the air couldn't burn. */
+	private static final double FOULING_RATE = 0.12;
 	/** Soot a plug loses each cycle it fires on a mixture that burns clean. */
-	private static final double FOULING_BURN_OFF = 0.08;
-	/** How far a completely fouled plug pulls the rich limit in: it can light no more than a balanced mixture. */
-	private static final double FOULED_RICH_LOSS = RICH_LIMIT - Mixture.RICH_BAND;
+	private static final double FOULING_BURN_OFF = 0.12;
+	/**
+	 * Soot a plug sparks off each cycle the charge was too rich to light. Soot only builds from a rich burn, and a plug
+	 * that has stopped lighting is hot and dry again a few cycles later, so rich running makes an engine stutter instead
+	 * of locking it out until the mixture is fixed by hand.
+	 */
+	private static final double FOULING_SCRUB = 0.04;
+	/**
+	 * How far a completely fouled plug pulls the rich limit in. It can still light a mixture a little richer than the
+	 * balanced band, so a beginner's flooded engine coughs rather than refusing to fire.
+	 */
+	private static final double FOULED_RICH_LOSS = RICH_LIMIT - 1.4;
 
 	public final CylinderSpec spec;
+	private final CylinderSpec.Geometry geometry;
+	private final CamProfile.Curve intakeCurve;
+	private final CamProfile.Curve exhaustCurve;
+	/**
+	 * Degrees of a rotary chamber's cycle for each degree of eccentric shaft: the rotor turns at a third of the shaft,
+	 * and a chamber goes through two volume cycles (four strokes) per turn of the rotor.
+	 */
+	public static final double ROTARY_SCALE = 2 / 3d;
+	/** Eccentric shaft degrees between one chamber of a rotor reaching a given stroke and the next one doing so. */
+	public static final double ROTARY_CHAMBER_SPACING = 360;
+	/** Eccentric shaft degrees in a chamber's whole four-stroke cycle: one turn of the rotor. */
+	public static final double ROTARY_CYCLE = 1080;
+
 	private final CamProfile profile;
 	/** Geometric crank angle (degrees) at which this piston is at top dead centre. */
 	private final double tdcCrankAngle;
 	private final @Nullable Camshaft camshaft;
 	/** Angle of this cylinder's lobe on its camshaft, cam degrees. */
 	private final double lobeAngle;
+	/**
+	 * A rotary chamber has no cam: the housing's ports are cut at fixed places, so its valves and its injection follow
+	 * its own cycle angle. {@link #angleScale} turns shaft degrees into that angle.
+	 */
+	private final boolean ported;
+	private final double angleScale;
+	/** Which of the rotor's chambers this is: its cycle runs this far ahead of the first one's, in cycle degrees. */
+	private final double cycleOffset;
 
 	// Inputs, refreshed by the owner every tick
 	public double rack = 1;
@@ -109,22 +139,83 @@ public final class CylinderModel {
 	private double fouling;
 	private double travelSinceCycle;
 
+	/** How the exhaust port's gas decays over the last step length, which is the same for every step but a tick's last. */
+	private double clearingDt = Double.NaN;
+	private double clearingDecay;
+
 	private final CycleStats current = new CycleStats();
 	private final CycleStats last = new CycleStats();
 
 	public CylinderModel(CylinderSpec spec, CamProfile profile, double tdcCrankAngle, @Nullable Camshaft camshaft,
 						 double lobeAngle) {
+		this(spec, profile, tdcCrankAngle, camshaft, lobeAngle, false, 1, 0);
+	}
+
+	private CylinderModel(CylinderSpec spec, CamProfile profile, double tdcCrankAngle, @Nullable Camshaft camshaft,
+						  double lobeAngle, boolean ported, double angleScale, double cycleOffset) {
 		this.spec = spec;
+		this.geometry = spec.geometry();
 		this.profile = profile;
+		this.intakeCurve = profile.intakeCurve();
+		this.exhaustCurve = profile.exhaustCurve();
 		this.tdcCrankAngle = tdcCrankAngle;
 		this.camshaft = camshaft;
 		this.lobeAngle = lobeAngle;
+		this.ported = ported;
+		this.angleScale = angleScale;
+		this.cycleOffset = cycleOffset;
 		resetGas();
+	}
+
+	/**
+	 * One chamber of a Wankel rotor. {@code eccentricTdc} is the shaft angle at which the rotor's eccentric points at the
+	 * housing's reference mark, and {@code chamber} (0 to 2) which of the rotor's three faces this is.
+	 */
+	public static CylinderModel rotary(CylinderSpec spec, CamProfile profile, double eccentricTdc, int chamber) {
+		return new CylinderModel(spec, profile, eccentricTdc, null, 0, true, ROTARY_SCALE,
+			chamber * ROTARY_CHAMBER_SPACING * ROTARY_SCALE);
 	}
 
 	/** Crank angle of this piston past its top dead centre, for a rotor angle travelling in {@code direction}. */
 	public double pistonAngle(double rotorAngle, int direction) {
-		return SimMath.wrap(rotorAngle - direction * tdcCrankAngle);
+		return pistonAngle(rotorAngle, rotorAngle, direction);
+	}
+
+	/**
+	 * As {@link #pistonAngle(double, int)}, given the angle the shaft has turned through in the {@link #ROTARY_CYCLE} a
+	 * rotary chamber repeats over. A rotary chamber's cycle angle is where it is in its four strokes: the shaft turns
+	 * three times to its once.
+	 */
+	public double pistonAngle(double rotorAngle, double rotaryAngle, int direction) {
+		if (!ported)
+			return SimMath.wrap(rotorAngle - direction * tdcCrankAngle);
+		double shaft = SimMath.wrap(rotaryAngle - direction * tdcCrankAngle, ROTARY_CYCLE);
+		return SimMath.wrap(shaft * angleScale + cycleOffset);
+	}
+
+	/** Whether this chamber's valves and injection follow its own cycle rather than a camshaft's. */
+	public boolean ported() {
+		return ported;
+	}
+
+	/** How many degrees of this cylinder's own cycle go by for each degree the shaft turns. */
+	public double angleScale() {
+		return angleScale;
+	}
+
+	/** Whether something fixes when its valves open and its injector fires: a cam, or a rotary housing's ports. */
+	private boolean timed() {
+		return ported || camshaft != null;
+	}
+
+	/** Shaft degrees one four-stroke cycle of this cylinder takes: two turns for a piston, three for a rotary chamber. */
+	public double cycleDegrees() {
+		return ported ? ROTARY_CYCLE : SimMath.CYCLE;
+	}
+
+	/** Whether valve timing is locked to the shaft: a cam geared 1:2, or fixed ports. */
+	public boolean isTimed() {
+		return ported || camshaft != null && camshaft.isPhaseLocked();
 	}
 
 	/** Where the cam says this cylinder is in its cycle (0 = intake TDC, 360 = firing TDC). */
@@ -169,7 +260,8 @@ public final class CylinderModel {
 
 	/** A fresh cylinder built the same way on {@code camshaft}, to test apart from the engine. */
 	public CylinderModel copyOnto(@Nullable Camshaft camshaft) {
-		CylinderModel copy = new CylinderModel(spec, profile, tdcCrankAngle, camshaft, lobeAngle);
+		CylinderModel copy =
+			new CylinderModel(spec, profile, tdcCrankAngle, camshaft, lobeAngle, ported, angleScale, cycleOffset);
 		copy.rack = rack;
 		copy.metering = metering;
 		copy.ignition = ignition;
@@ -263,26 +355,26 @@ public final class CylinderModel {
 	 * @return p·dV work done on the crank during the step
 	 */
 	double step(double pistonFrom, double delta, double camFrom, double camDelta, double dt) {
-		double v0 = spec.volumeAt(pistonFrom);
-		double v1 = spec.volumeAt(pistonFrom + delta);
+		double v0 = geometry.volume(pistonFrom);
+		double v1 = geometry.volume(pistonFrom + delta);
 
-		// Rule 2: adiabatic volume change. Rule 1: work relative to the crankcase at ambient pressure.
+		// Rule 2: adiabatic volume change (T times V^(γ-1) stays put). Rule 1: work relative to the crankcase at ambient pressure.
 		double p0 = pressure(v0);
-		temperature *= Math.pow(v0 / v1, GAMMA - 1);
+		temperature *= geometry.heat(pistonFrom) / geometry.heat(pistonFrom + delta);
 		double p1 = pressure(v1);
 		double work = (0.5 * (p0 + p1) - 1) * (v1 - v0);
 
 		// Rule 3: valves, opened by the cam
-		if (camshaft != null) {
+		if (timed()) {
 			double mid = SimMath.wrap(camFrom + camDelta / 2);
-			exchangeIntake(v1, spec.intakeFlow() * profile.intakeLift(mid) * intakeFactor * governedAir(), dt);
-			exchangeExhaust(v1, spec.exhaustFlow() * profile.exhaustLift(mid) * exhaustFactor, dt);
+			exchangeIntake(v1, spec.intakeFlow() * intakeCurve.at(mid) * intakeFactor * governedAir(), dt);
+			exchangeExhaust(v1, spec.exhaustFlow() * exhaustCurve.at(mid) * exhaustFactor, dt);
 		}
 
 		// Rule 4: injection (triggered by the cam), ignition, combustion
-		if (camshaft != null && SimMath.crosses(camFrom, camDelta, profile.injection()))
+		if (timed() && SimMath.crosses(camFrom, camDelta, profile.injection()))
 			inject();
-		if (camshaft != null && SimMath.crosses(camFrom, camDelta, profile.spark()))
+		if (timed() && SimMath.crosses(camFrom, camDelta, profile.spark()))
 			spark();
 		if (fuelPending > FUEL_EPSILON)
 			combust(dt);
@@ -293,7 +385,7 @@ public final class CylinderModel {
 
 		// A cycle ends when the cam starts the next intake stroke, or after two revolutions if the cam isn't turning
 		travelSinceCycle += delta;
-		boolean camWrapped = camshaft != null && SimMath.crosses(camFrom, camDelta, 0);
+		boolean camWrapped = timed() && SimMath.crosses(camFrom, camDelta, 0);
 		if (camWrapped || travelSinceCycle >= SimMath.CYCLE)
 			finishCycle();
 		return work;
@@ -321,7 +413,7 @@ public final class CylinderModel {
 		if (rate <= 0)
 			return;
 		double p = pressure(volume);
-		double target = p + (intakePressure - p) * (1 - Math.exp(-rate * dt));
+		double target = p + (intakePressure - p) * SimMath.approach(rate * dt);
 		if (target < p) {
 			double out = (p - target) * volume / temperature;
 			intakeBackflowFresh = (intakeBackflow * intakeBackflowFresh + out * fresh) / (intakeBackflow + out);
@@ -345,11 +437,15 @@ public final class CylinderModel {
 	 * out of its exhaust (that would be heat from nowhere), and the gas in the port drifts back to ambient anyway.
 	 */
 	private void exchangeExhaust(double volume, double rate, double dt) {
-		exhaustTemp = 1 + (exhaustTemp - 1) * Math.exp(-dt / EXHAUST_CLEARING);
+		if (dt != clearingDt) {
+			clearingDt = dt;
+			clearingDecay = Math.exp(-dt / EXHAUST_CLEARING);
+		}
+		exhaustTemp = 1 + (exhaustTemp - 1) * clearingDecay;
 		if (rate <= 0)
 			return;
 		double p = pressure(volume);
-		double target = p + (exhaustPressure - p) * (1 - Math.exp(-rate * dt));
+		double target = p + (exhaustPressure - p) * SimMath.approach(rate * dt);
 		if (target > p) {
 			double in = (target - p) * volume / exhaustTemp;
 			fresh = moles * fresh / (moles + in);
@@ -437,7 +533,8 @@ public final class CylinderModel {
 	private void combust(double dt) {
 		if (!burning) {
 			timeSinceInjection += dt;
-			if (timeSinceInjection < spec.ignitionDelay() || temperature < burningFuel.autoignitionTemp())
+			// A rotor's long, thin chamber loses too much heat to its walls for the charge to light itself: only a plug will
+			if (ported || timeSinceInjection < spec.ignitionDelay() || temperature < burningFuel.autoignitionTemp())
 				return;
 			startBurning();
 		}
@@ -477,9 +574,12 @@ public final class CylinderModel {
 
 		if (ignition.installed() && current.fuelInjected > 0) {
 			double unburned = current.unburnedFraction();
-			if (unburned > Mixture.RICH_UNBURNED)
+			if (current.fuelBurned <= 0) {
+				if (current.sparks > 0)
+					fouling = Math.max(0, fouling - FOULING_SCRUB);
+			} else if (unburned > Mixture.RICH_UNBURNED)
 				fouling = Math.min(1, fouling + FOULING_RATE * unburned);
-			else if (current.fuelBurned > 0)
+			else
 				fouling = Math.max(0, fouling - FOULING_BURN_OFF);
 		}
 

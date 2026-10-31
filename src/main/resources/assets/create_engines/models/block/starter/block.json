@@ -2,10 +2,10 @@
   "parent": "block/block",
   "textures": {
     "body": "create:block/andesite_casing",
-    "pinion": "create:block/brass_block",
+    "pinion": "create_engines:block/brass",
     "coil": "minecraft:block/copper_block",
-    "plate": "create:block/industrial_iron_block",
-    "bolt": "create:block/brass_block",
+    "plate": "create_engines:block/cast_iron",
+    "bolt": "create_engines:block/brass",
     "particle": "create:block/andesite_casing"
   },
   "elements": [

@@ -12,6 +12,7 @@ import com.createengines.content.cylinder.CylinderBlock;
 import com.createengines.content.cylinder.CylinderBlockEntity;
 import com.createengines.content.head.CylinderHeadBlock;
 import com.createengines.content.head.CylinderHeadBlockEntity;
+import com.createengines.content.rotor.RotorHousingBlockEntity;
 import com.createengines.engine.CrankGeometry;
 import com.createengines.engine.sim.CamProfile;
 import com.createengines.engine.sim.CylinderModel;
@@ -32,6 +33,8 @@ public final class EnginePoses {
 	private static final Vector3f UP = new Vector3f(0, 1, 0);
 	private static final float STEM_SPACING = 3 / 16f;
 	private static final float MAX_LIFT = 1.5f / 16;
+	/** How far a rotor's centre is from the shaft, in blocks. Match the eccentric model's journal. */
+	private static final float ROTOR_ECCENTRICITY = 1.5f / 16;
 
 	public record CylinderPose(Matrix4f piston, Matrix4f rod, boolean showPiston, boolean showRod) {
 	}
@@ -56,6 +59,25 @@ public final class EnginePoses {
 
 	public static float camAngle(CamshaftBlockEntity cam, float renderTime) {
 		return (float) ((cam.rotation(renderTime) + cam.lobeAngle()) % 360);
+	}
+
+	/**
+	 * A Wankel rotor: its centre rides the eccentric, and it turns on it at a third of the shaft's speed (the housing's
+	 * gears hold it to that). Drawn with a larger eccentricity than a real one has, so the orbit shows.
+	 */
+	public static Matrix4f rotor(RotorHousingBlockEntity housing, float renderTime) {
+		Axis axis = housing.getBlockState()
+			.getValue(BlockStateProperties.AXIS);
+		// The rotor is three turns of the shaft round, not one, so its angle must not wrap with the shaft's: a rotor a third
+		// of the way round from where it was is a different picture, whatever the three corners look like
+		float angle = (float) ((housing.rotation(renderTime) + housing.throwAngle()) % (3 * 360));
+		Vector3f pin = CrankGeometry.featureDirection(axis, angle)
+			.mul(ROTOR_ECCENTRICITY);
+		return new Matrix4f().translate(0.5f, 0.5f, 0.5f)
+			.translate(pin)
+			.rotate(CrankGeometry.spin(axis, angle / 3))
+			.rotate(CrankGeometry.modelToAxis(axis))
+			.translate(-0.5f, -0.5f, -0.5f);
 	}
 
 	/** Piston and connecting rod, from the crank throw's angle by slider-crank geometry. */

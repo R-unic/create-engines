@@ -1,15 +1,11 @@
 {
-  "parent": "create_engines:battery",
+  "parent": "create_engines:spark_plug",
   "criteria": {
     "alternator": {
       "conditions": {
-        "items": [
-          {
-            "items": "create_engines:alternator"
-          }
-        ]
+        "event": "alternator_charging"
       },
-      "trigger": "minecraft:inventory_changed"
+      "trigger": "create_engines:event"
     }
   },
   "display": {

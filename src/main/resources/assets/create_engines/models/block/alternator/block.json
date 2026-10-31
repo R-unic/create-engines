@@ -2,11 +2,11 @@
   "parent": "block/block",
   "textures": {
     "body": "create:block/copper_casing",
-    "band": "create:block/industrial_iron_block",
+    "band": "create_engines:block/cast_iron",
     "cap": "create:block/andesite_casing",
-    "vent": "create:block/dark_metal_block",
-    "bolt": "create:block/brass_block",
-    "lug": "minecraft:block/iron_block",
+    "vent": "create_engines:block/black_oxide",
+    "bolt": "create_engines:block/brass",
+    "lug": "create_engines:block/steel",
     "particle": "create:block/copper_casing"
   },
   "elements": [

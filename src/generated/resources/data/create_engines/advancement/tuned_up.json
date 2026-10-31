@@ -1,28 +1,28 @@
 {
-  "parent": "create_engines:starter",
+  "parent": "create_engines:timing_tool",
   "criteria": {
-    "cranking": {
+    "tuned_up": {
       "conditions": {
-        "event": "cranking"
+        "event": "fuel_tuned"
       },
       "trigger": "create_engines:event"
     }
   },
   "display": {
     "description": {
-      "translate": "advancement.create_engines.cranking.desc"
+      "translate": "advancement.create_engines.tuned_up.desc"
     },
     "icon": {
       "count": 1,
-      "id": "create_engines:starter"
+      "id": "create_engines:timing_tool"
     },
     "title": {
-      "translate": "advancement.create_engines.cranking"
+      "translate": "advancement.create_engines.tuned_up"
     }
   },
   "requirements": [
     [
-      "cranking"
+      "tuned_up"
     ]
   ],
   "sends_telemetry_event": true

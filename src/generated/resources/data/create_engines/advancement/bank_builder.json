@@ -1,0 +1,29 @@
+{
+  "parent": "create_engines:crankshaft",
+  "criteria": {
+    "bank_builder": {
+      "conditions": {
+        "event": "bank_built"
+      },
+      "trigger": "create_engines:event"
+    }
+  },
+  "display": {
+    "description": {
+      "translate": "advancement.create_engines.bank_builder.desc"
+    },
+    "icon": {
+      "count": 1,
+      "id": "create_engines:bank_builder"
+    },
+    "title": {
+      "translate": "advancement.create_engines.bank_builder"
+    }
+  },
+  "requirements": [
+    [
+      "bank_builder"
+    ]
+  ],
+  "sends_telemetry_event": true
+}

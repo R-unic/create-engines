@@ -3,13 +3,9 @@
   "criteria": {
     "rev_limiter": {
       "conditions": {
-        "items": [
-          {
-            "items": "create_engines:rev_limiter"
-          }
-        ]
+        "event": "rev_limited"
       },
-      "trigger": "minecraft:inventory_changed"
+      "trigger": "create_engines:event"
     }
   },
   "display": {

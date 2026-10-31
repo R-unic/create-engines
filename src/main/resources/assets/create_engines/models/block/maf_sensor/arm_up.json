@@ -4,12 +4,12 @@
     "pipe": "minecraft:block/cut_copper",
     "bead": "minecraft:block/copper_block",
     "flange": "minecraft:block/copper_block",
-    "gasket": "create:block/dark_metal_block",
-    "body": "create:block/brass_block",
-    "dark": "create:block/dark_metal_block",
-    "plug": "minecraft:block/iron_block",
-    "bolt": "create:block/brass_block",
-    "particle": "create:block/brass_block"
+    "gasket": "create_engines:block/black_oxide",
+    "body": "create_engines:block/brass",
+    "dark": "create_engines:block/black_oxide",
+    "plug": "create_engines:block/steel",
+    "bolt": "create_engines:block/brass",
+    "particle": "create_engines:block/brass"
   },
   "elements": [
     {

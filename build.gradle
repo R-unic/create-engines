@@ -48,6 +48,8 @@ neoForge {
             systemProperty 'neoforge.enabledGameTestNamespaces', project.mod_id
             systemProperty 'create_engines.visualSmokeTest', 'true'
             systemProperty 'create_engines.visualSmokeTest.scenes', project.hasProperty('smokeScenes') ? 'true' : 'false'
+            systemProperty 'create_engines.visualSmokeTest.rotary', project.hasProperty('smokeRotary') ? 'true' : 'false'
+            systemProperty 'create_engines.visualSmokeTest.newParts', project.hasProperty('smokeNewParts') ? 'true' : 'false'
         }
 
         server {

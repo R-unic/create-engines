@@ -4,7 +4,7 @@ import java.util.List;
 
 import org.jetbrains.annotations.Nullable;
 
-import com.createengines.content.head.CylinderHeadBlockEntity;
+import com.createengines.content.head.GalleryMember;
 import com.createengines.engine.sim.FuelSpec;
 import com.createengines.engine.sim.FuelSupply;
 import com.createengines.registry.CEDataMaps;
@@ -33,8 +33,13 @@ public final class GalleryFuelSupply implements FuelSupply {
 	}
 
 	private @Nullable FluidTank tank(BlockPos pos) {
-		return level.isLoaded(pos) && level.getBlockEntity(pos) instanceof CylinderHeadBlockEntity head
+		return level.isLoaded(pos) && level.getBlockEntity(pos) instanceof GalleryMember head
 			? head.tank() : null;
+	}
+
+	/** The fluid the engine is burning, or would burn next, if any. */
+	public @Nullable Fluid fluid() {
+		return availableFluid();
 	}
 
 	private @Nullable Fluid availableFluid() {

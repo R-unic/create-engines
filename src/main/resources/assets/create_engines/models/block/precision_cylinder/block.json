@@ -2,8 +2,8 @@
   "parent": "block/block",
   "textures": {
     "frame": "create:block/brass_casing",
-    "rim": "create:block/brass_block",
-    "sleeve": "minecraft:block/iron_block",
+    "rim": "create_engines:block/brass",
+    "sleeve": "create_engines:block/steel",
     "particle": "create:block/brass_casing"
   },
   "elements": [

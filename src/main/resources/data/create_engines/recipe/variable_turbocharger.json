@@ -1,0 +1,24 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "key": {
+    "B": {
+      "item": "create:brass_sheet"
+    },
+    "T": {
+      "item": "create_engines:turbocharger"
+    },
+    "M": {
+      "item": "create:precision_mechanism"
+    }
+  },
+  "pattern": [
+    "B",
+    "T",
+    "M"
+  ],
+  "result": {
+    "count": 1,
+    "id": "create_engines:variable_turbocharger"
+  }
+}

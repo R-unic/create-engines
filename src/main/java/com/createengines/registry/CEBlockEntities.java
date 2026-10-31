@@ -8,6 +8,9 @@ import com.createengines.content.airflow.MafSensorBlockEntity;
 import com.createengines.content.airflow.ThrottleBlockEntity;
 import com.createengines.content.alternator.AlternatorBlockEntity;
 import com.createengines.content.alternator.AlternatorVisual;
+import com.createengines.content.dyno.DynoBlockEntity;
+import com.createengines.content.flywheel.CastFlywheelBlockEntity;
+import com.createengines.content.flywheel.CastFlywheelVisual;
 import com.createengines.content.battery.BatteryBlockEntity;
 import com.createengines.content.camshaft.CamshaftBlockEntity;
 import com.createengines.content.camshaft.CamshaftVisual;
@@ -19,6 +22,8 @@ import com.createengines.content.head.CylinderHeadBlockEntity;
 import com.createengines.content.head.CylinderHeadVisual;
 import com.createengines.content.governor.GovernorBlockEntity;
 import com.createengines.content.limiter.RevLimiterBlockEntity;
+import com.createengines.content.rotor.RotorHousingBlockEntity;
+import com.createengines.content.rotor.RotorHousingVisual;
 import com.createengines.content.starter.StarterBlockEntity;
 import com.createengines.content.starter.StarterRenderer;
 import com.createengines.content.starter.StarterVisual;
@@ -43,6 +48,13 @@ public final class CEBlockEntities {
 		.visual(() -> CrankshaftVisual::new, false)
 		.validBlocks(CEBlocks.CRANKSHAFT, CEBlocks.CRANK_THROW)
 		.renderer(() -> EnginePartRenderers.Crankshaft::new)
+		.register();
+
+	public static final BlockEntityEntry<RotorHousingBlockEntity> ROTOR_HOUSING = REGISTRATE
+		.blockEntity("rotor_housing", RotorHousingBlockEntity::new)
+		.visual(() -> RotorHousingVisual::new, false)
+		.validBlocks(CEBlocks.ROTOR_HOUSING)
+		.renderer(() -> EnginePartRenderers.RotorHousing::new)
 		.register();
 
 	public static final BlockEntityEntry<CamshaftBlockEntity> CAMSHAFT = REGISTRATE
@@ -110,6 +122,18 @@ public final class CEBlockEntities {
 		.renderer(() -> KineticBlockEntityRenderer::new)
 		.register();
 
+	public static final BlockEntityEntry<CastFlywheelBlockEntity> CAST_FLYWHEEL = REGISTRATE
+		.blockEntity("cast_flywheel", CastFlywheelBlockEntity::new)
+		.visual(() -> CastFlywheelVisual::create, false)
+		.validBlocks(CEBlocks.CAST_FLYWHEEL)
+		.renderer(() -> KineticBlockEntityRenderer::new)
+		.register();
+
+	public static final BlockEntityEntry<DynoBlockEntity> DYNO = REGISTRATE
+		.blockEntity("dyno", DynoBlockEntity::new)
+		.validBlocks(CEBlocks.DYNO)
+		.register();
+
 	public static final BlockEntityEntry<SumpBlockEntity> SUMP = REGISTRATE
 		.blockEntity("sump", SumpBlockEntity::new)
 		.validBlocks(CEBlocks.SUMP)
@@ -117,7 +141,7 @@ public final class CEBlockEntities {
 
 	public static final BlockEntityEntry<TurbochargerBlockEntity> TURBOCHARGER = REGISTRATE
 		.blockEntity("turbocharger", TurbochargerBlockEntity::new)
-		.validBlocks(CEBlocks.TURBOCHARGER)
+		.validBlocks(CEBlocks.TURBOCHARGER, CEBlocks.VARIABLE_TURBOCHARGER)
 		.renderer(() -> TurbochargerRenderer::new)
 		.register();
 
@@ -143,6 +167,8 @@ public final class CEBlockEntities {
 
 	public static void registerCapabilities(RegisterCapabilitiesEvent event) {
 		event.registerBlockEntity(Capabilities.FluidHandler.BLOCK, CYLINDER_HEAD.get(),
+			(be, side) -> be.fluidCapability());
+		event.registerBlockEntity(Capabilities.FluidHandler.BLOCK, ROTOR_HOUSING.get(),
 			(be, side) -> be.fluidCapability());
 		event.registerBlockEntity(Capabilities.FluidHandler.BLOCK, SUMP.get(), (be, side) -> be.fluidCapability());
 	}

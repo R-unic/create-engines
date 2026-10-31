@@ -457,3 +457,72 @@ write_schematic("precision_parts", (5, 6, 5), [
     (1, 4, 2, ce("camshaft"), axis("x")),
     (3, 4, 2, ce("camshaft"), axis("x")),
 ])
+
+write_schematic("flywheel", (6, 5, 5), [
+    (1, 1, 2, ce("crankshaft"), axis("x")),
+    (2, 1, 2, ce("crank_throw"), axis("x")),
+    (3, 1, 2, ce("crankshaft"), axis("x")),
+    (0, 1, 2, ce("cast_flywheel"), axis("x")),
+    (2, 2, 2, ce("cylinder"), cylinder("up")),
+    (2, 3, 2, ce("cylinder_head"), head("up")),
+    (2, 4, 2, ce("cam_lobe"), axis("x")),
+    (1, 4, 2, ce("camshaft"), axis("x")),
+    (3, 4, 2, ce("camshaft"), axis("x")),
+])
+
+# A crank with two throws and every layout's cylinders on it, shown a stage at a time
+write_schematic("bank_builder", (7, 7, 7), [
+    (1, 3, 3, ce("crankshaft"), axis("x")),
+    (2, 3, 3, ce("crank_throw"), axis("x")),
+    (3, 3, 3, ce("crankshaft"), axis("x")),
+    (4, 3, 3, ce("crank_throw"), axis("x")),
+    (5, 3, 3, ce("crankshaft"), axis("x")),
+    (2, 4, 3, ce("cylinder"), cylinder("up")),
+    (2, 5, 3, ce("cylinder_head"), head("up")),
+    (4, 4, 3, ce("cylinder"), cylinder("up")),
+    (4, 5, 3, ce("cylinder_head"), head("up")),
+    (2, 2, 3, ce("cylinder"), cylinder("down")),
+    (2, 1, 3, ce("cylinder_head"), head("down")),
+    (4, 2, 3, ce("cylinder"), cylinder("down")),
+    (4, 1, 3, ce("cylinder_head"), head("down")),
+    (2, 3, 2, ce("cylinder"), cylinder("north")),
+    (2, 3, 1, ce("cylinder_head"), head("north")),
+    (4, 3, 2, ce("cylinder"), cylinder("north")),
+    (4, 3, 1, ce("cylinder_head"), head("north")),
+])
+
+write_schematic("dyno", (6, 6, 6), [
+    (1, 2, 3, ce("crankshaft"), axis("x")),
+    (2, 2, 3, ce("crank_throw"), axis("x")),
+    (3, 2, 3, ce("crankshaft"), axis("x")),
+    (2, 3, 3, ce("cylinder"), cylinder("up")),
+    (2, 4, 3, ce("cylinder_head"), head("up")),
+    (3, 1, 3, ce("dyno"), {}),
+])
+
+write_schematic("turbo_tuning", (7, 6, 7), [
+    (1, 1, 3, ce("crankshaft"), axis("x")),
+    (2, 1, 3, ce("crank_throw"), axis("x")),
+    (3, 1, 3, ce("crankshaft"), axis("x")),
+    (2, 2, 3, ce("cylinder"), cylinder("up")),
+    (2, 3, 3, ce("cylinder_head"), head("up")),
+    (1, 3, 3, ce("variable_turbocharger"), facing("west")),
+    (0, 3, 3, ce("air_intake"), facing("west")),
+    (1, 3, 4, ce("exhaust_outlet"), facing("south")),
+    (1, 3, 2, ce("intake_manifold"), pipe("south", "east")),
+    (2, 3, 2, ce("intake_manifold"), pipe("west", "south")),
+    (2, 4, 3, ce("cam_lobe"), axis("x")),
+    (1, 4, 3, ce("camshaft"), axis("x")),
+    (3, 4, 3, ce("camshaft"), axis("x")),
+])
+
+write_schematic("rotor", (7, 6, 6), [
+    (1, 2, 3, ce("crankshaft"), axis("x")),
+    (2, 2, 3, ce("rotor_housing"), {"axis": "x", "rotor": "true", "injector": "true", "spark_plug": "true"}),
+    (3, 2, 3, ce("crankshaft"), axis("x")),
+    (4, 2, 3, ce("crankshaft"), axis("x")),
+    (2, 2, 2, ce("air_intake"), facing("north")),
+    (2, 3, 3, ce("exhaust_outlet"), facing("up")),
+    (3, 2, 2, ce("air_intake"), facing("north")),
+    (3, 3, 3, ce("exhaust_outlet"), facing("up")),
+])

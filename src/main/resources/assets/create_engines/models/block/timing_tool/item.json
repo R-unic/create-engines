@@ -1,13 +1,13 @@
 {
   "parent": "block/block",
   "textures": {
-    "grip": "create:block/dark_metal_block",
-    "body": "create:block/brass_block",
-    "lens": "minecraft:block/quartz_block_top",
-    "dial": "minecraft:block/iron_block",
-    "needle": "minecraft:block/red_concrete",
-    "cable": "minecraft:block/black_concrete",
-    "particle": "create:block/brass_block"
+    "grip": "create_engines:block/black_oxide",
+    "body": "create_engines:block/brass",
+    "lens": "create_engines:block/ceramic",
+    "dial": "create_engines:block/steel",
+    "needle": "create_engines:block/enamel_red",
+    "cable": "create_engines:block/screen",
+    "particle": "create_engines:block/brass"
   },
   "elements": [
     {

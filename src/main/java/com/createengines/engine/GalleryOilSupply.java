@@ -4,7 +4,7 @@ import java.util.List;
 
 import org.jetbrains.annotations.Nullable;
 
-import com.createengines.content.head.CylinderHeadBlockEntity;
+import com.createengines.content.head.GalleryMember;
 import com.createengines.engine.sim.OilSupply;
 
 import net.minecraft.core.BlockPos;
@@ -30,7 +30,7 @@ public final class GalleryOilSupply implements OilSupply {
 	}
 
 	private @Nullable FluidTank tank(BlockPos pos) {
-		return level.isLoaded(pos) && level.getBlockEntity(pos) instanceof CylinderHeadBlockEntity head
+		return level.isLoaded(pos) && level.getBlockEntity(pos) instanceof GalleryMember head
 			? head.oilTank() : null;
 	}
 

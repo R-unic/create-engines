@@ -118,14 +118,34 @@ class AirFuelRatioTest {
 		return cycle.work / cycle.fuelInjected;
 	}
 
-	/** The drawback of a flooded spark engine: soot builds on the plug until it can only light a balanced mixture. */
+	/**
+	 * The drawback of a flooded spark engine: soot builds on the plug until it coughs. It stutters rather than locking
+	 * out, because a plug that can't light the charge scrubs itself until it can again.
+	 */
 	@Test
-	void runningRichFoulsASparkPlugUntilItMisfires() {
+	void runningRichFoulsASparkPlugUntilItCoughs() {
 		Rig rig = new Rig(GASOLINE, IgnitionSource.UNLIMITED, 128).mixture(1.7);
-		rig.run(30);
-		assertTrue(rig.cylinder.fouling() > 0.9, "fouling " + rig.cylinder.fouling());
-		assertEquals(CycleResult.FOULED, rig.last().result);
-		assertEquals(0, rig.last().fuelBurned);
+		boolean coughed = false;
+		int fired = 0;
+		double worst = 0;
+		for (int i = 0; i < 120; i++) {
+			rig.run(0.25);
+			coughed |= rig.last().result == CycleResult.FOULED;
+			if (rig.last().result.fired())
+				fired++;
+			worst = Math.max(worst, rig.cylinder.fouling());
+		}
+		assertTrue(worst > 0.2, "fouling " + worst);
+		assertTrue(coughed, "a fouled plug should misfire now and then");
+		assertTrue(fired > 20, "but it keeps firing between coughs: " + fired);
+	}
+
+	/** Even a completely sooted plug can light a mixture a little richer than balanced. */
+	@Test
+	void aSoottedPlugStillLightsAMildlyRichMixture() {
+		Rig rig = new Rig(GASOLINE, IgnitionSource.UNLIMITED, 128).mixture(1.35);
+		rig.run(40);
+		assertTrue(rig.last().result.fired() || rig.cylinder.fouling() < 0.9, "was " + rig.last().result);
 	}
 
 	/** Fouling is gradual: a moment of rich running doesn't stop an engine, a minute of it does. */
@@ -143,7 +163,6 @@ class AirFuelRatioTest {
 	void aFouledPlugCleansItselfOnceTheMixtureIsCorrected() {
 		Rig rig = new Rig(GASOLINE, IgnitionSource.UNLIMITED, 128).mixture(1.7);
 		rig.run(30);
-		assertEquals(CycleResult.FOULED, rig.last().result);
 
 		rig.mixture(TUNED);
 		rig.run(40);

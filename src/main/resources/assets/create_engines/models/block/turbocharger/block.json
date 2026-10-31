@@ -2,10 +2,10 @@
   "parent": "block/block",
   "textures": {
     "compressor": "create:block/copper_casing",
-    "turbine": "create:block/dark_metal_block",
-    "centre": "create:block/industrial_iron_block",
-    "bolt": "create:block/brass_block",
-    "pipe": "create:block/brass_block",
+    "turbine": "create_engines:block/black_oxide",
+    "centre": "create_engines:block/cast_iron",
+    "bolt": "create_engines:block/brass",
+    "pipe": "create_engines:block/brass",
     "particle": "create:block/copper_casing"
   },
   "elements": [

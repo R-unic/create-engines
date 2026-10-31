@@ -3,13 +3,9 @@
   "criteria": {
     "pipework": {
       "conditions": {
-        "items": [
-          {
-            "items": "create_engines:intake_manifold"
-          }
-        ]
+        "event": "piped_engine"
       },
-      "trigger": "minecraft:inventory_changed"
+      "trigger": "create_engines:event"
     }
   },
   "display": {

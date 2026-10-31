@@ -3,13 +3,9 @@
   "criteria": {
     "spark_plug": {
       "conditions": {
-        "items": [
-          {
-            "items": "create_engines:spark_plug"
-          }
-        ]
+        "event": "spark_engine"
       },
-      "trigger": "minecraft:inventory_changed"
+      "trigger": "create_engines:event"
     }
   },
   "display": {

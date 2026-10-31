@@ -3,13 +3,9 @@
   "criteria": {
     "starter": {
       "conditions": {
-        "items": [
-          {
-            "items": "create_engines:starter"
-          }
-        ]
+        "event": "cranking"
       },
-      "trigger": "minecraft:inventory_changed"
+      "trigger": "create_engines:event"
     }
   },
   "display": {

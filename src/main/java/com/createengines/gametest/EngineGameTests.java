@@ -16,12 +16,16 @@ import com.createengines.content.cylinder.CylinderBlock;
 import com.createengines.content.cylinder.CylinderBlockEntity;
 import com.createengines.content.head.CylinderHeadBlock;
 import com.createengines.content.head.CylinderHeadBlockEntity;
+import com.createengines.content.rotor.RotorHousingBlock;
+import com.createengines.content.rotor.RotorHousingBlockEntity;
 import com.createengines.content.governor.GovernorBlockEntity;
 import com.createengines.content.limiter.RevLimiterBlockEntity;
 import com.createengines.content.starter.StarterBlock;
 import com.createengines.content.sump.SumpBlockEntity;
 import com.createengines.content.transmission.Gears;
 import com.createengines.content.transmission.TransmissionBlockEntity;
+import com.createengines.content.dyno.DynoBlockEntity;
+import com.createengines.content.tool.BankBuilderItem;
 import com.createengines.content.tool.TimingToolItem;
 import com.createengines.content.intercooler.IntercoolerBlock;
 import com.createengines.content.supercharger.SuperchargerBlock;
@@ -1404,6 +1408,306 @@ public class EngineGameTests {
 			helper.assertTrue(Math.abs(other.rotation(100f) + drawn) < 1e-3,
 				"The second line should be drawn as the first's mirror image");
 			helper.succeed();
+		});
+	}
+
+	/** A rotor housing is a crank link, head and cylinder in one: three chambers, no camshaft, nothing missing. */
+	@GameTest(template = "empty", timeoutTicks = 100)
+	public static void aRotorHousingScansAsThreeChambersAndNeedsNoCam(GameTestHelper helper) {
+		TestEngine.buildRotary(helper.getLevel(), helper.absolutePos(BlockPos.ZERO), true);
+		helper.runAtTickTime(20, () -> {
+			EngineLayout layout = EngineScanner.scan(helper.getLevel(), helper.absolutePos(PRIMARY));
+			helper.assertTrue(layout != null && layout.cylinders()
+				.size() == 3, "A rotor makes three chambers: " + (layout == null ? null : layout.cylinders()));
+			for (int i = 0; i < 3; i++) {
+				EngineLayout.Cylinder chamber = layout.cylinders()
+					.get(i);
+				helper.assertTrue(chamber.rotary() && chamber.chamber() == i, "Chamber " + i + ": " + chamber);
+				helper.assertTrue(chamber.faults() == 0, "No cam, head or throw to be missing: " + chamber.faults());
+				helper.assertTrue(chamber.lobe() == null && chamber.camLine() < 0, "A rotor has no cam");
+				helper.assertTrue(chamber.intake() >= 0 && chamber.exhaust() >= 0, "Its ports are found like a head's");
+			}
+			helper.assertTrue(layout.heads()
+				.contains(helper.absolutePos(TestEngine.HOUSING)), "The housing is in the fuel gallery");
+			helper.succeed();
+		});
+	}
+
+	/** Cranked by the starter, a rotor on gasoline lights, runs on its own and keeps all three chambers firing. */
+	@GameTest(template = "empty", timeoutTicks = 1000)
+	public static void aRotaryEngineStartsAndRunsOnGasoline(GameTestHelper helper) {
+		TestEngine.buildRotary(helper.getLevel(), helper.absolutePos(BlockPos.ZERO), true);
+		helper.runAtTickTime(300, () -> {
+			EngineSummary summary = summary(helper);
+			helper.assertTrue(summary.firing() >= 1, "The rotor should fire under the starter: " + summary);
+			BatteryBlockEntity battery = helper.getBlockEntity(TestEngine.BATTERY);
+			helper.assertTrue(battery.charge() > 0, "Cranking should have charged the battery");
+			helper.setBlock(STARTER_POWER, Blocks.AIR);
+		});
+		helper.runAtTickTime(800, () -> {
+			EngineSummary summary = summary(helper);
+			helper.assertTrue(summary.state() == EngineState.RUNNING, "The rotary engine should run on its own: " + summary);
+			helper.assertTrue(summary.firing() == 3, "All three chambers should fire: " + summary);
+			RotorHousingBlockEntity housing = helper.getBlockEntity(TestEngine.HOUSING);
+			for (int i = 0; i < 3; i++)
+				helper.assertTrue(housing.chamber(i) != null && housing.chamber(i)
+					.result() == CycleResult.FIRED, "Chamber " + i + ": " + housing.chamber(i));
+			helper.assertTrue(housing.tank()
+				.getFluidAmount() < 250, "The engine should have burned gasoline");
+			helper.succeed();
+		});
+	}
+
+	/** A rotor cannot light a charge by compression alone: with no plug it only turns over, and says why. */
+	@GameTest(template = "empty", timeoutTicks = 500)
+	public static void aRotorWithNoSparkPlugDoesNotLight(GameTestHelper helper) {
+		TestEngine.buildRotary(helper.getLevel(), helper.absolutePos(BlockPos.ZERO), false);
+		RotorHousingBlockEntity housing = helper.getBlockEntity(TestEngine.HOUSING);
+		housing.tank()
+			.drain(250, FluidAction.EXECUTE);
+		housing.tank()
+			.fill(new FluidStack(CEFluids.DIESEL.get()
+				.getSource(), 250), FluidAction.EXECUTE);
+		helper.runAtTickTime(400, () -> {
+			helper.assertTrue(summary(helper).firing() == 0, "Diesel lit in a rotor with no plug: " + summary(helper));
+			CylinderStatus chamber = housing.chamber(0);
+			helper.assertTrue(chamber != null && CylinderFault.NO_PLUG.in(chamber.faults()),
+				"The housing should say it has no plug: " + chamber);
+			helper.succeed();
+		});
+	}
+
+	/** A housing with no rotor in it is one disabled entry that drags nothing, and the engine reports no cylinders. */
+	@GameTest(template = "empty", timeoutTicks = 100)
+	public static void aRotorHousingWithNoRotorWorksNothing(GameTestHelper helper) {
+		TestEngine.buildRotary(helper.getLevel(), helper.absolutePos(BlockPos.ZERO), true);
+		helper.setBlock(TestEngine.HOUSING, helper.getBlockState(TestEngine.HOUSING)
+			.setValue(RotorHousingBlock.HAS_ROTOR, false));
+		helper.runAtTickTime(30, () -> {
+			EngineLayout layout = EngineScanner.scan(helper.getLevel(), helper.absolutePos(PRIMARY));
+			helper.assertTrue(layout != null && layout.cylinders()
+				.size() == 1 && CylinderFault.NO_ROTOR.in(layout.cylinders()
+					.getFirst()
+					.faults()), "One disabled entry with no rotor: " + (layout == null ? null : layout.cylinders()));
+			helper.assertTrue(summary(helper).cylinders() == 0, "Nothing can work: " + summary(helper));
+			helper.succeed();
+		});
+	}
+
+	/** The Timing Tool sets two rotors half a turn apart, whichever way they started, and leaves a cams-only plan alone. */
+	@GameTest(template = "empty", timeoutTicks = 100)
+	public static void theTimingToolSpacesTwoRotorsEvenly(GameTestHelper helper) {
+		TestEngine.buildRotary(helper.getLevel(), helper.absolutePos(BlockPos.ZERO), true);
+		TestEngine.addSecondRotor(helper.getLevel(), helper.absolutePos(BlockPos.ZERO));
+		RotorHousingBlockEntity first = helper.getBlockEntity(TestEngine.HOUSING);
+		RotorHousingBlockEntity second = helper.getBlockEntity(TestEngine.HOUSING_2);
+		first.throwAngle.setValue(2);
+		second.throwAngle.setValue(3);
+		helper.runAtTickTime(30, () -> {
+			TimingToolItem.Result kept = TimingToolItem.apply(helper.getLevel(), helper.absolutePos(PRIMARY),
+				FiringPlanner.Style.CAMS_ONLY);
+			helper.assertTrue(kept != null && kept.rotors() == 2 && !kept.rotorsEven(), "Cams only leaves rotors: " + kept);
+			helper.assertTrue(first.throwAngle.getValue() == 2 && second.throwAngle.getValue() == 3,
+				"Cams only should not move an eccentric");
+			TimingToolItem.Result result = TimingToolItem.apply(helper.getLevel(), helper.absolutePos(PRIMARY),
+				FiringPlanner.Style.SMOOTH);
+			helper.assertTrue(result != null && result.plan() == null && result.rotors() == 2 && result.rotorsEven(),
+				"Two rotors can always be spaced evenly: " + result);
+			int apart = Math.floorMod(first.throwAngle.getValue() - second.throwAngle.getValue(), 24);
+			helper.assertTrue(apart == 12, "Eccentrics should be half a turn apart, was " + apart + " steps");
+			helper.succeed();
+		});
+	}
+
+	/** The eccentric angle and the fuel metering are both scroll values: saving must keep them apart. */
+	@GameTest(template = "empty", timeoutTicks = 20)
+	public static void aRotorHousingSavesItsAngleAndItsMeteringSeparately(GameTestHelper helper) {
+		TestEngine.buildRotary(helper.getLevel(), helper.absolutePos(BlockPos.ZERO), true);
+		RotorHousingBlockEntity housing = helper.getBlockEntity(TestEngine.HOUSING);
+		housing.throwAngle.setValue(5);
+		housing.metering.setValue(7);
+		net.minecraft.nbt.CompoundTag saved = housing.saveWithoutMetadata(helper.getLevel()
+			.registryAccess());
+		housing.throwAngle.setValue(1);
+		housing.metering.setValue(1);
+		housing.handleUpdateTag(saved, helper.getLevel()
+			.registryAccess());
+		helper.assertTrue(housing.throwAngle.getValue() == 5, "Eccentric angle: " + housing.throwAngle.getValue());
+		helper.assertTrue(housing.metering.getValue() == 7, "Metering: " + housing.metering.getValue());
+		helper.succeed();
+	}
+
+	// New in the early-game, flywheel, turbo, bank and dynamometer pass
+
+	/** A Cast Flywheel on the crank's shaft line is counted as rotating mass by the scanner. */
+	@GameTest(template = "empty")
+	public static void aCastFlywheelOnTheCrankLineAddsItsInertia(GameTestHelper helper) {
+		buildSingleCylinder(helper, true);
+		EngineLayout bare = EngineScanner.scan(helper.getLevel(), helper.absolutePos(PRIMARY));
+		helper.assertTrue(bare != null && bare.flywheelInertia() == 0, "No flywheel yet: " + bare);
+		helper.setBlock(new BlockPos(0, 2, 2), CEBlocks.CAST_FLYWHEEL.getDefaultState()
+			.setValue(BlockStateProperties.AXIS, Axis.X));
+		EngineLayout layout = EngineScanner.scan(helper.getLevel(), helper.absolutePos(PRIMARY));
+		helper.assertTrue(layout != null
+			&& Math.abs(layout.flywheelInertia() - com.createengines.config.CEConfig.CAST_FLYWHEEL_INERTIA.get()) < 1e-9,
+			"The cast flywheel should add its inertia: " + (layout == null ? null : layout.flywheelInertia()));
+		helper.succeed();
+	}
+
+	/** The Timing Tool's tune mode sets a flooded injector back to a balanced mixture. */
+	@GameTest(template = "empty", timeoutTicks = 1700)
+	public static void tuningAFloodedEngineBringsTheMixtureBack(GameTestHelper helper) {
+		buildSingleCylinder(helper, true);
+		CylinderHeadBlockEntity head = helper.getBlockEntity(HEAD);
+		head.metering.setValue(CylinderHeadBlockEntity.MAX_METERING);
+		helper.runAtTickTime(300, () -> helper.setBlock(STARTER_POWER, Blocks.AIR));
+		helper.runAtTickTime(900, () -> {
+			helper.assertTrue(cylinder(helper).rich(), "Twice the fuel should run rich first: " + cylinder(helper));
+			var tuning = TimingToolItem.tuneFuel(helper.getLevel(), helper.absolutePos(HEAD));
+			helper.assertTrue(tuning != null && tuning.tuned() == 1, "One injector should be tuned: " + tuning);
+			helper.assertTrue(head.metering.getValue() < CylinderHeadBlockEntity.MAX_METERING,
+				"Tuning should turn the shot down: " + head.metering.getValue());
+		});
+		helper.runAtTickTime(1500, () -> {
+			CylinderStatus status = cylinder(helper);
+			helper.assertTrue(status.mixture() > 0.5f && status.mixture() < 1.3f, "Mixture after tuning: " + status);
+			helper.succeed();
+		});
+	}
+
+	/** Tuning a stopped engine does nothing, and says so. */
+	@GameTest(template = "empty")
+	public static void tuningAStoppedEngineChangesNothing(GameTestHelper helper) {
+		buildSingleCylinder(helper, true);
+		helper.runAtTickTime(20, () -> {
+			var tuning = TimingToolItem.tuneFuel(helper.getLevel(), helper.absolutePos(HEAD));
+			helper.assertTrue(tuning != null && tuning.tuned() == 0, "Nothing to tune yet: " + tuning);
+			helper.succeed();
+		});
+	}
+
+	/** The Bank Builder lays a cylinder and a head on the chosen faces of every throw. */
+	@GameTest(template = "empty")
+	public static void theBankBuilderLaysOutAFlatAndAVeeBank(GameTestHelper helper) {
+		for (int x = 1; x <= 5; x++)
+			helper.setBlock(new BlockPos(x, 3, 3), (x % 2 == 0 ? CEBlocks.CRANK_THROW : CEBlocks.CRANKSHAFT).getDefaultState()
+				.setValue(BlockStateProperties.AXIS, Axis.X));
+		var player = helper.makeMockPlayer(GameType.CREATIVE);
+		var flat = BankBuilderItem.build(helper.getLevel(), helper.absolutePos(new BlockPos(2, 3, 3)), Direction.UP,
+			BankBuilderItem.Layout.FLAT, player, true);
+		helper.assertTrue(flat.throwsFound() == 2 && flat.cylinders() == 4 && flat.heads() == 4, "A flat bank: " + flat);
+		for (int x : new int[] {2, 4}) {
+			helper.assertBlockState(new BlockPos(x, 4, 3), s -> s.getBlock() instanceof CylinderBlock
+				&& s.getValue(CylinderBlock.FACING) == Direction.UP, () -> "Cylinder up on throw " + x);
+			helper.assertBlockState(new BlockPos(x, 2, 3), s -> s.getBlock() instanceof CylinderBlock
+				&& s.getValue(CylinderBlock.FACING) == Direction.DOWN, () -> "Cylinder down on throw " + x);
+			helper.assertBlockState(new BlockPos(x, 5, 3), s -> s.getBlock() instanceof CylinderHeadBlock, () -> "Head up");
+			helper.assertBlockState(new BlockPos(x, 1, 3), s -> s.getBlock() instanceof CylinderHeadBlock, () -> "Head down");
+			helper.assertBlockState(new BlockPos(x, 4, 3),
+				s -> s.getValue(CylinderBlock.HAS_PISTON) && s.getValue(CylinderBlock.HAS_ROD),
+				() -> "A creative builder fits the piston and rod");
+		}
+		// Asking again is harmless: what is built is only filled in
+		var again = BankBuilderItem.build(helper.getLevel(), helper.absolutePos(new BlockPos(2, 3, 3)), Direction.UP,
+			BankBuilderItem.Layout.FLAT, player, true);
+		helper.assertTrue(again.cylinders() == 0 && again.heads() == 0, "Nothing new to place: " + again);
+
+		// A vee puts the second bank a quarter turn round
+		var vee = BankBuilderItem.build(helper.getLevel(), helper.absolutePos(new BlockPos(2, 3, 3)), Direction.NORTH,
+			BankBuilderItem.Layout.VEE, player, true);
+		helper.assertTrue(vee.cylinders() >= 2, "Vee placed its new cylinders: " + vee);
+		BlockPos second = new BlockPos(2, 3, 3).relative(Direction.NORTH.getClockWise(Axis.X));
+		helper.assertBlockState(second, s -> s.getBlock() instanceof CylinderBlock, () -> "Vee second bank at " + second);
+		helper.succeed();
+	}
+
+	/** Out of parts, a survival builder places only what it has the blocks for. */
+	@GameTest(template = "empty")
+	public static void theBankBuilderReportsWhatItIsMissing(GameTestHelper helper) {
+		for (int x = 1; x <= 3; x++)
+			helper.setBlock(new BlockPos(x, 3, 3), (x == 2 ? CEBlocks.CRANK_THROW : CEBlocks.CRANKSHAFT).getDefaultState()
+				.setValue(BlockStateProperties.AXIS, Axis.X));
+		var player = helper.makeMockPlayer(GameType.SURVIVAL);
+		var result = BankBuilderItem.build(helper.getLevel(), helper.absolutePos(new BlockPos(2, 3, 3)), Direction.UP,
+			BankBuilderItem.Layout.INLINE, player, false);
+		helper.assertTrue(result.cylinders() == 0 && result.missing() == 1, "An empty inventory builds nothing: " + result);
+		player.getInventory()
+			.add(new ItemStack(CEBlocks.CYLINDER.get(), 1));
+		player.getInventory()
+			.add(new ItemStack(CEBlocks.CYLINDER_HEAD.get(), 1));
+		var next = BankBuilderItem.build(helper.getLevel(), helper.absolutePos(new BlockPos(2, 3, 3)), Direction.UP,
+			BankBuilderItem.Layout.INLINE, player, false);
+		helper.assertTrue(next.cylinders() == 1 && next.heads() == 1 && next.missing() == 0,
+			"With a cylinder and a head: " + next);
+		helper.succeed();
+	}
+
+	/** A dynamometer against the engine shows its measured curve. */
+	@GameTest(template = "empty", timeoutTicks = 900)
+	public static void aDynamometerShowsTheEnginesCurve(GameTestHelper helper) {
+		buildSingleCylinder(helper, true);
+		BlockPos dyno = new BlockPos(2, 2, 1);
+		helper.setBlock(dyno, CEBlocks.DYNO.getDefaultState());
+		helper.runAtTickTime(300, () -> helper.setBlock(STARTER_POWER, Blocks.AIR));
+		helper.runAtTickTime(800, () -> {
+			DynoBlockEntity be = helper.getBlockEntity(dyno);
+			var readout = be.readout();
+			helper.assertTrue(readout != null && readout.rpm().length >= 16, "The dyno should have a curve: " + readout);
+			helper.assertTrue(readout.complete(), "The curve should be finished by now");
+			helper.assertTrue(readout.torque()[readout.peakTorque()] > 0, "A running engine makes torque");
+			helper.assertTrue(readout.current() > 0, "And the dyno knows its speed: " + readout.current());
+			helper.succeed();
+		});
+	}
+
+	/** Alone, a dynamometer reads nothing. */
+	@GameTest(template = "empty")
+	public static void aDynamometerAloneReadsNothing(GameTestHelper helper) {
+		BlockPos dyno = new BlockPos(1, 1, 1);
+		helper.setBlock(dyno, CEBlocks.DYNO.getDefaultState());
+		helper.runAtTickTime(40, () -> {
+			DynoBlockEntity be = helper.getBlockEntity(dyno);
+			helper.assertTrue(be.readout() == null && be.signal() == 0, "No engine, no figures");
+			helper.succeed();
+		});
+	}
+
+	/** A variable-geometry turbo runs the engine, with its vanes closed on a thin exhaust. */
+	@GameTest(template = "empty", timeoutTicks = 1700)
+	public static void aVariableTurbochargerClosesItsVanesOnAThinExhaust(GameTestHelper helper) {
+		buildSingleCylinder(helper, true);
+		buildTurbo(helper);
+		helper.setBlock(EXHAUST, CEBlocks.VARIABLE_TURBOCHARGER.getDefaultState()
+			.setValue(TurbochargerBlock.FACING, Direction.WEST));
+		helper.runAtTickTime(300, () -> helper.setBlock(STARTER_POWER, Blocks.AIR));
+		helper.runAtTickTime(1100, () -> {
+			EngineSummary summary = summary(helper);
+			helper.assertTrue(summary.state() == EngineState.RUNNING, "Engine should run through the turbo: " + summary);
+			TurbochargerBlockEntity be = helper.getBlockEntity(EXHAUST);
+			helper.assertTrue(be.status() != null && be.status().vanes() > 0.2f,
+				"One cylinder exhaust is thin, so the vanes close: " + be.status());
+			helper.succeed();
+		});
+	}
+
+	/** With anti-lag set, a turbo burns fuel in the exhaust when the engine rack is closed. */
+	@GameTest(template = "empty", timeoutTicks = 1700)
+	public static void antiLagBurnsFuelOnceTheRackIsClosed(GameTestHelper helper) {
+		buildSingleCylinder(helper, true);
+		buildTurbo(helper);
+		TurbochargerBlockEntity turbo = helper.getBlockEntity(EXHAUST);
+		turbo.antiLag.setValue(3);
+		helper.runAtTickTime(300, () -> helper.setBlock(STARTER_POWER, Blocks.AIR));
+		helper.runAtTickTime(900, () -> {
+			helper.assertTrue(summary(helper).state() == EngineState.RUNNING, "Running first: " + summary(helper));
+			helper.assertTrue(turbo.status() != null && !turbo.status().antiLag(), "On the throttle it does nothing");
+			// Redstone on the camshaft closes the fuel rack
+			helper.setBlock(LOBE.above(), Blocks.REDSTONE_BLOCK);
+		});
+		helper.succeedWhen(() -> {
+			helper.assertTrue(helper.getTick() > 920, "Rack not shut yet");
+			helper.assertTrue(turbo.status() != null && turbo.status().antiLag(),
+				"The turbo should be burning fuel to stay spooled: " + turbo.status());
 		});
 	}
 

@@ -2,14 +2,14 @@
   "parent": "block/block",
   "textures": {
     "compressor": "create:block/copper_casing",
-    "turbine": "create:block/dark_metal_block",
-    "centre": "create:block/industrial_iron_block",
-    "bolt": "create:block/brass_block",
-    "pipe": "create:block/brass_block",
-    "particle": "create:block/brass_block",
-    "blade": "create:block/brass_block",
-    "hot": "minecraft:block/iron_block",
-    "shaft": "create:block/industrial_iron_block"
+    "turbine": "create_engines:block/black_oxide",
+    "centre": "create_engines:block/cast_iron",
+    "bolt": "create_engines:block/brass",
+    "pipe": "create_engines:block/brass",
+    "particle": "create_engines:block/brass",
+    "blade": "create_engines:block/brass",
+    "hot": "create_engines:block/steel",
+    "shaft": "create_engines:block/cast_iron"
   },
   "elements": [
     {

@@ -1,28 +1,28 @@
 {
-  "parent": "create_engines:alive",
+  "parent": "create_engines:heavy_duty",
   "criteria": {
-    "spark_engine": {
+    "dyno_run": {
       "conditions": {
-        "event": "spark_engine"
+        "event": "dyno_run"
       },
       "trigger": "create_engines:event"
     }
   },
   "display": {
     "description": {
-      "translate": "advancement.create_engines.spark_engine.desc"
+      "translate": "advancement.create_engines.dyno_run.desc"
     },
     "icon": {
       "count": 1,
-      "id": "create_engines:spark_plug"
+      "id": "create_engines:dyno"
     },
     "title": {
-      "translate": "advancement.create_engines.spark_engine"
+      "translate": "advancement.create_engines.dyno_run"
     }
   },
   "requirements": [
     [
-      "spark_engine"
+      "dyno_run"
     ]
   ],
   "sends_telemetry_event": true

@@ -10,6 +10,7 @@ import org.junit.jupiter.api.Test;
 
 import com.createengines.advancement.Milestone;
 import com.createengines.engine.EngineMilestones.Snapshot;
+import com.createengines.engine.topology.PrecisionParts;
 
 class EngineMilestonesTest {
 
@@ -158,6 +159,45 @@ class EngineMilestonesTest {
 			0, false, 0, false, 0, true, true);
 		assertFalse(EngineMilestones.reached(coasting)
 			.contains(Milestone.PUSHROD_CAM));
+	}
+
+	@Test
+	void rotaryMilestonesNeedARunningRotor() {
+		assertTrue(EngineMilestones.reachedRotary(new EngineMilestones.Rotary(false, 300, 2))
+			.isEmpty(), "a stopped engine");
+		assertTrue(EngineMilestones.reachedRotary(new EngineMilestones.Rotary(true, 300, 0))
+			.isEmpty(), "a piston engine has no rotors");
+		assertEquals(Set.of(Milestone.ROTARY_ENGINE), EngineMilestones.reachedRotary(new EngineMilestones.Rotary(true, 90, 1)));
+		assertEquals(Set.of(Milestone.ROTARY_ENGINE, Milestone.ROTARY_REVS),
+			EngineMilestones.reachedRotary(new EngineMilestones.Rotary(true, 210, 1)));
+		assertEquals(Set.of(Milestone.ROTARY_ENGINE, Milestone.TWIN_ROTORS),
+			EngineMilestones.reachedRotary(new EngineMilestones.Rotary(true, 90, 2)));
+	}
+
+	@Test
+	void partsAreRewardedForWorkingInARunningEngine() {
+		EngineMilestones.Parts idle = new EngineMilestones.Parts(false, true, true, true, true, true, 1, true, true,
+			true, true, PrecisionParts.ALL, false);
+		assertTrue(EngineMilestones.reachedParts(idle)
+			.isEmpty(), "fitting parts to an engine that is not running earns nothing");
+
+		EngineMilestones.Parts everything = new EngineMilestones.Parts(true, true, true, true, true, true, 1, true, true,
+			true, true, PrecisionParts.ALL, true);
+		assertEquals(Set.of(Milestone.CAMSHAFT_TIMED, Milestone.PIPED_ENGINE, Milestone.THROTTLED,
+			Milestone.DIESEL_BURNED, Milestone.GASOLINE_BURNED, Milestone.OILED, Milestone.SUMP_OILING,
+			Milestone.MAF_READING, Milestone.LAMBDA_READING, Milestone.GOVERNOR_ACTIVE, Milestone.PRECISION_BORE,
+			Milestone.PRECISION_HEAD, Milestone.PRECISION_PISTON, Milestone.PRECISION_INJECTOR,
+			Milestone.ROTOR_HOUSING_TURNED), EngineMilestones.reachedParts(everything));
+
+		EngineMilestones.Parts dry = new EngineMilestones.Parts(true, false, false, false, false, false, 0.2f, true,
+			false, false, false, PrecisionParts.PISTON, false);
+		assertEquals(Set.of(Milestone.PRECISION_PISTON), EngineMilestones.reachedParts(dry),
+			"a sump on a dry engine has not oiled anything");
+
+		EngineMilestones.Parts housing = new EngineMilestones.Parts(false, false, false, false, false, false, 0, false,
+			false, false, false, 0, true);
+		assertEquals(Set.of(Milestone.ROTOR_HOUSING_TURNED), EngineMilestones.reachedParts(housing),
+			"a rotor housing counts as soon as the shaft turns");
 	}
 
 	@Test

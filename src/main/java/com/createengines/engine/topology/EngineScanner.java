@@ -28,10 +28,12 @@ import com.createengines.content.camshaft.CamshaftBlock;
 import com.createengines.content.camshaft.CamshaftBlockEntity;
 import com.createengines.content.crankshaft.CrankshaftBlock;
 import com.createengines.content.crankshaft.CrankshaftBlockEntity;
+import com.createengines.content.flywheel.CastFlywheelBlock;
 import com.createengines.content.cylinder.CylinderBlock;
 import com.createengines.content.head.CylinderHeadBlock;
 import com.createengines.content.governor.GovernorBlock;
 import com.createengines.content.limiter.RevLimiterBlock;
+import com.createengines.content.rotor.RotorHousingBlock;
 import com.createengines.content.starter.StarterBlock;
 import com.createengines.content.sump.SumpBlock;
 import com.createengines.content.airflow.InlineDuct;
@@ -44,6 +46,8 @@ import com.createengines.engine.topology.EngineLayout.Cylinder;
 import com.createengines.engine.topology.EngineLayout.PortNetwork;
 import com.createengines.engine.topology.EngineLayout.Segment;
 import com.simibubi.create.AllBlocks;
+
+import org.joml.Vector3f;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -103,7 +107,8 @@ public final class EngineScanner {
 		final Axis axis;
 		final BlockPos start;
 		final List<Segment> segments = new ArrayList<>();
-		int flywheels;
+		/** Rotational inertia of the flywheels on this line's shaft. */
+		double flywheelInertia;
 		int sense;
 
 		Line(Axis axis, BlockPos start, int sense) {
@@ -148,7 +153,7 @@ public final class EngineScanner {
 			members.add(cursor.immutable());
 			cursor = cursor.relative(forward);
 		}
-		line.flywheels = countFlywheels(start.relative(back), back, axis) + countFlywheels(cursor, forward, axis);
+		line.flywheelInertia = flywheelInertia(start.relative(back), back, axis) + flywheelInertia(cursor, forward, axis);
 		return line;
 	}
 
@@ -191,11 +196,11 @@ public final class EngineScanner {
 		// The first line sets the engine's direction: the others are +1 where they turn the way it does
 		int base = lines.getFirst().sense;
 		List<Segment> segments = new ArrayList<>();
-		int flywheels = 0;
+		double flywheelInertia = 0;
 		for (Line line : lines) {
 			line.relativeTo(base);
 			segments.addAll(line.segments);
-			flywheels += line.flywheels;
+			flywheelInertia += line.flywheelInertia;
 		}
 
 		Set<BlockPos> batteries = new LinkedHashSet<>();
@@ -207,13 +212,18 @@ public final class EngineScanner {
 		List<BlockPos> starters = new ArrayList<>();
 		for (Line line : lines) {
 			for (Segment segment : line.segments) {
+				BlockState segmentState = state(segment.pos());
+				boolean rotor = segmentState.getBlock() instanceof RotorHousingBlock;
+				if (rotor)
+					drafts.addAll(scanRotor(line.axis, segment, segmentState));
 				for (Direction side : Direction.values()) {
 					if (side.getAxis() == line.axis)
 						continue;
 					BlockPos neighbour = segment.pos()
 						.relative(side);
 					BlockState state = state(neighbour);
-					if (state.getBlock() instanceof CylinderBlock && state.getValue(CylinderBlock.FACING) == side)
+					// A rotor housing is its own cylinder: nothing is bored into it
+					if (!rotor && state.getBlock() instanceof CylinderBlock && state.getValue(CylinderBlock.FACING) == side)
 						drafts.add(scanCylinder(line.axis, segment, side, neighbour, state));
 					else if (state.getBlock() instanceof StarterBlock
 						&& state.getValue(StarterBlock.FACING) == side.getOpposite()) {
@@ -244,7 +254,7 @@ public final class EngineScanner {
 		return new EngineLayout(first.start, first.axis, List.copyOf(segments), List.copyOf(cylinders),
 			List.copyOf(ports), List.copyOf(camLines), List.copyOf(starters), List.copyOf(batteries),
 			List.copyOf(alternators), List.copyOf(sumps), List.copyOf(limiters), List.copyOf(governors), List.copyOf(heads),
-			turbos(), inlines(true), inlines(false), flywheels, lines.size(), Set.copyOf(members), incomplete, brokenCrank);
+			turbos(), inlines(true), inlines(false), flywheelInertia, lines.size(), Set.copyOf(members), incomplete, brokenCrank);
 	}
 
 	/** Every supercharger (or, if not {@code superchargers}, intercooler) on one of this engine's intake networks. */
@@ -292,15 +302,18 @@ public final class EngineScanner {
 		}
 	}
 
-	private int countFlywheels(BlockPos from, Direction direction, Axis axis) {
-		int flywheels = 0;
+	/** The inertia of the flywheels on the shaft running on from {@code from} in {@code direction}, beyond a crank line's end. */
+	private double flywheelInertia(BlockPos from, Direction direction, Axis axis) {
+		double inertia = 0;
 		BlockPos cursor = from;
 		for (int i = 0; i < MAX_SHAFT_WALK; i++) {
 			BlockState state = state(cursor);
 			boolean onAxis = state.hasProperty(BlockStateProperties.AXIS)
 				&& state.getValue(BlockStateProperties.AXIS) == axis;
 			if (onAxis && AllBlocks.FLYWHEEL.has(state))
-				flywheels++;
+				inertia += CEConfig.FLYWHEEL_INERTIA.get();
+			else if (onAxis && state.getBlock() instanceof CastFlywheelBlock)
+				inertia += CEConfig.CAST_FLYWHEEL_INERTIA.get();
 			else if (i > 0 && isCrank(state, axis)) {
 				// A shaft in the middle of the crankshaft: the blocks either side of it are not one line
 				brokenCrank = true;
@@ -310,7 +323,7 @@ public final class EngineScanner {
 			members.add(cursor.immutable());
 			cursor = cursor.relative(direction);
 		}
-		return flywheels;
+		return inertia;
 	}
 
 	private final class CylinderDraft {
@@ -328,11 +341,87 @@ public final class EngineScanner {
 		boolean sparkPlug;
 		int precision;
 		int sense;
+		int chamber = -1;
 
 		Cylinder build() {
 			return new Cylinder(pos, throwPos, bore, tdcAngle, head, lobe, camLine, lobeAngle, intake, exhaust,
-				faults, sparkPlug, precision, sense);
+				faults, sparkPlug, precision, sense, chamber);
 		}
+
+		CylinderDraft copyAsChamber(int chamber) {
+			CylinderDraft copy = new CylinderDraft();
+			copy.pos = pos;
+			copy.throwPos = throwPos;
+			copy.bore = bore;
+			copy.tdcAngle = tdcAngle;
+			copy.head = head;
+			copy.lobe = lobe;
+			copy.camLine = camLine;
+			copy.lobeAngle = lobeAngle;
+			copy.intake = intake;
+			copy.exhaust = exhaust;
+			copy.faults = faults;
+			copy.sparkPlug = sparkPlug;
+			copy.precision = precision;
+			copy.sense = sense;
+			copy.chamber = chamber;
+			return copy;
+		}
+	}
+
+	/**
+	 * A rotor housing is a crank link, a head and a cylinder in one block, with three chambers (the rotor's faces) that
+	 * share everything but their phase. The housing's side faces are its ports, found as a head's are; there is no
+	 * camshaft to look for, because the ports are cut in the housing and time themselves. A housing with no rotor in it
+	 * is one disabled entry, so it neither drags on the shaft nor appears three times in a readout.
+	 */
+	private List<CylinderDraft> scanRotor(Axis axis, Segment segment, BlockState state) {
+		BlockPos pos = segment.pos();
+		CylinderDraft draft = new CylinderDraft();
+		draft.pos = pos.immutable();
+		draft.throwPos = pos.immutable();
+		draft.head = pos.immutable();
+		// The housing's mark is the direction a throw at zero degrees points in
+		Vector3f mark = CrankGeometry.restDirection(axis);
+		draft.bore = Direction.getNearest(mark.x, mark.y, mark.z);
+		draft.sense = segment.sense();
+		draft.tdcAngle = segment.sense() * CrankGeometry.topDeadCentreAngle(axis, segment.throwAngle(), draft.bore);
+		draft.sparkPlug = state.getValue(RotorHousingBlock.HAS_SPARK_PLUG);
+		if (state.getValue(RotorHousingBlock.FINE_INJECTOR))
+			draft.precision |= PrecisionParts.INJECTOR;
+		if (!state.getValue(RotorHousingBlock.HAS_ROTOR))
+			draft.faults |= CylinderFault.NO_ROTOR.bit();
+		if (!state.getValue(RotorHousingBlock.HAS_INJECTOR))
+			draft.faults |= CylinderFault.NO_INJECTOR.bit();
+		if (!draft.sparkPlug)
+			draft.faults |= CylinderFault.NO_PLUG.bit();
+
+		for (Direction face : Direction.values()) {
+			if (face.getAxis() == axis)
+				continue;
+			BlockPos neighbour = pos.relative(face);
+			PortKind kind = portKindFacing(state(neighbour), face);
+			if (kind == PortKind.INTAKE && draft.intake < 0)
+				draft.intake = portNetwork(neighbour, kind);
+			else if (kind == PortKind.EXHAUST && draft.exhaust < 0)
+				draft.exhaust = portNetwork(neighbour, kind);
+		}
+		if (draft.intake < 0)
+			draft.faults |= CylinderFault.NO_INTAKE.bit();
+		else if (ports.get(draft.intake)
+			.openings() == 0)
+			draft.faults |= CylinderFault.INTAKE_BLOCKED.bit();
+		if (draft.exhaust < 0)
+			draft.faults |= CylinderFault.NO_EXHAUST.bit();
+		else if (ports.get(draft.exhaust)
+			.openings() == 0)
+			draft.faults |= CylinderFault.EXHAUST_BLOCKED.bit();
+
+		List<CylinderDraft> chambers = new ArrayList<>();
+		int count = CylinderFault.NO_ROTOR.in(draft.faults) ? 1 : RotorHousingBlock.CHAMBERS;
+		for (int i = 0; i < count; i++)
+			chambers.add(draft.copyAsChamber(i));
+		return chambers;
 	}
 
 	private CylinderDraft scanCylinder(Axis axis, Segment segment, Direction bore, BlockPos pos, BlockState state) {
@@ -497,7 +586,8 @@ public final class EngineScanner {
 				} else if (block instanceof PortOpeningBlock opening && opening.kind() == kind
 					&& state.getValue(PortOpeningBlock.FACING) == direction)
 					openings.add(next.immutable());
-				else if (block instanceof CylinderHeadBlock && Pipes.accepts(state, direction.getOpposite(), kind))
+				else if ((block instanceof CylinderHeadBlock || block instanceof RotorHousingBlock)
+					&& Pipes.accepts(state, direction.getOpposite(), kind))
 					heads.add(next.immutable());
 			}
 		}
@@ -505,7 +595,8 @@ public final class EngineScanner {
 		for (BlockPos opening : openings) {
 			BlockPos behind = opening.relative(state(opening).getValue(PortOpeningBlock.FACING)
 				.getOpposite());
-			if (state(behind).getBlock() instanceof CylinderHeadBlock)
+			if (state(behind).getBlock() instanceof CylinderHeadBlock
+				|| state(behind).getBlock() instanceof RotorHousingBlock)
 				heads.add(behind.immutable());
 		}
 		return new Trace(visited, openings, heads);
@@ -699,6 +790,11 @@ public final class EngineScanner {
 	}
 
 	private static void addHeadSeed(Level level, BlockPos pos, BlockState state, Set<BlockPos> seeds) {
+		// A rotor housing is its own head, and sits in the crankshaft line
+		if (state.getBlock() instanceof RotorHousingBlock) {
+			seeds.add(pos.immutable());
+			return;
+		}
 		if (!(state.getBlock() instanceof CylinderHeadBlock))
 			return;
 		Direction outward = state.getValue(CylinderHeadBlock.FACING);

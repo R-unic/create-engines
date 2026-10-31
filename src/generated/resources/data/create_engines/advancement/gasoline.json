@@ -3,13 +3,9 @@
   "criteria": {
     "gasoline": {
       "conditions": {
-        "items": [
-          {
-            "items": "create_engines:gasoline_bucket"
-          }
-        ]
+        "event": "gasoline_burned"
       },
-      "trigger": "minecraft:inventory_changed"
+      "trigger": "create_engines:event"
     }
   },
   "display": {

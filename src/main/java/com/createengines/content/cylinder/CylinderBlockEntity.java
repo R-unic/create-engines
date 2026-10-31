@@ -6,10 +6,12 @@ import org.jetbrains.annotations.Nullable;
 
 import org.joml.Vector3f;
 
+import com.createengines.content.EffectRate;
 import com.createengines.content.EnginePoses;
 import com.createengines.content.airflow.PortOpeningBlock;
 import com.createengines.content.camshaft.CamshaftBlockEntity;
 import com.createengines.content.crankshaft.CrankshaftBlockEntity;
+import com.createengines.content.head.GalleryMember;
 import com.createengines.engine.CylinderStatus;
 import com.createengines.engine.sim.CamProfile;
 import com.createengines.engine.sim.CycleResult;
@@ -57,6 +59,8 @@ public class CylinderBlockEntity extends SmartBlockEntity implements IHaveGoggle
 
 	private @Nullable CylinderStatus status;
 	private double lastCamCycle = Double.NaN;
+	private final EffectRate bangs = new EffectRate(EffectRate.BANG_INTERVAL);
+	private final EffectRate puffs = new EffectRate(EffectRate.SMOKE_INTERVAL);
 
 	public CylinderBlockEntity(BlockEntityType<?> type, BlockPos pos, BlockState state) {
 		super(type, pos, state);
@@ -120,8 +124,10 @@ public class CylinderBlockEntity extends SmartBlockEntity implements IHaveGoggle
 		if (Double.isNaN(previous) || lobe.getTheoreticalSpeed() == 0)
 			return;
 		double travelled = (cycle - previous + 720) % 720;
+		// More than half a cycle in one frame, which a fast engine does: every mark went by, so none is told apart from
+		// the others, and the effects' own rate limits are what thin them out
 		if (travelled > 360)
-			return;
+			travelled = 720;
 
 		boolean fired = current.result() == CycleResult.FIRED;
 		if (fired && crosses(previous, travelled, FIRING_CYCLE_ANGLE))
@@ -134,6 +140,8 @@ public class CylinderBlockEntity extends SmartBlockEntity implements IHaveGoggle
 
 	/** The bang, and a flash of flame and sparks at the roof of the chamber. */
 	private void ignite() {
+		if (!bangs.allow(level))
+			return;
 		if (level.getNearestPlayer(worldPosition.getX() + 0.5, worldPosition.getY() + 0.5, worldPosition.getZ() + 0.5,
 			48, false) == null)
 			return;
@@ -248,6 +256,8 @@ public class CylinderBlockEntity extends SmartBlockEntity implements IHaveGoggle
 
 	/** Smoke from the exhaust when the exhaust valve opens after a firing. */
 	private void tickExhaust(CylinderStatus current) {
+		if (!puffs.allow(level))
+			return;
 		ParticleOptions particle;
 		int count;
 		if (current.result() == CycleResult.FIRED) {
@@ -327,6 +337,11 @@ public class CylinderBlockEntity extends SmartBlockEntity implements IHaveGoggle
 				GoggleLines.add(CELang.translate("goggles.mixture", mixture(current.mixture()))
 					.style(current.mixture() < LEAN_MIXTURE || current.mixture() > RICH_MIXTURE ? ChatFormatting.GOLD
 						: ChatFormatting.GRAY), tooltip, 1);
+			if (!Float.isNaN(current.mixture()) && (current.mixture() < LEAN_MIXTURE || current.mixture() > RICH_MIXTURE)
+				&& level.getBlockEntity(worldPosition.relative(state.getValue(CylinderBlock.FACING))) instanceof GalleryMember head)
+				GoggleLines.add(CELang.translate("goggles.mixture.suggest",
+						GalleryMember.balancedMetering(head.meteringFraction(), current.mixture()))
+					.style(ChatFormatting.AQUA), tooltip, 2);
 			if (current.sparkPlug()) {
 				GoggleLines.add(CELang.translate("goggles.ignition.spark")
 					.style(ChatFormatting.GRAY), tooltip, 1);

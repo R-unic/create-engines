@@ -36,7 +36,7 @@ public record EngineLayout(BlockPos primary, Axis axis, List<Segment> segments, 
 						   List<PortNetwork> ports, List<CamLine> camLines, List<BlockPos> starters,
 						   List<BlockPos> batteries, List<BlockPos> alternators, List<BlockPos> sumps,
 						   List<BlockPos> limiters, List<BlockPos> governors, List<BlockPos> heads,
-						   List<Turbo> turbos, List<Inline> superchargers, List<Inline> intercoolers, int flywheels,
+						   List<Turbo> turbos, List<Inline> superchargers, List<Inline> intercoolers, double flywheelInertia,
 							   int lines, Set<BlockPos> members, boolean incomplete,
 							   boolean broken) {
 
@@ -78,10 +78,18 @@ public record EngineLayout(BlockPos primary, Axis axis, List<Segment> segments, 
 	 * @param sparkPlug   the head has a spark plug fitted
 	 * @param precision   {@link PrecisionParts} bits for the precision parts this cylinder is built from
 	 * @param sense       the {@link Segment#sense()} of the throw it sits on
+	 * @param chamber     which face (0 to 2) of a rotor this is, or -1 for a piston cylinder. A rotor housing is its own
+	 *                    throw, head and cylinder: its three chambers all have its position, and {@code tdcAngle} is the
+	 *                    shaft angle at which its eccentric points at the housing's mark
 	 */
 	public record Cylinder(BlockPos pos, BlockPos throwPos, Direction bore, double tdcAngle, @Nullable BlockPos head,
 						   @Nullable BlockPos lobe, int camLine, double lobeAngle, int intake, int exhaust,
-						   int faults, boolean sparkPlug, int precision, int sense) {
+						   int faults, boolean sparkPlug, int precision, int sense, int chamber) {
+
+		/** Whether this is one chamber of a Wankel rotor rather than a piston in a bore. */
+		public boolean rotary() {
+			return chamber >= 0;
+		}
 	}
 
 	/**

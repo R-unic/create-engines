@@ -3,13 +3,9 @@
   "criteria": {
     "camshaft": {
       "conditions": {
-        "items": [
-          {
-            "items": "create_engines:camshaft"
-          }
-        ]
+        "event": "camshaft_timed"
       },
-      "trigger": "minecraft:inventory_changed"
+      "trigger": "create_engines:event"
     }
   },
   "display": {

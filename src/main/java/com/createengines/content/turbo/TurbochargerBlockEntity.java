@@ -22,6 +22,7 @@ import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.HolderLookup;
+import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.level.block.entity.BlockEntityType;
@@ -40,10 +41,13 @@ public class TurbochargerBlockEntity extends SmartBlockEntity implements IHaveGo
 	public static final int MAX_LIMIT = (int) Math.round(Turbocharger.MAX_LIMIT * 10);
 	public static final int DEFAULT_LIMIT = (int) Math.round(Turbocharger.DEFAULT_LIMIT * 10);
 	private static final BehaviourType<ScrollValueBehaviour> LIMIT_TYPE = new BehaviourType<>("turbo_limit");
+	private static final BehaviourType<ScrollValueBehaviour> ANTI_LAG_TYPE = new BehaviourType<>("turbo_anti_lag");
 	/** Wheel degrees turned per tick at design speed. */
 	private static final float WHEEL_DEGREES_PER_TICK = 60;
 
 	public ScrollValueBehaviour limit;
+	/** Anti-lag, 0 (off) to {@link Turbocharger#MAX_ANTI_LAG}. */
+	public ScrollValueBehaviour antiLag;
 
 	private @Nullable TurboStatus status;
 	private float wheelAngle;
@@ -56,7 +60,7 @@ public class TurbochargerBlockEntity extends SmartBlockEntity implements IHaveGo
 	@Override
 	public void addBehaviours(List<BlockEntityBehaviour> behaviours) {
 		limit = new ScrollValueBehaviour(CELang.translate("value.boost_limit")
-			.component(), this, new ValueBox()) {
+			.component(), this, new ValueBox(12)) {
 			@Override
 			public BehaviourType<?> getType() {
 				return LIMIT_TYPE;
@@ -66,6 +70,23 @@ public class TurbochargerBlockEntity extends SmartBlockEntity implements IHaveGo
 		limit.value = DEFAULT_LIMIT;
 		limit.withFormatter(v -> String.format(Locale.ROOT, "%.1f bar", v / 10f));
 		behaviours.add(limit);
+
+		antiLag = new ScrollValueBehaviour(CELang.translate("value.anti_lag")
+			.component(), this, new ValueBox(4)) {
+			@Override
+			public BehaviourType<?> getType() {
+				return ANTI_LAG_TYPE;
+			}
+		};
+		antiLag.between(0, Turbocharger.MAX_ANTI_LAG);
+		antiLag.value = 0;
+		antiLag.withFormatter(v -> v == 0 ? "Off" : "Level " + v);
+		behaviours.add(antiLag);
+	}
+
+	/** The anti-lag setting, 0 (off) to {@link Turbocharger#MAX_ANTI_LAG}. */
+	public int antiLagLevel() {
+		return Math.clamp(antiLag.getValue(), 0, Turbocharger.MAX_ANTI_LAG);
 	}
 
 	/** The boost the wastegate is set to hold, atmospheres. */
@@ -104,7 +125,21 @@ public class TurbochargerBlockEntity extends SmartBlockEntity implements IHaveGo
 			float target = status == null ? 0 : status.spool() * WHEEL_DEGREES_PER_TICK;
 			wheelSpeed += (target - wheelSpeed) * 0.15f;
 			wheelAngle = (wheelAngle + wheelSpeed) % 360;
+			if (status != null && status.antiLag() && level.random.nextInt(2) == 0)
+				popOut();
 		}
+	}
+
+	/** Flame and smoke at the turbine end, where anti-lag burns fuel in the exhaust. */
+	private void popOut() {
+		Direction exhaust = getBlockState().getValue(TurbochargerBlock.FACING)
+			.getOpposite();
+		Vec3 at = Vec3.atCenterOf(worldPosition)
+			.add(Vec3.atLowerCornerOf(exhaust.getNormal())
+				.scale(0.6));
+		var random = level.random;
+		level.addParticle(random.nextBoolean() ? ParticleTypes.FLAME : ParticleTypes.SMOKE, at.x, at.y, at.z,
+			(random.nextDouble() - 0.5) * 0.04, 0.03, (random.nextDouble() - 0.5) * 0.04);
 	}
 
 	/** The wheel's angle, degrees, interpolated between ticks. */
@@ -145,6 +180,15 @@ public class TurbochargerBlockEntity extends SmartBlockEntity implements IHaveGo
 					.style(ChatFormatting.DARK_AQUA), tooltip, 1);
 			GoggleLines.add(CELang.translate("goggles.turbo.spool", Math.round(current.spool() * 100))
 				.style(ChatFormatting.GRAY), tooltip, 1);
+			if (current.vanes() > 0.05f || getBlockState().getBlock() instanceof TurbochargerBlock block && block.variableGeometry())
+				GoggleLines.add(CELang.translate("goggles.turbo.vanes", Math.round(current.vanes() * 100))
+					.style(ChatFormatting.DARK_AQUA), tooltip, 1);
+			if (current.antiLag())
+				GoggleLines.add(CELang.translate("goggles.turbo.anti_lag")
+					.style(ChatFormatting.RED), tooltip, 1);
+			else if (antiLagLevel() > 0)
+				GoggleLines.add(CELang.translate("goggles.turbo.anti_lag.armed", antiLagLevel())
+					.style(ChatFormatting.GRAY), tooltip, 1);
 			if (current.wastegate() > 0.05f)
 				GoggleLines.add(CELang.translate(dumping() ? "goggles.turbo.dumping" : "goggles.turbo.wastegate",
 						Math.round(current.wastegate() * 100))
@@ -168,12 +212,18 @@ public class TurbochargerBlockEntity extends SmartBlockEntity implements IHaveGo
 		return true;
 	}
 
-	/** A value box on any face the shaft does not run out of. */
+	/** A value box on any face the shaft does not run out of, {@code height} sixteenths up it. */
 	private static class ValueBox extends ValueBoxTransform.Sided {
+
+		private final double height;
+
+		ValueBox(double height) {
+			this.height = height;
+		}
 
 		@Override
 		protected Vec3 getSouthLocation() {
-			return VecHelper.voxelSpace(8, 8, 16);
+			return VecHelper.voxelSpace(8, height, 16);
 		}
 
 		@Override

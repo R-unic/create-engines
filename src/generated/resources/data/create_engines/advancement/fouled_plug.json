@@ -1,5 +1,5 @@
 {
-  "parent": "create_engines:spark_engine",
+  "parent": "create_engines:spark_plug",
   "criteria": {
     "fouled_plug": {
       "conditions": {

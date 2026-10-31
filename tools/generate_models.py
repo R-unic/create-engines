@@ -49,20 +49,21 @@ def write_item(path, parent):
 
 CASING = "create:block/andesite_casing"
 COPPER_CASING = "create:block/copper_casing"
-IRON = "create:block/industrial_iron_block"
-DARK = "create:block/dark_metal_block"
-BRASS = "create:block/brass_block"
+IRON = "create_engines:block/cast_iron"
+DARK = "create_engines:block/black_oxide"
+BRASS = "create_engines:block/brass"
 ZINC = "create:block/zinc_block"
 COPPER = "minecraft:block/copper_block"
 CUT_COPPER = "minecraft:block/cut_copper"
-IRON_BLOCK = "minecraft:block/iron_block"
+IRON_BLOCK = "create_engines:block/steel"
 AXIS = "create:block/axis"
 AXIS_TOP = "create:block/axis_top"
-BLACK = "minecraft:block/black_concrete"
-QUARTZ = "minecraft:block/quartz_block_top"
+BLACK = "create_engines:block/screen"
+QUARTZ = "create_engines:block/ceramic"
 SMOOTH = "minecraft:block/smooth_stone"
 BRASS_CASING = "create:block/brass_casing"
-RED = "minecraft:block/red_concrete"
+RED = "create_engines:block/enamel_red"
+RIVETED = "create_engines:block/rivet_plate"
 
 
 # --- crank, throw, cam ---------------------------------------------------------------------------------------------
@@ -528,6 +529,49 @@ def turbocharger():
     write("turbocharger/item", {**textures, **wheel_textures}, elements + wheel)
 
 
+def variable_turbocharger():
+    """A turbocharger with a ring of vanes round its turbine: the same housings and wheels, in gold-coloured
+    compressor casing, with a vane ring and an actuator on the turbine housing."""
+    textures = {"compressor": BRASS_CASING, "turbine": DARK, "centre": IRON, "bolt": BRASS, "pipe": BRASS,
+                "vane": IRON_BLOCK, "actuator": COPPER_CASING, "particle": BRASS_CASING}
+
+    def ring(y0, y1, hole, tex):
+        lo, hi = 8 - hole, 8 + hole
+        return [box((1, y0, 1), (15, y1, lo), tex), box((1, y0, hi), (15, y1, 15), tex),
+                box((1, y0, lo), (lo, y1, hi), tex), box((hi, y0, lo), (15, y1, hi), tex)]
+
+    elements = ring(10, 16, 2.5, "compressor") + ring(0, 6, 2, "turbine")
+    elements += [
+        box((4.5, 6, 4.5), (11.5, 10, 11.5), "centre"),
+        box((3.5, 6.5, 3.5), (12.5, 7.5, 12.5), "bolt"),
+        box((3.5, 8.5, 3.5), (12.5, 9.5, 12.5), "bolt"),
+        box((11.5, 7, 7.25), (13.5, 8.75, 8.75), "pipe"),
+        box((12.75, 8.75, 7.25), (13.5, 10.5, 8.75), "pipe"),
+        # The vane ring: a thin collar of blades just inside the turbine housing, and the actuator that turns it
+        box((2.5, 2, 2.5), (13.5, 3, 13.5), "vane"),
+        box((3.5, 3, 3.5), (12.5, 3.75, 12.5), "vane"),
+        box((13.5, 1.5, 6), (16, 4.5, 10), "actuator"),
+        box((15.5, 2.25, 7.25), (16.5, 3.75, 8.75), "bolt"),
+    ]
+    for x in (1.6, 13.4):
+        for z in (1.6, 13.4):
+            elements.append(box((x, 15.6, z), (x + 1, 16.2, z + 1), "bolt"))
+            elements.append(box((x, -0.2, z), (x + 1, 0.4, z + 1), "bolt"))
+    write("variable_turbocharger/block", textures, elements)
+
+    wheel_textures = {"blade": BRASS, "hot": IRON_BLOCK, "shaft": IRON, "particle": BRASS}
+    wheel = [
+        box((7.25, 6, 7.25), (8.75, 10, 8.75), "shaft"),
+        box((6.5, 10, 6.5), (9.5, 15.2, 9.5), "blade"),
+        box((5.4, 10.4, 7.5), (10.6, 14.8, 8.5), "blade"),
+        box((7.5, 10.4, 5.4), (8.5, 14.8, 10.6), "blade"),
+        box((6.7, 0.8, 6.7), (9.3, 6, 9.3), "hot"),
+        box((5.8, 1.2, 7.6), (10.2, 5.6, 8.4), "hot"),
+        box((7.6, 1.2, 5.8), (8.4, 5.6, 10.2), "hot"),
+    ]
+    write("variable_turbocharger/item", {**textures, **wheel_textures}, elements + wheel)
+
+
 def supercharger():
     """A belt-driven blower along the Y axis: a finned housing with the shaft through both ends, open ring plates so
     the rotor shows, and an inlet flange on each side. The rotor (a two-lobe roots pair on the shaft) is a separate
@@ -570,6 +614,66 @@ def supercharger():
     ]
     write("supercharger/rotor", rotor_textures, rotor)
     write("supercharger/item", {**textures, **rotor_textures}, elements + rotor)
+
+
+def cast_flywheel():
+    """A heavy iron disc on the shaft, along the Y axis (the block state turns it). The block model is only the bearing
+    collars either side; the disc is a separate model so it can spin with the shaft."""
+    textures = {"collar": CASING, "bolt": BRASS, "particle": IRON}
+    collars = [box((5, 0, 5), (11, 2, 11), "collar"), box((5, 14, 5), (11, 16, 11), "collar")]
+    write("cast_flywheel/block", textures, collars)
+
+    disc_textures = {"axis": AXIS, "end": AXIS_TOP, "iron": RIVETED, "rim": IRON_BLOCK, "web": DARK, "bolt": BRASS,
+                     "particle": IRON}
+    disc = [
+        shaft((6, 0, 6), (10, 16, 10)),
+        # An octagonal body: two overlapping squares and a square turned square-on
+        box((1, 4, 4), (15, 12, 12), "iron"),
+        box((4, 4, 1), (12, 12, 15), "iron"),
+        box((2, 4, 2), (14, 12, 14), "iron"),
+        # A thicker rim all the way round, and a hub
+        box((0.5, 5, 5), (15.5, 11, 11), "rim"),
+        box((5, 5, 0.5), (11, 11, 15.5), "rim"),
+        box((1.5, 5, 1.5), (14.5, 11, 14.5), "rim"),
+        box((4.5, 3, 4.5), (11.5, 13, 11.5), "web"),
+    ]
+    # Lightening holes: darker squares let into each face, between the hub and the rim
+    for y in (11.95, 3.95):
+        for x, z in ((3, 3), (10, 3), (3, 10), (10, 10)):
+            disc.append(box((x, y, z), (x + 3, y + 0.1, z + 3), "web"))
+    # Bolts round the hub
+    for x, z in ((5, 5), (10, 5), (5, 10), (10, 10)):
+        disc.append(box((x, 12.9, z), (x + 1, 13.4, z + 1), "bolt"))
+    write("cast_flywheel/disc", disc_textures, disc)
+    write("cast_flywheel/item", {**textures, **disc_textures}, collars + disc)
+
+
+def dyno():
+    """A chassis dynamometer: a low bench with a pair of rollers between two frames and a read-out screen behind."""
+    textures = {"base": CASING, "frame": IRON, "drum": DARK, "axle": IRON_BLOCK, "screen": BLACK, "bar": BRASS,
+                "trace": RED, "bolt": BRASS, "particle": CASING}
+    elements = [
+        box((0, 0, 0), (16, 3, 16), "base"),
+        box((0, 3, 1), (2.5, 9, 15), "frame"),
+        box((13.5, 3, 1), (16, 9, 15), "frame"),
+        # Two rollers, each on an axle through both frames
+        box((2.5, 3.5, 2.5), (13.5, 7.5, 6.5), "drum"),
+        box((2.5, 3.5, 9.5), (13.5, 7.5, 13.5), "drum"),
+        box((1, 5, 4), (15, 6, 5), "axle"),
+        box((1, 5, 11), (15, 6, 12), "axle"),
+        # The read-out: a screen on the back rail with a few bars of the curve
+        box((4, 9, 13.5), (12, 12, 15.5), "frame"),
+        box((4.5, 9.5, 13.4), (11.5, 11.5, 13.5), "screen"),
+    ]
+    for i, height in enumerate((0.6, 1.0, 1.4, 1.8, 1.5, 1.0)):
+        x = 5 + i * 1.0
+        elements.append(box((x, 9.6, 13.3), (x + 0.6, 9.6 + height, 13.4), "bar"))
+    elements.append(box((5, 11, 13.3), (11, 11.2, 13.4), "trace"))
+    for x in (0.7, 14.2):
+        for z in (2.2, 13.2):
+            elements.append(box((x, 9, z), (x + 1, 9.5, z + 1), "bolt"))
+    write("dyno/block", textures, elements)
+    write_item("dyno/item", "dyno/block")
 
 
 def intercooler():
@@ -764,13 +868,110 @@ def timing_tool():
     write("timing_tool/item", textures, elements)
 
 
+
+def bank_builder():
+    """A layout tray: a flat frame with three cylinder-shaped slots and a handle."""
+    textures = {"frame": DARK, "slot": IRON_BLOCK, "bore": BLACK, "grip": BRASS, "mark": RED, "particle": DARK}
+    elements = [
+        box((1, 6, 4), (15, 8, 12), "frame"),
+        box((6, 3, 7), (10, 6, 9), "grip"),
+        box((6, 1, 6.5), (10, 3, 9.5), "grip"),
+    ]
+    # Three bores seen from above, and a mark by the one that is clicked
+    for x in (2.5, 6.5, 10.5):
+        elements.append(box((x, 8, 5.5), (x + 3, 8.4, 8.5), "slot"))
+        elements.append(box((x + 0.6, 8.4, 6.1), (x + 2.4, 8.5, 7.9), "bore"))
+    elements.append(box((2.5, 8, 9.5), (5.5, 8.4, 10.5), "mark"))
+    write("bank_builder/item", textures, elements)
+
+
+# --- rotor housing -------------------------------------------------------------------------------------------------
+
+ROTOR_RADIUS = 4.6
+ROTOR_ECCENTRICITY = 1.5
+
+
+def rotor_rows(radius=ROTOR_RADIUS, step=0.5):
+    """An equilateral triangle with its apex towards -Z, centred on (8, 8), as non-overlapping rows (z0, z1, half
+    width) half a pixel deep. Its flanks bulge a little, as a Wankel rotor's do."""
+    top = 8 - radius
+    rows = []
+    z = top
+    while z < 8 + radius / 2 - 1e-6:
+        depth = z + step / 2 - top
+        half = depth * math.tan(math.radians(30)) + min(depth, 3.0) * 0.12 + 0.3
+        half = min(half, radius * math.sin(math.radians(60)) + 0.3)
+        half = round(half / 0.25) * 0.25
+        rows.append((z, min(z + step, 8 + radius / 2), half))
+        z += step
+    return rows
+
+
+def rotor_elements(y0=5.0, y1=11.0):
+    """The rotor: a slab, an apex seal at each corner and a hub. The hub and seals stand a little proud of the slab on
+    both faces, and nothing else shares a plane with it, so nothing flickers as it turns."""
+    elements = []
+    for z0, z1, half in rotor_rows():
+        elements.append(box((8 - half, y0, z0), (8 + half, y1, z1), "rotor", up="face", down="face"))
+    for angle in (0, 120, 240):
+        a = math.radians(angle)
+        x = 8 + (ROTOR_RADIUS - 0.2) * math.sin(a)
+        z = 8 - (ROTOR_RADIUS - 0.2) * math.cos(a)
+        elements.append(box((x - 0.6, y0 - 0.15, z - 0.6), (x + 0.6, y1 + 0.15, z + 0.6), "seal"))
+    elements.append(box((6, y0 - 0.1, 6), (10, y1 + 0.1, 10), "hub", up="face", down="face"))
+    return elements
+
+
+ROTOR_TEXTURES = {"rotor": IRON_BLOCK, "face": CUT_COPPER, "seal": BRASS, "hub": DARK, "particle": IRON_BLOCK}
+
+
+def rotor_housing():
+    textures = {"frame": IRON, "rim": COPPER_CASING, "boss": CASING, "injector": BRASS, "ceramic": QUARTZ,
+                "terminal": IRON_BLOCK, "particle": COPPER_CASING}
+    base = []
+    # An open ring at each end of the shaft, held to the shaft's bearing by four spokes, and four posts holding the rings
+    # apart: the rotor shows through every side and down the shaft. The rotor's tips never reach the posts.
+    for y0, y1 in ((0, 2), (14, 16)):
+        base += [box((0, y0, 0), (16, y1, 2), "rim"), box((0, y0, 14), (16, y1, 16), "rim"),
+                 box((0, y0, 2), (2, y1, 14), "rim"), box((14, y0, 2), (16, y1, 14), "rim"),
+                 box((5, y0, 5), (6.5, y1, 11), "boss"), box((9.5, y0, 5), (11, y1, 11), "boss"),
+                 box((6.5, y0, 5), (9.5, y1, 6.5), "boss"), box((6.5, y0, 9.5), (9.5, y1, 11), "boss"),
+                 box((7, y0, 2), (9, y1, 5), "boss"), box((7, y0, 11), (9, y1, 14), "boss"),
+                 box((2, y0, 7), (5, y1, 9), "boss"), box((11, y0, 7), (14, y1, 9), "boss")]
+    for x in (0, 13.5):
+        for z in (0, 13.5):
+            base.append(box((x, 2, z), (x + 2.5, 14, z + 2.5), "frame"))
+    injector = [box((11, 2, 16), (14, 5, 17.5), "injector")]
+    plug = [box((2.5, 2.5, 16), (5.5, 5.5, 19), "ceramic"), box((3.5, 3.5, 19), (4.5, 4.5, 20.5), "terminal"),
+            box((2, 2, 16), (6, 6, 17), "terminal")]
+    write("rotor_housing/block", textures, base)
+    write("rotor_housing/block_injector", textures, base + injector)
+    write("rotor_housing/block_plug", textures, base + plug)
+    write("rotor_housing/block_injector_plug", textures, base + injector + plug)
+    write_item("rotor_housing/item", "rotor_housing/block")
+
+    # What turns inside: the shaft, a web at each end of the rotor, and the eccentric journal between them (offset
+    # towards +Z). The shaft stops at the webs rather than passing through the rotor, and the journal is inside the
+    # rotor's own thickness, so the rotor can orbit round it with nothing poking out of its faces.
+    e = ROTOR_ECCENTRICITY
+    write("rotor_housing/eccentric",
+          {"axis": AXIS, "end": AXIS_TOP, "journal": IRON, "web": DARK, "particle": IRON},
+          [shaft((6.5, 0, 6.5), (9.5, 4, 9.5)), shaft((6.5, 12, 6.5), (9.5, 16, 9.5)),
+           box((5.5, 4, 5.5), (10.5, 4.9, 10.5), "web"), box((5.5, 11.1, 5.5), (10.5, 12, 10.5), "web"),
+           box((6, 5.05, 8 + e - 2), (10, 10.95, 8 + e + 2), "journal")])
+    write("rotor_housing/rotor", ROTOR_TEXTURES, rotor_elements())
+    write("rotor_housing/rotor_item", ROTOR_TEXTURES, rotor_elements(6.0, 10.0))
+
+
 def main():
+    rotor_housing()
     precision_cylinder()
     precision_head()
     forged_piston()
     precision_injector_item()
     governor()
     timing_tool()
+    bank_builder()
     crankshaft()
     crank_throw()
     camshaft()
@@ -787,7 +988,10 @@ def main():
     battery()
     alternator()
     turbocharger()
+    variable_turbocharger()
     supercharger()
+    cast_flywheel()
+    dyno()
     intercooler()
     transmission()
     sump()

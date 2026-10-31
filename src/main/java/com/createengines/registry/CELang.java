@@ -49,6 +49,8 @@ public final class CELang {
 
 		raw("value.maf_target", "Mixture Target");
 		raw("value.rev_limit", "Rev Limit");
+		raw("value.boost_limit", "Boost Limit");
+		raw("value.anti_lag", "Anti-Lag");
 		raw("value.governed_speed", "Governed Speed");
 
 		raw("goggles.governor", "Governor");
@@ -65,7 +67,22 @@ public final class CELang {
 		raw("tool.timing_tool.style.cross_plane", "Cross-plane (quarter turns)");
 		raw("tool.timing_tool.style.flat_plane", "Flat-plane (half turns)");
 		raw("tool.timing_tool.style.cams_only", "Cams only (leave the crank)");
-		raw("tool.timing_tool.hint", "Use on an engine to set its throws and cam lobes. Sneak-use to change what it may set");
+		raw("tool.bank_builder.layout", "Bank Builder: %1$s");
+		raw("tool.bank_builder.layout.inline", "Inline (the face you click)");
+		raw("tool.bank_builder.layout.vee", "Vee (that face and the next, a quarter turn round)");
+		raw("tool.bank_builder.layout.flat", "Flat (that face and the one opposite)");
+		raw("tool.bank_builder.hint", "Use on a crank throw to set a cylinder and head on that face of every throw of the crankshaft, with the pistons, rods and injectors you carry. Sneak-use to change layout");
+		raw("tool.bank_builder.no_crank", "Use it on a crankshaft throw");
+		raw("tool.bank_builder.no_throws", "That crankshaft has no throw to build on");
+		raw("tool.bank_builder.built", "Placed %1$s cylinder(s) and %2$s head(s) on %3$s throw(s)");
+		raw("tool.bank_builder.blocked", "%1$s place(s) were blocked by something else");
+		raw("tool.bank_builder.missing", "%1$s cylinder or head block(s) were missing from your inventory");
+		raw("tool.timing_tool.style.tune", "Tune fuel (use on a running engine)");
+		raw("tool.timing_tool.hint", "Use on an engine to set its throws and cam lobes, or to tune its fuel in tune mode. Sneak-use to change mode");
+		raw("tool.timing_tool.tune.stopped", "Start the engine first: it tunes the fuel to the speed it is turning");
+		raw("tool.timing_tool.tune.nothing", "No injector to tune: none has fuel in it, or each is held by a MAF sensor or a closed rack");
+		raw("tool.timing_tool.tune.done", "Tuned %1$s injector(s) for a balanced mixture at %2$s RPM");
+		raw("tool.timing_tool.tune.skipped", "%1$s cylinder(s) were left alone: no shot to read, a MAF sensor or a closed rack");
 		raw("tool.timing_tool.no_engine", "Not part of an engine");
 		raw("tool.timing_tool.no_cylinders", "No working cylinder with a cam lobe to time");
 		raw("tool.timing_tool.single", "Timed one cylinder");
@@ -73,6 +90,9 @@ public final class CELang {
 		raw("tool.timing_tool.uneven", "Timed %1$s cylinders. This layout can't fire evenly; gaps of %2$s: %3$s");
 		raw("tool.timing_tool.shared", "%1$s cylinder(s) share a cam lobe with another that fires at a different time. Give each its own lobe, or move the lobe beside the block");
 		raw("tool.timing_tool.coupled", "Timed across %1$s coupled crankshafts");
+		raw("tool.timing_tool.rotor", "Timed one rotor");
+		raw("tool.timing_tool.rotors.even", "Timed %1$s rotors: every firing in the engine is evenly spaced");
+		raw("tool.timing_tool.rotors.uneven", "Timed %1$s rotors. The firings can't all be evenly spaced; up to %2$s° off");
 		raw("tool.timing_tool.skipped", "%1$s cylinder(s) were left alone: broken, or with no cam lobe");
 
 		raw("goggles.sensor.no_engine", "Not in the intake or exhaust of a running engine's cylinders");
@@ -99,6 +119,17 @@ public final class CELang {
 		raw("goggles.limiter.hint",
 			"Holds every injector shut once the crank reaches the limit, and lets fuel back in at %1$s%% of it. The redstone output is how close the engine is to the limit, 15 at it");
 
+		raw("goggles.dyno", "Dynamometer");
+		raw("goggles.dyno.no_engine", "Not against an engine: set it against a crankshaft, a cylinder or a head");
+		raw("goggles.dyno.measuring", "Still measuring the engine's curve");
+		raw("goggles.dyno.torque", "Torque  %1$s");
+		raw("goggles.dyno.power", "Power   %1$s");
+		raw("goggles.dyno.range", "%1$s RPM across to %2$s RPM");
+		raw("goggles.dyno.peak_torque", "Peak torque: %1$s SU per RPM at %2$s RPM");
+		raw("goggles.dyno.peak_power", "Peak power: %1$s SU at %2$s RPM");
+		raw("goggles.dyno.powerband", "Powerband: %1$s to %2$s RPM, within a tenth of peak power");
+		raw("goggles.dyno.now", "Engine now: %1$s RPM");
+		raw("goggles.dyno.hint", "This is what the engine can be rated for at each speed: after its fuel, mixture, boost and how roughly it runs. Redstone rises as its speed climbs to the speed of its peak power");
 		raw("goggles.turbo", "Turbocharger");
 		raw("goggles.turbo.no_engine", "Not on an engine's intake or exhaust");
 		raw("goggles.turbo.boost", "Boost: +%1$s bar");
@@ -110,8 +141,11 @@ public final class CELang {
 		raw("goggles.turbo.no_turbine", "Turbine is not on an engine's exhaust: nothing drives it");
 		raw("goggles.turbo.back_pressure", "Exhaust back-pressure: +%1$s bar");
 		raw("goggles.turbo.limit", "Boost limit: %1$s bar");
+		raw("goggles.turbo.vanes", "Variable vanes: %1$s%% closed");
+		raw("goggles.turbo.anti_lag", "Anti-lag: burning fuel in the exhaust to hold the boost");
+		raw("goggles.turbo.anti_lag.armed", "Anti-lag level %1$s: burns fuel in the exhaust when the engine is off the throttle");
 		raw("goggles.turbo.hint",
-			"Driven by the heat of the exhaust, so it lags and fades with the fuel. Boost packs in more air, which needs more fuel metering to use, and heats the charge. Redstone opens the wastegate fully. Turbos in series on one intake run compound, their pressures multiplying, while turbos side by side (the air can go round either) share the flow and average their pressures, with smaller wheels that spool sooner");
+			"Driven by the heat of the exhaust, so it lags and fades with the fuel. Boost packs in more air, which needs more fuel metering to use, and heats the charge. Redstone opens the wastegate fully. A variable-geometry turbo closes its vanes when the exhaust is thin, so it spools sooner and chokes the exhaust less at full flow. Anti-lag burns fuel ahead of the turbine when the engine is off the throttle, so the boost is waiting when it opens again. Turbos in series on one intake run compound, their pressures multiplying, while turbos side by side (the air can go round either) share the flow and average their pressures, with smaller wheels that spool sooner");
 
 		raw("goggles.supercharger", "Supercharger");
 		raw("goggles.supercharger.no_engine", "Not on an engine's intake: nothing is boosted");
@@ -153,6 +187,7 @@ public final class CELang {
 		raw("goggles.mb_per_minute", "%1$s mB/min");
 		raw("goggles.ripple", "Speed ripple: %1$s%%");
 		raw("goggles.ripple.rough", "Running rough");
+		raw("goggles.roughness", "Rough running costs %1$s%% of its rating: a flywheel, more cylinders or an even firing order would smooth it");
 		raw("goggles.coupled", "%1$s crankshafts geared together");
 		raw("goggles.firing", "Firing cylinders: %1$s of %2$s");
 		raw("goggles.firing_intervals", "Firing intervals: %1$s");
@@ -180,6 +215,7 @@ public final class CELang {
 		raw("goggles.mixture.lean", "%1$s× lean");
 		raw("goggles.mixture.rich", "%1$s× rich");
 		raw("goggles.mixture.balanced", "balanced");
+		raw("goggles.mixture.suggest", "Try about %1$s%% fuel metering at this speed, or tune it with a Timing Tool");
 		raw("goggles.ignition.spark", "Spark ignition");
 		raw("goggles.compression", "Charge temperature: %1$s (fuel ignites at %2$s)");
 		raw("goggles.timing", "Valve timing: %1$s");
@@ -200,6 +236,11 @@ public final class CELang {
 		raw("goggles.fault.exhaust_blocked", "Exhaust has no open outlet");
 		raw("goggles.fault.no_battery", "Spark plug has no battery touching the engine");
 		raw("goggles.fault.broken_cam", "A plain Shaft splits the camshaft: replace it with Camshaft blocks");
+		raw("goggles.fault.no_rotor", "No rotor installed: right-click with an Engine Rotor");
+		raw("goggles.fault.no_plug", "No spark plug: the chamber is too long and thin for the charge to light itself");
+
+		raw("goggles.rotor", "Rotor Housing");
+		raw("goggles.rotor.chamber", "Chamber %1$s: %2$s");
 
 		raw("goggles.cam", "Camshaft");
 		raw("goggles.cam_ratio", "Speed ratio to crank: %1$s");

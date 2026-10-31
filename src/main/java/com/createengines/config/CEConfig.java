@@ -10,6 +10,7 @@ public final class CEConfig {
 	public static final ModConfigSpec.DoubleValue JOURNAL_INERTIA;
 	public static final ModConfigSpec.DoubleValue THROW_INERTIA;
 	public static final ModConfigSpec.DoubleValue FLYWHEEL_INERTIA;
+	public static final ModConfigSpec.DoubleValue CAST_FLYWHEEL_INERTIA;
 	public static final ModConfigSpec.DoubleValue BEARING_FRICTION;
 	public static final ModConfigSpec.IntValue MAX_CRANK_SEGMENTS;
 	public static final ModConfigSpec.IntValue MAX_MANIFOLD_BLOCKS;
@@ -30,7 +31,9 @@ public final class CEConfig {
 		THROW_INERTIA = builder.comment("Rotational inertia of a crank throw block.")
 			.defineInRange("throwInertia", 0.2, 0.0, 100.0);
 		FLYWHEEL_INERTIA = builder.comment("Rotational inertia a Create Flywheel adds when coaxial with the crank.")
-			.defineInRange("flywheelInertia", 1.0, 0.0, 100.0);
+			.defineInRange("flywheelInertia", 1.5, 0.0, 100.0);
+		CAST_FLYWHEEL_INERTIA = builder.comment("Rotational inertia a Cast Flywheel adds when coaxial with the crank.")
+			.defineInRange("castFlywheelInertia", 1.0, 0.0, 100.0);
 		BEARING_FRICTION = builder.comment("Friction torque per crankshaft block.")
 			.defineInRange("bearingFriction", 0.01, 0.0, 10.0);
 		MAX_CRANK_SEGMENTS = builder.comment("Longest crankshaft line the engine scanner will follow.")

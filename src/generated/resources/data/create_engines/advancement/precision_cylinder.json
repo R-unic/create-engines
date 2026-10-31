@@ -3,13 +3,9 @@
   "criteria": {
     "precision_cylinder": {
       "conditions": {
-        "items": [
-          {
-            "items": "create_engines:precision_cylinder"
-          }
-        ]
+        "event": "precision_bore"
       },
-      "trigger": "minecraft:inventory_changed"
+      "trigger": "create_engines:event"
     }
   },
   "display": {

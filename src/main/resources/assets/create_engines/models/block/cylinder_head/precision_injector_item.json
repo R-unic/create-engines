@@ -1,11 +1,11 @@
 {
   "parent": "block/block",
   "textures": {
-    "body": "create:block/brass_block",
-    "cap": "create:block/dark_metal_block",
-    "nozzle": "minecraft:block/iron_block",
-    "rail": "minecraft:block/quartz_block_top",
-    "particle": "create:block/brass_block"
+    "body": "create_engines:block/brass",
+    "cap": "create_engines:block/black_oxide",
+    "nozzle": "create_engines:block/steel",
+    "rail": "create_engines:block/ceramic",
+    "particle": "create_engines:block/brass"
   },
   "elements": [
     {

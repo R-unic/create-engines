@@ -30,6 +30,11 @@ public final class PrecisionParts {
 		return Integer.bitCount(parts & ALL);
 	}
 
+	/** The physical description of a rotary chamber built from these parts; only the injector applies to a rotor. */
+	public static CylinderSpec rotarySpec(int parts) {
+		return CylinderSpec.buildRotary(has(parts, INJECTOR));
+	}
+
 	/** The physical description of a cylinder built from these parts. */
 	public static CylinderSpec spec(int parts) {
 		return CylinderSpec.build(has(parts, BORE), has(parts, HEAD), has(parts, PISTON), has(parts, INJECTOR));

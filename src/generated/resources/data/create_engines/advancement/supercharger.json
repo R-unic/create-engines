@@ -3,13 +3,9 @@
   "criteria": {
     "supercharger": {
       "conditions": {
-        "items": [
-          {
-            "items": "create_engines:supercharger"
-          }
-        ]
+        "event": "supercharged"
       },
-      "trigger": "minecraft:inventory_changed"
+      "trigger": "create_engines:event"
     }
   },
   "display": {

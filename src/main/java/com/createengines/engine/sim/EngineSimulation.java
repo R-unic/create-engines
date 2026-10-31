@@ -1,6 +1,7 @@
 package com.createengines.engine.sim;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Map;
@@ -18,7 +19,16 @@ import java.util.Objects;
 public final class EngineSimulation {
 
 	public static final double TICK = 1 / 20d;
-	private static final double MAX_STEP_DEGREES = 4;
+	/**
+	 * A tick is cut into crank-angle steps of at most this many degrees, which at Create's usual speeds is as fine as the
+	 * model is calibrated to. Faster than {@link #STEPS_PER_TICK} of them would take, the step grows to keep a tick's
+	 * cost from climbing with speed, up to {@link #MAX_STEP_DEGREES}: gas exchange and burning are timed in seconds, so
+	 * a fast engine changes little over a few more degrees, and a step this coarse measures the same torque to within
+	 * a percent from 1000 RPM up.
+	 */
+	static final double MIN_STEP_DEGREES = 4;
+	static final double MAX_STEP_DEGREES = 16;
+	static final double STEPS_PER_TICK = 64;
 	/** Below this the crank is considered stopped. */
 	private static final double STALL_OMEGA = rpmToOmega(2);
 	/** Oil strength lost per rotor cycle, times how far the unburned share of the fuel is past what counts as rich. */
@@ -37,10 +47,20 @@ public final class EngineSimulation {
 	private final List<Intercooler> intercoolers = new ArrayList<>();
 
 	private boolean washesOil = true;
+	/** Measures how unevenly a driven engine turns the crank; see {@link #trackSwing()}. Null unless asked for. */
+	private Swing swing;
 
 	private double inertia;
+	/** Friction torque not tied to speed, and per rad/s, at the oil the tick began with; see {@link #measureFriction()}. */
+	private double stepFriction;
+	private double stepViscousFriction;
 	/** Rotor angle in [0, 720), always increasing in the direction of travel. */
 	private double angle;
+	/**
+	 * The same turning as {@link #angle}, kept in [0, 1080): the angle a rotary chamber repeats over. It only differs from
+	 * {@link #angle} by a multiple of 360, which is as far apart as the chambers of a rotor are.
+	 */
+	private double rotaryAngle;
 	/** Angular speed, rad/s, always non-negative. */
 	private double omega;
 	private int direction = 1;
@@ -124,6 +144,7 @@ public final class EngineSimulation {
 	private void runCranked(double loadTorque, double maxOmega, double floorOmega, int floorDirection) {
 		crankingWork = 0;
 		crankingAngle = 0;
+		measureFriction();
 		if (floorOmega > STALL_OMEGA) {
 			if (omega <= STALL_OMEGA)
 				setDirection(floorDirection);
@@ -131,11 +152,11 @@ public final class EngineSimulation {
 		}
 		double remaining = TICK;
 		while (remaining > 1e-9 && omega > STALL_OMEGA) {
-			double delta = Math.min(MAX_STEP_DEGREES, Math.toDegrees(omega * remaining));
+			double delta = Math.min(stepLimit(omega), Math.toDegrees(omega * remaining));
 			double radians = Math.toRadians(delta);
 			double dt = radians / omega;
 			double gasWork = advance(delta, dt);
-			double friction = frictionTorque() * radians;
+			double friction = stepFrictionTorque() * radians;
 			double energy = 0.5 * inertia * omega * omega + gasWork - friction - loadTorque * radians;
 			cycleFrictionWork += friction;
 			double floorEnergy = 0.5 * inertia * floorOmega * floorOmega;
@@ -155,6 +176,12 @@ public final class EngineSimulation {
 			stall();
 	}
 
+	/** The most crank degrees one step may cover at {@code omega}; see {@link #MIN_STEP_DEGREES}. */
+	static double stepLimit(double omega) {
+		double perStep = Math.toDegrees(omega * TICK) / STEPS_PER_TICK;
+		return Math.max(MIN_STEP_DEGREES, Math.min(MAX_STEP_DEGREES, perStep));
+	}
+
 	/** Mean torque the cranking clutch supplied during the last tick (0 if the engine was outrunning it). */
 	public double crankingTorque() {
 		return crankingAngle > 0 ? crankingWork / crankingAngle : 0;
@@ -165,12 +192,16 @@ public final class EngineSimulation {
 		setDirection(drivenDirection);
 		omega = drivenOmega;
 		if (omega > STALL_OMEGA) {
+			measureFriction();
 			double remaining = TICK;
 			while (remaining > 1e-9) {
-				double delta = Math.min(MAX_STEP_DEGREES, Math.toDegrees(omega * remaining));
+				double delta = Math.min(stepLimit(omega), Math.toDegrees(omega * remaining));
 				double dt = Math.toRadians(delta) / omega;
-				advance(delta, dt);
-				cycleFrictionWork += frictionTorque() * Math.toRadians(delta);
+				double gasWork = advance(delta, dt);
+				double friction = stepFrictionTorque() * Math.toRadians(delta);
+				cycleFrictionWork += friction;
+				if (swing != null)
+					swing.add(gasWork - friction, Math.toRadians(delta));
 				remaining -= dt;
 			}
 		}
@@ -250,9 +281,12 @@ public final class EngineSimulation {
 
 	/** Running averages of what several parallel stages make for each cylinder they serve. */
 	private static final class Parallel {
-		private final Map<CylinderModel, double[]> sums = new IdentityHashMap<>();
+		/** Made when the first stage in parallel is added: most engines have none, and this is built every tick. */
+		private Map<CylinderModel, double[]> sums;
 
 		void add(CylinderModel cylinder, double first, double second) {
+			if (sums == null)
+				sums = new IdentityHashMap<>();
 			double[] sum = sums.computeIfAbsent(cylinder, $ -> new double[3]);
 			sum[0] += first;
 			sum[1] += second;
@@ -260,7 +294,8 @@ public final class EngineSimulation {
 		}
 
 		void forEach(Average average) {
-			sums.forEach((cylinder, sum) -> average.accept(cylinder, sum[0] / sum[2], sum[1] / sum[2]));
+			if (sums != null)
+				sums.forEach((cylinder, sum) -> average.accept(cylinder, sum[0] / sum[2], sum[1] / sum[2]));
 		}
 
 		interface Average {
@@ -306,15 +341,23 @@ public final class EngineSimulation {
 		double gasWork = 0;
 		for (CylinderModel cylinder : cylinders) {
 			Camshaft camshaft = cylinder.camshaft();
-			double camDelta = camshaft == null ? 0 : 2 * camshaft.ratio * delta;
 			double before = cylinder.currentCycle().fuelInjected;
-			gasWork += cylinder.step(cylinder.pistonAngle(angle, direction), delta, cylinder.camCycleAngle(), camDelta,
-				dt);
+			if (cylinder.ported()) {
+				// A rotary chamber is in step with the shaft by the housing's gears: its ports follow its own cycle
+				double cycle = cylinder.pistonAngle(angle, rotaryAngle, direction);
+				double cycleDelta = delta * cylinder.angleScale();
+				gasWork += cylinder.step(cycle, cycleDelta, cycle, cycleDelta, dt);
+			} else {
+				double camDelta = camshaft == null ? 0 : 2 * camshaft.ratio * delta;
+				gasWork += cylinder.step(cylinder.pistonAngle(angle, direction), delta, cylinder.camCycleAngle(), camDelta,
+					dt);
+			}
 			cycleFuel += Math.max(0, cylinder.currentCycle().fuelInjected - before);
 		}
 		for (Camshaft camshaft : camshafts)
 			camshaft.advance(delta);
 		angle = SimMath.wrap(angle + delta);
+		rotaryAngle = SimMath.wrap(rotaryAngle + delta, CylinderModel.ROTARY_CYCLE);
 		cycleGasWork += gasWork;
 		cycleTime += dt;
 		cycleOmegaMin = Math.min(cycleOmegaMin, omega);
@@ -393,6 +436,29 @@ public final class EngineSimulation {
 		return friction;
 	}
 
+	/**
+	 * Works out what friction is made of at the oil the engine has now, so the many steps of a tick can each find it from
+	 * the speed alone: the oil only changes between ticks, but summing every cylinder's share is a step's costliest loop.
+	 */
+	private void measureFriction() {
+		double film = lubrication.effective();
+		double staticFactor = Lubrication.staticFactor(film);
+		double viscousFactor = Lubrication.viscousFactor(film);
+		double fixed = baseFriction * staticFactor;
+		double perOmega = baseViscousFriction * viscousFactor;
+		for (CylinderModel cylinder : cylinders) {
+			fixed += cylinder.spec.frictionStatic() * staticFactor;
+			perOmega += cylinder.spec.frictionViscous() * viscousFactor;
+		}
+		stepFriction = fixed;
+		stepViscousFriction = perOmega;
+	}
+
+	/** Friction torque at {@code omega}, from the figures {@link #measureFriction()} took at the start of the tick. */
+	private double stepFrictionTorque() {
+		return stepFriction + stepViscousFriction * omega;
+	}
+
 	/** How well oiled the moving parts are; the owner keeps it up to date from the oil supply. */
 	public Lubrication lubrication() {
 		return lubrication;
@@ -423,7 +489,8 @@ public final class EngineSimulation {
 				double matched = cylinder.airMatch > 0 ? airLimit * cylinder.airMatch : airLimit;
 				scale = Math.max(1, Math.min(fullShot, Math.min(airLimit, matched)) / last.fuelBurned);
 			}
-			work += last.work * scale;
+			// A rotary chamber takes a turn and a half of the shaft to do what a piston does in two
+			work += last.work * scale * SimMath.CYCLE / cylinder.cycleDegrees();
 		}
 		return Math.max(0, work / Math.toRadians(SimMath.CYCLE) - frictionTorque());
 	}
@@ -448,6 +515,7 @@ public final class EngineSimulation {
 	public void restore(double angle, double omega, int direction) {
 		setDirection(direction);
 		this.angle = SimMath.wrap(angle);
+		this.rotaryAngle = SimMath.wrap(angle, CylinderModel.ROTARY_CYCLE);
 		this.omega = Math.max(0, omega);
 		for (Camshaft camshaft : camshafts)
 			camshaft.angle = this.angle / 2;
@@ -463,6 +531,19 @@ public final class EngineSimulation {
 
 	public double angle() {
 		return angle;
+	}
+
+	/** The shaft angle in [0, 1080) that rotary chambers are timed from; see {@link #angle()}. */
+	public double rotaryAngle() {
+		return rotaryAngle;
+	}
+
+	/**
+	 * Takes the rotary angle from an engine that was running the same rotors, which keeps each chamber's gas in step
+	 * with the shaft. Only the part beyond {@link #angle()}'s own 720 is carried, so it must agree with it modulo 360.
+	 */
+	public void restoreRotary(double rotaryAngle) {
+		this.rotaryAngle = SimMath.wrap(rotaryAngle, CylinderModel.ROTARY_CYCLE);
 	}
 
 	public double omega() {
@@ -504,6 +585,63 @@ public final class EngineSimulation {
 	/** Speed variation over the last cycle as a fraction of mean speed. */
 	public double ripple() {
 		return ripple;
+	}
+
+	/** Starts measuring the energy swing of a driven engine, which {@link #predictedRipple()} turns into a speed ripple. */
+	public void trackSwing() {
+		if (swing == null)
+			swing = new Swing();
+	}
+
+	/**
+	 * The speed ripple this engine would have if it were left to turn free at the speed it is being driven at: how far
+	 * the crank's energy swings over a cycle (power strokes in, compression and friction out), as a share of the energy
+	 * its inertia stores. A flywheel does not change the swing, only how much of it shows up as speed. Zero unless
+	 * {@link #trackSwing()} was called and a whole cycle has been driven.
+	 */
+	public double predictedRipple() {
+		if (swing == null || swing.result <= 0 || omega <= STALL_OMEGA)
+			return 0;
+		return swing.result / (inertia * omega * omega);
+	}
+
+	/**
+	 * Net energy the crank gains over a 720 degree cycle, less what an even torque would have given by the same angle:
+	 * the biggest excess minus the biggest shortfall is how far the energy swings.
+	 */
+	private static final class Swing {
+		private double[] angles = new double[128];
+		private double[] energies = new double[128];
+		private int count;
+		private double totalAngle;
+		private double totalEnergy;
+		double result;
+
+		void add(double work, double radians) {
+			totalAngle += radians;
+			totalEnergy += work;
+			if (count == angles.length) {
+				angles = Arrays.copyOf(angles, count * 2);
+				energies = Arrays.copyOf(energies, count * 2);
+			}
+			angles[count] = totalAngle;
+			energies[count] = totalEnergy;
+			count++;
+			if (totalAngle >= Math.toRadians(SimMath.CYCLE) - 1e-9) {
+				double slope = totalEnergy / totalAngle;
+				double low = 0;
+				double high = 0;
+				for (int i = 0; i < count; i++) {
+					double excess = energies[i] - slope * angles[i];
+					low = Math.min(low, excess);
+					high = Math.max(high, excess);
+				}
+				result = high - low;
+				count = 0;
+				totalAngle = 0;
+				totalEnergy = 0;
+			}
+		}
 	}
 
 	/** Fuel injected per second over the last cycle, mB/s. */

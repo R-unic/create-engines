@@ -22,6 +22,12 @@ import java.util.Map;
  * side by side (the air can go round either) share the flow instead: the cylinder gets their average pressure, each
  * turbine splits the exhaust heat, and each wheel is a smaller one, so the pair makes about one turbo's boost sooner.
  * <p>
+ * A variable-geometry turbo has a ring of vanes in front of its turbine. They close when the exhaust is thin, which
+ * speeds the gas up onto the wheel so it spools sooner and catches more of the heat (at the price of a more restrictive
+ * turbine), and open as the flow grows, which leaves the exhaust a freer path than a fixed turbine's. Anti-lag keeps
+ * a turbo spinning when the engine is off the throttle, by burning fuel in the exhaust ahead of the turbine so that the
+ * boost is waiting when the throttle opens again; it costs that fuel.
+ * <p>
  * Pure Java, like the rest of this package.
  */
 public final class Turbocharger {
@@ -44,6 +50,19 @@ public final class Turbocharger {
 	private static final double HEAT_EXPONENT = 0.3 / 1.3;
 	/** Exhaust back-pressure the turbine adds, per atmosphere of boost, with the wastegate shut. */
 	private static final double BACK_PRESSURE = 0.5;
+	/** Exhaust heat per second, per unit of flow share, at which variable vanes are fully open: any more and they gain nothing. */
+	private static final double VANES_OPEN_HEAT = 15;
+	/** Extra share of the exhaust heat the turbine catches with its vanes fully closed. */
+	private static final double VANE_POWER_GAIN = 0.5;
+	/** How restrictive the turbine is, against a fixed one's 1, with the vanes fully open and fully closed. */
+	private static final double VANES_OPEN_RESTRICTION = 0.7;
+	private static final double VANES_CLOSED_RESTRICTION = 1.3;
+	/** Exhaust heat per second per level of anti-lag that burning fuel ahead of the turbine adds. */
+	public static final double ANTI_LAG_HEAT = 4;
+	/** Fuel burned in the exhaust per second per level of anti-lag, mB. */
+	public static final double ANTI_LAG_FUEL = 0.12;
+	/** The strongest anti-lag setting. */
+	public static final int MAX_ANTI_LAG = 3;
 
 	private final List<CylinderModel> turbine;
 	private final List<CylinderModel> compressor;
@@ -53,6 +72,14 @@ public final class Turbocharger {
 	public double limit = DEFAULT_LIMIT;
 	/** Forces the wastegate wide open, dumping the boost. */
 	public boolean dump;
+	/** The turbine has a ring of variable vanes. */
+	public boolean variableGeometry;
+	/** Anti-lag setting, 0 (off) to {@link #MAX_ANTI_LAG}. It only works while {@link #offThrottle}. */
+	public int antiLag;
+	/** The engine is off the throttle: its fuel is cut or throttled shut, so its exhaust has little heat of its own. */
+	public boolean offThrottle;
+	/** Where the anti-lag fuel comes from; none, and anti-lag does nothing. */
+	public FuelSupply antiLagFuel = FuelSupply.NONE;
 	/** The intake air can bypass the compressor, so its pressure is averaged with the other branches' rather than compounded. */
 	public boolean parallelCompressor;
 	/** The exhaust can bypass the turbine, so its back-pressure is averaged with the other branches' rather than added. */
@@ -66,6 +93,8 @@ public final class Turbocharger {
 
 	private double energy;
 	private double bypass;
+	private double vanes;
+	private boolean antiLagging;
 
 	/**
 	 * @param turbine    cylinders whose exhaust runs through the turbine
@@ -82,6 +111,7 @@ public final class Turbocharger {
 	public Turbocharger copyOnto(Map<CylinderModel, CylinderModel> copies) {
 		Turbocharger copy = new Turbocharger(mapped(turbine, copies), mapped(compressor, copies), share);
 		copy.limit = limit;
+		copy.variableGeometry = variableGeometry;
 		copy.parallelCompressor = parallelCompressor;
 		copy.parallelTurbine = parallelTurbine;
 		copy.flow = flow;
@@ -124,7 +154,19 @@ public final class Turbocharger {
 
 	/** The pressure the exhaust blows down into because the turbine is in the way. */
 	public double backPressure() {
-		return 1 + BACK_PRESSURE * boost() * (1 - bypass);
+		double restriction = variableGeometry
+			? VANES_OPEN_RESTRICTION + (VANES_CLOSED_RESTRICTION - VANES_OPEN_RESTRICTION) * vanes : 1;
+		return 1 + BACK_PRESSURE * boost() * (1 - bypass) * restriction;
+	}
+
+	/** How far the variable vanes are closed, 0 (open) to 1; always 0 on a fixed turbo. */
+	public double vanes() {
+		return vanes;
+	}
+
+	/** Whether fuel is being burned in the exhaust to hold the spool up off the throttle. */
+	public boolean antiLagging() {
+		return antiLagging;
 	}
 
 	/** Temperature of the air leaving the compressor, ambient = 1. */
@@ -144,6 +186,7 @@ public final class Turbocharger {
 	public void copyStateFrom(Turbocharger other) {
 		energy = other.energy;
 		bypass = other.bypass;
+		vanes = other.vanes;
 	}
 
 	/**
@@ -152,6 +195,18 @@ public final class Turbocharger {
 	 */
 	void tick(double dt) {
 		double power = heatRate(dt);
+		// Closed vanes catch more of a thin exhaust; a full flow needs them open
+		vanes = variableGeometry ? 1 - Math.min(1, power / (VANES_OPEN_HEAT * flow)) : 0;
+		power *= 1 + VANE_POWER_GAIN * vanes;
+		antiLagging = false;
+		if (antiLag > 0 && offThrottle) {
+			double wanted = ANTI_LAG_FUEL * antiLag * dt;
+			double burned = antiLagFuel.draw(wanted);
+			if (burned > 0) {
+				antiLagging = true;
+				power += ANTI_LAG_HEAT * antiLag * burned / wanted;
+			}
+		}
 		bypass = dump ? 1 : Math.max(0, Math.min(1, (boost() - limit) / WASTEGATE_BAND));
 		double spool = spool();
 		double drain = flow * (COMPRESSOR_POWER * spool * spool * spool + BEARING_DRAG * spool);

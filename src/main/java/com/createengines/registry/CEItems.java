@@ -2,6 +2,7 @@ package com.createengines.registry;
 
 import static com.createengines.CreateEngines.REGISTRATE;
 
+import com.createengines.content.tool.BankBuilderItem;
 import com.createengines.content.tool.TimingToolItem;
 import com.tterrag.registrate.util.entry.ItemEntry;
 
@@ -37,11 +38,24 @@ public final class CEItems {
 		.model((c, p) -> p.withExistingParent(c.getName(), p.modLoc("block/cylinder_head/precision_injector_item")))
 		.register();
 
+	/** The triangular rotor of a Wankel engine, which goes in a rotor housing. */
+	public static final ItemEntry<Item> ROTOR = REGISTRATE.item("rotor", Item::new)
+		.lang("Engine Rotor")
+		.model((c, p) -> p.withExistingParent(c.getName(), p.modLoc("block/rotor_housing/rotor_item")))
+		.register();
+
 	/** Sets an engine's throws and cam lobes to the best firing order its layout allows. */
 	public static final ItemEntry<TimingToolItem> TIMING_TOOL = REGISTRATE.item("timing_tool", TimingToolItem::new)
 		.properties(p -> p.stacksTo(1))
 		.model((c, p) -> p.withExistingParent(c.getName(), p.modLoc("block/timing_tool/item")))
 		.register();
+
+	/** Lays out a bank of cylinders, inline, V or flat, in one click. */
+	public static final ItemEntry<BankBuilderItem> BANK_BUILDER =
+		REGISTRATE.item("bank_builder", BankBuilderItem::new)
+			.properties(p -> p.stacksTo(1))
+			.model((c, p) -> p.withExistingParent(c.getName(), p.modLoc("block/bank_builder/item")))
+			.register();
 
 	private CEItems() {
 	}

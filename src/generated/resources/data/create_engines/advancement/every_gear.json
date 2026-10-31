@@ -1,5 +1,5 @@
 {
-  "parent": "create_engines:shifted",
+  "parent": "create_engines:transmission",
   "criteria": {
     "every_gear": {
       "conditions": {
