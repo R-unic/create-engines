@@ -46,6 +46,7 @@ import com.createengines.engine.topology.FiringPlanner;
 import com.createengines.registry.CEBlocks;
 import com.createengines.registry.CECreativeTabs;
 import com.createengines.registry.CEFluids;
+import com.createengines.registry.CEItems;
 import com.simibubi.create.AllBlocks;
 import com.tterrag.registrate.util.entry.RegistryEntry;
 import com.simibubi.create.content.kinetics.base.KineticBlockEntity;
@@ -1639,6 +1640,42 @@ public class EngineGameTests {
 			BankBuilderItem.Layout.INLINE, player, false);
 		helper.assertTrue(next.cylinders() == 1 && next.heads() == 1 && next.missing() == 0,
 			"With a cylinder and a head: " + next);
+		helper.succeed();
+	}
+
+	/** A precision build places precision parts, and swaps them in for standard ones, handing the old ones back. */
+	@GameTest(template = "empty")
+	public static void thePrecisionBankBuilderSwapsInPrecisionParts(GameTestHelper helper) {
+		for (int x = 1; x <= 3; x++)
+			helper.setBlock(new BlockPos(x, 3, 3), (x == 2 ? CEBlocks.CRANK_THROW : CEBlocks.CRANKSHAFT).getDefaultState()
+				.setValue(BlockStateProperties.AXIS, Axis.X));
+		BlockPos throwPos = new BlockPos(2, 3, 3);
+		var creative = helper.makeMockPlayer(GameType.CREATIVE);
+		BankBuilderItem.build(helper.getLevel(), helper.absolutePos(throwPos), Direction.UP,
+			BankBuilderItem.Layout.INLINE, creative, true);
+		helper.assertBlockState(new BlockPos(2, 4, 3), s -> s.getBlock() == CEBlocks.CYLINDER.get(),
+			() -> "A standard build places the standard cylinder");
+
+		var player = helper.makeMockPlayer(GameType.SURVIVAL);
+		for (var block : new Block[] {CEBlocks.PRECISION_CYLINDER.get(), CEBlocks.PRECISION_CYLINDER_HEAD.get()})
+			player.getInventory()
+				.add(new ItemStack(block, 1));
+		player.getInventory()
+			.add(CEItems.FORGED_PISTON.asStack());
+		player.getInventory()
+			.add(CEItems.PRECISION_INJECTOR.asStack());
+		var result = BankBuilderItem.build(helper.getLevel(), helper.absolutePos(throwPos), Direction.UP,
+			BankBuilderItem.Layout.INLINE, true, player, false);
+		helper.assertTrue(result.upgraded() == 4, "Cylinder, head, piston and injector swapped: " + result);
+		helper.assertBlockState(new BlockPos(2, 4, 3), s -> s.getBlock() == CEBlocks.PRECISION_CYLINDER.get()
+			&& s.getValue(CylinderBlock.FORGED_PISTON) && s.getValue(CylinderBlock.HAS_ROD),
+			() -> "The cylinder is precision with a forged piston and its rod kept");
+		helper.assertBlockState(new BlockPos(2, 5, 3), s -> s.getBlock() == CEBlocks.PRECISION_CYLINDER_HEAD.get()
+			&& s.getValue(CylinderHeadBlock.FINE_INJECTOR), () -> "The head is precision with a precision injector");
+		helper.assertTrue(player.getInventory()
+			.contains(new ItemStack(CEBlocks.CYLINDER.get())), "The standard cylinder came back");
+		helper.assertTrue(player.getInventory()
+			.contains(CEItems.PISTON.asStack()), "And so did the standard piston");
 		helper.succeed();
 	}
 

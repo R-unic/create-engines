@@ -159,7 +159,7 @@ mix, not a better piston engine.
 - **Bank Builder** (`BankBuilderItem`): use on a crank throw to place a cylinder and head, and fit pistons, rods and
   injectors from the player's inventory, on the clicked face of every throw: inline (that face), vee (and the face a
   quarter turn round the crank) or flat (and the opposite face). Spark plugs, pipes, cams and fuel stay the builder's.
-  Blocked places and missing blocks are reported. It does not yet give a vee a shared valley cam: a lobe touching two
+  Sneak-use cycles the layouts and then between standard and precision parts: a precision build places precision cylinders, heads, forged pistons and precision injectors, and swaps them in for standard parts already on the throws, handing the old ones back. Blocked places and missing blocks are reported. It does not yet give a vee a shared valley cam: a lobe touching two
   cylinders still has one angle, so each bank has its own camshaft (see *compact engines*).
 - **Dynamometer block** (`DynoBlock`): set against any block of an engine, goggles draw its torque and power curves as
   bars, with peaks and the powerband, from the rating the engine itself uses. Redstone rises as the engine climbs to the

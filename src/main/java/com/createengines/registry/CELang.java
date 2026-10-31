@@ -67,11 +67,14 @@ public final class CELang {
 		raw("tool.timing_tool.style.cross_plane", "Cross-plane (quarter turns)");
 		raw("tool.timing_tool.style.flat_plane", "Flat-plane (half turns)");
 		raw("tool.timing_tool.style.cams_only", "Cams only (leave the crank)");
-		raw("tool.bank_builder.layout", "Bank Builder: %1$s");
+		raw("tool.bank_builder.layout", "Bank Builder: %1$s, %2$s");
+		raw("tool.bank_builder.grade.standard", "standard parts");
+		raw("tool.bank_builder.grade.precision", "precision parts");
+		raw("tool.bank_builder.upgraded", "Swapped %1$s standard part(s) for precision ones; the old parts are back in your inventory");
 		raw("tool.bank_builder.layout.inline", "Inline (the face you click)");
 		raw("tool.bank_builder.layout.vee", "Vee (that face and the next, a quarter turn round)");
 		raw("tool.bank_builder.layout.flat", "Flat (that face and the one opposite)");
-		raw("tool.bank_builder.hint", "Use on a crank throw to set a cylinder and head on that face of every throw of the crankshaft, with the pistons, rods and injectors you carry. Sneak-use to change layout");
+		raw("tool.bank_builder.hint", "Use on a crank throw to set a cylinder and head on that face of every throw of the crankshaft, with the pistons, rods and injectors you carry. Sneak-use to change layout, and then between standard and precision parts: a precision build swaps precision parts in for standard ones too");
 		raw("tool.bank_builder.no_crank", "Use it on a crankshaft throw");
 		raw("tool.bank_builder.no_throws", "That crankshaft has no throw to build on");
 		raw("tool.bank_builder.built", "Placed %1$s cylinder(s) and %2$s head(s) on %3$s throw(s)");

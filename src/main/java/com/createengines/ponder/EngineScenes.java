@@ -2805,7 +2805,7 @@ public final class EngineScenes {
 			.showText(100)
 			.attachKeyFrame()
 			.colored(PonderPalette.BLUE)
-			.text("Sneak-use changes the layout. Flat also builds the opposite face, for a boxer.")
+			.text("Sneak-use changes the layout, and then between standard and precision parts, which it also swaps in for the standard ones on the throws. Flat builds the opposite face too, for a boxer.")
 			.pointAt(util.vector()
 				.blockSurface(throwPos, Direction.DOWN))
 			.placeNearTarget();
