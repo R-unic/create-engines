@@ -494,8 +494,8 @@ public final class EngineSimulation {
 				// A MAF sensor sets the shot from the air, up to what the injector can deliver; without one it is
 				// whatever Fuel Metering says
 				double fullShot = cylinder.airMatch > 0
-					? Math.min(airLimit * cylinder.airMatch, cylinder.spec.maxFuelPerShot() * CylinderModel.INJECTOR_CAPACITY)
-					: cylinder.spec.maxFuelPerShot() * cylinder.metering * cylinder.fuelTrim;
+					? Math.min(airLimit * cylinder.airMatch, cylinder.injectorLimit(fuel))
+					: cylinder.usualShot(fuel) * cylinder.metering * cylinder.fuelTrim;
 				scale = Math.max(1, Math.min(fullShot, airLimit) / last.fuelBurned);
 			}
 			// A rotary chamber takes a turn and a half of the shaft to do what a piston does in two

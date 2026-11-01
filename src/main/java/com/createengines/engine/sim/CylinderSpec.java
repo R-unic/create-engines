@@ -22,10 +22,21 @@ import java.util.concurrent.ConcurrentHashMap;
  * @param inertia             effective rotating/reciprocating inertia this cylinder adds to the crank
  * @param displacement        swept volume, in the normalized units where an ordinary cylinder's is 1; gas, work and the
  *                            fuel it can burn all scale with it, so set {@code maxFuelPerShot} to match
+ * @param injectorFlow        how much more than the usual most an injector can deliver (twice {@code maxFuelPerShot}) this
+ *                            one can: 1 for a plain injector. It matters to an engine that boost has outgrown, and to
+ *                            a MAF sensor, which asks the injector for as much as the air can burn
  */
 public record CylinderSpec(double compressionRatio, double rodRatio, double intakeFlow, double exhaustFlow,
 						   double maxFuelPerShot, double ignitionDelay, double burnDuration, double frictionStatic,
-						   double frictionViscous, double inertia, double displacement) {
+						   double frictionViscous, double inertia, double displacement, double injectorFlow) {
+
+	/** A cylinder of the usual swept volume, 1, with a plain injector. */
+	public CylinderSpec(double compressionRatio, double rodRatio, double intakeFlow, double exhaustFlow,
+						double maxFuelPerShot, double ignitionDelay, double burnDuration, double frictionStatic,
+						double frictionViscous, double inertia, double displacement) {
+		this(compressionRatio, rodRatio, intakeFlow, exhaustFlow, maxFuelPerShot, ignitionDelay, burnDuration,
+			frictionStatic, frictionViscous, inertia, displacement, 1);
+	}
 
 	/** A cylinder of the usual swept volume, 1. */
 	public CylinderSpec(double compressionRatio, double rodRatio, double intakeFlow, double exhaustFlow,
@@ -70,7 +81,8 @@ public record CylinderSpec(double compressionRatio, double rodRatio, double inta
 		double burn = precisionInjector ? Tuning.blend(PRECISION_INJECTOR_BURN, Tuning.precisionBonus) : 1;
 		return new CylinderSpec(ROTARY.compressionRatio, ROTARY.rodRatio, ROTARY.intakeFlow, ROTARY.exhaustFlow,
 			ROTARY.maxFuelPerShot * power, ROTARY.ignitionDelay * delay, ROTARY.burnDuration * burn, ROTARY.frictionStatic,
-			ROTARY.frictionViscous, ROTARY.inertia, ROTARY.displacement * power);
+			ROTARY.frictionViscous, ROTARY.inertia, ROTARY.displacement * power,
+			precisionInjector ? Tuning.blend(PRECISION_INJECTOR_FLOW, Tuning.precisionBonus) : 1);
 	}
 
 	/**
@@ -80,7 +92,8 @@ public record CylinderSpec(double compressionRatio, double rodRatio, double inta
 	 *     <li>the <b>bore</b> is a machined liner: higher compression and less wall friction;</li>
 	 *     <li>the <b>head</b> has four valves and a pent roof: it breathes better and lights faster;</li>
 	 *     <li>the <b>piston</b> is forged and light: less inertia and less drag;</li>
-	 *     <li>the <b>injector</b> atomises the fuel finely: it ignites sooner and burns faster.</li>
+	 *     <li>the <b>injector</b> atomises the fuel finely: it ignites sooner and burns faster, and its wider nozzle can feed
+ *     the extra air that boost gives.</li>
 	 * </ul>
 	 */
 	public static CylinderSpec build(boolean precisionBore, boolean precisionHead, boolean precisionPiston,
@@ -93,6 +106,7 @@ public record CylinderSpec(double compressionRatio, double rodRatio, double inta
 		double frictionStatic = CRUDE.frictionStatic;
 		double frictionViscous = CRUDE.frictionViscous;
 		double inertia = CRUDE.inertia;
+		double injectorFlow = 1;
 		double bonus = Tuning.precisionBonus;
 		if (precisionBore) {
 			compression *= Tuning.blend(PRECISION_COMPRESSION, bonus);
@@ -112,9 +126,10 @@ public record CylinderSpec(double compressionRatio, double rodRatio, double inta
 		if (precisionInjector) {
 			delay *= Tuning.blend(PRECISION_INJECTOR_DELAY, bonus);
 			burn *= Tuning.blend(PRECISION_INJECTOR_BURN, bonus);
+			injectorFlow = Tuning.blend(PRECISION_INJECTOR_FLOW, bonus);
 		}
 		return new CylinderSpec(compression, CRUDE.rodRatio, intake, exhaust, CRUDE.maxFuelPerShot, delay, burn,
-			frictionStatic, frictionViscous, inertia);
+			frictionStatic, frictionViscous, inertia, 1, injectorFlow);
 	}
 
 	public static final double PRECISION_COMPRESSION = 1.2;
@@ -127,6 +142,8 @@ public record CylinderSpec(double compressionRatio, double rodRatio, double inta
 	public static final double PRECISION_PISTON_VISCOUS = 0.7;
 	public static final double PRECISION_INJECTOR_DELAY = 0.8;
 	public static final double PRECISION_INJECTOR_BURN = 0.7;
+	/** A precision injector's nozzle passes this much more fuel at its limit than a plain one, which heavy boost needs. */
+	public static final double PRECISION_INJECTOR_FLOW = 1.3;
 
 	public double clearanceVolume() {
 		return 1 / (compressionRatio - 1);

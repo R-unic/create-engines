@@ -226,6 +226,58 @@ mix, not a better piston engine.
 - **Not done.** Bank Builder still places no cams, so a vee built with it needs its valley camshaft added by hand. A
   running engine that is reversed keeps working, but the lobe dials were set for the way it ran when timed.
 
+### Balance and power-creep pass (2026-11-01)
+
+Goal: a combustion engine is a viable, rewarding power source at every point of a Create game, and the top of the ladder
+stays a top. `ProgressionBalanceTest` pins it in steam engines (16384 SU); `CombustionOutputTest` still pins the lead
+over steam. Measured with the dynamometer, MAF-trimmed shots, Create's 256 RPM limit, `stressPerTorque` 100:
+
+| Stage | Build (12 cylinders unless noted) | Power, steam engines | SU per mB/s |
+|---|---|---|---|
+| Andesite age | 1 crude cylinder, plant oil | 0.18 | 8.8k |
+| | 6 crude cylinders, plant oil | 1.1 (a steam engine, with no nether trip) | 9.0k |
+| | 12 crude, plant oil / diesel | 2.2 / 2.7 | 9.0k / 10.1k |
+| Refining | 12 crude, gasoline | 3.7 | 12.2k |
+| | 8 crude, ethanol (vs gasoline 2.5) | 2.2 | 7.2k |
+| Brass age | 12 crude, gasoline, one turbo | 6.6 | 13.1k |
+| Precision | 12 precision, gasoline | 6.2 | 13.4k |
+| | + one turbo | 10.9 | 14.4k |
+| End game | + second turbo and injector flow | about 18 | 14.9k |
+| | + intercooler and supercharger on top | about 19 | 14.2k |
+| | 16 cylinders, two turbos | about 25 | 13.7k |
+
+What the pass found, and changed:
+
+- **Ethanol was a dead end.** Injectors were sized in mB, and ethanol carries 27 energy per mB against gasoline's 40, so
+  it needed 1.5 times the shot for the same air, hit the injector's limit at ambient pressure, and starved under any
+  boost (one turbo: 69 percent of gasoline's power; two: it collapsed). `FuelSpec.injectorFlow()` (reference air per mB
+  1.5, so 1 for gasoline, diesel and plant oil and 1.5 for ethanol) now scales both Fuel Metering's 100 percent and the
+  injector's limit (`CylinderModel.usualShot`, `injectorLimit`). Ethanol now makes about 89 percent of gasoline's power at
+  one turbo and 90 percent at two, burning more by volume, and costs no blaze powder or superheating. Datapack fuels get the
+  same rule from their own `air_per_mb`. A hand-metered ethanol engine now wants roughly two thirds of the dial it did.
+- **The precision injector was the weakest precision part** (4 percent alone, against 29 for the head, 12 for the bore
+  and 6 for the piston) while the injector's limit was what capped boost: two turbos on crude injectors ran lean (0.72
+  equivalence), and a 16-cylinder with four boost stages misfired lean at low speed. A precision injector now has
+  `CylinderSpec.PRECISION_INJECTOR_FLOW` 1.3: the limit of its shot is 30 percent higher. Fuel Metering and every
+  engine that is not short of fuel are unchanged (no existing tune moves); a MAF sensor and boost are what use it. Two
+  turbos with precision injectors make 15 percent or more over two turbos on plain ones. This is the only change that
+  raises a ceiling: a full-house 12 went from 15.8 to about 19 steam engines.
+- **Boost stacking now flattens instead of falling off.** The combinations the advancements ask for (turbo, intercooler,
+  supercharger, twin or compound turbos) are each a step up on their own. A fourth stage (two turbos, an intercooler and a
+  supercharger) is worth about 15 percent less than three, because even a precision injector cannot feed it; the fuel
+  economy of the full stack is also about 40 percent worse than one turbo's, so the ceiling is paid for at the pump.
+- **Left alone on purpose.** Early engines are strong and cheap to run already (a crude 12 on plant oil burns about 4 mB/s,
+  under 20 seeds a minute for 2.2 steam engines). Per input item, plant oil to diesel, gasoline and ethanol are within
+  about 20 percent of each other, so the fuel ladder buys power density, not economy. Turbo and supercharger are the best
+  power per build cost and sit in the brass age; precision parts cost about three times a crude cylinder for 1.7 times the
+  power and are the late polish. Rotary stays below a precision piston engine (four rotors against eight precision
+  cylinders), and RPM is not a creep route: every build peaks at or below 256 and loses power past it, so raising Create's
+  limit does not raise ratings. Knock still does nothing in the sim (gasoline and a fuel that never autoignites rate
+  identically), as decided.
+- **Not done.** Build cost was estimated by hand (iron-ingot equivalents) rather than a pinned table; a real playtest of
+  boost builds with precision injectors and a MAF sensor is still wanted. Hand-metered engines cannot use the injector's
+  extra 30 percent (the dial tops out at 200 percent); only a MAF sensor reaches it.
+
 ---
 
 ## 1. The one idea everything hangs on

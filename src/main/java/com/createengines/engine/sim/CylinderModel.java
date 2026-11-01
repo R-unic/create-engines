@@ -501,6 +501,16 @@ public final class CylinderModel {
 		}
 	}
 
+	/** The shot Fuel Metering's 100% means for {@code fuel}, mB: a thin fuel needs a bigger one to match the same air. */
+	public double usualShot(FuelSpec fuel) {
+		return spec.maxFuelPerShot() * fuel.injectorFlow();
+	}
+
+	/** The most the injector can deliver of {@code fuel} in one shot, mB. */
+	public double injectorLimit(FuelSpec fuel) {
+		return usualShot(fuel) * INJECTOR_CAPACITY * spec.injectorFlow();
+	}
+
 	/**
 	 * The injector delivers what it was set to deliver, however much air the cylinder drew in. Breathing falls with
 	 * speed (valve flow is per second, not per degree), so a setting that suits one speed is rich at a higher one and
@@ -510,12 +520,12 @@ public final class CylinderModel {
 	private void inject() {
 		FuelSpec fuel = fuelSupply.fuel();
 		double air = fresh * moles;
-		double shot = spec.maxFuelPerShot() * rack * metering * fuelTrim * governedFuel();
+		double shot = (fuel == null ? 0 : usualShot(fuel)) * rack * metering * fuelTrim * governedFuel();
 		if (fuel != null && airMatch > 0 && shot > 0) {
 			// A MAF sensor sets the shot from the air, whichever way that moves it. The rack still says how much of it is
 			// wanted, and so does a compression engine's governor; a spark engine's throttle is already in the air.
 			double matched = rack * (ignition.installed() ? 1 : governor)
-				* Math.min(air / fuel.airPerMb() * airMatch, spec.maxFuelPerShot() * INJECTOR_CAPACITY);
+				* Math.min(air / fuel.airPerMb() * airMatch, injectorLimit(fuel));
 			if (matched < shot)
 				current.mafCut = 1 - matched / shot;
 			else if (matched > shot)
