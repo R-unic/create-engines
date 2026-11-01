@@ -156,6 +156,8 @@ public final class Dynamometer {
 				: IgnitionSource.NONE;
 			FuelSpec fuel = cylinder.fuelSupply.fuel();
 			copy.fuelSupply = fuel != null && cylinder.isTimed() ? unlimited(fuel) : FuelSupply.NONE;
+			FuelSpec pilot = cylinder.pilotSupply.fuel();
+			copy.pilotSupply = pilot != null ? unlimited(pilot) : FuelSupply.NONE;
 			ported |= cylinder.ported();
 			copies.add(copy);
 		}
@@ -175,6 +177,14 @@ public final class Dynamometer {
 		dyno.lubrication()
 			.setDilution(engine.lubrication()
 				.dilution());
+		dyno.lubrication()
+			.setCondition(engine.lubrication()
+				.condition());
+		// A dynamometer rates the engine at the temperature it is at, and doesn't let the run warm or cool it
+		dyno.thermal()
+			.setTemperature(engine.thermal()
+				.temperature());
+		dyno.setThermalLive(false);
 		dyno.setWashesOil(false);
 		dyno.trackSwing();
 		dyno.restore(0, 0, engine.direction());

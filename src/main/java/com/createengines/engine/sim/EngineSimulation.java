@@ -42,6 +42,14 @@ public final class EngineSimulation {
 	private final double baseFriction;
 	private final double baseViscousFriction;
 	private final Lubrication lubrication = new Lubrication(1);
+	/** A new simulation is warm; a live engine's owner starts it cold and switches {@link #setThermalLive} on. */
+	private final Thermal thermal = new Thermal(Thermal.NORMAL);
+	private CoolantSupply coolant = CoolantSupply.NONE;
+	/**
+	 * Whether the block warms and cools as the engine runs. Off for a dynamometer's copy, which holds the temperature of
+	 * the engine it is measuring, and for a bare simulation, which stays at the warm temperature that costs and earns nothing.
+	 */
+	private boolean thermalLive;
 	private final List<Turbocharger> turbos = new ArrayList<>();
 	private final List<Supercharger> superchargers = new ArrayList<>();
 	private final List<Intercooler> intercoolers = new ArrayList<>();
@@ -210,8 +218,13 @@ public final class EngineSimulation {
 
 	/** Closes the tick's heat accounting and lets each turbo spool on it; they spin down even while the crank is stopped. */
 	private void endTick() {
-		for (CylinderModel cylinder : cylinders)
+		double exhaustHeat = 0;
+		for (CylinderModel cylinder : cylinders) {
 			cylinder.endTick();
+			exhaustHeat += cylinder.exhaustHeatLastTick();
+		}
+		if (thermalLive && Tuning.engineTemperature)
+			thermal.update(exhaustHeat / TICK, cylinders.size(), TICK, coolant);
 		for (Turbocharger turbo : turbos)
 			turbo.tick(TICK);
 		for (Supercharger blower : superchargers) {
@@ -228,8 +241,13 @@ public final class EngineSimulation {
 	 * run each hold it up, so their back-pressures add.
 	 */
 	private void applyInduction() {
-		if (turbos.isEmpty() && superchargers.isEmpty() && intercoolers.isEmpty())
+		double cool = thermal.chargeFactor();
+		if (turbos.isEmpty() && superchargers.isEmpty() && intercoolers.isEmpty()) {
+			// No compressors, but a cool engine still draws a denser charge
+			for (CylinderModel cylinder : cylinders)
+				cylinder.intakeTemperature = cool;
 			return;
+		}
 		for (CylinderModel cylinder : cylinders) {
 			cylinder.intakePressure = 1;
 			cylinder.intakeTemperature = 1;
@@ -280,6 +298,9 @@ public final class EngineSimulation {
 		exhaust.forEach((cylinder, back, $) -> cylinder.exhaustPressure += back);
 		for (Intercooler cooler : intercoolers)
 			cooler.cool();
+		if (cool != 1)
+			for (CylinderModel cylinder : cylinders)
+				cylinder.intakeTemperature *= cool;
 	}
 
 	/** Running averages of what several parallel stages make for each cylinder they serve. */
@@ -440,7 +461,7 @@ public final class EngineSimulation {
 			+ baseViscousFriction * omega * Lubrication.viscousFactor(film);
 		for (CylinderModel cylinder : cylinders)
 			friction += cylinder.spec.frictionAt(omega, film);
-		return friction;
+		return friction * drag();
 	}
 
 	/**
@@ -449,8 +470,9 @@ public final class EngineSimulation {
 	 */
 	private void measureFriction() {
 		double film = lubrication.effective();
-		double staticFactor = Lubrication.staticFactor(film);
-		double viscousFactor = Lubrication.viscousFactor(film);
+		double drag = drag();
+		double staticFactor = Lubrication.staticFactor(film) * drag;
+		double viscousFactor = Lubrication.viscousFactor(film) * drag;
 		double fixed = baseFriction * staticFactor;
 		double perOmega = baseViscousFriction * viscousFactor;
 		for (CylinderModel cylinder : cylinders) {
@@ -469,6 +491,34 @@ public final class EngineSimulation {
 	/** How well oiled the moving parts are; the owner keeps it up to date from the oil supply. */
 	public Lubrication lubrication() {
 		return lubrication;
+	}
+
+	/** How hot the block is; see {@link Thermal}. */
+	public Thermal thermal() {
+		return thermal;
+	}
+
+	/** Where the coolant comes from; none by default, in which case the engine only loses heat to the air. */
+	public void setCoolant(CoolantSupply coolant) {
+		this.coolant = coolant;
+	}
+
+	/** Lets the block warm and cool as the engine runs. */
+	public void setThermalLive(boolean live) {
+		this.thermalLive = live;
+	}
+
+	/** Multiplier on all friction from the state of the oil and how warm the block is. */
+	private double drag() {
+		return lubrication.drag() * thermal.drag();
+	}
+
+	/**
+	 * Spends the oil's condition for the turning done this tick. The owner calls it once a tick on a live engine, with
+	 * whether a filter is fitted; a dynamometer copy never does.
+	 */
+	public void ageOil(boolean filtered) {
+		lubrication.age(revolutionsLastTick(), lubrication.stress(thermal.temperature(), filtered));
 	}
 
 	/** Crank revolutions turned during the last tick. */

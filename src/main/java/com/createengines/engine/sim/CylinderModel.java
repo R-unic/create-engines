@@ -31,6 +31,10 @@ public final class CylinderModel {
 	public static final double INJECTOR_CAPACITY = 2;
 	/** Fresh charge below which a cylinder counts as having no air at all, rather than too little for the shot. */
 	private static final double MIN_FRESH_AIR = 0.05;
+	/** Pilot fuel injected to light a charge, as a share of the main shot (by volume). */
+	public static final double PILOT_SHARE = 0.08;
+	/** A charge lit by a pilot flame spreads a little more slowly than one lit by a spark across the chamber. */
+	public static final double PILOT_BURN_SLOWDOWN = 1.15;
 	/** Leaner or richer than this (equivalence ratio) and a spark can't get a flame going. */
 	private static final double LEAN_LIMIT = 0.5;
 	private static final double RICH_LIMIT = 1.8;
@@ -121,6 +125,12 @@ public final class CylinderModel {
 	/** Pressure the exhaust valve blows down into, ambient (1) unless a turbine is in the way. */
 	public double exhaustPressure = 1;
 	public FuelSupply fuelSupply = FuelSupply.NONE;
+	/**
+	 * A second, easily ignited fuel (diesel, say) a cylinder with no spark plug can inject a little of to light a main
+	 * charge that compression alone couldn't: the pilot ignites at its own, lower autoignition temperature and its flame
+	 * lights the rest. Used only when the main fuel would not light by itself.
+	 */
+	public FuelSupply pilotSupply = FuelSupply.NONE;
 
 	// Gas state: amount, temperature, and fraction that is still fresh (unburned) air
 	private double moles;
@@ -306,6 +316,7 @@ public final class CylinderModel {
 		copy.ignition = ignition;
 		copy.intakeFactor = intakeFactor;
 		copy.fuelTrim = fuelTrim;
+		copy.pilotSupply = pilotSupply;
 		copy.airMatch = airMatch;
 		copy.exhaustFactor = exhaustFactor;
 		copy.intakePressure = intakePressure;
@@ -572,6 +583,24 @@ public final class CylinderModel {
 			startBurning();
 	}
 
+	/**
+	 * Whether a pilot shot lights the charge now: the main fuel is too hard to light by compression at this temperature, but
+	 * the pilot fuel isn't, and the supply has some to give. A cylinder with a plug uses its plug instead, and a rotor
+	 * chamber never lights itself.
+	 */
+	private boolean pilotLights() {
+		if (!Tuning.pilotInjection || ignition.installed())
+			return false;
+		FuelSpec pilot = pilotSupply.fuel();
+		if (pilot == null || temperature < pilot.autoignitionTemp())
+			return false;
+		double shot = PILOT_SHARE * current.fuelInjected;
+		if (shot <= 0 || pilotSupply.draw(shot) < shot * 0.99)
+			return false;
+		current.pilotShot += shot;
+		return true;
+	}
+
 	private void startBurning() {
 		burning = true;
 		double air = fresh * moles;
@@ -583,9 +612,17 @@ public final class CylinderModel {
 		if (!burning) {
 			timeSinceInjection += dt;
 			// A rotor's long, thin chamber loses too much heat to its walls for the charge to light itself: only a plug will
-			if (ported || timeSinceInjection < spec.ignitionDelay() || temperature < burningFuel.autoignitionTemp())
+			if (ported || timeSinceInjection < spec.ignitionDelay())
 				return;
+			boolean piloted = false;
+			if (temperature < burningFuel.autoignitionTemp()) {
+				if (!pilotLights())
+					return;
+				piloted = true;
+			}
 			startBurning();
+			if (piloted)
+				burnRate /= PILOT_BURN_SLOWDOWN;
 		}
 		double airLimited = fresh * moles / burningFuel.airPerMb();
 		double burned = Math.min(Math.min(fuelPending, burnRate * dt), airLimited);
