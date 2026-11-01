@@ -1,0 +1,84 @@
+{
+  "parent": "create_engines:crankshaft",
+  "criteria": {
+    "twelve_cylinders": {
+      "conditions": {
+        "event": "twelve_cylinders"
+      },
+      "trigger": "create_engines:event"
+    },
+    "coupled_cranks": {
+      "conditions": {
+        "event": "coupled_cranks"
+      },
+      "trigger": "create_engines:event"
+    },
+    "vee_engine": {
+      "conditions": {
+        "event": "vee_engine"
+      },
+      "trigger": "create_engines:event"
+    },
+    "flat_engine": {
+      "conditions": {
+        "event": "flat_engine"
+      },
+      "trigger": "create_engines:event"
+    },
+    "even_firing": {
+      "conditions": {
+        "event": "even_firing"
+      },
+      "trigger": "create_engines:event"
+    },
+    "valley_cam": {
+      "conditions": {
+        "event": "valley_cam"
+      },
+      "trigger": "create_engines:event"
+    },
+    "rotary_engine": {
+      "conditions": {
+        "event": "rotary_engine"
+      },
+      "trigger": "create_engines:event"
+    }
+  },
+  "display": {
+    "description": {
+      "translate": "advancement.create_engines.master_builder.desc"
+    },
+    "frame": "challenge",
+    "icon": {
+      "count": 1,
+      "id": "create_engines:crank_throw"
+    },
+    "title": {
+      "translate": "advancement.create_engines.master_builder"
+    }
+  },
+  "requirements": [
+    [
+      "twelve_cylinders"
+    ],
+    [
+      "coupled_cranks"
+    ],
+    [
+      "vee_engine"
+    ],
+    [
+      "flat_engine"
+    ],
+    [
+      "even_firing"
+    ],
+    [
+      "valley_cam"
+    ],
+    [
+      "rotary_engine"
+    ]
+  ],
+  "sends_telemetry_event": true
+}

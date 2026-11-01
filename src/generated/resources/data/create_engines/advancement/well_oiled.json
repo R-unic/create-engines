@@ -1,5 +1,5 @@
 {
-  "parent": "create_engines:alive",
+  "parent": "create_engines:engine_oil",
   "criteria": {
     "well_oiled": {
       "conditions": {

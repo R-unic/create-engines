@@ -1,0 +1,66 @@
+{
+  "parent": "create_engines:diesel",
+  "criteria": {
+    "gasoline_burned": {
+      "conditions": {
+        "event": "gasoline_burned"
+      },
+      "trigger": "create_engines:event"
+    },
+    "ethanol_burned": {
+      "conditions": {
+        "event": "ethanol_burned"
+      },
+      "trigger": "create_engines:event"
+    },
+    "superheat_recovered": {
+      "conditions": {
+        "event": "superheat_recovered"
+      },
+      "trigger": "create_engines:event"
+    },
+    "dual_fuel": {
+      "conditions": {
+        "event": "dual_fuel"
+      },
+      "trigger": "create_engines:event"
+    },
+    "waste_oil_burned": {
+      "conditions": {
+        "event": "waste_oil_burned"
+      },
+      "trigger": "create_engines:event"
+    }
+  },
+  "display": {
+    "description": {
+      "translate": "advancement.create_engines.closed_loop.desc"
+    },
+    "frame": "challenge",
+    "icon": {
+      "count": 1,
+      "id": "create_engines:ethanol_bucket"
+    },
+    "title": {
+      "translate": "advancement.create_engines.closed_loop"
+    }
+  },
+  "requirements": [
+    [
+      "gasoline_burned"
+    ],
+    [
+      "ethanol_burned"
+    ],
+    [
+      "superheat_recovered"
+    ],
+    [
+      "dual_fuel"
+    ],
+    [
+      "waste_oil_burned"
+    ]
+  ],
+  "sends_telemetry_event": true
+}

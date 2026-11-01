@@ -8,6 +8,7 @@ import com.createengines.content.RenderRotation;
 import com.createengines.engine.EngineController;
 import com.createengines.engine.EngineState;
 import com.createengines.engine.EngineSummary;
+import com.createengines.engine.sim.Thermal;
 import com.createengines.engine.topology.EngineLayout;
 import com.createengines.engine.topology.EngineMember;
 import com.createengines.engine.topology.EngineTopology;
@@ -234,6 +235,8 @@ public class CrankshaftBlockEntity extends GeneratingKineticBlockEntity implemen
 			motionTag.putInt("Direction", motion.direction());
 			motionTag.putDouble("Film", motion.film());
 			motionTag.putDouble("Dilution", motion.dilution());
+			motionTag.putDouble("Condition", motion.condition());
+			motionTag.putDouble("Temperature", motion.temperature());
 			tag.put("Motion", motionTag);
 		}
 		if (clientPacket && summary != null)
@@ -251,7 +254,10 @@ public class CrankshaftBlockEntity extends GeneratingKineticBlockEntity implemen
 		if (tag.contains("Motion")) {
 			CompoundTag motion = tag.getCompound("Motion");
 			savedMotion = new EngineController.Motion(motion.getDouble("Angle"), motion.getDouble("Omega"),
-				motion.getInt("Direction"), motion.getDouble("Film"), motion.getDouble("Dilution"), null);
+				motion.getInt("Direction"), motion.getDouble("Film"), motion.getDouble("Dilution"),
+				// An engine saved before oil went off has new oil, and a block that has had time to settle
+				motion.contains("Condition") ? motion.getDouble("Condition") : 1,
+				motion.contains("Temperature") ? motion.getDouble("Temperature") : Thermal.NORMAL, null);
 		}
 		if (clientPacket)
 			summary = tag.contains("Summary") ? EngineSummary.read(tag.getCompound("Summary")) : null;
@@ -305,6 +311,16 @@ public class CrankshaftBlockEntity extends GeneratingKineticBlockEntity implemen
 			if (oil < 30)
 				GoggleLines.add(CELang.translate("goggles.lubrication.dry")
 					.style(ChatFormatting.GRAY), tooltip, 2);
+			int fresh = Math.round(engine.condition() * 100);
+			GoggleLines.add(CELang.translate("goggles.oil_condition", fresh)
+				.style(fresh < 30 ? ChatFormatting.RED : fresh < 60 ? ChatFormatting.GOLD : ChatFormatting.GREEN), tooltip, 1);
+			if (fresh < 30 && isPlayerSneaking)
+				GoggleLines.add(CELang.translate("goggles.oil_condition.hint")
+					.style(ChatFormatting.DARK_GRAY), tooltip, 2);
+			if (engine.filtered())
+				GoggleLines.add(CELang.translate("goggles.oil_filtered")
+					.style(ChatFormatting.GRAY), tooltip, 2);
+			addTemperature(tooltip, engine, isPlayerSneaking);
 			int thinned = Math.round(engine.thinning() * 100);
 			if (thinned >= 5) {
 				GoggleLines.add(CELang.translate("goggles.lubrication.thinned", thinned)
@@ -371,6 +387,28 @@ public class CrankshaftBlockEntity extends GeneratingKineticBlockEntity implemen
 			.style(ChatFormatting.DARK_GRAY), tooltip, 1);
 		if (engine.starterEngaged())
 			GoggleLines.add(CELang.translate("goggles.starter_engaged")
+				.style(ChatFormatting.YELLOW), tooltip, 1);
+	}
+
+	/** The block's temperature in words, with the coolant it is spending and a note when a pilot shot is lighting the fuel. */
+	private static void addTemperature(List<Component> tooltip, EngineSummary engine, boolean isPlayerSneaking) {
+		float temperature = engine.temperature();
+		String state = temperature < Thermal.COLD_BELOW ? "cold" : temperature < Thermal.COOL_NONE ? "cool" : "warm";
+		ChatFormatting colour = switch (state) {
+			case "cold" -> ChatFormatting.AQUA;
+			case "cool" -> ChatFormatting.GREEN;
+			default -> ChatFormatting.GRAY;
+		};
+		GoggleLines.add(CELang.translate("goggles.temperature." + state)
+			.style(colour), tooltip, 1);
+		if (engine.coolantRate() > 0)
+			GoggleLines.add(CELang.translate("goggles.coolant_use", format(engine.coolantRate()))
+				.style(ChatFormatting.GRAY), tooltip, 2);
+		else if (isPlayerSneaking && temperature >= Thermal.COOL_NONE)
+			GoggleLines.add(CELang.translate("goggles.temperature.hint")
+				.style(ChatFormatting.DARK_GRAY), tooltip, 2);
+		if (engine.pilot())
+			GoggleLines.add(CELang.translate("goggles.pilot_lit")
 				.style(ChatFormatting.YELLOW), tooltip, 1);
 	}
 

@@ -1,0 +1,139 @@
+{
+  "parent": "block/block",
+  "textures": {
+    "can": "create_engines:block/steel",
+    "band": "create_engines:block/brass",
+    "boss": "create_engines:block/cast_iron",
+    "particle": "create_engines:block/steel"
+  },
+  "elements": [
+    {
+      "from": [
+        4,
+        0,
+        4
+      ],
+      "to": [
+        12,
+        9,
+        12
+      ],
+      "faces": {
+        "north": {
+          "texture": "#can"
+        },
+        "south": {
+          "texture": "#can"
+        },
+        "east": {
+          "texture": "#can"
+        },
+        "west": {
+          "texture": "#can"
+        },
+        "up": {
+          "texture": "#can"
+        },
+        "down": {
+          "texture": "#can"
+        }
+      }
+    },
+    {
+      "from": [
+        3.5,
+        3,
+        3.5
+      ],
+      "to": [
+        12.5,
+        5,
+        12.5
+      ],
+      "faces": {
+        "north": {
+          "texture": "#band"
+        },
+        "south": {
+          "texture": "#band"
+        },
+        "east": {
+          "texture": "#band"
+        },
+        "west": {
+          "texture": "#band"
+        },
+        "up": {
+          "texture": "#band"
+        },
+        "down": {
+          "texture": "#band"
+        }
+      }
+    },
+    {
+      "from": [
+        5,
+        9,
+        5
+      ],
+      "to": [
+        11,
+        10,
+        11
+      ],
+      "faces": {
+        "north": {
+          "texture": "#boss"
+        },
+        "south": {
+          "texture": "#boss"
+        },
+        "east": {
+          "texture": "#boss"
+        },
+        "west": {
+          "texture": "#boss"
+        },
+        "up": {
+          "texture": "#boss"
+        },
+        "down": {
+          "texture": "#boss"
+        }
+      }
+    },
+    {
+      "from": [
+        6.5,
+        10,
+        6.5
+      ],
+      "to": [
+        9.5,
+        11.5,
+        9.5
+      ],
+      "faces": {
+        "north": {
+          "texture": "#boss"
+        },
+        "south": {
+          "texture": "#boss"
+        },
+        "east": {
+          "texture": "#boss"
+        },
+        "west": {
+          "texture": "#boss"
+        },
+        "up": {
+          "texture": "#boss"
+        },
+        "down": {
+          "texture": "#boss"
+        }
+      }
+    }
+  ]
+}

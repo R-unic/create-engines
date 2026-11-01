@@ -1,0 +1,33 @@
+{
+  "parent": "create_engines:oil_exchange",
+  "criteria": {
+    "used_oil": {
+      "conditions": {
+        "items": [
+          {
+            "items": "create_engines:used_oil_bucket"
+          }
+        ]
+      },
+      "trigger": "minecraft:inventory_changed"
+    }
+  },
+  "display": {
+    "description": {
+      "translate": "advancement.create_engines.used_oil.desc"
+    },
+    "icon": {
+      "count": 1,
+      "id": "create_engines:used_oil_bucket"
+    },
+    "title": {
+      "translate": "advancement.create_engines.used_oil"
+    }
+  },
+  "requirements": [
+    [
+      "used_oil"
+    ]
+  ],
+  "sends_telemetry_event": true
+}

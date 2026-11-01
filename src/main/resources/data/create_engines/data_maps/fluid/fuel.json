@@ -15,6 +15,11 @@
       "autoignition_temperature": 2.7,
       "air_per_mb": 1.5
     },
+    "create_engines:used_oil": {
+      "energy_per_mb": 22,
+      "autoignition_temperature": 1.85,
+      "air_per_mb": 1.6
+    },
     "create_engines:ethanol": {
       "energy_per_mb": 27,
       "autoignition_temperature": 3.4,

@@ -1,0 +1,57 @@
+{
+  "parent": "create_engines:transmission",
+  "criteria": {
+    "every_gear": {
+      "conditions": {
+        "event": "every_gear"
+      },
+      "trigger": "create_engines:event"
+    },
+    "charged_battery": {
+      "conditions": {
+        "event": "charged_battery"
+      },
+      "trigger": "create_engines:event"
+    },
+    "flywheel_smooth": {
+      "conditions": {
+        "event": "flywheel_smooth"
+      },
+      "trigger": "create_engines:event"
+    },
+    "governor_commanded": {
+      "conditions": {
+        "event": "governor_commanded"
+      },
+      "trigger": "create_engines:event"
+    }
+  },
+  "display": {
+    "description": {
+      "translate": "advancement.create_engines.full_driveline.desc"
+    },
+    "frame": "challenge",
+    "icon": {
+      "count": 1,
+      "id": "create_engines:transmission"
+    },
+    "title": {
+      "translate": "advancement.create_engines.full_driveline"
+    }
+  },
+  "requirements": [
+    [
+      "every_gear"
+    ],
+    [
+      "charged_battery"
+    ],
+    [
+      "flywheel_smooth"
+    ],
+    [
+      "governor_commanded"
+    ]
+  ],
+  "sends_telemetry_event": true
+}

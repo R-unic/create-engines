@@ -44,6 +44,11 @@ public final class CEItems {
 		.model((c, p) -> p.withExistingParent(c.getName(), p.modLoc("block/rotor_housing/rotor_item")))
 		.register();
 
+	/** Fitted in an oil pan: the oil ages more slowly and fuel is cleaned out of it faster. Nothing wears out. */
+	public static final ItemEntry<Item> OIL_FILTER = REGISTRATE.item("oil_filter", Item::new)
+		.model((c, p) -> p.withExistingParent(c.getName(), p.modLoc("block/sump/filter_item")))
+		.register();
+
 	/** Sets an engine's throws and cam lobes to the best firing order its layout allows. */
 	public static final ItemEntry<TimingToolItem> TIMING_TOOL = REGISTRATE.item("timing_tool", TimingToolItem::new)
 		.properties(p -> p.stacksTo(1))

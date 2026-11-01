@@ -35,6 +35,7 @@ import com.createengines.content.turbo.TurbochargerBlock;
 import com.createengines.content.turbo.TurbochargerBlockEntity;
 import com.createengines.engine.sim.CamProfile;
 import com.createengines.engine.sim.Camshaft;
+import com.createengines.engine.sim.CoolantSupply;
 import com.createengines.engine.sim.CycleResult;
 import com.createengines.engine.sim.CycleStats;
 import com.createengines.engine.sim.CylinderModel;
@@ -84,8 +85,8 @@ public final class EngineController {
 	 * What carries over when an engine is rebuilt: the crank's motion, and (if the engine was running in memory)
 	 * the controller it was running in, so each surviving cylinder keeps its gas.
 	 */
-	public record Motion(double angle, double omega, int direction, double film, double dilution,
-						 @Nullable EngineController source) {
+	public record Motion(double angle, double omega, int direction, double film, double dilution, double condition,
+						 double temperature, @Nullable EngineController source) {
 	}
 
 	private static final int PUBLISH_INTERVAL = 10;
@@ -125,6 +126,9 @@ public final class EngineController {
 	/** Parallel to {@link EngineLayout#superchargers()}. */
 	private final List<Supercharger> blowers = new ArrayList<>();
 	private final OilSupply oilSupply;
+	/** Whether an oil pan swapped oil during the last tick, and whether any pan has a filter fitted: for achievements and goggles. */
+	private boolean exchanging;
+	private boolean filtered;
 	/** How many moving parts need oil: crank blocks, plus every piston and rod turning with the crank. */
 	private final double oilParts;
 
@@ -186,6 +190,10 @@ public final class EngineController {
 		};
 
 		IgnitionSource plugs = new BatteryIgnition(level, layout.batteries());
+		// The oil pans also hold the engine's coolant and its pilot fuel
+		CoolantSupply coolant = layout.sumps()
+			.isEmpty() ? CoolantSupply.NONE : new SumpCoolantSupply(level, layout.sumps());
+		FuelSupply pilots = new SumpPilotSupply(level, layout.sumps());
 
 		models = new ArrayList<>();
 		List<CylinderModel> working = new ArrayList<>();
@@ -216,6 +224,7 @@ public final class EngineController {
 					camshaft, cylinder.lobeAngle());
 			model.fuelSupply = CylinderFault.NO_INJECTOR.in(cylinder.faults()) ? FuelSupply.NONE : fuelGallery;
 			model.ignition = cylinder.sparkPlug() ? plugs : IgnitionSource.NONE;
+			model.pilotSupply = pilots;
 			model.intakeFactor = flow(cylinder.intake());
 			model.exhaustFactor = flow(cylinder.exhaust());
 			if (!Double.isNaN(cylinder.lobeLeaderTdc()))
@@ -271,11 +280,17 @@ public final class EngineController {
 		}
 		for (EngineLayout.Inline placed : layout.intercoolers())
 			sim.addIntercooler(new Intercooler(breathingOn(placed.intake())));
-		// A new engine starts dry, and has to be oiled
+		// A new engine starts dry, and has to be oiled; its oil is new and its block cold
 		sim.lubrication()
 			.setFilm(motion == null ? 0 : motion.film());
 		sim.lubrication()
 			.setDilution(motion == null ? 0 : motion.dilution());
+		sim.lubrication()
+			.setCondition(motion == null ? 1 : motion.condition());
+		sim.thermal()
+			.setTemperature(motion == null ? 0 : motion.temperature());
+		sim.setCoolant(coolant);
+		sim.setThermalLive(true);
 		if (motion != null) {
 			sim.restore(motion.angle(), motion.omega(), motion.direction());
 			// Rotor chambers repeat every three turns, so carrying only the angle could swap their gas between them
@@ -364,6 +379,10 @@ public final class EngineController {
 		return new Motion(sim.angle(), sim.omega(), sim.direction(), sim.lubrication()
 			.film(), sim.lubrication()
 				.dilution(),
+			sim.lubrication()
+				.condition(),
+			sim.thermal()
+				.temperature(),
 			this);
 	}
 
@@ -422,6 +441,7 @@ public final class EngineController {
 		sim.tickCranked(load, maxOmega, floor, floorDirection);
 		sim.lubrication()
 			.update(sim.revolutionsLastTick(), EngineSimulation.TICK, oilParts, oilSupply);
+		serviceOil(level);
 		cranking = floor > 0 && !sim.isSustaining();
 		readSensors(level);
 
@@ -738,6 +758,31 @@ public final class EngineController {
 		}
 	}
 
+	/**
+	 * Swaps oil in the pans that have an exchange running, so fresh oil takes the place of spent oil, and spends some of
+	 * what condition is left for the turning done. An engine that is not turning neither ages its oil nor flushes it.
+	 */
+	private void serviceOil(Level level) {
+		exchanging = false;
+		if (sim.revolutionsLastTick() <= 0)
+			return;
+		double swapped = 0;
+		boolean fitted = false;
+		for (BlockPos pos : layout.sumps()) {
+			if (!level.isLoaded(pos) || !(level.getBlockEntity(pos) instanceof SumpBlockEntity sump))
+				continue;
+			fitted |= sump.filtered();
+			swapped += sump.exchange(EngineSimulation.TICK);
+		}
+		filtered = fitted;
+		sim.ageOil(fitted);
+		if (swapped > 0) {
+			sim.lubrication()
+				.refresh(swapped);
+			exchanging = true;
+		}
+	}
+
 	private void publishSpeed() {
 		float maxSpeed = AllConfigs.server().kinetics.maxRotationSpeed.get();
 		float target = 0;
@@ -764,8 +809,16 @@ public final class EngineController {
 		List<Object> key = new ArrayList<>();
 		key.add((int) Math.round(sim.lubrication()
 			.effective() * 5));
+		// Spent oil and a cold or cool block change what the engine can deliver, in steps coarse enough not to re-rate it constantly
+		key.add((int) Math.round(sim.lubrication()
+			.condition() * 8));
+		key.add((int) Math.round(sim.thermal()
+			.cold() * 4));
+		key.add((int) Math.round(sim.thermal()
+			.cool() * 4));
 		for (CylinderModel model : sim.cylinders()) {
 			key.add(model.fuelSupply.fuel());
+			key.add(model.pilotSupply.fuel());
 			key.add((int) Math.round(model.metering * 20));
 			key.add((int) Math.round(model.intakeFactor * 20));
 			key.add((int) Math.round(model.fuelTrim * 20));
@@ -902,7 +955,22 @@ public final class EngineController {
 				.effective(),
 			activeStarter != null, angles, layout.lines(), (float) sim.lubrication()
 				.dilution(),
-			(float) (sim.isStopped() ? 0 : Dynamometer.roughnessLoss(torqueCurve, rippleCurve, sim.rpm())));
+			(float) (sim.isStopped() ? 0 : Dynamometer.roughnessLoss(torqueCurve, rippleCurve, sim.rpm())),
+			(float) sim.lubrication()
+				.condition(),
+			(float) sim.thermal()
+				.temperature(),
+			(float) sim.thermal()
+				.coolantRate(),
+			pilotLit(), filtered);
+	}
+
+	/** Whether a pilot shot, and not compression or a spark, lit the charge in a cylinder on its last cycle. */
+	private boolean pilotLit() {
+		for (CylinderModel model : models)
+			if (model != null && model.lastCycle().pilotShot > 0 && model.lastCycle().result.fired())
+				return true;
+		return false;
 	}
 
 	private void syncDiagnostics(Level level, double torqueScale) {
@@ -1083,6 +1151,7 @@ public final class EngineController {
 		reportInduction(level, state);
 		reportRotary(level, state);
 		reportRefining(level, state);
+		reportService(level, state);
 		reportMechanics(level, state);
 		reportParts(level, state, firing);
 		EngineMilestones.Snapshot snapshot = new EngineMilestones.Snapshot(state, previousState, rpm,
@@ -1190,6 +1259,21 @@ public final class EngineController {
 		Fluid fuel = fuels.fluid();
 		award(level, EngineMilestones.reachedRefining(state == EngineState.RUNNING,
 			fuel != null && fuel.isSame(CEFluids.ETHANOL.get()), exchangerLevel));
+	}
+
+	/** Credits the operator with oil that is kept fresh, an engine that has warmed up or is cooled, and a pilot shot at work. */
+	private void reportService(Level level, EngineState state) {
+		Fluid fuel = fuels.fluid();
+		award(level, EngineMilestones.reachedService(new EngineMilestones.Service(state == EngineState.RUNNING,
+			(float) sim.rpm(), exchanging, filtered, (float) sim.lubrication()
+				.condition(),
+			(float) sim.thermal()
+				.temperature(),
+			(float) sim.thermal()
+				.cool(),
+			sim.thermal()
+				.coolantRate() > 0,
+			pilotLit(), fuel != null && fuel.isSame(CEFluids.USED_OIL.get()))));
 	}
 
 	/** Credits the operator with a running rotary engine, a high-revving one, and one with several rotors. */

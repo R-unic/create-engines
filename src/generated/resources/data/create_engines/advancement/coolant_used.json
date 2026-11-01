@@ -1,0 +1,29 @@
+{
+  "parent": "create_engines:warmed_up",
+  "criteria": {
+    "coolant_used": {
+      "conditions": {
+        "event": "coolant_used"
+      },
+      "trigger": "create_engines:event"
+    }
+  },
+  "display": {
+    "description": {
+      "translate": "advancement.create_engines.coolant_used.desc"
+    },
+    "icon": {
+      "count": 1,
+      "id": "create_engines:coolant_bucket"
+    },
+    "title": {
+      "translate": "advancement.create_engines.coolant_used"
+    }
+  },
+  "requirements": [
+    [
+      "coolant_used"
+    ]
+  ],
+  "sends_telemetry_event": true
+}

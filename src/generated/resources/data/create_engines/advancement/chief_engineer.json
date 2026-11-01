@@ -1,0 +1,318 @@
+{
+  "parent": "create_engines:engineer",
+  "criteria": {
+    "twelve_cylinders": {
+      "conditions": {
+        "event": "twelve_cylinders"
+      },
+      "trigger": "create_engines:event"
+    },
+    "coupled_cranks": {
+      "conditions": {
+        "event": "coupled_cranks"
+      },
+      "trigger": "create_engines:event"
+    },
+    "vee_engine": {
+      "conditions": {
+        "event": "vee_engine"
+      },
+      "trigger": "create_engines:event"
+    },
+    "flat_engine": {
+      "conditions": {
+        "event": "flat_engine"
+      },
+      "trigger": "create_engines:event"
+    },
+    "even_firing": {
+      "conditions": {
+        "event": "even_firing"
+      },
+      "trigger": "create_engines:event"
+    },
+    "valley_cam": {
+      "conditions": {
+        "event": "valley_cam"
+      },
+      "trigger": "create_engines:event"
+    },
+    "rotary_engine": {
+      "conditions": {
+        "event": "rotary_engine"
+      },
+      "trigger": "create_engines:event"
+    },
+    "steam_herd": {
+      "conditions": {
+        "event": "steam_herd"
+      },
+      "trigger": "create_engines:event"
+    },
+    "redline": {
+      "conditions": {
+        "event": "redline"
+      },
+      "trigger": "create_engines:event"
+    },
+    "big_boost": {
+      "conditions": {
+        "event": "big_boost"
+      },
+      "trigger": "create_engines:event"
+    },
+    "twincharged": {
+      "conditions": {
+        "event": "twincharged"
+      },
+      "trigger": "create_engines:event"
+    },
+    "precision_engine": {
+      "conditions": {
+        "event": "precision_engine"
+      },
+      "trigger": "create_engines:event"
+    },
+    "anti_lag": {
+      "conditions": {
+        "event": "anti_lag"
+      },
+      "trigger": "create_engines:event"
+    },
+    "dialed_in": {
+      "conditions": {
+        "event": "dialed_in"
+      },
+      "trigger": "create_engines:event"
+    },
+    "maf_trim": {
+      "conditions": {
+        "event": "maf_trim"
+      },
+      "trigger": "create_engines:event"
+    },
+    "maf_enrich": {
+      "conditions": {
+        "event": "maf_enrich"
+      },
+      "trigger": "create_engines:event"
+    },
+    "governed": {
+      "conditions": {
+        "event": "governed"
+      },
+      "trigger": "create_engines:event"
+    },
+    "fuel_tuned": {
+      "conditions": {
+        "event": "fuel_tuned"
+      },
+      "trigger": "create_engines:event"
+    },
+    "tool_timed": {
+      "conditions": {
+        "event": "tool_timed"
+      },
+      "trigger": "create_engines:event"
+    },
+    "every_gear": {
+      "conditions": {
+        "event": "every_gear"
+      },
+      "trigger": "create_engines:event"
+    },
+    "charged_battery": {
+      "conditions": {
+        "event": "charged_battery"
+      },
+      "trigger": "create_engines:event"
+    },
+    "flywheel_smooth": {
+      "conditions": {
+        "event": "flywheel_smooth"
+      },
+      "trigger": "create_engines:event"
+    },
+    "governor_commanded": {
+      "conditions": {
+        "event": "governor_commanded"
+      },
+      "trigger": "create_engines:event"
+    },
+    "gasoline_burned": {
+      "conditions": {
+        "event": "gasoline_burned"
+      },
+      "trigger": "create_engines:event"
+    },
+    "ethanol_burned": {
+      "conditions": {
+        "event": "ethanol_burned"
+      },
+      "trigger": "create_engines:event"
+    },
+    "superheat_recovered": {
+      "conditions": {
+        "event": "superheat_recovered"
+      },
+      "trigger": "create_engines:event"
+    },
+    "dual_fuel": {
+      "conditions": {
+        "event": "dual_fuel"
+      },
+      "trigger": "create_engines:event"
+    },
+    "waste_oil_burned": {
+      "conditions": {
+        "event": "waste_oil_burned"
+      },
+      "trigger": "create_engines:event"
+    },
+    "oil_kept_fresh": {
+      "conditions": {
+        "event": "oil_kept_fresh"
+      },
+      "trigger": "create_engines:event"
+    },
+    "oil_filtered": {
+      "conditions": {
+        "event": "oil_filtered"
+      },
+      "trigger": "create_engines:event"
+    },
+    "sump_oiling": {
+      "conditions": {
+        "event": "sump_oiling"
+      },
+      "trigger": "create_engines:event"
+    },
+    "warmed_up": {
+      "conditions": {
+        "event": "warmed_up"
+      },
+      "trigger": "create_engines:event"
+    },
+    "cool_running": {
+      "conditions": {
+        "event": "cool_running"
+      },
+      "trigger": "create_engines:event"
+    }
+  },
+  "display": {
+    "description": {
+      "translate": "advancement.create_engines.chief_engineer.desc"
+    },
+    "frame": "challenge",
+    "icon": {
+      "count": 1,
+      "id": "create_engines:dyno"
+    },
+    "title": {
+      "translate": "advancement.create_engines.chief_engineer"
+    }
+  },
+  "requirements": [
+    [
+      "twelve_cylinders"
+    ],
+    [
+      "coupled_cranks"
+    ],
+    [
+      "vee_engine"
+    ],
+    [
+      "flat_engine"
+    ],
+    [
+      "even_firing"
+    ],
+    [
+      "valley_cam"
+    ],
+    [
+      "rotary_engine"
+    ],
+    [
+      "steam_herd"
+    ],
+    [
+      "redline"
+    ],
+    [
+      "big_boost"
+    ],
+    [
+      "twincharged"
+    ],
+    [
+      "precision_engine"
+    ],
+    [
+      "anti_lag"
+    ],
+    [
+      "dialed_in"
+    ],
+    [
+      "maf_trim"
+    ],
+    [
+      "maf_enrich"
+    ],
+    [
+      "governed"
+    ],
+    [
+      "fuel_tuned"
+    ],
+    [
+      "tool_timed"
+    ],
+    [
+      "every_gear"
+    ],
+    [
+      "charged_battery"
+    ],
+    [
+      "flywheel_smooth"
+    ],
+    [
+      "governor_commanded"
+    ],
+    [
+      "gasoline_burned"
+    ],
+    [
+      "ethanol_burned"
+    ],
+    [
+      "superheat_recovered"
+    ],
+    [
+      "dual_fuel"
+    ],
+    [
+      "waste_oil_burned"
+    ],
+    [
+      "oil_kept_fresh"
+    ],
+    [
+      "oil_filtered"
+    ],
+    [
+      "sump_oiling"
+    ],
+    [
+      "warmed_up"
+    ],
+    [
+      "cool_running"
+    ]
+  ],
+  "sends_telemetry_event": true
+}

@@ -41,8 +41,13 @@ public final class CEAdvancements {
 	private static final ResourceLocation BACKGROUND =
 		ResourceLocation.withDefaultNamespace("textures/gui/advancements/backgrounds/stone.png");
 
+	/**
+	 * @param criterion the one thing a row waits for; null for a capstone, which waits for every milestone in
+	 *                  {@code requires} instead
+	 */
 	private record Row(String id, @Nullable String parent, Supplier<ItemLike> icon, AdvancementType type,
-					   Supplier<Criterion<?>> criterion, String title, String description) {
+					   @Nullable Supplier<Criterion<?>> criterion, List<Milestone> requires, String title,
+					   String description) {
 	}
 
 	private static final List<Row> ROWS = new ArrayList<>();
@@ -135,9 +140,9 @@ public final class CEAdvancements {
 		on("steam_beater", "heavy_duty", () -> CEBlocks.CRANKSHAFT.get(), AdvancementType.CHALLENGE,
 			Milestone.STEAM_BEATER, "Steam Is for Kettles",
 			"Run an engine rated for 65536 stress units or more: four Create steam engines' worth from one crankshaft.");
-		on("well_oiled", "alive", () -> CEFluids.ENGINE_OIL.getBucket().orElseThrow(), AdvancementType.TASK,
+		on("well_oiled", "engine_oil", () -> CEFluids.ENGINE_OIL.getBucket().orElseThrow(), AdvancementType.TASK,
 			Milestone.WELL_OILED, "Well Oiled Machine", "Run an engine with every part fully lubricated.");
-		on("dry_run", "alive", () -> CEBlocks.CRANKSHAFT.get(), AdvancementType.TASK, Milestone.DRY_RUN,
+		on("dry_run", "engine_oil", () -> CEBlocks.CRANKSHAFT.get(), AdvancementType.TASK, Milestone.DRY_RUN,
 			"Running on Hope", "Run an engine with no oil in it. It drags terribly, but it runs.");
 		on("smoke_signals", "alive", () -> CEBlocks.EXHAUST_OUTLET.get(), AdvancementType.TASK, Milestone.SMOKE_SIGNALS,
 			"Smoke Signals", "Run so rich that fuel pours out of the exhaust as black smoke.");
@@ -250,6 +255,69 @@ public final class CEAdvancements {
 			"Reverse Engineering", "Run a transmission's output backwards in reverse gear.");
 		on("every_gear", "transmission", () -> CEBlocks.TRANSMISSION.get(), AdvancementType.GOAL, Milestone.EVERY_GEAR,
 			"Gearhead", "Shift a loaded transmission through all four gears and reverse.");
+
+		// Oil service: an oil pan's exchange dial, filter and used oil
+		on("oil_exchange", "sump", () -> CEBlocks.SUMP.get(), AdvancementType.TASK, Milestone.OIL_EXCHANGED,
+			"Fresh Start", "Set an oil pan's Oil Exchange dial and pipe fresh oil in and Used Oil out, so a running engine changes its own oil.");
+		has("used_oil", "oil_exchange", () -> CEFluids.USED_OIL.getBucket().orElseThrow(), "Spent",
+			"Get hold of a bucket of Used Oil. It has to go somewhere: burn it, refine it, coke it into charcoal or let it go.");
+		on("waste_oil", "used_oil", () -> CEFluids.USED_OIL.getBucket().orElseThrow(), AdvancementType.TASK,
+			Milestone.WASTE_OIL_BURNED, "Waste Oil Burner", "Run an engine on Used Oil as its main fuel.");
+		on("oil_filter", "sump", () -> CEItems.OIL_FILTER.get(), AdvancementType.TASK, Milestone.OIL_FILTERED,
+			"Filtered", "Run an engine with an Oil Filter fitted in its oil pan. The oil ages more slowly and fuel is cleaned out of it faster.");
+		on("oil_kept_fresh", "oil_exchange", () -> CEFluids.ENGINE_OIL.getBucket().orElseThrow(), AdvancementType.GOAL,
+			Milestone.OIL_KEPT_FRESH, "Always Fresh", "Run an engine at speed while an oil exchange keeps the oil nearly new.");
+		on("oil_spent", "engine_oil", () -> CEFluids.USED_OIL.getBucket().orElseThrow(), AdvancementType.TASK,
+			Milestone.OIL_SPENT, "Overdue", "Let an engine's oil go almost completely spent. It drags a little more, but nothing breaks.");
+
+		// Temperature and coolant
+		on("warmed_up", "alive", () -> CEBlocks.CYLINDER.get(), AdvancementType.TASK, Milestone.WARMED_UP,
+			"Operating Temperature", "Run an engine until its block has warmed through. A cold engine drags until it has.");
+		on("coolant_used", "warmed_up", () -> CEFluids.COOLANT.getBucket().orElseThrow(), AdvancementType.TASK,
+			Milestone.COOLANT_USED, "Keeping Cool", "Feed coolant, or just water, into an oil pan and let a running engine carry its heat away with it.");
+		on("cool_running", "coolant_used", () -> CEFluids.COOLANT.getBucket().orElseThrow(), AdvancementType.GOAL,
+			Milestone.COOL_RUNNING, "Cool Running", "Run an engine at speed cool enough to earn the whole cooling bonus.");
+
+		// Pilot injection
+		on("dual_fuel", "gasoline", () -> CEFluids.GASOLINE.getBucket().orElseThrow(), AdvancementType.GOAL,
+			Milestone.DUAL_FUEL, "Pilot Light", "Pipe diesel into an oil pan's pilot tank and light gasoline or ethanol in an engine with no spark plug.");
+
+		// More of the power ladder
+		on("steam_herd", "steam_beater", () -> CEBlocks.CRANKSHAFT.get(), AdvancementType.GOAL, Milestone.STEAM_HERD,
+			"A Herd of Kettles", "Rate an engine for as much stress as eight Create steam engines.");
+		on("steam_titan", "steam_herd", () -> CEBlocks.CRANKSHAFT.get(), AdvancementType.CHALLENGE,
+			Milestone.STEAM_TITAN, "Titan of Industry", "Rate an engine for as much stress as sixteen Create steam engines.");
+
+		// The top of each track, and the top of them all
+		List<Milestone> builder = List.of(Milestone.TWELVE_CYLINDERS, Milestone.COUPLED_CRANKS, Milestone.VEE_ENGINE,
+			Milestone.FLAT_ENGINE, Milestone.EVEN_FIRING, Milestone.VALLEY_CAM, Milestone.ROTARY_ENGINE);
+		List<Milestone> power = List.of(Milestone.STEAM_HERD, Milestone.REDLINE, Milestone.BIG_BOOST,
+			Milestone.TWINCHARGED, Milestone.PRECISION_ENGINE, Milestone.ANTI_LAG);
+		List<Milestone> tuning = List.of(Milestone.DIALED_IN, Milestone.MAF_TRIM, Milestone.MAF_ENRICH,
+			Milestone.GOVERNED, Milestone.FUEL_TUNED, Milestone.TOOL_TIMED);
+		List<Milestone> driveline = List.of(Milestone.EVERY_GEAR, Milestone.CHARGED_BATTERY,
+			Milestone.FLYWHEEL_SMOOTH, Milestone.GOVERNOR_COMMANDED);
+		List<Milestone> fuel = List.of(Milestone.GASOLINE_BURNED, Milestone.ETHANOL_BURNED,
+			Milestone.SUPERHEAT_RECOVERED, Milestone.DUAL_FUEL, Milestone.WASTE_OIL_BURNED);
+		List<Milestone> service = List.of(Milestone.OIL_KEPT_FRESH, Milestone.OIL_FILTERED, Milestone.SUMP_OILING,
+			Milestone.WARMED_UP, Milestone.COOL_RUNNING);
+		capstone("master_builder", "crankshaft", () -> CEBlocks.CRANK_THROW.get(), builder, "Master Builder",
+			"Finish the builder's track: a twelve, coupled cranks, a vee, a flat, even firing, a valley cam and a Wankel.");
+		capstone("power_plant", "heavy_duty", () -> CEBlocks.TURBOCHARGER.get(), power, "Power Plant",
+			"Finish the power track: eight steam engines' worth, redline, big boost, twincharging, precision parts and anti-lag.");
+		capstone("fine_tuner", "timing_tool", () -> CEBlocks.MAF_SENSOR.get(), tuning, "Fine Tuner",
+			"Finish the tuning track: a balanced mixture, MAF trimming and enrichment, a governor holding speed, a fuel tune and a timed engine.");
+		capstone("full_driveline", "transmission", () -> CEBlocks.TRANSMISSION.get(), driveline, "Full Driveline",
+			"Finish the driveline track: every gear, a charged battery, a flywheel smoothing the engine and a governor under redstone.");
+		capstone("closed_loop", "diesel", () -> CEFluids.ETHANOL.getBucket().orElseThrow(), fuel, "Closed Loop",
+			"Finish the fuel track: burn gasoline, ethanol and waste oil, superheat from the exhaust and light a dual-fuel engine.");
+		capstone("service_record", "engine_oil", () -> CEItems.OIL_FILTER.get(), service, "Service Record",
+			"Finish the service track: an oil pan keeping the oil fresh, a filter, a warm block and an engine running cool.");
+		List<Milestone> everything = new ArrayList<>();
+		for (List<Milestone> track : List.of(builder, power, tuning, driveline, fuel, service))
+			everything.addAll(track);
+		capstone("chief_engineer", "engineer", () -> CEBlocks.DYNO.get(), everything, "Chief Engineer",
+			"Finish every track: builder, power, tuning, driveline, fuel and service.");
 	}
 
 	private CEAdvancements() {
@@ -257,7 +325,17 @@ public final class CEAdvancements {
 
 	private static void row(String id, @Nullable String parent, Supplier<ItemLike> icon, AdvancementType type,
 							Supplier<Criterion<?>> criterion, String title, String description) {
-		ROWS.add(new Row(id, parent, icon, type, criterion, title, description));
+		ROWS.add(new Row(id, parent, icon, type, criterion, List.of(), title, description));
+	}
+
+	/**
+	 * The top of a track: done once every one of {@code needs} has been reached, in any order, by the same player. Each
+	 * milestone is its own criterion, so the advancement screen shows how far along it is. A player who reached some of them
+	 * before the capstone existed is credited as they reach them again.
+	 */
+	private static void capstone(String id, String parent, Supplier<ItemLike> icon, List<Milestone> needs,
+								 String title, String description) {
+		ROWS.add(new Row(id, parent, icon, AdvancementType.CHALLENGE, null, needs, title, description));
 	}
 
 	/** An advancement for getting hold of {@code item}. */
@@ -296,8 +374,14 @@ public final class CEAdvancements {
 			builder.display(row.icon()
 				.get(), Component.translatable(titleKey(row.id())), Component.translatable(titleKey(row.id()) + ".desc"),
 				root ? BACKGROUND : null, row.type(), !root, !root, false);
-			builder.addCriterion(row.id(), row.criterion()
-				.get());
+			if (row.requires()
+				.isEmpty())
+				builder.addCriterion(row.id(), row.criterion()
+					.get());
+			else
+				for (Milestone needed : row.requires())
+					builder.addCriterion(needed.id(), CETriggers.EVENT.get()
+						.waitingFor(needed));
 			built.put(row.id(), builder.save(provider, CreateEngines.MOD_ID + ":" + row.id()));
 		}
 	}

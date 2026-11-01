@@ -1,0 +1,30 @@
+{
+  "parent": "create_engines:gasoline",
+  "criteria": {
+    "dual_fuel": {
+      "conditions": {
+        "event": "dual_fuel"
+      },
+      "trigger": "create_engines:event"
+    }
+  },
+  "display": {
+    "description": {
+      "translate": "advancement.create_engines.dual_fuel.desc"
+    },
+    "frame": "goal",
+    "icon": {
+      "count": 1,
+      "id": "create_engines:gasoline_bucket"
+    },
+    "title": {
+      "translate": "advancement.create_engines.dual_fuel"
+    }
+  },
+  "requirements": [
+    [
+      "dual_fuel"
+    ]
+  ],
+  "sends_telemetry_event": true
+}

@@ -1,0 +1,30 @@
+{
+  "parent": "create_engines:steam_herd",
+  "criteria": {
+    "steam_titan": {
+      "conditions": {
+        "event": "steam_titan"
+      },
+      "trigger": "create_engines:event"
+    }
+  },
+  "display": {
+    "description": {
+      "translate": "advancement.create_engines.steam_titan.desc"
+    },
+    "frame": "challenge",
+    "icon": {
+      "count": 1,
+      "id": "create_engines:crankshaft"
+    },
+    "title": {
+      "translate": "advancement.create_engines.steam_titan"
+    }
+  },
+  "requirements": [
+    [
+      "steam_titan"
+    ]
+  ],
+  "sends_telemetry_event": true
+}

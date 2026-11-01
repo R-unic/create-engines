@@ -20,6 +20,9 @@ public final class EngineMilestones {
 	public static final float HEAVY_DUTY = STEAM_ENGINE;
 	/** Stress capacity, SU, that leaves steam behind: four steam engines' worth from one crankshaft. */
 	public static final float STEAM_BEATER = 4 * STEAM_ENGINE;
+	/** Eight steam engines' worth, and sixteen: the top of the power ladder. */
+	public static final float STEAM_HERD = 8 * STEAM_ENGINE;
+	public static final float STEAM_TITAN = 16 * STEAM_ENGINE;
 	public static final float WELL_OILED = 0.9f;
 	public static final float DRY = 0.1f;
 	public static final float BOOST = 0.3f;
@@ -137,6 +140,57 @@ public final class EngineMilestones {
 			reached.add(Milestone.HEAT_RECOVERED);
 		if (heatLevel >= com.createengines.engine.sim.HeatRecovery.SEETHE)
 			reached.add(Milestone.SUPERHEAT_RECOVERED);
+		return reached;
+	}
+
+	/** Condition at or below which oil counts as spent, and at or above which it counts as kept fresh. */
+	public static final float SPENT_OIL = 0.3f;
+	public static final float FRESH_OIL = 0.9f;
+	/** Temperature at which a block has warmed through (see {@link com.createengines.engine.sim.Thermal}). */
+	public static final float WARM = 0.6f;
+	/** Share of the cooling bonus an engine has to have earned for it to count as running cool. */
+	public static final float COOL_ENOUGH = 0.9f;
+	/** Speed an engine has to turn at for its oil and temperature to mean much. */
+	public static final float SERVICE_RPM = 100;
+
+	/**
+	 * @param running      the engine is running and some cylinder is firing
+	 * @param exchanging   an oil pan swapped oil during the last tick
+	 * @param filtered     an oil filter is fitted
+	 * @param condition    how fresh the oil is, 0 to 1
+	 * @param temperature  how hot the block is
+	 * @param cool         share of the cooling bonus the engine has earned, 0 to 1
+	 * @param coolant      coolant is being spent carrying heat away
+	 * @param pilotLit     a pilot shot lit the charge in a cylinder last cycle
+	 * @param usedOilFuel  the engine is burning Used Oil as its main fuel
+	 */
+	public record Service(boolean running, float rpm, boolean exchanging, boolean filtered, float condition,
+						  float temperature, float cool, boolean coolant, boolean pilotLit, boolean usedOilFuel) {
+	}
+
+	public static Set<Milestone> reachedService(Service s) {
+		Set<Milestone> reached = EnumSet.noneOf(Milestone.class);
+		if (!s.running())
+			return reached;
+		if (s.exchanging()) {
+			reached.add(Milestone.OIL_EXCHANGED);
+			if (s.condition() >= FRESH_OIL && s.rpm() >= SERVICE_RPM)
+				reached.add(Milestone.OIL_KEPT_FRESH);
+		}
+		if (s.filtered())
+			reached.add(Milestone.OIL_FILTERED);
+		if (s.condition() <= SPENT_OIL)
+			reached.add(Milestone.OIL_SPENT);
+		if (s.temperature() >= WARM)
+			reached.add(Milestone.WARMED_UP);
+		if (s.coolant())
+			reached.add(Milestone.COOLANT_USED);
+		if (s.cool() >= COOL_ENOUGH && s.rpm() >= SERVICE_RPM)
+			reached.add(Milestone.COOL_RUNNING);
+		if (s.pilotLit())
+			reached.add(Milestone.DUAL_FUEL);
+		if (s.usedOilFuel())
+			reached.add(Milestone.WASTE_OIL_BURNED);
 		return reached;
 	}
 
@@ -330,6 +384,10 @@ public final class EngineMilestones {
 				reached.add(Milestone.HEAVY_DUTY);
 			if (s.capacity() >= STEAM_BEATER)
 				reached.add(Milestone.STEAM_BEATER);
+			if (s.capacity() >= STEAM_HERD)
+				reached.add(Milestone.STEAM_HERD);
+			if (s.capacity() >= STEAM_TITAN)
+				reached.add(Milestone.STEAM_TITAN);
 			if (s.governed())
 				reached.add(Milestone.GOVERNED);
 			if (s.precisionEngine())

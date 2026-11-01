@@ -278,6 +278,82 @@ What the pass found, and changed:
   boost builds with precision injectors and a MAF sensor is still wanted. Hand-metered engines cannot use the injector's
   extra 30 percent (the dial tops out at 200 percent); only a MAF sensor reaches it.
 
+### Service port, oil condition, temperature, pilot injection and achievement tracks (2026-11-01)
+
+Design rules agreed for this round: nothing wears out or breaks (no part damage, no overheating failure); the only
+penalties are soft and recoverable (a cold engine drags, spent oil drags a little, an uncooled engine simply earns no
+bonus); anything an engine needs besides air and main fuel must arrive through one block, not through the heads' scarce
+faces; and anything that needs doing regularly (an oil change) can be automated with Create pipes alone.
+
+- **The Sump is the service port** (`SumpBlockEntity`). Four tanks behind one fluid capability on every face: Engine Oil
+  (1000 mB), Used Oil (500, filled only from inside), Coolant (500: Engine Coolant or plain water) and Pilot Fuel (250: any
+  fuel that autoignites at 2.0 or less, `CEDataMaps.isPilotFuel`). `fill` sorts a fluid into the right tank wherever it
+  comes in; only Used Oil can be drained, by pipe or bucket, so a pump on the pan can never empty the oil or coolant. An
+  engine finds its pans through `layout.sumps()`, as before. Existing pans keep their oil tank and gain the rest.
+- **Oil condition** (`Lubrication`): a third figure beside film and dilution, 1 new to 0 spent. Turning spends it,
+  `AGE_PER_REV` 1/3000 of a charge a revolution at stress 1; stress is 1 for a warm, clean engine, grows 1.5 per unit of
+  temperature above normal and 2 per unit of fuel dilution, and an oil filter takes it times 0.5 (`Lubrication.stress`).
+  Spent oil multiplies all friction by up to 1.25 (`drag`), never more, so it costs rating and nothing else. Fresh oil
+  swapped in closes the gap by `1 - exp(-mB / 150)` and cleans dilution by the same share (`refresh`). A filter also
+  halves ageing, which is all it does: it never clogs.
+- **Oil exchange** (dial on the sump: off, 0.25, 1, 4 mB/s while the engine turns). `SumpBlockEntity.exchange` moves oil
+  from the oil tank to the Used Oil tank; the engine calls it every tick and refreshes its condition by what moved. It
+  stops when the used tank is full or the pan has no oil, so the used oil has to be piped somewhere. Settled condition at
+  128 RPM is 0 with the exchange off, 0.57 on a trickle, 0.89 steady and 0.97 flushing, and a filter lifts those to 0.79, 0.95
+  and 0.99 (`OilConditionTest`). The player chooses what
+  happens to used oil: it is a poor fuel (22 energy, autoignition 1.85), heated with charcoal and recycled into oil (400
+  to 250 mB), coked into charcoal (250 mB to one charcoal, which feeds the coal route to diesel), or let go from an open
+  pipe. Plant oil with glycerin, already a recipe, is the slime-free oil, and glycerin also makes coolant, so one seed
+  farm and the biodiesel chain supply fuel, oil and coolant.
+- **Temperature** (`Thermal`). One figure for the whole block, 0 ambient, 0.7 a warm engine on a steady load. Heat in is the
+  exhaust heat the cylinders already compute for the heat exchanger; heat out is `PASSIVE x T^2` per cylinder (so an engine
+  settles at the square root of its heat, a crawling engine stays warm enough and a boosted one runs hot rather than
+  white hot) plus coolant. Coolant carries `100 x quality x (T - 0.4)` heat per cylinder per second and is spent in
+  proportion to the heat it carries (0.02 mB per unit at the best quality, twice that for water, which carries half as
+  much per mB); there is no radiator, the coolant is used up like water boiling off. Quality is 1 for Engine Coolant and
+  0.5 for water. The thermostat at 0.4 stops coolant from ever making an engine cold. A cold engine (below 0.3) drags up
+  to 25 percent; an engine below 0.65 earns the cooling bonus, all of it by 0.45: its charge temperature drops by up to
+  3 percent of ambient, which is about +9 percent net torque on a crude engine, +6.5 on precision parts and +4.5 with a
+  turbo (`Thermal.MAX_COOL_CHARGE`, scaled by the `coolingBonus` config). The bonus is applied in
+  `EngineSimulation.applyInduction` after the intercoolers. Heavier engines gain less (a flat-out boosted twelve earns
+  about 4.5 percent on proper coolant and water barely helps), so the good coolant is for the big builds. The dyno copies
+  the temperature it finds and holds it (`setThermalLive(false)`), so the rating includes both the cold drag and the bonus;
+  the rating key rounds both to quarters so warming up re-rates only a few times. A bare `EngineSimulation` is warm and
+  its thermal model is off, so every existing unit test is unchanged; the controller starts a new engine cold and turns it
+  on, and `Motion` carries temperature and condition across rebuilds and saves.
+- **Coolant and used oil are fluids** (`CEFluids.COOLANT`, `USED_OIL`), tinted water like the others.
+- **Pilot injection** (`CylinderModel.pilotSupply`, a `FuelSupply` from `SumpPilotSupply`). A cylinder with no spark plug
+  whose main fuel is still below its autoignition temperature after the ignition delay tries a pilot: if the pilot fuel
+  autoignites at this temperature and the pans can give `PILOT_SHARE` (8 percent) of the shot, the charge lights. The burn
+  is `PILOT_BURN_SLOWDOWN` (1.15) slower than a spark-lit one. Pilot fuel is drawn from the pans a whole millibucket at a
+  time, with the fraction kept as credit, and the pans are scanned once a tick. A diesel pilot lights gasoline and ethanol
+  from 32 RPM up (the speeds tested) and makes about the power of a spark engine (`PilotInjectionTest`). A cylinder with a plug always uses the
+  plug; a rotor chamber never self-lights, so it still needs one. A pilot fuel that is itself hard to light (ethanol) lights
+  nothing. The dyno copies a cylinder's pilot supply as unlimited.
+- **Config.** Switches `oilAgeing`, `engineTemperature`, `pilotInjection` and balance `coolingBonus`
+  (`Tuning.oilAgeing`, `engineTemperature`, `pilotInjection`, `coolingBonus`). Off, oil never ages, the block is always
+  warm and a pilot lights nothing.
+- **Goggles and Ponder.** A crankshaft block shows oil condition, whether a filter is fitted, the temperature in words, the
+  coolant being spent and a note when a pilot shot is lighting the fuel; the sump shows its exchange, filter and every tank.
+  The `sump` scene gained four pages (exchange, used oil and filter, coolant, pilot fuel) and `fuels` one (the loop).
+- **Achievement tracks.** The tree keeps its shape and gains six capstones, one per track (`master_builder`,
+  `power_plant`, `fine_tuner`, `full_driveline`, `closed_loop`, `service_record`) and `chief_engineer`, which waits for the
+  union of their milestones. A capstone is a single advancement with one criterion per milestone, so the advancement screen
+  shows the progress and no event hook is needed; a player who reached a milestone before the capstone existed is credited
+  when they reach it again. New rows: `oil_exchange`, `used_oil`, `waste_oil`, `oil_filter`, `oil_kept_fresh`, `oil_spent`,
+  `warmed_up`, `coolant_used`, `cool_running`, `dual_fuel`, `steam_herd` (8 steam engines) and `steam_titan` (16); `well_oiled`
+  and `dry_run` now hang from Oil Change. Milestones are in `EngineMilestones.reachedService` and the `STEAM_*` ladder,
+  both unit tested.
+- **Not done, and not verified.** The Minecraft-side code (sump, controller wiring, goggles, recipes, Ponder, advancements,
+  lang) could not be built or run when this was written, because the build environment could not reach the NeoForge and
+  Create Maven repositories; only the plain-Java simulation (`engine.sim`, the planners, `EngineMilestones`) was compiled and
+  tested, with a hand-made harness (283 tests). Run `./gradlew build runGameTestServer` and the visual smoke test before
+  relying on any of it, and run `./gradlew runData` once: the generated advancement and lang files were written by a script
+  that reproduces the datagen output (it matched all 74 existing advancement files byte for byte), so datagen may reorder a
+  few lines. The recipe JSON (coolant, recycling, coking, filter) follows Create's mixing format from the existing recipes
+  but has not been loaded by the game. The V and coupled-crank reward for engines past eight cylinders was discussed and left
+  out. The `anOilSumpOilsTheWholeEngine` GameTest now checks gasoline instead of water, which a pan takes as coolant.
+
 ---
 
 ## 1. The one idea everything hangs on

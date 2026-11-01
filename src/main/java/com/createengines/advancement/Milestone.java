@@ -17,6 +17,8 @@ public enum Milestone {
 	HIGH_REVS,
 	REDLINE,
 	HEAVY_DUTY,
+	STEAM_HERD,
+	STEAM_TITAN,
 	SPARK_ENGINE,
 	WELL_OILED,
 	DRY_RUN,
@@ -94,7 +96,17 @@ public enum Milestone {
 	// Refining fuel and recovering exhaust heat
 	ETHANOL_BURNED,
 	HEAT_RECOVERED,
-	SUPERHEAT_RECOVERED;
+	SUPERHEAT_RECOVERED,
+	// Oil service, temperature, coolant and pilot injection
+	OIL_EXCHANGED,
+	OIL_FILTERED,
+	OIL_SPENT,
+	OIL_KEPT_FRESH,
+	WARMED_UP,
+	COOLANT_USED,
+	COOL_RUNNING,
+	DUAL_FUEL,
+	WASTE_OIL_BURNED;
 
 	/** The name the advancement's criterion carries. */
 	public String id() {

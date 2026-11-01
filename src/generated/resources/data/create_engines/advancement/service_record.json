@@ -1,0 +1,66 @@
+{
+  "parent": "create_engines:engine_oil",
+  "criteria": {
+    "oil_kept_fresh": {
+      "conditions": {
+        "event": "oil_kept_fresh"
+      },
+      "trigger": "create_engines:event"
+    },
+    "oil_filtered": {
+      "conditions": {
+        "event": "oil_filtered"
+      },
+      "trigger": "create_engines:event"
+    },
+    "sump_oiling": {
+      "conditions": {
+        "event": "sump_oiling"
+      },
+      "trigger": "create_engines:event"
+    },
+    "warmed_up": {
+      "conditions": {
+        "event": "warmed_up"
+      },
+      "trigger": "create_engines:event"
+    },
+    "cool_running": {
+      "conditions": {
+        "event": "cool_running"
+      },
+      "trigger": "create_engines:event"
+    }
+  },
+  "display": {
+    "description": {
+      "translate": "advancement.create_engines.service_record.desc"
+    },
+    "frame": "challenge",
+    "icon": {
+      "count": 1,
+      "id": "create_engines:oil_filter"
+    },
+    "title": {
+      "translate": "advancement.create_engines.service_record"
+    }
+  },
+  "requirements": [
+    [
+      "oil_kept_fresh"
+    ],
+    [
+      "oil_filtered"
+    ],
+    [
+      "sump_oiling"
+    ],
+    [
+      "warmed_up"
+    ],
+    [
+      "cool_running"
+    ]
+  ],
+  "sends_telemetry_event": true
+}

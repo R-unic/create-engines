@@ -1,0 +1,29 @@
+{
+  "parent": "create_engines:sump",
+  "criteria": {
+    "oil_exchange": {
+      "conditions": {
+        "event": "oil_exchanged"
+      },
+      "trigger": "create_engines:event"
+    }
+  },
+  "display": {
+    "description": {
+      "translate": "advancement.create_engines.oil_exchange.desc"
+    },
+    "icon": {
+      "count": 1,
+      "id": "create_engines:sump"
+    },
+    "title": {
+      "translate": "advancement.create_engines.oil_exchange"
+    }
+  },
+  "requirements": [
+    [
+      "oil_exchange"
+    ]
+  ],
+  "sends_telemetry_event": true
+}
