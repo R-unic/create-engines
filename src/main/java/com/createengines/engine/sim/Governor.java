@@ -18,6 +18,8 @@ public final class Governor {
 	private static final double RESET_RATE = 4;
 	/** Least air a governed spark engine is throttled to, so a lightly loaded one still has a charge to light. */
 	public static final double MIN_OPENING = 0.08;
+	/** Slowest speed a redstone signal turns a governor down to, RPM: below this an engine only stalls. */
+	public static final double MIN_COMMANDED = 20;
 
 	private double reset;
 	private double position = 1;
@@ -48,6 +50,20 @@ public final class Governor {
 	public void reset() {
 		reset = 0;
 		position = 1;
+	}
+
+	/**
+	 * The speed a governor holds once a redstone signal has had its say: none leaves the setting alone, and a signal of
+	 * 1 to 15 asks for that share of it (15 being all of it), but never less than {@link #MIN_COMMANDED}.
+	 *
+	 * @param setting the speed the governor is set to, RPM
+	 * @param signal  the redstone strength at the governor
+	 */
+	public static double commanded(double setting, int signal) {
+		if (signal <= 0)
+			return setting;
+		double asked = setting * Math.min(signal, Throttle.FULL_SIGNAL) / Throttle.FULL_SIGNAL;
+		return Math.min(setting, Math.max(MIN_COMMANDED, asked));
 	}
 
 	/** The throttle opening a governed spark engine is held at for a rack position. */

@@ -48,7 +48,6 @@ public final class CELang {
 			"Redstone opens it from its idle stop to wide open. Less air means less power, and its linkage trims the injectors' fuel to match");
 
 		raw("value.maf_target", "Mixture Target");
-		raw("value.rev_limit", "Rev Limit");
 		raw("value.boost_limit", "Boost Limit");
 		raw("value.anti_lag", "Anti-Lag");
 		raw("value.governed_speed", "Governed Speed");
@@ -58,9 +57,10 @@ public final class CELang {
 		raw("goggles.governor.speed", "Crank speed: %1$s RPM");
 		raw("goggles.governor.rack", "Fuel rack held at: %1$s%%");
 		raw("goggles.governor.open", "Rack wide open: the load is more than the engine can hold at this speed");
-		raw("goggles.governor.target", "Holding: %1$s RPM");
+		raw("goggles.governor.target", "Set to: %1$s RPM");
+		raw("goggles.governor.commanded", "Redstone has turned it down: holding %1$s RPM");
 		raw("goggles.governor.hint",
-			"Fuel (or throttle, in a spark engine) is cut as the engine passes the setting and opened as it falls, over about %1$s%% of the speed. The lowest setting on an engine governs");
+			"Fuel (or throttle, in a spark engine) is cut as the engine passes the setting and opened as it falls, over about %1$s%% of the speed. The lowest setting on an engine governs. A redstone signal on the block holds the engine at that share of the setting, 15 being all of it, never below 20 RPM. The redstone output is the rack position, 15 wide open, and reaches comparators only");
 
 		raw("tool.timing_tool.style", "Timing Tool: %1$s");
 		raw("tool.timing_tool.style.smooth", "Smooth (any throw angle)");
@@ -91,7 +91,6 @@ public final class CELang {
 		raw("tool.timing_tool.single", "Timed one cylinder");
 		raw("tool.timing_tool.even", "Timed %1$s cylinders, one firing every %2$s°: %3$s");
 		raw("tool.timing_tool.uneven", "Timed %1$s cylinders. This layout can't fire evenly; gaps of %2$s: %3$s");
-		raw("tool.timing_tool.shared", "%1$s cylinder(s) share a cam lobe with another that fires at a different time. Give each its own lobe, or move the lobe beside the block");
 		raw("tool.timing_tool.coupled", "Timed across %1$s coupled crankshafts");
 		raw("tool.timing_tool.rotor", "Timed one rotor");
 		raw("tool.timing_tool.rotors.even", "Timed %1$s rotors: every firing in the engine is evenly spaced");
@@ -104,23 +103,21 @@ public final class CELang {
 		raw("goggles.maf", "MAF Sensor");
 		raw("goggles.maf.charge", "Air charge: %1$s%% of a full breath");
 		raw("goggles.maf.cutting", "Cutting each shot by %1$s%% to match the air");
-		raw("goggles.maf.within", "Every shot is within what the air can burn: no fuel cut");
+		raw("goggles.maf.adding", "Adding %1$s%% to each shot to match the air");
+		raw("goggles.maf.within", "Every shot already matches the air");
 		raw("goggles.maf.target", "Holding the mixture to: %1$s%% of balanced");
 		raw("goggles.maf.hint",
-			"Caps each injector's shot at the air its cylinder drew in, so Fuel Metering can be set high for slow running and the sensor trims it back as the engine speeds up. It only cuts, never adds. The redstone output is the size of the breath, 15 for one half as large again as the bore");
+			"Sets each injector's shot from the air its cylinder drew in, trimming a shot that is too big and topping up one that is too small, up to the most the injector can give. Fuel Metering no longer applies. The redstone output is the size of the breath, 15 for one half as large again as the bore");
 
-		raw("goggles.lambda", "Lambda Sensor");
-		raw("goggles.lambda.none", "Nothing has fired on this exhaust to read");
-		raw("goggles.lambda.hint",
-			"Reads the mixture the exhaust gas says was burned. The redstone output is 8 for balanced, 6 to 9 across the balanced band, lower for lean and higher for rich. It changes nothing itself: feed it to a comparator and the fuel rack on a camshaft for a loop of your own");
-
-		raw("goggles.limiter", "Rev Limiter");
-		raw("goggles.limiter.no_engine", "Not touching a crankshaft block or a cylinder head");
-		raw("goggles.limiter.speed", "Crank speed: %1$s RPM");
-		raw("goggles.limiter.cutting", "Cutting fuel: the engine is at its limit");
-		raw("goggles.limiter.limit", "Cuts fuel at: %1$s RPM");
-		raw("goggles.limiter.hint",
-			"Holds every injector shut once the crank reaches the limit, and lets fuel back in at %1$s%% of it. The redstone output is how close the engine is to the limit, 15 at it");
+		raw("goggles.heat_exchanger", "Exhaust Heat Exchanger");
+		raw("goggles.heat_exchanger.heat", "Exhaust heat: %1$s per second");
+		raw("goggles.heat_exchanger.cold", "Cold: not enough heat to warm a basin");
+		raw("goggles.heat_exchanger.warm", "Warm: too little heat to cook anything yet");
+		raw("goggles.heat_exchanger.heated", "Heating a basin on top of it");
+		raw("goggles.heat_exchanger.superheated", "Superheating a basin on top of it");
+		raw("goggles.heat_exchanger.disabled", "Heat recovery is switched off in this server's config");
+		raw("goggles.heat_exchanger.hint",
+			"Set a basin on top of it. About two cylinders at speed heat the basin for heated recipes, about seven superheat it. Exchangers on the same exhaust share its heat. The redstone output is how hot it runs, 15 at twice the heat superheating takes");
 
 		raw("goggles.dyno", "Dynamometer");
 		raw("goggles.dyno.no_engine", "Not against an engine: set it against a crankshaft, a cylinder or a head");
@@ -209,7 +206,6 @@ public final class CELang {
 		raw("goggles.cycle.too_lean", "Misfire: mixture too lean for the spark to light");
 		raw("goggles.cycle.too_rich", "Misfire: mixture too rich for the spark to light");
 		raw("goggles.cycle.fouled", "Misfire: the plug is fouled with soot and can't light a rich mixture");
-		raw("goggles.cycle.fuel_cut", "Fuel cut by the rev limiter");
 		raw("goggles.fouling", "Spark plug soot: %1$s%%");
 		raw("goggles.fouling.hint", "Caused by running rich. Lean the injector until the mixture burns clean and the plug cleans itself");
 		raw("goggles.cycle.rich", "Running rich: unburned fuel");
@@ -240,6 +236,7 @@ public final class CELang {
 		raw("goggles.fault.no_battery", "Spark plug has no battery touching the engine");
 		raw("goggles.fault.broken_cam", "A plain Shaft splits the camshaft: replace it with Camshaft blocks");
 		raw("goggles.fault.no_rotor", "No rotor installed: right-click with an Engine Rotor");
+		raw("goggles.fault.rotary_disabled", "Rotary engines are switched off in this server's config");
 		raw("goggles.fault.no_plug", "No spark plug: the chamber is too long and thin for the charge to light itself");
 
 		raw("goggles.rotor", "Rotor Housing");
@@ -250,6 +247,7 @@ public final class CELang {
 		raw("goggles.cam_ratio.correct", "Geared 1:2 for four-stroke");
 		raw("goggles.cam_ratio.wrong", "Must turn at half crank speed");
 		raw("goggles.lobe_cylinders", "Actuates %1$s cylinder(s)");
+		raw("goggles.lobe_shared", "Times the first at its angle; the others follow their own crank angles");
 		raw("goggles.fuel_rack", "Fuel rack: %1$s%%");
 
 		raw("goggles.starter", "Starter");

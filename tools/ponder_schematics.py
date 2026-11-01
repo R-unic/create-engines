@@ -320,15 +320,13 @@ for x in range(2, 6):
 firing_order.append((7, 1, 3, "create:flywheel", {"axis": "x", "waterlogged": "false"}))
 write_schematic("firing_order", (8, 5, 8), firing_order)
 
-# A small V: one bank bored up and one bored north from the same two throws. Each bank's cam sits against its
-# cylinders, so the heads keep their faces for the intake and exhaust
+# A small V: one bank bored up and one bored north from the same two throws. One camshaft sits in the valley between
+# them, against both banks' cylinder blocks, so the heads keep their faces for the intake and exhaust
 compact_v = [
     (1, 2, 3, ce("crankshaft"), axis("x")),
     (4, 2, 3, ce("crankshaft"), axis("x")),
-    (1, 3, 4, ce("camshaft"), axis("x")),
-    (4, 3, 4, ce("camshaft"), axis("x")),
-    (1, 1, 2, ce("camshaft"), axis("x")),
-    (4, 1, 2, ce("camshaft"), axis("x")),
+    (1, 3, 2, ce("camshaft"), axis("x")),
+    (4, 3, 2, ce("camshaft"), axis("x")),
 ]
 for x in range(2, 4):
     compact_v += [
@@ -338,13 +336,13 @@ for x in range(2, 4):
         (x, 4, 3, ce("cylinder_head"), head("up")),
         (x, 4, 2, ce("air_intake"), facing("north")),
         (x, 4, 4, ce("exhaust_outlet"), facing("south")),
-        (x, 3, 4, ce("cam_lobe"), axis("x")),
+        # The valley lobe, against the cylinder block of each bank
+        (x, 3, 2, ce("cam_lobe"), axis("x")),
         # Bank bored north
         (x, 2, 2, ce("cylinder"), cylinder("north")),
         (x, 2, 1, ce("cylinder_head"), head("north")),
         (x, 3, 1, ce("air_intake"), facing("up")),
         (x, 1, 1, ce("exhaust_outlet"), facing("down")),
-        (x, 1, 2, ce("cam_lobe"), axis("x")),
     ]
 write_schematic("compact_v", (6, 6, 6), compact_v)
 
@@ -365,39 +363,7 @@ write_schematic("maf_sensor", (6, 6, 6), [
     (3, 3, 2, "minecraft:redstone_lamp", {"lit": "false"}),
 ])
 
-# A lambda sensor in the exhaust run, with a lamp beside it
-write_schematic("lambda_sensor", (6, 6, 6), [
-    (1, 1, 3, ce("crankshaft"), axis("x")),
-    (2, 1, 3, ce("crank_throw"), axis("x")),
-    (3, 1, 3, ce("crankshaft"), axis("x")),
-    (2, 2, 3, ce("cylinder"), cylinder("up")),
-    (2, 3, 3, ce("cylinder_head"), head("up")),
-    (2, 3, 2, ce("air_intake"), facing("north")),
-    (2, 3, 4, ce("lambda_sensor"), pipe("north", "south")),
-    (2, 3, 5, ce("exhaust_outlet"), facing("south")),
-    (2, 4, 3, ce("cam_lobe"), axis("x")),
-    (1, 4, 3, ce("camshaft"), axis("x")),
-    (3, 4, 3, ce("camshaft"), axis("x")),
-    (3, 3, 4, "minecraft:redstone_lamp", {"lit": "false"}),
-])
-
-# A rev limiter against the crankshaft, with a lamp beside it
-write_schematic("rev_limiter", (6, 6, 6), [
-    (1, 1, 3, ce("crankshaft"), axis("x")),
-    (2, 1, 3, ce("crank_throw"), axis("x")),
-    (3, 1, 3, ce("crankshaft"), axis("x")),
-    (2, 2, 3, ce("cylinder"), cylinder("up")),
-    (2, 3, 3, ce("cylinder_head"), head("up")),
-    (2, 3, 2, ce("air_intake"), facing("north")),
-    (2, 3, 4, ce("exhaust_outlet"), facing("south")),
-    (2, 4, 3, ce("cam_lobe"), axis("x")),
-    (1, 4, 3, ce("camshaft"), axis("x")),
-    (3, 4, 3, ce("camshaft"), axis("x")),
-    (3, 2, 3, ce("rev_limiter"), {}),
-    (4, 2, 3, "minecraft:redstone_lamp", {"lit": "false"}),
-])
-
-# A governor against the crankshaft, with a lamp beside it
+# A governor against the crankshaft, with a comparator reading it and a lamp beyond
 write_schematic("governor", (6, 6, 6), [
     (1, 1, 3, ce("crankshaft"), axis("x")),
     (2, 1, 3, ce("crank_throw"), axis("x")),
@@ -410,7 +376,8 @@ write_schematic("governor", (6, 6, 6), [
     (1, 4, 3, ce("camshaft"), axis("x")),
     (3, 4, 3, ce("camshaft"), axis("x")),
     (3, 2, 3, ce("governor"), {}),
-    (4, 2, 3, "minecraft:redstone_lamp", {"lit": "false"}),
+    (4, 2, 3, "minecraft:comparator", {"facing": "east", "mode": "compare", "powered": "false"}),
+    (5, 2, 3, "minecraft:redstone_lamp", {"lit": "false"}),
 ])
 
 # The same four cylinders as the firing order page, for setting them with the timing tool
@@ -525,4 +492,38 @@ write_schematic("rotor", (7, 6, 6), [
     (2, 3, 3, ce("exhaust_outlet"), facing("up")),
     (3, 2, 2, ce("air_intake"), facing("north")),
     (3, 3, 3, ce("exhaust_outlet"), facing("up")),
+])
+
+
+# One cylinder with an exhaust heat exchanger in its exhaust run, a basin on top of the exchanger and a mixer over the basin
+write_schematic("heat_exchanger", (6, 7, 6), [
+    (1, 1, 3, ce("crankshaft"), axis("x")),
+    (2, 1, 3, ce("crank_throw"), axis("x")),
+    (3, 1, 3, ce("crankshaft"), axis("x")),
+    (2, 2, 3, ce("cylinder"), cylinder("up")),
+    (2, 3, 3, ce("cylinder_head"), head("up")),
+    (2, 3, 2, ce("air_intake"), facing("north")),
+    (2, 3, 4, ce("heat_exchanger"), {"north": "true", "south": "true", "blaze": "none"}),
+    (2, 3, 5, ce("exhaust_outlet"), facing("south")),
+    (2, 4, 3, ce("cam_lobe"), axis("x")),
+    (1, 4, 3, ce("camshaft"), axis("x")),
+    (3, 4, 3, ce("camshaft"), axis("x")),
+    (2, 4, 4, "create:basin", {}),
+    (2, 6, 4, "create:mechanical_mixer", {"axis": "x"}),
+    (3, 6, 4, "create:shaft", {"axis": "x", "waterlogged": "false"}),
+])
+
+# The refining chain: a pressed basin, a heated mixing basin and a superheated one on one shaft
+write_schematic("fuels", (7, 6, 7), [
+    (1, 1, 3, "create:andesite_casing", {}),
+    (1, 2, 3, "create:basin", {}),
+    (1, 4, 3, "create:mechanical_press", {"horizontal_facing": "north"}),
+    (2, 4, 3, "create:shaft", {"axis": "x", "waterlogged": "false"}),
+    (3, 1, 3, "create:blaze_burner", {"blaze": "kindled"}),
+    (3, 2, 3, "create:basin", {}),
+    (3, 4, 3, "create:mechanical_mixer", {"axis": "x"}),
+    (4, 4, 3, "create:shaft", {"axis": "x", "waterlogged": "false"}),
+    (5, 1, 3, "create:blaze_burner", {"blaze": "seething"}),
+    (5, 2, 3, "create:basin", {}),
+    (5, 4, 3, "create:mechanical_mixer", {"axis": "x"}),
 ])

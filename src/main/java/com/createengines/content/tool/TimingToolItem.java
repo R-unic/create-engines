@@ -246,7 +246,7 @@ public class TimingToolItem extends Item {
 			CETriggers.EVENT.get()
 				.trigger(server, Milestone.TOOL_USED);
 		Plan plan = result.plan();
-		boolean pistonsTimed = plan != null && plan.even() && plan.order().length >= 4 && plan.mistimed() == 0;
+		boolean pistonsTimed = plan != null && plan.even() && plan.order().length >= 4;
 		boolean rotorsTimed = result.rotorsEven() && result.rotors() >= 2 && (plan == null || plan.even());
 		if ((pistonsTimed || rotorsTimed) && player instanceof ServerPlayer server)
 			CETriggers.EVENT.get()
@@ -416,11 +416,6 @@ public class TimingToolItem extends Item {
 				.component();
 		}
 		tell(player, message, colour);
-		if (plan.mistimed() > 0)
-			player.displayClientMessage(CELang.translate("tool.timing_tool.shared", plan.mistimed())
-				.component()
-				.copy()
-				.withStyle(ChatFormatting.GOLD), false);
 		if (skipped > 0)
 			player.displayClientMessage(CELang.translate("tool.timing_tool.skipped", skipped)
 				.component()

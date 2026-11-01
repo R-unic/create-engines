@@ -29,16 +29,21 @@ Minecraft 1.21.1 · NeoForge 21.1.219 · Create 6.0.10
 - Crankshafts, throws, cylinders, heads, pistons, rods, camshafts and valves, assembled block by block; cylinders fire
   in order and the crank animates with them
 - Inline, V, flat and rotary (Wankel) layouts, with coupled crankshafts for bigger engines
+- Cam lobes that sit beside the cylinder block, so a V can run one camshaft in its valley and keep every head face
+  free for pipes
 - A **Bank Builder** that lays out a whole inline, V or flat bank in one click, and a **Timing Tool** that sets the
   firing order for you
 
 **Feed and tune it**
-- Air, fuel and exhaust plumbing with pipes, throttle bodies and fuel metering; diesel, plant oil and gasoline with
-  spark ignition
+- Air, fuel and exhaust plumbing with pipes, throttle bodies and fuel metering; diesel, plant oil, gasoline and ethanol
+  with spark ignition
+- A craftable fuel chain: seeds to plant oil to diesel, sugar crops to ethanol, and biodiesel with glycerin on the
+  side, all in Create basins
+- An **Exhaust Heat Exchanger** that turns engine exhaust into basin heat, so an engine can cook its own fuel
 - Oil film and lubrication, sumps, starters, batteries and alternators
 - A forgiving early game: spark plug soot clears itself, goggles suggest fuel settings, and the Timing Tool can tune
   every injector in one click
-- Governors, rev limiters, MAF and lambda sensors for the late game
+- Governors and MAF sensors for the late game
 
 **Make it powerful**
 - Turbochargers (stacked, twin, variable-geometry, with anti-lag), superchargers and intercoolers
@@ -54,6 +59,15 @@ Minecraft 1.21.1 · NeoForge 21.1.219 · Create 6.0.10
 |---|---|
 | ![Bank Builder Ponder scene](docs/images/engine_ponder_bank_builder_800.png) | ![Firing order Ponder scene](docs/images/engine_ponder_firing_order_960.png) |
 | ![Rotary engine Ponder scene](docs/images/engine_ponder_rotor_560.png) | ![Vanes and anti-lag Ponder scene](docs/images/engine_ponder_turbo_tuning_650.png) |
+
+## Configuration
+
+The server config (`serverconfig/create_engines-server.toml` in the world) carries the engine calibration plus
+`[balance]` multipliers (`fuelConsumption`, `precisionBonus`, `boostStrength`, `rotaryPower`, `heatRecoveryOutput`)
+and `[features]` switches (`forcedInduction`, `sparkFouling`, `oilDilution`, `rotaryEngines`, `heatRecovery`), so a
+modpack can rebalance without code. Turning a feature off never removes blocks; they stop doing that job. The client
+config (`engineParticles`, `bangVolume`, `effectDensity`) thins out engine sound and particles on a big engine.
+Fuel properties are a datapack data map (`data_maps/fluid/fuel.json`), so other mods' fluids can be made into fuels.
 
 ## Recommended: raise Create's RPM limit
 

@@ -10,6 +10,7 @@ import org.junit.jupiter.api.Test;
 
 import com.createengines.advancement.Milestone;
 import com.createengines.engine.EngineMilestones.Snapshot;
+import com.createengines.engine.sim.HeatRecovery;
 import com.createengines.engine.topology.PrecisionParts;
 
 class EngineMilestonesTest {
@@ -23,6 +24,17 @@ class EngineMilestonesTest {
 	void aRunningEngineIsAliveAndNothingMore() {
 		Set<Milestone> reached = EngineMilestones.reached(running(64, 1));
 		assertEquals(Set.of(Milestone.ENGINE_RUNNING), reached);
+	}
+
+	@Test
+	void aSharedLobeCountsOnlyWhileTheEngineRuns() {
+		EngineMilestones.Mechanics shared = new EngineMilestones.Mechanics(true, 100, 0, 0, false, false, 2, false, false,
+			false, true);
+		assertEquals(Set.of(Milestone.VALLEY_CAM), EngineMilestones.reachedMechanics(shared));
+		EngineMilestones.Mechanics stopped = new EngineMilestones.Mechanics(false, 0, 0, 0, false, false, 2, false, false,
+			false, true);
+		assertTrue(EngineMilestones.reachedMechanics(stopped)
+			.isEmpty(), "a stopped engine is not a working cam");
 	}
 
 	@Test
@@ -44,7 +56,7 @@ class EngineMilestonesTest {
 
 	private static Snapshot twoCranks(int firing, boolean coupled) {
 		return new Snapshot(EngineState.RUNNING, EngineState.RUNNING, 64, false, firing, 100, false, 0.5f, false, 0, false,
-			0, false, 0, false, false, false, false, false, false, false, coupled);
+			0, false, 0, false, false, false, false, false, false, coupled);
 	}
 
 	@Test
@@ -185,7 +197,7 @@ class EngineMilestonesTest {
 			true, true, PrecisionParts.ALL, true);
 		assertEquals(Set.of(Milestone.CAMSHAFT_TIMED, Milestone.PIPED_ENGINE, Milestone.THROTTLED,
 			Milestone.DIESEL_BURNED, Milestone.GASOLINE_BURNED, Milestone.OILED, Milestone.SUMP_OILING,
-			Milestone.MAF_READING, Milestone.LAMBDA_READING, Milestone.GOVERNOR_ACTIVE, Milestone.PRECISION_BORE,
+			Milestone.MAF_READING, Milestone.GOVERNOR_ACTIVE, Milestone.GOVERNOR_COMMANDED, Milestone.PRECISION_BORE,
 			Milestone.PRECISION_HEAD, Milestone.PRECISION_PISTON, Milestone.PRECISION_INJECTOR,
 			Milestone.ROTOR_HOUSING_TURNED), EngineMilestones.reachedParts(everything));
 
@@ -198,6 +210,17 @@ class EngineMilestonesTest {
 			false, false, false, 0, true);
 		assertEquals(Set.of(Milestone.ROTOR_HOUSING_TURNED), EngineMilestones.reachedParts(housing),
 			"a rotor housing counts as soon as the shaft turns");
+	}
+
+	@Test
+	void ethanolAndRecoveredHeatCountOnlyWhileTheEngineRuns() {
+		assertTrue(EngineMilestones.reachedRefining(false, true, HeatRecovery.SEETHE)
+			.isEmpty(), "a stopped engine");
+		assertEquals(Set.of(Milestone.ETHANOL_BURNED), EngineMilestones.reachedRefining(true, true, HeatRecovery.SMOULDER));
+		assertEquals(Set.of(Milestone.HEAT_RECOVERED), EngineMilestones.reachedRefining(true, false, HeatRecovery.KINDLE),
+			"enough heat to cook heated recipes");
+		assertEquals(Set.of(Milestone.HEAT_RECOVERED, Milestone.SUPERHEAT_RECOVERED),
+			EngineMilestones.reachedRefining(true, false, HeatRecovery.SEETHE), "enough to superheat as well");
 	}
 
 	@Test

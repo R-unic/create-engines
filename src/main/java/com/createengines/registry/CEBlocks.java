@@ -2,7 +2,7 @@ package com.createengines.registry;
 
 import static com.createengines.CreateEngines.REGISTRATE;
 
-import com.createengines.content.airflow.LambdaSensorBlock;
+import com.createengines.content.airflow.HeatExchangerBlock;
 import com.createengines.content.airflow.MafSensorBlock;
 import com.createengines.content.airflow.ManifoldBlock;
 import com.createengines.content.airflow.PortKind;
@@ -20,7 +20,6 @@ import com.createengines.content.flywheel.CastFlywheelBlock;
 import com.createengines.content.governor.GovernorBlock;
 import com.createengines.content.head.CylinderHeadBlock;
 import com.createengines.content.intercooler.IntercoolerBlock;
-import com.createengines.content.limiter.RevLimiterBlock;
 import com.createengines.content.rotor.RotorHousingBlock;
 import com.createengines.content.starter.StarterBlock;
 import com.createengines.content.sump.SumpBlock;
@@ -28,6 +27,7 @@ import com.createengines.content.supercharger.SuperchargerBlock;
 import com.createengines.content.transmission.TransmissionBlock;
 import com.createengines.content.turbo.TurbochargerBlock;
 import com.createengines.content.turbo.VariableTurbochargerBlock;
+import com.simibubi.create.content.processing.burner.BlazeBurnerBlock;
 import com.simibubi.create.foundation.data.AssetLookup;
 import com.simibubi.create.foundation.data.BlockStateGen;
 import com.simibubi.create.foundation.data.ModelGen;
@@ -205,24 +205,15 @@ public final class CEBlocks {
 			.transform(ModelGen.customItemModel())
 			.register();
 
-	public static final BlockEntry<LambdaSensorBlock> LAMBDA_SENSOR =
-		REGISTRATE.block("lambda_sensor", LambdaSensorBlock::new)
-			.initialProperties(SharedProperties::softMetal)
+	public static final BlockEntry<HeatExchangerBlock> HEAT_EXCHANGER =
+		REGISTRATE.block("heat_exchanger", HeatExchangerBlock::new)
+			.lang("Exhaust Heat Exchanger")
+			.initialProperties(SharedProperties::copperMetal)
 			.properties(p -> p.noOcclusion()
-				.mapColor(MapColor.COLOR_GRAY))
+				.mapColor(MapColor.COLOR_ORANGE)
+				.lightLevel(HeatExchangerBlock::light))
 			.transform(TagGen.pickaxeOnly())
-			.blockstate(CEBlocks::pipeBlockstate)
-			.item()
-			.transform(ModelGen.customItemModel())
-			.register();
-
-	public static final BlockEntry<RevLimiterBlock> REV_LIMITER =
-		REGISTRATE.block("rev_limiter", RevLimiterBlock::new)
-			.initialProperties(SharedProperties::softMetal)
-			.properties(p -> p.noOcclusion()
-				.mapColor(MapColor.METAL))
-			.transform(TagGen.pickaxeOnly())
-			.blockstate((c, p) -> BlockStateGen.simpleBlock(c, p, s -> AssetLookup.partialBaseModel(c, p)))
+			.blockstate(CEBlocks::heatExchangerBlockstate)
 			.item()
 			.transform(ModelGen.customItemModel())
 			.register();
@@ -424,6 +415,23 @@ public final class CEBlocks {
 				.addModel()
 				.condition(ManifoldBlock.CONNECTIONS.get(direction), true)
 				.end();
+	}
+
+	/** A pipe that also glows by its heat level: an overlay of hot metal over the fins at kindled and at seething. */
+	private static void heatExchangerBlockstate(DataGenContext<Block, HeatExchangerBlock> context,
+												RegistrateBlockstateProvider provider) {
+		pipeBlockstate(context, provider);
+		var builder = provider.getMultipartBuilder(context.get());
+		builder.part()
+			.modelFile(pipeModel(provider, context.getName(), "glow_kindled"))
+			.addModel()
+			.condition(BlazeBurnerBlock.HEAT_LEVEL, BlazeBurnerBlock.HeatLevel.KINDLED)
+			.end();
+		builder.part()
+			.modelFile(pipeModel(provider, context.getName(), "glow_seething"))
+			.addModel()
+			.condition(BlazeBurnerBlock.HEAT_LEVEL, BlazeBurnerBlock.HeatLevel.SEETHING)
+			.end();
 	}
 
 	/**

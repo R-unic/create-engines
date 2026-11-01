@@ -1,5 +1,8 @@
 package com.createengines.config;
 
+import com.createengines.engine.sim.Tuning;
+
+import net.neoforged.fml.event.config.ModConfigEvent;
 import net.neoforged.neoforge.common.ModConfigSpec;
 
 /** Server-side calibration. The simulation's internal units are converted to Create's here. */
@@ -16,6 +19,18 @@ public final class CEConfig {
 	public static final ModConfigSpec.IntValue MAX_MANIFOLD_BLOCKS;
 	public static final ModConfigSpec.IntValue MAX_COUPLED_LINES;
 	public static final ModConfigSpec.IntValue MAX_COUPLING_WALK;
+
+	public static final ModConfigSpec.DoubleValue FUEL_CONSUMPTION;
+	public static final ModConfigSpec.DoubleValue PRECISION_BONUS;
+	public static final ModConfigSpec.DoubleValue BOOST_STRENGTH;
+	public static final ModConfigSpec.DoubleValue ROTARY_POWER;
+	public static final ModConfigSpec.DoubleValue HEAT_RECOVERY;
+
+	public static final ModConfigSpec.BooleanValue FORCED_INDUCTION;
+	public static final ModConfigSpec.BooleanValue SPARK_FOULING;
+	public static final ModConfigSpec.BooleanValue OIL_DILUTION;
+	public static final ModConfigSpec.BooleanValue ROTARY_ENGINES;
+	public static final ModConfigSpec.BooleanValue HEAT_RECOVERY_ENABLED;
 
 	static {
 		ModConfigSpec.Builder builder = new ModConfigSpec.Builder();
@@ -47,9 +62,60 @@ public final class CEConfig {
 				"crankshafts geared to it.")
 			.defineInRange("maxCouplingWalk", 512, 1, 8192);
 		builder.pop();
+
+		builder.comment("Balance multipliers. 1.0 is the shipped balance.")
+			.push("balance");
+		FUEL_CONSUMPTION = builder.comment("Fuel drawn from the tanks for each unit of fuel an engine burns.",
+				"Above 1 makes every engine thirstier, below 1 thriftier; the engine's power is unchanged.")
+			.defineInRange("fuelConsumption", 1.0, 0.05, 20.0);
+		PRECISION_BONUS = builder.comment("How far each precision part (cylinder, head, forged piston, injector) moves a",
+				"cylinder away from the crude one. 0 makes them cosmetic, 2 doubles their effect.")
+			.defineInRange("precisionBonus", 1.0, 0.0, 2.0);
+		BOOST_STRENGTH = builder.comment("Scales the boost made by every turbocharger and supercharger.")
+			.defineInRange("boostStrength", 1.0, 0.0, 2.0);
+		ROTARY_POWER = builder.comment("Scales a Wankel rotor chamber's swept volume, and so its power and thirst.",
+				"Rotary engines are tuned as a niche (compact and smooth but thirsty, weak at low speed);",
+				"raising this shifts that balance.")
+			.defineInRange("rotaryPower", 1.0, 0.25, 2.0);
+		HEAT_RECOVERY = builder.comment("Scales the heat an Exhaust Heat Exchanger takes from an engine's exhaust.",
+				"Create's basins need a heated or superheated source below them, and the exchanger gets there",
+				"only with enough exhaust heat, so lower values need a bigger engine.")
+			.defineInRange("heatRecoveryOutput", 1.0, 0.1, 10.0);
+		builder.pop();
+
+		builder.comment("Feature switches. Turning one off never destroys blocks; the machines just stop doing that job.")
+			.push("features");
+		FORCED_INDUCTION = builder.comment("Turbochargers and superchargers make boost (and turbines add back-pressure).")
+			.define("forcedInduction", true);
+		SPARK_FOULING = builder.comment("A spark plug fouls with soot when its engine runs rich.")
+			.define("sparkFouling", true);
+		OIL_DILUTION = builder.comment("Unburned fuel thins an engine's oil when it runs rich.")
+			.define("oilDilution", true);
+		ROTARY_ENGINES = builder.comment("Rotor housings run. Off, they sit inert and say so in the goggles.")
+			.define("rotaryEngines", true);
+		HEAT_RECOVERY_ENABLED = builder.comment("Exhaust Heat Exchangers take heat from the exhaust and warm basins.")
+			.define("heatRecovery", true);
+		builder.pop();
 		SPEC = builder.build();
 	}
 
 	private CEConfig() {
+	}
+
+	/** Copies the loaded values to the plain-Java {@link Tuning} the simulation reads. */
+	public static void onConfig(ModConfigEvent event) {
+		// Nothing can be read once the config is unloading, and the settings simply stay as they were until the next load
+		if (event.getConfig().getSpec() != SPEC || event instanceof ModConfigEvent.Unloading)
+			return;
+		Tuning.fuelConsumption = FUEL_CONSUMPTION.get();
+		Tuning.precisionBonus = PRECISION_BONUS.get();
+		Tuning.boostStrength = BOOST_STRENGTH.get();
+		Tuning.rotaryPower = ROTARY_POWER.get();
+		Tuning.heatRecovery = HEAT_RECOVERY.get();
+		Tuning.forcedInduction = FORCED_INDUCTION.get();
+		Tuning.sparkFouling = SPARK_FOULING.get();
+		Tuning.oilDilution = OIL_DILUTION.get();
+		Tuning.rotaryEngines = ROTARY_ENGINES.get();
+		Tuning.heatRecoveryEnabled = HEAT_RECOVERY_ENABLED.get();
 	}
 }

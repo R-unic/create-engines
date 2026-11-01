@@ -4,7 +4,7 @@ import java.util.Collection;
 import java.util.function.BiConsumer;
 
 import com.createengines.CreateEngines;
-import com.createengines.content.airflow.LambdaSensorBlockEntity;
+import com.createengines.content.airflow.HeatExchangerBlockEntity;
 import com.createengines.content.airflow.MafSensorBlockEntity;
 import com.createengines.content.airflow.ManifoldBlock;
 import com.createengines.content.airflow.PortOpeningBlock;
@@ -19,7 +19,6 @@ import com.createengines.content.head.CylinderHeadBlockEntity;
 import com.createengines.content.rotor.RotorHousingBlock;
 import com.createengines.content.rotor.RotorHousingBlockEntity;
 import com.createengines.content.governor.GovernorBlockEntity;
-import com.createengines.content.limiter.RevLimiterBlockEntity;
 import com.createengines.content.starter.StarterBlock;
 import com.createengines.content.sump.SumpBlockEntity;
 import com.createengines.content.transmission.Gears;
@@ -414,6 +413,58 @@ public class EngineGameTests {
 		});
 	}
 
+	/**
+	 * A cam in the valley of a vee: a second cylinder on the same throw, a quarter turn from the first, and the one lobe
+	 * between the two cylinder blocks working both. The lobe is set for the first cylinder only; the second has to follow
+	 * its own piston, so both are on time.
+	 */
+	@GameTest(template = "empty", timeoutTicks = 900)
+	public static void aValleyLobeTimesBothBanksOfAVee(GameTestHelper helper) {
+		buildSingleCylinder(helper, true);
+		for (int x = 2; x <= 5; x++)
+			helper.setBlock(new BlockPos(x, 4, 3), Blocks.AIR);
+		helper.setBlock(new BlockPos(6, 3, 3), Blocks.AIR);
+		helper.setBlock(new BlockPos(6, 4, 3), Blocks.AIR);
+		BlockPos lobe = new BlockPos(2, 3, 3);
+		helper.setBlock(lobe, CEBlocks.CAM_LOBE.getDefaultState()
+			.setValue(BlockStateProperties.AXIS, Axis.X));
+		for (int x = 3; x <= 4; x++)
+			helper.setBlock(new BlockPos(x, 3, 3), CEBlocks.CAMSHAFT.getDefaultState()
+				.setValue(BlockStateProperties.AXIS, Axis.X));
+		double tdc = CrankGeometry.topDeadCentreAngle(Axis.X, 0, Direction.UP);
+		CamshaftBlockEntity cam = helper.getBlockEntity(lobe);
+		cam.lobeAngle.setValue((int) Math.round(((tdc / 2) % 180 + 180) % 180 / CamshaftBlockEntity.LOBE_ANGLE_STEP));
+
+		BlockPos second = new BlockPos(2, 2, 3);
+		helper.setBlock(second, CEBlocks.CYLINDER.getDefaultState()
+			.setValue(CylinderBlock.FACING, Direction.SOUTH)
+			.setValue(CylinderBlock.HAS_PISTON, true)
+			.setValue(CylinderBlock.HAS_ROD, true));
+		helper.setBlock(new BlockPos(2, 2, 4), CEBlocks.CYLINDER_HEAD.getDefaultState()
+			.setValue(CylinderHeadBlock.FACING, Direction.SOUTH)
+			.setValue(CylinderHeadBlock.HAS_INJECTOR, true));
+		helper.setBlock(new BlockPos(1, 2, 4), CEBlocks.AIR_INTAKE.getDefaultState()
+			.setValue(PortOpeningBlock.FACING, Direction.WEST));
+		helper.setBlock(new BlockPos(3, 2, 4), CEBlocks.EXHAUST_OUTLET.getDefaultState()
+			.setValue(PortOpeningBlock.FACING, Direction.EAST));
+
+		helper.runAtTickTime(400, () -> {
+			CylinderStatus first = cylinder(helper);
+			CylinderBlockEntity other = helper.getBlockEntity(second);
+			CylinderStatus follower = other.status();
+			helper.assertTrue(follower != null, "The second cylinder should be part of the engine");
+			helper.assertTrue(first.lobe() != null && first.lobe()
+				.equals(follower.lobe()), "One lobe should work both cylinders: " + first + " and " + follower);
+			helper.assertTrue(Math.abs(first.timingError()) < 1, "The first is timed by the lobe's angle: " + first);
+			helper.assertTrue(Math.abs(follower.timingError()) < 1,
+				"The second follows its own piston, so it is on time too: " + follower);
+			helper.assertTrue(Math.abs(follower.lobeShift()) > 1 && first.lobeShift() == 0,
+				"Only the second is shifted round the lobe: " + first.lobeShift() + ", " + follower.lobeShift());
+			helper.assertTrue(summary(helper).firing() == 2, "Both banks should fire: " + summary(helper));
+			helper.succeed();
+		});
+	}
+
 	/** Air with no injector: pumping air round costs power, it can't make any. */
 	@GameTest(template = "empty", timeoutTicks = 700)
 	public static void cylinderWithoutInjectorNeverFires(GameTestHelper helper) {
@@ -712,12 +763,12 @@ public class EngineGameTests {
 	}
 
 	/**
-	 * A MAF sensor in the intake and a lambda sensor in the exhaust. The injector is set to the largest shot it allows,
-	 * which would run this engine rich at speed; the MAF sensor holds it to the air the cylinder breathed, so it burns
-	 * clean, and both sensors belong to the engine and put what they read out as redstone.
+	 * A MAF sensor in the intake. The injector is set to the largest shot it allows, which would run this engine rich at
+	 * speed; the MAF sensor holds it to the air the cylinder breathed, so it burns clean, and the sensor belongs to the
+	 * engine and puts what it reads out as redstone.
 	 */
 	@GameTest(template = "empty", timeoutTicks = 1300)
-	public static void sensorsReadAndTrimAnEngine(GameTestHelper helper) {
+	public static void aMafSensorReadsAndTrimsAnEngine(GameTestHelper helper) {
 		buildSingleCylinder(helper, true);
 		CylinderHeadBlockEntity head = helper.getBlockEntity(HEAD);
 		head.metering.setValue(CylinderHeadBlockEntity.MAX_METERING);
@@ -726,15 +777,11 @@ public class EngineGameTests {
 		helper.setBlock(intake, placePipe(helper, CEBlocks.MAF_SENSOR.get(), intake));
 		helper.setBlock(intake.west(), CEBlocks.AIR_INTAKE.getDefaultState()
 			.setValue(PortOpeningBlock.FACING, Direction.WEST));
-		helper.setBlock(EXHAUST, Blocks.AIR);
-		helper.setBlock(EXHAUST, placePipe(helper, CEBlocks.LAMBDA_SENSOR.get(), EXHAUST));
-		helper.setBlock(EXHAUST.above(), CEBlocks.EXHAUST_OUTLET.getDefaultState()
-			.setValue(PortOpeningBlock.FACING, Direction.UP));
 		helper.runAtTickTime(300, () -> helper.setBlock(STARTER_POWER, Blocks.AIR));
 		helper.runAtTickTime(900, () -> {
 			CylinderStatus status = cylinder(helper);
 			helper.assertTrue(status.result() == CycleResult.FIRED,
-				"Engine should run through both sensors: " + status + ", " + summary(helper));
+				"Engine should run through the sensor: " + status + ", " + summary(helper));
 			helper.assertFalse(status.rich(), "The MAF sensor should keep a double shot from running rich: " + status);
 			helper.assertTrue(status.mixture() < 1.3f, "The shot should follow the air: " + status);
 
@@ -745,47 +792,133 @@ public class EngineGameTests {
 				.getSignal(helper.absolutePos(intake), Direction.NORTH) == maf.signal(),
 				"Its signal should reach the blocks around it");
 
-			LambdaSensorBlockEntity lambda = helper.getBlockEntity(EXHAUST);
-			helper.assertTrue(lambda.onEngine(), "The lambda sensor should belong to the engine");
-			helper.assertFalse(Float.isNaN(lambda.mixture()), "It should read what the firing cylinder burned");
-			helper.assertTrue(lambda.mixture() < 1.3f, "A trimmed engine should read balanced or lean: " + lambda.mixture());
-			helper.assertTrue(lambda.signal() > 0 && lambda.signal() < 11,
-				"A balanced mixture reads near the middle: " + lambda.signal());
 			helper.succeed();
 		});
 	}
 
 	/**
-	 * A rev limiter against the crankshaft holds the injector shut when the crank reaches its setting, so an engine that
-	 * would rev well past it climbs to it, loses a cycle's fuel, and gets it back once it has slowed.
+	 * The injector is set to the smallest shot it allows, which would starve this engine. A MAF sensor in the intake
+	 * tops the shot up to what the air can burn, so the engine fires on a balanced mixture, and says it is adding fuel.
 	 */
-	@GameTest(template = "empty", timeoutTicks = 1500)
-	public static void aRevLimiterBouncesAnEngineOffItsLimit(GameTestHelper helper) {
+	@GameTest(template = "empty", timeoutTicks = 1300)
+	public static void aMafSensorTopsUpALeanEngine(GameTestHelper helper) {
 		buildSingleCylinder(helper, true);
-		BlockPos at = new BlockPos(3, 3, 2);
-		helper.setBlock(at, CEBlocks.REV_LIMITER.getDefaultState());
-		RevLimiterBlockEntity limiter = helper.getBlockEntity(at);
-		int limit = 80;
-		limiter.limit.setValue(limit / RevLimiterBlockEntity.LIMIT_STEP);
-		float[] peak = new float[1];
-		// Whether fuel was cut at the limit, and whether it came back afterwards
-		boolean[] seen = new boolean[2];
+		CylinderHeadBlockEntity head = helper.getBlockEntity(HEAD);
+		head.metering.setValue(CylinderHeadBlockEntity.MIN_METERING);
+		BlockPos intake = TestEngine.AIR_INTAKE;
+		helper.setBlock(intake, Blocks.AIR);
+		helper.setBlock(intake, placePipe(helper, CEBlocks.MAF_SENSOR.get(), intake));
+		helper.setBlock(intake.west(), CEBlocks.AIR_INTAKE.getDefaultState()
+			.setValue(PortOpeningBlock.FACING, Direction.WEST));
 		helper.runAtTickTime(300, () -> helper.setBlock(STARTER_POWER, Blocks.AIR));
-		helper.succeedWhen(() -> {
-			helper.assertTrue(helper.getTick() > 400, "Still starting");
-			EngineSummary summary = summary(helper);
-			CycleResult result = cylinder(helper).result();
-			peak[0] = Math.max(peak[0], summary.rpm());
-			seen[0] |= result == CycleResult.FUEL_CUT;
-			seen[1] |= seen[0] && result == CycleResult.FIRED;
-			helper.assertTrue(helper.getTick() > 1100, "Watching the limiter");
-			helper.assertTrue(seen[0], "The limiter should have cut the fuel, peak " + peak[0] + " RPM: " + summary);
-			helper.assertTrue(seen[1], "Fuel should have come back once the engine slowed: " + summary);
-			helper.assertTrue(peak[0] > limit * 0.7f && peak[0] <= limit * 1.15f,
-				"The engine should climb to its limit and no further, peak " + peak[0] + " RPM");
-			helper.assertTrue(summary.rpm() > 0, "The limiter should not stall the engine: " + summary);
-			helper.assertTrue(limiter.signal() > 0, "The limiter should put out a signal for how near the limit it is");
+		helper.runAtTickTime(900, () -> {
+			CylinderStatus status = cylinder(helper);
+			helper.assertTrue(status.result() == CycleResult.FIRED,
+				"The sensor should feed a starved engine: " + status + ", " + summary(helper));
+			helper.assertTrue(status.mixture() > 0.6f && status.mixture() < 1.3f,
+				"The shot should follow the air, not the setting: " + status);
+			helper.succeed();
 		});
+	}
+
+	/**
+	 * An exhaust heat exchanger in the exhaust of a running cylinder takes the exhaust's heat, shows it as a blaze burner
+	 * heat level on its own block (which is where a basin above it looks), and goes cold again when the server's config
+	 * switches heat recovery off.
+	 */
+	@GameTest(template = "empty", timeoutTicks = 1300)
+	public static void anExhaustHeatExchangerWarmsItsBlock(GameTestHelper helper) {
+		buildSingleCylinder(helper, true);
+		helper.setBlock(EXHAUST, Blocks.AIR);
+		helper.setBlock(EXHAUST, placePipe(helper, CEBlocks.HEAT_EXCHANGER.get(), EXHAUST));
+		helper.setBlock(EXHAUST.above(), CEBlocks.EXHAUST_OUTLET.getDefaultState()
+			.setValue(PortOpeningBlock.FACING, Direction.UP));
+		helper.runAtTickTime(300, () -> helper.setBlock(STARTER_POWER, Blocks.AIR));
+		helper.runAtTickTime(900, () -> {
+			HeatExchangerBlockEntity exchanger = helper.getBlockEntity(EXHAUST);
+			helper.assertTrue(exchanger.onEngine(), "The exchanger should belong to the engine");
+			helper.assertTrue(exchanger.heat() > 0.5f, "A firing cylinder should heat the exhaust: " + exchanger.heat() + ", " + summary(helper) + ", " + cylinder(helper));
+			int shown = helper.getBlockState(EXHAUST)
+				.getValue(com.simibubi.create.content.processing.burner.BlazeBurnerBlock.HEAT_LEVEL)
+				.ordinal();
+			helper.assertTrue(exchanger.heatLevel() == com.createengines.engine.sim.HeatRecovery.level(exchanger.heat(),
+				exchanger.heatLevel()), "Its level should follow its heat");
+			helper.assertTrue((shown > 0) == (exchanger.heatLevel() > 0),
+				"The block should carry the heat level a basin reads: " + shown + " against " + exchanger.heatLevel());
+			helper.assertTrue(exchanger.signal() > 0, "Its heat should come out as redstone");
+			com.createengines.engine.sim.Tuning.heatRecoveryEnabled = false;
+		});
+		helper.runAtTickTime(1000, () -> {
+			try {
+				HeatExchangerBlockEntity exchanger = helper.getBlockEntity(EXHAUST);
+				helper.assertTrue(exchanger.heatLevel() == 0 && exchanger.signal() == 0,
+					"With heat recovery off the exchanger should be cold: " + exchanger.heatLevel());
+				helper.assertTrue(helper.getBlockState(EXHAUST)
+					.getValue(com.simibubi.create.content.processing.burner.BlazeBurnerBlock.HEAT_LEVEL)
+					== com.simibubi.create.content.processing.burner.BlazeBurnerBlock.HeatLevel.NONE,
+					"And so should its block");
+			} finally {
+				com.createengines.engine.sim.Tuning.heatRecoveryEnabled = true;
+			}
+			helper.succeed();
+		});
+	}
+
+	/**
+	 * The fuel consumption setting changes what the tanks pay for the same burn: the gallery hands the engine what it
+	 * asked for and takes three times as much from the tank at 3, half as much at 0.5. Done within one tick, because
+	 * the setting is global and other tests' engines are running.
+	 */
+	@GameTest(template = "empty", timeoutTicks = 20)
+	public static void theFuelConsumptionSettingScalesWhatTheTanksPay(GameTestHelper helper) {
+		buildSingleCylinder(helper, true);
+		CylinderHeadBlockEntity head = helper.getBlockEntity(HEAD);
+		com.createengines.engine.GalleryFuelSupply supply = new com.createengines.engine.GalleryFuelSupply(
+			helper.getLevel(), java.util.List.of(helper.absolutePos(HEAD)));
+		try {
+			int before = head.tank()
+				.getFluidAmount();
+			com.createengines.engine.sim.Tuning.fuelConsumption = 3;
+			double delivered = supply.draw(10);
+			helper.assertTrue(Math.abs(delivered - 10) < 1e-9, "The engine should still get what it asked for: " + delivered);
+			helper.assertTrue(before - head.tank()
+				.getFluidAmount() == 30, "At 3 the tank should pay 30 mB for 10: " + (before - head.tank()
+					.getFluidAmount()));
+			before = head.tank()
+				.getFluidAmount();
+			com.createengines.engine.sim.Tuning.fuelConsumption = 0.5;
+			delivered = supply.draw(10);
+			helper.assertTrue(Math.abs(delivered - 10) < 1e-9, "Nor should it get less at a thrifty setting: " + delivered);
+			helper.assertTrue(before - head.tank()
+				.getFluidAmount() == 5, "At 0.5 the tank should pay 5 mB for 10: " + (before - head.tank()
+					.getFluidAmount()));
+		} finally {
+			com.createengines.engine.sim.Tuning.fuelConsumption = 1;
+		}
+		helper.succeed();
+	}
+
+	/**
+	 * With rotary engines switched off in the config a housing sits inert and says so. Scanned within one tick, because
+	 * the setting is global and other tests are scanning rotors.
+	 */
+	@GameTest(template = "empty", timeoutTicks = 20)
+	public static void switchingRotaryEnginesOffLeavesAHousingInert(GameTestHelper helper) {
+		TestEngine.buildRotary(helper.getLevel(), helper.absolutePos(BlockPos.ZERO), true);
+		try {
+			com.createengines.engine.sim.Tuning.rotaryEngines = false;
+			EngineLayout layout = EngineScanner.scan(helper.getLevel(), helper.absolutePos(PRIMARY));
+			helper.assertTrue(layout != null && layout.cylinders()
+				.size() == 1 && CylinderFault.ROTARY_DISABLED.in(layout.cylinders()
+					.getFirst()
+					.faults()) && CylinderFault.disables(layout.cylinders()
+						.getFirst()
+						.faults()),
+				"One disabled entry: " + (layout == null ? null : layout.cylinders()));
+		} finally {
+			com.createengines.engine.sim.Tuning.rotaryEngines = true;
+		}
+		helper.succeed();
 	}
 
 	/**
@@ -812,6 +945,29 @@ public class EngineGameTests {
 			helper.assertTrue(peak[0] <= target * 1.12f, "It should never run away, peak " + peak[0] + " RPM");
 			helper.assertTrue(governor.signal() > 0 && governor.signal() < 15,
 				"Holding the speed takes part of the rack, not all or none: " + governor.signal());
+		});
+	}
+
+	/**
+	 * A governor reads the redstone signal at its block as a command, and does not power its neighbours itself (so its
+	 * own output can never come back as a command): next to a block of redstone it asks for all of its setting.
+	 */
+	@GameTest(template = "empty", timeoutTicks = 100)
+	public static void aGovernorTakesARedstoneCommandAndPowersNothing(GameTestHelper helper) {
+		buildSingleCylinder(helper, true);
+		BlockPos at = new BlockPos(3, 3, 2);
+		helper.setBlock(at, CEBlocks.GOVERNOR.getDefaultState());
+		GovernorBlockEntity governor = helper.getBlockEntity(at);
+		governor.target.setValue(80 / GovernorBlockEntity.TARGET_STEP);
+		helper.assertTrue(governor.command() == 0, "Nothing powers it yet: " + governor.command());
+		helper.assertTrue(Math.abs(governor.governedSpeed() - 80) < 1e-9, "No signal leaves the setting: " + governor.governedSpeed());
+		helper.assertFalse(helper.getBlockState(at)
+			.isSignalSource(), "It reaches comparators only");
+		helper.setBlock(at.above(), Blocks.REDSTONE_BLOCK);
+		helper.runAfterDelay(2, () -> {
+			helper.assertTrue(governor.command() == 15, "A block of redstone is a full command: " + governor.command());
+			helper.assertTrue(Math.abs(governor.governedSpeed() - 80) < 1e-9, "A full command asks for the whole setting");
+			helper.succeed();
 		});
 	}
 

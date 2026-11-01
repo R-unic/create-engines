@@ -31,6 +31,9 @@ public final class CEFluids {
 	private static final int DIESEL_COLOUR = 0xFFC7A93B;
 	private static final int GASOLINE_COLOUR = 0xFFE6D27A;
 	private static final int ENGINE_OIL_COLOUR = 0xFF2B2622;
+	private static final int SUGAR_MASH_COLOUR = 0xFFB89A5E;
+	private static final int ETHANOL_COLOUR = 0xFFC9E8EC;
+	private static final int GLYCERIN_COLOUR = 0xFFE3D9A0;
 
 	public static final FluidEntry<BaseFlowingFluid.Flowing> PLANT_OIL =
 		REGISTRATE.fluid("plant_oil", STILL, FLOW, tinted(PLANT_OIL_COLOUR))
@@ -100,6 +103,63 @@ public final class CEFluids {
 			.source(BaseFlowingFluid.Source::new)
 			.block()
 			.properties(p -> p.mapColor(MapColor.COLOR_BLACK))
+			.build()
+			.bucket()
+			.model(CEFluids::bucketModel)
+			.build()
+			.register();
+
+	/** Crushed and watered sugar crops, ready to ferment: the first step towards ethanol. Not a fuel. */
+	public static final FluidEntry<BaseFlowingFluid.Flowing> SUGAR_MASH =
+		REGISTRATE.fluid("sugar_mash", STILL, FLOW, tinted(SUGAR_MASH_COLOUR))
+			.lang("Sugar Mash")
+			.properties(b -> b.viscosity(2000)
+				.density(1100))
+			.fluidProperties(p -> p.levelDecreasePerBlock(2)
+				.tickRate(25)
+				.slopeFindDistance(2)
+				.explosionResistance(100f))
+			.source(BaseFlowingFluid.Source::new)
+			.block()
+			.properties(p -> p.mapColor(MapColor.TERRACOTTA_YELLOW))
+			.build()
+			.bucket()
+			.model(CEFluids::bucketModel)
+			.build()
+			.register();
+
+	/** Distilled from mash. Too hard to light by compression, so it burns only with a spark plug, and boost will not light it early. */
+	public static final FluidEntry<BaseFlowingFluid.Flowing> ETHANOL =
+		REGISTRATE.fluid("ethanol", STILL, FLOW, tinted(ETHANOL_COLOUR))
+			.lang("Ethanol")
+			.properties(b -> b.viscosity(500)
+				.density(790))
+			.fluidProperties(p -> p.levelDecreasePerBlock(2)
+				.tickRate(10)
+				.slopeFindDistance(4)
+				.explosionResistance(100f))
+			.source(BaseFlowingFluid.Source::new)
+			.block()
+			.properties(p -> p.mapColor(MapColor.ICE))
+			.build()
+			.bucket()
+			.model(CEFluids::bucketModel)
+			.build()
+			.register();
+
+	/** What is left when plant oil is made into diesel with ethanol. It thickens engine oil. Not a fuel. */
+	public static final FluidEntry<BaseFlowingFluid.Flowing> GLYCERIN =
+		REGISTRATE.fluid("glycerin", STILL, FLOW, tinted(GLYCERIN_COLOUR))
+			.lang("Glycerin")
+			.properties(b -> b.viscosity(3000)
+				.density(1260))
+			.fluidProperties(p -> p.levelDecreasePerBlock(2)
+				.tickRate(30)
+				.slopeFindDistance(2)
+				.explosionResistance(100f))
+			.source(BaseFlowingFluid.Source::new)
+			.block()
+			.properties(p -> p.mapColor(MapColor.SAND))
 			.build()
 			.bucket()
 			.model(CEFluids::bucketModel)

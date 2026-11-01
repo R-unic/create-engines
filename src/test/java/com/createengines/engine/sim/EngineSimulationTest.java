@@ -267,6 +267,44 @@ class EngineSimulationTest {
 	}
 
 	@Test
+	void aSharedLobeGivesEveryCylinderOnItTheFirstOnesTimingError() {
+		// A vee on one throw: pistons top out at 90 and 180 crank degrees, and the lobe is set for the first
+		CylinderModel first = cylinderWithLobe(90, 45, new Camshaft(), FuelSupply.NONE);
+		CylinderModel second = cylinderWithLobe(180, 45, new Camshaft(), FuelSupply.NONE);
+		second.shareLobe(90);
+		assertEquals(0, first.timingError(1), 1e-9);
+		assertEquals(0, second.timingError(1), 1e-9, "on time at its own top dead centre too");
+		assertEquals(90, SimMath.wrap(second.firingRotorAngle() - first.firingRotorAngle()), 1e-9,
+			"it fires as far after the first as its piston tops out after the first's");
+		assertEquals(second.lobeAngle() - 45, second.lobeShift(), 1e-9);
+
+		CylinderModel late = cylinderWithLobe(90, 45 + 15, new Camshaft(), FuelSupply.NONE);
+		CylinderModel follower = cylinderWithLobe(180, 45 + 15, new Camshaft(), FuelSupply.NONE);
+		follower.shareLobe(90);
+		assertEquals(late.timingError(1), follower.timingError(1), 1e-9, "a lobe set late is late for both");
+
+		second.setDirection(-1);
+		assertEquals(first.timingError(-1), second.timingError(-1), 1e-9, "and the same the other way round");
+	}
+
+	@Test
+	void aSharedLobeRunsLikeLobesSetOneByOne() {
+		Camshaft cam = new Camshaft();
+		CylinderModel first = cylinderWithLobe(90, 45, cam, new Tank(1000));
+		CylinderModel second = cylinderWithLobe(180, 45, cam, new Tank(1000));
+		second.shareLobe(90);
+		EngineSimulation shared = engine(FLYWHEEL_INERTIA, first, second);
+		drive(shared, 64, 10);
+
+		Camshaft apart = new Camshaft();
+		EngineSimulation separate = engine(FLYWHEEL_INERTIA, cylinder(90, 0, apart, new Tank(1000)),
+			cylinder(180, 0, apart, new Tank(1000)));
+		drive(separate, 64, 10);
+		assertTrue(separate.netTorque() > 0, "the control should run");
+		assertEquals(separate.netTorque(), shared.netTorque(), 1e-6);
+	}
+
+	@Test
 	void fuelIsOnlyUsedByInjectionEvents() {
 		Tank tank = new Tank(1000);
 		EngineSimulation engine = engine(0, single(tank));

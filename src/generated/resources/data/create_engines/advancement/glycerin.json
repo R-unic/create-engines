@@ -1,0 +1,33 @@
+{
+  "parent": "create_engines:ethanol",
+  "criteria": {
+    "glycerin": {
+      "conditions": {
+        "items": [
+          {
+            "items": "create_engines:glycerin_bucket"
+          }
+        ]
+      },
+      "trigger": "minecraft:inventory_changed"
+    }
+  },
+  "display": {
+    "description": {
+      "translate": "advancement.create_engines.glycerin.desc"
+    },
+    "icon": {
+      "count": 1,
+      "id": "create_engines:glycerin_bucket"
+    },
+    "title": {
+      "translate": "advancement.create_engines.glycerin"
+    }
+  },
+  "requirements": [
+    [
+      "glycerin"
+    ]
+  ],
+  "sends_telemetry_event": true
+}

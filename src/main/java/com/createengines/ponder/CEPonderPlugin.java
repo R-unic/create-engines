@@ -44,10 +44,6 @@ public class CEPonderPlugin implements PonderPlugin {
 			.addStoryBoard("throttle", EngineScenes::throttle);
 		scenes.forComponents(CEBlocks.MAF_SENSOR)
 			.addStoryBoard("maf_sensor", EngineScenes::mafSensor);
-		scenes.forComponents(CEBlocks.LAMBDA_SENSOR)
-			.addStoryBoard("lambda_sensor", EngineScenes::lambdaSensor);
-		scenes.forComponents(CEBlocks.REV_LIMITER)
-			.addStoryBoard("rev_limiter", EngineScenes::revLimiter);
 		scenes.forComponents(CEBlocks.GOVERNOR)
 			.addStoryBoard("governor", EngineScenes::governor);
 		scenes.forComponents(CEItems.TIMING_TOOL)
@@ -85,5 +81,12 @@ public class CEPonderPlugin implements PonderPlugin {
 			.addStoryBoard("dyno", EngineScenes::dyno);
 		scenes.forComponents(CEBlocks.VARIABLE_TURBOCHARGER, CEBlocks.TURBOCHARGER)
 			.addStoryBoard("turbo_tuning", EngineScenes::turboTuning);
+		scenes.forComponents(CEBlocks.HEAT_EXCHANGER)
+			.addStoryBoard("heat_exchanger", EngineScenes::heatExchanger);
+		scenes.forComponents(CEBlocks.HEAT_EXCHANGER)
+			.addStoryBoard("fuels", EngineScenes::fuels);
+		for (String fuel : new String[] {"plant_oil", "diesel", "gasoline", "sugar_mash", "ethanol", "glycerin"})
+			helper.forComponents(CreateEngines.asResource(fuel + "_bucket"))
+				.addStoryBoard("fuels", EngineScenes::fuels);
 	}
 }

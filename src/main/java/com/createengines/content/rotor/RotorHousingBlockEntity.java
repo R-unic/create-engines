@@ -4,6 +4,7 @@ import java.util.List;
 
 import org.jetbrains.annotations.Nullable;
 
+import com.createengines.config.CEClientConfig;
 import com.createengines.content.EffectRate;
 import com.createengines.content.GoggleLines;
 import com.createengines.content.crankshaft.CrankshaftBlockEntity;
@@ -252,8 +253,12 @@ public class RotorHousingBlockEntity extends CrankshaftBlockEntity implements Ga
 			false) == null)
 			return;
 		RandomSource random = level.random;
-		level.playLocalSound(worldPosition, CESounds.CYLINDER_FIRE.get(), SoundSource.BLOCKS, 1f,
-			1.05f + random.nextFloat() * 0.16f, false);
+		float volume = CEClientConfig.bangVolume();
+		if (volume > 0)
+			level.playLocalSound(worldPosition, CESounds.CYLINDER_FIRE.get(), SoundSource.BLOCKS, volume,
+				1.05f + random.nextFloat() * 0.16f, false);
+		if (!CEClientConfig.particles())
+			return;
 		for (int i = 0; i < 5; i++)
 			level.addParticle(i < 3 ? ParticleTypes.SMALL_FLAME : ParticleTypes.ELECTRIC_SPARK,
 				worldPosition.getX() + 0.3 + random.nextDouble() * 0.4, worldPosition.getY() + 0.3 + random.nextDouble() * 0.4,
@@ -263,7 +268,7 @@ public class RotorHousingBlockEntity extends CrankshaftBlockEntity implements Ga
 
 	/** Smoke from the exhaust when the exhaust port opens after a firing. */
 	private void tickExhaust(int chamber, CylinderStatus current) {
-		if (!puffs[chamber].allow(level))
+		if (!CEClientConfig.particles() || !puffs[chamber].allow(level))
 			return;
 		ParticleOptions particle;
 		int count;
@@ -328,7 +333,7 @@ public class RotorHousingBlockEntity extends CrankshaftBlockEntity implements Ga
 				CycleResult result = status.result();
 				ChatFormatting colour = result.fired() ? ChatFormatting.GREEN
 					: result == CycleResult.NONE ? ChatFormatting.GRAY
-						: result == CycleResult.FUEL_CUT ? ChatFormatting.GOLD : ChatFormatting.RED;
+						: ChatFormatting.RED;
 				GoggleLines.add(CELang.translate("goggles.rotor.chamber", i + 1, CELang.translate("goggles.cycle."
 						+ result.name()
 							.toLowerCase(java.util.Locale.ROOT))

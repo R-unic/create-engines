@@ -34,6 +34,8 @@ public final class EngineMilestones {
 	public static final int EVEN_FIRING_CYLINDERS = 4;
 	/** Share of the average shot a MAF sensor has to be holding back for it to count as doing something. */
 	public static final float MAF_TRIMMING = 0.2f;
+	/** Share of the average shot a MAF sensor has to be adding for it to count as topping up a lean one. */
+	public static final float MAF_ENRICHING = 0.2f;
 
 	private EngineMilestones() {
 	}
@@ -52,8 +54,7 @@ public final class EngineMilestones {
 	 * @param pushrod        a firing cylinder is timed by a cam beside its block rather than its head
 	 * @param evenFiring     every cylinder is firing, at least four, evenly spaced around the cycle
 	 * @param mafTrimming    a MAF sensor is holding the shots of the firing cylinders on its network back
-	 * @param lambdaBalanced a lambda sensor is in the exhaust of cylinders that are all burning a balanced mixture
-	 * @param limiting       a rev limiter is holding the injectors shut
+	 * @param mafEnriching   a MAF sensor is adding fuel to the shots of the firing cylinders on its network
 	 * @param governed       a governor has held the engine on its setting, under load, for a good while
 	 * @param precisionEngine every cylinder of an engine of four or more is built entirely from precision parts
 	 * @param coupled        the engine has more than one crankshaft, geared together
@@ -61,38 +62,30 @@ public final class EngineMilestones {
 	public record Snapshot(EngineState state, EngineState previous, float rpm, boolean starterEngaged, int firing,
 						   float capacity, boolean sparkFiring, float lubrication, boolean rich, float boost,
 						   boolean dumping, float fouling, boolean balanced, float dilution,
-						   boolean pushrod, boolean evenFiring, boolean mafTrimming, boolean lambdaBalanced,
-						   boolean limiting, boolean governed, boolean precisionEngine,
+						   boolean pushrod, boolean evenFiring, boolean mafTrimming, boolean mafEnriching,
+						   boolean governed, boolean precisionEngine,
 						   boolean coupled) {
-
-		public Snapshot(EngineState state, EngineState previous, float rpm, boolean starterEngaged, int firing,
-						float capacity, boolean sparkFiring, float lubrication, boolean rich, float boost,
-						boolean dumping, float fouling, boolean balanced, float dilution, boolean pushrod,
-						boolean evenFiring, boolean mafTrimming, boolean lambdaBalanced, boolean limiting) {
-			this(state, previous, rpm, starterEngaged, firing, capacity, sparkFiring, lubrication, rich, boost, dumping,
-				fouling, balanced, dilution, pushrod, evenFiring, mafTrimming, lambdaBalanced, limiting, false, false, false);
-		}
 
 		public Snapshot(EngineState state, EngineState previous, float rpm, boolean starterEngaged, int firing,
 						float capacity, boolean sparkFiring, float lubrication, boolean rich, float boost,
 						boolean dumping, float fouling, boolean balanced, float dilution, boolean pushrod,
 						boolean evenFiring) {
 			this(state, previous, rpm, starterEngaged, firing, capacity, sparkFiring, lubrication, rich, boost, dumping,
-				fouling, balanced, dilution, pushrod, evenFiring, false, false, false, false, false, false);
+				fouling, balanced, dilution, pushrod, evenFiring, false, false, false, false, false);
 		}
 
 		public Snapshot(EngineState state, EngineState previous, float rpm, boolean starterEngaged, int firing,
 						float capacity, boolean sparkFiring, float lubrication, boolean rich, float boost,
 						boolean dumping, float fouling, boolean balanced, float dilution) {
 			this(state, previous, rpm, starterEngaged, firing, capacity, sparkFiring, lubrication, rich, boost, dumping,
-				fouling, balanced, dilution, false, false, false, false, false, false, false, false);
+				fouling, balanced, dilution, false, false, false, false, false, false, false);
 		}
 
 		public Snapshot(EngineState state, EngineState previous, float rpm, boolean starterEngaged, int firing,
 						float capacity, boolean sparkFiring, float lubrication, boolean rich, float boost,
 						boolean dumping) {
 			this(state, previous, rpm, starterEngaged, firing, capacity, sparkFiring, lubrication, rich, boost, dumping,
-				0, false, 0, false, false, false, false, false, false, false, false);
+				0, false, 0, false, false, false, false, false, false, false);
 		}
 	}
 
@@ -129,6 +122,24 @@ public final class EngineMilestones {
 	public record Rotary(boolean running, float rpm, int rotorsFiring) {
 	}
 
+	/**
+	 * Fuel and heat from a running engine: whether it burns ethanol, and the heat level of the hottest exhaust heat
+	 * exchanger on it ({@link com.createengines.engine.sim.HeatRecovery#NONE} to
+	 * {@link com.createengines.engine.sim.HeatRecovery#SEETHE}).
+	 */
+	public static Set<Milestone> reachedRefining(boolean running, boolean ethanol, int heatLevel) {
+		Set<Milestone> reached = EnumSet.noneOf(Milestone.class);
+		if (!running)
+			return reached;
+		if (ethanol)
+			reached.add(Milestone.ETHANOL_BURNED);
+		if (heatLevel >= com.createengines.engine.sim.HeatRecovery.KINDLE)
+			reached.add(Milestone.HEAT_RECOVERED);
+		if (heatLevel >= com.createengines.engine.sim.HeatRecovery.SEETHE)
+			reached.add(Milestone.SUPERHEAT_RECOVERED);
+		return reached;
+	}
+
 	public static Set<Milestone> reachedRotary(Rotary r) {
 		Set<Milestone> reached = EnumSet.noneOf(Milestone.class);
 		if (!r.running() || r.rotorsFiring() < 1)
@@ -161,9 +172,11 @@ public final class EngineMilestones {
 	 * @param vee             two firing cylinders share a throw a quarter turn apart
 	 * @param flat            two firing cylinders share a throw on opposite sides
 	 * @param dynoRead        a dynamometer block is showing this engine's finished torque curve
+	 * @param sharedLobe      one cam lobe is timing firing cylinders that reach top dead centre at different crank angles
 	 */
 	public record Mechanics(boolean running, float rpm, double flywheelInertia, float roughness, boolean vaneBoost,
-							boolean antiLagBoost, int firing, boolean vee, boolean flat, boolean dynoRead) {
+							boolean antiLagBoost, int firing, boolean vee, boolean flat, boolean dynoRead,
+							boolean sharedLobe) {
 	}
 
 	public static Set<Milestone> reachedMechanics(Mechanics m) {
@@ -176,6 +189,8 @@ public final class EngineMilestones {
 			reached.add(Milestone.FLAT_ENGINE);
 		if (m.running() && m.dynoRead())
 			reached.add(Milestone.DYNO_RUN);
+		if (m.running() && m.sharedLobe())
+			reached.add(Milestone.VALLEY_CAM);
 		if (m.vaneBoost())
 			reached.add(Milestone.VARIABLE_VANES);
 		// Off the throttle the engine is not running on its own power, so this is not tied to it
@@ -236,14 +251,14 @@ public final class EngineMilestones {
 	 * @param lubrication    how well oiled the engine is, 0 to 1
 	 * @param sump           an oil sump is on the engine
 	 * @param mafReading     a MAF sensor is reading the air that cylinders draw
-	 * @param lambdaReading  a lambda sensor is reading the exhaust of cylinders that fired
 	 * @param governing      a governor is pulling the fuel rack back to hold the engine's speed
+	 * @param commanded      a redstone signal has turned that governed speed down
 	 * @param precision      {@link PrecisionParts} bits of the precision parts in firing cylinders
 	 * @param rotorHousingTurning a rotor housing is in a crankshaft that is turning, running or not
 	 */
 	public record Parts(boolean running, boolean camTimed, boolean piped, boolean throttled, boolean diesel,
-						boolean gasoline, float lubrication, boolean sump, boolean mafReading, boolean lambdaReading,
-						boolean governing, int precision, boolean rotorHousingTurning) {
+						boolean gasoline, float lubrication, boolean sump, boolean mafReading,
+						boolean governing, boolean commanded, int precision, boolean rotorHousingTurning) {
 	}
 
 	public static Set<Milestone> reachedParts(Parts p) {
@@ -269,10 +284,10 @@ public final class EngineMilestones {
 		}
 		if (p.mafReading())
 			reached.add(Milestone.MAF_READING);
-		if (p.lambdaReading())
-			reached.add(Milestone.LAMBDA_READING);
 		if (p.governing())
 			reached.add(Milestone.GOVERNOR_ACTIVE);
+		if (p.governing() && p.commanded())
+			reached.add(Milestone.GOVERNOR_COMMANDED);
 		if (PrecisionParts.has(p.precision(), PrecisionParts.BORE))
 			reached.add(Milestone.PRECISION_BORE);
 		if (PrecisionParts.has(p.precision(), PrecisionParts.HEAD))
@@ -335,13 +350,9 @@ public final class EngineMilestones {
 				reached.add(Milestone.EVEN_FIRING);
 			if (s.mafTrimming())
 				reached.add(Milestone.MAF_TRIM);
-			if (s.lambdaBalanced() && s.rpm() >= DIALED_IN_RPM)
-				reached.add(Milestone.LAMBDA_LOCK);
+			if (s.mafEnriching())
+				reached.add(Milestone.MAF_ENRICH);
 		}
-		// Fuel cut for a moment leaves nothing firing, so this is not tied to running
-		if (s.limiting())
-			reached.add(Milestone.REV_LIMITED);
-
 		if (s.fouling() >= FOULED)
 			reached.add(Milestone.FOULED_PLUG);
 		if (s.dilution() >= THINNED)

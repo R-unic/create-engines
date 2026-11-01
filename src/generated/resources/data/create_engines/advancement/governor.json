@@ -1,5 +1,5 @@
 {
-  "parent": "create_engines:rev_limiter",
+  "parent": "create_engines:crankshaft",
   "criteria": {
     "governor": {
       "conditions": {

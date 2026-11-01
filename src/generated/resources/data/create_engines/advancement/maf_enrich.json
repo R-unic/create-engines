@@ -1,0 +1,29 @@
+{
+  "parent": "create_engines:maf_sensor",
+  "criteria": {
+    "maf_enrich": {
+      "conditions": {
+        "event": "maf_enrich"
+      },
+      "trigger": "create_engines:event"
+    }
+  },
+  "display": {
+    "description": {
+      "translate": "advancement.create_engines.maf_enrich.desc"
+    },
+    "icon": {
+      "count": 1,
+      "id": "create_engines:maf_sensor"
+    },
+    "title": {
+      "translate": "advancement.create_engines.maf_enrich"
+    }
+  },
+  "requirements": [
+    [
+      "maf_enrich"
+    ]
+  ],
+  "sends_telemetry_event": true
+}

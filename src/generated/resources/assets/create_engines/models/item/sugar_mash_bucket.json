@@ -1,0 +1,5 @@
+{
+  "parent": "neoforge:item/bucket",
+  "fluid": "create_engines:sugar_mash",
+  "loader": "neoforge:fluid_container"
+}

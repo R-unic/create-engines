@@ -15,7 +15,7 @@ import org.jetbrains.annotations.Nullable;
 import com.createengines.advancement.Achievements;
 import com.createengines.advancement.Milestone;
 import com.createengines.config.CEConfig;
-import com.createengines.content.airflow.LambdaSensorBlockEntity;
+import com.createengines.content.airflow.HeatExchangerBlockEntity;
 import com.createengines.content.airflow.MafSensorBlockEntity;
 import com.createengines.content.airflow.PortKind;
 import com.createengines.content.airflow.ThrottleBlockEntity;
@@ -28,7 +28,6 @@ import com.createengines.content.head.CylinderHeadBlockEntity;
 import com.createengines.content.head.GalleryMember;
 import com.createengines.content.governor.GovernorBlockEntity;
 import com.createengines.content.rotor.RotorHousingBlockEntity;
-import com.createengines.content.limiter.RevLimiterBlockEntity;
 import com.createengines.content.starter.StarterBlockEntity;
 import com.createengines.content.sump.SumpBlockEntity;
 import com.createengines.content.supercharger.SuperchargerBlockEntity;
@@ -47,7 +46,6 @@ import com.createengines.engine.sim.FuelSupply;
 import com.createengines.engine.sim.Governor;
 import com.createengines.engine.sim.IgnitionSource;
 import com.createengines.engine.sim.Mixture;
-import com.createengines.engine.sim.RevLimiter;
 import com.createengines.engine.sim.Roughness;
 import com.createengines.engine.sim.Sensors;
 import com.createengines.engine.sim.Throttle;
@@ -147,17 +145,17 @@ public final class EngineController {
 	private @Nullable BlockPos activeStarter;
 	private EngineState previousState = EngineState.STALLED;
 	private final Map<Milestone, Integer> milestoneTicks = new EnumMap<>(Milestone.class);
-	private final RevLimiter revLimiter = new RevLimiter();
 	private final Governor governor = new Governor();
 	/** Ticks the governor has held the engine on its setting while carrying a load. */
 	private int governedTicks;
 	/** What the engine-management blocks last saw, for milestones. */
-	private boolean limiting;
 	private boolean mafTrimming;
-	private boolean lambdaPresent;
+	private boolean mafEnriching;
 	private boolean mafReading;
-	private boolean lambdaReading;
+	/** Heat level of the hottest exhaust heat exchanger on the engine, {@code HeatRecovery.NONE} to {@code SEETHE}. */
+	private int exchangerLevel;
 	private boolean governing;
+	private boolean commanded;
 	/** The fuel gallery shared by every head, for telling which fuel the engine burns. */
 	private final GalleryFuelSupply fuels;
 
@@ -220,6 +218,8 @@ public final class EngineController {
 			model.ignition = cylinder.sparkPlug() ? plugs : IgnitionSource.NONE;
 			model.intakeFactor = flow(cylinder.intake());
 			model.exhaustFactor = flow(cylinder.exhaust());
+			if (!Double.isNaN(cylinder.lobeLeaderTdc()))
+				model.shareLobe(cylinder.lobeLeaderTdc());
 			models.add(model);
 			working.add(model);
 		}
@@ -388,7 +388,6 @@ public final class EngineController {
 		readThrottles(level);
 		readTurbos(level);
 		readSuperchargers(level);
-		readLimiters(level);
 		readGovernors(level);
 		if (ticks % RACK_INTERVAL == 1)
 			readFuelRacks(level);
@@ -518,7 +517,7 @@ public final class EngineController {
 			.isEmpty())
 			return false;
 		for (CylinderModel cylinder : turbo.turbine())
-			if (!(cylinder.fuelCut || cylinder.rack < 0.3 || cylinder.fuelTrim < 0.3 || cylinder.governor < 0.3))
+			if (!(cylinder.rack < 0.3 || cylinder.fuelTrim < 0.3 || cylinder.governor < 0.3))
 				return false;
 		return true;
 	}
@@ -642,36 +641,17 @@ public final class EngineController {
 	}
 
 	/**
-	 * Rev limiters on the engine: the lowest limit set governs, and every injector is held shut while the crank is at or
-	 * above it until it has fallen a little below. Read every tick, because it is a safety: a changed limit counts at once.
-	 */
-	private void readLimiters(Level level) {
-		double limit = Double.MAX_VALUE;
-		for (BlockPos pos : layout.limiters())
-			if (level.getBlockEntity(pos) instanceof RevLimiterBlockEntity limiter)
-				limit = Math.min(limit, limiter.limit());
-		boolean fitted = limit < Double.MAX_VALUE;
-		if (!fitted)
-			revLimiter.reset();
-		boolean cut = fitted && revLimiter.update(sim.rpm(), limit);
-		limiting = cut;
-		for (CylinderModel model : sim.cylinders())
-			model.fuelCut = cut;
-		float rpm = (float) sim.rpm();
-		for (BlockPos pos : layout.limiters())
-			if (level.getBlockEntity(pos) instanceof RevLimiterBlockEntity limiter)
-				limiter.reading(rpm, cut);
-	}
-
-	/**
 	 * Governors on the engine: the lowest speed set governs, and the rack (the throttle, in a spark engine) is moved to
 	 * hold the crank there. Read every tick because a governor is a feedback loop: it has to keep up with the load.
 	 */
 	private void readGovernors(Level level) {
 		double target = Double.MAX_VALUE;
+		double setting = Double.MAX_VALUE;
 		for (BlockPos pos : layout.governors())
-			if (level.getBlockEntity(pos) instanceof GovernorBlockEntity be)
-				target = Math.min(target, be.target());
+			if (level.getBlockEntity(pos) instanceof GovernorBlockEntity be) {
+				target = Math.min(target, be.governedSpeed());
+				setting = Math.min(setting, be.target());
+			}
 		boolean fitted = target < Double.MAX_VALUE;
 		double position = 1;
 		if (fitted)
@@ -684,22 +664,24 @@ public final class EngineController {
 			&& position > 0.05 && position < 0.95;
 		governedTicks = holding ? governedTicks + 1 : 0;
 		governing = fitted && !sim.isStopped() && position < 0.95;
+		// A redstone signal has turned the governed speed down
+		commanded = governing && target < setting - 0.5;
 		float rpm = (float) sim.rpm();
 		for (BlockPos pos : layout.governors())
 			if (level.getBlockEntity(pos) instanceof GovernorBlockEntity be)
-				be.reading(rpm, (float) position);
+				be.reading(rpm, (float) position, (float) be.governedSpeed());
 	}
 
 	/**
 	 * Tells each sensor in the engine's pipes what its network is doing. A MAF sensor gets the breath of the cylinders
-	 * drawing on its intake and how much of their shot it held back; a lambda sensor gets the mixture of the cylinders
-	 * that fired into its exhaust. A stopped engine reads nothing, rather than its last breath for ever.
+	 * drawing on its intake and how much of their shot it held back or added; an exhaust heat exchanger gets the heat of
+	 * the cylinders that fired into its exhaust. A stopped engine reads nothing, rather than its last breath for ever.
 	 */
 	private void readSensors(Level level) {
 		mafTrimming = false;
-		lambdaPresent = false;
+		mafEnriching = false;
 		mafReading = false;
-		lambdaReading = false;
+		exchangerLevel = 0;
 		boolean running = !sim.isStopped();
 		for (int port = 0; port < layout.ports()
 			.size(); port++) {
@@ -711,9 +693,9 @@ public final class EngineController {
 			boolean intake = network.kind() == PortKind.INTAKE;
 			double charge = 0;
 			double cut = 0;
-			double mixture = 0;
+			double added = 0;
+			double heat = 0;
 			int breathing = 0;
-			int firing = 0;
 			for (int i = 0; running && i < models.size(); i++) {
 				CylinderModel model = models.get(i);
 				if (model == null)
@@ -725,27 +707,33 @@ public final class EngineController {
 					breathing++;
 					charge += Sensors.airCharge(model.spec, last.freshAirAtInjection);
 					cut += last.mafCut;
-				} else if (!intake && placed.exhaust() == port && last.result.fired() && last.equivalence > 0) {
-					firing++;
-					mixture += last.equivalence;
+					added += last.mafAdded;
 				}
+				if (!intake && placed.exhaust() == port)
+					heat += model.exhaustHeatLastTick();
 			}
 			float meanCharge = breathing == 0 ? 0 : (float) (charge / breathing);
 			float meanCut = breathing == 0 ? 0 : (float) (cut / breathing);
-			float meanMixture = firing == 0 ? Float.NaN : (float) (mixture / firing);
+			float meanAdded = breathing == 0 ? 0 : (float) (added / breathing);
+			// Exchangers on one network split its heat between them
+			int exchangers = 0;
+			for (BlockPos pos : network.sensors())
+				if (!intake && level.getBlockEntity(pos) instanceof HeatExchangerBlockEntity)
+					exchangers++;
+			float heatShare = exchangers == 0 ? 0 : (float) (heat / EngineSimulation.TICK / exchangers);
 			if (intake) {
 				mafReading |= breathing > 0;
 				mafTrimming |= breathing > 0 && meanCut >= EngineMilestones.MAF_TRIMMING;
-			} else {
-				lambdaPresent = true;
-				lambdaReading |= firing > 0;
+				mafEnriching |= breathing > 0 && meanAdded >= EngineMilestones.MAF_ENRICHING;
 			}
 			for (BlockPos pos : network.sensors()) {
 				var be = level.getBlockEntity(pos);
 				if (be instanceof MafSensorBlockEntity maf && intake)
-					maf.reading(meanCharge, meanCut);
-				else if (be instanceof LambdaSensorBlockEntity lambda && !intake)
-					lambda.reading(meanMixture);
+					maf.reading(meanCharge, meanCut, meanAdded);
+				else if (be instanceof HeatExchangerBlockEntity exchanger && !intake) {
+					exchanger.reading(heatShare);
+					exchangerLevel = Math.max(exchangerLevel, exchanger.heatLevel());
+				}
 			}
 		}
 	}
@@ -954,7 +942,7 @@ public final class EngineController {
 				(float) cylinder.tdcAngle(), timing, charge, fuel == null ? Float.NaN : (float) fuel.autoignitionTemp(),
 				cylinder.lobe(), outlets, last != null && last.lean(),
 				last == null || last.equivalence <= 0 ? Float.NaN : (float) last.equivalence, cylinder.sparkPlug(),
-				model == null ? 0 : (float) model.fouling()));
+				model == null ? 0 : (float) model.fouling(), model == null ? 0 : (float) model.lobeShift()));
 		}
 
 		for (BlockPos pos : layout.batteries())
@@ -1004,7 +992,7 @@ public final class EngineController {
 			Float.NaN, last == null || last.fuelInjected <= 0 ? Float.NaN : (float) last.compressionTemp,
 			fuel == null ? Float.NaN : (float) fuel.autoignitionTemp(), null, outlets, last != null && last.lean(),
 			last == null || last.equivalence <= 0 ? Float.NaN : (float) last.equivalence, cylinder.sparkPlug(),
-			model == null ? 0 : (float) model.fouling());
+			model == null ? 0 : (float) model.fouling(), 0);
 	}
 
 	private void syncSuperchargers(Level level) {
@@ -1094,6 +1082,7 @@ public final class EngineController {
 		float rpm = (float) sim.rpm();
 		reportInduction(level, state);
 		reportRotary(level, state);
+		reportRefining(level, state);
 		reportMechanics(level, state);
 		reportParts(level, state, firing);
 		EngineMilestones.Snapshot snapshot = new EngineMilestones.Snapshot(state, previousState, rpm,
@@ -1102,7 +1091,7 @@ public final class EngineController {
 			rich, boost, dumping, fouling, firing > 0 && balanced, (float) sim.lubrication()
 				.dilution(),
 			pushrod, firingAngles.size() == cylinders && EngineMilestones.evenFiring(toArray(firingAngles)),
-			mafTrimming, lambdaPresent && firing > 0 && balanced, limiting && sim.rpm() > 0,
+			mafTrimming, mafEnriching,
 			governedTicks >= GOVERNED_TICKS, precision && cylinders >= EngineMilestones.EVEN_FIRING_CYLINDERS,
 			layout.lines() > 1);
 		previousState = state;
@@ -1151,7 +1140,7 @@ public final class EngineController {
 				.effective(),
 			!layout.sumps()
 				.isEmpty(),
-			mafReading, lambdaReading, governing, precision, rotorHousing && !sim.isStopped())));
+			mafReading, governing, commanded, precision, rotorHousing && !sim.isStopped())));
 	}
 
 	/** Credits the operator with a flywheel that smooths a running engine, variable vanes at work, and anti-lag. */
@@ -1167,6 +1156,7 @@ public final class EngineController {
 		// Banks: firing pistons that share a throw, on sides a quarter turn apart (a vee) or opposite (flat)
 		Map<BlockPos, List<Direction>> bores = new java.util.HashMap<>();
 		int firing = 0;
+		boolean sharedLobe = false;
 		for (int i = 0; i < models.size(); i++) {
 			CylinderModel model = models.get(i);
 			Cylinder placed = layout.cylinders()
@@ -1174,6 +1164,8 @@ public final class EngineController {
 			if (model == null || placed.rotary() || !model.lastCycle().result.fired())
 				continue;
 			firing++;
+			// A cylinder on a shared lobe is timed at an offset from the cylinder the lobe's angle sets
+			sharedLobe |= !Double.isNaN(placed.lobeLeaderTdc()) && model.lobeShift() > 0.5;
 			bores.computeIfAbsent(placed.throwPos(), $ -> new ArrayList<>())
 				.add(placed.bore());
 		}
@@ -1190,7 +1182,14 @@ public final class EngineController {
 				}
 		award(level, EngineMilestones.reachedMechanics(new EngineMilestones.Mechanics(state == EngineState.RUNNING,
 			(float) sim.rpm(), layout.flywheelInertia(), roughness, vaneBoost, antiLagBoost, firing, vee, flat,
-			ticks - dynoReadTick < 2 * SYNC_INTERVAL && rated && rating == null)));
+			ticks - dynoReadTick < 2 * SYNC_INTERVAL && rated && rating == null, sharedLobe)));
+	}
+
+	/** Credits the operator with an engine burning ethanol, and one whose exhaust heat is cooking a basin's recipe. */
+	private void reportRefining(Level level, EngineState state) {
+		Fluid fuel = fuels.fluid();
+		award(level, EngineMilestones.reachedRefining(state == EngineState.RUNNING,
+			fuel != null && fuel.isSame(CEFluids.ETHANOL.get()), exchangerLevel));
 	}
 
 	/** Credits the operator with a running rotary engine, a high-revving one, and one with several rotors. */

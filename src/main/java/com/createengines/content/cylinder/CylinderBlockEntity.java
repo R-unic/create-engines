@@ -6,6 +6,7 @@ import org.jetbrains.annotations.Nullable;
 
 import org.joml.Vector3f;
 
+import com.createengines.config.CEClientConfig;
 import com.createengines.content.EffectRate;
 import com.createengines.content.EnginePoses;
 import com.createengines.content.airflow.PortOpeningBlock;
@@ -118,7 +119,7 @@ public class CylinderBlockEntity extends SmartBlockEntity implements IHaveGoggle
 		}
 		float renderTime = AnimationTickHolder.getRenderTime(level);
 		float camAngle = (float) Math.abs(lobe.rotation(renderTime) % 360);
-		double cycle = CylinderModel.camCycleAngle(camAngle, lobe.lobeAngle());
+		double cycle = CylinderModel.camCycleAngle(camAngle, lobe.lobeAngle() + current.lobeShift());
 		double previous = lastCamCycle;
 		lastCamCycle = cycle;
 		if (Double.isNaN(previous) || lobe.getTheoreticalSpeed() == 0)
@@ -146,8 +147,12 @@ public class CylinderBlockEntity extends SmartBlockEntity implements IHaveGoggle
 			48, false) == null)
 			return;
 		RandomSource random = level.random;
-		level.playLocalSound(worldPosition, CESounds.CYLINDER_FIRE.get(), SoundSource.BLOCKS, 1f,
-			0.92f + random.nextFloat() * 0.16f, false);
+		float volume = CEClientConfig.bangVolume();
+		if (volume > 0)
+			level.playLocalSound(worldPosition, CESounds.CYLINDER_FIRE.get(), SoundSource.BLOCKS, volume,
+				0.92f + random.nextFloat() * 0.16f, false);
+		if (!CEClientConfig.particles())
+			return;
 		Direction bore = getBlockState().getValue(CylinderBlock.FACING);
 		for (int i = 0; i < 6; i++) {
 			Vec3 at = chamberPoint(bore, ROOF - random.nextDouble() * 0.1);
@@ -165,6 +170,8 @@ public class CylinderBlockEntity extends SmartBlockEntity implements IHaveGoggle
 	 * last cycle's result, and a blocked valve shows nothing moving through it.
 	 */
 	private void tickChamber(CylinderStatus current, double cycle, float renderTime) {
+		if (!CEClientConfig.particles())
+			return;
 		if (level.getNearestPlayer(worldPosition.getX() + 0.5, worldPosition.getY() + 0.5, worldPosition.getZ() + 0.5,
 			24, false) == null)
 			return;
@@ -256,7 +263,7 @@ public class CylinderBlockEntity extends SmartBlockEntity implements IHaveGoggle
 
 	/** Smoke from the exhaust when the exhaust valve opens after a firing. */
 	private void tickExhaust(CylinderStatus current) {
-		if (!puffs.allow(level))
+		if (!CEClientConfig.particles() || !puffs.allow(level))
 			return;
 		ParticleOptions particle;
 		int count;
@@ -323,7 +330,7 @@ public class CylinderBlockEntity extends SmartBlockEntity implements IHaveGoggle
 			CycleResult result = current.result();
 			ChatFormatting colour = result.fired() ? ChatFormatting.GREEN
 				: result == CycleResult.NONE ? ChatFormatting.GRAY
-					: result == CycleResult.FUEL_CUT ? ChatFormatting.GOLD : ChatFormatting.RED;
+					: ChatFormatting.RED;
 			GoggleLines.add(CELang.translate("goggles.cycle." + result.name()
 					.toLowerCase(java.util.Locale.ROOT))
 				.style(colour), tooltip, 1);

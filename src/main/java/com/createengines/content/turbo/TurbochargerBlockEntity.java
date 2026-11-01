@@ -5,6 +5,7 @@ import java.util.Locale;
 
 import org.jetbrains.annotations.Nullable;
 
+import com.createengines.config.CEClientConfig;
 import com.createengines.engine.TurboStatus;
 import com.createengines.engine.sim.Turbocharger;
 import com.createengines.engine.topology.EngineMember;
@@ -144,7 +145,7 @@ public class TurbochargerBlockEntity extends SmartBlockEntity implements IHaveGo
 			float target = status == null ? 0 : status.spool() * WHEEL_DEGREES_PER_TICK;
 			wheelSpeed += (target - wheelSpeed) * 0.15f;
 			wheelAngle = (wheelAngle + wheelSpeed) % 360;
-			if (status != null && status.antiLag() && level.random.nextInt(2) == 0)
+			if (status != null && status.antiLag() && CEClientConfig.particles() && level.random.nextInt(2) == 0)
 				popOut();
 		}
 	}

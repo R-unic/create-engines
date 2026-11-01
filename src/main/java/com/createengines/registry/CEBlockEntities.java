@@ -3,7 +3,7 @@ package com.createengines.registry;
 import static com.createengines.CreateEngines.REGISTRATE;
 
 import com.createengines.content.EnginePartRenderers;
-import com.createengines.content.airflow.LambdaSensorBlockEntity;
+import com.createengines.content.airflow.HeatExchangerBlockEntity;
 import com.createengines.content.airflow.MafSensorBlockEntity;
 import com.createengines.content.airflow.ThrottleBlockEntity;
 import com.createengines.content.alternator.AlternatorBlockEntity;
@@ -21,7 +21,6 @@ import com.createengines.content.cylinder.CylinderVisual;
 import com.createengines.content.head.CylinderHeadBlockEntity;
 import com.createengines.content.head.CylinderHeadVisual;
 import com.createengines.content.governor.GovernorBlockEntity;
-import com.createengines.content.limiter.RevLimiterBlockEntity;
 import com.createengines.content.rotor.RotorHousingBlockEntity;
 import com.createengines.content.rotor.RotorHousingVisual;
 import com.createengines.content.starter.StarterBlockEntity;
@@ -88,14 +87,9 @@ public final class CEBlockEntities {
 		.validBlocks(CEBlocks.MAF_SENSOR)
 		.register();
 
-	public static final BlockEntityEntry<LambdaSensorBlockEntity> LAMBDA_SENSOR = REGISTRATE
-		.blockEntity("lambda_sensor", LambdaSensorBlockEntity::new)
-		.validBlocks(CEBlocks.LAMBDA_SENSOR)
-		.register();
-
-	public static final BlockEntityEntry<RevLimiterBlockEntity> REV_LIMITER = REGISTRATE
-		.blockEntity("rev_limiter", RevLimiterBlockEntity::new)
-		.validBlocks(CEBlocks.REV_LIMITER)
+	public static final BlockEntityEntry<HeatExchangerBlockEntity> HEAT_EXCHANGER = REGISTRATE
+		.blockEntity("heat_exchanger", HeatExchangerBlockEntity::new)
+		.validBlocks(CEBlocks.HEAT_EXCHANGER)
 		.register();
 
 	public static final BlockEntityEntry<GovernorBlockEntity> GOVERNOR = REGISTRATE

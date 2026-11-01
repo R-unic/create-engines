@@ -1,0 +1,29 @@
+{
+  "type": "create:mixing",
+  "heat_requirement": "heated",
+  "ingredients": [
+    {
+      "type": "neoforge:single",
+      "amount": 250,
+      "fluid": "create_engines:plant_oil"
+    },
+    {
+      "type": "neoforge:single",
+      "amount": 50,
+      "fluid": "create_engines:ethanol"
+    },
+    {
+      "item": "minecraft:bone_meal"
+    }
+  ],
+  "results": [
+    {
+      "amount": 300,
+      "id": "create_engines:diesel"
+    },
+    {
+      "amount": 50,
+      "id": "create_engines:glycerin"
+    }
+  ]
+}

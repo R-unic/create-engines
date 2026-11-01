@@ -1,0 +1,24 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "key": {
+    "C": {
+      "item": "create:copper_sheet"
+    },
+    "M": {
+      "item": "create_engines:exhaust_manifold"
+    },
+    "B": {
+      "item": "create:brass_sheet"
+    }
+  },
+  "pattern": [
+    "CCC",
+    " M ",
+    "CBC"
+  ],
+  "result": {
+    "count": 1,
+    "id": "create_engines:heat_exchanger"
+  }
+}

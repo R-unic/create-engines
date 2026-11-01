@@ -1,0 +1,29 @@
+{
+  "parent": "create_engines:spark_plug",
+  "criteria": {
+    "ethanol": {
+      "conditions": {
+        "event": "ethanol_burned"
+      },
+      "trigger": "create_engines:event"
+    }
+  },
+  "display": {
+    "description": {
+      "translate": "advancement.create_engines.ethanol.desc"
+    },
+    "icon": {
+      "count": 1,
+      "id": "create_engines:ethanol_bucket"
+    },
+    "title": {
+      "translate": "advancement.create_engines.ethanol"
+    }
+  },
+  "requirements": [
+    [
+      "ethanol"
+    ]
+  ],
+  "sends_telemetry_event": true
+}

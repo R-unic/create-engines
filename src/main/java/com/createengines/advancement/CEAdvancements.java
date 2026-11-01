@@ -82,9 +82,24 @@ public final class CEAdvancements {
 		on("sump", "engine_oil", () -> CEBlocks.SUMP.get(), AdvancementType.TASK, Milestone.SUMP_OILING,
 			"Oil Pan", "Run an engine kept oiled from an Oil Sump set against its crankshaft or head.");
 
+		// Exhaust heat
+		on("heat_exchanger", "pipework", () -> CEBlocks.HEAT_EXCHANGER.get(), AdvancementType.TASK,
+			Milestone.HEAT_RECOVERED, "Waste Not",
+			"Run an engine whose exhaust runs through an Exhaust Heat Exchanger hot enough to cook heated basin recipes, with the basin on top of it.");
+		on("superheat", "heat_exchanger", () -> CEBlocks.HEAT_EXCHANGER.get(), AdvancementType.GOAL,
+			Milestone.SUPERHEAT_RECOVERED, "Exhausting Work",
+			"Run a big engine whose exhaust heat exchanger is hot enough to superheat a basin, as a Blaze Burner fed blaze cake would.");
+
 		// Ignition and electrics
 		on("spark_plug", "cylinder_head", () -> CEItems.SPARK_PLUG.get(), AdvancementType.TASK, Milestone.SPARK_ENGINE,
 			"Spark of Genius", "Run an engine whose fuel is lit by a Spark Plug, with a Battery to supply the sparks.");
+		on("ethanol", "spark_plug", () -> CEFluids.ETHANOL.getBucket().orElseThrow(), AdvancementType.TASK,
+			Milestone.ETHANOL_BURNED, "Home Brew",
+			"Run a spark engine on Ethanol, fermented from crops and distilled in a heated basin. Its autoignition point is so high that boost will not light it early.");
+		has("sugar_mash", "diesel", () -> CEFluids.SUGAR_MASH.getBucket().orElseThrow(), "Mash Up",
+			"Press sugar cane, beetroot or potatoes with water in a basin into Sugar Mash, the start of ethanol.");
+		has("glycerin", "ethanol", () -> CEFluids.GLYCERIN.getBucket().orElseThrow(), "Byproduct",
+			"Cook plant oil with ethanol and bone meal in a heated basin: you get more diesel than coal would give, and Glycerin on the side.");
 		on("alternator", "spark_plug", () -> CEBlocks.ALTERNATOR.get(), AdvancementType.TASK,
 			Milestone.ALTERNATOR_CHARGING, "Keeping the Lights On",
 			"Turn an Alternator's shaft to put charge back into a Battery.");
@@ -109,6 +124,8 @@ public final class CEAdvancements {
 			"Smooth Operator", "Run an engine of four or more cylinders whose firings are spaced evenly round the cycle.");
 		on("pushrod_cam", "camshaft", () -> CEBlocks.CAM_LOBE.get(), AdvancementType.TASK, Milestone.PUSHROD_CAM,
 			"Push It", "Run an engine whose cam sits beside the cylinder block and works the valves through pushrods.");
+		on("valley_cam", "pushrod_cam", () -> CEBlocks.CAM_LOBE.get(), AdvancementType.GOAL, Milestone.VALLEY_CAM,
+			"Cam in the Valley", "Run an engine where one cam lobe times cylinders on different banks of the same crank throw.");
 		on("high_revs", "alive", () -> CEBlocks.CAMSHAFT.get(), AdvancementType.TASK, Milestone.HIGH_REVS,
 			"Revving High", "Turn a running engine faster than 200 RPM.");
 		on("redline", "high_revs", () -> CEBlocks.CAMSHAFT.get(), AdvancementType.GOAL, Milestone.REDLINE,
@@ -160,21 +177,17 @@ public final class CEAdvancements {
 
 		// Engine management
 		on("maf_sensor", "throttle", () -> CEBlocks.MAF_SENSOR.get(), AdvancementType.TASK, Milestone.MAF_READING,
-			"Weighing the Air", "Run an engine with a MAF Sensor in its intake, which caps every shot at the air the cylinder drew in.");
+			"Weighing the Air", "Run an engine with a MAF Sensor in its intake, which sets every shot from the air the cylinder drew in.");
 		on("maf_trim", "maf_sensor", () -> CEBlocks.MAF_SENSOR.get(), AdvancementType.TASK, Milestone.MAF_TRIM,
 			"Penny Pincher", "Run an engine whose MAF sensor is holding every shot back by a fifth or more to match the air.");
-		on("lambda_sensor", "pipework", () -> CEBlocks.LAMBDA_SENSOR.get(), AdvancementType.TASK,
-			Milestone.LAMBDA_READING, "Breath Test",
-			"Run an engine with a Lambda Sensor in its exhaust, reading the mixture the exhaust gas says was burned.");
-		on("lambda_lock", "lambda_sensor", () -> CEBlocks.LAMBDA_SENSOR.get(), AdvancementType.GOAL,
-			Milestone.LAMBDA_LOCK, "Right on Lambda",
-			"Run an engine above 100 RPM on a balanced mixture with a Lambda Sensor in its exhaust.");
-		on("rev_limiter", "crankshaft", () -> CEBlocks.REV_LIMITER.get(), AdvancementType.TASK,
-			Milestone.REV_LIMITED, "Know Your Limits",
-			"Rev an engine up to a Rev Limiter's setting and let it cut the fuel.");
+		on("maf_enrich", "maf_sensor", () -> CEBlocks.MAF_SENSOR.get(), AdvancementType.TASK, Milestone.MAF_ENRICH,
+			"Topping Up", "Run an engine whose MAF sensor is adding a fifth or more to every shot because the air could burn more than the injector was set to give.");
 
-		on("governor", "rev_limiter", () -> CEBlocks.GOVERNOR.get(), AdvancementType.TASK, Milestone.GOVERNOR_ACTIVE,
+		on("governor", "crankshaft", () -> CEBlocks.GOVERNOR.get(), AdvancementType.TASK, Milestone.GOVERNOR_ACTIVE,
 			"Steady as She Goes", "Run an engine with a Governor pulling the fuel rack back to hold it at a set speed.");
+		on("governor_commanded", "governor", () -> CEBlocks.GOVERNOR.get(), AdvancementType.TASK,
+			Milestone.GOVERNOR_COMMANDED, "Speed Dial",
+			"Power a Governor with redstone so it holds the engine at a share of its setting.");
 		on("governed", "governor", () -> CEBlocks.GOVERNOR.get(), AdvancementType.GOAL, Milestone.GOVERNED,
 			"Cruise Control", "Let a Governor hold a loaded engine on its setting for ten seconds.");
 

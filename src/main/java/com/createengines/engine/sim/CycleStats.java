@@ -20,8 +20,8 @@ public final class CycleStats {
 	public int flameOut;
 	/** Share of the shot a MAF sensor held back because the air could not burn it: 0 (none) to 1 (all of it). */
 	public double mafCut;
-	/** A rev limiter cut the injector this cycle. */
-	public boolean limited;
+	/** Share of the shot a MAF sensor added because the air could burn more than the injector was set to give: 0 to 1. */
+	public double mafAdded;
 	public CycleResult result = CycleResult.NONE;
 
 	public double unburnedFraction() {
@@ -49,7 +49,7 @@ public final class CycleStats {
 		deadSparks = other.deadSparks;
 		flameOut = other.flameOut;
 		mafCut = other.mafCut;
-		limited = other.limited;
+		mafAdded = other.mafAdded;
 		result = other.result;
 	}
 
@@ -65,7 +65,7 @@ public final class CycleStats {
 		deadSparks = 0;
 		flameOut = 0;
 		mafCut = 0;
-		limited = false;
+		mafAdded = 0;
 		result = CycleResult.NONE;
 	}
 }

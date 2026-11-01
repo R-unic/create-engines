@@ -154,6 +154,9 @@ public class CamshaftBlockEntity extends KineticBlockEntity implements EngineMem
 		if (isLobe()) {
 			GoggleLines.add(CELang.translate("goggles.lobe_cylinders", actuated)
 				.style(ChatFormatting.GRAY), tooltip, 1);
+			if (actuated > 1)
+				GoggleLines.add(CELang.translate("goggles.lobe_shared")
+					.style(ChatFormatting.DARK_GRAY), tooltip, 2);
 			if (!Float.isNaN(timingError))
 				GoggleLines.add(CELang.translate("goggles.timing", timingText(timingError))
 					.style(Math.abs(timingError) < 7.5f ? ChatFormatting.GREEN : ChatFormatting.GOLD), tooltip, 1);

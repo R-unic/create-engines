@@ -124,6 +124,59 @@ class GovernorTest {
 			assertEquals(plain[i], governed[i], 1e-9);
 	}
 
+	/** Fuel drawn in 20 seconds with nothing to drive, governed to {@code target} unless that is 0. */
+	private static double fuelUsed(double target) {
+		EngineSimulation sim = engine(4, FuelSpec.DIESEL, false);
+		double[] used = {0};
+		for (CylinderModel cylinder : sim.cylinders()) {
+			FuelSupply supply = cylinder.fuelSupply;
+			cylinder.fuelSupply = new FuelSupply() {
+				@Override
+				public double draw(double mb) {
+					used[0] += mb;
+					return supply.draw(mb);
+				}
+
+				@Override
+				public FuelSpec fuel() {
+					return supply.fuel();
+				}
+			};
+		}
+		run(sim, new Governor(), target, 0, 20, null);
+		return used[0];
+	}
+
+	/** With nothing to drive, a governed engine eases off the fuel where an ungoverned one races on full shots. */
+	@Test
+	void anUnloadedGovernedEngineBurnsLessFuelThanARacingOne() {
+		double racing = fuelUsed(0);
+		double governed = fuelUsed(80);
+		assertTrue(governed < racing * 0.6, "governed " + governed + " mB against racing " + racing + " mB");
+	}
+
+	/** No signal leaves the setting alone; one asks for that share of it, 15 for all of it, and never a stall. */
+	@Test
+	void aRedstoneSignalScalesTheGovernedSpeed() {
+		assertEquals(120, Governor.commanded(120, 0), 1e-9);
+		assertEquals(120, Governor.commanded(120, 15), 1e-9);
+		assertEquals(64, Governor.commanded(120, 8), 1e-9);
+		assertEquals(40, Governor.commanded(120, 5), 1e-9);
+		assertEquals(Governor.MIN_COMMANDED, Governor.commanded(120, 1), 1e-9);
+		assertEquals(Governor.MIN_COMMANDED, Governor.commanded(Governor.MIN_COMMANDED, 3), 1e-9);
+		assertEquals(120, Governor.commanded(120, 40), 1e-9, "a signal can't ask for more than the setting");
+	}
+
+	/** A governor turned down by redstone holds the lower speed, steadily. */
+	@Test
+	void aCommandedGovernorHoldsTheLowerSpeed() {
+		EngineSimulation sim = engine(4, FuelSpec.DIESEL, false);
+		double[] range = {1e9, 0};
+		double[] state = run(sim, new Governor(), Governor.commanded(120, 8), 0, 20, range);
+		assertEquals(64, state[0], 3, "commanded speed");
+		assertTrue(range[1] - range[0] < 8, "steady: " + range[0] + " to " + range[1]);
+	}
+
 	@Test
 	void theSignalIsFifteenWhenOpenAndZeroWhenShut() {
 		assertEquals(15, Governor.signal(1));

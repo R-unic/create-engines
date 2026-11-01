@@ -1,0 +1,33 @@
+{
+  "parent": "create_engines:diesel",
+  "criteria": {
+    "sugar_mash": {
+      "conditions": {
+        "items": [
+          {
+            "items": "create_engines:sugar_mash_bucket"
+          }
+        ]
+      },
+      "trigger": "minecraft:inventory_changed"
+    }
+  },
+  "display": {
+    "description": {
+      "translate": "advancement.create_engines.sugar_mash.desc"
+    },
+    "icon": {
+      "count": 1,
+      "id": "create_engines:sugar_mash_bucket"
+    },
+    "title": {
+      "translate": "advancement.create_engines.sugar_mash"
+    }
+  },
+  "requirements": [
+    [
+      "sugar_mash"
+    ]
+  ],
+  "sends_telemetry_event": true
+}

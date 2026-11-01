@@ -58,14 +58,19 @@ public record CylinderSpec(double compressionRatio, double rodRatio, double inta
 	public static final CylinderSpec ROTARY =
 		new CylinderSpec(9.5, 1e-4, 32, 32, 0.5 * ROTARY_DISPLACEMENT, 0.02, 0.09, 0.05, 0.006, 0.07, ROTARY_DISPLACEMENT);
 
-	/** A rotary chamber with a precision injector fitted: it lights sooner and burns faster, as in a piston engine. */
+	/**
+	 * A rotary chamber with a precision injector fitted: it lights sooner and burns faster, as in a piston engine. The
+	 * server's rotary power setting scales the chamber's swept volume and the fuel it can burn.
+	 */
 	public static CylinderSpec buildRotary(boolean precisionInjector) {
-		if (!precisionInjector)
+		double power = Tuning.rotaryPower;
+		if (!precisionInjector && power == 1)
 			return ROTARY;
+		double delay = precisionInjector ? Tuning.blend(PRECISION_INJECTOR_DELAY, Tuning.precisionBonus) : 1;
+		double burn = precisionInjector ? Tuning.blend(PRECISION_INJECTOR_BURN, Tuning.precisionBonus) : 1;
 		return new CylinderSpec(ROTARY.compressionRatio, ROTARY.rodRatio, ROTARY.intakeFlow, ROTARY.exhaustFlow,
-			ROTARY.maxFuelPerShot, ROTARY.ignitionDelay * PRECISION_INJECTOR_DELAY,
-			ROTARY.burnDuration * PRECISION_INJECTOR_BURN, ROTARY.frictionStatic, ROTARY.frictionViscous, ROTARY.inertia,
-			ROTARY.displacement);
+			ROTARY.maxFuelPerShot * power, ROTARY.ignitionDelay * delay, ROTARY.burnDuration * burn, ROTARY.frictionStatic,
+			ROTARY.frictionViscous, ROTARY.inertia, ROTARY.displacement * power);
 	}
 
 	/**
@@ -88,24 +93,25 @@ public record CylinderSpec(double compressionRatio, double rodRatio, double inta
 		double frictionStatic = CRUDE.frictionStatic;
 		double frictionViscous = CRUDE.frictionViscous;
 		double inertia = CRUDE.inertia;
+		double bonus = Tuning.precisionBonus;
 		if (precisionBore) {
-			compression *= PRECISION_COMPRESSION;
-			frictionStatic *= PRECISION_BORE_STATIC;
-			frictionViscous *= PRECISION_BORE_VISCOUS;
+			compression *= Tuning.blend(PRECISION_COMPRESSION, bonus);
+			frictionStatic *= Tuning.blend(PRECISION_BORE_STATIC, bonus);
+			frictionViscous *= Tuning.blend(PRECISION_BORE_VISCOUS, bonus);
 		}
 		if (precisionHead) {
-			intake *= PRECISION_BREATHING;
-			exhaust *= PRECISION_BREATHING;
-			delay *= PRECISION_HEAD_DELAY;
+			intake *= Tuning.blend(PRECISION_BREATHING, bonus);
+			exhaust *= Tuning.blend(PRECISION_BREATHING, bonus);
+			delay *= Tuning.blend(PRECISION_HEAD_DELAY, bonus);
 		}
 		if (precisionPiston) {
-			inertia *= PRECISION_PISTON_INERTIA;
-			frictionStatic *= PRECISION_PISTON_STATIC;
-			frictionViscous *= PRECISION_PISTON_VISCOUS;
+			inertia *= Tuning.blend(PRECISION_PISTON_INERTIA, bonus);
+			frictionStatic *= Tuning.blend(PRECISION_PISTON_STATIC, bonus);
+			frictionViscous *= Tuning.blend(PRECISION_PISTON_VISCOUS, bonus);
 		}
 		if (precisionInjector) {
-			delay *= PRECISION_INJECTOR_DELAY;
-			burn *= PRECISION_INJECTOR_BURN;
+			delay *= Tuning.blend(PRECISION_INJECTOR_DELAY, bonus);
+			burn *= Tuning.blend(PRECISION_INJECTOR_BURN, bonus);
 		}
 		return new CylinderSpec(compression, CRUDE.rodRatio, intake, exhaust, CRUDE.maxFuelPerShot, delay, burn,
 			frictionStatic, frictionViscous, inertia);

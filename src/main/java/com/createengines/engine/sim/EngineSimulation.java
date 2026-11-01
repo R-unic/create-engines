@@ -239,9 +239,12 @@ public final class EngineSimulation {
 		// air, so the cylinder gets their average, whatever the number of them
 		Parallel intake = new Parallel();
 		Parallel exhaust = new Parallel();
+		// The server can scale boost, or switch forced induction off, in which case the turbines add no back-pressure either
+		double strength = Tuning.forcedInduction ? Tuning.boostStrength : 0;
+		double turbine = Tuning.forcedInduction ? 1 : 0;
 		for (Turbocharger turbo : turbos) {
-			double pressure = 1 + turbo.boost();
-			double temperature = turbo.chargeTemperature();
+			double pressure = 1 + turbo.boost() * strength;
+			double temperature = Tuning.blend(turbo.chargeTemperature(), strength);
 			for (CylinderModel cylinder : turbo.compressor()) {
 				if (turbo.parallelCompressor)
 					intake.add(cylinder, pressure, temperature);
@@ -250,7 +253,7 @@ public final class EngineSimulation {
 					cylinder.intakeTemperature *= temperature;
 				}
 			}
-			double back = turbo.backPressure() - 1;
+			double back = (turbo.backPressure() - 1) * turbine;
 			for (CylinderModel cylinder : turbo.turbine()) {
 				if (turbo.parallelTurbine)
 					exhaust.add(cylinder, back, 0);
@@ -259,8 +262,8 @@ public final class EngineSimulation {
 			}
 		}
 		for (Supercharger blower : superchargers) {
-			double pressure = 1 + blower.boost();
-			double temperature = blower.chargeTemperature();
+			double pressure = 1 + blower.boost() * strength;
+			double temperature = Tuning.blend(blower.chargeTemperature(), strength);
 			for (CylinderModel cylinder : blower.compressor()) {
 				if (blower.parallel)
 					intake.add(cylinder, pressure, temperature);
@@ -407,6 +410,10 @@ public final class EngineSimulation {
 		if (injecting == 0)
 			return;
 		double mean = unburned / injecting;
+		if (!Tuning.oilDilution) {
+			lubrication.setDilution(0);
+			return;
+		}
 		if (mean > Mixture.RICH_UNBURNED)
 			lubrication.dilute((mean - Mixture.RICH_UNBURNED) * DILUTION_PER_CYCLE);
 		else
@@ -483,11 +490,13 @@ public final class EngineSimulation {
 			double scale = 1;
 			FuelSpec fuel = cylinder.fuelSupply.fuel();
 			if (last.result.fired() && last.fuelBurned > 0 && fuel != null) {
-				double fullShot = cylinder.spec.maxFuelPerShot() * cylinder.metering * cylinder.fuelTrim;
 				double airLimit = last.freshAirAtInjection / fuel.airPerMb();
-				// A MAF sensor holds the shot below what the air could burn if it is set to a leaner mixture
-				double matched = cylinder.airMatch > 0 ? airLimit * cylinder.airMatch : airLimit;
-				scale = Math.max(1, Math.min(fullShot, Math.min(airLimit, matched)) / last.fuelBurned);
+				// A MAF sensor sets the shot from the air, up to what the injector can deliver; without one it is
+				// whatever Fuel Metering says
+				double fullShot = cylinder.airMatch > 0
+					? Math.min(airLimit * cylinder.airMatch, cylinder.spec.maxFuelPerShot() * CylinderModel.INJECTOR_CAPACITY)
+					: cylinder.spec.maxFuelPerShot() * cylinder.metering * cylinder.fuelTrim;
+				scale = Math.max(1, Math.min(fullShot, airLimit) / last.fuelBurned);
 			}
 			// A rotary chamber takes a turn and a half of the shaft to do what a piston does in two
 			work += last.work * scale * SimMath.CYCLE / cylinder.cycleDegrees();
@@ -507,8 +516,12 @@ public final class EngineSimulation {
 
 	/** Which way the crank turns. Valve timing only suits one direction, so this matters. */
 	public void setDirection(int direction) {
-		if (direction != 0)
-			this.direction = direction > 0 ? 1 : -1;
+		if (direction == 0)
+			return;
+		this.direction = direction > 0 ? 1 : -1;
+		// Cylinders on a shared cam lobe are timed relative to each other, and that depends on the way the crank turns
+		for (CylinderModel cylinder : cylinders)
+			cylinder.setDirection(this.direction);
 	}
 
 	/** Restores motion state, e.g. after a topology rebuild or loading from disk. */

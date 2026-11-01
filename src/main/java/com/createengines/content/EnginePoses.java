@@ -138,7 +138,13 @@ public final class EnginePoses {
 				.relative(face)) instanceof CamshaftBlockEntity lobe))
 				continue;
 			float travelled = (float) Math.abs(lobe.rotation(renderTime) % 360);
-			double cycle = CylinderModel.camCycleAngle(travelled, lobe.lobeAngle());
+			// A lobe shared with other cylinders times this one at an offset from the angle set on it
+			double shift = level.getBlockEntity(head.getBlockPos()
+				.relative(cylinderSide)) instanceof CylinderBlockEntity cylinder && cylinder.status() != null
+					? cylinder.status()
+						.lobeShift()
+					: 0;
+			double cycle = CylinderModel.camCycleAngle(travelled, lobe.lobeAngle() + shift);
 			Vector3f camAxis = CrankGeometry.axisVector(neighbour.getValue(BlockStateProperties.AXIS));
 			Vector3f normal = new Vector3f(face.step());
 			return new ValvePose(stem(normal, camAxis, STEM_SPACING, (float) CamProfile.BASIC.intakeLift(cycle)),

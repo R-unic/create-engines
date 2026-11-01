@@ -13,6 +13,8 @@ import com.createengines.registry.CEBlocks;
 import com.createengines.registry.CEFluids;
 import com.createengines.registry.CEItems;
 import com.simibubi.create.content.fluids.tank.FluidTankBlockEntity;
+import com.simibubi.create.content.processing.burner.BlazeBurnerBlock;
+import com.simibubi.create.content.processing.burner.BlazeBurnerBlock.HeatLevel;
 import com.simibubi.create.foundation.ponder.CreateSceneBuilder;
 
 import net.createmod.catnip.math.Pointing;
@@ -615,20 +617,18 @@ public final class EngineScenes {
 			.fromTo(2, 3, 1, 3, 3, 1)
 			.add(util.select()
 				.fromTo(2, 1, 1, 3, 1, 1));
-		Selection uprightCam = util.select()
-			.fromTo(1, 3, 4, 4, 3, 4);
-		Selection northCam = util.select()
-			.fromTo(1, 1, 2, 4, 1, 2);
+		// The camshaft sits in the valley, against the upright bank's cylinders on one side and the north bank's on the other
+		Selection valleyCam = util.select()
+			.fromTo(1, 3, 2, 4, 3, 2);
 
-		// The second throw is turned half way round, as in a crossplane V
+		// The second throw is turned half way round, as in a crossplane V. Each valley lobe is set for the upright cylinder
+		// of its throw, the first of the two it works; the north cylinder follows its own piston
 		int[] throwSteps = {0, THROW_HALF_TURN};
 		for (int i = 0; i < 2; i++) {
 			setThrow(scene, util.select()
 				.position(2 + i, 2, 3), throwSteps[i]);
 			setLobe(scene, util.select()
-				.position(2 + i, 3, 4), lobeFor(throwSteps[i], Direction.UP, false));
-			setLobe(scene, util.select()
-				.position(2 + i, 1, 2), lobeFor(throwSteps[i], Direction.NORTH, false));
+				.position(2 + i, 3, 2), lobeFor(throwSteps[i], Direction.UP, false));
 		}
 		scene.world()
 			.showSection(crank, Direction.DOWN);
@@ -663,36 +663,30 @@ public final class EngineScenes {
 		scene.idle(120);
 
 		scene.world()
-			.showSection(uprightCam, Direction.NORTH);
-		scene.world()
-			.showSection(northCam, Direction.UP);
+			.showSection(valleyCam, Direction.DOWN);
 		scene.world()
 			.setKineticSpeed(crank, 32);
 		scene.world()
-			.setKineticSpeed(uprightCam, 16);
-		scene.world()
-			.setKineticSpeed(northCam, 16);
+			.setKineticSpeed(valleyCam, 16);
 		scene.idle(15);
 		scene.overlay()
 			.showText(120)
 			.attachKeyFrame()
 			.colored(PonderPalette.GREEN)
-			.text("A Cam Lobe works a cylinder from beside its block as well as beside its head, through pushrods. Put each bank's camshaft on the block and the heads keep their faces for pipes.")
+			.text("A Cam Lobe works a cylinder from beside its block as well as beside its head, through pushrods. Put the camshaft in the valley, against the cylinder blocks of both banks, and the heads keep every face for pipes.")
 			.pointAt(util.vector()
-				.blockSurface(util.grid()
-					.at(2, 3, 4), Direction.WEST))
+				.centerOf(2, 3, 2))
 			.placeNearTarget();
 		scene.idle(130);
 
 		scene.overlay()
-			.showText(120)
+			.showText(130)
 			.colored(PonderPalette.BLUE)
-			.text("The two cylinders on one throw reach top dead centre at different angles, so each bank has its own camshaft and lobe angles. Goggles show when a cylinder is on time.")
+			.text("One lobe works the cylinders on both banks. Its angle times the first of them, and the others follow their own crank angles, so a V needs one camshaft and one lobe to set for each throw. Goggles show when a cylinder is on time.")
 			.pointAt(util.vector()
-				.blockSurface(util.grid()
-					.at(2, 1, 2), Direction.WEST))
+				.centerOf(3, 3, 2))
 			.placeNearTarget();
-		scene.idle(130);
+		scene.idle(140);
 
 		scene.overlay()
 			.showText(100)
@@ -968,7 +962,7 @@ public final class EngineScenes {
 			.showText(120)
 			.attachKeyFrame()
 			.colored(PonderPalette.GREEN)
-			.text("Every injector on its network is capped at the fuel that air can burn. It only ever cuts: Fuel Metering stays the most a cylinder gets, so set it high and the sensor trims the shot back as the engine speeds up.")
+			.text("Every injector on its network is given the fuel that air can burn, whichever way that moves the shot: trimmed back as the engine speeds up and the air thins, topped up as it slows. Fuel Metering no longer matters, and the injector can give at most twice its usual shot.")
 			.pointAt(util.vector()
 				.topOf(2, 3, 3))
 			.placeNearTarget();
@@ -1001,188 +995,9 @@ public final class EngineScenes {
 		scene.overlay()
 			.showText(110)
 			.attachKeyFrame()
-			.text("It also puts the size of the breath out as redstone: 15 for a boosted cylinder half again as full as its bore. Goggles show the air charge and how much fuel is being cut.")
+			.text("It also puts the size of the breath out as redstone: 15 for a boosted cylinder half again as full as its bore. Goggles show the air charge and how much fuel is being cut or added.")
 			.pointAt(util.vector()
 				.topOf(3, 3, 2))
-			.placeNearTarget();
-		scene.idle(120);
-		scene.markAsFinished();
-	}
-
-	public static void lambdaSensor(SceneBuilder builder, SceneBuildingUtil util) {
-		CreateSceneBuilder scene = new CreateSceneBuilder(builder);
-		scene.title("lambda_sensor", "Reading the Exhaust with a Lambda Sensor");
-		scene.configureBasePlate(0, 0, 6);
-		scene.world()
-			.showSection(util.select()
-				.layer(0), Direction.UP);
-
-		Selection crank = util.select()
-			.fromTo(1, 1, 3, 3, 1, 3);
-		Selection cam = util.select()
-			.fromTo(1, 4, 3, 3, 4, 3);
-		Selection engine = util.select()
-			.fromTo(2, 2, 3, 2, 3, 3)
-			.add(cam)
-			.add(util.select()
-				.position(2, 3, 2));
-		Selection outlet = util.select()
-			.position(2, 3, 5);
-		Selection body = util.select()
-			.position(2, 3, 4);
-		Selection lamp = util.select()
-			.position(3, 3, 4);
-		BlockPos sensor = util.grid()
-			.at(2, 3, 4);
-
-		setThrow(scene, util.select()
-			.position(2, 1, 3), 0);
-		setLobe(scene, util.select()
-			.position(2, 4, 3), LOBE_FOR_UPRIGHT_CYLINDER);
-		scene.world()
-			.showSection(crank, Direction.DOWN);
-		scene.world()
-			.showSection(engine, Direction.DOWN);
-		scene.world()
-			.showSection(outlet, Direction.NORTH);
-		scene.world()
-			.setKineticSpeed(crank, 64);
-		scene.world()
-			.setKineticSpeed(cam, 32);
-		scene.idle(20);
-
-		scene.world()
-			.showSection(body, Direction.NORTH);
-		scene.idle(15);
-		scene.overlay()
-			.showText(100)
-			.attachKeyFrame()
-			.text("A Lambda Sensor is a length of exhaust pipe that reads the mixture the cylinders feeding it burned, from what the exhaust gas still holds.")
-			.pointAt(util.vector()
-				.topOf(sensor))
-			.placeNearTarget();
-		scene.idle(110);
-
-		scene.world()
-			.showSection(lamp, Direction.DOWN);
-		scene.idle(15);
-		scene.world()
-			.modifyBlock(util.grid()
-				.at(3, 3, 4), state -> state.setValue(BlockStateProperties.LIT, true), false);
-		scene.effects()
-			.indicateRedstone(util.grid()
-				.at(3, 3, 4));
-		scene.overlay()
-			.showText(120)
-			.attachKeyFrame()
-			.colored(PonderPalette.GREEN)
-			.text("Its redstone output is the mixture: 8 for balanced, 6 to 9 across the balanced band, lower for lean, higher for rich, and 15 at twice the fuel the air could burn.")
-			.pointAt(util.vector()
-				.topOf(3, 3, 4))
-			.placeNearTarget();
-		scene.idle(130);
-
-		scene.overlay()
-			.showText(120)
-			.attachKeyFrame()
-			.text("It changes nothing by itself. Feed it through a comparator to a camshaft's fuel rack, where redstone closes the rack, and rich running cuts its own fuel.")
-			.pointAt(util.vector()
-				.topOf(sensor))
-			.placeNearTarget();
-		scene.idle(130);
-		scene.markAsFinished();
-	}
-
-	public static void revLimiter(SceneBuilder builder, SceneBuildingUtil util) {
-		CreateSceneBuilder scene = new CreateSceneBuilder(builder);
-		scene.title("rev_limiter", "Limiting an Engine's Speed");
-		scene.configureBasePlate(0, 0, 6);
-		scene.world()
-			.showSection(util.select()
-				.layer(0), Direction.UP);
-
-		Selection crank = util.select()
-			.fromTo(1, 1, 3, 3, 1, 3);
-		Selection cam = util.select()
-			.fromTo(1, 4, 3, 3, 4, 3);
-		Selection engine = util.select()
-			.fromTo(2, 2, 3, 2, 3, 3)
-			.add(cam)
-			.add(util.select()
-				.fromTo(2, 3, 2, 2, 3, 2))
-			.add(util.select()
-				.position(2, 3, 4));
-		Selection limiter = util.select()
-			.position(3, 2, 3);
-		Selection lamp = util.select()
-			.position(4, 2, 3);
-		BlockPos block = util.grid()
-			.at(3, 2, 3);
-
-		setThrow(scene, util.select()
-			.position(2, 1, 3), 0);
-		setLobe(scene, util.select()
-			.position(2, 4, 3), LOBE_FOR_UPRIGHT_CYLINDER);
-		scene.world()
-			.showSection(crank, Direction.DOWN);
-		scene.world()
-			.showSection(engine, Direction.DOWN);
-		scene.world()
-			.setKineticSpeed(crank, 64);
-		scene.world()
-			.setKineticSpeed(cam, 32);
-		scene.idle(20);
-
-		scene.world()
-			.showSection(limiter, Direction.DOWN);
-		scene.idle(15);
-		scene.overlay()
-			.showText(110)
-			.attachKeyFrame()
-			.text("A Rev Limiter set against a crankshaft block or a cylinder head holds every injector shut once the engine reaches the speed it is set to.")
-			.pointAt(util.vector()
-				.topOf(block))
-			.placeNearTarget();
-		scene.world()
-			.setKineticSpeed(crank, 96);
-		scene.world()
-			.setKineticSpeed(cam, 48);
-		scene.idle(120);
-
-		scene.world()
-			.setKineticSpeed(crank, 72);
-		scene.world()
-			.setKineticSpeed(cam, 36);
-		scene.overlay()
-			.showControls(util.vector()
-				.blockSurface(block, Direction.NORTH), Pointing.RIGHT, 40)
-			.rightClick();
-		scene.idle(10);
-		scene.overlay()
-			.showText(120)
-			.attachKeyFrame()
-			.colored(PonderPalette.BLUE)
-			.text("Its Rev Limit is set with the value panel, in steps of 5 RPM. Fuel returns a few percent below the limit, so the engine bounces off it instead of revving on.")
-			.pointAt(util.vector()
-				.blockSurface(block, Direction.NORTH))
-			.placeNearTarget();
-		scene.idle(130);
-
-		scene.world()
-			.showSection(lamp, Direction.DOWN);
-		scene.idle(15);
-		scene.world()
-			.modifyBlock(util.grid()
-				.at(4, 2, 3), state -> state.setValue(BlockStateProperties.LIT, true), false);
-		scene.effects()
-			.indicateRedstone(util.grid()
-				.at(4, 2, 3));
-		scene.overlay()
-			.showText(110)
-			.attachKeyFrame()
-			.text("Its redstone output is how near the engine is to its limit, 15 at it: a tachometer. A cylinder that was cut reads \"Fuel cut by the rev limiter\" in goggles, not a fault.")
-			.pointAt(util.vector()
-				.topOf(4, 2, 3))
 			.placeNearTarget();
 		scene.idle(120);
 		scene.markAsFinished();
@@ -1210,7 +1025,7 @@ public final class EngineScenes {
 		Selection governor = util.select()
 			.position(3, 2, 3);
 		Selection lamp = util.select()
-			.position(4, 2, 3);
+			.fromTo(4, 2, 3, 5, 2, 3);
 		BlockPos block = util.grid()
 			.at(3, 2, 3);
 
@@ -1267,7 +1082,7 @@ public final class EngineScenes {
 			.showText(110)
 			.attachKeyFrame()
 			.colored(PonderPalette.BLUE)
-			.text("Its Governed Speed is set with the value panel, in steps of 5 RPM. A spark engine is governed on its throttle instead, because a charge that is too lean will not light.")
+			.text("Its Governed Speed is set with the value panel, in steps of 5 RPM, up to 1000. A spark engine is governed on its throttle instead, because a charge that is too lean will not light.")
 			.pointAt(util.vector()
 				.blockSurface(block, Direction.NORTH))
 			.placeNearTarget();
@@ -1287,16 +1102,34 @@ public final class EngineScenes {
 		scene.idle(15);
 		scene.world()
 			.modifyBlock(util.grid()
-				.at(4, 2, 3), state -> state.setValue(BlockStateProperties.LIT, true), false);
+				.at(5, 2, 3), state -> state.setValue(BlockStateProperties.LIT, true), false);
 		scene.effects()
 			.indicateRedstone(util.grid()
-				.at(4, 2, 3));
+				.at(5, 2, 3));
 		scene.overlay()
 			.showText(110)
 			.attachKeyFrame()
-			.text("Its redstone output is how far open the rack is held, 15 wide open and 0 shut, so it reads as a load meter. Fit a Rev Limiter as well to stop a runaway.")
+			.text("A comparator reads how far open the rack is held, 15 wide open and 0 shut, so it works as a load meter. The Governor never powers its neighbours directly.")
 			.pointAt(util.vector()
 				.topOf(4, 2, 3))
+			.placeNearTarget();
+		scene.idle(120);
+
+		scene.overlay()
+			.showText(130)
+			.attachKeyFrame()
+			.colored(PonderPalette.GREEN)
+			.text("Power the Governor with redstone and it holds only that share of its setting: strength 15 is all of it, 8 about half, never below 20 RPM. A circuit can command an engine's speed.")
+			.pointAt(util.vector()
+				.topOf(block))
+			.placeNearTarget();
+		scene.idle(140);
+
+		scene.overlay()
+			.showText(110)
+			.text("It also eases the fuel off whenever the engine would race, so an unloaded governed engine idles on a fraction of the fuel a racing one burns.")
+			.pointAt(util.vector()
+				.topOf(2, 3, 3))
 			.placeNearTarget();
 		scene.idle(120);
 		scene.markAsFinished();
@@ -2987,6 +2820,191 @@ public final class EngineScenes {
 				.blockSurface(turboPos, Direction.NORTH))
 			.placeNearTarget();
 		scene.idle(110);
+		scene.markAsFinished();
+	}
+
+	public static void heatExchanger(SceneBuilder builder, SceneBuildingUtil util) {
+		CreateSceneBuilder scene = new CreateSceneBuilder(builder);
+		scene.title("heat_exchanger", "Cooking Fuel on Exhaust Heat");
+		scene.configureBasePlate(0, 0, 6);
+		scene.world()
+			.showSection(util.select()
+				.layer(0), Direction.UP);
+
+		Selection crank = util.select()
+			.fromTo(1, 1, 3, 3, 1, 3);
+		Selection cam = util.select()
+			.fromTo(1, 4, 3, 3, 4, 3);
+		Selection engine = util.select()
+			.fromTo(2, 2, 3, 2, 3, 3)
+			.add(cam)
+			.add(util.select()
+				.position(2, 3, 2));
+		Selection outlet = util.select()
+			.position(2, 3, 5);
+		Selection body = util.select()
+			.position(2, 3, 4);
+		Selection basin = util.select()
+			.position(2, 4, 4);
+		Selection mixer = util.select()
+			.fromTo(2, 6, 4, 3, 6, 4);
+		BlockPos exchanger = util.grid()
+			.at(2, 3, 4);
+
+		setThrow(scene, util.select()
+			.position(2, 1, 3), 0);
+		setLobe(scene, util.select()
+			.position(2, 4, 3), LOBE_FOR_UPRIGHT_CYLINDER);
+		scene.world()
+			.showSection(crank, Direction.DOWN);
+		scene.world()
+			.showSection(engine, Direction.DOWN);
+		scene.world()
+			.showSection(outlet, Direction.NORTH);
+		scene.world()
+			.setKineticSpeed(crank, 64);
+		scene.world()
+			.setKineticSpeed(cam, 32);
+		scene.idle(20);
+
+		scene.world()
+			.showSection(body, Direction.NORTH);
+		scene.idle(15);
+		scene.overlay()
+			.showText(100)
+			.attachKeyFrame()
+			.text("An Exhaust Heat Exchanger is a length of exhaust pipe that takes the heat out of the gas going through it.")
+			.pointAt(util.vector()
+				.topOf(exchanger))
+			.placeNearTarget();
+		scene.idle(110);
+
+		scene.world()
+			.showSection(basin, Direction.DOWN);
+		scene.idle(15);
+		scene.overlay()
+			.showText(110)
+			.attachKeyFrame()
+			.text("A Basin set on top of it reads that heat as if it stood on a blaze burner, so a running engine can cook its own fuel.")
+			.pointAt(util.vector()
+				.topOf(2, 4, 4))
+			.placeNearTarget();
+		scene.idle(120);
+
+		scene.world()
+			.modifyBlock(exchanger, state -> state.setValue(BlazeBurnerBlock.HEAT_LEVEL, HeatLevel.KINDLED), false);
+		scene.world()
+			.showSection(mixer, Direction.DOWN);
+		scene.world()
+			.setKineticSpeed(mixer, 32);
+		scene.idle(15);
+		scene.overlay()
+			.showText(120)
+			.attachKeyFrame()
+			.colored(PonderPalette.GREEN)
+			.text("From about two cylinders running at speed it counts as heated: enough for the diesel, ethanol and biodiesel recipes.")
+			.pointAt(util.vector()
+				.topOf(exchanger))
+			.placeNearTarget();
+		scene.idle(130);
+
+		scene.world()
+			.modifyBlock(exchanger, state -> state.setValue(BlazeBurnerBlock.HEAT_LEVEL, HeatLevel.SEETHING), false);
+		scene.idle(10);
+		scene.overlay()
+			.showText(120)
+			.attachKeyFrame()
+			.colored(PonderPalette.RED)
+			.text("From about seven it counts as superheated, enough to crack diesel into gasoline without a blaze burner.")
+			.pointAt(util.vector()
+				.topOf(exchanger))
+			.placeNearTarget();
+		scene.idle(130);
+
+		scene.overlay()
+			.showText(140)
+			.colored(PonderPalette.BLUE)
+			.text("It warms and cools over about a second and costs the engine nothing. Its heat also comes out as a redstone signal, and goggles read it in heat per second. The server config can switch heat recovery off.")
+			.pointAt(util.vector()
+				.topOf(exchanger))
+			.placeNearTarget();
+		scene.idle(150);
+		scene.markAsFinished();
+	}
+
+	public static void fuels(SceneBuilder builder, SceneBuildingUtil util) {
+		CreateSceneBuilder scene = new CreateSceneBuilder(builder);
+		scene.title("fuels", "Refining Fuel");
+		scene.configureBasePlate(0, 0, 7);
+		scene.world()
+			.showSection(util.select()
+				.layer(0), Direction.UP);
+
+		Selection pressed = util.select()
+			.fromTo(1, 1, 3, 2, 4, 3);
+		Selection heated = util.select()
+			.fromTo(3, 1, 3, 4, 4, 3);
+		Selection superheated = util.select()
+			.fromTo(5, 1, 3, 5, 4, 3);
+		Selection drive = util.select()
+			.fromTo(1, 4, 3, 5, 4, 3);
+
+		scene.world()
+			.showSection(pressed, Direction.DOWN);
+		scene.world()
+			.setKineticSpeed(drive, 32);
+		scene.idle(15);
+		scene.overlay()
+			.showText(130)
+			.attachKeyFrame()
+			.text("Seeds pressed in a Basin make Plant Oil, four seeds to 50 mB. Sugar cane, beetroot or potatoes pressed with water make Sugar Mash.")
+			.pointAt(util.vector()
+				.topOf(1, 2, 3))
+			.placeNearTarget();
+		scene.idle(140);
+
+		scene.world()
+			.showSection(heated, Direction.DOWN);
+		scene.idle(15);
+		scene.overlay()
+			.showText(140)
+			.attachKeyFrame()
+			.colored(PonderPalette.GREEN)
+			.text("Over a blaze burner, or an Exhaust Heat Exchanger, a heated Basin cooks Plant Oil with coal into Diesel, and Sugar Mash with a brown mushroom into Ethanol.")
+			.pointAt(util.vector()
+				.topOf(3, 2, 3))
+			.placeNearTarget();
+		scene.idle(150);
+
+		scene.overlay()
+			.showText(140)
+			.text("Plant Oil, Ethanol and bone meal make more Diesel, with Glycerin on the side. Plant Oil with Glycerin makes a better Engine Oil.")
+			.pointAt(util.vector()
+				.topOf(3, 2, 3))
+			.placeNearTarget();
+		scene.idle(150);
+
+		scene.world()
+			.showSection(superheated, Direction.DOWN);
+		scene.idle(15);
+		scene.overlay()
+			.showText(120)
+			.attachKeyFrame()
+			.colored(PonderPalette.RED)
+			.text("Superheated, Diesel with blaze powder cracks into Gasoline.")
+			.pointAt(util.vector()
+				.topOf(5, 2, 3))
+			.placeNearTarget();
+		scene.idle(130);
+
+		scene.overlay()
+			.showText(150)
+			.colored(PonderPalette.BLUE)
+			.text("Diesel burns by compression alone. Gasoline and Ethanol need a spark plug. Ethanol carries less energy than gasoline, but a hot, boosted charge will not light it early.")
+			.pointAt(util.vector()
+				.topOf(5, 2, 3))
+			.placeNearTarget();
+		scene.idle(160);
 		scene.markAsFinished();
 	}
 }

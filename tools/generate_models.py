@@ -64,6 +64,8 @@ SMOOTH = "minecraft:block/smooth_stone"
 BRASS_CASING = "create:block/brass_casing"
 RED = "create_engines:block/enamel_red"
 RIVETED = "create_engines:block/rivet_plate"
+MAGMA = "minecraft:block/magma"
+LAVA = "minecraft:block/lava_still"
 
 
 # --- crank, throw, cam ---------------------------------------------------------------------------------------------
@@ -354,17 +356,27 @@ def core(style):
                     box((6.5, 14.5, 10.5), (9.5, 16, 12.5), "plug"),
                     box((4.5, 12.5, 7), (5, 13.5, 9), "bolt"),
                     box((11, 12.5, 7), (11.5, 13.5, 9), "bolt")]
-    if style == "lambda":
+    if style == "heat":
         elements = [box((5, 5, 5), (11, 11, 11), "pipe"),
-                    box((4.5, 5.5, 5.5), (11.5, 10.5, 10.5), "bead"),
-                    box((5.5, 4.5, 5.5), (10.5, 11.5, 10.5), "bead"),
-                    box((5.5, 5.5, 4.5), (10.5, 10.5, 11.5), "bead"),
-                    # A threaded boss with a ceramic probe standing out of it, and the lead running away
-                    box((6, 11.5, 6), (10, 13, 10), "boss"),
-                    box((6.5, 13, 6.5), (9.5, 14, 9.5), "boss"),
-                    box((7, 14, 7), (9, 16, 9), "ceramic"),
-                    box((9, 14.5, 7.5), (12.5, 15.5, 8.5), "wire")]
+                    box((4, 4, 4), (12, 12, 12), "body"),
+                    box((3.5, 5.5, 5.5), (12.5, 10.5, 10.5), "bead"),
+                    box((5.5, 5.5, 3.5), (10.5, 10.5, 12.5), "bead"),
+                    # Cooling fins stacked up the body, and the hot plate a basin sits on
+                    box((2.5, 4.5, 2.5), (13.5, 5.5, 13.5), "fin"),
+                    box((2.5, 7, 2.5), (13.5, 8, 13.5), "fin"),
+                    box((2.5, 9.5, 2.5), (13.5, 10.5, 13.5), "fin"),
+                    box((2, 12, 2), (14, 15, 14), "plate"),
+                    box((3.5, 15, 3.5), (12.5, 15.5, 12.5), "body")]
     return elements
+
+
+def heat_glow():
+    """Hot metal over the fins and round the hot plate, drawn over the exchanger when it is running hot."""
+    return [box((2.4, 4.6, 2.4), (13.6, 5.4, 13.6), "glow"),
+            box((2.4, 7.1, 2.4), (13.6, 7.9, 13.6), "glow"),
+            box((2.4, 9.6, 2.4), (13.6, 10.4, 13.6), "glow"),
+            box((1.9, 12.5, 1.9), (14.1, 14.5, 14.1), "glow"),
+            box((3.6, 15.5, 3.6), (12.4, 15.6, 12.4), "glow")]
 
 
 PIPE_STYLES = {
@@ -376,17 +388,20 @@ PIPE_STYLES = {
                               "dark": DARK, "bolt": BRASS, "particle": IRON_BLOCK}),
     "maf_sensor": ("maf", {"pipe": CUT_COPPER, "bead": COPPER, "flange": COPPER, "gasket": DARK, "body": BRASS,
                            "dark": DARK, "plug": IRON_BLOCK, "bolt": BRASS, "particle": BRASS}),
-    "lambda_sensor": ("lambda", {"pipe": DARK, "bead": IRON, "flange": IRON, "gasket": DARK, "wrap": SMOOTH,
-                                 "boss": IRON_BLOCK, "ceramic": QUARTZ, "wire": DARK, "bolt": BRASS,
+    "heat_exchanger": ("heat", {"pipe": DARK, "bead": IRON, "flange": IRON, "gasket": DARK, "wrap": SMOOTH,
+                                 "body": IRON_BLOCK, "fin": COPPER, "plate": DARK, "bolt": BRASS,
                                  "particle": DARK}),
 }
 
 
 def pipes():
     for name, (style, textures) in PIPE_STYLES.items():
-        arm_style = "exhaust" if style in ("exhaust", "lambda") else "intake"
+        arm_style = "exhaust" if style in ("exhaust", "heat") else "intake"
         core_elements = core(style)
         write(name + "/core", textures, core_elements)
+        if style == "heat":
+            for level, glow in (("kindled", MAGMA), ("seething", LAVA)):
+                write(name + "/glow_" + level, {"glow": glow, "particle": glow}, heat_glow())
         if name.endswith("_manifold"):
             # Fittings for the shapes a run takes, drawn along z (the north-south axis) and turned for the others
             write(name + "/core_elbow", textures, [box((5, 5, 5), (11, 11, 11), "pipe"),
@@ -736,31 +751,6 @@ def sump():
     write_item("sump/item", "sump/block")
 
 
-def rev_limiter():
-    """A control module in a brass casing: a tachometer face on top, a vent plate on each side and a mounting plate."""
-    textures = {"plate": IRON, "body": BRASS_CASING, "bezel": BRASS, "face": DARK, "needle": RED, "vent": IRON_BLOCK,
-                "bolt": BRASS, "particle": BRASS_CASING}
-    elements = [
-        box((1, 0, 1), (15, 2.5, 15), "plate"),
-        box((2, 2.5, 2), (14, 11, 14), "body"),
-        # The gauge on top: a bezel round a dark face with the needle at the limit
-        box((3, 11, 3), (13, 12, 13), "bezel"),
-        box((4, 12, 4), (12, 12.4, 12), "face"),
-        box((7.4, 12.4, 4.5), (8.6, 12.9, 9.5), "needle"),
-        box((6.8, 12.4, 6.8), (9.2, 13.2, 9.2), "bezel"),
-        # A vent plate on each side with its slots
-        box((4, 5, 1.6), (12, 9, 2), "vent"),
-        box((4, 5, 14), (12, 9, 14.4), "vent"),
-        box((1.6, 5, 4), (2, 9, 12), "vent"),
-        box((14, 5, 4), (14.4, 9, 12), "vent"),
-    ]
-    for x in (1.6, 13.4):
-        for z in (1.6, 13.4):
-            elements.append(box((x, 2.5, z), (x + 1, 3.1, z + 1), "bolt"))
-    write("rev_limiter/block", textures, elements)
-    write_item("rev_limiter/item", "rev_limiter/block")
-
-
 # --- precision parts and the governor ------------------------------------------------------------------------------
 
 def precision_cylinder():
@@ -995,7 +985,6 @@ def main():
     intercooler()
     transmission()
     sump()
-    rev_limiter()
 
 
 main()

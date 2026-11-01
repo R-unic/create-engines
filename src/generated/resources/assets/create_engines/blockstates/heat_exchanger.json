@@ -1,0 +1,73 @@
+{
+  "multipart": [
+    {
+      "apply": {
+        "model": "create_engines:block/heat_exchanger/core"
+      }
+    },
+    {
+      "apply": {
+        "model": "create_engines:block/heat_exchanger/arm_down"
+      },
+      "when": {
+        "down": "true"
+      }
+    },
+    {
+      "apply": {
+        "model": "create_engines:block/heat_exchanger/arm_up"
+      },
+      "when": {
+        "up": "true"
+      }
+    },
+    {
+      "apply": {
+        "model": "create_engines:block/heat_exchanger/arm_north"
+      },
+      "when": {
+        "north": "true"
+      }
+    },
+    {
+      "apply": {
+        "model": "create_engines:block/heat_exchanger/arm_south"
+      },
+      "when": {
+        "south": "true"
+      }
+    },
+    {
+      "apply": {
+        "model": "create_engines:block/heat_exchanger/arm_west"
+      },
+      "when": {
+        "west": "true"
+      }
+    },
+    {
+      "apply": {
+        "model": "create_engines:block/heat_exchanger/arm_east"
+      },
+      "when": {
+        "east": "true"
+      }
+    },
+    {
+      "apply": {
+        "model": "create_engines:block/heat_exchanger/glow_kindled"
+      },
+      "when": {
+        "blaze": "kindled"
+      }
+    },
+    {
+      "apply": {
+        "model": "create_engines:block/heat_exchanger/glow_seething"
+      },
+      "when": {
+        "blaze": "seething"
+      }
+    }
+  ]
+}

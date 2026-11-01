@@ -5,7 +5,6 @@ import com.createengines.registry.CEBlockEntities;
 import com.simibubi.create.foundation.block.IBE;
 
 import net.minecraft.core.BlockPos;
-import net.minecraft.core.Direction;
 import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
@@ -16,9 +15,11 @@ import net.minecraft.world.phys.shapes.VoxelShape;
 
 /**
  * A mechanical governor: set against a crankshaft block or a cylinder head, it moves the engine's fuel rack (a spark
- * engine's throttle) to hold the crank at the speed it is set to, whatever the load does. Where a rev limiter only
- * stops an engine passing a speed, this one holds it there, so everything the engine drives runs at a steady pace.
- * Its redstone output is how far open it holds the rack, 15 wide open and 0 shut, so it reads as a load meter.
+ * engine's throttle) to hold the crank at the speed it is set to, whatever the load does, so everything the engine
+ * drives runs at a steady pace.
+ * A redstone signal on the block turns the speed it holds down, so a circuit can command an engine's speed. Its
+ * output is how far open it holds the rack, 15 wide open and 0 shut, so it reads as a load meter, but it reaches
+ * comparators only: a block that powered its neighbours would feed its own output back in as a command.
  */
 public class GovernorBlock extends Block implements IBE<GovernorBlockEntity> {
 
@@ -31,17 +32,6 @@ public class GovernorBlock extends Block implements IBE<GovernorBlockEntity> {
 	@Override
 	protected VoxelShape getShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext context) {
 		return SHAPE;
-	}
-
-	@Override
-	protected boolean isSignalSource(BlockState state) {
-		return true;
-	}
-
-	@Override
-	protected int getSignal(BlockState state, BlockGetter level, BlockPos pos, Direction direction) {
-		return getBlockEntityOptional(level, pos).map(GovernorBlockEntity::signal)
-			.orElse(0);
 	}
 
 	@Override

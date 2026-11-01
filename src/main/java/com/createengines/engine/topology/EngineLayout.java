@@ -19,7 +19,6 @@ import net.minecraft.core.Direction.Axis;
  * @param batteries  batteries touching the crankshaft or a cylinder head, which fire every spark plug
  * @param alternators alternators touching the crankshaft or a cylinder head, which charge those batteries
  * @param sumps      oil pans touching the crankshaft or a cylinder head, which oil the whole engine
- * @param limiters   rev limiters touching the crankshaft or a cylinder head, which cut fuel at their set speed
  * @param governors  mechanical governors touching the crankshaft or a cylinder head, which hold a set speed
  * @param turbos     turbochargers on the engine's port networks
  * @param superchargers superchargers in the engine's intake networks
@@ -35,7 +34,7 @@ import net.minecraft.core.Direction.Axis;
 public record EngineLayout(BlockPos primary, Axis axis, List<Segment> segments, List<Cylinder> cylinders,
 						   List<PortNetwork> ports, List<CamLine> camLines, List<BlockPos> starters,
 						   List<BlockPos> batteries, List<BlockPos> alternators, List<BlockPos> sumps,
-						   List<BlockPos> limiters, List<BlockPos> governors, List<BlockPos> heads,
+						   List<BlockPos> governors, List<BlockPos> heads,
 						   List<Turbo> turbos, List<Inline> superchargers, List<Inline> intercoolers, double flywheelInertia,
 							   int lines, Set<BlockPos> members, boolean incomplete,
 							   boolean broken) {
@@ -78,13 +77,16 @@ public record EngineLayout(BlockPos primary, Axis axis, List<Segment> segments, 
 	 * @param sparkPlug   the head has a spark plug fitted
 	 * @param precision   {@link PrecisionParts} bits for the precision parts this cylinder is built from
 	 * @param sense       the {@link Segment#sense()} of the throw it sits on
+	 * @param lobeLeaderTdc crank angle at which the first working cylinder on this cylinder's cam lobe reaches top dead
+	 *                    centre, or NaN if this is that cylinder or the lobe is its alone: a lobe times the first cylinder
+	 *                    by its angle and the others at the same offset from their own top dead centres
 	 * @param chamber     which face (0 to 2) of a rotor this is, or -1 for a piston cylinder. A rotor housing is its own
 	 *                    throw, head and cylinder: its three chambers all have its position, and {@code tdcAngle} is the
 	 *                    shaft angle at which its eccentric points at the housing's mark
 	 */
 	public record Cylinder(BlockPos pos, BlockPos throwPos, Direction bore, double tdcAngle, @Nullable BlockPos head,
 						   @Nullable BlockPos lobe, int camLine, double lobeAngle, int intake, int exhaust,
-						   int faults, boolean sparkPlug, int precision, int sense, int chamber) {
+						   int faults, boolean sparkPlug, int precision, int sense, double lobeLeaderTdc, int chamber) {
 
 		/** Whether this is one chamber of a Wankel rotor rather than a piston in a bore. */
 		public boolean rotary() {
@@ -97,7 +99,7 @@ public record EngineLayout(BlockPos primary, Axis axis, List<Segment> segments, 
 	 * @param heads     cylinder heads sharing this network (from any engine)
 	 * @param outlets   positions of every opening, for exhaust effects
 	 * @param throttles throttle bodies in the line, whose openings are read live
-	 * @param sensors   MAF or lambda sensors in the line, which are told what the cylinders on it are doing
+	 * @param sensors   MAF sensors and heat exchangers in the line, which are told what the cylinders on it are doing
 	 * @param turbos    turbochargers the line runs through: a compressor if it is an intake, a turbine if an exhaust
 	 * @param superchargers superchargers in an intake line, whose blowers push all of its air
 	 * @param intercoolers  intercoolers in an intake line, which cool the charge the compressors heat

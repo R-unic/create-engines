@@ -1,0 +1,30 @@
+{
+  "parent": "create_engines:pushrod_cam",
+  "criteria": {
+    "valley_cam": {
+      "conditions": {
+        "event": "valley_cam"
+      },
+      "trigger": "create_engines:event"
+    }
+  },
+  "display": {
+    "description": {
+      "translate": "advancement.create_engines.valley_cam.desc"
+    },
+    "frame": "goal",
+    "icon": {
+      "count": 1,
+      "id": "create_engines:cam_lobe"
+    },
+    "title": {
+      "translate": "advancement.create_engines.valley_cam"
+    }
+  },
+  "requirements": [
+    [
+      "valley_cam"
+    ]
+  ],
+  "sends_telemetry_event": true
+}

@@ -16,6 +16,10 @@ import java.util.Random;
  * time of a cylinder is set by exactly two things the player can change, its throw angle and its lobe angle, and the
  * planner searches those for the best spacing around the 720 degree cycle.
  * <p>
+ * A lobe that works several cylinders (a cam in the valley of a vee) times the first of them by its angle and the others
+ * at the same offset from their own top dead centres, on whichever turn puts them within one turn after the first. They
+ * have no revolution of their own to choose: where they fire follows from where the first does.
+ * <p>
  * Pure Java, so it can be unit tested without a world.
  */
 public final class FiringPlanner {
@@ -29,8 +33,6 @@ public final class FiringPlanner {
 
 	private static final int RESTARTS = 40;
 	private static final int STEPS = 6000;
-	/** Cost of a cylinder that shares a cam lobe with another but fires at a different time. */
-	private static final double MISTIMED_COST = 0.3;
 	/** Weight of the preference for neighbouring cylinders not to fire one straight after the other. */
 	private static final double NEIGHBOUR_WEIGHT = 0.001;
 	private static final int EXHAUSTIVE_LIMIT = 16;
@@ -74,10 +76,8 @@ public final class FiringPlanner {
 	 * @param lobeAngles  each lobe's angle, cam degrees; lobes that no cylinder uses keep their entry
 	 * @param order       cylinder indices in firing order, starting from the first to fire after top dead centre zero
 	 * @param deviation   the largest amount, degrees, any gap between firings is from an even spacing
-	 * @param mistimed    cylinders that share a lobe with another but fire at a different time
 	 */
-	public record Plan(double[] throwAngles, double[] fireAngles, double[] lobeAngles, int[] order, double deviation,
-					   int mistimed) {
+	public record Plan(double[] throwAngles, double[] fireAngles, double[] lobeAngles, int[] order, double deviation) {
 		public boolean even() {
 			return deviation < 0.5;
 		}
@@ -95,8 +95,10 @@ public final class FiringPlanner {
 		int n = cylinders.size();
 		int t = currentThrows.length;
 		if (n == 0)
-			return new Plan(currentThrows.clone(), new double[0], lobes.clone(), new int[0], 0, 0);
+			return new Plan(currentThrows.clone(), new double[0], lobes.clone(), new int[0], 0);
 
+		int[] leaders = leaders(cylinders);
+		int[] free = freeCylinders(leaders);
 		int[] options = optionsFor(style);
 		State best = null;
 		if (style == Style.CAMS_ONLY && n <= EXHAUSTIVE_LIMIT) {
@@ -104,10 +106,10 @@ public final class FiringPlanner {
 			for (int i = 0; i < t; i++)
 				steps[i] = angleStep(currentThrows[i]);
 			boolean[] revolutions = new boolean[n];
-			for (long mask = 0; mask < 1L << n; mask++) {
-				for (int i = 0; i < n; i++)
-					revolutions[i] = (mask >> i & 1) == 1;
-				double cost = cost(cylinders, direction, steps, revolutions);
+			for (long mask = 0; mask < 1L << free.length; mask++) {
+				for (int k = 0; k < free.length; k++)
+					revolutions[free[k]] = (mask >> k & 1) == 1;
+				double cost = cost(cylinders, leaders, direction, steps, revolutions);
 				if (best == null || cost < best.cost) {
 					best = new State(steps.clone(), revolutions.clone(), cost);
 					if (cost < 1e-12)
@@ -117,7 +119,7 @@ public final class FiringPlanner {
 		} else {
 			Random random = new Random(31L * n + 7L * t + style.ordinal());
 			for (int restart = 0; restart < RESTARTS && (best == null || best.cost > 1e-9); restart++) {
-				State candidate = anneal(style, options, direction, currentThrows, cylinders, random);
+				State candidate = anneal(style, options, direction, currentThrows, cylinders, leaders, free, random);
 				if (best == null || candidate.cost < best.cost)
 					best = candidate;
 			}
@@ -126,23 +128,14 @@ public final class FiringPlanner {
 		double[] throwAngles = new double[t];
 		for (int i = 0; i < t; i++)
 			throwAngles[i] = best.steps[i] * THROW_STEP;
-		double[] fire = new double[n];
-		for (int i = 0; i < n; i++)
-			fire[i] = fireAngle(cylinders.get(i), direction, best.steps, best.revolution[i]);
+		double[] fire = fires(cylinders, leaders, direction, best.steps, best.revolution);
 
 		double[] lobeAngles = lobes.clone();
-		boolean[] seen = new boolean[lobes.length];
-		int mistimed = 0;
-		for (int i = 0; i < n; i++) {
+		for (int i : free) {
 			int lobe = cylinders.get(i)
 				.lobe();
-			if (lobe < 0 || lobe >= lobes.length)
-				continue;
-			if (!seen[lobe]) {
-				seen[lobe] = true;
+			if (lobe >= 0 && lobe < lobes.length)
 				lobeAngles[lobe] = fire[i] / 2;
-			} else if (Math.abs(wrap(fire[i] - lobeAngles[lobe] * 2, CYCLE)) > 1e-6)
-				mistimed++;
 		}
 
 		Integer[] order = new Integer[n];
@@ -152,7 +145,7 @@ public final class FiringPlanner {
 		int[] firingOrder = new int[n];
 		for (int i = 0; i < n; i++)
 			firingOrder[i] = order[i];
-		return new Plan(throwAngles, fire, lobeAngles, firingOrder, deviation(fire), mistimed);
+		return new Plan(throwAngles, fire, lobeAngles, firingOrder, deviation(fire));
 	}
 
 	/** The gaps, degrees, between one firing and the next around the cycle, in firing order. */
@@ -198,8 +191,36 @@ public final class FiringPlanner {
 		return ((int) Math.round(degrees / THROW_STEP) % count + count) % count;
 	}
 
+	/**
+	 * For each cylinder, the first cylinder on the same lobe, which is the one the lobe's angle times; a cylinder that
+	 * is the first on its lobe, or has no lobe, is its own.
+	 */
+	private static int[] leaders(List<Cylinder> cylinders) {
+		int n = cylinders.size();
+		int[] leaders = new int[n];
+		for (int i = 0; i < n; i++) {
+			leaders[i] = i;
+			int lobe = cylinders.get(i)
+				.lobe();
+			for (int j = 0; lobe >= 0 && j < i; j++)
+				if (cylinders.get(j)
+					.lobe() == lobe) {
+					leaders[i] = j;
+					break;
+				}
+		}
+		return leaders;
+	}
+
+	/** The cylinders that choose their own revolution: every one that leads its lobe. */
+	private static int[] freeCylinders(int[] leaders) {
+		return java.util.stream.IntStream.range(0, leaders.length)
+			.filter(i -> leaders[i] == i)
+			.toArray();
+	}
+
 	private static State anneal(Style style, int[] options, int direction, double[] current, List<Cylinder> cylinders,
-								Random random) {
+								int[] leaders, int[] free, Random random) {
 		int n = cylinders.size();
 		int t = current.length;
 		int[] steps = new int[t];
@@ -209,7 +230,7 @@ public final class FiringPlanner {
 		for (int i = 0; i < n; i++)
 			revolution[i] = random.nextBoolean();
 
-		double cost = cost(cylinders, direction, steps, revolution);
+		double cost = cost(cylinders, leaders, direction, steps, revolution);
 		State best = new State(steps.clone(), revolution.clone(), cost);
 		boolean movableThrows = style != Style.CAMS_ONLY && t > 0;
 		for (int step = 0; step < STEPS && best.cost > 1e-9; step++) {
@@ -222,10 +243,10 @@ public final class FiringPlanner {
 				oldStep = steps[throwIndex];
 				steps[throwIndex] = options[random.nextInt(options.length)];
 			} else {
-				flipped = random.nextInt(n);
+				flipped = free[random.nextInt(free.length)];
 				revolution[flipped] = !revolution[flipped];
 			}
-			double next = cost(cylinders, direction, steps, revolution);
+			double next = cost(cylinders, leaders, direction, steps, revolution);
 			if (next <= cost || random.nextDouble() < Math.exp((cost - next) / temperature)) {
 				cost = next;
 				if (cost < best.cost)
@@ -238,40 +259,41 @@ public final class FiringPlanner {
 		return best;
 	}
 
-	private static double fireAngle(Cylinder cylinder, int direction, int[] steps, boolean secondRevolution) {
-		double tdc = cylinder.bore() - steps[cylinder.crank()] * THROW_STEP;
-		return wrap(direction * tdc + (secondRevolution ? 360 : 0), CYCLE);
+	private static double topDeadCentre(Cylinder cylinder, int[] steps) {
+		return cylinder.bore() - steps[cylinder.crank()] * THROW_STEP;
 	}
 
-	/** How bad a choice of throws and revolutions is: uneven spacing, cylinders that miss their shared lobe, neighbours in a row. */
-	private static double cost(List<Cylinder> cylinders, int direction, int[] steps, boolean[] revolution) {
+	/**
+	 * The rotor angle each cylinder fires at. A cylinder that leads its lobe picks its revolution; one that shares a lobe
+	 * fires as far after its leader as its top dead centre is after the leader's, within one crank turn.
+	 */
+	private static double[] fires(List<Cylinder> cylinders, int[] leaders, int direction, int[] steps,
+								  boolean[] revolution) {
 		int n = cylinders.size();
 		double[] fire = new double[n];
-		for (int i = 0; i < n; i++)
-			fire[i] = fireAngle(cylinders.get(i), direction, steps, revolution[i]);
+		for (int i = 0; i < n; i++) {
+			Cylinder cylinder = cylinders.get(i);
+			double tdc = topDeadCentre(cylinder, steps);
+			if (leaders[i] == i)
+				fire[i] = wrap(direction * tdc + (revolution[i] ? 360 : 0), CYCLE);
+			else
+				fire[i] = wrap(fire[leaders[i]]
+					+ wrap(direction * (tdc - topDeadCentre(cylinders.get(leaders[i]), steps)), 360), CYCLE);
+		}
+		return fire;
+	}
+
+	/** How bad a choice of throws and revolutions is: uneven spacing, and neighbours firing in a row. */
+	private static double cost(List<Cylinder> cylinders, int[] leaders, int direction, int[] steps,
+							   boolean[] revolution) {
+		int n = cylinders.size();
+		double[] fire = fires(cylinders, leaders, direction, steps, revolution);
 
 		double ideal = CYCLE / n;
 		double cost = 0;
 		for (double gap : intervals(fire)) {
 			double off = (gap - ideal) / ideal;
 			cost += off * off;
-		}
-
-		// Cylinders on one lobe have to fire together, because the lobe has one angle
-		int[] first = new int[n];
-		Arrays.fill(first, -1);
-		for (int i = 0; i < n; i++) {
-			int lobe = cylinders.get(i)
-				.lobe();
-			if (lobe < 0)
-				continue;
-			for (int j = 0; j < i; j++)
-				if (cylinders.get(j)
-					.lobe() == lobe) {
-					if (Math.abs(wrap(fire[i] - fire[j], CYCLE)) > 1e-6)
-						cost += MISTIMED_COST;
-					break;
-				}
 		}
 
 		if (n > 2) {

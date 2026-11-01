@@ -27,6 +27,8 @@ public final class CylinderModel {
 	/** Seconds for the gas in the exhaust port to leave and be replaced by ambient air. */
 	private static final double EXHAUST_CLEARING = 1;
 	private static final double FUEL_EPSILON = 1e-6;
+	/** Most an injector can deliver as a multiple of {@link CylinderSpec#maxFuelPerShot()}: Fuel Metering's top setting. */
+	public static final double INJECTOR_CAPACITY = 2;
 	/** Fresh charge below which a cylinder counts as having no air at all, rather than too little for the shot. */
 	private static final double MIN_FRESH_AIR = 0.05;
 	/** Leaner or richer than this (equivalence ratio) and a spark can't get a flame going. */
@@ -71,8 +73,16 @@ public final class CylinderModel {
 	/** Geometric crank angle (degrees) at which this piston is at top dead centre. */
 	private final double tdcCrankAngle;
 	private final @Nullable Camshaft camshaft;
-	/** Angle of this cylinder's lobe on its camshaft, cam degrees. */
-	private final double lobeAngle;
+	/** Angle set on this cylinder's lobe block, cam degrees. */
+	private final double dialAngle;
+	/**
+	 * Angle of this cylinder's lobe on its camshaft, cam degrees: the dial, plus what sharing the lobe with an earlier
+	 * cylinder adds for the way the crank turns (see {@link #shareLobe}).
+	 */
+	private double lobeAngle;
+	private double forwardShift;
+	private double reverseShift;
+	private int turning = 1;
 	/**
 	 * A rotary chamber has no cam: the housing's ports are cut at fixed places, so its valves and its injection follow
 	 * its own cycle angle. {@link #angleScale} turns shaft degrees into that angle.
@@ -91,12 +101,11 @@ public final class CylinderModel {
 	/** Share of the shot a throttle body's linkage lets through; 1 where there is no throttle. */
 	public double fuelTrim = 1;
 	/**
-	 * Equivalence ratio a MAF sensor holds the shot to, or 0 where there is none. The injector never delivers more
-	 * fuel than the air the cylinder drew in can burn at this ratio; it is a cap, so it only ever cuts.
+	 * Equivalence ratio a MAF sensor holds the shot to, or 0 where there is none. The injector delivers the fuel the
+	 * air the cylinder drew in can burn at this ratio, trimming a shot that is too big and topping up one that is too
+	 * small, up to the most the injector can deliver ({@link #INJECTOR_CAPACITY}). Fuel Metering no longer applies.
 	 */
 	public double airMatch = 0;
-	/** A rev limiter is holding the injector shut. */
-	public boolean fuelCut;
 	/**
 	 * Rack position a mechanical governor holds the engine at, 0 (shut) to 1 (wide open); 1 where there is none. A
 	 * compression engine is governed on fuel alone. A spark engine can't be, because a lean charge won't light, so the
@@ -160,6 +169,7 @@ public final class CylinderModel {
 		this.exhaustCurve = profile.exhaustCurve();
 		this.tdcCrankAngle = tdcCrankAngle;
 		this.camshaft = camshaft;
+		this.dialAngle = lobeAngle;
 		this.lobeAngle = lobeAngle;
 		this.ported = ported;
 		this.angleScale = angleScale;
@@ -254,6 +264,31 @@ public final class CylinderModel {
 		return lobeAngle;
 	}
 
+	/** What sharing a lobe has added to the angle set on it, cam degrees: 0 for a cylinder that has its lobe to itself. */
+	public double lobeShift() {
+		return lobeAngle - dialAngle;
+	}
+
+	/**
+	 * Puts this cylinder on a lobe that an earlier cylinder, whose piston reaches top dead centre at {@code leaderTdc},
+	 * is timed by. The lobe's angle times that first cylinder; this one gets the same timing error, firing the same
+	 * distance from its own top dead centre, on whichever crank turn puts it within one turn after the first. Reversing
+	 * the crank mirrors the offset, like everything else about timing.
+	 */
+	public void shareLobe(double leaderTdc) {
+		forwardShift = SimMath.wrap(tdcCrankAngle - leaderTdc, 360) / 2;
+		reverseShift = SimMath.wrap(leaderTdc - tdcCrankAngle, 360) / 2;
+		lobeAngle = dialAngle + (turning > 0 ? forwardShift : reverseShift);
+	}
+
+	/** Tells a cylinder on a shared lobe which way the crank turns. */
+	void setDirection(int direction) {
+		if (direction == turning)
+			return;
+		turning = direction;
+		lobeAngle = dialAngle + (turning > 0 ? forwardShift : reverseShift);
+	}
+
 	public double tdcCrankAngle() {
 		return tdcCrankAngle;
 	}
@@ -261,7 +296,11 @@ public final class CylinderModel {
 	/** A fresh cylinder built the same way on {@code camshaft}, to test apart from the engine. */
 	public CylinderModel copyOnto(@Nullable Camshaft camshaft) {
 		CylinderModel copy =
-			new CylinderModel(spec, profile, tdcCrankAngle, camshaft, lobeAngle, ported, angleScale, cycleOffset);
+			new CylinderModel(spec, profile, tdcCrankAngle, camshaft, dialAngle, ported, angleScale, cycleOffset);
+		copy.lobeAngle = lobeAngle;
+		copy.forwardShift = forwardShift;
+		copy.reverseShift = reverseShift;
+		copy.turning = turning;
 		copy.rack = rack;
 		copy.metering = metering;
 		copy.ignition = ignition;
@@ -473,15 +512,15 @@ public final class CylinderModel {
 		double air = fresh * moles;
 		double shot = spec.maxFuelPerShot() * rack * metering * fuelTrim * governedFuel();
 		if (fuel != null && airMatch > 0 && shot > 0) {
-			double matched = air / fuel.airPerMb() * airMatch;
-			if (matched < shot) {
+			// A MAF sensor sets the shot from the air, whichever way that moves it. The rack still says how much of it is
+			// wanted, and so does a compression engine's governor; a spark engine's throttle is already in the air.
+			double matched = rack * (ignition.installed() ? 1 : governor)
+				* Math.min(air / fuel.airPerMb() * airMatch, spec.maxFuelPerShot() * INJECTOR_CAPACITY);
+			if (matched < shot)
 				current.mafCut = 1 - matched / shot;
-				shot = matched;
-			}
-		}
-		if (fuelCut) {
-			current.limited = true;
-			shot = 0;
+			else if (matched > shot)
+				current.mafAdded = 1 - shot / matched;
+			shot = matched;
 		}
 		double delivered = fuel == null ? 0 : fuelSupply.draw(shot);
 		current.fuelInjected += delivered;
@@ -553,10 +592,9 @@ public final class CylinderModel {
 
 	private void finishCycle() {
 		if (current.fuelInjected <= 0)
-			current.result = current.limited ? CycleResult.FUEL_CUT
-				// A MAF sensor that cut the shot to nothing did so because there was nothing to burn it with
-				: current.mafCut > 0 && current.freshAirAtInjection < MIN_FRESH_AIR ? CycleResult.NO_AIR
-					: CycleResult.NO_FUEL;
+			// A MAF sensor that cut the shot to nothing did so because there was nothing to burn it with
+			current.result = current.mafCut > 0 && current.freshAirAtInjection < MIN_FRESH_AIR ? CycleResult.NO_AIR
+				: CycleResult.NO_FUEL;
 		else if (current.fuelBurned > 0)
 			current.result = CycleResult.FIRED;
 		else if (current.freshAirAtInjection < MIN_FRESH_AIR)
@@ -574,7 +612,9 @@ public final class CylinderModel {
 
 		if (ignition.installed() && current.fuelInjected > 0) {
 			double unburned = current.unburnedFraction();
-			if (current.fuelBurned <= 0) {
+			if (!Tuning.sparkFouling)
+				fouling = 0;
+			else if (current.fuelBurned <= 0) {
 				if (current.sparks > 0)
 					fouling = Math.max(0, fouling - FOULING_SCRUB);
 			} else if (unburned > Mixture.RICH_UNBURNED)

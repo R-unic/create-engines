@@ -16,7 +16,6 @@ import com.createengines.content.tool.TimingToolItem;
 import com.createengines.engine.topology.FiringPlanner;
 import com.createengines.content.head.CylinderHeadBlock;
 import com.createengines.content.head.CylinderHeadBlockEntity;
-import com.createengines.content.limiter.RevLimiterBlockEntity;
 import com.createengines.engine.CrankGeometry;
 import com.createengines.gametest.TestEngine;
 import com.createengines.registry.CEBlocks;
@@ -128,8 +127,11 @@ public final class VisualSmokeTest {
 			goggles("head", 110, 4.5, 4.0, 1.0, 45, 0);
 			goggles("crankshaft", 130, 1.5, 2.0, 0.4, 0, 28);
 			goggles("cylinder", 150, 2.5, 2.0, -0.5, 0, 2.3f);
-			ponder("supercharger", 200, CEBlocks.SUPERCHARGER::asStack, 250, 600, 900, 1250, 1600);
-			management(2000);
+			ponderScene("compact_v", 200, CEBlocks.CAM_LOBE::asStack, 2, 900, 1150, 1400);
+			ponder("heat_exchanger", 1700, CEBlocks.HEAT_EXCHANGER::asStack, 400, 800, 1200);
+			ponderScene("fuels", 3000, CEBlocks.HEAT_EXCHANGER::asStack, 1, 400, 900, 1400);
+			ponder("supercharger", 4500, CEBlocks.SUPERCHARGER::asStack, 250, 600, 900, 1250, 1600);
+			management(6300);
 			return;
 		}
 
@@ -275,9 +277,8 @@ public final class VisualSmokeTest {
 	private static final BlockPos MANAGEMENT_OFFSET = new BlockPos(36, 0, 0);
 
 	/**
-	 * A fresh engine with a MAF sensor in its intake, a lambda sensor in its exhaust and a rev limiter on its crank,
-	 * the injector turned up so the sensor has something to cut and the limit set where the engine will reach it; then
-	 * their Ponder pages, and the end of the run.
+	 * A fresh engine with a MAF sensor in its intake and the injector turned up so the sensor has something to cut; then
+	 * its Ponder page, and the end of the run.
 	 */
 	private static void management(int start) {
 		int dx = MANAGEMENT_OFFSET.getX();
@@ -292,15 +293,6 @@ public final class VisualSmokeTest {
 				level.setBlock(intake, pipe(CEBlocks.MAF_SENSOR.get(), Direction.SOUTH, Direction.WEST), 3);
 				level.setBlock(intake.west(), CEBlocks.AIR_INTAKE.getDefaultState()
 					.setValue(PortOpeningBlock.FACING, Direction.WEST), 3);
-				BlockPos exhaust = at.offset(TestEngine.EXHAUST);
-				level.removeBlock(exhaust, false);
-				level.setBlock(exhaust.above(), CEBlocks.EXHAUST_OUTLET.getDefaultState()
-					.setValue(PortOpeningBlock.FACING, Direction.UP), 3);
-				level.setBlock(exhaust, pipe(CEBlocks.LAMBDA_SENSOR.get(), Direction.EAST, Direction.UP), 3);
-				BlockPos limiter = at.offset(3, 3, 2);
-				level.setBlock(limiter, CEBlocks.REV_LIMITER.getDefaultState(), 3);
-				if (level.getBlockEntity(limiter) instanceof RevLimiterBlockEntity be)
-					be.limit.setValue(80 / RevLimiterBlockEntity.LIMIT_STEP);
 				if (level.getBlockEntity(at.offset(TestEngine.HEAD)) instanceof CylinderHeadBlockEntity head)
 					head.metering.setValue(CylinderHeadBlockEntity.MAX_METERING);
 			});
@@ -315,13 +307,9 @@ public final class VisualSmokeTest {
 			server(server -> command(server, "item replace entity @a armor.head with create:goggles"));
 		}));
 		goggles("maf", start + 560, dx + 2.5, 5.0, -1.0, 0, 11);
-		goggles("lambda", start + 590, dx - 1.5, 4.7, 2.5, -90, 4);
-		goggles("limiter", start + 620, dx + 3.5, 4.5, -0.5, 0, 18);
 		goggles("management_cylinder", start + 650, dx + 2.5, 2.0, -0.5, 0, 2.3f);
 		ponder("maf_sensor", start + 700, CEBlocks.MAF_SENSOR::asStack, 250, 650, 1000);
-		ponder("lambda_sensor", start + 1800, CEBlocks.LAMBDA_SENSOR::asStack, 250, 550);
-		ponder("rev_limiter", start + 2600, CEBlocks.REV_LIMITER::asStack, 250, 550, 800);
-		precision(start + 3600);
+		precision(start + 1800);
 	}
 
 	/** Where the precision engine stands, relative to the first. */

@@ -26,6 +26,7 @@ public enum Milestone {
 	CHARGED_BATTERY,
 	// Cams and firing order
 	PUSHROD_CAM,
+	VALLEY_CAM,
 	EVEN_FIRING,
 	// Air-fuel ratio
 	DIALED_IN,
@@ -47,8 +48,7 @@ public enum Milestone {
 	EVERY_GEAR,
 	// Engine management
 	MAF_TRIM,
-	LAMBDA_LOCK,
-	REV_LIMITED,
+	MAF_ENRICH,
 	// Speed control
 	GOVERNED,
 	// Output and precision parts
@@ -68,8 +68,8 @@ public enum Milestone {
 	OILED,
 	SUMP_OILING,
 	MAF_READING,
-	LAMBDA_READING,
 	GOVERNOR_ACTIVE,
+	GOVERNOR_COMMANDED,
 	PRECISION_BORE,
 	PRECISION_HEAD,
 	PRECISION_PISTON,
@@ -90,7 +90,11 @@ public enum Milestone {
 	ROTOR_HOUSING_TURNED,
 	ROTARY_ENGINE,
 	ROTARY_REVS,
-	TWIN_ROTORS;
+	TWIN_ROTORS,
+	// Refining fuel and recovering exhaust heat
+	ETHANOL_BURNED,
+	HEAT_RECOVERED,
+	SUPERHEAT_RECOVERED;
 
 	/** The name the advancement's criterion carries. */
 	public String id() {

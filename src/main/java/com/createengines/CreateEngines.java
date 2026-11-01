@@ -52,6 +52,7 @@ public class CreateEngines {
 
 		modEventBus.addListener(CEDataMaps::register);
 		modEventBus.addListener(CEBlockEntities::registerCapabilities);
+		modEventBus.addListener(CEConfig::onConfig);
 		modContainer.registerConfig(ModConfig.Type.SERVER, CEConfig.SPEC);
 
 		NeoForge.EVENT_BUS.addListener(EngineTopology::onLevelTick);

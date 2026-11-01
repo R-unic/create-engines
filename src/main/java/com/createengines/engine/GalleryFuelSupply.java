@@ -7,6 +7,7 @@ import org.jetbrains.annotations.Nullable;
 import com.createengines.content.head.GalleryMember;
 import com.createengines.engine.sim.FuelSpec;
 import com.createengines.engine.sim.FuelSupply;
+import com.createengines.engine.sim.Tuning;
 import com.createengines.registry.CEDataMaps;
 
 import net.minecraft.core.BlockPos;
@@ -69,7 +70,10 @@ public final class GalleryFuelSupply implements FuelSupply {
 			credit = 0;
 			creditFluid = fluid;
 		}
-		int needed = (int) Math.ceil(mb - credit);
+		// The server can make an engine thirstier or thriftier: the tanks pay this much per unit the engine burns
+		double consumption = Math.max(Tuning.fuelConsumption, 1e-6);
+		double wanted = mb * consumption;
+		int needed = (int) Math.ceil(wanted - credit);
 		for (BlockPos pos : heads) {
 			if (needed <= 0)
 				break;
@@ -81,8 +85,8 @@ public final class GalleryFuelSupply implements FuelSupply {
 			credit += drained.getAmount();
 			needed -= drained.getAmount();
 		}
-		double delivered = Math.min(mb, credit);
-		credit -= delivered;
-		return delivered;
+		double paid = Math.min(wanted, credit);
+		credit -= paid;
+		return paid / consumption;
 	}
 }

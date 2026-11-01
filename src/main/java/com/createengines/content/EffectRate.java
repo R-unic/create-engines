@@ -1,5 +1,7 @@
 package com.createengines.content;
 
+import com.createengines.config.CEClientConfig;
+
 import net.minecraft.world.level.Level;
 
 /**
@@ -8,7 +10,8 @@ import net.minecraft.world.level.Level;
  * allowed to turn thousands of RPM: far more than the sound engine will play or the eye can tell apart, and each
  * costs a sound instance and a handful of particles.
  * <p>
- * Counted in game ticks, so the same however fast the client draws frames.
+ * Counted in game ticks, so the same however fast the client draws frames. The player's effect density setting scales
+ * the interval: half the density, twice the gap.
  */
 public final class EffectRate {
 
@@ -27,7 +30,7 @@ public final class EffectRate {
 	/** Whether the effect may play now; if it may, this counts as it playing. */
 	public boolean allow(Level level) {
 		long now = level.getGameTime();
-		if (now - last < interval)
+		if (now - last < Math.max(1, Math.round(interval / CEClientConfig.effectDensity())))
 			return false;
 		last = now;
 		return true;

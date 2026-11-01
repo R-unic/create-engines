@@ -20,7 +20,7 @@ import net.minecraft.world.level.block.state.BlockState;
 
 /**
  * The mixture a {@link MafSensorBlock} holds its network's shots to, and the last breath it weighed. The simulation
- * does the cutting; this holds the setting it reads and what goggles and redstone show.
+ * does the trimming and the topping up; this holds the setting it reads and what goggles and redstone show.
  */
 public class MafSensorBlockEntity extends SensorBlockEntity {
 
@@ -30,14 +30,15 @@ public class MafSensorBlockEntity extends SensorBlockEntity {
 	public static final int MAX_TARGET = 25;
 	public static final int DEFAULT_TARGET = 20;
 	private static final BehaviourType<ScrollValueBehaviour> TARGET_TYPE = new BehaviourType<>("maf_target");
-	/** Goggles say the sensor is cutting once it holds back at least this share of the shot. */
-	private static final float CUT_SHOWN = 0.02f;
+	/** Goggles say the sensor is cutting or adding once it moves at least this share of the shot. */
+	private static final float SHIFT_SHOWN = 0.02f;
 
 	public ScrollValueBehaviour target;
 
 	private boolean onEngine;
 	private float charge;
 	private float cut;
+	private float added;
 
 	public MafSensorBlockEntity(BlockEntityType<?> type, BlockPos pos, BlockState state) {
 		super(type, pos, state);
@@ -73,12 +74,15 @@ public class MafSensorBlockEntity extends SensorBlockEntity {
 	 *
 	 * @param charge how full the breath of the cylinders on this network is, 1 being the bore at bottom dead centre
 	 * @param cut    the average share of the shot held back to match it
+	 * @param added  the average share of the shot added to match it
 	 */
-	public void reading(float charge, float cut) {
-		boolean changed = !onEngine || Math.abs(charge - this.charge) > 0.005f || Math.abs(cut - this.cut) > 0.005f;
+	public void reading(float charge, float cut, float added) {
+		boolean changed = !onEngine || Math.abs(charge - this.charge) > 0.005f || Math.abs(cut - this.cut) > 0.005f
+			|| Math.abs(added - this.added) > 0.005f;
 		onEngine = true;
 		this.charge = charge;
 		this.cut = cut;
+		this.added = added;
 		setSignal(Sensors.mafSignal(charge));
 		if (changed)
 			displayChanged();
@@ -91,6 +95,7 @@ public class MafSensorBlockEntity extends SensorBlockEntity {
 		onEngine = false;
 		charge = 0;
 		cut = 0;
+		added = 0;
 		setSignal(0);
 		displayChanged();
 	}
@@ -101,6 +106,7 @@ public class MafSensorBlockEntity extends SensorBlockEntity {
 		tag.putBoolean("OnEngine", onEngine);
 		tag.putFloat("Charge", charge);
 		tag.putFloat("Cut", cut);
+		tag.putFloat("Added", added);
 	}
 
 	@Override
@@ -109,6 +115,7 @@ public class MafSensorBlockEntity extends SensorBlockEntity {
 		onEngine = tag.getBoolean("OnEngine");
 		charge = tag.getFloat("Charge");
 		cut = tag.getFloat("Cut");
+		added = tag.getFloat("Added");
 	}
 
 	@Override
@@ -121,9 +128,12 @@ public class MafSensorBlockEntity extends SensorBlockEntity {
 		else {
 			GoggleLines.add(CELang.translate("goggles.maf.charge", Math.round(charge * 100))
 				.style(ChatFormatting.AQUA), tooltip, 1);
-			if (cut >= CUT_SHOWN)
+			if (cut >= SHIFT_SHOWN)
 				GoggleLines.add(CELang.translate("goggles.maf.cutting", Math.round(cut * 100))
 					.style(ChatFormatting.GOLD), tooltip, 1);
+			else if (added >= SHIFT_SHOWN)
+				GoggleLines.add(CELang.translate("goggles.maf.adding", Math.round(added * 100))
+					.style(ChatFormatting.GREEN), tooltip, 1);
 			else
 				GoggleLines.add(CELang.translate("goggles.maf.within")
 					.style(ChatFormatting.GRAY), tooltip, 1);

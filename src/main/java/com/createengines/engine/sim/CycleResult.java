@@ -6,7 +6,7 @@ public enum CycleResult {
 	NONE,
 	/** Fuel ignited and burned. */
 	FIRED,
-	/** Nothing was injected: empty injector, fuel cut off, or no injector. */
+	/** Nothing was injected: empty injector, rack shut, or no injector. */
 	NO_FUEL,
 	/** Fuel was injected but the charge never got hot enough to ignite it. */
 	NO_IGNITION,
@@ -19,9 +19,7 @@ public enum CycleResult {
 	/** The spark fired but the charge was drowned in fuel, so the flame never took. */
 	TOO_RICH,
 	/** The mixture was within a clean plug's limits, but a plug caked with soot from running rich could not light it. */
-	FOULED,
-	/** A rev limiter held the injector shut: nothing was wrong, the engine was at its set speed. */
-	FUEL_CUT;
+	FOULED;
 
 	public boolean fired() {
 		return this == FIRED;

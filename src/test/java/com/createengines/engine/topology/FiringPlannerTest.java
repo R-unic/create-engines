@@ -46,7 +46,6 @@ class FiringPlannerTest {
 	void aStraightTwelveFiresEveryHalfSixtyDegrees() {
 		Plan plan = solve(Style.SMOOTH, 12, 12, inline(12));
 		assertEvenlySpaced(plan, 12);
-		assertEquals(0, plan.mistimed());
 	}
 
 	@Test
@@ -116,28 +115,43 @@ class FiringPlannerTest {
 		assertTrue(!plan.even(), "four pistons rising together can fire only twice per cycle");
 	}
 
-	/**
-	 * A lobe has one angle, so every cylinder on it that is timed fires at the same moment. The planner would rather
-	 * fire evenly and say that one cylinder is off its lobe than fire two together.
-	 */
+	/** One lobe in the valley of a vee: the lobe's angle times the first cylinder and the second follows its piston. */
 	@Test
-	void aLobeSharedByTwoCylindersLeavesOneMistimedRatherThanFiringTogether() {
-		List<Cylinder> cylinders = new ArrayList<>();
-		cylinders.add(new Cylinder(0, 90, 0));
-		cylinders.add(new Cylinder(1, 90, 0));
-		cylinders.add(new Cylinder(2, 90, 1));
-		cylinders.add(new Cylinder(3, 90, 2));
-		Plan plan = solve(Style.SMOOTH, 4, 3, cylinders);
-		assertEquals(1, plan.mistimed());
-		assertTrue(plan.even(), "the other cylinders should still fire evenly: " + plan.deviation());
-	}
-
-	/** Two cylinders that can only ever fire together (a lone pair on one lobe) are reported rather than hidden. */
-	@Test
-	void aSharedLobeThatCannotTimeBothSaysSo() {
+	void aLobeSharedByTheTwoBanksOfAVeeFiresTheSecondAfterTheFirstByTheirCrankAngles() {
 		List<Cylinder> cylinders = List.of(new Cylinder(0, 90, 0), new Cylinder(0, 180, 0));
 		Plan plan = solve(Style.SMOOTH, 1, 1, cylinders);
-		assertEquals(1, plan.mistimed());
+		assertEquals(90, plan.fireAngles()[1] - plan.fireAngles()[0] + (plan.fireAngles()[1] < plan.fireAngles()[0] ? 720 : 0),
+			1e-9, "a right-angle vee fires its second bank a quarter turn on");
+		assertEquals(plan.fireAngles()[0] / 2, plan.lobeAngles()[0], 1e-9, "the lobe is set for the first cylinder");
+
+		Plan reversed = FiringPlanner.solve(Style.SMOOTH, -1, new double[1], new double[1], cylinders);
+		double gap = reversed.fireAngles()[1] - reversed.fireAngles()[0];
+		assertEquals(270, (gap + 720) % 720, 1e-9, "turning the other way mirrors the offset");
+	}
+
+	/** Four throws of a vee, a lobe in the valley of each: every pair is tied, and the planner still spaces the firing evenly. */
+	@Test
+	void aVeeEightWithOneLobePerValleyIsStillEven() {
+		List<Cylinder> cylinders = new ArrayList<>();
+		for (int i = 0; i < 4; i++) {
+			cylinders.add(new Cylinder(i, 90, i));
+			cylinders.add(new Cylinder(i, 180, i));
+		}
+		Plan plan = solve(Style.SMOOTH, 4, 4, cylinders);
+		assertEvenlySpaced(plan, 8);
+		for (int i = 0; i < 4; i++)
+			assertEquals(0, plan.lobeAngles()[i] % FiringPlanner.LOBE_STEP, 1e-9, "lobe " + i + " can be set on its block");
+	}
+
+	/** A lobe times everything within one crank turn after the first cylinder, so one lobe for a whole four cannot spread them. */
+	@Test
+	void oneLobeForTheWholeEngineCannotSpreadTheFiring() {
+		List<Cylinder> cylinders = new ArrayList<>();
+		for (int i = 0; i < 4; i++)
+			cylinders.add(new Cylinder(i, 90, 0));
+		Plan plan = solve(Style.SMOOTH, 4, 1, cylinders);
+		assertTrue(!plan.even(), "four firings inside one turn leave a long gap: " + plan.deviation());
+		assertEquals(plan.fireAngles()[0] / 2, plan.lobeAngles()[0], 1e-9, "the lobe is still set for the first cylinder");
 	}
 
 	@Test

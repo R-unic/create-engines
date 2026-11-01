@@ -1,0 +1,29 @@
+{
+  "parent": "create_engines:pipework",
+  "criteria": {
+    "heat_exchanger": {
+      "conditions": {
+        "event": "heat_recovered"
+      },
+      "trigger": "create_engines:event"
+    }
+  },
+  "display": {
+    "description": {
+      "translate": "advancement.create_engines.heat_exchanger.desc"
+    },
+    "icon": {
+      "count": 1,
+      "id": "create_engines:heat_exchanger"
+    },
+    "title": {
+      "translate": "advancement.create_engines.heat_exchanger"
+    }
+  },
+  "requirements": [
+    [
+      "heat_exchanger"
+    ]
+  ],
+  "sends_telemetry_event": true
+}

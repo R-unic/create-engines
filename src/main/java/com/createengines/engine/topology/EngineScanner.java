@@ -32,7 +32,6 @@ import com.createengines.content.flywheel.CastFlywheelBlock;
 import com.createengines.content.cylinder.CylinderBlock;
 import com.createengines.content.head.CylinderHeadBlock;
 import com.createengines.content.governor.GovernorBlock;
-import com.createengines.content.limiter.RevLimiterBlock;
 import com.createengines.content.rotor.RotorHousingBlock;
 import com.createengines.content.starter.StarterBlock;
 import com.createengines.content.sump.SumpBlock;
@@ -41,6 +40,7 @@ import com.createengines.content.intercooler.IntercoolerBlock;
 import com.createengines.content.supercharger.SuperchargerBlock;
 import com.createengines.content.turbo.TurbochargerBlock;
 import com.createengines.engine.CrankGeometry;
+import com.createengines.engine.sim.Tuning;
 import com.createengines.engine.topology.EngineLayout.CamLine;
 import com.createengines.engine.topology.EngineLayout.Cylinder;
 import com.createengines.engine.topology.EngineLayout.PortNetwork;
@@ -75,7 +75,6 @@ public final class EngineScanner {
 	private final List<CamLine> camLines = new ArrayList<>();
 	private final Map<BlockPos, Integer> camIndex = new HashMap<>();
 	private final Set<BlockPos> sumps = new LinkedHashSet<>();
-	private final Set<BlockPos> limiters = new LinkedHashSet<>();
 	private final Set<BlockPos> governors = new LinkedHashSet<>();
 	private boolean incomplete;
 	/** A plain shaft sits between blocks of a crank line. */
@@ -244,16 +243,23 @@ public final class EngineScanner {
 			addElectricsAround(head, batteries, alternators);
 
 		List<Cylinder> cylinders = new ArrayList<>();
+		Map<BlockPos, CylinderDraft> lobeLeaders = new HashMap<>();
 		for (CylinderDraft draft : drafts) {
 			if (draft.sparkPlug && batteries.isEmpty())
 				draft.faults |= CylinderFault.NO_BATTERY.bit();
+			// The first working cylinder a lobe touches is the one its angle times; the rest follow it round the crank
+			if (draft.lobe != null && !CylinderFault.disables(draft.faults)) {
+				CylinderDraft leader = lobeLeaders.putIfAbsent(draft.lobe, draft);
+				if (leader != null)
+					draft.lobeLeaderTdc = leader.tdcAngle;
+			}
 			cylinders.add(draft.build());
 		}
 
 		Line first = lines.getFirst();
 		return new EngineLayout(first.start, first.axis, List.copyOf(segments), List.copyOf(cylinders),
 			List.copyOf(ports), List.copyOf(camLines), List.copyOf(starters), List.copyOf(batteries),
-			List.copyOf(alternators), List.copyOf(sumps), List.copyOf(limiters), List.copyOf(governors), List.copyOf(heads),
+			List.copyOf(alternators), List.copyOf(sumps), List.copyOf(governors), List.copyOf(heads),
 			turbos(), inlines(true), inlines(false), flywheelInertia, lines.size(), Set.copyOf(members), incomplete, brokenCrank);
 	}
 
@@ -296,7 +302,6 @@ public final class EngineScanner {
 			if (block instanceof BatteryBlock && batteries.add(neighbour.immutable())
 				|| block instanceof AlternatorBlock && alternators.add(neighbour.immutable())
 				|| block instanceof SumpBlock && sumps.add(neighbour.immutable())
-				|| block instanceof RevLimiterBlock && limiters.add(neighbour.immutable())
 				|| block instanceof GovernorBlock && governors.add(neighbour.immutable()))
 				members.add(neighbour.immutable());
 		}
@@ -341,11 +346,12 @@ public final class EngineScanner {
 		boolean sparkPlug;
 		int precision;
 		int sense;
+		double lobeLeaderTdc = Double.NaN;
 		int chamber = -1;
 
 		Cylinder build() {
 			return new Cylinder(pos, throwPos, bore, tdcAngle, head, lobe, camLine, lobeAngle, intake, exhaust,
-				faults, sparkPlug, precision, sense, chamber);
+				faults, sparkPlug, precision, sense, lobeLeaderTdc, chamber);
 		}
 
 		CylinderDraft copyAsChamber(int chamber) {
@@ -389,6 +395,8 @@ public final class EngineScanner {
 		draft.sparkPlug = state.getValue(RotorHousingBlock.HAS_SPARK_PLUG);
 		if (state.getValue(RotorHousingBlock.FINE_INJECTOR))
 			draft.precision |= PrecisionParts.INJECTOR;
+		if (!Tuning.rotaryEngines)
+			draft.faults |= CylinderFault.ROTARY_DISABLED.bit();
 		if (!state.getValue(RotorHousingBlock.HAS_ROTOR))
 			draft.faults |= CylinderFault.NO_ROTOR.bit();
 		if (!state.getValue(RotorHousingBlock.HAS_INJECTOR))
@@ -418,7 +426,8 @@ public final class EngineScanner {
 			draft.faults |= CylinderFault.EXHAUST_BLOCKED.bit();
 
 		List<CylinderDraft> chambers = new ArrayList<>();
-		int count = CylinderFault.NO_ROTOR.in(draft.faults) ? 1 : RotorHousingBlock.CHAMBERS;
+		int count = CylinderFault.NO_ROTOR.in(draft.faults) || CylinderFault.ROTARY_DISABLED.in(draft.faults) ? 1
+			: RotorHousingBlock.CHAMBERS;
 		for (int i = 0; i < count; i++)
 			chambers.add(draft.copyAsChamber(i));
 		return chambers;
@@ -741,7 +750,7 @@ public final class EngineScanner {
 				}
 			}
 		} else if (block instanceof BatteryBlock || block instanceof AlternatorBlock || block instanceof SumpBlock
-			|| block instanceof RevLimiterBlock || block instanceof GovernorBlock) {
+			|| block instanceof GovernorBlock) {
 			for (Direction direction : Direction.values())
 				addHeadSeed(level, pos.relative(direction), level.getBlockState(pos.relative(direction)), seeds);
 		} else if (block instanceof ManifoldBlock || block instanceof PortOpeningBlock

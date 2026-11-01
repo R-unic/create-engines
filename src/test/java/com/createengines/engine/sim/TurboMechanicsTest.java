@@ -92,7 +92,7 @@ class TurboMechanicsTest {
 
 	private static void liftOff(Rig rig) {
 		for (CylinderModel cylinder : rig.cylinders)
-			cylinder.fuelCut = true;
+			cylinder.rack = 0;
 		rig.turbo.offThrottle = true;
 	}
 
