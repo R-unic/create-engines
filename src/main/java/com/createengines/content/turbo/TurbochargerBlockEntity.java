@@ -6,11 +6,15 @@ import java.util.Locale;
 import org.jetbrains.annotations.Nullable;
 
 import com.createengines.config.CEClientConfig;
+import com.createengines.content.EffectRate;
+import com.createengines.content.LoopSource;
+import com.createengines.content.MachineLoopSound;
 import com.createengines.engine.TurboStatus;
 import com.createengines.engine.sim.Turbocharger;
 import com.createengines.engine.topology.EngineMember;
 import com.createengines.content.GoggleLines;
 import com.createengines.registry.CELang;
+import com.createengines.registry.CESounds;
 import com.simibubi.create.api.equipment.goggles.IHaveGoggleInformation;
 import com.simibubi.create.foundation.blockEntity.SmartBlockEntity;
 import com.simibubi.create.foundation.blockEntity.behaviour.BehaviourType;
@@ -26,6 +30,7 @@ import net.minecraft.core.HolderLookup;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
+import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.Vec3;
@@ -34,7 +39,8 @@ import net.minecraft.world.phys.Vec3;
  * The wastegate setting of a {@link TurbochargerBlock}, and what the engine tells it about the wheel. The spool and
  * boost live in the engine's simulation; this holds the last figures it sent, for goggles and for the wheel to turn by.
  */
-public class TurbochargerBlockEntity extends SmartBlockEntity implements IHaveGoggleInformation, EngineMember {
+public class TurbochargerBlockEntity extends SmartBlockEntity
+	implements IHaveGoggleInformation, EngineMember, LoopSource {
 
 	/** The boost limit is set in steps of this many tenths of a bar. */
 	public static final int LIMIT_STEP = 1;
@@ -54,6 +60,10 @@ public class TurbochargerBlockEntity extends SmartBlockEntity implements IHaveGo
 	private @Nullable TurboStatus status;
 	private float wheelAngle;
 	private float wheelSpeed;
+	/** Client only: whether the wastegate was being held open by redstone at the last tick, and the best boost lately. */
+	private boolean wasVenting;
+	private float heldBoost;
+	private final EffectRate popRate = new EffectRate(EffectRate.BANG_INTERVAL * 2);
 
 	public TurbochargerBlockEntity(BlockEntityType<?> type, BlockPos pos, BlockState state) {
 		super(type, pos, state);
@@ -145,9 +155,51 @@ public class TurbochargerBlockEntity extends SmartBlockEntity implements IHaveGo
 			float target = status == null ? 0 : status.spool() * WHEEL_DEGREES_PER_TICK;
 			wheelSpeed += (target - wheelSpeed) * 0.15f;
 			wheelAngle = (wheelAngle + wheelSpeed) % 360;
-			if (status != null && status.antiLag() && CEClientConfig.particles() && level.random.nextInt(2) == 0)
-				popOut();
+			if (status != null && status.antiLag() && level.random.nextInt(2) == 0) {
+				if (CEClientConfig.particles())
+					popOut();
+				popBang();
+			}
+			if (loopLevel() > 0.02f)
+				MachineLoopSound.ensurePlaying(this, worldPosition, CESounds.TURBO_WHISTLE.get(), 0.5f, this);
+			blowOff();
 		}
+	}
+
+	/** The whistle is as loud as the wheel is fast, and silent while it is barely turning. */
+	@Override
+	public float loopLevel() {
+		return status == null ? 0 : Math.min(1, Math.max(0, status.spool() - 0.04f) * 1.25f);
+	}
+
+	/** From a low hum at a slow wheel to a shriek at design speed. */
+	@Override
+	public float loopPitch() {
+		return 0.55f + 1.05f * Math.min(1.2f, status == null ? 0 : status.spool());
+	}
+
+	/**
+	 * The blow-off valve: redstone opens the wastegate fully while there is boost to dump, and the charge goes with a thump,
+	 * a hiss and a flutter. Played when the valve opens, louder for more boost. The boost it was holding is remembered for a
+	 * moment, since by the time the client hears of the open valve the gauge has started to fall.
+	 */
+	private void blowOff() {
+		float boost = status == null ? 0 : status.boost();
+		heldBoost = Math.max(boost, heldBoost - 0.01f);
+		boolean venting = status != null && status.wastegate() > 0.5f && dumping();
+		if (venting && !wasVenting && heldBoost >= 0.25f && CEClientConfig.boostVolume() > 0)
+			level.playLocalSound(worldPosition, CESounds.TURBO_BLOWOFF.get(), SoundSource.BLOCKS,
+				Math.min(1.2f, 0.4f + heldBoost) * CEClientConfig.boostVolume(), 0.95f + level.random.nextFloat() * 0.1f,
+				false);
+		wasVenting = venting;
+	}
+
+	/** A crack from the exhaust where anti-lag burns fuel, quieter and higher than a cylinder's bang. */
+	private void popBang() {
+		float volume = CEClientConfig.bangVolume();
+		if (volume > 0 && popRate.allow(level))
+			level.playLocalSound(worldPosition, CESounds.CYLINDER_FIRE.get(), SoundSource.BLOCKS, 0.4f * volume,
+				1.25f + level.random.nextFloat() * 0.3f, false);
 	}
 
 	/** Flame and smoke at the turbine end, where anti-lag burns fuel in the exhaust. */

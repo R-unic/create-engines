@@ -9,6 +9,7 @@ import com.createengines.engine.EngineController;
 import com.createengines.engine.EngineState;
 import com.createengines.engine.EngineSummary;
 import com.createengines.engine.sim.Thermal;
+import com.createengines.engine.sim.Torsion;
 import com.createengines.engine.topology.EngineLayout;
 import com.createengines.engine.topology.EngineMember;
 import com.createengines.engine.topology.EngineTopology;
@@ -382,6 +383,14 @@ public class CrankshaftBlockEntity extends GeneratingKineticBlockEntity implemen
 			if (lost >= 2)
 				GoggleLines.add(CELang.translate("goggles.roughness", lost)
 					.style(ChatFormatting.GOLD), tooltip, 1);
+		}
+		int flexed = Math.round(engine.flex() * 100);
+		if (flexed >= 1) {
+			GoggleLines.add(CELang.translate("goggles.flex", flexed, engine.longestLine())
+				.style(ChatFormatting.GOLD), tooltip, 1);
+			if (isPlayerSneaking)
+				GoggleLines.add(CELang.translate("goggles.flex.hint", Torsion.FREE_THROWS)
+					.style(ChatFormatting.DARK_GRAY), tooltip, 2);
 		}
 		GoggleLines.add(CELang.translate("goggles.inertia", format(engine.inertia()))
 			.style(ChatFormatting.DARK_GRAY), tooltip, 1);

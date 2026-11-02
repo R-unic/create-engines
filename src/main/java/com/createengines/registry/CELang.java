@@ -289,6 +289,9 @@ public final class CELang {
 			"Coolant, or water, piped into an oil pan would cool it, and a cool engine earns a power bonus. A hot engine is never harmed");
 		raw("goggles.coolant_use", "Coolant spent: %1$s mB a second");
 		raw("goggles.pilot_lit", "A pilot shot is lighting the charge");
+		raw("goggles.flex", "Torsional flex: %1$s%% of the rating lost, %2$s throws on one crankshaft");
+		raw("goggles.flex.hint",
+			"A long crank twists under load. Past %1$s throws on one unbroken crankshaft it costs rating. A vee or a flat puts two cylinders on a throw, and cranks geared together one to one are separate lines");
 
 		raw("goggles.battery", "Battery");
 		raw("goggles.battery.charge", "Charge: %1$s%%");

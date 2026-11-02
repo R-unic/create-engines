@@ -78,4 +78,13 @@ class ServiceMilestonesTest {
 		assertFalse(herd.contains(Milestone.STEAM_TITAN));
 		assertTrue(atCapacity(16 * EngineMilestones.STEAM_ENGINE).contains(Milestone.STEAM_TITAN));
 	}
+
+	@Test
+	void aBigStiffCrankIsCreditedOnlyWhenRunningWithNoFlex() {
+		assertTrue(EngineMilestones.reachedFlex(true, 12, 0).contains(Milestone.STIFF_CRANK));
+		assertTrue(EngineMilestones.reachedFlex(true, 16, 0.001f).contains(Milestone.STIFF_CRANK));
+		assertTrue(EngineMilestones.reachedFlex(true, 12, 0.18f).isEmpty(), "a straight twelve flexes");
+		assertTrue(EngineMilestones.reachedFlex(true, 8, 0).isEmpty(), "eight cylinders is not a big engine");
+		assertTrue(EngineMilestones.reachedFlex(false, 12, 0).isEmpty(), "and it has to be running");
+	}
 }

@@ -354,6 +354,34 @@ faces; and anything that needs doing regularly (an oil change) can be automated 
   but has not been loaded by the game. The V and coupled-crank reward for engines past eight cylinders was discussed and left
   out. The `anOilSumpOilsTheWholeEngine` GameTest now checks gasoline instead of water, which a pan takes as coolant.
 
+
+### Turbo and supercharger sounds, and torsional flex (2026-11-02)
+
+- **Sounds.** Three new recordings, synthesized by `tools/generate_sounds.py` (which now falls back to ffmpeg's libvorbis
+  when there is no libsndfile, and takes sound names to regenerate only those): `turbo_whistle` and `supercharger_whine`,
+  one-second seamless loops, and `turbo_blowoff`, a one-shot with a valve thump, a hiss and a compressor-surge flutter.
+  `MachineLoopSound` (client only, like `StarterWhirSound`) plays a loop for any block entity that implements `LoopSource`:
+  it fades in and out and takes its volume and pitch from `loopLevel()` and `loopPitch()` every tick. The turbo's loop level
+  is its wheel speed above 4 percent and its pitch runs from 0.55 to about 1.8; the supercharger's level is its shaft speed
+  over 96 RPM (a third as loud when it feeds no engine) and its pitch 0.6 to 1.8 by 200 RPM. The blow-off plays when redstone
+  holds the wastegate open with at least 0.25 bar on the gauge a moment before, louder for more boost; anti-lag pops
+  reuse the cylinder bang, quieter and higher, at half the rate of the particles. The client config `boostVolume` scales the
+  whistle, whine and blow-off; `bangVolume` still scales the pops. The recordings were analyzed (levels, spectrum, loop seam)
+  but not listened to; if one is off, adjust its constants in the generator and regenerate it by name.
+- **Torsional flex** (`engine.sim.Torsion`). The rating loses `0.045` per throw beyond eight on a crank line, to at most 0.45,
+  and an engine with several lines loses the average of the lines' losses weighted by their throws, so a short line
+  does not hide a long one. Throws, not cylinders, are counted, so a vee or flat (two cylinders to a throw) puts a V12 at six
+  throws and a V16 at eight, both free, where a straight twelve (12 throws) loses 18 percent and a straight sixteen 36.
+  Two coupled straight eights lose nothing. It is applied to the rated torque and the dynamometer curve in
+  `EngineController`, as roughness is, and never to the running engine; a rotor's eccentric counts as a throw. The controller
+  finds the lines by walking the layout's crank blocks, which the scanner lists line by line, and starting a new line
+  wherever a block is not the next one along the axis. The server config `torsionalFlex` scales it (0 off, 2 doubles it,
+  never more than 0.8 off). Goggles on a crankshaft show the loss and the longest line, with a hint when sneaking; a
+  Ponder page was added to the V engine scene; an advancement, Stiff Upper Crank (twelve or more firing cylinders with no
+  flex), joins the builder capstone. The sim-level balance tables (`CombustionOutputTest`, `ProgressionBalanceTest`) measure
+  the engine without a layout, so they are unchanged; in play a straight twelve is rated a fifth lower than those tables
+  say, which is the intent.
+
 ---
 
 ## 1. The one idea everything hangs on

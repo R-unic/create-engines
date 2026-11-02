@@ -288,9 +288,15 @@ public final class CEAdvancements {
 		on("steam_titan", "steam_herd", () -> CEBlocks.CRANKSHAFT.get(), AdvancementType.CHALLENGE,
 			Milestone.STEAM_TITAN, "Titan of Industry", "Rate an engine for as much stress as sixteen Create steam engines.");
 
+		// Big engines that keep their cranks short
+		on("stiff_crank", "twelve_cylinders", () -> CEBlocks.CRANKSHAFT.get(), AdvancementType.GOAL,
+			Milestone.STIFF_CRANK, "Stiff Upper Crank",
+			"Run twelve or more cylinders with no torsional flex: put them on a vee, a flat or cranks geared together, so no crank is longer than eight throws.");
+
 		// The top of each track, and the top of them all
-		List<Milestone> builder = List.of(Milestone.TWELVE_CYLINDERS, Milestone.COUPLED_CRANKS, Milestone.VEE_ENGINE,
-			Milestone.FLAT_ENGINE, Milestone.EVEN_FIRING, Milestone.VALLEY_CAM, Milestone.ROTARY_ENGINE);
+		List<Milestone> builder = List.of(Milestone.TWELVE_CYLINDERS, Milestone.STIFF_CRANK, Milestone.COUPLED_CRANKS,
+			Milestone.VEE_ENGINE, Milestone.FLAT_ENGINE, Milestone.EVEN_FIRING, Milestone.VALLEY_CAM,
+			Milestone.ROTARY_ENGINE);
 		List<Milestone> power = List.of(Milestone.STEAM_HERD, Milestone.REDLINE, Milestone.BIG_BOOST,
 			Milestone.TWINCHARGED, Milestone.PRECISION_ENGINE, Milestone.ANTI_LAG);
 		List<Milestone> tuning = List.of(Milestone.DIALED_IN, Milestone.MAF_TRIM, Milestone.MAF_ENRICH,
@@ -302,7 +308,7 @@ public final class CEAdvancements {
 		List<Milestone> service = List.of(Milestone.OIL_KEPT_FRESH, Milestone.OIL_FILTERED, Milestone.SUMP_OILING,
 			Milestone.WARMED_UP, Milestone.COOL_RUNNING);
 		capstone("master_builder", "crankshaft", () -> CEBlocks.CRANK_THROW.get(), builder, "Master Builder",
-			"Finish the builder's track: a twelve, coupled cranks, a vee, a flat, even firing, a valley cam and a Wankel.");
+			"Finish the builder's track: a twelve with a stiff crank, coupled cranks, a vee, a flat, even firing, a valley cam and a Wankel.");
 		capstone("power_plant", "heavy_duty", () -> CEBlocks.TURBOCHARGER.get(), power, "Power Plant",
 			"Finish the power track: eight steam engines' worth, redline, big boost, twincharging, precision parts and anti-lag.");
 		capstone("fine_tuner", "timing_tool", () -> CEBlocks.MAF_SENSOR.get(), tuning, "Fine Tuner",

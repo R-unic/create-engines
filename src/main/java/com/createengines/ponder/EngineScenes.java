@@ -695,6 +695,16 @@ public final class EngineScenes {
 				.topOf(3, 4, 3))
 			.placeNearTarget();
 		scene.idle(110);
+
+		scene.overlay()
+			.showText(150)
+			.attachKeyFrame()
+			.colored(PonderPalette.GREEN)
+			.text("It is also how a big engine stays stiff. A long crank twists under load: past eight throws on one crankshaft it costs rating, about 4.5 percent a throw. A V12 has six throws and loses nothing, where a straight twelve has twelve. Cranks geared together one to one count as separate lines.")
+			.pointAt(util.vector()
+				.topOf(3, 4, 3))
+			.placeNearTarget();
+		scene.idle(160);
 		scene.markAsFinished();
 	}
 

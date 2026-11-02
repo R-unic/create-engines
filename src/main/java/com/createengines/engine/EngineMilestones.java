@@ -194,6 +194,18 @@ public final class EngineMilestones {
 		return reached;
 	}
 
+	/**
+	 * A big engine whose cranks do not flex: twelve or more cylinders firing, with none of the rating lost to torsional
+	 * flex, which takes a vee, a flat or cranks geared together so no crank line is longer than {@link com.createengines.engine.sim.Torsion#FREE_THROWS}
+	 * throws.
+	 */
+	public static Set<Milestone> reachedFlex(boolean running, int firing, float flex) {
+		Set<Milestone> reached = EnumSet.noneOf(Milestone.class);
+		if (running && firing >= 12 && flex < 0.005f)
+			reached.add(Milestone.STIFF_CRANK);
+		return reached;
+	}
+
 	public static Set<Milestone> reachedRotary(Rotary r) {
 		Set<Milestone> reached = EnumSet.noneOf(Milestone.class);
 		if (!r.running() || r.rotorsFiring() < 1)

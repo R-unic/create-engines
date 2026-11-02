@@ -1,0 +1,30 @@
+{
+  "parent": "create_engines:twelve_cylinders",
+  "criteria": {
+    "stiff_crank": {
+      "conditions": {
+        "event": "stiff_crank"
+      },
+      "trigger": "create_engines:event"
+    }
+  },
+  "display": {
+    "description": {
+      "translate": "advancement.create_engines.stiff_crank.desc"
+    },
+    "frame": "goal",
+    "icon": {
+      "count": 1,
+      "id": "create_engines:crankshaft"
+    },
+    "title": {
+      "translate": "advancement.create_engines.stiff_crank"
+    }
+  },
+  "requirements": [
+    [
+      "stiff_crank"
+    ]
+  ],
+  "sends_telemetry_event": true
+}

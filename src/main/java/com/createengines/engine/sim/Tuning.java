@@ -15,6 +15,8 @@ public final class Tuning {
 	public static volatile double rotaryPower = 1;
 	/** Fuel drawn from the tanks for each unit the engine burns; combustion itself is unchanged. */
 	public static volatile double fuelConsumption = 1;
+	/** Scales the rating a long crankshaft loses to torsional flex. 0 removes the loss, 1 is as designed. */
+	public static volatile double torsionalFlex = 1;
 	/** Scales how much better a cool engine breathes. 0 removes the bonus, 1 is as designed. */
 	public static volatile double coolingBonus = 1;
 	/** Scales the heat a heat exchanger takes from the exhaust. */
@@ -48,6 +50,7 @@ public final class Tuning {
 		fuelConsumption = 1;
 		heatRecovery = 1;
 		coolingBonus = 1;
+		torsionalFlex = 1;
 		forcedInduction = true;
 		sparkFouling = true;
 		oilDilution = true;

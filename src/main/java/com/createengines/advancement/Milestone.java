@@ -106,7 +106,9 @@ public enum Milestone {
 	COOLANT_USED,
 	COOL_RUNNING,
 	DUAL_FUEL,
-	WASTE_OIL_BURNED;
+	WASTE_OIL_BURNED,
+	// A long crank, split up
+	STIFF_CRANK;
 
 	/** The name the advancement's criterion carries. */
 	public String id() {

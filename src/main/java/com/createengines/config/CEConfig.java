@@ -26,6 +26,7 @@ public final class CEConfig {
 	public static final ModConfigSpec.DoubleValue ROTARY_POWER;
 	public static final ModConfigSpec.DoubleValue HEAT_RECOVERY;
 	public static final ModConfigSpec.DoubleValue COOLING_BONUS;
+	public static final ModConfigSpec.DoubleValue TORSIONAL_FLEX;
 
 	public static final ModConfigSpec.BooleanValue FORCED_INDUCTION;
 	public static final ModConfigSpec.BooleanValue SPARK_FOULING;
@@ -89,6 +90,10 @@ public final class CEConfig {
 				"power at 1.0. 0 removes the bonus. Cold engines drag and uncooled ones earn nothing either way,",
 				"and nothing ever overheats or wears out.")
 			.defineInRange("coolingBonus", 1.0, 0.0, 3.0);
+		TORSIONAL_FLEX = builder.comment("Scales the rating an engine loses to a long crankshaft: past 8 throws on one unbroken",
+				"crank line it falls by 4.5 percent a throw at 1.0. A vee or flat has half as many throws as cylinders,",
+				"and cranks geared together one to one are separate lines. 0 turns it off.")
+			.defineInRange("torsionalFlex", 1.0, 0.0, 2.0);
 		builder.pop();
 
 		builder.comment("Feature switches. Turning one off never destroys blocks; the machines just stop doing that job.")
@@ -129,6 +134,7 @@ public final class CEConfig {
 		Tuning.rotaryPower = ROTARY_POWER.get();
 		Tuning.heatRecovery = HEAT_RECOVERY.get();
 		Tuning.coolingBonus = COOLING_BONUS.get();
+		Tuning.torsionalFlex = TORSIONAL_FLEX.get();
 		Tuning.forcedInduction = FORCED_INDUCTION.get();
 		Tuning.sparkFouling = SPARK_FOULING.get();
 		Tuning.oilDilution = OIL_DILUTION.get();

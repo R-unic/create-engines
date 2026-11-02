@@ -7,6 +7,12 @@
       },
       "trigger": "create_engines:event"
     },
+    "stiff_crank": {
+      "conditions": {
+        "event": "stiff_crank"
+      },
+      "trigger": "create_engines:event"
+    },
     "coupled_cranks": {
       "conditions": {
         "event": "coupled_cranks"
@@ -60,6 +66,9 @@
   "requirements": [
     [
       "twelve_cylinders"
+    ],
+    [
+      "stiff_crank"
     ],
     [
       "coupled_cranks"

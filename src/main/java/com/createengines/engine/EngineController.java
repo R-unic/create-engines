@@ -50,6 +50,7 @@ import com.createengines.engine.sim.Mixture;
 import com.createengines.engine.sim.Roughness;
 import com.createengines.engine.sim.Sensors;
 import com.createengines.engine.sim.Throttle;
+import com.createengines.engine.sim.Torsion;
 import com.createengines.engine.sim.Intercooler;
 import com.createengines.engine.sim.Supercharger;
 import com.createengines.engine.sim.Turbocharger;
@@ -131,6 +132,9 @@ public final class EngineController {
 	private boolean filtered;
 	/** How many moving parts need oil: crank blocks, plus every piston and rod turning with the crank. */
 	private final double oilParts;
+	/** Share of the rating this engine's crank lines lose to torsional flex at the shipped balance, and the throws on its longest line. */
+	private final double flexLoss;
+	private final int longestLine;
 
 	private int ticks;
 	/** The tick a dynamometer block last read this engine's curve. */
@@ -234,6 +238,11 @@ public final class EngineController {
 		}
 
 		oilParts = parts;
+		int[] lineThrows = throwsPerLine(layout);
+		flexLoss = Torsion.loss(lineThrows);
+		longestLine = Arrays.stream(lineThrows)
+			.max()
+			.orElse(0);
 
 		double inertia = idleInertia + layout.flywheelInertia();
 		for (EngineLayout.Segment segment : layout.segments())
@@ -882,7 +891,7 @@ public final class EngineController {
 		int points = Dynamometer.pointCount(maxRpm);
 		float[] rpm = new float[points];
 		float[] torque = new float[points];
-		double scale = CEConfig.STRESS_PER_TORQUE.get() * RATING_MARGIN;
+		double scale = CEConfig.STRESS_PER_TORQUE.get() * RATING_MARGIN * Torsion.stiffness(flexLoss);
 		for (int i = 0; i < points; i++) {
 			rpm[i] = (float) Dynamometer.speed(i);
 			torque[i] = (float) (Math.max(0, torqueCurve[i]) * Roughness.smoothness(rippleCurve[i]) * scale);
@@ -891,7 +900,33 @@ public final class EngineController {
 	}
 
 	private double ratedTorque() {
-		return sim.isStopped() ? 0 : Dynamometer.ratedTorque(torqueCurve, rippleCurve, sim.rpm()) * RATING_MARGIN;
+		return sim.isStopped() ? 0
+			: Dynamometer.ratedTorque(torqueCurve, rippleCurve, sim.rpm()) * RATING_MARGIN * Torsion.stiffness(flexLoss);
+	}
+
+	/**
+	 * How many throws sit on each of the engine's crank lines. The scanner lists the crank blocks line by line, and a
+	 * line is unbroken, so a block that is not the next one along the axis from the one before it begins a new line.
+	 */
+	private static int[] throwsPerLine(EngineLayout layout) {
+		List<EngineLayout.Segment> segments = layout.segments();
+		boolean[] isThrow = new boolean[segments.size()];
+		boolean[] startsLine = new boolean[segments.size()];
+		Direction up = Direction.fromAxisAndDirection(layout.axis(), Direction.AxisDirection.POSITIVE);
+		for (int i = 0; i < isThrow.length; i++) {
+			isThrow[i] = segments.get(i)
+				.isThrow();
+			if (i == 0)
+				continue;
+			BlockPos before = segments.get(i - 1)
+				.pos();
+			BlockPos here = segments.get(i)
+				.pos();
+			startsLine[i] = !before.relative(up)
+				.equals(here) && !before.relative(up.getOpposite())
+					.equals(here);
+		}
+		return Torsion.throwsPerLine(isThrow, startsLine);
 	}
 
 	private void publishCapacity(double torqueScale) {
@@ -962,7 +997,7 @@ public final class EngineController {
 				.temperature(),
 			(float) sim.thermal()
 				.coolantRate(),
-			pilotLit(), filtered);
+			pilotLit(), filtered, (float) Torsion.scaled(flexLoss), longestLine);
 	}
 
 	/** Whether a pilot shot, and not compression or a spark, lit the charge in a cylinder on its last cycle. */
@@ -1152,6 +1187,7 @@ public final class EngineController {
 		reportRotary(level, state);
 		reportRefining(level, state);
 		reportService(level, state);
+		award(level, EngineMilestones.reachedFlex(state == EngineState.RUNNING, firing, (float) Torsion.scaled(flexLoss)));
 		reportMechanics(level, state);
 		reportParts(level, state, firing);
 		EngineMilestones.Snapshot snapshot = new EngineMilestones.Snapshot(state, previousState, rpm,
