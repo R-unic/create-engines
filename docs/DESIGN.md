@@ -382,6 +382,55 @@ faces; and anything that needs doing regularly (an oil change) can be automated 
   the engine without a layout, so they are unchanged; in play a straight twelve is rated a fifth lower than those tables
   say, which is the intent.
 
+
+### Engines on trains (design; only the model is built, 2026-11-02)
+
+**The ask.** Put an engine on a train carriage and feed its power into the train while it runs, to speed it up.
+
+**What is and is not possible.** A *built* engine cannot run on a carriage. `EngineScanner` and `EngineController` read the
+world's blocks and block entities by position (`level.getBlockEntity`, `RotationPropagator`, the pipe graph, the
+kinetic network), and a carriage is a Create contraption: its blocks are frozen copies in a moving entity, with no world
+positions to scan and no kinetic network. A train also has no shaft input, so there is nothing to plug a crankshaft into.
+What is possible, and gives the experience described, is a carriage that carries a **snapshot** of an engine, with the
+engine blocks on top of it for show, and turns that snapshot into pull.
+
+**The model (built, unit tested: `engine.sim.TrainDrive`, `TrainDriveTest`).**
+- A `TrainDrive.Spec` is the snapshot: the engine's rated torque curve (the same rpm and torque arrays a dynamometer block
+  shows, after roughness, torsional flex and the rating margin) and `suPerMb`, the power it makes per mB of fuel burned a
+  second. Power at a speed is `capacity(rpm) x rpm`, read between the measured points and zero off either end of the curve.
+- The engine is geared to the train: `rpm = speed x gearing`. `idealGearing(spec, speed)` puts the engine's best power at a
+  chosen speed. A gearing that spins the engine past the end of its curve gives nothing there: the engine redlines, and
+  that is the top speed it can take the train to.
+- The boost is stated against the train's own figures, so it does not depend on Create's units: given the base top speed and
+  acceleration the hook reads from Create, power per carriage in steam engines (`REFERENCE_POWER` 16384 SU) sets the top
+  speed gain, `0.35 x cbrt(power per carriage)` of the base to at most +150 percent (a pull needed to hold a speed grows with
+  its cube), and the extra pull, `0.5 x` the base acceleration per steam engine of power per carriage to at most +200
+  percent. The top speed is found by settling, since the power depends on the speed it is geared to. The same engine
+  spread over more carriages pushes each less. A standing train is pulled as if at a quarter of its top speed, so a
+  start is not powerless. Fuel is `power / suPerMb` mB per second at the throttle, 0 to 1.
+
+**What is left to build (and why it waits).** Create's `Train` and its config are not readable here, because the Create
+Maven repository was unreachable when this was written, so none of the hook is written. The plan, to be checked against the
+real API:
+1. **A Dyno Printout** (item). Used on a crankshaft block of a running engine, it records `Curve` (rpm and torque, already
+   produced by `EngineController.curve()`), the fuel fluid, and `suPerMb` from the engine's current power and
+   `sim.fuelRate()`. This is also the "save a dyno run" idea from earlier.
+2. **A Locomotive Drive** (block, on the carriage). A printout goes in by right-click. It has a gearing dial (an "auto"
+   setting uses `idealGearing` for 1.5 x the train's base top speed) and a throttle from redstone. It takes its fuel from fluid
+   tanks on the same carriage, which Create contraptions already carry.
+3. **A tick hook** for trains with drive blocks: read the base top speed and acceleration from Create's train config, call
+   `TrainDrive.boost` with the carriage count, raise that train's top speed to `Boost.topSpeed()`, add `Boost.acceleration()` to
+   its speed while below it, and drain `fuelPerSecond x dt` from the tanks (no fuel, no boost). Create may offer no way to
+   change one train's top speed from outside, in which case this needs a mixin on the train's top speed and acceleration, and
+   the mod has no mixin setup yet (`mixins.json`, the mod-list entry, the build plugin).
+4. **Stretch: no printout.** Run the scanner and dynamometer once over the carriage's own blocks at assembly, so the engine
+   on top *is* the engine. That needs `EngineScanner` to read from an abstract block source instead of the `Level`, which is a
+   large refactor, and freezes the tune, fuel and cooling at the moment of assembly.
+
+Open choices for when this is built: whether the throttle is redstone or follows the train's own controls, how fuel is
+refilled at stations, whether several drive carriages in one train add (the model says yes, each sharing the load), and
+whether a boosted train should wear anything (by the rules agreed for this mod, no).
+
 ---
 
 ## 1. The one idea everything hangs on
