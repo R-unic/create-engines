@@ -25,10 +25,15 @@ public final class CEConfig {
 	public static final ModConfigSpec.DoubleValue BOOST_STRENGTH;
 	public static final ModConfigSpec.DoubleValue ROTARY_POWER;
 	public static final ModConfigSpec.DoubleValue HEAT_RECOVERY;
+	public static final ModConfigSpec.DoubleValue COOLING_BONUS;
+	public static final ModConfigSpec.DoubleValue TORSIONAL_FLEX;
 
 	public static final ModConfigSpec.BooleanValue FORCED_INDUCTION;
 	public static final ModConfigSpec.BooleanValue SPARK_FOULING;
 	public static final ModConfigSpec.BooleanValue OIL_DILUTION;
+	public static final ModConfigSpec.BooleanValue OIL_AGEING;
+	public static final ModConfigSpec.BooleanValue ENGINE_TEMPERATURE;
+	public static final ModConfigSpec.BooleanValue PILOT_INJECTION;
 	public static final ModConfigSpec.BooleanValue ROTARY_ENGINES;
 	public static final ModConfigSpec.BooleanValue HEAT_RECOVERY_ENABLED;
 
@@ -81,6 +86,14 @@ public final class CEConfig {
 				"Create's basins need a heated or superheated source below them, and the exchanger gets there",
 				"only with enough exhaust heat, so lower values need a bigger engine.")
 			.defineInRange("heatRecoveryOutput", 1.0, 0.1, 10.0);
+		COOLING_BONUS = builder.comment("Scales how much better a well cooled engine breathes: about 6 to 9 percent more",
+				"power at 1.0. 0 removes the bonus. Cold engines drag and uncooled ones earn nothing either way,",
+				"and nothing ever overheats or wears out.")
+			.defineInRange("coolingBonus", 1.0, 0.0, 3.0);
+		TORSIONAL_FLEX = builder.comment("Scales the rating an engine loses to a long crankshaft: past 8 throws on one unbroken",
+				"crank line it falls by 4.5 percent a throw at 1.0. A vee or flat has half as many throws as cylinders,",
+				"and cranks geared together one to one are separate lines. 0 turns it off.")
+			.defineInRange("torsionalFlex", 1.0, 0.0, 2.0);
 		builder.pop();
 
 		builder.comment("Feature switches. Turning one off never destroys blocks; the machines just stop doing that job.")
@@ -91,6 +104,14 @@ public final class CEConfig {
 			.define("sparkFouling", true);
 		OIL_DILUTION = builder.comment("Unburned fuel thins an engine's oil when it runs rich.")
 			.define("oilDilution", true);
+		OIL_AGEING = builder.comment("Engine oil goes off with use and drags a little more until it is changed.",
+				"Off, oil stays new for ever and the oil exchange setting does nothing useful.")
+			.define("oilAgeing", true);
+		ENGINE_TEMPERATURE = builder.comment("Engines warm up and cool down: a cold engine drags, a cooled one breathes better.")
+			.define("engineTemperature", true);
+		PILOT_INJECTION = builder.comment("A compression engine can inject a pilot shot of diesel (from an oil pan's pilot tank)",
+				"to light gasoline or ethanol that compression alone could not.")
+			.define("pilotInjection", true);
 		ROTARY_ENGINES = builder.comment("Rotor housings run. Off, they sit inert and say so in the goggles.")
 			.define("rotaryEngines", true);
 		HEAT_RECOVERY_ENABLED = builder.comment("Exhaust Heat Exchangers take heat from the exhaust and warm basins.")
@@ -112,9 +133,14 @@ public final class CEConfig {
 		Tuning.boostStrength = BOOST_STRENGTH.get();
 		Tuning.rotaryPower = ROTARY_POWER.get();
 		Tuning.heatRecovery = HEAT_RECOVERY.get();
+		Tuning.coolingBonus = COOLING_BONUS.get();
+		Tuning.torsionalFlex = TORSIONAL_FLEX.get();
 		Tuning.forcedInduction = FORCED_INDUCTION.get();
 		Tuning.sparkFouling = SPARK_FOULING.get();
 		Tuning.oilDilution = OIL_DILUTION.get();
+		Tuning.oilAgeing = OIL_AGEING.get();
+		Tuning.engineTemperature = ENGINE_TEMPERATURE.get();
+		Tuning.pilotInjection = PILOT_INJECTION.get();
 		Tuning.rotaryEngines = ROTARY_ENGINES.get();
 		Tuning.heatRecoveryEnabled = HEAT_RECOVERY_ENABLED.get();
 	}

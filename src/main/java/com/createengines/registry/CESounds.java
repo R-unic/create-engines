@@ -22,6 +22,13 @@ public final class CESounds {
 	/** The starter motor turning an engine over: a seamless loop, played for as long as it is cranking. */
 	public static final DeferredHolder<SoundEvent, SoundEvent> STARTER_WHIR = register("starter_whir");
 
+	/** A turbocharger's wheel spooling: a seamless loop, pitched with the wheel's speed. */
+	public static final DeferredHolder<SoundEvent, SoundEvent> TURBO_WHISTLE = register("turbo_whistle");
+	/** A blow-off valve dumping boost, with the flutter of the compressor surging. */
+	public static final DeferredHolder<SoundEvent, SoundEvent> TURBO_BLOWOFF = register("turbo_blowoff");
+	/** A supercharger's gears and lobes: a seamless loop, pitched with its shaft. */
+	public static final DeferredHolder<SoundEvent, SoundEvent> SUPERCHARGER_WHINE = register("supercharger_whine");
+
 	private CESounds() {
 	}
 

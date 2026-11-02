@@ -695,6 +695,16 @@ public final class EngineScenes {
 				.topOf(3, 4, 3))
 			.placeNearTarget();
 		scene.idle(110);
+
+		scene.overlay()
+			.showText(150)
+			.attachKeyFrame()
+			.colored(PonderPalette.GREEN)
+			.text("It is also how a big engine stays stiff. A long crank twists under load: past eight throws on one crankshaft it costs rating, about 4.5 percent a throw. A V12 has six throws and loses nothing, where a straight twelve has twelve. Cranks geared together one to one count as separate lines.")
+			.pointAt(util.vector()
+				.topOf(3, 4, 3))
+			.placeNearTarget();
+		scene.idle(160);
 		scene.markAsFinished();
 	}
 
@@ -2284,6 +2294,44 @@ public final class EngineScenes {
 				.topOf(sumpPos))
 			.placeNearTarget();
 		scene.idle(100);
+
+		scene.overlay()
+			.showText(140)
+			.attachKeyFrame()
+			.colored(PonderPalette.GREEN)
+			.text("Oil goes off with use, and a spent charge drags a little more. Scroll the dial on the sump to set an Oil Exchange: spent oil is pushed out as Used Oil while fresh oil piped in takes its place.")
+			.pointAt(util.vector()
+				.blockSurface(sumpPos, Direction.NORTH))
+			.placeNearTarget();
+		scene.idle(150);
+
+		scene.overlay()
+			.showText(140)
+			.colored(PonderPalette.RED)
+			.text("Used Oil has to be piped away or the exchange stops. Burn it as a poor fuel, refine it back into oil, coke it into charcoal, or let it go. An Oil Filter, fitted by right-click, slows the ageing and cleans fuel out of the oil.")
+			.pointAt(util.vector()
+				.blockSurface(sumpPos, Direction.EAST))
+			.placeNearTarget();
+		scene.idle(150);
+
+		scene.overlay()
+			.showText(150)
+			.attachKeyFrame()
+			.colored(PonderPalette.BLUE)
+			.text("The same sump takes coolant, from any face. Water works; Engine Coolant, made from water and glycerin, works better. It is spent carrying heat away, so no radiator is needed. A cool engine breathes better. A cold one drags until it warms up. Nothing ever overheats or wears out.")
+			.pointAt(util.vector()
+				.blockSurface(sumpPos, Direction.UP))
+			.placeNearTarget();
+		scene.idle(160);
+
+		scene.overlay()
+			.showText(150)
+			.colored(PonderPalette.WHITE)
+			.text("It also takes a pilot fuel: pipe diesel into it and a compression engine with no spark plug injects a small pilot shot that lights gasoline or ethanol, a dual-fuel engine.")
+			.pointAt(util.vector()
+				.blockSurface(sumpPos, Direction.WEST))
+			.placeNearTarget();
+		scene.idle(160);
 		scene.markAsFinished();
 	}
 
@@ -3000,9 +3048,19 @@ public final class EngineScenes {
 		scene.overlay()
 			.showText(150)
 			.colored(PonderPalette.BLUE)
-			.text("Diesel burns by compression alone. Gasoline and Ethanol need a spark plug. Ethanol carries less energy than gasoline, but a hot, boosted charge will not light it early.")
+			.text("Diesel burns by compression alone. Gasoline and Ethanol need a spark plug, or a diesel pilot shot. Ethanol carries less energy than gasoline, but a hot, boosted charge will not light it early.")
 			.pointAt(util.vector()
 				.topOf(5, 2, 3))
+			.placeNearTarget();
+		scene.idle(160);
+
+		scene.overlay()
+			.showText(150)
+			.attachKeyFrame()
+			.colored(PonderPalette.GREEN)
+			.text("Water with Glycerin makes Engine Coolant. Used Oil from an oil exchange heated with charcoal makes Engine Oil again, or coked on its own it makes charcoal, which goes back into Diesel. Nothing is wasted.")
+			.pointAt(util.vector()
+				.topOf(3, 2, 3))
 			.placeNearTarget();
 		scene.idle(160);
 		scene.markAsFinished();

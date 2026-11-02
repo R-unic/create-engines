@@ -267,6 +267,31 @@ public final class CELang {
 		raw("goggles.sump", "Oil Sump");
 		raw("goggles.sump.no_engine", "Not touching an engine's crankshaft or cylinder head");
 		raw("goggles.sump.empty", "Empty: fill it with Engine Oil by bucket or pipe");
+		raw("goggles.sump.filter", "Oil filter fitted: the oil ages more slowly and fuel is cleaned out of it faster");
+		raw("goggles.sump.no_filter", "Right-click with an Oil Filter to fit one");
+		raw("goggles.sump.exchange", "Oil exchange: %1$s mB of oil a second while the engine turns");
+		raw("goggles.sump.exchange.hint",
+			"Spent oil leaves as Used Oil from any face, by pipe or bucket, and fresh oil piped in takes its place. Burn the used oil, refine it, coke it or let it go");
+		raw("goggles.sump.used_full", "Used Oil tank full: pipe it away or the exchange stops");
+		raw("value.oil_exchange", "Oil Exchange");
+		raw("value.oil_exchange.0", "Off");
+		raw("value.oil_exchange.1", "Trickle");
+		raw("value.oil_exchange.2", "Steady");
+		raw("value.oil_exchange.3", "Flush");
+		raw("goggles.oil_condition", "Oil condition: %1$s%%");
+		raw("goggles.oil_condition.hint",
+			"Spent oil drags the engine a little. Set an oil pan's Oil Exchange to change it as the engine turns");
+		raw("goggles.oil_filtered", "Oil filter fitted");
+		raw("goggles.temperature.cold", "Engine cold: it drags until it has warmed through");
+		raw("goggles.temperature.cool", "Engine cool: it breathes better");
+		raw("goggles.temperature.warm", "Engine warm");
+		raw("goggles.temperature.hint",
+			"Coolant, or water, piped into an oil pan would cool it, and a cool engine earns a power bonus. A hot engine is never harmed");
+		raw("goggles.coolant_use", "Coolant spent: %1$s mB a second");
+		raw("goggles.pilot_lit", "A pilot shot is lighting the charge");
+		raw("goggles.flex", "Torsional flex: %1$s%% of the rating lost, %2$s throws on one crankshaft");
+		raw("goggles.flex.hint",
+			"A long crank twists under load. Past %1$s throws on one unbroken crankshaft it costs rating. A vee or a flat puts two cylinders on a throw, and cranks geared together one to one are separate lines");
 
 		raw("goggles.battery", "Battery");
 		raw("goggles.battery.charge", "Charge: %1$s%%");

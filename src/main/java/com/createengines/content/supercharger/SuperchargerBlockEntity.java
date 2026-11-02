@@ -6,9 +6,12 @@ import java.util.Locale;
 import org.jetbrains.annotations.Nullable;
 
 import com.createengines.content.GoggleLines;
+import com.createengines.content.LoopSource;
+import com.createengines.content.MachineLoopSound;
 import com.createengines.engine.sim.Supercharger;
 import com.createengines.engine.topology.EngineMember;
 import com.createengines.registry.CELang;
+import com.createengines.registry.CESounds;
 import com.simibubi.create.content.kinetics.base.KineticBlockEntity;
 import com.simibubi.create.foundation.blockEntity.behaviour.BehaviourType;
 import com.simibubi.create.foundation.blockEntity.behaviour.BlockEntityBehaviour;
@@ -33,7 +36,7 @@ import net.minecraft.world.phys.Vec3;
  * itself is made in the engine's simulation from this block's shaft speed; this holds the last figures it sent, for
  * goggles, and puts the work of turning the blower on its shaft as stress.
  */
-public class SuperchargerBlockEntity extends KineticBlockEntity implements EngineMember {
+public class SuperchargerBlockEntity extends KineticBlockEntity implements EngineMember, LoopSource {
 
 	/** The boost limit is set in steps of a tenth of a bar. */
 	public static final int MIN_LIMIT = 1;
@@ -84,6 +87,27 @@ public class SuperchargerBlockEntity extends KineticBlockEntity implements Engin
 	/** Whether the engine has told this blower that it feeds some of its cylinders. */
 	public boolean onEngine() {
 		return primaryPos != null && served > 0;
+	}
+
+	@Override
+	public void tick() {
+		super.tick();
+		if (level != null && level.isClientSide && loopLevel() > 0.02f)
+			MachineLoopSound.ensurePlaying(this, worldPosition, CESounds.SUPERCHARGER_WHINE.get(), 0.45f, this);
+	}
+
+	/** The whine rises with the shaft, and is much quieter while the blower is turning but not pushing any engine's air. */
+	@Override
+	public float loopLevel() {
+		double rpm = shaftRpm();
+		if (rpm < 6)
+			return 0;
+		return (float) Math.min(1, rpm / 96) * (onEngine() ? 1 : 0.35f);
+	}
+
+	@Override
+	public float loopPitch() {
+		return 0.6f + 1.2f * (float) Math.min(1, shaftRpm() / 200);
 	}
 
 	/** The boost the engine last reported, atmospheres. */

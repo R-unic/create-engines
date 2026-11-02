@@ -25,8 +25,22 @@ public final class Lubrication {
 	/** Most the oil can be thinned by fuel washing past the rings: it still lubricates, at half strength. */
 	public static final double MAX_DILUTION = 0.5;
 
+	/** Condition lost per crank revolution at ordinary stress: a full change of oil is spent in about 3000 turns. */
+	public static final double AGE_PER_REV = 1 / 3000d;
+	/**
+	 * Friction added to a completely spent oil, as a share of normal. Spent oil never stops an engine or harms it, it only
+	 * drags a little: fresh oil takes the drag away again.
+	 */
+	public static final double MAX_AGED_FRICTION = 0.25;
+	/** How much oil makes up an engine's charge, mB: changing this much of it in one go restores most of the condition. */
+	public static final double CHARGE_VOLUME = 150;
+	/** A filter makes the oil age this much more slowly, and cleans fuel out of it this much faster. */
+	public static final double FILTER_AGEING = 0.5;
+	public static final double FILTER_CLEANING = 2;
+
 	private double film;
 	private double dilution;
+	private double condition = 1;
 
 	public Lubrication(double film) {
 		this.film = Math.clamp(film, 0, 1);
@@ -58,6 +72,53 @@ public final class Lubrication {
 	/** Fuel boiling back out of the oil once the engine burns what it is given. */
 	public void boilOff(double amount) {
 		setDilution(dilution - amount);
+	}
+
+	/** How fresh the oil is, from 0 (spent) to 1 (new). Heat, fuel and hard running spend it; changing the oil restores it. */
+	public double condition() {
+		return condition;
+	}
+
+	public void setCondition(double condition) {
+		this.condition = Math.clamp(condition, 0, 1);
+	}
+
+	/**
+	 * Spends some of the oil's condition.
+	 *
+	 * @param revolutions crank revolutions turned
+	 * @param stress      how hard the oil is worked: 1 for a warm engine burning cleanly, more when it runs hot or the oil
+	 *                    is thinned by fuel, less with a filter
+	 */
+	public void age(double revolutions, double stress) {
+		if (!Tuning.oilAgeing) {
+			condition = 1;
+			return;
+		}
+		setCondition(condition - revolutions * AGE_PER_REV * stress);
+	}
+
+	/** How hard the oil is being worked at this temperature (0 ambient, 1 normal running): hot oil and thinned oil age faster. */
+	public double stress(double temperature, boolean filtered) {
+		double stress = 1 + 1.5 * Math.max(0, temperature - Thermal.NORMAL) + 2 * dilution;
+		return filtered ? stress * FILTER_AGEING : stress;
+	}
+
+	/**
+	 * Swaps {@code mb} of the oil for fresh: the spent share leaves and new oil takes its place, so the condition closes on
+	 * new by a share of the gap that grows with how much was changed. Fresh oil is clean, so fuel in it goes too.
+	 */
+	public void refresh(double mb) {
+		if (mb <= 0)
+			return;
+		double share = 1 - Math.exp(-mb / CHARGE_VOLUME);
+		setCondition(condition + (1 - condition) * share);
+		setDilution(dilution * (1 - share));
+	}
+
+	/** Multiplier on all friction from the oil's condition: 1 when new, up to {@link #MAX_AGED_FRICTION} more when spent. */
+	public double drag() {
+		return 1 + MAX_AGED_FRICTION * (1 - condition);
 	}
 
 	/** What the parts actually feel: the film, less the strength fuel has taken from it. */

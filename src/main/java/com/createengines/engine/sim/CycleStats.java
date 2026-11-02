@@ -22,6 +22,8 @@ public final class CycleStats {
 	public double mafCut;
 	/** Share of the shot a MAF sensor added because the air could burn more than the injector was set to give: 0 to 1. */
 	public double mafAdded;
+	/** Pilot fuel injected to light the charge this cycle, mB: above zero means the pilot, not compression, lit it. */
+	public double pilotShot;
 	public CycleResult result = CycleResult.NONE;
 
 	public double unburnedFraction() {
@@ -50,6 +52,7 @@ public final class CycleStats {
 		flameOut = other.flameOut;
 		mafCut = other.mafCut;
 		mafAdded = other.mafAdded;
+		pilotShot = other.pilotShot;
 		result = other.result;
 	}
 
@@ -66,6 +69,7 @@ public final class CycleStats {
 		flameOut = 0;
 		mafCut = 0;
 		mafAdded = 0;
+		pilotShot = 0;
 		result = CycleResult.NONE;
 	}
 }

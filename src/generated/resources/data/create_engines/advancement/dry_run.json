@@ -1,5 +1,5 @@
 {
-  "parent": "create_engines:alive",
+  "parent": "create_engines:engine_oil",
   "criteria": {
     "dry_run": {
       "conditions": {

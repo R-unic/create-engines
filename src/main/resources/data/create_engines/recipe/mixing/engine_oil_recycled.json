@@ -1,0 +1,20 @@
+{
+  "type": "create:mixing",
+  "heat_requirement": "heated",
+  "ingredients": [
+    {
+      "type": "neoforge:single",
+      "amount": 400,
+      "fluid": "create_engines:used_oil"
+    },
+    {
+      "item": "minecraft:charcoal"
+    }
+  ],
+  "results": [
+    {
+      "amount": 250,
+      "id": "create_engines:engine_oil"
+    }
+  ]
+}

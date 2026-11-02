@@ -1,0 +1,75 @@
+{
+  "parent": "create_engines:timing_tool",
+  "criteria": {
+    "dialed_in": {
+      "conditions": {
+        "event": "dialed_in"
+      },
+      "trigger": "create_engines:event"
+    },
+    "maf_trim": {
+      "conditions": {
+        "event": "maf_trim"
+      },
+      "trigger": "create_engines:event"
+    },
+    "maf_enrich": {
+      "conditions": {
+        "event": "maf_enrich"
+      },
+      "trigger": "create_engines:event"
+    },
+    "governed": {
+      "conditions": {
+        "event": "governed"
+      },
+      "trigger": "create_engines:event"
+    },
+    "fuel_tuned": {
+      "conditions": {
+        "event": "fuel_tuned"
+      },
+      "trigger": "create_engines:event"
+    },
+    "tool_timed": {
+      "conditions": {
+        "event": "tool_timed"
+      },
+      "trigger": "create_engines:event"
+    }
+  },
+  "display": {
+    "description": {
+      "translate": "advancement.create_engines.fine_tuner.desc"
+    },
+    "frame": "challenge",
+    "icon": {
+      "count": 1,
+      "id": "create_engines:maf_sensor"
+    },
+    "title": {
+      "translate": "advancement.create_engines.fine_tuner"
+    }
+  },
+  "requirements": [
+    [
+      "dialed_in"
+    ],
+    [
+      "maf_trim"
+    ],
+    [
+      "maf_enrich"
+    ],
+    [
+      "governed"
+    ],
+    [
+      "fuel_tuned"
+    ],
+    [
+      "tool_timed"
+    ]
+  ],
+  "sends_telemetry_event": true
+}

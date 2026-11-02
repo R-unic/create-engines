@@ -1,14 +1,50 @@
 {
   "cylinder_fire": {
     "sounds": [
-      { "name": "create_engines:cylinder_fire1", "attenuation_distance": 24 },
-      { "name": "create_engines:cylinder_fire2", "attenuation_distance": 24 },
-      { "name": "create_engines:cylinder_fire3", "attenuation_distance": 24 }
+      {
+        "name": "create_engines:cylinder_fire1",
+        "attenuation_distance": 24
+      },
+      {
+        "name": "create_engines:cylinder_fire2",
+        "attenuation_distance": 24
+      },
+      {
+        "name": "create_engines:cylinder_fire3",
+        "attenuation_distance": 24
+      }
     ]
   },
   "starter_whir": {
     "sounds": [
-      { "name": "create_engines:starter_whir", "attenuation_distance": 16 }
+      {
+        "name": "create_engines:starter_whir",
+        "attenuation_distance": 16
+      }
+    ]
+  },
+  "turbo_whistle": {
+    "sounds": [
+      {
+        "name": "create_engines:turbo_whistle",
+        "attenuation_distance": 20
+      }
+    ]
+  },
+  "turbo_blowoff": {
+    "sounds": [
+      {
+        "name": "create_engines:turbo_blowoff",
+        "attenuation_distance": 28
+      }
+    ]
+  },
+  "supercharger_whine": {
+    "sounds": [
+      {
+        "name": "create_engines:supercharger_whine",
+        "attenuation_distance": 16
+      }
     ]
   }
 }

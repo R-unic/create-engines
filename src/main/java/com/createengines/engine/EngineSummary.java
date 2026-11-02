@@ -17,19 +17,29 @@ import net.minecraft.nbt.CompoundTag;
  * @param firingAngles     crank angles (0-720) at which each cam-timed cylinder fires, sorted
  * @param lines            how many crankshafts are geared together into this engine
  * @param roughness        share of the engine's rating that its uneven running takes off, 0 to 0.4 (see Roughness)
+ * @param condition        how fresh the oil is, 0 (spent) to 1 (new)
+ * @param temperature      how hot the block is: 0 ambient, 0.7 a warm engine on a steady load
+ * @param coolantRate      coolant being spent carrying heat away, mB per second; 0 with none
+ * @param pilot            a pilot shot of fuel is lighting the charge in at least one cylinder
+ * @param filtered         an oil filter is fitted in an oil pan
+ * @param flex             share of the rating a long crankshaft loses to torsional flex, 0 to 0.8 (see Torsion)
+ * @param longestLine      throws on the engine's longest crank line
  */
 public record EngineSummary(EngineState state, float rpm, float availableTorque, float loadTorque,
 							float fuelPerMinute, float ripple, int firing, int cylinders, float inertia, float lubrication,
-							boolean starterEngaged, float[] firingAngles, int lines, float thinning, float roughness) {
+							boolean starterEngaged, float[] firingAngles, int lines, float thinning, float roughness,
+							float condition, float temperature, float coolantRate, boolean pilot, boolean filtered,
+							float flex, int longestLine) {
 
 	public static final EngineSummary EMPTY =
-		new EngineSummary(EngineState.STALLED, 0, 0, 0, 0, 0, 0, 0, 0, 0, false, new float[0], 1, 0, 0);
+		new EngineSummary(EngineState.STALLED, 0, 0, 0, 0, 0, 0, 0, 0, 0, false, new float[0], 1, 0, 0, 1, 0, 0,
+			false, false, 0, 0);
 
 	public EngineSummary(EngineState state, float rpm, float availableTorque, float loadTorque, float fuelPerMinute,
 						 float ripple, int firing, int cylinders, float inertia, float lubrication,
 						 boolean starterEngaged, float[] firingAngles) {
 		this(state, rpm, availableTorque, loadTorque, fuelPerMinute, ripple, firing, cylinders, inertia, lubrication,
-			starterEngaged, firingAngles, 1, 0, 0);
+			starterEngaged, firingAngles, 1, 0, 0, 1, 0, 0, false, false, 0, 0);
 	}
 
 	public CompoundTag write() {
@@ -46,6 +56,13 @@ public record EngineSummary(EngineState state, float rpm, float availableTorque,
 		tag.putFloat("Lubrication", lubrication);
 		tag.putFloat("Thinning", thinning);
 		tag.putFloat("Roughness", roughness);
+		tag.putFloat("Condition", condition);
+		tag.putFloat("Temperature", temperature);
+		tag.putFloat("Coolant", coolantRate);
+		tag.putBoolean("Pilot", pilot);
+		tag.putBoolean("Filtered", filtered);
+		tag.putFloat("Flex", flex);
+		tag.putInt("LongestLine", longestLine);
 		tag.putInt("Lines", lines);
 		tag.putBoolean("Starter", starterEngaged);
 		int[] angles = new int[firingAngles.length];
@@ -65,7 +82,10 @@ public record EngineSummary(EngineState state, float rpm, float availableTorque,
 			tag.getFloat("Torque"), tag.getFloat("Load"), tag.getFloat("Fuel"), tag.getFloat("Ripple"),
 			tag.getInt("Firing"), tag.getInt("Cylinders"), tag.getFloat("Inertia"), tag.getFloat("Lubrication"),
 			tag.getBoolean("Starter"),
-			firingAngles, Math.max(1, tag.getInt("Lines")), tag.getFloat("Thinning"), tag.getFloat("Roughness"));
+			firingAngles, Math.max(1, tag.getInt("Lines")), tag.getFloat("Thinning"), tag.getFloat("Roughness"),
+			tag.contains("Condition") ? tag.getFloat("Condition") : 1, tag.getFloat("Temperature"),
+			tag.getFloat("Coolant"), tag.getBoolean("Pilot"), tag.getBoolean("Filtered"), tag.getFloat("Flex"),
+			tag.getInt("LongestLine"));
 	}
 
 	/** Gaps between consecutive firings around the 720° cycle. */
@@ -88,6 +108,9 @@ public record EngineSummary(EngineState state, float rpm, float availableTorque,
 			|| relativeChange(availableTorque, other.availableTorque) || relativeChange(loadTorque, other.loadTorque)
 			|| relativeChange(fuelPerMinute, other.fuelPerMinute) || Math.abs(ripple - other.ripple) > 0.01
 			|| Math.abs(lubrication - other.lubrication) >= 0.02 || Math.abs(roughness - other.roughness) >= 0.02
+			|| Math.abs(condition - other.condition) >= 0.02 || Math.abs(temperature - other.temperature) >= 0.03
+			|| Math.abs(coolantRate - other.coolantRate) >= 0.1 || pilot != other.pilot || filtered != other.filtered
+			|| Math.abs(flex - other.flex) >= 0.01 || longestLine != other.longestLine
 			|| !Arrays.equals(firingAngles, other.firingAngles);
 	}
 

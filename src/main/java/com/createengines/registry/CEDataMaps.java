@@ -52,4 +52,15 @@ public final class CEDataMaps {
 	public static boolean isFuel(FluidStack stack) {
 		return !stack.isEmpty() && fuel(stack.getFluid()) != null;
 	}
+
+	/** Fuels that light themselves easily enough to start a flame in a charge that will not: diesel, plant oil and the like. */
+	public static final double PILOT_IGNITION_LIMIT = 2.0;
+
+	/** Whether a fluid can be injected as a pilot shot to light a main charge: a fuel that compression lights readily. */
+	public static boolean isPilotFuel(FluidStack stack) {
+		if (stack.isEmpty())
+			return false;
+		FuelSpec spec = fuel(stack.getFluid());
+		return spec != null && spec.autoignitionTemp() <= PILOT_IGNITION_LIMIT;
+	}
 }

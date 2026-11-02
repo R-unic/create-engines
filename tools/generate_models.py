@@ -749,6 +749,11 @@ def sump():
             elements.append(box((x, 14, z), (x + 1, 14.6, z + 1), "bolt"))
     write("sump/block", textures, elements)
     write_item("sump/item", "sump/block")
+    # The oil filter that fits in the pan: a steel canister with a ribbed band and a threaded boss
+    write("sump/filter_item",
+          {"can": IRON_BLOCK, "band": BRASS, "boss": IRON, "particle": IRON_BLOCK},
+          [box((4, 0, 4), (12, 9, 12), "can"), box((3.5, 3, 3.5), (12.5, 5, 12.5), "band"),
+           box((5, 9, 5), (11, 10, 11), "boss"), box((6.5, 10, 6.5), (9.5, 11.5, 9.5), "boss")])
 
 
 # --- precision parts and the governor ------------------------------------------------------------------------------

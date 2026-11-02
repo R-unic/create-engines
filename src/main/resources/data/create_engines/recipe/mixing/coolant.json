@@ -1,0 +1,21 @@
+{
+  "type": "create:mixing",
+  "ingredients": [
+    {
+      "type": "neoforge:single",
+      "amount": 250,
+      "fluid": "minecraft:water"
+    },
+    {
+      "type": "neoforge:single",
+      "amount": 50,
+      "fluid": "create_engines:glycerin"
+    }
+  ],
+  "results": [
+    {
+      "amount": 300,
+      "id": "create_engines:coolant"
+    }
+  ]
+}

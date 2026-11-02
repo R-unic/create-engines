@@ -1,0 +1,29 @@
+{
+  "parent": "create_engines:sump",
+  "criteria": {
+    "oil_filter": {
+      "conditions": {
+        "event": "oil_filtered"
+      },
+      "trigger": "create_engines:event"
+    }
+  },
+  "display": {
+    "description": {
+      "translate": "advancement.create_engines.oil_filter.desc"
+    },
+    "icon": {
+      "count": 1,
+      "id": "create_engines:oil_filter"
+    },
+    "title": {
+      "translate": "advancement.create_engines.oil_filter"
+    }
+  },
+  "requirements": [
+    [
+      "oil_filter"
+    ]
+  ],
+  "sends_telemetry_event": true
+}

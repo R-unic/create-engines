@@ -1,18 +1,28 @@
 """Synthesizes the mod's sounds and encodes them to Ogg Vorbis under assets/create_engines/sounds.
 
-Needs numpy and scipy, plus a libsndfile built with Vorbis support. Audacity ships one: point CE_SNDFILE at its
-sndfile.dll if it isn't found in the usual install location. Run from anywhere; output paths are relative to this file.
+Needs numpy and scipy, plus a way to write Ogg Vorbis: a libsndfile built with Vorbis support (Audacity ships one:
+point CE_SNDFILE at its sndfile.dll if it isn't found in the usual install location), or failing that ffmpeg with
+libvorbis on the path. Run from anywhere; output paths are relative to this file. Name sounds to make only those, which
+leaves the others' recordings alone (a different encoder gives a different file even from the same synthesis):
 
     python tools/generate_sounds.py
+    python tools/generate_sounds.py turbo_whistle turbo_blowoff supercharger_whine
 
 Sounds:
   cylinder_fire1..3  the bang of a charge igniting: a pressure thump, a sharp crack and a ring down the exhaust
   starter_whir       a seamless loop of a starter motor turning over; the game bends its pitch with the motor's speed
+  turbo_whistle      a seamless loop of a spooling turbine: a thin whistle over air rush; pitch follows the wheel speed
+  turbo_blowoff      the blow-off valve dumping boost: a thump, a hiss and a flutter of the compressor surging
+  supercharger_whine a seamless loop of a roots blower: gear whine over the beat of its lobes; pitch follows its shaft
 """
 import ctypes
 import glob
 import os
+import shutil
+import subprocess
 import sys
+import tempfile
+import wave
 
 import numpy as np
 from scipy import signal
@@ -45,12 +55,33 @@ def load_sndfile():
             lib.sf_write_float.argtypes = [ctypes.c_void_p, ctypes.POINTER(ctypes.c_float), ctypes.c_int64]
             lib.sf_close.argtypes = [ctypes.c_void_p]
             return lib
-    sys.exit("No libsndfile found: set CE_SNDFILE to a sndfile.dll that can write Ogg Vorbis.")
+    return None
+
+
+def write_ogg_ffmpeg(path, samples):
+    """Encodes through ffmpeg's libvorbis when there is no libsndfile to do it."""
+    ffmpeg = shutil.which("ffmpeg")
+    if not ffmpeg:
+        sys.exit("No libsndfile and no ffmpeg found: set CE_SNDFILE to a sndfile.dll that can write Ogg Vorbis.")
+    pcm = (np.clip(samples, -1, 1) * 32767).astype("<i2")
+    with tempfile.TemporaryDirectory() as tmp:
+        wav = os.path.join(tmp, "in.wav")
+        with wave.open(wav, "wb") as fh:
+            fh.setnchannels(1)
+            fh.setsampwidth(2)
+            fh.setframerate(SR)
+            fh.writeframes(pcm.tobytes())
+        subprocess.run([ffmpeg, "-y", "-loglevel", "error", "-i", wav, "-c:a", "libvorbis", "-q:a", "5", path],
+                       check=True)
 
 
 def write_ogg(lib, name, samples):
     os.makedirs(OUT, exist_ok=True)
     path = os.path.join(OUT, name + ".ogg")
+    if lib is None:
+        write_ogg_ffmpeg(path, samples)
+        print("wrote", os.path.normpath(path), "%.2fs (ffmpeg)" % (len(samples) / SR))
+        return
     info = SfInfo(0, SR, 1, SF_FORMAT_OGG | SF_FORMAT_VORBIS, 0, 0)
     handle = lib.sf_open(path.encode(), SFM_WRITE, ctypes.byref(info))
     if not handle:
@@ -131,11 +162,94 @@ def starter_loop():
     return finish(mix, 0.8)
 
 
+def turbo_loop():
+    """One second of spooling turbine that repeats seamlessly. At the game's pitch 1 the whistle sits near 1.8 kHz; the
+    wheel running up bends it from about half that to well over an octave above. Every component is a whole number of
+    cycles long, so the loop has no seam."""
+    rng = np.random.default_rng(3)
+    n = SR
+    t = np.arange(n) / SR
+
+    # The blades passing a fixed point: a thin tone with a quiver, a bright overtone and a sub-tone, and a second tone
+    # a few hertz off it that makes the whistle shimmer
+    f0 = 1800
+    quiver = 0.9 * np.sin(2 * np.pi * 5 * t)
+    whistle = (np.sin(2 * np.pi * f0 * t + quiver) + 0.38 * np.sin(2 * np.pi * 2 * f0 * t + 2 * quiver + 0.7)
+               + 0.12 * np.sin(2 * np.pi * 3 * f0 * t + 1.9) + 0.26 * np.sin(2 * np.pi * (f0 // 2) * t + 0.4)
+               + 0.5 * np.sin(2 * np.pi * (f0 + 7) * t + 1.3))
+
+    # Air going through the housing: a bright rush that swells and ebbs, and a soft low whoosh
+    rush = periodic_noise(rng, n, lambda f: np.where((f > 2500) & (f < 9500), 1 / np.sqrt(np.maximum(f, 1)), 0))
+    rush = rush / np.max(np.abs(rush)) * (0.8 + 0.2 * np.cos(2 * np.pi * 38 * t))
+    whoosh = periodic_noise(rng, n, lambda f: np.where((f > 120) & (f < 650), 1.0, 0.0))
+    whoosh = whoosh / np.max(np.abs(whoosh))
+
+    mix = 0.55 * whistle / np.max(np.abs(whistle)) + 0.34 * rush + 0.24 * whoosh
+    return finish(np.tanh(1.2 * mix), 0.8)
+
+
+def turbo_blowoff():
+    """The blow-off valve letting a charge go: the valve thumps open, the air hisses out and the compressor, suddenly
+    unloaded, flutters as it surges before it settles."""
+    rng = np.random.default_rng(19)
+    n = int(1.0 * SR)
+    t = np.arange(n) / SR
+    rise = np.minimum(t / 0.006, 1)
+
+    thump = np.sin(2 * np.pi * np.cumsum(55 + 90 * np.exp(-t / 0.025)) / SR) * rise * np.exp(-t / 0.05)
+
+    hiss = band(rng.standard_normal(n), 1600, 11000, 2) * rise * (0.6 * np.exp(-t / 0.32) + 0.4 * np.exp(-t / 0.09))
+    # Surge: the hiss chops at a rate that slows as the wheel runs down, chattering rather than switching cleanly
+    chatter_rate = 36 * np.exp(-t / 0.35) + 9
+    chop = 0.5 + 0.5 * np.sign(np.sin(2 * np.pi * np.cumsum(chatter_rate) / SR)) * 0.8
+    chop = lowpass(chop, 220, 2)
+    flutter = band(rng.standard_normal(n), 900, 5200, 2) * chop * rise * np.exp(-t / 0.28)
+
+    mix = 0.8 * thump + 0.5 * hiss / np.max(np.abs(hiss)) + 0.55 * flutter / np.max(np.abs(flutter))
+    mix = np.tanh(1.5 * mix)
+    mix *= np.clip((n - np.arange(n)) / (0.06 * SR), 0, 1)
+    return finish(mix)
+
+
+def supercharger_loop():
+    """One second of roots blower that repeats seamlessly: the gears whine, the lobes beat at 48 Hz and the delivered air
+    thrums a third as fast. At pitch 1 the whine is near 900 Hz."""
+    rng = np.random.default_rng(5)
+    n = SR
+    t = np.arange(n) / SR
+
+    f0 = 900
+    whine = sum(np.sin(2 * np.pi * k * f0 * t + rng.uniform(0, 2 * np.pi)) / k ** 0.85 for k in range(1, 7))
+    whine += 0.4 * np.sin(2 * np.pi * 13 * (f0 // 3) * t)
+    lobes = 0.7 + 0.3 * np.cos(2 * np.pi * 48 * t)
+
+    thrum = sum(np.sin(2 * np.pi * k * 96 * t + rng.uniform(0, 2 * np.pi)) / k for k in range(1, 5))
+    air = periodic_noise(rng, n, lambda f: np.where((f > 500) & (f < 3800), 1 / np.sqrt(np.maximum(f, 1)), 0))
+    air = air / np.max(np.abs(air))
+    air *= 0.75 + 0.25 * np.cos(2 * np.pi * 48 * t - 0.8)
+
+    mix = 0.5 * whine / np.max(np.abs(whine)) * lobes + 0.3 * thrum / np.max(np.abs(thrum)) + 0.22 * air
+    return finish(np.tanh(1.25 * mix), 0.8)
+
+
+SOUNDS = {
+    "cylinder_fire1": lambda: bang(11, 1.0),
+    "cylinder_fire2": lambda: bang(23, 0.93),
+    "cylinder_fire3": lambda: bang(37, 1.07),
+    "starter_whir": starter_loop,
+    "turbo_whistle": turbo_loop,
+    "turbo_blowoff": turbo_blowoff,
+    "supercharger_whine": supercharger_loop,
+}
+
+
 def main():
     lib = load_sndfile()
-    for i, (seed, pitch) in enumerate([(11, 1.0), (23, 0.93), (37, 1.07)], start=1):
-        write_ogg(lib, "cylinder_fire%d" % i, bang(seed, pitch))
-    write_ogg(lib, "starter_whir", starter_loop())
+    names = sys.argv[1:] or list(SOUNDS)
+    for name in names:
+        if name not in SOUNDS:
+            sys.exit("Unknown sound %r; the sounds are: %s" % (name, ", ".join(SOUNDS)))
+        write_ogg(lib, name, SOUNDS[name]())
 
 
 if __name__ == "__main__":

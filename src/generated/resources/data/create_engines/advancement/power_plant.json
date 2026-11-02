@@ -1,0 +1,75 @@
+{
+  "parent": "create_engines:heavy_duty",
+  "criteria": {
+    "steam_herd": {
+      "conditions": {
+        "event": "steam_herd"
+      },
+      "trigger": "create_engines:event"
+    },
+    "redline": {
+      "conditions": {
+        "event": "redline"
+      },
+      "trigger": "create_engines:event"
+    },
+    "big_boost": {
+      "conditions": {
+        "event": "big_boost"
+      },
+      "trigger": "create_engines:event"
+    },
+    "twincharged": {
+      "conditions": {
+        "event": "twincharged"
+      },
+      "trigger": "create_engines:event"
+    },
+    "precision_engine": {
+      "conditions": {
+        "event": "precision_engine"
+      },
+      "trigger": "create_engines:event"
+    },
+    "anti_lag": {
+      "conditions": {
+        "event": "anti_lag"
+      },
+      "trigger": "create_engines:event"
+    }
+  },
+  "display": {
+    "description": {
+      "translate": "advancement.create_engines.power_plant.desc"
+    },
+    "frame": "challenge",
+    "icon": {
+      "count": 1,
+      "id": "create_engines:turbocharger"
+    },
+    "title": {
+      "translate": "advancement.create_engines.power_plant"
+    }
+  },
+  "requirements": [
+    [
+      "steam_herd"
+    ],
+    [
+      "redline"
+    ],
+    [
+      "big_boost"
+    ],
+    [
+      "twincharged"
+    ],
+    [
+      "precision_engine"
+    ],
+    [
+      "anti_lag"
+    ]
+  ],
+  "sends_telemetry_event": true
+}

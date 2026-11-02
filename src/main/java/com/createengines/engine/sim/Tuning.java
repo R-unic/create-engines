@@ -15,12 +15,22 @@ public final class Tuning {
 	public static volatile double rotaryPower = 1;
 	/** Fuel drawn from the tanks for each unit the engine burns; combustion itself is unchanged. */
 	public static volatile double fuelConsumption = 1;
+	/** Scales the rating a long crankshaft loses to torsional flex. 0 removes the loss, 1 is as designed. */
+	public static volatile double torsionalFlex = 1;
+	/** Scales how much better a cool engine breathes. 0 removes the bonus, 1 is as designed. */
+	public static volatile double coolingBonus = 1;
 	/** Scales the heat a heat exchanger takes from the exhaust. */
 	public static volatile double heatRecovery = 1;
 
 	public static volatile boolean forcedInduction = true;
 	public static volatile boolean sparkFouling = true;
 	public static volatile boolean oilDilution = true;
+	/** Whether engine oil goes off with use. Off, it stays new and nothing needs changing. */
+	public static volatile boolean oilAgeing = true;
+	/** Whether an engine has a temperature: off, it never warms up or cools and neither penalty nor bonus applies. */
+	public static volatile boolean engineTemperature = true;
+	/** Whether a pilot injection can light fuels compression alone can't. */
+	public static volatile boolean pilotInjection = true;
 	public static volatile boolean rotaryEngines = true;
 	public static volatile boolean heatRecoveryEnabled = true;
 
@@ -39,9 +49,14 @@ public final class Tuning {
 		rotaryPower = 1;
 		fuelConsumption = 1;
 		heatRecovery = 1;
+		coolingBonus = 1;
+		torsionalFlex = 1;
 		forcedInduction = true;
 		sparkFouling = true;
 		oilDilution = true;
+		oilAgeing = true;
+		engineTemperature = true;
+		pilotInjection = true;
 		rotaryEngines = true;
 		heatRecoveryEnabled = true;
 	}

@@ -525,7 +525,8 @@ public class EngineGameTests {
 				.fill(new FluidStack(CEFluids.ENGINE_OIL.get()
 					.getSource(), 500), FluidAction.EXECUTE) == 500, "The sump should take engine oil from a pipe");
 			helper.assertTrue(pan.fluidCapability()
-				.fill(new FluidStack(Fluids.WATER, 500), FluidAction.EXECUTE) == 0, "It shouldn't take water");
+				.fill(new FluidStack(CEFluids.GASOLINE.get()
+					.getSource(), 500), FluidAction.EXECUTE) == 0, "It shouldn't take a fuel that is no pilot fuel");
 		});
 		helper.runAtTickTime(500, () -> {
 			EngineSummary summary = summary(helper);
