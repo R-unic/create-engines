@@ -77,6 +77,8 @@ public final class EngineSimulation {
 	private double cycleProgress;
 	private double cycleGasWork;
 	private double cycleFrictionWork;
+	/** Friction work done over the tick so far, which warms the block alongside the exhaust. */
+	private double tickFrictionWork;
 	private double cycleOmegaMin = Double.MAX_VALUE;
 	private double cycleOmegaMax;
 	private double cycleFuel;
@@ -167,6 +169,7 @@ public final class EngineSimulation {
 			double friction = stepFrictionTorque() * radians;
 			double energy = 0.5 * inertia * omega * omega + gasWork - friction - loadTorque * radians;
 			cycleFrictionWork += friction;
+			tickFrictionWork += friction;
 			double floorEnergy = 0.5 * inertia * floorOmega * floorOmega;
 			if (floorOmega > STALL_OMEGA && energy < floorEnergy) {
 				crankingWork += floorEnergy - energy;
@@ -208,6 +211,7 @@ public final class EngineSimulation {
 				double gasWork = advance(delta, dt);
 				double friction = stepFrictionTorque() * Math.toRadians(delta);
 				cycleFrictionWork += friction;
+				tickFrictionWork += friction;
 				if (swing != null)
 					swing.add(gasWork - friction, Math.toRadians(delta));
 				remaining -= dt;
@@ -224,7 +228,8 @@ public final class EngineSimulation {
 			exhaustHeat += cylinder.exhaustHeatLastTick();
 		}
 		if (thermalLive && Tuning.engineTemperature)
-			thermal.update(exhaustHeat / TICK, cylinders.size(), TICK, coolant);
+			thermal.update(Thermal.heatIn(exhaustHeat / TICK, tickFrictionWork / TICK), cylinders.size(), TICK, coolant);
+		tickFrictionWork = 0;
 		for (Turbocharger turbo : turbos)
 			turbo.tick(TICK);
 		for (Supercharger blower : superchargers) {

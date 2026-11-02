@@ -39,10 +39,27 @@ public final class Thermal {
 	static final double CAPACITY = 60;
 	/** Heat the best coolant carries off per second per cylinder per unit above the thermostat. */
 	static final double COOLANT_CONDUCTANCE = 100;
-	/** Coolant spent per unit of heat it carries, mB, at the best quality. */
-	static final double COOLANT_PER_HEAT = 0.02;
+	/**
+	 * Coolant spent per unit of heat it carries, mB, at the best quality. Sized so a cooled engine burns through coolant at
+	 * a fifth or so of the rate it burns fuel: one cylinder spends a pan's 500 mB in about half an hour, and a big engine
+	 * in minutes, so the pan has to be fed and not filled once.
+	 */
+	static final double COOLANT_PER_HEAT = 0.15;
 	/** Heat in per second per cylinder, for each unit of heat the exhaust carries out per second. */
 	static final double HEAT_SHARE = 1;
+
+	/**
+	 * Share of the heat that goes into the block which comes from friction rather than the exhaust. Rubbing parts warm an
+	 * engine whatever it burns, so a lightly fuelled one still warms through; the share is traded against the exhaust's, and
+	 * friction and exhaust heat are of the same size at the speeds {@link #PASSIVE} was sized for, so a full-throttle
+	 * engine settles where it always did.
+	 */
+	static final double FRICTION_SHARE = 0.35;
+
+	/** The heat per second that goes into the block, from what leaves the exhaust and the power lost to friction. */
+	public static double heatIn(double exhaustHeat, double frictionPower) {
+		return exhaustHeat * (1 - FRICTION_SHARE) + frictionPower * FRICTION_SHARE;
+	}
 
 	private double temperature;
 	/** Coolant spent per second over the last tick, for goggles. */

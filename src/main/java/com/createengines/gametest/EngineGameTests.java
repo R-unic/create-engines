@@ -242,6 +242,23 @@ public class EngineGameTests {
 		});
 	}
 
+	/** Once the redstone drops, the starter lets go of its input: a weak source such as a hand crank must not stay loaded. */
+	@GameTest(template = "empty", timeoutTicks = 900)
+	public static void starterReleasesItsInputWhenTheSignalDrops(GameTestHelper helper) {
+		buildSingleCylinder(helper, false);
+		helper.runAtTickTime(200, () -> {
+			com.createengines.content.starter.StarterBlockEntity starter = helper.getBlockEntity(STARTER);
+			helper.assertTrue(starter.calculateStressApplied() > 0, "Cranking should load the starter first");
+			helper.setBlock(STARTER_POWER, Blocks.AIR);
+		});
+		helper.runAtTickTime(300, () -> {
+			com.createengines.content.starter.StarterBlockEntity starter = helper.getBlockEntity(STARTER);
+			helper.assertTrue(starter.calculateStressApplied() == 0,
+				"A starter without a signal should put no stress on its input: " + starter.calculateStressApplied());
+			helper.succeed();
+		});
+	}
+
 	/** Each item should be listed once in our tab and in search; a duplicate crashes the creative inventory. */
 	@GameTest(template = "empty")
 	public static void creativeTabListsEachItemOnce(GameTestHelper helper) {
@@ -539,6 +556,37 @@ public class EngineGameTests {
 			CylinderHeadBlockEntity head = helper.getBlockEntity(HEAD);
 			helper.assertTrue(head.oilTank()
 				.isEmpty(), "The head's own oil tank was never needed");
+			helper.succeed();
+		});
+	}
+
+	/** Coolant is spent carrying heat, so a pan filled once runs down while the engine works and has to be fed. */
+	@GameTest(template = "empty", timeoutTicks = 1700)
+	public static void aRunningEngineSpendsTheCoolantInItsPan(GameTestHelper helper) {
+		TestEngine.build(helper.getLevel(), helper.absolutePos(BlockPos.ZERO), true, false);
+		BlockPos sump = new BlockPos(3, 1, 2);
+		helper.setBlock(sump, CEBlocks.SUMP.getDefaultState());
+		helper.runAtTickTime(20, () -> {
+			SumpBlockEntity pan = helper.getBlockEntity(sump);
+			pan.fluidCapability()
+				.fill(new FluidStack(CEFluids.COOLANT.get()
+					.getSource(), 500), FluidAction.EXECUTE);
+			pan.fluidCapability()
+				.fill(new FluidStack(CEFluids.ENGINE_OIL.get()
+					.getSource(), 500), FluidAction.EXECUTE);
+		});
+		helper.runAtTickTime(300, () -> helper.setBlock(STARTER_POWER, Blocks.AIR));
+		int[] atStart = new int[1];
+		helper.runAtTickTime(400, () -> atStart[0] = ((SumpBlockEntity) helper.getBlockEntity(sump)).coolantTank()
+			.getFluidAmount());
+		helper.runAtTickTime(1600, () -> {
+			SumpBlockEntity pan = helper.getBlockEntity(sump);
+			int left = pan.coolantTank()
+				.getFluidAmount();
+			helper.assertTrue(summary(helper).state() == EngineState.RUNNING, "The engine should be running: " + summary(helper));
+			helper.assertTrue(atStart[0] - left >= 10,
+				"A minute of running should use up coolant, but the pan went from " + atStart[0] + " to " + left + " mB");
+			helper.assertTrue(left > 0, "And not all of it in a minute");
 			helper.succeed();
 		});
 	}
@@ -1853,6 +1901,25 @@ public class EngineGameTests {
 			.registryAccess());
 		helper.assertTrue(turbo.limit.getValue() == 9, "Boost limit: " + turbo.limit.getValue());
 		helper.assertTrue(turbo.antiLag.getValue() == 2, "Anti-lag: " + turbo.antiLag.getValue());
+		helper.succeed();
+	}
+
+	/** Create sends a player's setting to the value box with the matching network id: the two must not share one. */
+	@GameTest(template = "empty")
+	public static void aTurbochargersTwoValuesHaveTheirOwnNetworkIds(GameTestHelper helper) {
+		BlockPos plain = new BlockPos(1, 1, 1);
+		BlockPos variable = new BlockPos(3, 1, 1);
+		helper.setBlock(plain, CEBlocks.TURBOCHARGER.getDefaultState()
+			.setValue(TurbochargerBlock.FACING, Direction.UP));
+		helper.setBlock(variable, CEBlocks.VARIABLE_TURBOCHARGER.getDefaultState()
+			.setValue(TurbochargerBlock.FACING, Direction.UP));
+		for (BlockPos pos : new BlockPos[] {plain, variable}) {
+			TurbochargerBlockEntity turbo = helper.getBlockEntity(pos);
+			helper.assertTrue(turbo.limit.netId() != turbo.antiLag.netId(),
+				"The boost limit and anti-lag share network id " + turbo.limit.netId() + " at " + pos);
+			helper.assertTrue(!turbo.limit.getClipboardKey()
+				.equals(turbo.antiLag.getClipboardKey()), "And the same clipboard key at " + pos);
+		}
 		helper.succeed();
 	}
 

@@ -27,18 +27,28 @@ public final class MachineLoopSound extends AbstractTickableSoundInstance {
 	private static final float FADE_OUT = 0.08f;
 	/** Below this the loop is wanted silent. */
 	private static final float AUDIBLE = 0.02f;
+	/**
+	 * Share of the way to what the source asks for that the level and pitch move each tick. A machine's figures reach the
+	 * client in steps, a few times a second, and the sound would follow them in jumps: this carries it between them.
+	 */
+	private static final float FOLLOW = 0.06f;
 
 	private final Object owner;
 	private final LoopSource source;
 	private final float loudest;
 	/** How far the loop has faded in, 0 (silent) to 1. */
 	private float fade;
+	/** The level and pitch the loop is at now, on their way to what the source asks for. */
+	private float level;
+	private float currentPitch;
 
 	private MachineLoopSound(Object owner, BlockPos at, SoundEvent sound, float loudest, LoopSource source) {
 		super(sound, SoundSource.BLOCKS, SoundInstance.createUnseededRandom());
 		this.owner = owner;
 		this.source = source;
 		this.loudest = loudest;
+		this.level = Mth.clamp(source.loopLevel(), 0, 1);
+		this.currentPitch = source.loopPitch();
 		looping = true;
 		delay = 0;
 		volume = 0;
@@ -83,8 +93,10 @@ public final class MachineLoopSound extends AbstractTickableSoundInstance {
 			finish();
 			return;
 		}
-		volume = loudest * CEClientConfig.boostVolume() * wanted * fade;
-		pitch = Mth.clamp(source.loopPitch(), 0.5f, 2f);
+		level += (wanted - level) * FOLLOW;
+		currentPitch += (source.loopPitch() - currentPitch) * FOLLOW;
+		volume = loudest * CEClientConfig.boostVolume() * level * fade;
+		pitch = Mth.clamp(currentPitch, 0.5f, 2f);
 	}
 
 	private void finish() {

@@ -35,7 +35,7 @@ public class CreateEnginesClient {
 	 */
 	private static void registerBucketColours(RegisterColorHandlersEvent.Item event) {
 		for (FluidEntry<?> fluid : List.of(CEFluids.PLANT_OIL, CEFluids.DIESEL, CEFluids.GASOLINE, CEFluids.ENGINE_OIL, CEFluids.SUGAR_MASH,
-			CEFluids.ETHANOL, CEFluids.GLYCERIN))
+			CEFluids.ETHANOL, CEFluids.GLYCERIN, CEFluids.USED_OIL, CEFluids.COOLANT))
 			fluid.getBucket()
 				.ifPresent(bucket -> event.register(new DynamicFluidContainerModel.Colors(), bucket));
 	}

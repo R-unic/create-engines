@@ -114,7 +114,7 @@ class ThermalTest {
 
 	@Test
 	void coolantIsSpentCarryingHeatAndRunsOutWithoutHurtingAnything() {
-		Tank small = new Tank(20, 1);
+		Tank small = new Tank(150, 1);
 		Thermal thermal = new Thermal(0.4);
 		double early = 0;
 		for (int i = 0; i < 20 * 400; i++) {
@@ -122,10 +122,29 @@ class ThermalTest {
 			if (i == 20 * 3)
 				early = thermal.temperature();
 		}
-		assertEquals(20, small.drawn, 1e-6, "all of it is used");
+		assertEquals(150, small.drawn, 1e-6, "all of it is used");
 		assertTrue(early < 0.6, "it held the engine cool while it lasted: " + early);
 		assertEquals(settle(8, 12, CoolantSupply.NONE), thermal.temperature(), 0.01, "afterwards the engine is simply uncooled");
 		assertEquals(0, thermal.coolantRate());
+	}
+
+	/** Coolant spent over {@code seconds} by {@code cylinders} each sending {@code perCylinder} heat a second out of the exhaust. */
+	private static double spentOver(double seconds, double perCylinder, int cylinders) {
+		Tank endless = new Tank(1e9, 1);
+		Thermal thermal = new Thermal(Thermal.NORMAL);
+		for (int i = 0; i < seconds * 20; i++)
+			thermal.update(perCylinder * cylinders, cylinders, 0.05, endless);
+		return endless.drawn;
+	}
+
+	@Test
+	void aPanOfCoolantDoesNotLastForeverOnARunningEngine() {
+		double hour = spentOver(3600, 2.0, 1);
+		assertTrue(hour > 500, "even one gently running cylinder empties a 500 mB pan within the hour: " + hour);
+		double halfHour = spentOver(1800, 2.0, 1);
+		assertTrue(halfHour < 500, "but a small engine gets a good while out of it: " + halfHour);
+		double sixteen = spentOver(300, 2.0, 16);
+		assertTrue(sixteen > 500, "a sixteen is through a pan in five minutes: " + sixteen);
 	}
 
 	@Test
@@ -183,6 +202,41 @@ class ThermalTest {
 		double cooled = liveEngineTemperature(new Tank(1e9, 1));
 		assertTrue(bare > Thermal.COOL_NONE, "an uncooled engine at speed is warm: " + bare);
 		assertTrue(cooled < bare - 0.1, "cooled " + cooled + " against " + bare);
+	}
+
+	/** Temperature a sixteen-cylinder crude engine settles at, turned at {@code rpm} with the fuel rack at {@code rack}. */
+	private static double sixteenAt(double rpm, double rack) {
+		List<CylinderModel> models = new ArrayList<>();
+		Camshaft cam = new Camshaft();
+		for (int i = 0; i < 16; i++) {
+			double fire = i * 720d / 16;
+			CylinderModel model = new CylinderModel(CylinderSpec.CRUDE, CamProfile.BASIC, fire % 360, cam, fire / 2);
+			model.fuelSupply = MixtureTest.unlimited(FuelSpec.DIESEL);
+			model.rack = rack;
+			models.add(model);
+		}
+		EngineSimulation sim = new EngineSimulation(models, 2.4 * 4, 0.09);
+		sim.thermal().setTemperature(0);
+		sim.setThermalLive(true);
+		sim.setCoolant(CoolantSupply.NONE);
+		for (CylinderModel model : models)
+			model.resetGas(0);
+		for (int i = 0; i < 20 * 300; i++)
+			sim.tickDriven(EngineSimulation.rpmToOmega(rpm), 1);
+		return sim.thermal().temperature();
+	}
+
+	@Test
+	void aLightlyFuelledEngineStillWarmsThroughFromItsOwnFriction() {
+		double starved = sixteenAt(67, 0.25);
+		assertTrue(starved > Thermal.COLD_BELOW + 0.04, "a big engine turning slowly on little fuel is not stuck cold: " + starved);
+		assertTrue(starved < sixteenAt(67, 1), "but it is still cooler than one burning a full shot");
+	}
+
+	@Test
+	void frictionHeatLeavesTheFullThrottleCalibrationWhereItWas() {
+		assertEquals(Thermal.NORMAL, settle(2.5, 8, CoolantSupply.NONE), 0.01);
+		assertEquals(2.5, Thermal.heatIn(2.5, 2.5), 1e-12, "equal exhaust and friction heat add up to the same");
 	}
 
 	private static double liveEngineTemperature(CoolantSupply coolant) {

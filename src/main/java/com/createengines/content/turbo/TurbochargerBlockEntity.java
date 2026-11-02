@@ -50,6 +50,8 @@ public class TurbochargerBlockEntity extends SmartBlockEntity
 	private static final BehaviourType<ScrollValueBehaviour> LIMIT_TYPE = new BehaviourType<>("turbo_limit");
 	private static final BehaviourType<ScrollValueBehaviour> ANTI_LAG_TYPE = new BehaviourType<>("turbo_anti_lag");
 	private static final String ANTI_LAG_KEY = "AntiLag";
+	/** The boost limit keeps Create's default of 0 for its network id. */
+	private static final int ANTI_LAG_NET_ID = 1;
 	/** Wheel degrees turned per tick at design speed. */
 	private static final float WHEEL_DEGREES_PER_TICK = 60;
 
@@ -107,6 +109,22 @@ public class TurbochargerBlockEntity extends SmartBlockEntity
 				scratch.putInt("ScrollValue", nbt.getInt(ANTI_LAG_KEY));
 				super.read(scratch, registries, clientPacket);
 			}
+
+			/**
+			 * Create tells the value boxes of one block apart by this number, and a setting sent from the player lands on the
+			 * first behaviour that matches it. Both scroll values here said 0, so a setting made on the anti-lag box went to
+			 * the boost limit, which is first in line: the two seemed tied together.
+			 */
+			@Override
+			public int netId() {
+				return ANTI_LAG_NET_ID;
+			}
+
+			/** Create's clipboard copies a block's settings under this key, so each value needs its own. */
+			@Override
+			public String getClipboardKey() {
+				return ANTI_LAG_KEY;
+			}
 		};
 		antiLag.between(0, Turbocharger.MAX_ANTI_LAG);
 		antiLag.value = 0;
@@ -161,21 +179,24 @@ public class TurbochargerBlockEntity extends SmartBlockEntity
 				popBang();
 			}
 			if (loopLevel() > 0.02f)
-				MachineLoopSound.ensurePlaying(this, worldPosition, CESounds.TURBO_WHISTLE.get(), 0.5f, this);
+				MachineLoopSound.ensurePlaying(this, worldPosition, CESounds.TURBO_WHISTLE.get(), 0.22f, this);
 			blowOff();
 		}
 	}
 
-	/** The whistle is as loud as the wheel is fast, and silent while it is barely turning. */
+	/** The whistle is as loud as the wheel is fast, and silent while it is barely turning; it eases in rather than ramping. */
 	@Override
 	public float loopLevel() {
-		return status == null ? 0 : Math.min(1, Math.max(0, status.spool() - 0.04f) * 1.25f);
+		if (status == null)
+			return 0;
+		float x = Math.clamp((status.spool() - 0.06f) * 1.2f, 0, 1);
+		return x * x * (3 - 2 * x);
 	}
 
-	/** From a low hum at a slow wheel to a shriek at design speed. */
+	/** From a low hum at a slow wheel to a whistle at design speed, kept well below the shrill end of the recording. */
 	@Override
 	public float loopPitch() {
-		return 0.55f + 1.05f * Math.min(1.2f, status == null ? 0 : status.spool());
+		return 0.55f + 0.5f * Math.min(1.2f, status == null ? 0 : status.spool());
 	}
 
 	/**

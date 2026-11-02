@@ -31,12 +31,12 @@ public final class CEFluids {
 	private static final int PLANT_OIL_COLOUR = 0xFF6E4A1A;
 	private static final int DIESEL_COLOUR = 0xFFC7A93B;
 	private static final int GASOLINE_COLOUR = 0xFFE6D27A;
-	private static final int ENGINE_OIL_COLOUR = 0xFF2B2622;
+	private static final int ENGINE_OIL_COLOUR = 0xFFD99A1E;
 	private static final int SUGAR_MASH_COLOUR = 0xFFB89A5E;
 	private static final int ETHANOL_COLOUR = 0xFFC9E8EC;
 	private static final int GLYCERIN_COLOUR = 0xFFE3D9A0;
-	private static final int USED_OIL_COLOUR = 0xFF14100D;
-	private static final int COOLANT_COLOUR = 0xFF4FD6A8;
+	private static final int USED_OIL_COLOUR = 0xFF7F7A74;
+	private static final int COOLANT_COLOUR = 0xFF6CE02E;
 
 	public static final FluidEntry<BaseFlowingFluid.Flowing> PLANT_OIL =
 		REGISTRATE.fluid("plant_oil", STILL, FLOW, tinted(PLANT_OIL_COLOUR))
@@ -105,7 +105,7 @@ public final class CEFluids {
 				.explosionResistance(100f))
 			.source(BaseFlowingFluid.Source::new)
 			.block()
-			.properties(p -> p.mapColor(MapColor.COLOR_BLACK))
+			.properties(p -> p.mapColor(MapColor.COLOR_ORANGE))
 			.build()
 			.bucket()
 			.model(CEFluids::bucketModel)
@@ -203,7 +203,7 @@ public final class CEFluids {
 				.explosionResistance(100f))
 			.source(BaseFlowingFluid.Source::new)
 			.block()
-			.properties(p -> p.mapColor(MapColor.EMERALD))
+			.properties(p -> p.mapColor(MapColor.COLOR_LIGHT_GREEN))
 			.build()
 			.bucket()
 			.model(CEFluids::bucketModel)

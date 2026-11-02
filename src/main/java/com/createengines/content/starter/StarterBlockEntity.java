@@ -30,6 +30,7 @@ public class StarterBlockEntity extends KineticBlockEntity implements EngineMemb
 
 	private @Nullable BlockPos primaryPos;
 	private float drag;
+	private float smoothedDrag;
 	private boolean cranking;
 	private boolean turning;
 	private int idleTicks;
@@ -59,12 +60,14 @@ public class StarterBlockEntity extends KineticBlockEntity implements EngineMemb
 		primaryPos = primary;
 		cranking = active;
 		turning = engaged;
-		// Smooth over a cycle so the input network isn't jerked about every compression stroke
-		float next = (float) (drag + (crankingStress - drag) * 0.05);
-		if (!active && crankingStress == 0 && next < 0.05f)
-			next = 0;
-		if (Math.abs(next - drag) > Math.max(0.1f, drag * 0.05f) || next == 0 && drag != 0) {
-			drag = next;
+		// Smooth over a cycle so the input network isn't jerked about every compression stroke. The smoothed figure
+		// moves every tick; the stress the network sees only follows it in steps, so it has to be tracked separately,
+		// or a decay of a twentieth a tick never clears the step and the last stress is left on the shaft for good.
+		smoothedDrag += (crankingStress - smoothedDrag) * (active ? 0.05f : 0.3f);
+		if (!active && crankingStress == 0 && smoothedDrag < 0.05f)
+			smoothedDrag = 0;
+		if (Math.abs(smoothedDrag - drag) > Math.max(0.1f, drag * 0.05f) || smoothedDrag == 0 && drag != 0) {
+			drag = smoothedDrag;
 			if (hasNetwork())
 				getOrCreateNetwork().updateStressFor(this, calculateStressApplied());
 		}
@@ -96,6 +99,7 @@ public class StarterBlockEntity extends KineticBlockEntity implements EngineMemb
 		cranking = false;
 		turning = false;
 		drag = 0;
+		smoothedDrag = 0;
 		if (hasNetwork())
 			getOrCreateNetwork().updateStressFor(this, 0);
 		sendData();
@@ -115,6 +119,7 @@ public class StarterBlockEntity extends KineticBlockEntity implements EngineMemb
 	protected void read(CompoundTag tag, HolderLookup.Provider registries, boolean clientPacket) {
 		super.read(tag, registries, clientPacket);
 		drag = tag.getFloat("Drag");
+		smoothedDrag = drag;
 		cranking = tag.getBoolean("Cranking");
 		turning = tag.getBoolean("Turning");
 		primaryPos = NbtUtils.readBlockPos(tag, "Primary")
