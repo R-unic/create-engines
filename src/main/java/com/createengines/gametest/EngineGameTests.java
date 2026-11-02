@@ -23,6 +23,7 @@ import com.createengines.content.starter.StarterBlock;
 import com.createengines.content.sump.SumpBlockEntity;
 import com.createengines.content.transmission.Gears;
 import com.createengines.content.transmission.TransmissionBlockEntity;
+import com.createengines.content.blackbox.BlackBoxBlockEntity;
 import com.createengines.content.dyno.DynoBlockEntity;
 import com.createengines.content.tool.BankBuilderItem;
 import com.createengines.content.tool.TimingToolItem;
@@ -1339,8 +1340,8 @@ public class EngineGameTests {
 	public static void aTransmissionTurnsItsOutputAtTheSelectedGear(GameTestHelper helper) {
 		buildTransmission(helper, Gears.FIRST);
 		BlockPos at = new BlockPos(1, 1, 1);
-		int[] gears = {Gears.FIRST, 2, 3, Gears.FOURTH, Gears.NEUTRAL, Gears.REVERSE};
-		float[] speeds = {16, 25.6f, 40, 64, 0, -21.333f};
+		int[] gears = {Gears.FIRST, 2, 7, Gears.TOP, Gears.NEUTRAL, Gears.REVERSE};
+		float[] speeds = {5.333f, 6.557f, 18.497f, 64, 0, -21.333f};
 		for (int i = 0; i < gears.length; i++) {
 			int gear = gears[i];
 			float speed = speeds[i];
@@ -1359,14 +1360,14 @@ public class EngineGameTests {
 	public static void redstoneOverridesTheTransmissionPanel(GameTestHelper helper) {
 		buildTransmission(helper, Gears.FIRST);
 		BlockPos power = new BlockPos(1, 2, 1);
-		helper.runAtTickTime(20, () -> helper.assertTrue(Math.abs(outputSpeed(helper) - 16) < 0.1f,
+		helper.runAtTickTime(20, () -> helper.assertTrue(Math.abs(outputSpeed(helper) - 5.333f) < 0.1f,
 			"The panel's first gear should be in use: " + outputSpeed(helper)));
 		helper.runAtTickTime(25, () -> helper.setBlock(power, Blocks.REDSTONE_BLOCK));
 		helper.runAtTickTime(45, () -> helper.assertTrue(outputSpeed(helper) < -20,
 			"A strong signal selects reverse: " + outputSpeed(helper)));
 		helper.runAtTickTime(50, () -> helper.setBlock(power, Blocks.AIR));
 		helper.runAtTickTime(70, () -> {
-			helper.assertTrue(Math.abs(outputSpeed(helper) - 16) < 0.1f,
+			helper.assertTrue(Math.abs(outputSpeed(helper) - 5.333f) < 0.1f,
 				"Without a signal the panel decides again: " + outputSpeed(helper));
 			helper.succeed();
 		});
@@ -1393,6 +1394,56 @@ public class EngineGameTests {
 				"Three presses overstress this engine direct, but first gear should carry them");
 			KineticBlockEntity press = helper.getBlockEntity(PRESS.east());
 			helper.assertTrue(press.getSpeed() != 0, "The presses should turn behind the transmission");
+			helper.succeed();
+		});
+	}
+
+	private static void placePresses(GameTestHelper helper) {
+		for (int i = 0; i < 3; i++)
+			helper.setBlock(PRESS.east(1 + i), AllBlocks.MECHANICAL_PRESS.getDefaultState()
+				.setValue(BlockStateProperties.HORIZONTAL_FACING, Direction.EAST));
+	}
+
+	/** On auto, a transmission that starts in first gear climbs until the engine is carrying about as much as it can. */
+	@GameTest(template = "empty", timeoutTicks = 4000)
+	public static void anAutoTransmissionClimbsToWhatTheEngineCanPull(GameTestHelper helper) {
+		buildSingleCylinder(helper, true);
+		helper.setBlock(PRESS, CEBlocks.TRANSMISSION.getDefaultState()
+			.setValue(BlockStateProperties.AXIS, Axis.X));
+		TransmissionBlockEntity box = helper.getBlockEntity(PRESS);
+		box.panel.setValue(Gears.AUTO);
+		helper.runAtTickTime(300, () -> helper.setBlock(STARTER_POWER, Blocks.AIR));
+		helper.runAtTickTime(500, () -> placePresses(helper));
+		helper.runAtTickTime(3600, () -> {
+			CrankshaftBlockEntity crank = helper.getBlockEntity(PRIMARY);
+			helper.assertFalse(crank.isOverStressed(), "Auto should have found a gear that carries the presses");
+			helper.assertTrue(box.gear() > Gears.FIRST, "With room to spare it should have climbed out of first: " + box.gear());
+			helper.assertTrue(box.gear() < Gears.TOP, "Three presses overstress this engine direct, so not to the top: " + box.gear());
+			KineticBlockEntity press = helper.getBlockEntity(PRESS.east());
+			helper.assertTrue(press.getSpeed() != 0, "The presses should turn behind the transmission");
+			helper.succeed();
+		});
+	}
+
+	/** Put on auto while overstressed in a gear that is too tall, a transmission drops to one the engine can carry. */
+	@GameTest(template = "empty", timeoutTicks = 4000)
+	public static void anAutoTransmissionDownshiftsOutOfAnOverload(GameTestHelper helper) {
+		buildSingleCylinder(helper, true);
+		helper.setBlock(PRESS, CEBlocks.TRANSMISSION.getDefaultState()
+			.setValue(BlockStateProperties.AXIS, Axis.X));
+		TransmissionBlockEntity box = helper.getBlockEntity(PRESS);
+		box.panel.setValue(Gears.TOP);
+		helper.runAtTickTime(300, () -> helper.setBlock(STARTER_POWER, Blocks.AIR));
+		helper.runAtTickTime(500, () -> placePresses(helper));
+		helper.runAtTickTime(1500, () -> {
+			CrankshaftBlockEntity crank = helper.getBlockEntity(PRIMARY);
+			helper.assertTrue(crank.isOverStressed(), "In the top gear three presses should overstress the engine");
+			box.panel.setValue(Gears.AUTO);
+		});
+		helper.runAtTickTime(3600, () -> {
+			CrankshaftBlockEntity crank = helper.getBlockEntity(PRIMARY);
+			helper.assertFalse(crank.isOverStressed(), "Auto should have dropped to a gear the engine can carry: gear " + box.gear());
+			helper.assertTrue(box.gear() < Gears.TOP, "It should have left the top gear: " + box.gear());
 			helper.succeed();
 		});
 	}
@@ -2008,6 +2059,62 @@ public class EngineGameTests {
 			helper.assertTrue(readout.complete(), "The curve should be finished by now");
 			helper.assertTrue(readout.torque()[readout.peakTorque()] > 0, "A running engine makes torque");
 			helper.assertTrue(readout.current() > 0, "And the dyno knows its speed: " + readout.current());
+			helper.succeed();
+		});
+	}
+
+	/** A flight recorder set against an engine keeps its speed, and logs the start. */
+	@GameTest(template = "empty", timeoutTicks = 1100)
+	public static void aFlightRecorderLogsAnEnginesLife(GameTestHelper helper) {
+		buildSingleCylinder(helper, true);
+		BlockPos box = new BlockPos(2, 2, 1);
+		helper.setBlock(box, CEBlocks.BLACK_BOX.getDefaultState());
+		helper.runAtTickTime(300, () -> helper.setBlock(STARTER_POWER, Blocks.AIR));
+		helper.runAtTickTime(1000, () -> {
+			BlackBoxBlockEntity be = helper.getBlockEntity(box);
+			var readout = be.readout();
+			helper.assertTrue(be.engineFound(), "It should have found the engine");
+			helper.assertTrue(readout != null && !readout.isEmpty() && readout.span() >= 20,
+				"It should have most of the run on tape: " + readout);
+			int fastest = 0;
+			for (int rpm : readout.rpm())
+				fastest = Math.max(fastest, rpm);
+			helper.assertTrue(fastest > 20, "And the engine turned: " + fastest);
+			helper.assertTrue(readout.events()
+				.stream()
+				.anyMatch(event -> event.to() == EngineState.RUNNING), "Cranking to running should be an event: " + readout.events());
+			helper.succeed();
+		});
+	}
+
+	/** An engine that will not start is logged as stalling for want of fuel. */
+	@GameTest(template = "empty", timeoutTicks = 1100)
+	public static void aFlightRecorderSaysWhyAnEngineStalled(GameTestHelper helper) {
+		buildSingleCylinder(helper, false);
+		BlockPos box = new BlockPos(2, 2, 1);
+		helper.setBlock(box, CEBlocks.BLACK_BOX.getDefaultState());
+		helper.runAtTickTime(300, () -> helper.setBlock(STARTER_POWER, Blocks.AIR));
+		helper.runAtTickTime(1000, () -> {
+			BlackBoxBlockEntity be = helper.getBlockEntity(box);
+			var events = be.readout()
+				.events();
+			helper.assertTrue(events.stream()
+				.anyMatch(event -> event.to() == EngineState.STALLED
+					&& event.cause() == com.createengines.engine.FlightRecorder.Cause.NO_FUEL),
+				"An unfuelled engine stalls for want of fuel: " + events);
+			helper.succeed();
+		});
+	}
+
+	/** Alone, a flight recorder has nothing to record. */
+	@GameTest(template = "empty")
+	public static void aFlightRecorderAloneRecordsNothing(GameTestHelper helper) {
+		BlockPos box = new BlockPos(1, 1, 1);
+		helper.setBlock(box, CEBlocks.BLACK_BOX.getDefaultState());
+		helper.runAtTickTime(100, () -> {
+			BlackBoxBlockEntity be = helper.getBlockEntity(box);
+			helper.assertTrue(!be.engineFound() && be.recorder()
+				.size() == 0, "No engine, no tape");
 			helper.succeed();
 		});
 	}

@@ -1,0 +1,29 @@
+{
+  "parent": "create_engines:dyno_run",
+  "criteria": {
+    "stall_recorded": {
+      "conditions": {
+        "event": "stall_recorded"
+      },
+      "trigger": "create_engines:event"
+    }
+  },
+  "display": {
+    "description": {
+      "translate": "advancement.create_engines.stall_recorded.desc"
+    },
+    "icon": {
+      "count": 1,
+      "id": "create_engines:black_box"
+    },
+    "title": {
+      "translate": "advancement.create_engines.stall_recorded"
+    }
+  },
+  "requirements": [
+    [
+      "stall_recorded"
+    ]
+  ],
+  "sends_telemetry_event": true
+}

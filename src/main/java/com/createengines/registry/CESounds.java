@@ -19,6 +19,8 @@ public final class CESounds {
 
 	/** A cylinder's charge igniting at the top of its compression stroke. */
 	public static final DeferredHolder<SoundEvent, SoundEvent> CYLINDER_FIRE = register("cylinder_fire");
+	/** An engine's exhaust note, made up as it plays; the recording named in sounds.json is never read. */
+	public static final DeferredHolder<SoundEvent, SoundEvent> ENGINE_NOTE = register("engine_note");
 	/** The starter motor turning an engine over: a seamless loop, played for as long as it is cranking. */
 	public static final DeferredHolder<SoundEvent, SoundEvent> STARTER_WHIR = register("starter_whir");
 

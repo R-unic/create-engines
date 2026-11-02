@@ -217,6 +217,8 @@ public final class CEAdvancements {
 			"Boxer Rebellion", "Run an engine of four or more cylinders with opposed banks on the same crank throws.");
 		on("dyno_run", "heavy_duty", () -> CEBlocks.DYNO.get(), AdvancementType.TASK, Milestone.DYNO_RUN,
 			"On the Rollers", "Read a running engine's torque and power curves with a Dynamometer set against it.");
+		on("stall_recorded", "dyno_run", () -> CEBlocks.BLACK_BOX.get(), AdvancementType.TASK, Milestone.STALL_RECORDED,
+			"Black Box Thinking", "Have a Flight Recorder set against an engine log it stalling.");
 		on("tuned_up", "timing_tool", () -> CEItems.TIMING_TOOL.get(), AdvancementType.TASK, Milestone.FUEL_TUNED,
 			"Tune-Up", "Sneak-use a Timing Tool until it is in tune mode, then use it on a running engine to set every injector for a balanced mixture.");
 		on("tool_timed", "timing_tool",() -> CEItems.TIMING_TOOL.get(), AdvancementType.GOAL, Milestone.TOOL_TIMED,
@@ -257,7 +259,9 @@ public final class CEAdvancements {
 		on("reverse", "transmission", () -> CEBlocks.TRANSMISSION.get(), AdvancementType.TASK, Milestone.REVERSE,
 			"Reverse Engineering", "Run a transmission's output backwards in reverse gear.");
 		on("every_gear", "transmission", () -> CEBlocks.TRANSMISSION.get(), AdvancementType.GOAL, Milestone.EVERY_GEAR,
-			"Gearhead", "Shift a loaded transmission through all four gears and reverse.");
+			"Gearhead", "Shift a loaded transmission through all thirteen gears and reverse.");
+		on("auto_gearbox", "transmission", () -> CEBlocks.TRANSMISSION.get(), AdvancementType.TASK, Milestone.AUTO_SHIFTED,
+			"Let It Shift", "Set a Transmission to auto and let it change gear on its own while it is carrying drive.");
 
 		// Oil service: an oil pan's exchange dial, filter and used oil
 		on("oil_exchange", "sump", () -> CEBlocks.SUMP.get(), AdvancementType.TASK, Milestone.OIL_EXCHANGED,

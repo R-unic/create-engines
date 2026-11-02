@@ -13,6 +13,7 @@ import com.createengines.content.battery.BatteryBlock;
 import com.createengines.content.camshaft.CamLobeBlock;
 import com.createengines.content.camshaft.CamshaftBlock;
 import com.createengines.content.crankshaft.CrankThrowBlock;
+import com.createengines.content.blackbox.BlackBoxBlock;
 import com.createengines.content.crankshaft.CrankshaftBlock;
 import com.createengines.content.cylinder.CylinderBlock;
 import com.createengines.content.dyno.DynoBlock;
@@ -312,6 +313,17 @@ public final class CEBlocks {
 		.initialProperties(SharedProperties::softMetal)
 		.properties(p -> p.noOcclusion()
 			.mapColor(MapColor.METAL))
+		.transform(TagGen.pickaxeOnly())
+		.blockstate((c, p) -> BlockStateGen.simpleBlock(c, p, s -> AssetLookup.partialBaseModel(c, p)))
+		.item()
+		.transform(ModelGen.customItemModel())
+		.register();
+
+	/** Set against an engine, it keeps the last ten minutes of its speed, load and warmth and every time it changed state. */
+	public static final BlockEntry<BlackBoxBlock> BLACK_BOX = REGISTRATE.block("black_box", BlackBoxBlock::new)
+		.initialProperties(SharedProperties::softMetal)
+		.properties(p -> p.noOcclusion()
+			.mapColor(MapColor.COLOR_ORANGE))
 		.transform(TagGen.pickaxeOnly())
 		.blockstate((c, p) -> BlockStateGen.simpleBlock(c, p, s -> AssetLookup.partialBaseModel(c, p)))
 		.item()

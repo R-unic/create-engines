@@ -129,6 +129,29 @@ public final class CELang {
 		raw("goggles.dyno.peak_power", "Peak power: %1$s SU at %2$s RPM");
 		raw("goggles.dyno.powerband", "Powerband: %1$s to %2$s RPM, within a tenth of peak power");
 		raw("goggles.dyno.now", "Engine now: %1$s RPM");
+		raw("goggles.recorder", "Flight Recorder");
+		raw("goggles.recorder.no_engine", "Not against an engine: set it against a crankshaft, a cylinder or a head");
+		raw("goggles.recorder.empty", "Nothing on the tape yet");
+		raw("goggles.recorder.paused", "Not against an engine now: the tape is paused");
+		raw("goggles.recorder.span", "The last %1$s, oldest first");
+		raw("goggles.recorder.speed", "Speed   %1$s  up to %2$s RPM");
+		raw("goggles.recorder.load", "Load    %1$s  up to %2$s%% of what it could give");
+		raw("goggles.recorder.warmth", "Warmth  %1$s  now %2$s%% of a warm engine");
+		raw("goggles.recorder.states", "State   %1$s");
+		raw("goggles.recorder.event", "%1$s ago: %2$s to %3$s");
+		raw("goggles.recorder.event_cause", "%1$s ago: %2$s to %3$s, %4$s");
+		raw("goggles.recorder.hint", "Dots are stalled, light shading cranking, medium coasting, solid running and dark overloaded. Warmth is against the 0.7 a warm engine settles at, so a long way under 100 is a cold engine");
+		raw("goggles.recorder.state.stalled", "stalled");
+		raw("goggles.recorder.state.cranking", "cranking");
+		raw("goggles.recorder.state.coasting", "coasting");
+		raw("goggles.recorder.state.running", "running");
+		raw("goggles.recorder.state.overloaded", "overloaded");
+		raw("goggles.recorder.state.incomplete", "not fully built");
+		raw("goggles.recorder.state.broken", "broken up");
+		raw("goggles.recorder.cause.unknown", "and the figures do not say why");
+		raw("goggles.recorder.cause.no_fuel", "no fuel was reaching it");
+		raw("goggles.recorder.cause.overload", "the load was more than it could pull");
+		raw("goggles.recorder.cause.dry", "it had no oil");
 		raw("goggles.dyno.hint", "This is what the engine can be rated for at each speed: after its fuel, mixture, boost and how roughly it runs. Redstone rises as its speed climbs to the speed of its peak power");
 		raw("goggles.turbo", "Turbocharger");
 		raw("goggles.turbo.no_engine", "Not on an engine's intake or exhaust");
@@ -161,9 +184,10 @@ public final class CELang {
 		raw("goggles.transmission", "Transmission");
 		raw("goggles.transmission.neutral", "Neutral: no drive reaches the output");
 		raw("goggles.transmission.gear", "Gear %1$s: %2$s turns of the input to one of the output");
+		raw("goggles.transmission.auto", "Auto, in gear %1$s: %2$s turns of the input to one of the output");
 		raw("goggles.transmission.reverse", "Reverse: %1$s turns of the input to one of the output, backwards");
 		raw("goggles.transmission.hint",
-			"The panel sets the gear. A redstone signal picks one instead: 1 neutral, 2 to 5 first to fourth, 6 reverse. A low gear lets the engine carry a heavier load at a slower output");
+			"The panel sets the gear: neutral, thirteen forward gears, reverse, or Auto. Auto takes the tallest gear the engine can pull without overloading, down to a lower one when the load is too heavy and up again when there is room. A redstone signal picks a gear instead: 1 neutral, 2 to 14 first to thirteenth, 15 reverse. A low gear lets the engine carry a heavier load at a slower output");
 
 		raw("goggles.engine", "Engine");
 		raw("goggles.state.stalled", "Stalled");

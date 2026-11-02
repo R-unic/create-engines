@@ -691,6 +691,33 @@ def dyno():
     write_item("dyno/item", "dyno/block")
 
 
+def black_box():
+    """A flight recorder: a squat crash case in red enamel under a riveted lid, with a little read-out window on the front
+    and a carrying handle."""
+    textures = {"case": RED, "lid": RIVETED, "trim": IRON, "window": BLACK, "bar": BRASS, "trace": RED, "bolt": BRASS,
+                "particle": RED}
+    elements = [
+        box((1, 0, 1), (15, 8, 15), "case"),
+        box((0.5, 8, 0.5), (15.5, 10, 15.5), "lid"),
+        # Read-out window on the front: a frame, the dark glass and a few bars of tape
+        box((2.5, 2, 0.5), (13.5, 7, 1), "trim"),
+        box((3, 2.5, 0.3), (13, 6.5, 0.5), "window"),
+    ]
+    for i, height in enumerate((1.0, 1.8, 1.2, 2.6, 1.6, 0.8)):
+        x = 4 + i * 1.5
+        elements.append(box((x, 3, 0.2), (x + 0.8, 3 + height, 0.3), "bar"))
+    elements.append(box((4, 5.6, 0.2), (12, 5.8, 0.3), "trace"))
+    # Handle across the lid
+    elements.append(box((5, 10, 7), (6, 11.5, 9), "trim"))
+    elements.append(box((10, 10, 7), (11, 11.5, 9), "trim"))
+    elements.append(box((5, 11.5, 7), (11, 12.5, 9), "trim"))
+    for x in (1.2, 14.2):
+        for z in (1.2, 14.2):
+            elements.append(box((x, 10, z), (x + 0.6, 10.4, z + 0.6), "bolt"))
+    write("black_box/block", textures, elements)
+    write_item("black_box/item", "black_box/block")
+
+
 def intercooler():
     """A charge-air cooler along the Y axis (the block state turns it): a finned core between two end tanks, with an
     inlet stub on each end."""
@@ -987,6 +1014,7 @@ def main():
     supercharger()
     cast_flywheel()
     dyno()
+    black_box()
     intercooler()
     transmission()
     sump()

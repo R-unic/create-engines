@@ -1,4 +1,13 @@
 {
+  "engine_note": {
+    "sounds": [
+      {
+        "name": "create_engines:cylinder_fire1",
+        "stream": true,
+        "attenuation_distance": 32
+      }
+    ]
+  },
   "cylinder_fire": {
     "sounds": [
       {

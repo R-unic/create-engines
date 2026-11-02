@@ -93,7 +93,7 @@ public class SuperchargerBlockEntity extends KineticBlockEntity implements Engin
 	public void tick() {
 		super.tick();
 		if (level != null && level.isClientSide && loopLevel() > 0.02f)
-			MachineLoopSound.ensurePlaying(this, worldPosition, CESounds.SUPERCHARGER_WHINE.get(), 0.45f, this);
+			MachineLoopSound.ensurePlaying(this, worldPosition, CESounds.SUPERCHARGER_WHINE.get(), 0.2f, this);
 	}
 
 	/** The whine rises with the shaft, and is much quieter while the blower is turning but not pushing any engine's air. */

@@ -2111,7 +2111,7 @@ public final class EngineScenes {
 		scene.world()
 			.setKineticSpeed(box, 64);
 		scene.world()
-			.setKineticSpeed(output, 16);
+			.setKineticSpeed(output, 5);
 		scene.idle(15);
 		scene.overlay()
 			.showText(110)
@@ -2126,7 +2126,7 @@ public final class EngineScenes {
 			.showText(120)
 			.attachKeyFrame()
 			.colored(PonderPalette.GREEN)
-			.text("In first gear the output turns four times slower than the input. A load behind it asks the engine for a quarter of the torque it would direct, so an engine can carry a heavier load, slowly.")
+			.text("In first gear the output turns twelve times slower than the input. A load behind it asks the engine for a twelfth of the torque it would direct, so an engine can carry a far heavier load, slowly.")
 			.pointAt(util.vector()
 				.topOf(4, 1, 2))
 			.placeNearTarget();
@@ -2138,12 +2138,12 @@ public final class EngineScenes {
 			.rightClick();
 		scene.idle(10);
 		scene.world()
-			.setKineticSpeed(output, 40);
+			.setKineticSpeed(output, 28);
 		scene.overlay()
 			.showText(110)
 			.attachKeyFrame()
 			.colored(PonderPalette.BLUE)
-			.text("The value panel picks the gear. Third turns the output at five eighths of the input...")
+			.text("The value panel picks the gear, from first to thirteenth, each about a quarter faster than the one below. Ninth turns the output at a little over two fifths of the input...")
 			.pointAt(util.vector()
 				.blockSurface(boxPos, Direction.NORTH))
 			.placeNearTarget();
@@ -2153,7 +2153,7 @@ public final class EngineScenes {
 			.setKineticSpeed(output, 64);
 		scene.overlay()
 			.showText(90)
-			.text("...and fourth drives it direct. Faster output, but the load asks the crank for its full torque.")
+			.text("...and thirteenth drives it direct. The fastest output, but the load asks the crank for its full torque.")
 			.pointAt(util.vector()
 				.topOf(4, 1, 2))
 			.placeNearTarget();
@@ -2183,7 +2183,7 @@ public final class EngineScenes {
 			.showSection(lever, Direction.DOWN);
 		scene.idle(10);
 		scene.world()
-			.setKineticSpeed(output, 16);
+			.setKineticSpeed(output, 5);
 		scene.world()
 			.toggleRedstonePower(lever);
 		scene.effects()
@@ -2193,11 +2193,21 @@ public final class EngineScenes {
 			.showText(120)
 			.attachKeyFrame()
 			.colored(PonderPalette.RED)
-			.text("A redstone signal picks the gear instead of the panel: strength 1 is neutral, 2 to 5 are first to fourth, and 6 or more is reverse. Shifting briefly cuts the output off.")
+			.text("A redstone signal picks the gear instead of the panel: strength 1 is neutral, 2 to 14 are first to thirteenth, and 15 is reverse. Shifting briefly cuts the output off.")
 			.pointAt(util.vector()
 				.topOf(2, 1, 3))
 			.placeNearTarget();
 		scene.idle(130);
+
+		scene.overlay()
+			.showText(130)
+			.attachKeyFrame()
+			.colored(PonderPalette.GREEN)
+			.text("Past reverse on the panel is Auto. The Transmission watches the engine behind it and holds the tallest gear it can pull without overloading: it climbs a gear at a time while there is room, and drops straight to a gear that fits when the load gets too heavy.")
+			.pointAt(util.vector()
+				.blockSurface(boxPos, Direction.NORTH))
+			.placeNearTarget();
+		scene.idle(140);
 		scene.markAsFinished();
 	}
 

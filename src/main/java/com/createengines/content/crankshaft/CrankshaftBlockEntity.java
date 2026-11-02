@@ -4,6 +4,7 @@ import java.util.List;
 
 import org.jetbrains.annotations.Nullable;
 
+import com.createengines.content.EngineNoteSound;
 import com.createengines.content.RenderRotation;
 import com.createengines.engine.EngineController;
 import com.createengines.engine.EngineState;
@@ -86,8 +87,21 @@ public class CrankshaftBlockEntity extends GeneratingKineticBlockEntity implemen
 	@Override
 	public void tick() {
 		super.tick();
-		if (level != null && !level.isClientSide && controller != null)
+		if (level == null)
+			return;
+		if (level.isClientSide)
+			tickClient();
+		else if (controller != null)
 			controller.tick();
+	}
+
+	/** The engine's exhaust note, from the primary only: it knows the engine's speed and firing order. */
+	private void tickClient() {
+		if (summary == null || !worldPosition.equals(primaryPos))
+			return;
+		if (summary.state() != EngineState.STALLED && summary.state() != EngineState.INCOMPLETE
+			&& summary.state() != EngineState.BROKEN)
+			EngineNoteSound.ensurePlaying(this);
 	}
 
 	@Override

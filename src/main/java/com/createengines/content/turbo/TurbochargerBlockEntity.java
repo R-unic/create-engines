@@ -179,7 +179,7 @@ public class TurbochargerBlockEntity extends SmartBlockEntity
 				popBang();
 			}
 			if (loopLevel() > 0.02f)
-				MachineLoopSound.ensurePlaying(this, worldPosition, CESounds.TURBO_WHISTLE.get(), 0.22f, this);
+				MachineLoopSound.ensurePlaying(this, worldPosition, CESounds.TURBO_WHISTLE.get(), 0.09f, this);
 			blowOff();
 		}
 	}

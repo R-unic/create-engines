@@ -48,6 +48,7 @@ public enum Milestone {
 	SHIFTED,
 	REVERSE,
 	EVERY_GEAR,
+	AUTO_SHIFTED,
 	// Engine management
 	MAF_TRIM,
 	MAF_ENRICH,
@@ -83,6 +84,7 @@ public enum Milestone {
 	// Laying out banks of cylinders
 	BANK_BUILT,
 	DYNO_RUN,
+	STALL_RECORDED,
 	VEE_ENGINE,
 	FLAT_ENGINE,
 	// Flywheels, variable-geometry turbos and anti-lag

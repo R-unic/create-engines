@@ -8,6 +8,7 @@ import org.joml.Vector3f;
 
 import com.createengines.config.CEClientConfig;
 import com.createengines.content.EffectRate;
+import com.createengines.content.EngineNoteSound;
 import com.createengines.content.EnginePoses;
 import com.createengines.content.airflow.PortOpeningBlock;
 import com.createengines.content.camshaft.CamshaftBlockEntity;
@@ -45,6 +46,8 @@ import net.minecraft.world.phys.Vec3;
 
 public class CylinderBlockEntity extends SmartBlockEntity implements IHaveGoggleInformation, EngineMember {
 
+	/** How much of its volume a cylinder's bang keeps while the engine's exhaust note is playing. */
+	private static final float NOTE_PLAYING_BANG_SHARE = 0.15f;
 	/** Where the cam says the charge fires: the top of the compression stroke. */
 	private static final double FIRING_CYCLE_ANGLE = 360;
 	/** The piston's crown above its wrist pin, in blocks (the 6/16 top of the piston model). */
@@ -148,6 +151,10 @@ public class CylinderBlockEntity extends SmartBlockEntity implements IHaveGoggle
 			return;
 		RandomSource random = level.random;
 		float volume = CEClientConfig.bangVolume();
+		// With the engine's own exhaust note playing, a bang is only the accent on the flash
+		CrankshaftBlockEntity throwBlock = crankThrow();
+		if (throwBlock != null && throwBlock.primaryPos() != null && EngineNoteSound.isPlayingFor(throwBlock.primaryPos()))
+			volume *= NOTE_PLAYING_BANG_SHARE;
 		if (volume > 0)
 			level.playLocalSound(worldPosition, CESounds.CYLINDER_FIRE.get(), SoundSource.BLOCKS, volume,
 				0.92f + random.nextFloat() * 0.16f, false);

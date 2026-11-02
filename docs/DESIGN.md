@@ -49,7 +49,7 @@ before relying on it.
 | Supercharger | A **Supercharger** is a Create kinetic block (`RotatedPillarKineticBlock`, shaft through it along `AXIS`) and an `InlineDuct`: intake pipes join the four faces round the shaft, never the shaft's ends, and a head can be bolted to any of them. `engine.sim.Supercharger` makes `0.9 bar x (rpm / 128)^2` from the shaft speed alone, following it with a 0.2 s lag, held at the Boost Limit value box (default 0.5 bar, up to 1.5) by a bypass valve that a redstone signal opens fully. No exhaust and no wheel to spool, so it boosts a motored or stalled engine and from the first turn of the crank; the trade is stress. The block puts `4 SU/RPM x cylinders fed x (boost / 0.9)` on its own shaft (updated by the engine every ten ticks), so on the crank's own shaft line it comes out of the engine's output; driven by another source it costs the engine nothing. A blower is a cruder pump than a turbine compressor (efficiency 0.55 against 0.7), so it heats the air more. The dynamometer cannot read a shaft, so a blower copy turns with the crank at the ratio of shaft speed to crank speed last seen on the live engine (`Supercharger.driveRatio`, 1 until the engine has run), and the rating key includes that ratio rounded to a quarter. Achievements: Blown Away, Whine On, Twincharged (a turbo and a blower at 0.2 bar or more on one cylinder). |
 | Intercooler | An **Intercooler** is a plain block with an `AXIS` (`InlineDuct`; intake pipes join its two ends). In the sim (`engine.sim.Intercooler`) it removes 60% of the compression heat the compressors put in (`T = 1 + (T - 1) x 0.4`) and costs 4% of the boost in pressure, after all the compressors whatever order the blocks sit in; two in a row each take their share of what is left. Cooler air is denser and further from pre-igniting. It is the answer to a blower's heat and to the turbo+blower stack. No block entity, so no goggles. Achievements: Chill Out, Cool Customer (a firing engine at 0.3 bar or more through one). |
 | Inline ducts | `InlineDuct extends AirflowPort` is what the scanner treats as a pipe junction (the air goes in at one accepting face and out of another): the turbocharger, supercharger and intercooler implement it, and `kindFacingHead` says what a head bolted straight to a face sees. A new pipe-run part is a block that implements it plus, if the sim cares, a list on `PortNetwork` and `EngineLayout`. |
-| Transmission | A **Transmission** is a Create `SplitShaftBlockEntity`, like the gearshift and clutch, so the kinetic network on both sides behaves as Create's own does. Gears: neutral (output is cut), first to fourth at 4, 2.5, 1.6 and 1 turns of input per turn of output, and reverse at 3 backwards. The gear is a value panel; a redstone signal overrides it (1 neutral, 2 to 5 first to fourth, 6 and above reverse). Shifting detaches the block from the network, changes the gear and re-adds it next tick, as Create's gearshift does. No engine rule was needed: the load an engine feels is network stress over crank speed, so a load behind a low gear asks the crank for 1/ratio of the torque and an engine carries what it could not direct. Shifting while carrying drive, reverse, and using every gear count towards achievements. |
+| Transmission | A **Transmission** is a Create `SplitShaftBlockEntity`, like the gearshift and clutch, so the kinetic network on both sides behaves as Create's own does. Gears: neutral (output is cut), thirteen forward gears spaced evenly in ratio from 12 turns of input per turn of output in first to a direct 1 in thirteenth (each about 23 percent taller than the last, `Gears`), and reverse at 3 backwards. The gear is a value panel, which has one more setting past reverse, Auto; a redstone signal overrides it (1 neutral, 2 to 14 first to thirteenth, 15 reverse). A block saved with the old four gears is mapped across on load by ratio (`Gears.fromLegacy`). Shifting detaches the block from the network, changes the gear and re-adds it next tick, as Create's gearshift does. No engine rule was needed: the load an engine feels is network stress over crank speed, so a load behind a low gear asks the crank for 1/ratio of the torque and an engine carries what it could not direct. Shifting while carrying drive, reverse, Auto shifting, and using every gear count towards achievements. |
 | Achievements | Advancements live in `advancement/CEAdvancements` as a table, one row per advancement: datagen (`runData`) turns the rows into the advancement JSON and the lang entries. A part gets a `has(...)` row (obtained). Something the engine or a block does gets a `Milestone` constant, fired where it happens (`Achievements.award(level, blocks, milestone)` credits only the engine's operator: the one player who last placed or used one of those blocks, tracked by `Operators`/`OperatorLog` and saved with the level; a transmission also records whoever sets its gear) and a row that waits for it with `on(...)`. One trigger type, `create_engines:event`, carries the milestone name. The engine's own thresholds (`EngineMilestones`, pure Java and unit tested) are checked every ten ticks from `EngineController.syncDiagnostics`, no more than once per milestone per ten seconds. **Every new feature adds rows here.** |
 | Engine management | Opt-in, like the governor: with no MAF sensor fitted an engine behaves exactly as before, so a rich-running fault is still there to hit. A **MAF Sensor** is an inline intake pipe (`SensorBlock`, a `ManifoldBlock`, so it joins and scans like a throttle body). It sets each injector's shot from the air the cylinder drew in, whichever way that moves it: `CylinderModel.airMatch` (the sensor's Mixture Target, 80% to 125% of balanced, default 100%) makes the shot `air / airPerMb × target`, trimmed back when the air thins with speed and topped up when it could burn more than the injector was set to give. Fuel Metering therefore no longer applies on a network with a sensor. The most the injector can give is `CylinderModel.INJECTOR_CAPACITY` (2× the usual shot, Fuel Metering's top setting), so very heavy boost can still run leaner than the target. The rack still scales the matched shot (a closed rack is *no fuel*), and so does a compression engine's governor; a spark engine's throttle is already in the air, so its fuel trim is not applied twice. `CycleStats.mafCut` and `mafAdded` say how much of the shot the sensor held back or added. A cut to nothing for want of air reads *no air*, not *no fuel*. The leanest sensor on a network wins; the dyno rating uses the same matched shot. Its redstone output (and comparator output) is the size of the breath, 0 to 15 for 0 to 1.5 bores; goggles say whether it is cutting or adding. `Sensors` (pure Java) turns readings into signals and is unit tested with the sensor's two-way metering (`EngineManagementTest`, plus the `aMafSensorReadsAndTrimsAnEngine` and `aMafSensorTopsUpALeanEngine` GameTests). Recipe uses brass sheets and electron tubes. Ponder page: `maf_sensor`. Achievements: Weighing the Air, Penny Pincher, Topping Up. The lambda sensor and the rev limiter were removed: nothing in the simulation punishes overspeed or rewards reading the exhaust once the MAF sensor feeds both ways, and a governor holds a speed better than a fuel cut. |
 | Lubrication | **Engine Oil** (heated mixing of Plant Oil with a slime ball) is piped into any cylinder head, into a second tank beside the fuel tank, and shared along touching heads like fuel. It lubricates the whole engine: crank blocks and every piston and rod. Turning uses it up (about 0.01 mB per part per crank revolution); while the supply keeps up the film builds to full in a few seconds, and without oil it thins over a few hundred revolutions. A dry part drags: friction doubles, and speed-dependent friction quadruples, so a dry engine tops out at roughly half the speed and has less torque to spare, but it still runs. A new engine starts dry. Goggles show the lubrication. |
@@ -381,6 +381,62 @@ faces; and anything that needs doing regularly (an oil change) can be automated 
   flex), joins the builder capstone. The sim-level balance tables (`CombustionOutputTest`, `ProgressionBalanceTest`) measure
   the engine without a layout, so they are unchanged; in play a straight twelve is rated a fifth lower than those tables
   say, which is the intent.
+
+
+### Flight recorder and the engine note (2026-11-02)
+
+- **Black Box** (`content.blackbox`, `engine.FlightRecorder`). A block set against any block of an engine, as the dynamometer
+  is. Once a second the server reads the engine's synced `EngineSummary` (from the crank it touches, or that crank's
+  primary) and hands a `Sample` (state, speed, load, rated capacity, temperature, fuel, lubrication) to a pure-Java ring of
+  600 samples, ten minutes. A change of state is logged as an event with the cause the figures before it point to: a stall
+  with no fuel injected is `NO_FUEL`, with the oil gone `DRY`, with a load above capacity `OVERLOAD`, else `UNKNOWN`; going
+  overloaded is `OVERLOAD`. The tape is saved with the block (so it survives a restart) and boiled down to 40 columns every
+  other second for the goggles, which draw speed, load (against what the engine could give) and warmth (against the 0.7 a
+  warm engine sits at) as rows of bars, a row of state shades, and the last few events, more when sneaking. Only the
+  boiled-down readout goes to clients. It records only while it touches an engine, and a gap is not marked. An advancement,
+  Black Box Thinking, is awarded when a running, coasting or overloaded engine is logged stalling. It was built for the
+  questions "why is it cold" and "why did it stall", which the simulation knows and the player could not see.
+- **Engine note** (`content.EngineNoteSynth`, `EngineNoteSound`). The primary crankshaft's client tick starts one streamed
+  voice per engine (at most three near the player, within 40 blocks) that the sound engine fills from a synthesizer instead of
+  a file: the sound instance overrides `getStream` (a NeoForge hook) to return a mono 22.05 kHz stream that renders a tenth of
+  a second per read, and `sounds.json` marks `engine_note` as `stream`, the placeholder file named there never read. The
+  synthesizer walks a 720 degree phase at the engine's speed and strikes three bandpass resonances (92, 205 and 470 Hz) at
+  each crank angle in `EngineSummary.firingAngles`, with a short noise crack for the snap, so the pattern of the engine's
+  own firing order is what is heard. Firings that did not light (the share of cylinders not firing) are an eighth as loud;
+  load brightens the upper resonances and the crack; a coasting or cranking engine only thumps at about a quarter strength.
+  Loudness is divided by the firing rate so a V16 at speed is not a wall. Speed and loudness are followed over about a
+  tenth of a second, and the stream queues four tenths ahead, so the note trails the engine by a few tenths. A cylinder's
+  bang keeps 40 percent of its volume while the note plays (the bang is still tied to the flash). The client config
+  `engineNoteVolume` scales it (0 off, bangs back at full). The recordings in `build/engine-notes` come from
+  `EngineNoteSynthTest.rendersDemoRecordings`. The levels and spectra were measured, and the visual smoke run with the sound
+  on showed the sound engine accepting the voice and pulling its stream with no errors, but the sound itself has not been
+  listened to by the author of it. A new voice is given 20 ticks to start before it is judged declined (master volume at zero
+  declines every one) and only then replaced, so a muted client does not build a synthesizer every tick.
+- **Clicks and loudness.** The first note was a click track: a firing was one sample into resonances that rang for six
+  thousandths of a second, so each was a spike (crest factor up to 15, a jump from sample to sample up to 13 times the
+  level). A firing is now a pressure pulse smoothed over a thousandth of a second, into resonances at 86, 172 and 345 Hz
+  that ring for about 20, 12 and 7 thousandths, with a lowpassed chuff for the rush of gas; the same measures are now a
+  crest of 2 to 6 and a step under the level. `EngineNoteSynthTest.noFiringIsAClick` holds that. The whole note is about
+  six decibels louder, a cylinder's bang keeps only 15 percent of its volume under it, and the turbo whistle (0.09) and
+  supercharger whine (0.2) are quieter than before, because a tone in the kilohertz carries much further to the ear than
+  a rumble of the same level.
+
+
+### Transmission: thirteen gears and Auto (2026-11-02)
+
+- **Gears** (`content.transmission.Gears`). First is 12 turns to one and thirteenth direct, each gear about 23 percent
+  taller than the last; the engine's published speed is capped at Create's rotation limit, so there is no overdrive. Panel
+  settings are neutral, 1 to 13, reverse and Auto (`Gears.AUTO`, 15, not a position). Redstone 2 to 14 picks first to
+  thirteenth and 15 reverse.
+- **Auto** (`AutoGearbox`, pure). A transmission on Auto follows its drive back along the network (`KineticBlockEntity.source`,
+  up to 64 steps) to the engine's primary crankshaft and, every ten ticks, reads its utilization: the network's stress over
+  the crank's speed times the capacity it publishes. The load behind a gear scales with 1 over the ratio, so the box can
+  say what any other gear would ask. Over 90 percent (or an overstressed network, which reads over 100) it drops at once to
+  the tallest gear that would bring the load under 80 percent; with room, it climbs one gear at a time into one that would
+  still load under 70 percent. The gaps are wider than a gear's step, so it settles. A downshift waits half a second
+  after a shift and a climb one and a half. Redstone overrides it. Without an engine it holds its gear. An advancement,
+  Let It Shift, is awarded for an Auto shift while carrying drive, and Gearhead now asks for all thirteen gears and reverse.
+  Two GameTests cover it: climbing from first with three presses behind, and dropping out of an overload in thirteenth.
 
 
 ---

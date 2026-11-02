@@ -65,7 +65,9 @@ Minecraft 1.21.1 · NeoForge 21.1.219 · Create 6.0.10
   crackle, and a supercharger whine that rises with its shaft
 - Precision cylinders, heads, pistons and injectors
 - Flywheels that matter: a rough engine is rated for less, and rotating mass smooths it out
-- A transmission, and a **Dynamometer** that draws an engine's torque and power curves
+- A 13-gear transmission with an Auto mode that shifts to suit the engine, and a **Dynamometer** that draws an engine's torque and power curves
+- A **Black Box** flight recorder that keeps ten minutes of an engine's speed, load and warmth and says why it stalled
+- An exhaust note made up from the engine's speed and firing order, so a V-twin lopes, a six hums and a dead cylinder limps
 
 **Learn it**
 - Engineer's Goggles diagnostics on every part, Ponder scenes for every part, and advancements that reward actually

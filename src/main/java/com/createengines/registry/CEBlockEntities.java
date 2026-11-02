@@ -8,6 +8,7 @@ import com.createengines.content.airflow.MafSensorBlockEntity;
 import com.createengines.content.airflow.ThrottleBlockEntity;
 import com.createengines.content.alternator.AlternatorBlockEntity;
 import com.createengines.content.alternator.AlternatorVisual;
+import com.createengines.content.blackbox.BlackBoxBlockEntity;
 import com.createengines.content.dyno.DynoBlockEntity;
 import com.createengines.content.flywheel.CastFlywheelBlockEntity;
 import com.createengines.content.flywheel.CastFlywheelVisual;
@@ -126,6 +127,11 @@ public final class CEBlockEntities {
 	public static final BlockEntityEntry<DynoBlockEntity> DYNO = REGISTRATE
 		.blockEntity("dyno", DynoBlockEntity::new)
 		.validBlocks(CEBlocks.DYNO)
+		.register();
+
+	public static final BlockEntityEntry<BlackBoxBlockEntity> BLACK_BOX = REGISTRATE
+		.blockEntity("black_box", BlackBoxBlockEntity::new)
+		.validBlocks(CEBlocks.BLACK_BOX)
 		.register();
 
 	public static final BlockEntityEntry<SumpBlockEntity> SUMP = REGISTRATE

@@ -10,6 +10,7 @@ public final class CEClientConfig {
 	public static final ModConfigSpec.DoubleValue BANG_VOLUME;
 	public static final ModConfigSpec.DoubleValue EFFECT_DENSITY;
 	public static final ModConfigSpec.DoubleValue BOOST_VOLUME;
+	public static final ModConfigSpec.DoubleValue ENGINE_NOTE_VOLUME;
 
 	static {
 		ModConfigSpec.Builder builder = new ModConfigSpec.Builder();
@@ -18,6 +19,9 @@ public final class CEClientConfig {
 			.define("engineParticles", true);
 		BANG_VOLUME = builder.comment("Volume of a cylinder's firing bang. 0 mutes it.")
 			.defineInRange("bangVolume", 1.0, 0.0, 2.0);
+		ENGINE_NOTE_VOLUME = builder.comment("Volume of the engine's exhaust note, made up from its speed and firing order as it runs.",
+				"0 mutes it, and each cylinder's bang plays at full volume instead.")
+			.defineInRange("engineNoteVolume", 1.0, 0.0, 2.0);
 		BOOST_VOLUME = builder.comment("Volume of turbocharger whistle and blow-off and the supercharger whine. 0 mutes them.")
 			.defineInRange("boostVolume", 1.0, 0.0, 2.0);
 		EFFECT_DENSITY = builder.comment("How often each cylinder may bang and puff, against the default. Below 1 thins the",
@@ -36,6 +40,11 @@ public final class CEClientConfig {
 
 	public static float bangVolume() {
 		return BANG_VOLUME.get()
+			.floatValue();
+	}
+
+	public static float engineNoteVolume() {
+		return ENGINE_NOTE_VOLUME.get()
 			.floatValue();
 	}
 
