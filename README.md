@@ -44,6 +44,7 @@ Minecraft 1.21.1 · NeoForge 21.1.219 · Create 6.0.10
   side, all in Create basins. The loop closes: glycerin goes into engine oil and coolant, and used oil is burned as fuel or recycled into oil or charcoal
 - An **Exhaust Heat Exchanger** that turns engine exhaust into basin heat, so an engine can cook its own fuel
 - Oil film and lubrication, starters, batteries and alternators
+- Forge Energy out of an alternator, and other mods' fuels (anything tagged `c:diesel`, `c:gasoline`, `c:ethanol` or `c:plantoil`, or given an entry in the fuel data map) in the engines
 - An **oil sump that is the engine's service port**: one block against the engine takes its oil, its coolant and its
   pilot fuel from any face, so the cylinder heads keep their faces for air and fuel
 - **Oil that goes off**: a spent charge drags a little more (never stops or damages anything). Set the sump's Oil

@@ -1,0 +1,9 @@
+{
+  "values": [
+    "create_engines:plant_oil",
+    {
+      "id": "create_engines:flowing_plant_oil",
+      "required": false
+    }
+  ]
+}

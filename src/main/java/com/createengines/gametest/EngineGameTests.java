@@ -1923,6 +1923,77 @@ public class EngineGameTests {
 		helper.succeed();
 	}
 
+	/** A fluid in a common fuel tag runs an engine with no datapack; our own fuels sit in those tags for other mods' machines. */
+	@GameTest(template = "empty")
+	public static void fuelsFromOtherModsRunByTheirCommonTags(GameTestHelper helper) {
+		var tags = new Object() {
+			boolean has(net.minecraft.world.level.material.Fluid fluid, net.minecraft.tags.TagKey<net.minecraft.world.level.material.Fluid> tag) {
+				return fluid.builtInRegistryHolder()
+					.is(tag);
+			}
+		};
+		helper.assertTrue(tags.has(CEFluids.DIESEL.get(), com.createengines.registry.CEDataMaps.DIESEL), "Our diesel is c:diesel");
+		helper.assertTrue(tags.has(CEFluids.GASOLINE.get(), com.createengines.registry.CEDataMaps.GASOLINE), "Our gasoline is c:gasoline");
+		helper.assertTrue(tags.has(CEFluids.ETHANOL.get(), com.createengines.registry.CEDataMaps.ETHANOL), "Our ethanol is c:ethanol");
+		helper.assertTrue(tags.has(CEFluids.PLANT_OIL.get(), com.createengines.registry.CEDataMaps.PLANT_OIL),
+			"Our plant oil is c:plantoil");
+		helper.assertTrue(com.createengines.registry.CEDataMaps.fuelForTags(t -> t.equals(com.createengines.registry.CEDataMaps.GASOLINE))
+			== com.createengines.engine.sim.FuelSpec.GASOLINE, "Another mod's gasoline burns as gasoline");
+		helper.assertTrue(com.createengines.registry.CEDataMaps.fuelForTags(t -> t.equals(com.createengines.registry.CEDataMaps.BIODIESEL))
+			== com.createengines.engine.sim.FuelSpec.DIESEL, "Biodiesel burns as diesel");
+		helper.assertTrue(com.createengines.registry.CEDataMaps.fuelForTags(t -> t.equals(com.createengines.registry.CEDataMaps.ETHANOL))
+			== com.createengines.engine.sim.FuelSpec.ETHANOL, "Ethanol burns as ethanol");
+		helper.assertTrue(com.createengines.registry.CEDataMaps.fuelForTags(t -> t.equals(com.createengines.registry.CEDataMaps.PLANT_OIL))
+			== com.createengines.engine.sim.FuelSpec.PLANT_OIL, "Plant oil burns as plant oil");
+		helper.assertTrue(com.createengines.registry.CEDataMaps.fuelForTags(t -> false) == null, "A fluid in no fuel tag is no fuel");
+		helper.assertTrue(com.createengines.registry.CEDataMaps.fuel(net.minecraft.world.level.material.Fluids.WATER) == null,
+			"Water is no fuel");
+		helper.assertTrue(com.createengines.registry.CEDataMaps.fuel(CEFluids.COOLANT.get()) == null, "Nor is coolant");
+		var diesel = com.createengines.registry.CEDataMaps.fuel(CEFluids.DIESEL.get());
+		helper.assertTrue(diesel != null && diesel.energyPerMb() == 36 && diesel.autoignitionTemp() == 1.55,
+			"A data map entry still wins over the tag: " + diesel);
+		helper.succeed();
+	}
+
+	/** An alternator on a turning shaft offers Forge Energy, and only feels stress for it while something draws it. */
+	@GameTest(template = "empty", timeoutTicks = 400)
+	public static void anAlternatorMakesForgeEnergyForWhatDrawsIt(GameTestHelper helper) {
+		BlockPos motor = new BlockPos(1, 1, 1);
+		BlockPos alternator = new BlockPos(2, 1, 1);
+		helper.setBlock(motor, com.simibubi.create.AllBlocks.CREATIVE_MOTOR.getDefaultState()
+			.setValue(CreativeMotorBlock.FACING, Direction.EAST));
+		CreativeMotorBlockEntity drive = helper.getBlockEntity(motor);
+		drive.generatedSpeed.setValue(64);
+		helper.setBlock(alternator, CEBlocks.ALTERNATOR.getDefaultState()
+			.setValue(net.minecraft.world.level.block.state.properties.BlockStateProperties.AXIS, Direction.Axis.X));
+		int[] taken = new int[1];
+		helper.runAtTickTime(80, () -> {
+			com.createengines.content.alternator.AlternatorBlockEntity be = helper.getBlockEntity(alternator);
+			helper.assertTrue(Math.abs(be.getSpeed()) > 0, "The alternator should be turning: " + be.getSpeed());
+			var energy = be.energyOutput();
+			helper.assertTrue(energy.canExtract() && !energy.canReceive(), "It gives energy and takes none");
+			helper.assertTrue(energy.receiveEnergy(1000, false) == 0, "Nothing can be put in");
+			helper.assertTrue(energy.getEnergyStored() > 0, "The buffer should have filled from the shaft");
+			helper.assertTrue(be.calculateStressApplied() == 0, "Nothing is drawing it yet, so the shaft feels nothing");
+		});
+		for (int tick = 90; tick < 110; tick++)
+			helper.runAtTickTime(tick, () -> {
+				com.createengines.content.alternator.AlternatorBlockEntity be = helper.getBlockEntity(alternator);
+				taken[0] += be.energyOutput()
+					.extractEnergy(100000, false);
+			});
+		helper.runAtTickTime(112, () -> {
+			com.createengines.content.alternator.AlternatorBlockEntity be = helper.getBlockEntity(alternator);
+			helper.assertTrue(taken[0] > 1000, "A machine drawing every tick should get a steady supply: " + taken[0]);
+			helper.assertTrue(be.calculateStressApplied() > 0, "And the shaft should feel the load");
+		});
+		helper.runAtTickTime(200, () -> {
+			com.createengines.content.alternator.AlternatorBlockEntity be = helper.getBlockEntity(alternator);
+			helper.assertTrue(be.calculateStressApplied() == 0, "With nothing drawing, the shaft is let go again");
+			helper.succeed();
+		});
+	}
+
 	/** A dynamometer against the engine shows its measured curve. */
 	@GameTest(template = "empty", timeoutTicks = 900)
 	public static void aDynamometerShowsTheEnginesCurve(GameTestHelper helper) {

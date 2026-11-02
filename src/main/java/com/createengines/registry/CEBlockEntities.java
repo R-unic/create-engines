@@ -165,5 +165,6 @@ public final class CEBlockEntities {
 		event.registerBlockEntity(Capabilities.FluidHandler.BLOCK, ROTOR_HOUSING.get(),
 			(be, side) -> be.fluidCapability());
 		event.registerBlockEntity(Capabilities.FluidHandler.BLOCK, SUMP.get(), (be, side) -> be.fluidCapability());
+		event.registerBlockEntity(Capabilities.EnergyStorage.BLOCK, ALTERNATOR.get(), (be, side) -> be.energyOutput());
 	}
 }

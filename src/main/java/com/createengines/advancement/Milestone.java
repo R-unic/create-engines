@@ -77,6 +77,7 @@ public enum Milestone {
 	PRECISION_PISTON,
 	PRECISION_INJECTOR,
 	ALTERNATOR_CHARGING,
+	ENERGY_GENERATED,
 	TOOL_USED,
 	FUEL_TUNED,
 	// Laying out banks of cylinders

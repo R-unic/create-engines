@@ -1,0 +1,9 @@
+{
+  "values": [
+    "create_engines:gasoline",
+    {
+      "id": "create_engines:flowing_gasoline",
+      "required": false
+    }
+  ]
+}

@@ -28,4 +28,6 @@ public record FuelSpec(double energyPerMb, double autoignitionTemp, double airPe
 	public static final FuelSpec DIESEL = new FuelSpec(36, 1.55, 1.7);
 	/** Too hard to light by compression alone at any speed an engine of this size turns: it needs a spark plug. */
 	public static final FuelSpec GASOLINE = new FuelSpec(40, 2.7, 1.5);
+	/** Needs a spark like gasoline, with less energy to the mB and a flame that boost will not light early. */
+	public static final FuelSpec ETHANOL = new FuelSpec(27, 3.4, 1.0);
 }

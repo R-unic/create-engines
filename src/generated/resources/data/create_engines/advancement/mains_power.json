@@ -1,0 +1,29 @@
+{
+  "parent": "create_engines:alternator",
+  "criteria": {
+    "mains_power": {
+      "conditions": {
+        "event": "energy_generated"
+      },
+      "trigger": "create_engines:event"
+    }
+  },
+  "display": {
+    "description": {
+      "translate": "advancement.create_engines.mains_power.desc"
+    },
+    "icon": {
+      "count": 1,
+      "id": "create_engines:alternator"
+    },
+    "title": {
+      "translate": "advancement.create_engines.mains_power"
+    }
+  },
+  "requirements": [
+    [
+      "mains_power"
+    ]
+  ],
+  "sends_telemetry_event": true
+}

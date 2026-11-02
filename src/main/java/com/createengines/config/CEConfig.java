@@ -27,6 +27,7 @@ public final class CEConfig {
 	public static final ModConfigSpec.DoubleValue HEAT_RECOVERY;
 	public static final ModConfigSpec.DoubleValue COOLING_BONUS;
 	public static final ModConfigSpec.DoubleValue TORSIONAL_FLEX;
+	public static final ModConfigSpec.DoubleValue ALTERNATOR_ENERGY;
 
 	public static final ModConfigSpec.BooleanValue FORCED_INDUCTION;
 	public static final ModConfigSpec.BooleanValue SPARK_FOULING;
@@ -94,6 +95,10 @@ public final class CEConfig {
 				"crank line it falls by 4.5 percent a throw at 1.0. A vee or flat has half as many throws as cylinders,",
 				"and cranks geared together one to one are separate lines. 0 turns it off.")
 			.defineInRange("torsionalFlex", 1.0, 0.0, 2.0);
+		ALTERNATOR_ENERGY = builder.comment("Forge Energy an Alternator makes each tick for every RPM of its shaft, while something is",
+				"drawing it. It puts 2 stress units on the shaft for each RPM while it does, so the default of 2 makes",
+				"one stress unit worth about one FE a tick. 0 turns FE output off; spark charging is unaffected.")
+			.defineInRange("alternatorEnergy", 2.0, 0.0, 100.0);
 		builder.pop();
 
 		builder.comment("Feature switches. Turning one off never destroys blocks; the machines just stop doing that job.")

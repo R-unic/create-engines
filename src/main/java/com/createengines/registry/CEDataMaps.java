@@ -7,7 +7,12 @@ import com.createengines.engine.sim.FuelSpec;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 
+import java.util.function.Predicate;
+
+import net.minecraft.core.Holder;
 import net.minecraft.core.registries.Registries;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.tags.TagKey;
 import net.minecraft.world.level.material.Fluid;
 import net.neoforged.neoforge.fluids.FluidStack;
 import net.neoforged.neoforge.registries.datamaps.DataMapType;
@@ -43,10 +48,39 @@ public final class CEDataMaps {
 		event.register(FUEL);
 	}
 
+	private static TagKey<Fluid> common(String name) {
+		return TagKey.create(Registries.FLUID, ResourceLocation.fromNamespaceAndPath("c", name));
+	}
+
+	/** The fluid tags other mods put their fuels in, and so ours: {@code c:diesel} and the rest. */
+	public static final TagKey<Fluid> DIESEL = common("diesel");
+	public static final TagKey<Fluid> BIODIESEL = common("biodiesel");
+	public static final TagKey<Fluid> GASOLINE = common("gasoline");
+	public static final TagKey<Fluid> ETHANOL = common("ethanol");
+	public static final TagKey<Fluid> PLANT_OIL = common("plantoil");
+
+	/**
+	 * A fuel's properties: its entry in the fuel data map if it has one, and otherwise those of the common fluid tag it is
+	 * in, so any mod's diesel, gasoline, ethanol or plant oil runs an engine without a datapack. A data map entry wins, so a
+	 * pack can still tune or replace any fluid.
+	 */
 	public static @Nullable FuelSpec fuel(Fluid fluid) {
-		FuelProperties properties = fluid.builtInRegistryHolder()
-			.getData(FUEL);
-		return properties == null ? null : properties.toSpec();
+		Holder<Fluid> holder = fluid.builtInRegistryHolder();
+		FuelProperties properties = holder.getData(FUEL);
+		return properties == null ? fuelForTags(holder::is) : properties.toSpec();
+	}
+
+	/** The fuel a fluid counts as by its tags alone, or null if it is in none of the fuel tags. */
+	public static @Nullable FuelSpec fuelForTags(Predicate<TagKey<Fluid>> inTag) {
+		if (inTag.test(GASOLINE))
+			return FuelSpec.GASOLINE;
+		if (inTag.test(DIESEL) || inTag.test(BIODIESEL))
+			return FuelSpec.DIESEL;
+		if (inTag.test(ETHANOL))
+			return FuelSpec.ETHANOL;
+		if (inTag.test(PLANT_OIL))
+			return FuelSpec.PLANT_OIL;
+		return null;
 	}
 
 	public static boolean isFuel(FluidStack stack) {

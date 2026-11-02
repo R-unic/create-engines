@@ -204,8 +204,10 @@ public final class CEFluids {
 			.source(BaseFlowingFluid.Source::new)
 			.block()
 			.properties(p -> p.mapColor(MapColor.COLOR_LIGHT_GREEN))
+			.lang("Engine Coolant")
 			.build()
 			.bucket()
+			.lang("Engine Coolant Bucket")
 			.model(CEFluids::bucketModel)
 			.build()
 			.register();

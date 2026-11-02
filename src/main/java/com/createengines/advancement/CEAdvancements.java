@@ -108,6 +108,9 @@ public final class CEAdvancements {
 		on("alternator", "spark_plug", () -> CEBlocks.ALTERNATOR.get(), AdvancementType.TASK,
 			Milestone.ALTERNATOR_CHARGING, "Keeping the Lights On",
 			"Turn an Alternator's shaft to put charge back into a Battery.");
+		on("mains_power", "alternator", () -> CEBlocks.ALTERNATOR.get(), AdvancementType.TASK,
+			Milestone.ENERGY_GENERATED, "Mains Power",
+			"Turn an Alternator's shaft while a cable or machine from another mod draws Forge Energy from it.");
 		on("charged_battery", "alternator", () -> CEBlocks.BATTERY.get(), AdvancementType.TASK, Milestone.CHARGED_BATTERY,
 			"Fully Charged", "Fill a battery with an alternator.");
 

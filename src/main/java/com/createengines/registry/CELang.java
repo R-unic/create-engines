@@ -299,6 +299,8 @@ public final class CELang {
 
 		raw("goggles.alternator", "Alternator");
 		raw("goggles.alternator.charging", "Charging batteries from its shaft");
+		raw("goggles.alternator.supplying", "Supplying Forge Energy from its shaft");
+		raw("goggles.alternator.energy", "Up to %1$s FE a tick");
 		raw("goggles.alternator.no_battery", "No battery touching it or its engine to charge");
 		raw("goggles.alternator.idle", "Idle: needs a turning shaft and a battery that isn't full");
 		raw("goggles.battery.no_engine", "Not touching an engine's crankshaft or cylinder head");
