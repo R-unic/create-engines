@@ -121,7 +121,10 @@ public class AlternatorBlockEntity extends KineticBlockEntity implements EngineM
 			budget -= battery.charge(budget);
 		}
 		batteriesFound = batteries.size();
-		chargeHold = wanted ? CHARGE_GRACE : turning ? Math.max(0, chargeHold - 1) : 0;
+		// An overstressed shaft reads as stopped, but the grace runs down through it instead of resetting: dropping the load
+		// the moment the network overstresses, then restoring it the next tick, flipped the whole crank line between
+		// stopped and turning every tick, and the throw and alternator were destroyed within a couple of seconds
+		chargeHold = wanted ? CHARGE_GRACE : getTheoreticalSpeed() != 0 ? Math.max(0, chargeHold - 1) : 0;
 		wanted = chargeHold > 0;
 
 		boolean drawing = supplyEnergy(turning);
