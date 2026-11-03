@@ -1528,6 +1528,15 @@ public final class EngineScenes {
 			.placeNearTarget();
 		scene.idle(120);
 
+		scene.overlay()
+			.showText(120)
+			.colored(PonderPalette.BLUE)
+			.text("A second dial, the Wide-Open Bore, sets how far full signal opens it: 100% is the plain intake, and up to 150% is a bigger bore that lets a fast engine breathe more than the intake alone gives. It does nothing with no signal.")
+			.pointAt(util.vector()
+				.topOf(3, 3, 2))
+			.placeNearTarget();
+		scene.idle(130);
+
 		scene.world()
 			.toggleRedstonePower(pedal);
 		scene.world()
@@ -2783,6 +2792,85 @@ public final class EngineScenes {
 				.blockSurface(dynoPos, Direction.EAST))
 			.placeNearTarget();
 		scene.idle(110);
+		scene.markAsFinished();
+	}
+
+	public static void blackBox(SceneBuilder builder, SceneBuildingUtil util) {
+		CreateSceneBuilder scene = new CreateSceneBuilder(builder);
+		scene.title("black_box", "The Black Box");
+		scene.configureBasePlate(0, 0, 6);
+		scene.world()
+			.showSection(util.select()
+				.layer(0), Direction.UP);
+
+		Selection crank = util.select()
+			.fromTo(1, 2, 3, 3, 2, 3);
+		Selection engine = util.select()
+			.fromTo(2, 3, 3, 2, 4, 3);
+		Selection box = util.select()
+			.position(3, 1, 3);
+		BlockPos boxPos = util.grid()
+			.at(3, 1, 3);
+
+		setThrow(scene, util.select()
+			.position(2, 2, 3), 0);
+		scene.world()
+			.showSection(crank, Direction.DOWN);
+		scene.world()
+			.showSection(engine, Direction.DOWN);
+		scene.world()
+			.setKineticSpeed(crank, 48);
+		scene.idle(20);
+		scene.overlay()
+			.showText(100)
+			.attachKeyFrame()
+			.text("An engine that stalls rarely says why, and by the time you look it is cold. The Black Box remembers.")
+			.pointAt(util.vector()
+				.topOf(2, 4, 3))
+			.placeNearTarget();
+		scene.idle(110);
+
+		scene.world()
+			.showSection(box, Direction.UP);
+		scene.idle(15);
+		scene.overlay()
+			.showText(120)
+			.attachKeyFrame()
+			.text("Set it against any block of a built engine: a crankshaft, a cylinder or a head. Once a second it notes the engine's speed, its load and how warm it is, and keeps the last ten minutes.")
+			.pointAt(util.vector()
+				.blockSurface(boxPos, Direction.NORTH))
+			.placeNearTarget();
+		scene.idle(130);
+
+		scene.overlay()
+			.showText(110)
+			.colored(PonderPalette.BLUE)
+			.text("Goggles on it read the tape back as rows of bars, oldest first, with a mark for each state the engine was in: stalled, cranking, coasting, running or overloaded.")
+			.pointAt(util.vector()
+				.blockSurface(boxPos, Direction.UP))
+			.placeNearTarget();
+		scene.idle(120);
+
+		scene.world()
+			.setKineticSpeed(crank, 0);
+		scene.idle(15);
+		scene.overlay()
+			.showText(120)
+			.colored(PonderPalette.RED)
+			.text("Every time the engine changes state it logs the change, and says what the figures point to: no fuel reaching it, a load more than it could pull, or no oil.")
+			.pointAt(util.vector()
+				.blockSurface(boxPos, Direction.EAST))
+			.placeNearTarget();
+		scene.idle(130);
+
+		scene.overlay()
+			.showText(90)
+			.colored(PonderPalette.GREEN)
+			.text("The tape is kept in the block, so it is still there after the world is saved and loaded.")
+			.pointAt(util.vector()
+				.blockSurface(boxPos, Direction.SOUTH))
+			.placeNearTarget();
+		scene.idle(100);
 		scene.markAsFinished();
 	}
 

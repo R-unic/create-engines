@@ -467,6 +467,15 @@ write_schematic("dyno", (6, 6, 6), [
     (3, 1, 3, ce("dyno"), {}),
 ])
 
+write_schematic("black_box", (6, 6, 6), [
+    (1, 2, 3, ce("crankshaft"), axis("x")),
+    (2, 2, 3, ce("crank_throw"), axis("x")),
+    (3, 2, 3, ce("crankshaft"), axis("x")),
+    (2, 3, 3, ce("cylinder"), cylinder("up")),
+    (2, 4, 3, ce("cylinder_head"), head("up")),
+    (3, 1, 3, ce("black_box"), {}),
+])
+
 write_schematic("turbo_tuning", (7, 6, 7), [
     (1, 1, 3, ce("crankshaft"), axis("x")),
     (2, 1, 3, ce("crank_throw"), axis("x")),

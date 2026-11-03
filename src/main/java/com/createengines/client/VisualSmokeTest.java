@@ -131,7 +131,8 @@ public final class VisualSmokeTest {
 			ponder("heat_exchanger", 1700, CEBlocks.HEAT_EXCHANGER::asStack, 400, 800, 1200);
 			ponderScene("fuels", 3000, CEBlocks.HEAT_EXCHANGER::asStack, 1, 400, 900, 1400);
 			ponder("supercharger", 4500, CEBlocks.SUPERCHARGER::asStack, 250, 600, 900, 1250, 1600);
-			management(6300);
+			ponder("black_box", 6300, CEBlocks.BLACK_BOX::asStack, 250, 600, 950);
+			management(7500);
 			return;
 		}
 
