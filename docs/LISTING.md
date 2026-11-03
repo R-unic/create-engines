@@ -135,7 +135,27 @@ config thins out engine sound and particles on a big engine. Fuel properties are
 
 First public release. Everything in the description above.
 
-## Before uploading
+## Publishing
 
-- Rebuild (`./gradlew build --offline`) and upload `build/libs/create_engines-0.1.0.jar`.
-- Push the repository first so the description's image links resolve.
+Uploads are automatic, from `.github/workflows/publish.yml`. It builds with the tests, then uploads the jar to
+Modrinth and CurseForge with the commit subjects since the last tag as the changelog.
+
+| Do this | You get |
+|---|---|
+| `git tag v0.2.0 && git push origin v0.2.0` | a release |
+| `git tag v0.2.0-beta.1 && git push origin v0.2.0-beta.1` | a beta (`-alpha` makes an alpha, `-rc` a beta) |
+| push to the `prototype` branch, or run the workflow by hand | an alpha named `<mod_version>-prototype.<run number>` |
+
+The version in the jar comes from the tag, so `mod_version` in `gradle.properties` only needs bumping for the
+prototype names.
+
+One-time setup in the GitHub repository (Settings, Secrets and variables, Actions):
+
+- Secret `MODRINTH_TOKEN`: a Modrinth personal access token with the "Create versions" scope
+  (modrinth.com/settings/pats).
+- Secret `CURSEFORGE_TOKEN`: a CurseForge API token (authors.curseforge.com/account/api-tokens).
+- Variable `CURSEFORGE_ID`: the numeric project ID, on the CurseForge project page under About Project.
+- Variable `MODRINTH_ID` is optional; it defaults to the slug `create-engine-engineer`.
+
+Push the repository first so the description's image links resolve. Both sites review a project before it goes
+public, and Modrinth may not accept uploads until its first review passes.

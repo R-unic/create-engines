@@ -1,0 +1,87 @@
+name: Publish
+
+# Tag v1.2.3 to publish a release, v1.2.3-beta.1 or v1.2.3-alpha.1 for the matching channel.
+# Push to the prototype branch (or run this by hand) to publish an alpha build of whatever is on it.
+on:
+  push:
+    tags: ['v*']
+    branches: [prototype]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: publish-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+
+      - uses: gradle/actions/setup-gradle@v4
+
+      - name: Work out the version and channel
+        id: meta
+        run: |
+          if [[ "$GITHUB_REF" == refs/tags/v* ]]; then
+            version="${GITHUB_REF_NAME#v}"
+            case "$version" in
+              *alpha*) type=alpha ;;
+              *beta*|*rc*) type=beta ;;
+              *) type=release ;;
+            esac
+            previous=$(git describe --tags --abbrev=0 "${GITHUB_REF_NAME}^" 2>/dev/null || true)
+          else
+            base=$(sed -n 's/^mod_version=//p' gradle.properties | tr -d '\r')
+            version="${base}-prototype.${GITHUB_RUN_NUMBER}"
+            type=alpha
+            previous=$(git describe --tags --abbrev=0 2>/dev/null || true)
+          fi
+          range="${previous:+$previous..}HEAD"
+          {
+            echo "version=$version"
+            echo "type=$type"
+            echo "changelog<<CHANGELOG_EOF"
+            git log "$range" --no-merges --format='- %s'
+            echo "CHANGELOG_EOF"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Build and test
+        run: ./gradlew build -Pmod_version=${{ steps.meta.outputs.version }} --no-daemon
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: create_engines-${{ steps.meta.outputs.version }}
+          path: build/libs/create_engines-${{ steps.meta.outputs.version }}.jar
+
+      - name: Publish to Modrinth and CurseForge
+        uses: Kir-Antipov/mc-publish@v3.3.0
+        with:
+          modrinth-id: ${{ vars.MODRINTH_ID || 'create-engine-engineer' }}
+          modrinth-token: ${{ secrets.MODRINTH_TOKEN }}
+          curseforge-id: ${{ vars.CURSEFORGE_ID }}
+          curseforge-token: ${{ secrets.CURSEFORGE_TOKEN }}
+
+          files: build/libs/create_engines-${{ steps.meta.outputs.version }}.jar
+          name: Create Engine Engineer ${{ steps.meta.outputs.version }}
+          version: ${{ steps.meta.outputs.version }}
+          version-type: ${{ steps.meta.outputs.type }}
+          changelog: ${{ steps.meta.outputs.changelog }}
+
+          loaders: neoforge
+          game-versions: 1.21.1
+          java: 21
+          dependencies: |
+            create(required){modrinth:LNytGWDc}{curseforge:328085}
+
+          fail-mode: fail
