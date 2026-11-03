@@ -813,6 +813,33 @@ public class EngineGameTests {
 		});
 	}
 
+	/** With a full redstone signal a bore opened past the plain intake lets an engine breathe, and so turn, faster. */
+	@GameTest(template = "empty", timeoutTicks = 1800)
+	public static void aWideBoreLetsAnEngineTurnFaster(GameTestHelper helper) {
+		buildSingleCylinder(helper, true);
+		BlockPos body = TestEngine.AIR_INTAKE;
+		helper.setBlock(body, Blocks.AIR);
+		helper.setBlock(body, placePipe(helper, CEBlocks.THROTTLE.get(), body));
+		helper.setBlock(body.west(), CEBlocks.AIR_INTAKE.getDefaultState()
+			.setValue(PortOpeningBlock.FACING, Direction.WEST));
+		helper.setBlock(body.above(), Blocks.REDSTONE_BLOCK.defaultBlockState());
+		ThrottleBlockEntity throttle = helper.getBlockEntity(body);
+		float[] rpm = new float[1];
+		helper.runAtTickTime(300, () -> helper.setBlock(STARTER_POWER, Blocks.AIR));
+		helper.runAtTickTime(900, () -> {
+			helper.assertTrue(throttle.opening() == 1, "A full signal opens the plain bore: " + throttle.opening());
+			rpm[0] = summary(helper).rpm();
+			throttle.wide.setValue(ThrottleBlockEntity.MAX_WIDE);
+		});
+		helper.runAtTickTime(1700, () -> {
+			helper.assertTrue(throttle.opening() > 1.4, "A full signal opens the wide bore: " + throttle.opening());
+			float wide = summary(helper).rpm();
+			helper.assertTrue(wide > rpm[0] * 1.03f,
+				"A wider bore should let the engine turn faster: " + wide + " RPM vs " + rpm[0]);
+			helper.succeed();
+		});
+	}
+
 	/** A throttle body's idle stop and wide-open bore are two scroll values on one block; each keeps its own setting when saved. */
 	@GameTest(template = "empty")
 	public static void aThrottleKeepsItsIdleStopAndItsBoreApart(GameTestHelper helper) {

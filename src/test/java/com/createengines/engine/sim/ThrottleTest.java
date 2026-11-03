@@ -93,6 +93,15 @@ class ThrottleTest {
 		}
 	}
 
+	/** The most closed body governs a line, and a bore past the intake counts: starting the comparison from 1 once hid it. */
+	@Test
+	void throttleBodiesInSeriesAreGovernedByTheMostClosed() {
+		assertEquals(1, Throttle.inSeries(List.of()), 1e-9);
+		assertEquals(1.4, Throttle.inSeries(List.of(1.4)), 1e-9);
+		assertEquals(0.3, Throttle.inSeries(List.of(1.4, 0.3)), 1e-9);
+		assertEquals(1.2, Throttle.inSeries(List.of(1.4, 1.2)), 1e-9);
+	}
+
 	@Test
 	void theLinkageGivesNoMoreFuelPastTheIntake() {
 		assertEquals(1, Throttle.fuelTrim(1), 1e-9);

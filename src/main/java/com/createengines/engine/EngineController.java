@@ -501,13 +501,14 @@ public final class EngineController {
 	 */
 	private void readThrottles(Level level) {
 		for (int port = 0; port < portOpening.length; port++) {
-			double opening = 1;
+			// Starting from 1 would cap a bore opened past the intake right back at it
+			List<Double> openings = new ArrayList<>();
 			for (BlockPos pos : layout.ports()
 				.get(port)
 				.throttles())
 				if (level.getBlockEntity(pos) instanceof ThrottleBlockEntity throttle)
-					opening = Math.min(opening, throttle.opening());
-			portOpening[port] = opening;
+					openings.add(throttle.opening());
+			portOpening[port] = Throttle.inSeries(openings);
 		}
 		for (int i = 0; i < models.size(); i++) {
 			CylinderModel model = models.get(i);

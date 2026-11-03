@@ -30,6 +30,17 @@ public final class Throttle {
 		return (1 - Math.exp(-AIR_CURVE * clamped)) / (1 - Math.exp(-AIR_CURVE));
 	}
 
+	/**
+	 * How far open an intake is with these throttle bodies in series: the most closed one governs, and with none (or none
+	 * loaded) it is the plain intake, 1. A bore opened past the intake gives more than 1 only when every body in the line does.
+	 */
+	public static double inSeries(java.util.Collection<Double> openings) {
+		return openings.stream()
+			.mapToDouble(Double::doubleValue)
+			.min()
+			.orElse(1);
+	}
+
 	/** How open the valve is: its idle stop with no signal, rising evenly to wide open at full signal strength. */
 	public static double opening(double idle, int signal) {
 		return opening(idle, 1, signal);
