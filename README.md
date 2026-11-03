@@ -6,11 +6,12 @@ with a boosted, precision-built V12.
 
 Minecraft 1.21.1 · NeoForge 21.1.219 · Create 6.0.10
 
-> [!WARNING]
-> **This mod is vibe coded.** Nearly all of the code, models, Ponder scenes and docs were written by an AI
-> (Claude) while directed by a human. It has tests and in-game smoke tests, but expect rough edges, odd balance and
-> bugs. Treat it as an experiment, not a polished release, and don't be surprised if worlds or save data break between
-> versions.
+> [!NOTE]
+> **Built with AI.** Nearly all of the code, models, textures, sounds, Ponder scenes and docs were written by an AI
+> (Claude) at my direction. I have played, tested and reworked almost all of it over many passes, and it ships with
+> unit tests and in-world GameTests. It is still a young mod, so you may find rough edges or odd balance. Please report
+> them on the issue tracker, and back up a world before adding the mod to it. Until 1.0, a new version may change how
+> an existing engine behaves.
 
 ## Preview
 
@@ -30,7 +31,7 @@ Minecraft 1.21.1 · NeoForge 21.1.219 · Create 6.0.10
   in order and the crank animates with them
 - Inline, V, flat and rotary (Wankel) layouts, with coupled crankshafts for bigger engines
 - **Torsional flex**: a crank twists under load, so past eight throws on one unbroken crankshaft an engine's rating
-  falls by 4.5 percent a throw. A straight twelve loses about a fifth; a V12 or flat twelve (six throws) loses nothing,
+  falls by 2.5 percent a throw, to at most 35 percent. A straight twelve loses about a tenth; a V12 or flat twelve (six throws) loses nothing,
   and cranks geared together one to one count as separate lines. It takes from the rating only, never harms anything
 - Cam lobes that sit beside the cylinder block, so a V can run one camshaft in its valley and keep every head face
   free for pipes
@@ -38,7 +39,7 @@ Minecraft 1.21.1 · NeoForge 21.1.219 · Create 6.0.10
   firing order for you
 
 **Feed and tune it**
-- Air, fuel and exhaust plumbing with pipes, throttle bodies and fuel metering; diesel, plant oil, gasoline and ethanol
+- Air, fuel and exhaust plumbing with pipes, throttle bodies (a pedal that can also open past the plain intake, to help a big engine turn faster) and fuel metering; diesel, plant oil, gasoline and ethanol
   with spark ignition
 - A craftable fuel chain: seeds to plant oil to diesel, sugar crops to ethanol, and biodiesel with glycerin on the
   side, all in Create basins. The loop closes: glycerin goes into engine oil and coolant, and used oil is burned as fuel or recycled into oil or charcoal

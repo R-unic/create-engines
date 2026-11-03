@@ -7,6 +7,7 @@ import com.createengines.content.camshaft.CamLobeBlock;
 import com.createengines.content.camshaft.CamshaftBlockEntity;
 import com.createengines.content.crankshaft.CrankThrowBlock;
 import com.createengines.content.crankshaft.CrankshaftBlockEntity;
+import com.createengines.content.cylinder.CylinderBlock;
 import com.createengines.content.cylinder.CylinderBlockEntity;
 import com.createengines.content.head.CylinderHeadBlockEntity;
 import com.createengines.content.rotor.RotorHousingBlock;
@@ -124,7 +125,8 @@ public final class EnginePartRenderers {
 							  int light) {
 			EnginePoses.CylinderPose pose = EnginePoses.cylinder(be, renderTime);
 			if (pose.showPiston())
-				draw(CEPartialModels.PISTON, be.getBlockState(), pose.piston(), ms, buffer, light);
+				draw(be.getBlockState().getValue(CylinderBlock.FORGED_PISTON) ? CEPartialModels.FORGED_PISTON
+					: CEPartialModels.PISTON, be.getBlockState(), pose.piston(), ms, buffer, light);
 			if (pose.showRod())
 				draw(CEPartialModels.CONNECTING_ROD, be.getBlockState(), pose.rod(), ms, buffer, light);
 		}

@@ -41,11 +41,12 @@ public final class CELang {
 		raw("value.lobe_angle", "Lobe Angle");
 		raw("value.fuel_metering", "Fuel Metering");
 		raw("value.throttle_idle", "Idle Stop");
+		raw("value.throttle_wide", "Wide-Open Bore");
 
 		raw("goggles.throttle", "Throttle Body");
 		raw("goggles.throttle.open", "Open: %1$s%%");
 		raw("goggles.throttle.hint",
-			"Redstone opens it from its idle stop to wide open. Less air means less power, and its linkage trims the injectors' fuel to match");
+			"Redstone opens it from its idle stop to wide open. Less air means less power, and its linkage trims the injectors' fuel to match. Set the wide-open bore above 100% and a full signal opens it past the plain intake: a fast engine that cannot fill gets more air, which is how it turns faster");
 
 		raw("value.maf_target", "Mixture Target");
 		raw("value.boost_limit", "Boost Limit");

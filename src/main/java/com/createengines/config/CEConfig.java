@@ -92,7 +92,7 @@ public final class CEConfig {
 				"and nothing ever overheats or wears out.")
 			.defineInRange("coolingBonus", 1.0, 0.0, 3.0);
 		TORSIONAL_FLEX = builder.comment("Scales the rating an engine loses to a long crankshaft: past 8 throws on one unbroken",
-				"crank line it falls by 4.5 percent a throw at 1.0. A vee or flat has half as many throws as cylinders,",
+				"crank line it falls by 2.5 percent a throw at 1.0. A vee or flat has half as many throws as cylinders,",
 				"and cranks geared together one to one are separate lines. 0 turns it off.")
 			.defineInRange("torsionalFlex", 1.0, 0.0, 2.0);
 		ALTERNATOR_ENERGY = builder.comment("Forge Energy an Alternator makes each tick for every RPM of its shaft, while something is",

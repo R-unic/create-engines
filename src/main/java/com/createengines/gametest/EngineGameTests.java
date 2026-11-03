@@ -54,6 +54,7 @@ import com.simibubi.create.content.kinetics.motor.CreativeMotorBlock;
 import com.simibubi.create.content.kinetics.motor.CreativeMotorBlockEntity;
 
 import net.minecraft.core.BlockPos;
+import net.minecraft.nbt.CompoundTag;
 import net.minecraft.core.Direction;
 import net.minecraft.core.Direction.Axis;
 import net.minecraft.core.registries.Registries;
@@ -810,6 +811,29 @@ public class EngineGameTests {
 				"Opening it again should free the engine: " + opened + " RPM vs " + rpm[1]);
 			helper.succeed();
 		});
+	}
+
+	/** A throttle body's idle stop and wide-open bore are two scroll values on one block; each keeps its own setting when saved. */
+	@GameTest(template = "empty")
+	public static void aThrottleKeepsItsIdleStopAndItsBoreApart(GameTestHelper helper) {
+		BlockPos at = new BlockPos(2, 1, 2);
+		helper.setBlock(at, placePipe(helper, CEBlocks.THROTTLE.get(), at));
+		ThrottleBlockEntity throttle = helper.getBlockEntity(at);
+		throttle.idle.setValue(7);
+		throttle.wide.setValue(26);
+		var registries = helper.getLevel()
+			.registryAccess();
+		for (boolean clientPacket : new boolean[] {false, true}) {
+			CompoundTag saved = clientPacket ? throttle.getUpdateTag(registries) : throttle.saveWithFullMetadata(registries);
+			throttle.idle.setValue(ThrottleBlockEntity.DEFAULT_IDLE);
+			throttle.wide.setValue(ThrottleBlockEntity.MIN_WIDE);
+			throttle.loadWithComponents(saved, registries);
+			helper.assertTrue(throttle.idle.getValue() == 7, "The idle stop should come back as set: " + throttle.idle.getValue());
+			helper.assertTrue(throttle.wide.getValue() == 26, "The bore should come back as set: " + throttle.wide.getValue());
+			throttle.idle.setValue(7);
+			throttle.wide.setValue(26);
+		}
+		helper.succeed();
 	}
 
 	/**

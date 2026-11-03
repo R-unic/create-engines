@@ -47,6 +47,11 @@ public class AlternatorBlockEntity extends KineticBlockEntity implements EngineM
 	private static final int FASTEST_RPM = 256;
 	/** Ticks after energy last left the buffer for which the shaft is still counted as supplying. */
 	private static final int SUPPLY_GRACE = 10;
+	/**
+	 * Ticks after a battery last had room for which the shaft is still counted as charging. A spark engine takes a spark
+	 * out of a full battery every time a plug fires, so without this the load would switch on and off with every firing.
+	 */
+	private static final int CHARGE_GRACE = 20;
 
 	private @Nullable BlockPos primaryPos;
 	/** Batteries of the engine this alternator touches, set by the engine. */
@@ -58,6 +63,7 @@ public class AlternatorBlockEntity extends KineticBlockEntity implements EngineM
 	/** Energy made but too small to store as a whole unit yet. */
 	private double energyCarry;
 	private int idleTicks = SUPPLY_GRACE;
+	private int chargeHold;
 
 	public AlternatorBlockEntity(BlockEntityType<?> type, BlockPos pos, BlockState state) {
 		super(type, pos, state);
@@ -115,6 +121,8 @@ public class AlternatorBlockEntity extends KineticBlockEntity implements EngineM
 			budget -= battery.charge(budget);
 		}
 		batteriesFound = batteries.size();
+		chargeHold = wanted ? CHARGE_GRACE : turning ? Math.max(0, chargeHold - 1) : 0;
+		wanted = chargeHold > 0;
 
 		boolean drawing = supplyEnergy(turning);
 		boolean changed = wanted != charging || drawing != supplying;

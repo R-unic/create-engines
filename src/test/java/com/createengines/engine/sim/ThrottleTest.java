@@ -71,6 +71,43 @@ class ThrottleTest {
 		}
 	}
 
+	/** A bore opened past the plain intake gives a fast engine more air, and so more work, where it was starved. */
+	@Test
+	void aBoreOpenedPastTheIntakeMakesMoreWorkAtSpeed() {
+		for (double rpm : new double[] {192, 256}) {
+			CycleStats plain = runThrottled(rpm, 1);
+			CycleStats wide = runThrottled(rpm, 1.4);
+			assertTrue(wide.freshAirAtInjection > plain.freshAirAtInjection,
+				rpm + " RPM drew " + wide.freshAirAtInjection + " air against " + plain.freshAirAtInjection);
+			assertTrue(wide.work > plain.work, rpm + " RPM made " + wide.work + " work against " + plain.work);
+		}
+	}
+
+	/** Where the engine already fills, a bigger bore has nothing to add and costs almost nothing (a slightly leaner charge). */
+	@Test
+	void aBoreOpenedPastTheIntakeBarelyChangesLowSpeed() {
+		for (double rpm : new double[] {32, 64, 128}) {
+			double plain = runThrottled(rpm, 1).work;
+			double wide = runThrottled(rpm, 1.4).work;
+			assertTrue(wide >= plain * 0.97, rpm + " RPM made " + wide + " work against " + plain);
+		}
+	}
+
+	@Test
+	void theLinkageGivesNoMoreFuelPastTheIntake() {
+		assertEquals(1, Throttle.fuelTrim(1), 1e-9);
+		assertEquals(1, Throttle.fuelTrim(1.4), 1e-9);
+	}
+
+	@Test
+	void aWiderBoreOpensFurtherAtTheSameSignalAndTheIdleStopIsUntouched() {
+		assertEquals(0.2, Throttle.opening(0.2, 1.4, 0), 1e-9);
+		assertEquals(1.4, Throttle.opening(0.2, 1.4, 15), 1e-9);
+		assertEquals(0.2 + 1.2 / 3, Throttle.opening(0.2, 1.4, 5), 1e-9);
+		assertEquals(Throttle.opening(0.2, 7), Throttle.opening(0.2, 1, 7), 1e-9);
+		assertEquals(Throttle.MAX_WIDE_OPEN, Throttle.opening(0.2, 9, 15), 1e-9);
+	}
+
 	@Test
 	void theOpeningRisesFromTheIdleStopToWideOpenWithTheSignal() {
 		assertEquals(0.2, Throttle.opening(0.2, 0), 1e-9);

@@ -7,7 +7,8 @@ package com.createengines.engine.sim;
  * most {@link #MAX_LOSS}. Like {@link Roughness} it takes from the rating, and does not stop or harm the engine.
  * <p>
  * What counts is throws on one line, not cylinders. A vee or a flat puts two cylinders on each throw, so a V12 or a flat
- * twelve has six and loses nothing, where a straight twelve has twelve and loses nearly a fifth. Crank lines geared
+ * twelve has six and loses nothing, where a straight twelve has twelve and loses a tenth. A vee thirty is fifteen throws and
+	 * loses under a fifth, so the biggest builds still come out ahead of a smaller engine. Crank lines geared
  * together one to one are separate lines (each flexes on its own), so two straight sixes or eights coupled lose
  * nothing either. That is the point: it is how the mod rewards the layouts real big engines use.
  * <p>
@@ -18,9 +19,9 @@ public final class Torsion {
 	/** Throws on one crank line that cost nothing. */
 	public static final int FREE_THROWS = 8;
 	/** Share of the rating lost for each throw on a line beyond {@link #FREE_THROWS}. */
-	public static final double LOSS_PER_THROW = 0.045;
+	public static final double LOSS_PER_THROW = 0.025;
 	/** The most an engine loses to torsional flex at the shipped balance. */
-	public static final double MAX_LOSS = 0.45;
+	public static final double MAX_LOSS = 0.35;
 	/** The most the server's scaling can take off, however it is set. */
 	private static final double ABSOLUTE_MAX_LOSS = 0.8;
 

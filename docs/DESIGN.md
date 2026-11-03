@@ -368,10 +368,11 @@ faces; and anything that needs doing regularly (an oil change) can be automated 
   reuse the cylinder bang, quieter and higher, at half the rate of the particles. The client config `boostVolume` scales the
   whistle, whine and blow-off; `bangVolume` still scales the pops. The recordings were analyzed (levels, spectrum, loop seam)
   but not listened to; if one is off, adjust its constants in the generator and regenerate it by name.
-- **Torsional flex** (`engine.sim.Torsion`). The rating loses `0.045` per throw beyond eight on a crank line, to at most 0.45,
+- **Torsional flex** (`engine.sim.Torsion`). The rating loses `0.025` per throw beyond eight on a crank line (it was 0.045 to at most 0.45 until 2026-11-02, when a V24 and V30
+  were rated below a V16; now at most 0.35),
   and an engine with several lines loses the average of the lines' losses weighted by their throws, so a short line
   does not hide a long one. Throws, not cylinders, are counted, so a vee or flat (two cylinders to a throw) puts a V12 at six
-  throws and a V16 at eight, both free, where a straight twelve (12 throws) loses 18 percent and a straight sixteen 36.
+  throws and a V16 at eight, both free, where a straight twelve (12 throws) loses 10 percent and a straight sixteen 20; a V24 loses 10 and a V30 17.5.
   Two coupled straight eights lose nothing. It is applied to the rated torque and the dynamometer curve in
   `EngineController`, as roughness is, and never to the running engine; a rotor's eccentric counts as a throw. The controller
   finds the lines by walking the layout's crank blocks, which the scanner lists line by line, and starting a new line
@@ -379,7 +380,7 @@ faces; and anything that needs doing regularly (an oil change) can be automated 
   never more than 0.8 off). Goggles on a crankshaft show the loss and the longest line, with a hint when sneaking; a
   Ponder page was added to the V engine scene; an advancement, Stiff Upper Crank (twelve or more firing cylinders with no
   flex), joins the builder capstone. The sim-level balance tables (`CombustionOutputTest`, `ProgressionBalanceTest`) measure
-  the engine without a layout, so they are unchanged; in play a straight twelve is rated a fifth lower than those tables
+  the engine without a layout, so they are unchanged; in play a straight twelve is rated a tenth lower than those tables
   say, which is the intent.
 
 

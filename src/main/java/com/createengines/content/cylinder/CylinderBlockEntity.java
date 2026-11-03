@@ -12,6 +12,7 @@ import com.createengines.content.EngineNoteSound;
 import com.createengines.content.EnginePoses;
 import com.createengines.content.airflow.PortOpeningBlock;
 import com.createengines.content.camshaft.CamshaftBlockEntity;
+import com.createengines.content.crankshaft.CrankshaftBlock;
 import com.createengines.content.crankshaft.CrankshaftBlockEntity;
 import com.createengines.content.head.GalleryMember;
 import com.createengines.engine.CylinderStatus;
@@ -91,11 +92,12 @@ public class CylinderBlockEntity extends SmartBlockEntity implements IHaveGoggle
 		sendData();
 	}
 
-	/** The crank throw this cylinder's connecting rod is on, if any. */
+	/** The crank throw this cylinder's connecting rod is on, if any: a plain journal has no pin for the rod to ride. */
 	public @Nullable CrankshaftBlockEntity crankThrow() {
 		Direction bore = getBlockState().getValue(CylinderBlock.FACING);
 		if (level != null && level.getBlockEntity(worldPosition.relative(bore.getOpposite()))
-			instanceof CrankshaftBlockEntity crank)
+			instanceof CrankshaftBlockEntity crank && crank.getBlockState()
+				.getBlock() instanceof CrankshaftBlock block && block.isThrow())
 			return crank;
 		return null;
 	}
