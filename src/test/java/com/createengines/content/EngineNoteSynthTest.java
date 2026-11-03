@@ -88,6 +88,21 @@ class EngineNoteSynthTest {
 	}
 
 	@Test
+	void theNoteDoesNotChangeCharacterAtAnySpeed() {
+		// Once the firings come faster than the pipe rings, which resonance each rate lands on once swung the loudness by half
+		for (int cylinders : new int[] {4, 8}) {
+			double before = 0;
+			for (float rpm = 200; rpm <= 6000; rpm *= 1.15f) {
+				double level = rms(render(rpm, even(cylinders), 1, 0.8f, 1));
+				if (before > 0)
+					assertTrue(level / before > 0.8 && level / before < 1.25,
+						"Loudness jumps near " + rpm + " RPM with " + cylinders + " cylinders: " + before + " to " + level);
+				before = level;
+			}
+		}
+	}
+
+	@Test
 	void noFiringIsAClick() {
 		// A click is a jump from one sample to the next far bigger than the sound around it, and a spike far above its level
 		for (float[] angles : new float[][] {even(1), {0, 315}, even(4), even(8), even(16)}) {
@@ -107,6 +122,30 @@ class EngineNoteSynthTest {
 				assertTrue(biggestStep / level < 2, "Jumps from sample to sample like a click, " + where + ": " + biggestStep / level);
 				assertTrue(peak / level < 6, "Spikes like a click, " + where + ": " + peak / level);
 			}
+		}
+	}
+
+	/** The level of what is left under {@code cutoff} Hz, through two gentle low-pass stages. */
+	private static double lowRms(float[] samples, double cutoff) {
+		double pole = Math.exp(-2 * Math.PI * cutoff / RATE);
+		double first = 0;
+		double second = 0;
+		double sum = 0;
+		for (float sample : samples) {
+			first = pole * first + (1 - pole) * sample;
+			second = pole * second + (1 - pole) * first;
+			sum += second * second;
+		}
+		return Math.sqrt(sum / samples.length);
+	}
+
+	@Test
+	void everyFiringHasTheLowThumpOfTheBang() {
+		// The pipe's resonances start at 86 Hz, so what sits under 60 Hz is the thump the bang is made of
+		for (float[] angles : new float[][] {even(1), even(4), even(8)}) {
+			float[] samples = render(angles.length == 1 ? 90 : 256, angles, 1, 0.8f, 3);
+			double share = lowRms(samples, 60) / rms(samples);
+			assertTrue(share > 0.18, "No low end under the note with " + angles.length + " firings a cycle: " + share);
 		}
 	}
 

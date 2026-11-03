@@ -6,6 +6,7 @@ import org.jetbrains.annotations.Nullable;
 
 import com.createengines.config.CEClientConfig;
 import com.createengines.content.EffectRate;
+import com.createengines.content.EngineNoteSound;
 import com.createengines.content.GoggleLines;
 import com.createengines.content.crankshaft.CrankshaftBlockEntity;
 import com.createengines.content.airflow.PortOpeningBlock;
@@ -254,7 +255,9 @@ public class RotorHousingBlockEntity extends CrankshaftBlockEntity implements Ga
 			return;
 		RandomSource random = level.random;
 		float volume = CEClientConfig.bangVolume();
-		if (volume > 0)
+		// The engine's note has the bang in it, on the same firing
+		boolean inTheNote = primaryPos() != null && EngineNoteSound.isPlayingFor(primaryPos());
+		if (volume > 0 && !inTheNote)
 			level.playLocalSound(worldPosition, CESounds.CYLINDER_FIRE.get(), SoundSource.BLOCKS, volume,
 				1.05f + random.nextFloat() * 0.16f, false);
 		if (!CEClientConfig.particles())

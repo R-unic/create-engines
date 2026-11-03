@@ -405,9 +405,11 @@ faces; and anything that needs doing regularly (an oil change) can be automated 
   own firing order is what is heard. Firings that did not light (the share of cylinders not firing) are an eighth as loud;
   load brightens the upper resonances and the crack; a coasting or cranking engine only thumps at about a quarter strength.
   Loudness is divided by the firing rate so a V16 at speed is not a wall. Speed and loudness are followed over about a
-  tenth of a second, and the stream queues four tenths ahead, so the note trails the engine by a few tenths. A cylinder's
-  bang keeps 40 percent of its volume while the note plays (the bang is still tied to the flash). The client config
-  `engineNoteVolume` scales it (0 off, bangs back at full). The recordings in `build/engine-notes` come from
+  tenth of a second, and the stream queues four tenths ahead, so the note trails the engine by a few tenths. While the
+  note plays the cylinders' (and rotor housings') recorded bangs are skipped: the bang is in the note, as a thump (a
+  sine dropping from about 150 to 46 Hz) and a low rumble struck by the same firing as the resonances, so it lands with
+  the note by construction. A sample played from the cylinder runs a few tenths of a second ahead of a stream and was
+  never going to line up. The client config `engineNoteVolume` scales it (0 off, recorded bangs back at full). The recordings in `build/engine-notes` come from
   `EngineNoteSynthTest.rendersDemoRecordings`. The levels and spectra were measured, and the visual smoke run with the sound
   on showed the sound engine accepting the voice and pulling its stream with no errors, but the sound itself has not been
   listened to by the author of it. A new voice is given 20 ticks to start before it is judged declined (master volume at zero
@@ -417,7 +419,11 @@ faces; and anything that needs doing regularly (an oil change) can be automated 
   level). A firing is now a pressure pulse smoothed over a thousandth of a second, into resonances at 86, 172 and 345 Hz
   that ring for about 20, 12 and 7 thousandths, with a lowpassed chuff for the rush of gas; the same measures are now a
   crest of 2 to 6 and a step under the level. `EngineNoteSynthTest.noFiringIsAClick` holds that. The whole note is about
-  six decibels louder, a cylinder's bang keeps only 15 percent of its volume under it, and the turbo whistle (0.09) and
+  six decibels louder. Past about a hundred firings a second (a four at 3000 RPM, a V8 at 1500) the narrow resonances
+  stopped lining up with the pulses and the note fell to half its level in a step, and then sounded thin; the firings
+  themselves, softened, now come in as a tone at the firing rate, and a slow gain (0.3 s) holds the level across the
+  range, only for fast engines so a slow engine's lope is untouched (`theNoteDoesNotChangeCharacterAtAnySpeed`). The
+  turbo whistle (0.09) and
   supercharger whine (0.2) are quieter than before, because a tone in the kilohertz carries much further to the ear than
   a rumble of the same level.
 

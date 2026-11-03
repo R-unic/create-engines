@@ -45,6 +45,35 @@ public final class EngineNoteSynth {
 	private static final double PULSE_GAIN = 1 / (1 - RISE);
 	/** The noise in a firing, and in the valve gear, is kept below a few kilohertz. */
 	private static final float NOISE_POLE = (float) Math.exp(-2 * Math.PI * 1800 / SAMPLE_RATE);
+	/**
+	 * The bang itself, so it lands on the firing it belongs to instead of beside it: a sine that drops from about 150 Hz to
+	 * 46 Hz in a few hundredths of a second, which is the thump of the pressure, and a low rumble of noise under it. Both
+	 * die away in about a tenth of a second.
+	 */
+	private static final double THUMP_LOW = 46;
+	private static final double THUMP_DROP = 110;
+	private static final float THUMP_SWEEP_FALL = (float) Math.exp(-1 / (0.02 * SAMPLE_RATE));
+	private static final float THUMP_FALL = (float) Math.exp(-1 / (0.05 * SAMPLE_RATE));
+	private static final float RUMBLE_FALL = (float) Math.exp(-1 / (0.045 * SAMPLE_RATE));
+	private static final float RUMBLE_POLE = (float) Math.exp(-2 * Math.PI * 700 / SAMPLE_RATE);
+	private static final float THUMP_WEIGHT = 0.45f;
+	private static final float RUMBLE_WEIGHT = 0.8f;
+	/** Firings a second at which one thump has not quite died before the next starts. */
+	private static final float THUMPS_BEFORE_PILE_UP = 16;
+	/**
+	 * Above a hundred firings a second the pulses come faster than the pipe's resonances ring, and which of them a firing
+	 * rate happens to land on decides the loudness: the note would drop away in steps as the engine sped up. So the firings
+	 * themselves, softened to below a few hundred hertz, are heard as a tone at the firing rate that grows in as the rate
+	 * climbs, and a slow gain follows the level so a fast engine stays as loud as a slow one.
+	 */
+	private static final float TONE_POLE = (float) Math.exp(-2 * Math.PI * 600 / SAMPLE_RATE);
+	private static final float TONE_DC_POLE = (float) Math.exp(-2 * Math.PI * 15 / SAMPLE_RATE);
+	private static final float TONE_WEIGHT = 3f;
+	private static final float TONE_FROM = 40;
+	private static final float LEVEL_FOLLOW = (float) (1 / (0.3 * SAMPLE_RATE));
+	/** The mean square of the note before it is clipped, as it sits across the middle of the range. */
+	private static final float TARGET_POWER = 0.16f;
+	private static final float MOST_BOOST = 4;
 	/** Per-sample share of the way to the asked-for speed and loudness: about a tenth of a second. */
 	private static final float FOLLOW = 0.0005f;
 	/** Overall level, set so a running engine sits around a fifth of full scale. */
@@ -70,6 +99,16 @@ public final class EngineNoteSynth {
 	private double impulse;
 	private double pulse;
 	private float noiseLow;
+	private float thumpEnvelope;
+	private float thumpSweep;
+	private float thumpPitch = 1;
+	private double thumpPhase;
+	private float rumbleEnvelope;
+	private float rumbleNoise;
+	private float toneA;
+	private float toneB;
+	private float toneDc;
+	private float power = TARGET_POWER;
 	private int random;
 
 	public EngineNoteSynth(int seed) {
@@ -93,7 +132,8 @@ public final class EngineNoteSynth {
 
 	/** Whether there is nothing left to hear: the engine is quiet and the pipe has stopped ringing. */
 	public boolean isSilent() {
-		return params.combustion <= 0 && combustion < 0.001f && Math.abs(y1[0]) + Math.abs(y1[1]) < 0.001 && pulse < 0.001;
+		return params.combustion <= 0 && combustion < 0.001f && Math.abs(y1[0]) + Math.abs(y1[1]) < 0.001 && pulse < 0.001
+			&& thumpEnvelope < 0.001f;
 	}
 
 	/** Fills {@code out[offset, offset + count)} with 16-bit samples. */
@@ -142,9 +182,34 @@ public final class EngineNoteSynth {
 		float chuff = (float) (low * pulse * PULSE_GAIN * 0.3 * (0.35 + 0.65 * Math.min(1f, load)));
 		float mechanical = low * 0.03f * Math.min(1f, rpm / 1500f) * Math.min(1f, combustion * 2);
 
+		// Every firing restarts the thump's drop; its phase carries on, so the pitch jumps but the wave never does
+		thumpSweep *= THUMP_SWEEP_FALL;
+		thumpPhase += 2 * Math.PI * (THUMP_LOW + THUMP_DROP * thumpSweep) * thumpPitch / SAMPLE_RATE;
+		if (thumpPhase > 2 * Math.PI)
+			thumpPhase -= 2 * Math.PI;
+		thumpEnvelope = thumpEnvelope * THUMP_FALL + (float) (pulse * PULSE_GAIN);
+		// Thumps that overlap pile up, so a fast engine's are thinned until it hums instead of roaring
 		float eventsPerSecond = angles.length * rpm / 120f;
+		float pileUp = 1 / (float) Math.sqrt(1 + (eventsPerSecond / THUMPS_BEFORE_PILE_UP) * (eventsPerSecond / THUMPS_BEFORE_PILE_UP));
+		float thump = (float) Math.sin(thumpPhase) * thumpEnvelope * THUMP_WEIGHT * pileUp;
+		rumbleEnvelope = rumbleEnvelope * RUMBLE_FALL + (float) (pulse * PULSE_GAIN);
+		rumbleNoise = RUMBLE_POLE * rumbleNoise + (1 - RUMBLE_POLE) * noise();
+		float rumble = rumbleNoise * rumbleEnvelope * RUMBLE_WEIGHT * pileUp;
+
+		toneA = TONE_POLE * toneA + (1 - TONE_POLE) * (float) (pulse * PULSE_GAIN);
+		toneB = TONE_POLE * toneB + (1 - TONE_POLE) * toneA;
+		toneDc = TONE_DC_POLE * toneDc + (1 - TONE_DC_POLE) * toneB;
+		float toneShare = eventsPerSecond * eventsPerSecond / (eventsPerSecond * eventsPerSecond + TONE_FROM * TONE_FROM);
+		float tone = (toneB - toneDc) * TONE_WEIGHT * toneShare;
+
 		float scale = LEVEL / (float) Math.pow(1 + 0.03f * eventsPerSecond, 0.7);
-		return (float) Math.tanh((body * 0.5 + chuff) * scale * 2 + mechanical);
+		float mix = (float) (body * 0.5 + chuff + thump + rumble + tone) * scale * 2;
+		power += (mix * mix - power) * LEVEL_FOLLOW;
+		// Only a fast engine is levelled, so the lope of a slow one is left alone, and a stopping engine is not turned up, and a resonance the firing rate happens to hit is turned down
+		float follow = toneShare * Math.min(1f, combustion * 2);
+		float boost = Math.clamp(TARGET_POWER / (power + 1e-6f), 0.25f, MOST_BOOST * MOST_BOOST);
+		mix *= 1 + follow * ((float) Math.sqrt(boost) - 1);
+		return (float) Math.tanh(mix + mechanical);
 	}
 
 	/** Strikes every firing whose crank angle the cycle has now reached. */
@@ -162,6 +227,10 @@ public final class EngineNoteSynth {
 		if (burn <= 0)
 			return;
 		impulse += strength * burn;
+		if (lit) {
+			thumpSweep = 1;
+			thumpPitch = 0.92f + 0.16f * (cylinderGain(index) - 0.88f) / 0.24f;
+		}
 	}
 
 	/** A little difference between cylinders, the same each time for the same one. */
