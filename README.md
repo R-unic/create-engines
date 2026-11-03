@@ -1,3 +1,5 @@
+<p align="center"><img src="docs/images/icon.png" alt="Create: Engine Engineer" width="160"></p>
+
 # Create: Engine Engineer
 
 An addon for [Create](https://github.com/Creators-of-Create/Create) that lets you build working internal combustion

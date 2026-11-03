@@ -1,11 +1,15 @@
 modLoader="javafml"
 loaderVersion="${loader_version_range}"
 license="${mod_license}"
+issueTrackerURL="https://github.com/R-unic/create-engines/issues"
 
 [[mods]]
 modId="${mod_id}"
 version="${mod_version}"
 displayName="${mod_name}"
+displayURL="https://github.com/R-unic/create-engines"
+logoFile="logo.png"
+authors="R-unic"
 description='''
 Physically assembled combustion engines for Create. Build cylinders, pistons and crankshafts
 piece by piece; the layout you build decides whether the engine runs and how well.

@@ -624,7 +624,7 @@ public class EngineGameTests {
 		helper.runAtTickTime(300, () -> {
 			EngineSummary summary = summary(helper);
 			helper.assertTrue(summary.firing() == 1,
-				"Cylinder should fire from the plug under the starter, summary " + summary + ", cylinder " + cylinder(helper));
+				"Cylinder should fire from the plug under the starter, summary " + summary + ", cylinder " + ((CylinderBlockEntity) helper.getBlockEntity(CYLINDER)).status() + " throw " + helper.getBlockState(TestEngine.THROW) + " cyl " + helper.getBlockState(CYLINDER) + " alt " + helper.getBlockState(TestEngine.ALTERNATOR) + " j2 " + helper.getBlockState(new BlockPos(3, 2, 2)));
 			BatteryBlockEntity battery = helper.getBlockEntity(TestEngine.BATTERY);
 			helper.assertTrue(battery.charge() > 0, "Cranking should have charged the battery through the alternator");
 			helper.setBlock(STARTER_POWER, Blocks.AIR);
