@@ -39,7 +39,7 @@ import net.minecraft.world.level.ItemLike;
 public final class CEAdvancements {
 
 	private static final ResourceLocation BACKGROUND =
-		ResourceLocation.withDefaultNamespace("textures/gui/advancements/backgrounds/stone.png");
+		CreateEngines.asResource("textures/gui/advancements/tread_plate.png");
 
 	/**
 	 * @param criterion the one thing a row waits for; null for a capstone, which waits for every milestone in

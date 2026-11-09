@@ -131,6 +131,12 @@ config thins out engine sound and particles on a big engine. Fuel properties are
 - [Design notes](https://github.com/R-unic/create-engines/blob/master/docs/DESIGN.md), how the simulation works
 ```
 
+## Changelog for 0.2.0
+
+New art. The mod's metals are repainted to match Create's, with the same rims and strokes in Create's own colours. Vanilla's
+copper, magma, lava, smooth stone and trapdoor are gone from the models, the fluids have their own thin and thick textures in
+place of tinted water, and hot metal on a heat exchanger gives its own light. The advancement tab has a tread plate background.
+
 ## Changelog for 0.1.0
 
 First public release. Everything in the description above.

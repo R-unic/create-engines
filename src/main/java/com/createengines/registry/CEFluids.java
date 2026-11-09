@@ -4,6 +4,7 @@ import static com.createengines.CreateEngines.REGISTRATE;
 
 import java.util.function.Consumer;
 
+import com.createengines.CreateEngines;
 import com.tterrag.registrate.builders.FluidBuilder;
 import com.tterrag.registrate.providers.DataGenContext;
 import com.tterrag.registrate.providers.RegistrateItemModelProvider;
@@ -25,8 +26,10 @@ import net.neoforged.neoforge.fluids.FluidType;
 
 public final class CEFluids {
 
-	private static final ResourceLocation STILL = ResourceLocation.withDefaultNamespace("block/water_still");
-	private static final ResourceLocation FLOW = ResourceLocation.withDefaultNamespace("block/water_flow");
+	private static final ResourceLocation THIN_STILL = CreateEngines.asResource("block/fluid/thin_still");
+	private static final ResourceLocation THIN_FLOW = CreateEngines.asResource("block/fluid/thin_flow");
+	private static final ResourceLocation THICK_STILL = CreateEngines.asResource("block/fluid/thick_still");
+	private static final ResourceLocation THICK_FLOW = CreateEngines.asResource("block/fluid/thick_flow");
 
 	private static final int PLANT_OIL_COLOUR = 0xFF6E4A1A;
 	private static final int DIESEL_COLOUR = 0xFFC7A93B;
@@ -39,7 +42,7 @@ public final class CEFluids {
 	private static final int COOLANT_COLOUR = 0xFF6CE02E;
 
 	public static final FluidEntry<BaseFlowingFluid.Flowing> PLANT_OIL =
-		REGISTRATE.fluid("plant_oil", STILL, FLOW, tinted(PLANT_OIL_COLOUR))
+		REGISTRATE.fluid("plant_oil", THICK_STILL, THICK_FLOW, tinted(PLANT_OIL_COLOUR))
 			.lang("Plant Oil")
 			.properties(b -> b.viscosity(1500)
 				.density(920))
@@ -57,7 +60,7 @@ public final class CEFluids {
 			.register();
 
 	public static final FluidEntry<BaseFlowingFluid.Flowing> DIESEL =
-		REGISTRATE.fluid("diesel", STILL, FLOW, tinted(DIESEL_COLOUR))
+		REGISTRATE.fluid("diesel", THIN_STILL, THIN_FLOW, tinted(DIESEL_COLOUR))
 			.lang("Diesel")
 			.properties(b -> b.viscosity(1200)
 				.density(840))
@@ -76,7 +79,7 @@ public final class CEFluids {
 
 	/** Too hard to light by compression alone: it burns only in an engine with spark plugs. */
 	public static final FluidEntry<BaseFlowingFluid.Flowing> GASOLINE =
-		REGISTRATE.fluid("gasoline", STILL, FLOW, tinted(GASOLINE_COLOUR))
+		REGISTRATE.fluid("gasoline", THIN_STILL, THIN_FLOW, tinted(GASOLINE_COLOUR))
 			.lang("Gasoline")
 			.properties(b -> b.viscosity(600)
 				.density(740))
@@ -95,7 +98,7 @@ public final class CEFluids {
 
 	/** Lubricates an engine's moving parts: a thick, dark oil, made from plant oil. Not a fuel. */
 	public static final FluidEntry<BaseFlowingFluid.Flowing> ENGINE_OIL =
-		REGISTRATE.fluid("engine_oil", STILL, FLOW, tinted(ENGINE_OIL_COLOUR))
+		REGISTRATE.fluid("engine_oil", THICK_STILL, THICK_FLOW, tinted(ENGINE_OIL_COLOUR))
 			.lang("Engine Oil")
 			.properties(b -> b.viscosity(2500)
 				.density(880))
@@ -114,7 +117,7 @@ public final class CEFluids {
 
 	/** Crushed and watered sugar crops, ready to ferment: the first step towards ethanol. Not a fuel. */
 	public static final FluidEntry<BaseFlowingFluid.Flowing> SUGAR_MASH =
-		REGISTRATE.fluid("sugar_mash", STILL, FLOW, tinted(SUGAR_MASH_COLOUR))
+		REGISTRATE.fluid("sugar_mash", THICK_STILL, THICK_FLOW, tinted(SUGAR_MASH_COLOUR))
 			.lang("Sugar Mash")
 			.properties(b -> b.viscosity(2000)
 				.density(1100))
@@ -133,7 +136,7 @@ public final class CEFluids {
 
 	/** Distilled from mash. Too hard to light by compression, so it burns only with a spark plug, and boost will not light it early. */
 	public static final FluidEntry<BaseFlowingFluid.Flowing> ETHANOL =
-		REGISTRATE.fluid("ethanol", STILL, FLOW, tinted(ETHANOL_COLOUR))
+		REGISTRATE.fluid("ethanol", THIN_STILL, THIN_FLOW, tinted(ETHANOL_COLOUR))
 			.lang("Ethanol")
 			.properties(b -> b.viscosity(500)
 				.density(790))
@@ -152,7 +155,7 @@ public final class CEFluids {
 
 	/** What is left when plant oil is made into diesel with ethanol. It thickens engine oil. Not a fuel. */
 	public static final FluidEntry<BaseFlowingFluid.Flowing> GLYCERIN =
-		REGISTRATE.fluid("glycerin", STILL, FLOW, tinted(GLYCERIN_COLOUR))
+		REGISTRATE.fluid("glycerin", THICK_STILL, THICK_FLOW, tinted(GLYCERIN_COLOUR))
 			.lang("Glycerin")
 			.properties(b -> b.viscosity(3000)
 				.density(1260))
@@ -174,7 +177,7 @@ public final class CEFluids {
 	 * in, and it has to go somewhere: burned as a poor fuel, refined back into oil, coked into charcoal, or let go.
 	 */
 	public static final FluidEntry<BaseFlowingFluid.Flowing> USED_OIL =
-		REGISTRATE.fluid("used_oil", STILL, FLOW, tinted(USED_OIL_COLOUR))
+		REGISTRATE.fluid("used_oil", THICK_STILL, THICK_FLOW, tinted(USED_OIL_COLOUR))
 			.lang("Used Oil")
 			.properties(b -> b.viscosity(3000)
 				.density(900))
@@ -193,7 +196,7 @@ public final class CEFluids {
 
 	/** Water thickened with glycerin so it carries more heat before it boils. Cools an engine; not a fuel. */
 	public static final FluidEntry<BaseFlowingFluid.Flowing> COOLANT =
-		REGISTRATE.fluid("coolant", STILL, FLOW, tinted(COOLANT_COLOUR))
+		REGISTRATE.fluid("coolant", THIN_STILL, THIN_FLOW, tinted(COOLANT_COLOUR))
 			.lang("Engine Coolant")
 			.properties(b -> b.viscosity(1100)
 				.density(1030))
@@ -254,7 +257,7 @@ public final class CEFluids {
 			.fluid(context.get().content);
 	}
 
-	/** Water's greyscale textures tinted to a fixed colour. */
+	/** The mod's greyscale fluid textures, tinted to a fixed colour. */
 	private static FluidBuilder.FluidTypeFactory tinted(int argb) {
 		return (properties, still, flow) -> new FluidType(properties) {
 			@Override

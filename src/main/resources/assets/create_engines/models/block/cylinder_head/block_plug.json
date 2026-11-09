@@ -2,7 +2,7 @@
   "parent": "block/block",
   "textures": {
     "side": "create:block/copper_casing",
-    "top": "minecraft:block/cut_copper",
+    "top": "create_engines:block/copper_panel",
     "injector": "create_engines:block/brass",
     "ceramic": "create_engines:block/ceramic",
     "terminal": "create_engines:block/cast_iron",

@@ -5,7 +5,7 @@
     "bead": "create_engines:block/cast_iron",
     "flange": "create_engines:block/cast_iron",
     "gasket": "create_engines:block/black_oxide",
-    "wrap": "minecraft:block/smooth_stone",
+    "wrap": "create_engines:block/heat_wrap",
     "bolt": "create_engines:block/brass",
     "particle": "create_engines:block/black_oxide"
   },

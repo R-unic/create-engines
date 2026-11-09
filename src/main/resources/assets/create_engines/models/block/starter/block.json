@@ -3,7 +3,7 @@
   "textures": {
     "body": "create:block/andesite_casing",
     "pinion": "create_engines:block/brass",
-    "coil": "minecraft:block/copper_block",
+    "coil": "create_engines:block/copper",
     "plate": "create_engines:block/cast_iron",
     "bolt": "create_engines:block/brass",
     "particle": "create:block/andesite_casing"

@@ -5,7 +5,7 @@
     "flange": "create_engines:block/cast_iron",
     "rib": "create_engines:block/steel",
     "bolt": "create_engines:block/brass",
-    "cap": "minecraft:block/copper_block",
+    "cap": "create_engines:block/copper",
     "particle": "create_engines:block/black_oxide"
   },
   "elements": [
