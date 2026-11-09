@@ -48,8 +48,10 @@ jobs:
             previous=$(git describe --tags --abbrev=0 2>/dev/null || true)
           fi
           range="${previous:+$previous..}HEAD"
+          minecraft=$(sed -n 's/^minecraft_version=//p' gradle.properties | tr -d '\r')
           {
             echo "version=$version"
+            echo "jar=create_engines-$version-$minecraft.jar"
             echo "type=$type"
             echo "changelog<<CHANGELOG_EOF"
             git log "$range" --no-merges --format='- %s'
@@ -62,7 +64,7 @@ jobs:
       - uses: actions/upload-artifact@v4
         with:
           name: create_engines-${{ steps.meta.outputs.version }}
-          path: build/libs/create_engines-${{ steps.meta.outputs.version }}.jar
+          path: build/libs/${{ steps.meta.outputs.jar }}
 
       - name: Publish to Modrinth and CurseForge
         uses: Kira-NT/mc-publish@v3.3.2
@@ -72,7 +74,7 @@ jobs:
           curseforge-id: ${{ vars.CURSEFORGE_ID }}
           curseforge-token: ${{ secrets.CURSEFORGE_TOKEN }}
 
-          files: build/libs/create_engines-${{ steps.meta.outputs.version }}.jar
+          files: build/libs/${{ steps.meta.outputs.jar }}
           name: Create Engine Engineer ${{ steps.meta.outputs.version }}
           version: ${{ steps.meta.outputs.version }}
           version-type: ${{ steps.meta.outputs.type }}
