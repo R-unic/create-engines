@@ -164,4 +164,8 @@ One-time setup in the GitHub repository (Settings, Secrets and variables, Action
 - Variable `MODRINTH_ID` is optional; it defaults to the slug `create-engine-engineer`.
 
 Push the repository first so the description's image links resolve. Both sites review a project before it goes
-public, and Modrinth may not accept uploads until its first review passes.
+public, and Modrinth may not accept uploads until its first review passes. While a Modrinth project is unapproved, the slug
+cannot be looked up without the token's "Read projects" scope: add that scope, or set `MODRINTH_ID` to the project's ID.
+
+A failed upload does not stop the other site, but the run still fails. Rerunning it uploads again to any site that
+succeeded, so when one site worked, upload to the other by hand with the jar from the run's artifacts.

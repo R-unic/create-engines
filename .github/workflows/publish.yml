@@ -65,7 +65,7 @@ jobs:
           path: build/libs/create_engines-${{ steps.meta.outputs.version }}.jar
 
       - name: Publish to Modrinth and CurseForge
-        uses: Kir-Antipov/mc-publish@v3.3.0
+        uses: Kira-NT/mc-publish@v3.3.2
         with:
           modrinth-id: ${{ vars.MODRINTH_ID || 'create-engine-engineer' }}
           modrinth-token: ${{ secrets.MODRINTH_TOKEN }}
@@ -79,9 +79,12 @@ jobs:
           changelog: ${{ steps.meta.outputs.changelog }}
 
           loaders: neoforge
+          # CurseForge refuses a file with no environment; the mod is required on both sides
+          environment: client | server
           game-versions: 1.21.1
           java: 21
           dependencies: |
             create(required){modrinth:LNytGWDc}{curseforge:328085}
 
-          fail-mode: fail
+          # Try every site, then fail the run if any refused: a Modrinth problem must not hold up CurseForge
+          fail-mode: skip
