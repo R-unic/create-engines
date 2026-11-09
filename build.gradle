@@ -8,7 +8,8 @@ tasks.named('wrapper', Wrapper).configure {
     distributionType = Wrapper.DistributionType.BIN
 }
 
-version = mod_version
+// Names the jar create_engines-VERSION-MCVERSION.jar. The version the game sees is mod_version alone (see generateModMetadata).
+version = "${mod_version}-${minecraft_version}"
 group = mod_group_id
 
 base {
