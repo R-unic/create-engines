@@ -2,7 +2,7 @@
   "parent": "block/block",
   "textures": {
     "rotor": "create_engines:block/steel",
-    "face": "minecraft:block/cut_copper",
+    "face": "create_engines:block/copper_panel",
     "seal": "create_engines:block/brass",
     "hub": "create_engines:block/black_oxide",
     "particle": "create_engines:block/steel"

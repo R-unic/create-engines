@@ -5,7 +5,7 @@
     "body": "create:block/copper_casing",
     "rim": "create_engines:block/cast_iron",
     "bolt": "create_engines:block/brass",
-    "grille": "minecraft:block/iron_trapdoor",
+    "grille": "create_engines:block/grille",
     "particle": "create:block/copper_casing"
   },
   "elements": [

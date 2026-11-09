@@ -1,8 +1,8 @@
 {
   "parent": "block/block",
   "textures": {
-    "glow": "minecraft:block/lava_still",
-    "particle": "minecraft:block/lava_still"
+    "glow": "create_engines:block/heat_seething",
+    "particle": "create_engines:block/heat_seething"
   },
   "elements": [
     {
@@ -35,6 +35,10 @@
         "down": {
           "texture": "#glow"
         }
+      },
+      "neoforge_data": {
+        "block_light": 15,
+        "sky_light": 15
       }
     },
     {
@@ -67,6 +71,10 @@
         "down": {
           "texture": "#glow"
         }
+      },
+      "neoforge_data": {
+        "block_light": 15,
+        "sky_light": 15
       }
     },
     {
@@ -99,6 +107,10 @@
         "down": {
           "texture": "#glow"
         }
+      },
+      "neoforge_data": {
+        "block_light": 15,
+        "sky_light": 15
       }
     },
     {
@@ -131,6 +143,10 @@
         "down": {
           "texture": "#glow"
         }
+      },
+      "neoforge_data": {
+        "block_light": 15,
+        "sky_light": 15
       }
     },
     {
@@ -163,6 +179,10 @@
         "down": {
           "texture": "#glow"
         }
+      },
+      "neoforge_data": {
+        "block_light": 15,
+        "sky_light": 15
       }
     }
   ]

@@ -1,7 +1,8 @@
 """Writes the block models under src/main/resources/assets/create_engines/models/block/.
 
 Run from the repository root: python tools/generate_models.py
-Everything here is built from boxes in 1/16 block units, textured with Create and vanilla textures only. Parts that
+Everything here is built from boxes in 1/16 block units, textured with Create's casings and shafts and with the metals
+drawn by tools/generate_textures.py, which are made to sit next to them. Parts that
 the engine animates (piston, rod, valve, crank, cam) keep the pivot and extent the renderers expect: they are drawn
 about the same axis and stay inside the same envelope, with detail added inside it.
 """
@@ -53,19 +54,19 @@ IRON = "create_engines:block/cast_iron"
 DARK = "create_engines:block/black_oxide"
 BRASS = "create_engines:block/brass"
 ZINC = "create:block/zinc_block"
-COPPER = "minecraft:block/copper_block"
-CUT_COPPER = "minecraft:block/cut_copper"
+COPPER = "create_engines:block/copper"
+CUT_COPPER = "create_engines:block/copper_panel"
 IRON_BLOCK = "create_engines:block/steel"
 AXIS = "create:block/axis"
 AXIS_TOP = "create:block/axis_top"
 BLACK = "create_engines:block/screen"
 QUARTZ = "create_engines:block/ceramic"
-SMOOTH = "minecraft:block/smooth_stone"
+SMOOTH = "create_engines:block/heat_wrap"
 BRASS_CASING = "create:block/brass_casing"
 RED = "create_engines:block/enamel_red"
 RIVETED = "create_engines:block/rivet_plate"
-MAGMA = "minecraft:block/magma"
-LAVA = "minecraft:block/lava_still"
+MAGMA = "create_engines:block/heat_kindled"
+LAVA = "create_engines:block/heat_seething"
 
 
 # --- crank, throw, cam ---------------------------------------------------------------------------------------------
@@ -254,7 +255,7 @@ def valve():
 # --- airflow -------------------------------------------------------------------------------------------------------
 
 def air_intake():
-    textures = {"body": COPPER_CASING, "rim": IRON, "bolt": BRASS, "grille": "minecraft:block/iron_trapdoor",
+    textures = {"body": COPPER_CASING, "rim": IRON, "bolt": BRASS, "grille": "create_engines:block/grille",
                 "particle": COPPER_CASING}
     elements = [
         box((3, 0, 3), (13, 1.5, 13), "rim"),
@@ -401,7 +402,8 @@ def pipes():
         write(name + "/core", textures, core_elements)
         if style == "heat":
             for level, glow in (("kindled", MAGMA), ("seething", LAVA)):
-                write(name + "/glow_" + level, {"glow": glow, "particle": glow}, heat_glow())
+                elements = [dict(e, neoforge_data={"block_light": 15, "sky_light": 15}) for e in heat_glow()]
+                write(name + "/glow_" + level, {"glow": glow, "particle": glow}, elements)
         if name.endswith("_manifold"):
             # Fittings for the shapes a run takes, drawn along z (the north-south axis) and turned for the others
             write(name + "/core_elbow", textures, [box((5, 5, 5), (11, 11, 11), "pipe"),

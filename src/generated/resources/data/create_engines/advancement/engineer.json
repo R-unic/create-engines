@@ -6,7 +6,7 @@
   },
   "display": {
     "announce_to_chat": false,
-    "background": "minecraft:textures/gui/advancements/backgrounds/stone.png",
+    "background": "create_engines:textures/gui/advancements/tread_plate.png",
     "description": {
       "translate": "advancement.create_engines.engineer.desc"
     },

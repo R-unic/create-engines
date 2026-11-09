@@ -1,12 +1,12 @@
 {
   "parent": "block/block",
   "textures": {
-    "pipe": "minecraft:block/cut_copper",
-    "bead": "minecraft:block/copper_block",
-    "flange": "minecraft:block/copper_block",
+    "pipe": "create_engines:block/copper_panel",
+    "bead": "create_engines:block/copper",
+    "flange": "create_engines:block/copper",
     "gasket": "create_engines:block/black_oxide",
     "bolt": "create_engines:block/brass",
-    "particle": "minecraft:block/cut_copper"
+    "particle": "create_engines:block/copper_panel"
   },
   "elements": [
     {
