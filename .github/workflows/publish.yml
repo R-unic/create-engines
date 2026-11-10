@@ -57,7 +57,13 @@ jobs:
             echo "jar=create_engines-$version-$minecraft.jar"
             echo "type=$type"
             echo "changelog<<CHANGELOG_EOF"
-            git log "$range" --no-merges --format='- %s'
+            # Prefer the hand-written section in docs/LISTING.md; fall back to commit subjects
+            notes=$(awk -v v="$version" '$0 == "## Changelog for " v {on=1; next} /^## /{on=0} on' docs/LISTING.md)
+            if [ -n "$(echo "$notes" | tr -d '[:space:]')" ]; then
+              echo "$notes"
+            else
+              git log "$range" --no-merges --format='- %s'
+            fi
             echo "CHANGELOG_EOF"
           } >> "$GITHUB_OUTPUT"
 

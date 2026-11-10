@@ -72,6 +72,10 @@ and the crank animates with them.
   Oil that you burn, refine, coke into charcoal or let go. An Oil Filter slows the ageing
 - **Engine temperature**: a cold engine drags until it warms through, and a cooled one breathes better. Coolant, or
   just water, goes into the same sump, so there is no radiator to fit. Nothing ever overheats or wears out
+- **Warm-up and cooling**: a cold block burns fuel a little worse, and a Blaze Burner against the heat exchanger
+  preheats it. A stopped engine ticks and its turbine wheel glows red as it cools
+- **Plain-language diagnosis**: goggles name an engine Healthy, Running rough or Failing with the one cause to fix first,
+  and the Dynamometer compares a new run with the last
 - **Dual-fuel pilot injection**: pipe diesel into the sump's pilot tank and a compression engine with no spark plug
   lights gasoline or ethanol with a small pilot shot
 - A forgiving early game: spark plug soot clears itself, goggles suggest fuel settings, and the Timing Tool can tune
@@ -92,6 +96,8 @@ and the crank animates with them.
 - A 13-gear transmission with an Auto mode that shifts to suit the engine, and a **Dynamometer** that draws an
   engine's torque and power curves
 - A **Black Box** flight recorder that keeps ten minutes of an engine's speed, load and warmth and says why it stalled
+- Engines that look and sound alive: exhaust colour that reads the mixture, flame from a hot pipe, a cough on starting,
+  ticking as they cool, and a clatter or squeal when they run dry. Nothing runs underwater
 - An exhaust note made up from the engine's speed and firing order, so a V-twin lopes, a six hums and a dead cylinder
   limps
 
@@ -131,6 +137,22 @@ config thins out engine sound and particles on a big engine. Fuel properties are
 - [Design notes](https://github.com/R-unic/create-engines/blob/master/docs/DESIGN.md), how the simulation works
 ```
 
+## Changelog for 0.3.0
+
+Livelier engines. Exhaust tells the truth: a thin haze when the mixture is right, black when rich, white vapour until the
+block warms, a blue cast when fuel has thinned the oil, and a crack of flame when unburned fuel meets a hot pipe. Engines
+cough as they catch, knock as they die, tick as they cool, squeal and spark when they run dry, and draw air in at their
+intakes. New recordings and white puff and spark particles back all of it.
+- Warm-up and cooling: a cold block burns fuel a little worse and warms quickest at idle. A Blaze Burner against the heat
+  exchanger preheats it. A stopped engine ticks and shimmers, and its turbine wheel glows red as it cools.
+- Plain-language diagnosis: goggles name an engine Healthy, Running rough or Failing with the one cause to fix first, and
+  say why a cylinder misfired. The Dynamometer shows how a new run compares with the last. Two new Ponder pages cover why
+  an engine will not start and why it runs badly.
+- Nothing burns underwater. Water against a cylinder, head or rotor housing stops the engine wherever its pipes lead, and a
+  flooded intake or exhaust shuts as well. Engine parts are no longer washed away by flowing water.
+- New advancements: Hard Start, Preheated and Flooded.
+- New client settings: `engineNoteVolume` and `mechanicalVolume`.
+
 ## Changelog for 0.2.0
 
 New art. The mod's metals are repainted to match Create's, with the same rims and strokes in Create's own colours. Vanilla's
@@ -144,7 +166,8 @@ First public release. Everything in the description above.
 ## Publishing
 
 Uploads are automatic, from `.github/workflows/publish.yml`. It builds with the tests, then uploads the jar to
-Modrinth and CurseForge with the commit subjects since the last tag as the changelog.
+Modrinth and CurseForge. The changelog is the `## Changelog for X.Y.Z` section of this file when one matches the tag,
+otherwise the commit subjects since the last tag.
 
 | Do this | You get |
 |---|---|
