@@ -14,9 +14,15 @@ import net.minecraft.nbt.CompoundTag;
  * @param turbine     the turbine is on an exhaust network of this engine
  * @param vanes       how far a variable-geometry turbine's vanes are closed, 0 (open) to 1; 0 on a fixed one
  * @param antiLag     fuel is being burned in the exhaust to hold the spool up off the throttle
+ * @param heat        how hot the engine's block is (see Thermal), which a turbine wheel in its exhaust glows with
  */
 public record TurboStatus(float spool, float boost, float wastegate, float backPressure, float charge,
-						  boolean compressor, boolean turbine, float vanes, boolean antiLag) {
+						  boolean compressor, boolean turbine, float vanes, boolean antiLag, float heat) {
+
+	public TurboStatus(float spool, float boost, float wastegate, float backPressure, float charge,
+					   boolean compressor, boolean turbine, float vanes, boolean antiLag) {
+		this(spool, boost, wastegate, backPressure, charge, compressor, turbine, vanes, antiLag, 0);
+	}
 
 	public TurboStatus(float spool, float boost, float wastegate, float backPressure, boolean compressor,
 					   boolean turbine) {
@@ -39,6 +45,7 @@ public record TurboStatus(float spool, float boost, float wastegate, float backP
 		tag.putBoolean("Turbine", turbine);
 		tag.putFloat("Vanes", vanes);
 		tag.putBoolean("AntiLag", antiLag);
+		tag.putFloat("Heat", heat);
 		return tag;
 	}
 
@@ -46,7 +53,7 @@ public record TurboStatus(float spool, float boost, float wastegate, float backP
 		float boost = tag.getFloat("Boost");
 		return new TurboStatus(tag.getFloat("Spool"), boost, tag.getFloat("Wastegate"), tag.getFloat("BackPressure"),
 			tag.contains("Charge") ? tag.getFloat("Charge") : boost, tag.getBoolean("Compressor"),
-			tag.getBoolean("Turbine"), tag.getFloat("Vanes"), tag.getBoolean("AntiLag"));
+			tag.getBoolean("Turbine"), tag.getFloat("Vanes"), tag.getBoolean("AntiLag"), tag.getFloat("Heat"));
 	}
 
 	/** Whether the figures differ enough to be worth sending. */
@@ -54,6 +61,6 @@ public record TurboStatus(float spool, float boost, float wastegate, float backP
 		return other == null || compressor != other.compressor || turbine != other.turbine
 			|| Math.abs(spool - other.spool) >= 0.02 || Math.abs(boost - other.boost) >= 0.01 || Math.abs(charge - other.charge) >= 0.01
 			|| Math.abs(wastegate - other.wastegate) >= 0.05 || Math.abs(vanes - other.vanes) >= 0.05
-			|| antiLag != other.antiLag;
+			|| antiLag != other.antiLag || Math.abs(heat - other.heat) >= 0.04;
 	}
 }

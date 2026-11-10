@@ -239,6 +239,91 @@ class ThermalTest {
 		assertEquals(2.5, Thermal.heatIn(2.5, 2.5), 1e-12, "equal exhaust and friction heat add up to the same");
 	}
 
+	@Test
+	void aStoppedEngineGivesUpItsHeatSlowlyAndStopsCooling() {
+		Thermal thermal = new Thermal(Thermal.NORMAL);
+		assertTrue(Thermal.isCooling(thermal.temperature(), false));
+		assertTrue(!Thermal.isCooling(thermal.temperature(), true), "a turning engine is running, not cooling");
+		double first = 0;
+		double half = 0;
+		for (int i = 1; i <= 20 * 600; i++) {
+			thermal.update(0, 4, 0.05, CoolantSupply.NONE);
+			if (half == 0 && thermal.temperature() < Thermal.NORMAL / 2)
+				half = i / 20d;
+			if (first == 0 && !Thermal.isCooling(thermal.temperature(), false))
+				first = i / 20d;
+		}
+		assertTrue(half > 5 && half < 40, "it halves in " + half + " s");
+		assertTrue(first > half && first < 600, "and has finished cooling after " + first + " s");
+	}
+
+	@Test
+	void theTicksOfAContractingBlockGetSparserAsItCools() {
+		assertEquals(0, Thermal.tickChance(0.05));
+		double hot = Thermal.tickChance(Thermal.NORMAL);
+		double warm = Thermal.tickChance(0.3);
+		double nearly = Thermal.tickChance(Thermal.COOLING_FROM);
+		assertTrue(hot > warm && warm > nearly && nearly > 0, hot + " " + warm + " " + nearly);
+	}
+
+	@Test
+	void exhaustPartsGlowOnlyWhenTheBlockIsHot() {
+		assertEquals(0, Thermal.glow(0.3));
+		assertEquals(0, Thermal.glow(Thermal.GLOW_FROM));
+		assertEquals(1, Thermal.glow(Thermal.GLOW_FROM + Thermal.GLOW_SPAN), 1e-9);
+		assertTrue(Thermal.glow(0.7) > 0 && Thermal.glow(0.7) < 1);
+		assertEquals(1, Thermal.glow(2));
+	}
+
+	@Test
+	void aColdBlockBurnsFuelWorseAndSomeFuelsWorseThanOthers() {
+		assertEquals(1, Thermal.burnFactor(0, 1.8), 1e-12);
+		double gasoline = Thermal.burnFactor(1, FuelSpec.GASOLINE.coldSensitivity());
+		double diesel = Thermal.burnFactor(1, FuelSpec.DIESEL.coldSensitivity());
+		double oil = Thermal.burnFactor(1, FuelSpec.PLANT_OIL.coldSensitivity());
+		double ethanol = Thermal.burnFactor(1, FuelSpec.ETHANOL.coldSensitivity());
+		assertTrue(ethanol < oil && oil < diesel && diesel < gasoline && gasoline < 1,
+			ethanol + " " + oil + " " + diesel + " " + gasoline);
+		assertTrue(ethanol > 0.75, "cold costs a power, it does not stop the engine: " + ethanol);
+		assertEquals(1, new FuelSpec(30, 2, 1.5).coldSensitivity(), "a datapack fuel is an ordinary one");
+	}
+
+	@Test
+	void aColdEngineWarmsAtIdleAtLeastAsFastAsItWouldUnderLoad() {
+		Thermal idle = new Thermal(0);
+		Thermal bare = new Thermal(0.29);
+		idle.update(0.6 * 4, 4, 0.05, CoolantSupply.NONE);
+		double idleGain = idle.temperature();
+		bare.update(0.6 * 4, 4, 0.05, CoolantSupply.NONE);
+		double nearWarmGain = bare.temperature() - 0.29;
+		assertTrue(idleGain > nearWarmGain, "the choke helps a cold block most: " + idleGain + " against " + nearWarmGain);
+		// A warm engine gets no help
+		Thermal warm = new Thermal(Thermal.NORMAL);
+		Thermal reference = new Thermal(Thermal.NORMAL);
+		warm.update(0.6 * 4, 4, 0.05, CoolantSupply.NONE);
+		reference.update(0.6 * 4, 4, 0.05, CoolantSupply.NONE);
+		assertEquals(reference.temperature(), warm.temperature(), 1e-12);
+	}
+
+	@Test
+	void aHeatSourceTouchingTheEngineHoldsItWarmerWhenStoppedTheHotterTheSource() {
+		double previous = -1;
+		for (int level = HeatRecovery.NONE; level <= HeatRecovery.SEETHE; level++) {
+			Thermal thermal = new Thermal(0);
+			thermal.setPreheat(level);
+			for (int i = 0; i < 20 * 900; i++)
+				thermal.update(0, 4, 0.05, CoolantSupply.NONE);
+			assertTrue(thermal.temperature() > previous, "level " + level + " should be warmer: " + thermal.temperature());
+			previous = thermal.temperature();
+			if (level == HeatRecovery.NONE)
+				assertEquals(0, thermal.temperature(), 1e-9);
+			if (level == HeatRecovery.SEETHE)
+				assertTrue(thermal.temperature() < Thermal.NORMAL, "preheat never matches a running engine");
+			if (level == HeatRecovery.KINDLE)
+				assertTrue(thermal.temperature() > Thermal.COLD_BELOW, "a kindled source takes the cold off: " + thermal.temperature());
+		}
+	}
+
 	private static double liveEngineTemperature(CoolantSupply coolant) {
 		List<CylinderModel> models = new ArrayList<>();
 		Camshaft cam = new Camshaft();

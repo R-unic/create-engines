@@ -414,16 +414,7 @@ public final class EngineScanner {
 			else if (kind == PortKind.EXHAUST && draft.exhaust < 0)
 				draft.exhaust = portNetwork(neighbour, kind);
 		}
-		if (draft.intake < 0)
-			draft.faults |= CylinderFault.NO_INTAKE.bit();
-		else if (ports.get(draft.intake)
-			.openings() == 0)
-			draft.faults |= CylinderFault.INTAKE_BLOCKED.bit();
-		if (draft.exhaust < 0)
-			draft.faults |= CylinderFault.NO_EXHAUST.bit();
-		else if (ports.get(draft.exhaust)
-			.openings() == 0)
-			draft.faults |= CylinderFault.EXHAUST_BLOCKED.bit();
+		draft.faults |= portFaults(draft);
 
 		List<CylinderDraft> chambers = new ArrayList<>();
 		int count = CylinderFault.NO_ROTOR.in(draft.faults) || CylinderFault.ROTARY_DISABLED.in(draft.faults) ? 1
@@ -502,17 +493,41 @@ public final class EngineScanner {
 			} else if (level.getBlockEntity(draft.lobe) instanceof CamshaftBlockEntity lobe)
 				draft.lobeAngle = lobe.lobeAngle();
 		}
+		draft.faults |= portFaults(draft);
+		return draft;
+	}
+
+	/** Whether a fluid is against any face of the block at {@code pos}. */
+	private boolean wet(BlockPos pos) {
+		for (Direction side : Direction.values())
+			if (!state(pos.relative(side)).getFluidState()
+				.isEmpty())
+				return true;
+		return false;
+	}
+
+	/**
+	 * What is wrong with the way a cylinder breathes: no intake or exhaust at all, or one with no opening air can pass.
+	 * An opening under a fluid is as shut as a covered one, and is reported as flooded so the player knows which it is.
+	 * A cylinder, head or rotor housing with a fluid against it is underwater, which no length of pipe gets round.
+	 */
+	private int portFaults(CylinderDraft draft) {
+		int faults = 0;
+		if (wet(draft.pos) || draft.head != null && wet(draft.head))
+			faults |= CylinderFault.SUBMERGED.bit();
 		if (draft.intake < 0)
-			draft.faults |= CylinderFault.NO_INTAKE.bit();
+			faults |= CylinderFault.NO_INTAKE.bit();
 		else if (ports.get(draft.intake)
 			.openings() == 0)
-			draft.faults |= CylinderFault.INTAKE_BLOCKED.bit();
+			faults |= (ports.get(draft.intake)
+				.flooded() > 0 ? CylinderFault.INTAKE_FLOODED : CylinderFault.INTAKE_BLOCKED).bit();
 		if (draft.exhaust < 0)
-			draft.faults |= CylinderFault.NO_EXHAUST.bit();
+			faults |= CylinderFault.NO_EXHAUST.bit();
 		else if (ports.get(draft.exhaust)
 			.openings() == 0)
-			draft.faults |= CylinderFault.EXHAUST_BLOCKED.bit();
-		return draft;
+			faults |= (ports.get(draft.exhaust)
+				.flooded() > 0 ? CylinderFault.EXHAUST_FLOODED : CylinderFault.EXHAUST_BLOCKED).bit();
+		return faults;
 	}
 
 	/** A cam lobe on one of the sides of the cylinder block at {@code pos}, which is bored towards {@code bore}. */
@@ -623,9 +638,14 @@ public final class EngineScanner {
 		Set<BlockPos> heads = trace.heads;
 
 		int open = 0;
-		for (BlockPos opening : openings)
-			if (PortOpeningBlock.isOpen(level, opening, state(opening)))
+		int flooded = 0;
+		for (BlockPos opening : openings) {
+			BlockState openingState = state(opening);
+			if (PortOpeningBlock.isFlooded(level, opening, openingState))
+				flooded++;
+			else if (PortOpeningBlock.isOpen(level, opening, openingState))
 				open++;
+		}
 
 		List<BlockPos> throttles = new ArrayList<>();
 		List<BlockPos> sensors = new ArrayList<>();
@@ -655,7 +675,7 @@ public final class EngineScanner {
 					parallel.add(stage);
 
 		int number = ports.size();
-		ports.add(new PortNetwork(kind, open, Math.max(1, heads.size()), List.copyOf(openings), List.copyOf(throttles), List.copyOf(sensors),
+		ports.add(new PortNetwork(kind, open, flooded, Math.max(1, heads.size()), List.copyOf(openings), List.copyOf(throttles), List.copyOf(sensors),
 			List.copyOf(turbos), List.copyOf(superchargers), List.copyOf(intercoolers), Set.copyOf(parallel)));
 		for (BlockPos pos : visited) {
 			index.put(pos, number);

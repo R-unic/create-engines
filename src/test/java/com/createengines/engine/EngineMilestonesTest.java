@@ -224,6 +224,15 @@ class EngineMilestonesTest {
 	}
 
 	@Test
+	void crankingAnEngineUnderwaterCounts() {
+		assertTrue(EngineMilestones.reachedWater(false, true)
+			.isEmpty(), "an engine underwater that nobody is trying to start");
+		assertEquals(Set.of(Milestone.FLOODED), EngineMilestones.reachedWater(true, true));
+		assertTrue(EngineMilestones.reachedWater(true, false)
+			.isEmpty(), "cranking a dry engine");
+	}
+
+	@Test
 	void everyMilestoneHasADistinctLowerCaseId() {
 		Set<String> ids = new java.util.HashSet<>();
 		for (Milestone milestone : Milestone.values()) {

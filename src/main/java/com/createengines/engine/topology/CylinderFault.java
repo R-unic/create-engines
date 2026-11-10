@@ -21,7 +21,16 @@ public enum CylinderFault {
 	/** A rotor housing with no spark plug: its chamber is too long and thin for the charge to light itself. */
 	NO_PLUG(false),
 	/** The server's config has rotary engines switched off, so the housing does no work. */
-	ROTARY_DISABLED(true);
+	ROTARY_DISABLED(true),
+	/** Every opening the intake has is under a fluid: the cylinder draws no air, so nothing in it can burn. */
+	INTAKE_FLOODED(false),
+	/** Every opening the exhaust has is under a fluid, which the burned gas cannot push its way out against. */
+	EXHAUST_FLOODED(false),
+	/**
+	 * A fluid is against the cylinder, its head or its rotor housing: the engine is underwater, and nothing burns in it
+	 * wherever its pipes lead. It still drags on the crank.
+	 */
+	SUBMERGED(false);
 
 	/** Without this the cylinder is not a working piston at all and is left out of the simulation. */
 	public final boolean disablesCylinder;
@@ -40,6 +49,21 @@ public enum CylinderFault {
 
 	public String langKey() {
 		return "goggles.fault." + name().toLowerCase(java.util.Locale.ROOT);
+	}
+
+	/** Whether no air can reach the cylinder: no intake, one that is covered or underwater, or the cylinder is. */
+	public static boolean intakeShut(int faults) {
+		return NO_INTAKE.in(faults) || INTAKE_BLOCKED.in(faults) || INTAKE_FLOODED.in(faults) || SUBMERGED.in(faults);
+	}
+
+	/** Whether burned gas has no way out: no exhaust, one that is covered or underwater, or the cylinder is. */
+	public static boolean exhaustShut(int faults) {
+		return NO_EXHAUST.in(faults) || EXHAUST_BLOCKED.in(faults) || EXHAUST_FLOODED.in(faults) || SUBMERGED.in(faults);
+	}
+
+	/** Whether water is what stops the cylinder: it sits in it, or its intake or exhaust opens in it. */
+	public static boolean underwater(int faults) {
+		return INTAKE_FLOODED.in(faults) || EXHAUST_FLOODED.in(faults) || SUBMERGED.in(faults);
 	}
 
 	public static boolean disables(int faults) {

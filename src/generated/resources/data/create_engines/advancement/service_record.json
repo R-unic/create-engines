@@ -1,15 +1,33 @@
 {
   "parent": "create_engines:engine_oil",
   "criteria": {
-    "oil_kept_fresh": {
+    "cool_running": {
       "conditions": {
-        "event": "oil_kept_fresh"
+        "event": "cool_running"
+      },
+      "trigger": "create_engines:event"
+    },
+    "hard_start": {
+      "conditions": {
+        "event": "hard_start"
       },
       "trigger": "create_engines:event"
     },
     "oil_filtered": {
       "conditions": {
         "event": "oil_filtered"
+      },
+      "trigger": "create_engines:event"
+    },
+    "oil_kept_fresh": {
+      "conditions": {
+        "event": "oil_kept_fresh"
+      },
+      "trigger": "create_engines:event"
+    },
+    "preheated": {
+      "conditions": {
+        "event": "preheated"
       },
       "trigger": "create_engines:event"
     },
@@ -22,12 +40,6 @@
     "warmed_up": {
       "conditions": {
         "event": "warmed_up"
-      },
-      "trigger": "create_engines:event"
-    },
-    "cool_running": {
-      "conditions": {
-        "event": "cool_running"
       },
       "trigger": "create_engines:event"
     }
@@ -60,6 +72,12 @@
     ],
     [
       "cool_running"
+    ],
+    [
+      "preheated"
+    ],
+    [
+      "hard_start"
     ]
   ],
   "sends_telemetry_event": true

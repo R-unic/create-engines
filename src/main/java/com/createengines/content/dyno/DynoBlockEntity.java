@@ -9,6 +9,7 @@ import org.jetbrains.annotations.Nullable;
 import com.createengines.content.GoggleLines;
 import com.createengines.content.crankshaft.CrankshaftBlockEntity;
 import com.createengines.engine.EngineController;
+import com.createengines.engine.sim.RunComparison;
 import com.createengines.engine.topology.EngineScanner;
 import com.createengines.registry.CELang;
 import com.simibubi.create.api.equipment.goggles.IHaveGoggleInformation;
@@ -106,6 +107,10 @@ public class DynoBlockEntity extends SmartBlockEntity implements IHaveGoggleInfo
 	}
 
 	private @Nullable Readout readout;
+	/** The last whole curve seen, held until the engine's curve starts to be measured again. */
+	private @Nullable Readout lastComplete;
+	/** The run before the one on show: what the dyno compares the new curve against. */
+	private @Nullable Readout previous;
 	private int ticks;
 	private int signal;
 
@@ -134,6 +139,15 @@ public class DynoBlockEntity extends SmartBlockEntity implements IHaveGoggleInfo
 		Readout next = measure();
 		boolean changed = next == null ? readout != null : next.differsFrom(readout);
 		readout = next;
+		if (next != null && next.complete)
+			lastComplete = next;
+		else if (next != null && lastComplete != null) {
+			// The engine's curve is being measured again: it has been changed, or rebuilt. The run it had is the one to beat
+			previous = lastComplete;
+			lastComplete = null;
+			changed = true;
+			setChanged();
+		}
 		if (changed)
 			sendData();
 		int signalNow = signalFor(next);
@@ -178,6 +192,8 @@ public class DynoBlockEntity extends SmartBlockEntity implements IHaveGoggleInfo
 		super.write(tag, registries, clientPacket);
 		if (clientPacket && readout != null)
 			tag.put("Readout", readout.write());
+		if (previous != null)
+			tag.put("Previous", previous.write());
 	}
 
 	@Override
@@ -185,6 +201,7 @@ public class DynoBlockEntity extends SmartBlockEntity implements IHaveGoggleInfo
 		super.read(tag, registries, clientPacket);
 		if (clientPacket)
 			readout = tag.contains("Readout") ? Readout.read(tag.getCompound("Readout")) : null;
+		previous = tag.contains("Previous") ? Readout.read(tag.getCompound("Previous")) : null;
 	}
 
 	@Override
@@ -229,10 +246,44 @@ public class DynoBlockEntity extends SmartBlockEntity implements IHaveGoggleInfo
 			.style(ChatFormatting.GRAY), tooltip, 1);
 		GoggleLines.add(CELang.translate("goggles.dyno.now", Math.round(current.current))
 			.style(ChatFormatting.DARK_GRAY), tooltip, 1);
+		addComparison(tooltip, current);
 		if (isPlayerSneaking)
 			GoggleLines.add(CELang.translate("goggles.dyno.hint")
 				.style(ChatFormatting.DARK_GRAY), tooltip, 2);
 		return true;
+	}
+
+	/** What changed since the run before, once this one is whole: green for more, red for less. */
+	private void addComparison(List<Component> tooltip, Readout current) {
+		Readout before = previous;
+		if (before == null || !current.complete || before.rpm.length == 0)
+			return;
+		RunComparison change = RunComparison.between(before.rpm, before.torque, current.rpm, current.torque);
+		GoggleLines.add(CELang.translate("goggles.dyno.previous")
+			.style(ChatFormatting.GRAY), tooltip, 1);
+		if (change.same()) {
+			GoggleLines.add(CELang.translate("goggles.dyno.delta_same")
+				.style(ChatFormatting.DARK_GRAY), tooltip, 2);
+			return;
+		}
+		GoggleLines.add(CELang.translate("goggles.dyno.delta_torque", signed(change.torquePercent()), signed(change.torqueDelta()))
+			.style(shade(change.torquePercent())), tooltip, 2);
+		GoggleLines.add(CELang.translate("goggles.dyno.delta_power", signed(change.powerPercent()), signed(change.powerDelta()))
+			.style(shade(change.powerPercent())), tooltip, 2);
+		if (Math.abs(change.peakShift()) >= 1)
+			GoggleLines.add(CELang.translate("goggles.dyno.delta_peak", signed(change.peakShift()))
+				.style(ChatFormatting.GRAY), tooltip, 2);
+		if (Math.abs(change.bandDelta()) >= 1)
+			GoggleLines.add(CELang.translate("goggles.dyno.delta_band", signed(change.bandDelta()))
+				.style(shade(change.bandDelta())), tooltip, 2);
+	}
+
+	private static ChatFormatting shade(float change) {
+		return Math.abs(change) < RunComparison.SAME ? ChatFormatting.GRAY : change > 0 ? ChatFormatting.GREEN : ChatFormatting.RED;
+	}
+
+	private static String signed(float value) {
+		return Math.abs(value) >= 100 ? String.format(Locale.ROOT, "%+.0f", value) : String.format(Locale.ROOT, "%+.1f", value);
 	}
 
 	/** A row of bars as tall as each value is against the biggest, at most 24 of them. */

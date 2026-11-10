@@ -456,6 +456,89 @@ faces; and anything that needs doing regularly (an oil change) can be automated 
   Let It Shift, is awarded for an Auto shift while carrying drive, and Gearhead now asks for all thirteen gears and reverse.
   Two GameTests cover it: climbing from first with three presses behind, and dropping out of an overload in thirteenth.
 
+### Livelier engines, and water (2026-11-09)
+
+- **Water.** Engines never work underwater (the user's ruling: no snorkels). A cylinder, head or rotor housing with a
+  fluid against any face is `SUBMERGED` (`EngineScanner.portFaults`), and the controller gives a submerged cylinder
+  no intake or exhaust flow whatever its pipes reach, so it never fires and only drags. Separately, an opening whose
+  mouth is in a fluid counts as shut (`PortOpeningBlock.isFlooded`, counted in `PortNetwork.flooded`): a network with
+  no clear opening and at least one flooded one gives `INTAKE_FLOODED` or `EXHAUST_FLOODED` instead of the covered
+  faults, so goggles say which it is. Cylinders, heads and housings rescan when a fluid arrives at or leaves a
+  neighbour (`EngineTopology.fluidMoved`). What is left open: an engine in a dry pocket walled off from the water
+  runs, because nothing is against it.
+- **Blocks are wash-proof.** Every block is registered through `CEBlocks.part`, which adds `forceSolidOn()`:
+  crankshafts, cams and pipes have shapes too slight to count as solid, and flowing water used to break them and
+  drop them as items. Found when the submerged GameTest's water took the crank journal out.
+- One advancement, That's Not Air, for cranking an engine that is underwater either way. GameTests:
+  `submergedCylinderNeverFiresWhateverItsPipesReach`, `sinkingARunningEngineStallsIt`,
+  `floodedIntakeNeverFiresUntilItIsDrained`, `floodingTheExhaustStallsARunningEngine`, `waterWashesNoEngineBlockAway`.
+- **Exhaust** (`content.effects.ExhaustLook`, pure and unit-tested, drawn by `EngineEffects.exhaust`). One look per
+  exhaust stroke from the cylinder's last cycle and the engine's figures: clean haze that grows with load, black by how
+  far past rich the mixture is, white while the block is below `Thermal.COLD_BELOW`, blue with oil dilution, a pale mist
+  for unlit fuel, a darker thicker cloud for thirty ticks after catching. A rich engine working hard licks flame; unlit
+  fuel into the pipe of a warm, otherwise firing engine pops three times in ten (`exhaust_pop`, on the bang volume).
+  Each firing leaves by one outlet picked at random and throws fewer puffs past four cylinders, so particles do not
+  multiply with outlets or grow in step with cylinders.
+- **Particles** (`CEParticles`, `client.particle`). `gas` takes a colour, size, opacity, lift and lifetime, swells
+  and fades, and is drawn from four white puffs made by `tools/generate_textures.py` in the manner of vanilla's
+  campfire smoke (vanilla's own are grey, so they cannot be tinted white, and its small smoke set shrinks to a speck).
+  The game's particle shader discards anything fainter than 0.1, so no look starts below about 0.25.
+  `exhaust_flame` is vanilla's flame, short-lived and aimed; `spark` is one bright pixel that falls and cools.
+- **Around the engine** (`EngineEffects`). A wisp of air drawn into an intake on each intake stroke; bubbles from any
+  flooded mouth and off the wet faces of a submerged cylinder while the crank turns; rain boiling off a head above temperature 0.35, and a shimmer over a running one
+  above 0.62 (so coolant shows); sparks off crank throws below 30 percent lubrication and off a starter's pinion; a
+  burst of white air when a blow-off valve opens.
+- **Machinery sounds** (`EngineAmbience`, kept by the primary crank on the client; levels in `MechanicalNoise`, pure).
+  `engine_catch` on CRANKING or STALLED to RUNNING and `engine_stall` on a turning engine reaching STALLED, each at most
+  once in three seconds; `engine_clatter` (valve gear, pitched with the crank, louder rough or dry) and
+  `bearing_squeal` (below 30 percent lubrication) as `MachineLoopSound` loops; `metal_tick` at random for about twenty
+  seconds after a warm engine stops, from a heat figure the client lets decay. All on the new `mechanicalVolume`
+  setting. Recordings are synthesized by `tools/generate_sounds.py`, which can now write WAV previews (`--wav DIR`).
+- **Checking it.** `./gradlew runVisualSmokeTest -PsmokeEffects --offline` builds a cold, a rich, a flooded and a dry
+  engine and screenshots each effect (about a minute and a half).
+
+### Warm-up, cooling, health and troubleshooting (2026-11-10)
+
+- **One temperature.** `Thermal.temperature` stays the single figure per engine; everything below reads it, nothing
+  keeps a second one. `Thermal.isCooling` (stopped, still above `COOLING_FROM` 0.12) is the "cooling" state, exposed as
+  `EngineSummary.cooling()` and shown in goggles in place of cold/cool/warm. `Thermal.glow` (0 at 0.5, 1 by 0.85)
+  drives the red turbine wheel in `TurbochargerRenderer`, through `TurboStatus.heat`; the compressor stays dark, and
+  exhaust pipes do not glow (they are plain block models). The cooling ticks (`EngineAmbience.cool`) now follow the real
+  temperature through `Thermal.tickChance` instead of a decay the client kept itself, so they fade with the goggles,
+  and a cooling head shimmers faintly down to 0.5.
+- **Warm-up gameplay.** A cold block quenches the flame: `CylinderModel.coldness` (set each tick from `Thermal.cold()`)
+  scales heat release by `Thermal.burnFactor`, up to `MAX_COLD_BURN_LOSS` (12 percent) times the fuel's new
+  `FuelSpec.coldSensitivity`: gasoline 0.8, diesel 1, pressed oil 1.5, ethanol 1.8 (a datapack fuel is 1). It never
+  stops an engine and is gone by the cold line, 0.3. Heat made at idle is helped while the block is cold
+  (`WARMUP_ASSIST`, fading to nothing at a cylinder's full-load share). A heat source against an exhaust heat exchanger
+  (`HeatExchangerBlockEntity.externalHeat`, read once a second from `BlazeBurnerBlock.getHeatLevelOf`, other exchangers
+  ignored) puts `Thermal.setPreheat` heat into a stopped or running block: smouldering settles at 0.28, kindled at 0.42,
+  seething at 0.56, never as warm as a running engine. No cooling system was added. A fuelled burner is what reaches
+  kindled; a bare one is smouldering.
+- **Why, in plain words.** `engine.Diagnosis` maps a cylinder's faults and last cycle to a `Cause` (build, water, no
+  air, no cam, no fuel, no spark, no plug, no exhaust, no ignition, lean, rich, fouled) and rates the engine
+  (`assess`): Healthy, Running rough or Failing, with the cause hitting most cylinders (ties to the more fundamental
+  one), dry oil, uneven firing (the existing roughness loss, `ROUGH_LOSS` 5 percent) or a cold block. It is computed in
+  `EngineController.diagnose`, carried in `EngineSummary` and shown as one line and its cause under the engine state.
+  A cylinder's goggles add a "Why:" line for a misfire. A cylinder left out of the simulation for a missing part counts
+  as one that is not firing. A stopped engine with a cause is Failing: it cannot run as it is.
+- **Dyno comparison.** `DynoBlockEntity` keeps the last whole curve it saw and, when the engine's curve starts being
+  measured again, files it as the run to beat (saved with the block). `sim.RunComparison` (pure) reads peak torque, peak
+  power, the speed of the power peak and the powerband width off the two curves; goggles show percent and absolute
+  change, green for gains.
+- **Loop sounds.** `LoopSource` gained `loopSpinUp`, `loopSpinDown` and `loopCoasts`. `MachineLoopSound` lags level
+  and pitch behind the source by those rates, and a source that coasts keeps its loop alive until its own spin has run
+  down, so a stopped supercharger or turbo winds down in pitch and volume for several seconds. The supercharger comes up
+  slowly and coasts longest. Other loops are unchanged. The belt chirp on engagement was left out: it needs a recording.
+- **Ponder.** Two pages, `troubleshooting_start` ("Why Won't It Start?", on the starter, battery, head and air intake)
+  and `troubleshooting_running` ("When an Engine Runs Badly", on the crankshaft, cylinder and exhaust outlet), told on the
+  spark structure in `TroubleshootingScenes`, in the same words as the goggles causes.
+- **Advancements.** Block Heater (`PREHEATED`: an engine caught with a heat source already warming its block) and Slow
+  Burn (`HARD_START`: caught stone cold on ethanol or pressed oil, then warmed through), both in the service track.
+- **Checks.** Unit tests: `DiagnosisTest`, `RunComparisonTest`, and new cases in `ThermalTest` and
+  `ServiceMilestonesTest`. GameTests: `aBlazeBurnerAgainstTheExchangerPreheatsTheEngine`,
+  `anEngineWithNoIntakeReadsAsFailingForWantOfAir`.
+
 
 ---
 

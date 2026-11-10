@@ -55,5 +55,69 @@
         "attenuation_distance": 16
       }
     ]
+  },
+  "engine_catch": {
+    "sounds": [
+      {
+        "name": "create_engines:engine_catch",
+        "attenuation_distance": 32
+      }
+    ]
+  },
+  "engine_stall": {
+    "sounds": [
+      {
+        "name": "create_engines:engine_stall",
+        "attenuation_distance": 28
+      }
+    ]
+  },
+  "exhaust_pop": {
+    "sounds": [
+      {
+        "name": "create_engines:exhaust_pop1",
+        "attenuation_distance": 28
+      },
+      {
+        "name": "create_engines:exhaust_pop2",
+        "attenuation_distance": 28
+      },
+      {
+        "name": "create_engines:exhaust_pop3",
+        "attenuation_distance": 28
+      }
+    ]
+  },
+  "metal_tick": {
+    "sounds": [
+      {
+        "name": "create_engines:metal_tick1",
+        "attenuation_distance": 12
+      },
+      {
+        "name": "create_engines:metal_tick2",
+        "attenuation_distance": 12
+      },
+      {
+        "name": "create_engines:metal_tick3",
+        "attenuation_distance": 12
+      }
+    ]
+  },
+  "engine_clatter": {
+    "sounds": [
+      {
+        "name": "create_engines:engine_clatter",
+        "attenuation_distance": 14
+      }
+    ]
+  },
+  "bearing_squeal": {
+    "sounds": [
+      {
+        "name": "create_engines:bearing_squeal",
+        "attenuation_distance": 20
+      }
+    ]
   }
 }

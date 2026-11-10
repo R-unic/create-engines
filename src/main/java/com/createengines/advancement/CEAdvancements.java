@@ -27,6 +27,7 @@ import net.minecraft.advancements.critereon.InventoryChangeTrigger;
 import net.minecraft.advancements.critereon.PlayerTrigger;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.item.Items;
 import net.minecraft.world.level.ItemLike;
 
 /**
@@ -157,6 +158,9 @@ public final class CEAdvancements {
 			Milestone.THINNED_OIL, "Gas in the Oil", "Run rich for so long that unburned fuel thins the engine oil.");
 		on("stalled", "alive", () -> CEBlocks.STARTER.get(), AdvancementType.TASK, Milestone.STALLED,
 			"Stall Out", "Let a turning engine die.");
+		on("flooded", "starter", () -> CEBlocks.AIR_INTAKE.get(), AdvancementType.TASK, Milestone.FLOODED,
+			"That's Not Air",
+			"Crank an engine that sits underwater, or opens its air intake or exhaust outlet there. Nothing burns down there.");
 		on("overloaded", "alive", () -> CEBlocks.TRANSMISSION.get(), AdvancementType.TASK, Milestone.OVERLOADED,
 			"Overworked", "Ask an engine for more torque than it is rated for.");
 
@@ -280,6 +284,10 @@ public final class CEAdvancements {
 		// Temperature and coolant
 		on("warmed_up", "alive", () -> CEBlocks.CYLINDER.get(), AdvancementType.TASK, Milestone.WARMED_UP,
 			"Operating Temperature", "Run an engine until its block has warmed through. A cold engine drags until it has.");
+		on("preheated", "warmed_up", () -> Items.BLAZE_POWDER, AdvancementType.TASK, Milestone.PREHEATED,
+			"Block Heater", "Start an engine whose block a heat source has already warmed: put a Blaze Burner against its heat exchanger and leave it a while.");
+		on("hard_start", "warmed_up", () -> CEFluids.ETHANOL.getBucket().orElseThrow(), AdvancementType.TASK,
+			Milestone.HARD_START, "Slow Burn", "Start an engine stone cold on ethanol or pressed oil and keep it running until its block has warmed through.");
 		on("coolant_used", "warmed_up", () -> CEFluids.COOLANT.getBucket().orElseThrow(), AdvancementType.TASK,
 			Milestone.COOLANT_USED, "Keeping Cool", "Feed coolant, or just water, into an oil pan and let a running engine carry its heat away with it.");
 		on("cool_running", "coolant_used", () -> CEFluids.COOLANT.getBucket().orElseThrow(), AdvancementType.GOAL,
@@ -313,7 +321,7 @@ public final class CEAdvancements {
 		List<Milestone> fuel = List.of(Milestone.GASOLINE_BURNED, Milestone.ETHANOL_BURNED,
 			Milestone.SUPERHEAT_RECOVERED, Milestone.DUAL_FUEL, Milestone.WASTE_OIL_BURNED);
 		List<Milestone> service = List.of(Milestone.OIL_KEPT_FRESH, Milestone.OIL_FILTERED, Milestone.SUMP_OILING,
-			Milestone.WARMED_UP, Milestone.COOL_RUNNING);
+			Milestone.WARMED_UP, Milestone.COOL_RUNNING, Milestone.PREHEATED, Milestone.HARD_START);
 		capstone("master_builder", "crankshaft", () -> CEBlocks.CRANK_THROW.get(), builder, "Master Builder",
 			"Finish the builder's track: a twelve with a stiff crank, coupled cranks, a vee, a flat, even firing, a valley cam and a Wankel.");
 		capstone("power_plant", "heavy_duty", () -> CEBlocks.TURBOCHARGER.get(), power, "Power Plant",
@@ -325,7 +333,7 @@ public final class CEAdvancements {
 		capstone("closed_loop", "diesel", () -> CEFluids.ETHANOL.getBucket().orElseThrow(), fuel, "Closed Loop",
 			"Finish the fuel track: burn gasoline, ethanol and waste oil, superheat from the exhaust and light a dual-fuel engine.");
 		capstone("service_record", "engine_oil", () -> CEItems.OIL_FILTER.get(), service, "Service Record",
-			"Finish the service track: an oil pan keeping the oil fresh, a filter, a warm block and an engine running cool.");
+			"Finish the service track: an oil pan keeping the oil fresh, a filter, a warm block, an engine running cool, a block heater and a stone-cold start on a slow fuel.");
 		List<Milestone> everything = new ArrayList<>();
 		for (List<Milestone> track : List.of(builder, power, tuning, driveline, fuel, service))
 			everything.addAll(track);

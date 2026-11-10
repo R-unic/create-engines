@@ -25,11 +25,12 @@ import net.minecraft.nbt.NbtUtils;
  * @param sparkPlug       the head has a spark plug
  * @param fouling         soot on the spark plug from running rich, 0 (clean) to 1
  * @param lobeShift      cam degrees a lobe shared with other cylinders adds to its angle for this one, for animation
+ * @param intakeInlets    where this cylinder's air comes in, for the draught at its intakes
  */
 public record CylinderStatus(BlockPos primary, int faults, CycleResult result, boolean rich, float tdcAngle,
 							 float timingError, float chargeTemp, float ignitionTemp, @Nullable BlockPos lobe,
 							 List<BlockPos> exhaustOutlets, boolean lean, float mixture, boolean sparkPlug,
-							 float fouling, float lobeShift) {
+							 float fouling, float lobeShift, List<BlockPos> intakeInlets) {
 
 	public CompoundTag write() {
 		CompoundTag tag = new CompoundTag();
@@ -53,6 +54,11 @@ public record CylinderStatus(BlockPos primary, int faults, CycleResult result, b
 		tag.putBoolean("Plug", sparkPlug);
 		tag.putFloat("Fouling", fouling);
 		tag.putFloat("LobeShift", lobeShift);
+		long[] inlets = new long[intakeInlets.size()];
+		for (int i = 0; i < inlets.length; i++)
+			inlets[i] = intakeInlets.get(i)
+				.asLong();
+		tag.putLongArray("Inlets", inlets);
 		return tag;
 	}
 
@@ -65,12 +71,15 @@ public record CylinderStatus(BlockPos primary, int faults, CycleResult result, b
 		List<BlockPos> outlets = new ArrayList<>();
 		for (long packed : tag.getLongArray("Outlets"))
 			outlets.add(BlockPos.of(packed));
+		List<BlockPos> inlets = new ArrayList<>();
+		for (long packed : tag.getLongArray("Inlets"))
+			inlets.add(BlockPos.of(packed));
 		return new CylinderStatus(primary, tag.getInt("Faults"),
 			results[Math.clamp(tag.getInt("Result"), 0, results.length - 1)], tag.getBoolean("Rich"),
 			tag.getFloat("Tdc"), tag.getFloat("Timing"), tag.getFloat("Charge"), tag.getFloat("Ignition"),
 			NbtUtils.readBlockPos(tag, "Lobe")
 				.orElse(null), List.copyOf(outlets), tag.getBoolean("Lean"), tag.getFloat("Mixture"),
-			tag.getBoolean("Plug"), tag.getFloat("Fouling"), tag.getFloat("LobeShift"));
+			tag.getBoolean("Plug"), tag.getFloat("Fouling"), tag.getFloat("LobeShift"), List.copyOf(inlets));
 	}
 
 	/** Whether anything a player would see has changed. */
@@ -82,7 +91,7 @@ public record CylinderStatus(BlockPos primary, int faults, CycleResult result, b
 			|| changed(mixture, other.mixture, 0.05f) || changed(fouling, other.fouling, 0.05f) || changed(tdcAngle, other.tdcAngle, 0.5f)
 			|| changed(timingError, other.timingError, 0.5f) || changed(chargeTemp, other.chargeTemp, 0.05f)
 			|| changed(ignitionTemp, other.ignitionTemp, 0.01f) || !Objects.equals(lobe, other.lobe) || changed(lobeShift, other.lobeShift, 0.5f)
-			|| !exhaustOutlets.equals(other.exhaustOutlets);
+			|| !exhaustOutlets.equals(other.exhaustOutlets) || !intakeInlets.equals(other.intakeInlets);
 	}
 
 	private static boolean changed(float a, float b, float tolerance) {

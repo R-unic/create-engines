@@ -262,6 +262,9 @@ public final class CELang {
 		raw("goggles.fault.broken_cam", "A plain Shaft splits the camshaft: replace it with Camshaft blocks");
 		raw("goggles.fault.no_rotor", "No rotor installed: right-click with an Engine Rotor");
 		raw("goggles.fault.rotary_disabled", "Rotary engines are switched off in this server's config");
+		raw("goggles.fault.intake_flooded", "Air intake is underwater: it draws no air, so nothing can burn");
+		raw("goggles.fault.exhaust_flooded", "Exhaust outlet is underwater: the gas can't push its way out");
+		raw("goggles.fault.submerged", "Underwater: nothing burns in an engine that sits in water, wherever its pipes lead");
 		raw("goggles.fault.no_plug", "No spark plug: the chamber is too long and thin for the charge to light itself");
 
 		raw("goggles.rotor", "Rotor Housing");
@@ -310,6 +313,36 @@ public final class CELang {
 		raw("goggles.temperature.cold", "Engine cold: it drags until it has warmed through");
 		raw("goggles.temperature.cool", "Engine cool: it breathes better");
 		raw("goggles.temperature.warm", "Engine warm");
+		raw("goggles.temperature.cooling", "Cooling down: the metal ticks as it gives up its heat");
+		raw("goggles.temperature.cooling.hint", "Running a cold engine drags and burns fuel poorly, and pressed oil and ethanol are the worst at it. Gasoline copes best");
+		raw("goggles.temperature.preheated", "Warmed by a heat source against the exchanger");
+		raw("goggles.health.healthy", "Healthy");
+		raw("goggles.health.rough", "Running rough");
+		raw("goggles.health.failing", "Failing");
+		raw("goggles.health.line", "Engine health: %1$s");
+		raw("goggles.cause.none", "Nothing wrong");
+		raw("goggles.cause.build", "A cylinder is missing a part or is not on a crank throw: look at its goggles");
+		raw("goggles.cause.water", "Part of the engine is underwater, and nothing burns there: lift its intake, exhaust and block clear of the water");
+		raw("goggles.cause.no_air", "Air cannot get in: an intake is missing, covered or underwater");
+		raw("goggles.cause.no_cam", "A cam lobe is not opening the valves: touch one to the head and keep the camshaft unbroken");
+		raw("goggles.cause.no_fuel", "No fuel is reaching a cylinder: check the injector, the fuel supply and the rack");
+		raw("goggles.cause.no_spark", "The spark plug is not firing: put a charged battery against the engine");
+		raw("goggles.cause.no_plug", "A rotor housing needs a spark plug to light its charge");
+		raw("goggles.cause.no_exhaust", "Burned gas cannot get out: an exhaust is missing, covered or underwater");
+		raw("goggles.cause.no_ignition", "The charge is not hot enough to light: use a spark plug, a pilot fuel, or more compression");
+		raw("goggles.cause.too_lean", "Too little fuel for the air to burn: raise the injector's metering");
+		raw("goggles.cause.too_rich", "Too much fuel for the air to burn: lower the metering or let more air in");
+		raw("goggles.cause.fouled", "Soot on the spark plug from running rich: lean the mixture out until it burns off");
+		raw("goggles.cause.dry_oil", "The bearings are running dry: keep the oil pan full");
+		raw("goggles.cause.uneven", "The cylinders fire unevenly, so the speed surges: add cylinders, even out the firing order or fit a flywheel");
+		raw("goggles.cause.cold", "The block has not warmed through, so it drags and burns fuel poorly: let it warm up");
+		raw("goggles.cylinder.cause", "Why: %1$s");
+		raw("goggles.dyno.previous", "Against the last run:");
+		raw("goggles.dyno.delta_torque", "Peak torque %1$s%% (%2$s SU per RPM)");
+		raw("goggles.dyno.delta_power", "Peak power %1$s%% (%2$s SU)");
+		raw("goggles.dyno.delta_peak", "Power peak %1$s RPM");
+		raw("goggles.dyno.delta_band", "Powerband %1$s RPM wide");
+		raw("goggles.dyno.delta_same", "Same as the last run");
 		raw("goggles.temperature.hint",
 			"Coolant, or water, piped into an oil pan would cool it, and a cool engine earns a power bonus. A hot engine is never harmed");
 		raw("goggles.coolant_use", "Coolant spent: %1$s mB a second");

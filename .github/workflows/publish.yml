@@ -18,6 +18,9 @@ concurrency:
 jobs:
   publish:
     runs-on: ubuntu-latest
+    outputs:
+      modrinth-url: ${{ steps.upload.outputs.modrinth-url }}
+      curseforge-url: ${{ steps.upload.outputs.curseforge-url }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -67,6 +70,7 @@ jobs:
           path: build/libs/${{ steps.meta.outputs.jar }}
 
       - name: Publish to Modrinth and CurseForge
+        id: upload
         uses: Kira-NT/mc-publish@v3.3.2
         with:
           modrinth-id: ${{ vars.MODRINTH_ID || 'create-engine-engineer' }}
@@ -90,3 +94,25 @@ jobs:
 
           # Try every site, then fail the run if any refused: a Modrinth problem must not hold up CurseForge
           fail-mode: skip
+
+  # Each site gets its own job so GitHub lists it under Deployments with a link to the uploaded file.
+  # The upload step fails the publish job when one site refuses, so these must run regardless.
+  modrinth:
+    needs: publish
+    if: ${{ !cancelled() && needs.publish.outputs.modrinth-url != '' }}
+    runs-on: ubuntu-latest
+    environment:
+      name: Modrinth
+      url: ${{ needs.publish.outputs.modrinth-url }}
+    steps:
+      - run: echo "${{ needs.publish.outputs.modrinth-url }}"
+
+  curseforge:
+    needs: publish
+    if: ${{ !cancelled() && needs.publish.outputs.curseforge-url != '' }}
+    runs-on: ubuntu-latest
+    environment:
+      name: CurseForge
+      url: ${{ needs.publish.outputs.curseforge-url }}
+    steps:
+      - run: echo "${{ needs.publish.outputs.curseforge-url }}"

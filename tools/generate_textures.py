@@ -11,6 +11,10 @@ alongside Create's own casings and shafts.
 
 The fluids are greyscale, and the game tints them per fluid (see CEFluids): thin fuels ripple quickly and let the light through,
 thick oils move slowly and are nearly opaque. Animations loop, and their frames tile.
+
+The puffs are the sprites of the gas particle (exhaust, vapour, steam): white, because the game tints each puff to
+the colour its engine gives it, and shaped and shaded like vanilla's campfire smoke, which is grey and so cannot be
+tinted any lighter than itself.
 """
 import json
 import math
@@ -318,6 +322,33 @@ def tread_plate():
     write_png("gui/advancements/tread_plate", rows)
 
 
+PUFFS = 4
+
+
+def puff(seed):
+    """A round, ragged cloud: a few overlapping lobes about the middle of the tile, lit from the top left in three
+    flat tones with a little mottling, the way vanilla's campfire smoke is drawn. Solid or clear, nothing between."""
+    lobes = [(7.5, 7.5, 4.4)]
+    for k in range(5):
+        turn = 2 * math.pi * (k / 5.0 + hashed(k, 1, seed))
+        reach = 2.2 + 2.0 * hashed(k, 2, seed)
+        lobes.append((7.5 + reach * math.cos(turn), 7.5 + reach * math.sin(turn), 2.2 + 1.6 * hashed(k, 3, seed)))
+    rows = []
+    for j in range(SIZE):
+        row = []
+        for i in range(SIZE):
+            # How far inside the nearest lobe's edge this pixel is, in pixels
+            depth = max(r - math.hypot(i - x, j - y) for x, y, r in lobes)
+            if depth < 0 or depth < 0.8 and hashed(i, j, seed + 5) < 0.3:
+                row.append((0, 0, 0, 0))
+                continue
+            light = 0.5 - (i + j - 15) / 22.0 + 0.16 * (hashed(i // 2, j // 2, seed + 9) - 0.5)
+            shade = 255 if light > 0.62 else 236 if light > 0.38 else 214
+            row.append((shade, shade, shade, 255))
+        rows.append(row)
+    return rows
+
+
 def main():
     for name, painter in (("brass", brass), ("copper", copper), ("copper_panel", copper_panel), ("steel", steel),
                           ("cast_iron", cast_iron), ("black_oxide", black_oxide), ("rivet_plate", rivet_plate),
@@ -331,6 +362,10 @@ def main():
     heat("kindled", KINDLED, 31)
     heat("seething", SEETHING, 41)
     tread_plate()
+    for index in range(PUFFS):
+        write_png("particle/puff_%d" % index, puff(61 + 7 * index))
+    # A spark is one solid square, sized and coloured by the particle that draws it
+    write_png("particle/spark", [[(255, 255, 255, 255)] * 4 for _ in range(4)])
 
 
 main()

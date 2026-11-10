@@ -69,6 +69,9 @@ public final class VisualSmokeTest {
 	/** Run only the flywheel, dynamometer, variable turbo and bank builder (gradle {@code -PsmokeNewParts}). */
 	private static final String NEW_PARTS_ONLY = "create_engines.visualSmokeTest.newParts";
 
+	/** Run only the engines' smoke, steam, sparks and bubbles (gradle {@code -PsmokeEffects}). */
+	private static final String EFFECTS_ONLY = "create_engines.visualSmokeTest.effects";
+
 	private record Step(int tick, Runnable action) {
 	}
 
@@ -113,6 +116,11 @@ public final class VisualSmokeTest {
 			return;
 		}
 
+		if (Boolean.getBoolean(EFFECTS_ONLY)) {
+			effects(60);
+			return;
+		}
+
 		if (Boolean.getBoolean(NEW_PARTS_ONLY)) {
 			newParts(100);
 			return;
@@ -127,12 +135,9 @@ public final class VisualSmokeTest {
 			goggles("head", 110, 4.5, 4.0, 1.0, 45, 0);
 			goggles("crankshaft", 130, 1.5, 2.0, 0.4, 0, 28);
 			goggles("cylinder", 150, 2.5, 2.0, -0.5, 0, 2.3f);
-			ponderScene("compact_v", 200, CEBlocks.CAM_LOBE::asStack, 2, 900, 1150, 1400);
-			ponder("heat_exchanger", 1700, CEBlocks.HEAT_EXCHANGER::asStack, 400, 800, 1200);
-			ponderScene("fuels", 3000, CEBlocks.HEAT_EXCHANGER::asStack, 1, 400, 900, 1400);
-			ponder("supercharger", 4500, CEBlocks.SUPERCHARGER::asStack, 250, 600, 900, 1250, 1600);
-			ponder("black_box", 6300, CEBlocks.BLACK_BOX::asStack, 250, 600, 950);
-			management(7500);
+			// The troubleshooting pages: the second page of the starter, the third of the crankshaft
+			ponderScene("troubleshooting_start", 200, CEBlocks.STARTER::asStack, 1, 150, 400, 700, 1000, 1300);
+			ponderScene("troubleshooting_running", 1700, CEBlocks.CRANKSHAFT::asStack, 3, 150, 400, 700, 1000, 1300);
 			return;
 		}
 
@@ -526,6 +531,83 @@ public final class VisualSmokeTest {
 		ponder("turbo_tuning", start + 4300, CEBlocks.VARIABLE_TURBOCHARGER::asStack, 250, 650, 1000, 1350);
 		STEPS.add(new Step(start + 5800, () -> Minecraft.getInstance()
 			.stop()));
+	}
+
+	/** Where the rich, the flooded and the dry engine of {@link #effects} stand, relative to the first. */
+	private static final BlockPos RICH_OFFSET = new BlockPos(12, 0, 0);
+	private static final BlockPos FLOODED_OFFSET = new BlockPos(24, 0, 0);
+	private static final BlockPos DRY_OFFSET = new BlockPos(36, 0, 0);
+
+	/**
+	 * What engines throw out: the first engine catching from cold and settling, one beside it with its injector wide
+	 * open, one with its air intake underwater and one with no oil. Then the first is choked so it dies, it rains, and
+	 * each engine's figures are logged so the pictures can be read against them.
+	 */
+	private static void effects(int start) {
+		STEPS.add(new Step(start, () -> server(server -> {
+			var level = server.overworld();
+			BlockPos rich = origin.offset(RICH_OFFSET);
+			TestEngine.build(level, rich, true);
+			if (level.getBlockEntity(rich.offset(TestEngine.HEAD)) instanceof CylinderHeadBlockEntity head)
+				head.metering.setValue(CylinderHeadBlockEntity.MAX_METERING);
+			BlockPos flooded = origin.offset(FLOODED_OFFSET);
+			TestEngine.build(level, flooded, true);
+			BlockPos mouth = flooded.offset(TestEngine.AIR_INTAKE)
+				.north();
+			for (Direction side : new Direction[] {Direction.NORTH, Direction.EAST, Direction.WEST, Direction.DOWN})
+				level.setBlock(mouth.relative(side), Blocks.GLASS.defaultBlockState(), 3);
+			level.setBlock(mouth, Blocks.WATER.defaultBlockState(), 3);
+			TestEngine.build(level, origin.offset(DRY_OFFSET), true, false);
+		})));
+		// The first engine was built a second ago: these catch it cranking, catching and clearing its throat
+		for (int i = 0; i < 4; i++)
+			frames("effects_start_" + i, start + 10 + i * 40, -1.5, 4.0, -2.0, -18, 5);
+		STEPS.add(new Step(start + 200, () -> server(server -> {
+			for (BlockPos offset : List.of(BlockPos.ZERO, RICH_OFFSET, FLOODED_OFFSET, DRY_OFFSET))
+				server.overworld()
+					.removeBlock(origin.offset(offset)
+						.offset(TestEngine.STARTER_POWER), false);
+		})));
+		frames("effects_running", start + 360, -1.5, 4.0, -2.0, -18, 5);
+		frames("effects_intake", start + 390, 5.5, 3.6, -0.5, 73, 13);
+		frames("effects_rich", start + 420, RICH_OFFSET.getX() - 1.5, 4.0, -2.0, -18, 5);
+		frames("effects_dry", start + 450, DRY_OFFSET.getX() + 2.5, 1.0, -0.4, 0, 0);
+		// Crank the flooded one again, which nothing can light, and look at its intake and its cylinder
+		STEPS.add(new Step(start + 470, () -> server(server -> server.overworld()
+			.setBlock(origin.offset(FLOODED_OFFSET)
+				.offset(TestEngine.STARTER_POWER), Blocks.REDSTONE_BLOCK.defaultBlockState(), 3))));
+		frames("effects_flooded", start + 520, FLOODED_OFFSET.getX() - 0.5, 3.6, -1.5, -56, 10);
+		STEPS.add(new Step(start + 550, () -> {
+			Minecraft.getInstance().options.hideGui = false;
+			server(server -> command(server, "item replace entity @a armor.head with create:goggles"));
+		}));
+		goggles("effects_flooded_cylinder", start + 560, FLOODED_OFFSET.getX() + 2.5, 2.0, -0.5, 0, 2.3f);
+		// Starve the first engine of air so it dies hot, and let it rain on all of them
+		STEPS.add(new Step(start + 590, () -> {
+			Minecraft.getInstance().options.hideGui = true;
+			logEngines("running");
+			server(server -> {
+				server.overworld()
+					.removeBlock(origin.offset(TestEngine.AIR_INTAKE), false);
+				command(server, "weather rain");
+			});
+		}));
+		frames("effects_rain", start + 760, RICH_OFFSET.getX() + 0.5, 4.2, -0.8, -31, 12);
+		STEPS.add(new Step(start + 900, () -> {
+			logEngines("after the stall");
+			Minecraft.getInstance()
+				.stop();
+		}));
+	}
+
+	/** Writes each of the {@link #effects} engines' figures, as this client has them, to the log. */
+	private static void logEngines(String when) {
+		Minecraft minecraft = Minecraft.getInstance();
+		for (BlockPos offset : List.of(BlockPos.ZERO, RICH_OFFSET, FLOODED_OFFSET, DRY_OFFSET))
+			if (minecraft.level != null && minecraft.level.getBlockEntity(origin.offset(offset)
+				.offset(TestEngine.PRIMARY)) instanceof CrankshaftBlockEntity crank)
+				CreateEngines.LOGGER.info("Smoke test engine at +{} {}: {}, particles alive {}", offset.getX(), when,
+					crank.summary(), minecraft.particleEngine.countParticles());
 	}
 
 	private static BlockState pipe(Block block, Direction... open) {

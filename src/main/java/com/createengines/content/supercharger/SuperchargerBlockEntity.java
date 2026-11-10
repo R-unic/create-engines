@@ -110,6 +110,23 @@ public class SuperchargerBlockEntity extends KineticBlockEntity implements Engin
 		return 0.6f + 1.2f * (float) Math.min(1, shaftRpm() / 200);
 	}
 
+	/** The blower is a heavy rotor on a belt: it takes a couple of seconds to come up to pitch... */
+	@Override
+	public float loopSpinUp() {
+		return 0.045f;
+	}
+
+	/** ...and winds down for several more after the shaft stops, falling in pitch as it goes. */
+	@Override
+	public float loopSpinDown() {
+		return 0.025f;
+	}
+
+	@Override
+	public boolean loopCoasts() {
+		return true;
+	}
+
 	/** The boost the engine last reported, atmospheres. */
 	public float boost() {
 		return boost;

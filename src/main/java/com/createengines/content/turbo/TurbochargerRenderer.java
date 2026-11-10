@@ -5,11 +5,13 @@ import org.joml.Matrix4f;
 import org.joml.Quaternionf;
 import org.joml.Vector3f;
 
+import com.createengines.engine.sim.Thermal;
 import com.createengines.registry.CEPartialModels;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.simibubi.create.foundation.blockEntity.renderer.SafeBlockEntityRenderer;
 
 import net.createmod.catnip.render.CachedBuffers;
+import net.minecraft.client.renderer.LightTexture;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.blockentity.BlockEntityRendererProvider;
@@ -41,8 +43,23 @@ public class TurbochargerRenderer extends SafeBlockEntityRenderer<TurbochargerBl
 		ms.last()
 			.normal()
 			.mul(new Matrix3f(pose).normal());
+		// A hot turbine wheel glows a dull red, and keeps glowing for a while after the engine stops: it is the part
+		// sitting in the exhaust. The compressor side stays dark metal.
+		float glow = be.status() == null || !be.status()
+			.turbine() ? 0 : (float) Thermal.glow(be.status()
+				.heat());
+		int lit = light;
+		int tint = 0xFFFFFF;
+		if (glow > 0.02f) {
+			int block = Math.max(LightTexture.block(light), Math.round(glow * 11));
+			lit = LightTexture.pack(block, LightTexture.sky(light));
+			int green = Math.round(255 - 125 * glow);
+			int blue = Math.round(255 - 175 * glow);
+			tint = 0xFF << 16 | green << 8 | blue;
+		}
 		CachedBuffers.partial(CEPartialModels.TURBO_WHEEL, state)
-			.light(light)
+			.light(lit)
+			.color(tint)
 			.renderInto(ms, buffer.getBuffer(RenderType.solid()));
 		ms.popPose();
 	}

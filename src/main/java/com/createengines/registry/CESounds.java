@@ -31,6 +31,19 @@ public final class CESounds {
 	/** A supercharger's gears and lobes: a seamless loop, pitched with its shaft. */
 	public static final DeferredHolder<SoundEvent, SoundEvent> SUPERCHARGER_WHINE = register("supercharger_whine");
 
+	/** An engine catching on the starter: its first few firings, each sooner and harder than the last. */
+	public static final DeferredHolder<SoundEvent, SoundEvent> ENGINE_CATCH = register("engine_catch");
+	/** An engine dying: its last firings, a knock as the crank rocks to a stop, and a sigh from the exhaust. */
+	public static final DeferredHolder<SoundEvent, SoundEvent> ENGINE_STALL = register("engine_stall");
+	/** Unburned fuel lighting in a hot exhaust: the crack of an afterfire. */
+	public static final DeferredHolder<SoundEvent, SoundEvent> EXHAUST_POP = register("exhaust_pop");
+	/** Hot metal ticking as it cools, for a while after an engine stops. */
+	public static final DeferredHolder<SoundEvent, SoundEvent> METAL_TICK = register("metal_tick");
+	/** Valve gear ticking over the hum of the gears: a seamless loop, pitched with the crank. */
+	public static final DeferredHolder<SoundEvent, SoundEvent> ENGINE_CLATTER = register("engine_clatter");
+	/** Bearings running dry: a seamless loop, as loud as the engine is short of oil. */
+	public static final DeferredHolder<SoundEvent, SoundEvent> BEARING_SQUEAL = register("bearing_squeal");
+
 	private CESounds() {
 	}
 

@@ -17,7 +17,10 @@ import net.createmod.catnip.data.WorldAttached;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.level.Level;
 import net.minecraft.world.level.LevelAccessor;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.LiquidBlock;
 import net.neoforged.neoforge.event.level.LevelEvent;
 import net.neoforged.neoforge.event.tick.LevelTickEvent;
 
@@ -43,6 +46,17 @@ public final class EngineTopology {
 		if (level == null || level.isClientSide())
 			return;
 		TOPOLOGIES.get(level).dirty.add(pos.immutable());
+	}
+
+	/**
+	 * A block beside a cylinder, head or rotor housing at {@code pos} changed: look at its engine again if that put a
+	 * fluid against it or took one away, since an engine sitting in water does not run. {@code changed} is the block
+	 * that was there before.
+	 */
+	public static void fluidMoved(Level level, BlockPos pos, Block changed, BlockPos neighbour) {
+		if (changed instanceof LiquidBlock || !level.getFluidState(neighbour)
+			.isEmpty())
+			markDirty(level, pos);
 	}
 
 	public static void onLevelTick(LevelTickEvent.Post event) {

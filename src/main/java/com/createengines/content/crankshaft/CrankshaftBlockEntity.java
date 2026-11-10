@@ -6,6 +6,11 @@ import org.jetbrains.annotations.Nullable;
 
 import com.createengines.content.EngineNoteSound;
 import com.createengines.content.RenderRotation;
+import com.createengines.content.effects.EngineAmbience;
+import com.createengines.content.effects.EngineEffects;
+import com.createengines.content.effects.MechanicalNoise;
+import com.createengines.config.CEClientConfig;
+import com.createengines.engine.Diagnosis;
 import com.createengines.engine.EngineController;
 import com.createengines.engine.EngineState;
 import com.createengines.engine.EngineSummary;
@@ -29,6 +34,7 @@ import net.minecraft.nbt.NbtUtils;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.phys.Vec3;
 
 /**
  * Every crankshaft block is a Create kinetic block, so rotation propagates through the crank and anything attached
@@ -50,6 +56,8 @@ public class CrankshaftBlockEntity extends GeneratingKineticBlockEntity implemen
 	private @Nullable EngineController.Motion savedMotion;
 	private @Nullable EngineSummary summary;
 	private final RenderRotation rotation = new RenderRotation();
+	/** Client only, and only on the primary: the engine's own noises (see {@link EngineAmbience}). */
+	private @Nullable EngineAmbience ambience;
 
 	public CrankshaftBlockEntity(BlockEntityType<?> type, BlockPos pos, BlockState state) {
 		super(type, pos, state);
@@ -95,13 +103,49 @@ public class CrankshaftBlockEntity extends GeneratingKineticBlockEntity implemen
 			controller.tick();
 	}
 
-	/** The engine's exhaust note, from the primary only: it knows the engine's speed and firing order. */
+	/**
+	 * Sparks off any throw whose bearings are dry, and from the primary only, which knows the engine's speed and firing
+	 * order, the engine's exhaust note and the noises of its machinery.
+	 */
 	private void tickClient() {
+		if (throwAngle != null)
+			dryBearingSparks();
 		if (summary == null || !worldPosition.equals(primaryPos))
 			return;
+		if (ambience == null)
+			ambience = new EngineAmbience(this);
+		ambience.tick(summary);
 		if (summary.state() != EngineState.STALLED && summary.state() != EngineState.INCOMPLETE
 			&& summary.state() != EngineState.BROKEN)
 			EngineNoteSound.ensurePlaying(this);
+	}
+
+	/** A crank pin turning in a bearing with no oil on it throws sparks, more of them the drier and faster it runs. */
+	private void dryBearingSparks() {
+		if (((level.getGameTime() + worldPosition.asLong()) & 1) != 0 || !CEClientConfig.particles())
+			return;
+		EngineSummary engine = engineSummary();
+		if (engine == null || engine.state() == EngineState.STALLED)
+			return;
+		float dryness = MechanicalNoise.squealLevel(engine.rpm(), engine.lubrication());
+		if (dryness <= 0.05f || level.random.nextFloat() >= 0.5f * dryness)
+			return;
+		Vec3 at = Vec3.atCenterOf(worldPosition)
+			.add((level.random.nextDouble() - 0.5) * 0.5, (level.random.nextDouble() - 0.5) * 0.5,
+				(level.random.nextDouble() - 0.5) * 0.5);
+		EngineEffects.sparks(level, at, Vec3.ZERO, 2 + level.random.nextInt(2), 0.16);
+	}
+
+	/**
+	 * Client only: whether this crank's engine caught a moment ago, so its cylinders cough out what pooled in them
+	 * while it cranked.
+	 */
+	public boolean catching() {
+		if (ambience != null)
+			return ambience.catching();
+		return primaryPos != null && !primaryPos.equals(worldPosition) && level != null
+			&& level.getBlockEntity(primaryPos) instanceof CrankshaftBlockEntity primary && primary.ambience != null
+			&& primary.ambience.catching();
 	}
 
 	@Override
@@ -281,7 +325,8 @@ public class CrankshaftBlockEntity extends GeneratingKineticBlockEntity implemen
 
 	// Goggles
 
-	private @Nullable EngineSummary engineSummary() {
+	/** The figures of the engine this crankshaft block is part of, from whichever of its blocks is the primary. */
+	public @Nullable EngineSummary engineSummary() {
 		if (summary != null)
 			return summary;
 		if (primaryPos != null && level != null && level.getBlockEntity(primaryPos) instanceof CrankshaftBlockEntity p)
@@ -319,6 +364,8 @@ public class CrankshaftBlockEntity extends GeneratingKineticBlockEntity implemen
 		if (engine.lines() > 1)
 			GoggleLines.add(CELang.translate("goggles.coupled", engine.lines())
 				.style(ChatFormatting.GRAY), tooltip, 1);
+		if (engine.state() != EngineState.INCOMPLETE)
+			addHealth(tooltip, engine);
 		if (engine.state() != EngineState.INCOMPLETE) {
 			int oil = Math.round(engine.lubrication() * 100);
 			GoggleLines.add(CELang.translate("goggles.lubrication", oil)
@@ -413,9 +460,34 @@ public class CrankshaftBlockEntity extends GeneratingKineticBlockEntity implemen
 				.style(ChatFormatting.YELLOW), tooltip, 1);
 	}
 
+	/** One line saying how the engine is running, and under it, when something is wrong, the one thing to look at. */
+	private static void addHealth(List<Component> tooltip, EngineSummary engine) {
+		ChatFormatting colour = switch (engine.health()) {
+			case HEALTHY -> ChatFormatting.GREEN;
+			case ROUGH -> ChatFormatting.GOLD;
+			case FAILING -> ChatFormatting.RED;
+		};
+		GoggleLines.add(CELang.translate("goggles.health.line", CELang.translate(engine.health()
+				.langKey())
+			.string())
+			.style(colour), tooltip, 1);
+		if (engine.cause() != Diagnosis.Cause.NONE)
+			GoggleLines.add(CELang.translate(engine.cause()
+					.langKey())
+				.style(ChatFormatting.GRAY), tooltip, 2);
+	}
+
 	/** The block's temperature in words, with the coolant it is spending and a note when a pilot shot is lighting the fuel. */
 	private static void addTemperature(List<Component> tooltip, EngineSummary engine, boolean isPlayerSneaking) {
 		float temperature = engine.temperature();
+		if (engine.cooling()) {
+			GoggleLines.add(CELang.translate("goggles.temperature.cooling")
+				.style(ChatFormatting.AQUA), tooltip, 1);
+			if (isPlayerSneaking)
+				GoggleLines.add(CELang.translate("goggles.temperature.cooling.hint")
+					.style(ChatFormatting.DARK_GRAY), tooltip, 2);
+			return;
+		}
 		String state = temperature < Thermal.COLD_BELOW ? "cold" : temperature < Thermal.COOL_NONE ? "cool" : "warm";
 		ChatFormatting colour = switch (state) {
 			case "cold" -> ChatFormatting.AQUA;

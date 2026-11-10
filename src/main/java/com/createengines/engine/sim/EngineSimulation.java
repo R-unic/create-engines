@@ -230,6 +230,9 @@ public final class EngineSimulation {
 		if (thermalLive && Tuning.engineTemperature)
 			thermal.update(Thermal.heatIn(exhaustHeat / TICK, tickFrictionWork / TICK), cylinders.size(), TICK, coolant);
 		tickFrictionWork = 0;
+		double cold = thermal.cold();
+		for (CylinderModel cylinder : cylinders)
+			cylinder.coldness = cold;
 		for (Turbocharger turbo : turbos)
 			turbo.tick(TICK);
 		for (Supercharger blower : superchargers) {

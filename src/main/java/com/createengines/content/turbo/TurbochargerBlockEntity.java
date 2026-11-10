@@ -9,6 +9,8 @@ import com.createengines.config.CEClientConfig;
 import com.createengines.content.EffectRate;
 import com.createengines.content.LoopSource;
 import com.createengines.content.MachineLoopSound;
+import com.createengines.content.effects.EngineEffects;
+import com.createengines.content.effects.GasParticleOptions;
 import com.createengines.engine.TurboStatus;
 import com.createengines.engine.sim.Turbocharger;
 import com.createengines.engine.topology.EngineMember;
@@ -27,7 +29,6 @@ import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.HolderLookup;
-import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.sounds.SoundSource;
@@ -173,11 +174,8 @@ public class TurbochargerBlockEntity extends SmartBlockEntity
 			float target = status == null ? 0 : status.spool() * WHEEL_DEGREES_PER_TICK;
 			wheelSpeed += (target - wheelSpeed) * 0.15f;
 			wheelAngle = (wheelAngle + wheelSpeed) % 360;
-			if (status != null && status.antiLag() && level.random.nextInt(2) == 0) {
-				if (CEClientConfig.particles())
-					popOut();
-				popBang();
-			}
+			if (status != null && status.antiLag() && level.random.nextInt(2) == 0)
+				antiLagPop();
 			if (loopLevel() > 0.02f)
 				MachineLoopSound.ensurePlaying(this, worldPosition, CESounds.TURBO_WHISTLE.get(), 0.09f, this);
 			blowOff();
@@ -199,6 +197,17 @@ public class TurbochargerBlockEntity extends SmartBlockEntity
 		return 0.55f + 0.5f * Math.min(1.2f, status == null ? 0 : status.spool());
 	}
 
+	/** The wheel is slower to come up to its whistle than the gauge is to say so, and it coasts on after the exhaust lets go. */
+	@Override
+	public float loopSpinDown() {
+		return 0.03f;
+	}
+
+	@Override
+	public boolean loopCoasts() {
+		return true;
+	}
+
 	/**
 	 * The blow-off valve: redstone opens the wastegate fully while there is boost to dump, and the charge goes with a thump,
 	 * a hiss and a flutter. Played when the valve opens, louder for more boost. The boost it was holding is remembered for a
@@ -208,31 +217,53 @@ public class TurbochargerBlockEntity extends SmartBlockEntity
 		float boost = status == null ? 0 : status.boost();
 		heldBoost = Math.max(boost, heldBoost - 0.01f);
 		boolean venting = status != null && status.wastegate() > 0.5f && dumping();
-		if (venting && !wasVenting && heldBoost >= 0.25f && CEClientConfig.boostVolume() > 0)
-			level.playLocalSound(worldPosition, CESounds.TURBO_BLOWOFF.get(), SoundSource.BLOCKS,
-				Math.min(1.2f, 0.4f + heldBoost) * CEClientConfig.boostVolume(), 0.95f + level.random.nextFloat() * 0.1f,
-				false);
+		if (venting && !wasVenting && heldBoost >= 0.25f) {
+			if (CEClientConfig.boostVolume() > 0)
+				level.playLocalSound(worldPosition, CESounds.TURBO_BLOWOFF.get(), SoundSource.BLOCKS,
+					Math.min(1.2f, 0.4f + heldBoost) * CEClientConfig.boostVolume(), 0.95f + level.random.nextFloat() * 0.1f,
+					false);
+			if (CEClientConfig.particles())
+				ventCharge(heldBoost);
+		}
 		wasVenting = venting;
 	}
 
-	/** A crack from the exhaust where anti-lag burns fuel, quieter and higher than a cylinder's bang. */
-	private void popBang() {
-		float volume = CEClientConfig.bangVolume();
-		if (volume > 0 && popRate.allow(level))
-			level.playLocalSound(worldPosition, CESounds.CYLINDER_FIRE.get(), SoundSource.BLOCKS, 0.4f * volume,
-				1.25f + level.random.nextFloat() * 0.3f, false);
+	/** The dumped charge, seen: a burst of cold white air off the compressor end, bigger for more boost. */
+	private void ventCharge(float boost) {
+		Vec3 out = Vec3.atLowerCornerOf(getBlockState().getValue(TurbochargerBlock.FACING)
+			.getNormal());
+		Vec3 at = Vec3.atCenterOf(worldPosition)
+			.add(out.scale(0.6));
+		var random = level.random;
+		GasParticleOptions air = new GasParticleOptions(0.92f, 0.94f, 0.97f, 0.5f, 0.55f, 0.1f, 12);
+		int puffs = 5 + Math.round(4 * Math.min(1.5f, boost));
+		for (int i = 0; i < puffs; i++)
+			level.addParticle(air, at.x, at.y, at.z, out.x * 0.1 + (random.nextDouble() - 0.5) * 0.3,
+				out.y * 0.1 + (random.nextDouble() - 0.5) * 0.3, out.z * 0.1 + (random.nextDouble() - 0.5) * 0.3);
 	}
 
-	/** Flame and smoke at the turbine end, where anti-lag burns fuel in the exhaust. */
-	private void popOut() {
-		Direction exhaust = getBlockState().getValue(TurbochargerBlock.FACING)
-			.getOpposite();
+	/**
+	 * Anti-lag burning fuel in the exhaust to keep the wheel spinning: flame and smoke flicker at the turbine end, and
+	 * every so often it goes off with a crack, higher than a cylinder's afterfire, and a burst of flame and sparks.
+	 */
+	private void antiLagPop() {
+		Vec3 out = Vec3.atLowerCornerOf(getBlockState().getValue(TurbochargerBlock.FACING)
+			.getOpposite()
+			.getNormal());
 		Vec3 at = Vec3.atCenterOf(worldPosition)
-			.add(Vec3.atLowerCornerOf(exhaust.getNormal())
-				.scale(0.6));
+			.add(out.scale(0.6));
+		if (popRate.allow(level)) {
+			EngineEffects.afterfire(level, at, out, 0.45f, 1.25f);
+			return;
+		}
+		if (!CEClientConfig.particles())
+			return;
 		var random = level.random;
-		level.addParticle(random.nextBoolean() ? ParticleTypes.FLAME : ParticleTypes.SMOKE, at.x, at.y, at.z,
-			(random.nextDouble() - 0.5) * 0.04, 0.03, (random.nextDouble() - 0.5) * 0.04);
+		if (random.nextBoolean())
+			EngineEffects.flames(level, at, out, 1, 0.1);
+		else
+			level.addParticle(new GasParticleOptions(0.25f, 0.25f, 0.25f, 0.6f, 0.5f, 0.6f, 24), at.x, at.y, at.z,
+				out.x * 0.04 + (random.nextDouble() - 0.5) * 0.04, 0.03, out.z * 0.04 + (random.nextDouble() - 0.5) * 0.04);
 	}
 
 	/** The wheel's angle, degrees, interpolated between ticks. */

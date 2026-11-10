@@ -12,6 +12,7 @@ import com.simibubi.create.content.processing.burner.BlazeBurnerBlock.HeatLevel;
 
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
@@ -34,6 +35,10 @@ public class HeatExchangerBlockEntity extends SensorBlockEntity {
 
 	private static final HeatLevel[] LEVELS = {HeatLevel.NONE, HeatLevel.SMOULDERING, HeatLevel.KINDLED, HeatLevel.SEETHING};
 
+	private static final int SOURCE_INTERVAL = 20;
+
+	private int sourceLevel;
+	private int sourceCheck;
 	private boolean onEngine;
 	/** Exhaust heat per second this exchanger is getting, after the server's recovery setting. */
 	private float heat;
@@ -51,6 +56,33 @@ public class HeatExchangerBlockEntity extends SensorBlockEntity {
 
 	public float heat() {
 		return heat;
+	}
+
+	/**
+	 * The heat level of the hottest source touching this exchanger, {@link HeatRecovery#NONE} to {@link HeatRecovery#SEETHE}:
+	 * a blaze burner beside it warms the engine's block before it is started. Other exchangers are ignored, since each
+	 * would only be reading the heat another had made from the engine. Looked at once a second.
+	 */
+	public int externalHeat() {
+		if (level == null)
+			return 0;
+		if (--sourceCheck > 0)
+			return sourceLevel;
+		sourceCheck = SOURCE_INTERVAL;
+		int best = HeatRecovery.NONE;
+		for (Direction side : Direction.values()) {
+			BlockState neighbour = level.getBlockState(worldPosition.relative(side));
+			if (neighbour.getBlock() instanceof HeatExchangerBlock)
+				continue;
+			best = Math.max(best, switch (BlazeBurnerBlock.getHeatLevelOf(neighbour)) {
+				case SEETHING -> HeatRecovery.SEETHE;
+				case KINDLED, FADING -> HeatRecovery.KINDLE;
+				case SMOULDERING -> HeatRecovery.SMOULDER;
+				default -> HeatRecovery.NONE;
+			});
+		}
+		sourceLevel = best;
+		return best;
 	}
 
 	/** One of {@link HeatRecovery#NONE} to {@link HeatRecovery#SEETHE}. */

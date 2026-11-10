@@ -119,6 +119,14 @@ public class RotorHousingBlock extends CrankshaftBlock implements AirflowPort {
 	}
 
 	@Override
+	public void neighborChanged(BlockState state, Level level, BlockPos pos, Block block, BlockPos fromPos,
+								boolean isMoving) {
+		super.neighborChanged(state, level, pos, block, fromPos, isMoving);
+		// The housing is its own cylinder and head, and water against it drowns it
+		EngineTopology.fluidMoved(level, pos, block, fromPos);
+	}
+
+	@Override
 	public void onRemove(BlockState state, Level level, BlockPos pos, BlockState newState, boolean isMoving) {
 		PartInstallation.dropParts(state, level, pos, newState, PARTS);
 		super.onRemove(state, level, pos, newState, isMoving);

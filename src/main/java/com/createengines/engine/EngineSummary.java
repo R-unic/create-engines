@@ -24,22 +24,31 @@ import net.minecraft.nbt.CompoundTag;
  * @param filtered         an oil filter is fitted in an oil pan
  * @param flex             share of the rating a long crankshaft loses to torsional flex, 0 to 0.8 (see Torsion)
  * @param longestLine      throws on the engine's longest crank line
+ * @param health           how the engine is running overall (see Diagnosis)
+ * @param cause            the one thing most responsible for it, or NONE
  */
 public record EngineSummary(EngineState state, float rpm, float availableTorque, float loadTorque,
 							float fuelPerMinute, float ripple, int firing, int cylinders, float inertia, float lubrication,
 							boolean starterEngaged, float[] firingAngles, int lines, float thinning, float roughness,
 							float condition, float temperature, float coolantRate, boolean pilot, boolean filtered,
-							float flex, int longestLine) {
+							float flex, int longestLine, Diagnosis.Health health, Diagnosis.Cause cause) {
 
 	public static final EngineSummary EMPTY =
 		new EngineSummary(EngineState.STALLED, 0, 0, 0, 0, 0, 0, 0, 0, 0, false, new float[0], 1, 0, 0, 1, 0, 0,
-			false, false, 0, 0);
+			false, false, 0, 0, Diagnosis.Health.HEALTHY, Diagnosis.Cause.NONE);
 
 	public EngineSummary(EngineState state, float rpm, float availableTorque, float loadTorque, float fuelPerMinute,
 						 float ripple, int firing, int cylinders, float inertia, float lubrication,
 						 boolean starterEngaged, float[] firingAngles) {
 		this(state, rpm, availableTorque, loadTorque, fuelPerMinute, ripple, firing, cylinders, inertia, lubrication,
-			starterEngaged, firingAngles, 1, 0, 0, 1, 0, 0, false, false, 0, 0);
+			starterEngaged, firingAngles, 1, 0, 0, 1, 0, 0, false, false, 0, 0, Diagnosis.Health.HEALTHY, Diagnosis.Cause.NONE);
+	}
+
+	/** Whether the block is still giving up its heat with the crank stopped. */
+	public boolean cooling() {
+		boolean turning = state == EngineState.RUNNING || state == EngineState.OVERLOADED || state == EngineState.CRANKING
+			|| state == EngineState.COASTING;
+		return com.createengines.engine.sim.Thermal.isCooling(temperature, turning);
 	}
 
 	public CompoundTag write() {
@@ -63,6 +72,8 @@ public record EngineSummary(EngineState state, float rpm, float availableTorque,
 		tag.putBoolean("Filtered", filtered);
 		tag.putFloat("Flex", flex);
 		tag.putInt("LongestLine", longestLine);
+		tag.putInt("Health", health.ordinal());
+		tag.putInt("Cause", cause.ordinal());
 		tag.putInt("Lines", lines);
 		tag.putBoolean("Starter", starterEngaged);
 		int[] angles = new int[firingAngles.length];
@@ -78,6 +89,8 @@ public record EngineSummary(EngineState state, float rpm, float availableTorque,
 		for (int i = 0; i < angles.length; i++)
 			firingAngles[i] = angles[i] / 10f;
 		EngineState[] states = EngineState.values();
+		Diagnosis.Health[] healths = Diagnosis.Health.values();
+		Diagnosis.Cause[] causes = Diagnosis.Cause.values();
 		return new EngineSummary(states[Math.clamp(tag.getInt("State"), 0, states.length - 1)], tag.getFloat("Rpm"),
 			tag.getFloat("Torque"), tag.getFloat("Load"), tag.getFloat("Fuel"), tag.getFloat("Ripple"),
 			tag.getInt("Firing"), tag.getInt("Cylinders"), tag.getFloat("Inertia"), tag.getFloat("Lubrication"),
@@ -85,7 +98,8 @@ public record EngineSummary(EngineState state, float rpm, float availableTorque,
 			firingAngles, Math.max(1, tag.getInt("Lines")), tag.getFloat("Thinning"), tag.getFloat("Roughness"),
 			tag.contains("Condition") ? tag.getFloat("Condition") : 1, tag.getFloat("Temperature"),
 			tag.getFloat("Coolant"), tag.getBoolean("Pilot"), tag.getBoolean("Filtered"), tag.getFloat("Flex"),
-			tag.getInt("LongestLine"));
+			tag.getInt("LongestLine"), healths[Math.clamp(tag.getInt("Health"), 0, healths.length - 1)],
+			causes[Math.clamp(tag.getInt("Cause"), 0, causes.length - 1)]);
 	}
 
 	/** Gaps between consecutive firings around the 720° cycle. */
@@ -110,7 +124,8 @@ public record EngineSummary(EngineState state, float rpm, float availableTorque,
 			|| Math.abs(lubrication - other.lubrication) >= 0.02 || Math.abs(roughness - other.roughness) >= 0.02
 			|| Math.abs(condition - other.condition) >= 0.02 || Math.abs(temperature - other.temperature) >= 0.03
 			|| Math.abs(coolantRate - other.coolantRate) >= 0.1 || pilot != other.pilot || filtered != other.filtered
-			|| Math.abs(flex - other.flex) >= 0.01 || longestLine != other.longestLine
+			|| Math.abs(flex - other.flex) >= 0.01 || longestLine != other.longestLine || health != other.health
+			|| cause != other.cause
 			|| !Arrays.equals(firingAngles, other.firingAngles);
 	}
 

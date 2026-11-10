@@ -64,6 +64,14 @@ class ServiceMilestonesTest {
 		assertEquals(Set.of(Milestone.DUAL_FUEL, Milestone.WASTE_OIL_BURNED, Milestone.WARMED_UP), reached);
 	}
 
+	@Test
+	void aWarmStartIsCreditedAtOnceAndAHardStartOnlyOnceTheBlockHasWarmedThrough() {
+		assertEquals(Set.of(Milestone.PREHEATED), EngineMilestones.reachedWarmup(true, true, false, 0.35f));
+		assertEquals(Set.of(), EngineMilestones.reachedWarmup(true, false, true, 0.35f), "still cold, so not yet");
+		assertEquals(Set.of(Milestone.HARD_START), EngineMilestones.reachedWarmup(true, false, true, EngineMilestones.WARM));
+		assertEquals(Set.of(), EngineMilestones.reachedWarmup(false, true, true, 0.7f), "an engine that has stopped earns nothing");
+	}
+
 	private static Set<Milestone> atCapacity(float capacity) {
 		return EngineMilestones.reached(new EngineMilestones.Snapshot(EngineState.RUNNING, EngineState.RUNNING, 100,
 			false, 8, capacity, false, 0.5f, false, 0, false));

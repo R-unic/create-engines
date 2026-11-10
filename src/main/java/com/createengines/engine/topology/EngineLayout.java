@@ -96,7 +96,8 @@ public record EngineLayout(BlockPos primary, Axis axis, List<Segment> segments, 
 
 	/**
 	 * @param openings  openings whose mouths are clear
-	 * @param heads     cylinder heads sharing this network (from any engine)
+	 * @param flooded   openings whose mouths are under a fluid, which count as shut
+	 * @param heads    cylinder heads sharing this network (from any engine)
 	 * @param outlets   positions of every opening, for exhaust effects
 	 * @param throttles throttle bodies in the line, whose openings are read live
 	 * @param sensors   MAF sensors and heat exchangers in the line, which are told what the cylinders on it are doing
@@ -106,7 +107,7 @@ public record EngineLayout(BlockPos primary, Axis axis, List<Segment> segments, 
 	 * @param parallel      turbochargers and superchargers the run can go round, which share its flow with the
 	 *                      other branches; any other is in series, and all of the flow goes through it
 	 */
-	public record PortNetwork(PortKind kind, int openings, int heads, List<BlockPos> outlets,
+	public record PortNetwork(PortKind kind, int openings, int flooded, int heads, List<BlockPos> outlets,
 							  List<BlockPos> throttles, List<BlockPos> sensors, List<BlockPos> turbos,
 							  List<BlockPos> superchargers, List<BlockPos> intercoolers, Set<BlockPos> parallel) {
 		/** Share of full breathing each head gets: an opening comfortably serves two cylinders. */

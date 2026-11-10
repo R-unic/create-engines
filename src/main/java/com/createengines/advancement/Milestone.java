@@ -106,12 +106,16 @@ public enum Milestone {
 	OIL_SPENT,
 	OIL_KEPT_FRESH,
 	WARMED_UP,
+	PREHEATED,
+	HARD_START,
 	COOLANT_USED,
 	COOL_RUNNING,
 	DUAL_FUEL,
 	WASTE_OIL_BURNED,
 	// A long crank, split up
-	STIFF_CRANK;
+	STIFF_CRANK,
+	// Water: nothing burns down there
+	FLOODED;
 
 	/** The name the advancement's criterion carries. */
 	public String id() {

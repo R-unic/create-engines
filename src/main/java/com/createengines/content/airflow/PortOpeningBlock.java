@@ -54,6 +54,16 @@ public class PortOpeningBlock extends DirectionalBlock implements AirflowPort {
 			.isFaceSturdy(level, front, mouth.getOpposite());
 	}
 
+	/**
+	 * Whether this opening's mouth is under a fluid. An intake there draws water, not air, and an exhaust cannot push its
+	 * gas out against it, so a flooded opening counts as shut. (An engine that itself sits in a fluid does not run at
+	 * all: see {@code CylinderFault.SUBMERGED}.)
+	 */
+	public static boolean isFlooded(BlockGetter level, BlockPos pos, BlockState state) {
+		return !level.getFluidState(pos.relative(state.getValue(FACING)))
+			.isEmpty();
+	}
+
 	@Override
 	protected MapCodec<? extends DirectionalBlock> codec() {
 		throw new UnsupportedOperationException();

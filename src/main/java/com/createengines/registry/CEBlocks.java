@@ -40,6 +40,7 @@ import com.tterrag.registrate.util.entry.BlockEntry;
 
 import net.minecraft.core.Direction;
 import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.state.BlockBehaviour;
 import net.minecraft.world.level.material.MapColor;
 import net.neoforged.neoforge.client.model.generators.ModelFile;
 
@@ -49,9 +50,19 @@ public final class CEBlocks {
 		REGISTRATE.setCreativeTab(CECreativeTabs.MAIN);
 	}
 
+	/**
+	 * What every block here starts from: no occlusion, since none is a full cube, and solid whatever its shape. A shaft, a
+	 * cam or a pipe is too slight a shape to count as solid by itself, and water that flows onto a block that is not
+	 * solid washes it away like a torch: an engine caught by a flood stops, it does not come apart.
+	 */
+	private static BlockBehaviour.Properties part(BlockBehaviour.Properties properties) {
+		return properties.noOcclusion()
+			.forceSolidOn();
+	}
+
 	public static final BlockEntry<CrankshaftBlock> CRANKSHAFT = REGISTRATE.block("crankshaft", CrankshaftBlock::new)
 		.initialProperties(SharedProperties::softMetal)
-		.properties(p -> p.noOcclusion()
+		.properties(p -> part(p)
 			.mapColor(MapColor.METAL))
 		.transform(TagGen.pickaxeOnly())
 		.blockstate((c, p) -> BlockStateGen.axisBlock(c, p, s -> AssetLookup.partialBaseModel(c, p)))
@@ -61,7 +72,7 @@ public final class CEBlocks {
 
 	public static final BlockEntry<CrankThrowBlock> CRANK_THROW = REGISTRATE.block("crank_throw", CrankThrowBlock::new)
 		.initialProperties(SharedProperties::softMetal)
-		.properties(p -> p.noOcclusion()
+		.properties(p -> part(p)
 			.mapColor(MapColor.METAL))
 		.transform(TagGen.pickaxeOnly())
 		.blockstate((c, p) -> BlockStateGen.axisBlock(c, p, s -> AssetLookup.partialBaseModel(c, p)))
@@ -76,7 +87,7 @@ public final class CEBlocks {
 	public static final BlockEntry<RotorHousingBlock> ROTOR_HOUSING =
 		REGISTRATE.block("rotor_housing", RotorHousingBlock::new)
 			.initialProperties(SharedProperties::softMetal)
-			.properties(p -> p.noOcclusion()
+			.properties(p -> part(p)
 				.mapColor(MapColor.COLOR_ORANGE))
 			.transform(TagGen.pickaxeOnly())
 			.blockstate((c, p) -> BlockStateGen.axisBlock(c, p, s -> {
@@ -93,7 +104,7 @@ public final class CEBlocks {
 
 	public static final BlockEntry<CylinderBlock> CYLINDER = REGISTRATE.block("cylinder", CylinderBlock::new)
 		.initialProperties(SharedProperties::softMetal)
-		.properties(p -> p.noOcclusion()
+		.properties(p -> part(p)
 			.mapColor(MapColor.METAL))
 		.transform(TagGen.pickaxeOnly())
 		.blockstate((c, p) -> BlockStateGen.directionalBlockIgnoresWaterlogged(c, p,
@@ -105,7 +116,7 @@ public final class CEBlocks {
 	public static final BlockEntry<CylinderHeadBlock> CYLINDER_HEAD =
 		REGISTRATE.block("cylinder_head", CylinderHeadBlock::new)
 			.initialProperties(SharedProperties::copperMetal)
-			.properties(p -> p.noOcclusion()
+			.properties(p -> part(p)
 				.mapColor(MapColor.COLOR_ORANGE))
 			.transform(TagGen.pickaxeOnly())
 			.blockstate((c, p) -> BlockStateGen.directionalBlockIgnoresWaterlogged(c, p, s -> {
@@ -124,7 +135,7 @@ public final class CEBlocks {
 	public static final BlockEntry<CylinderBlock> PRECISION_CYLINDER =
 		REGISTRATE.block("precision_cylinder", p -> new CylinderBlock(p, true))
 			.initialProperties(SharedProperties::softMetal)
-			.properties(p -> p.noOcclusion()
+			.properties(p -> part(p)
 				.mapColor(MapColor.GOLD))
 			.transform(TagGen.pickaxeOnly())
 			.blockstate((c, p) -> BlockStateGen.directionalBlockIgnoresWaterlogged(c, p,
@@ -137,7 +148,7 @@ public final class CEBlocks {
 	public static final BlockEntry<CylinderHeadBlock> PRECISION_CYLINDER_HEAD =
 		REGISTRATE.block("precision_cylinder_head", p -> new CylinderHeadBlock(p, true))
 			.initialProperties(SharedProperties::copperMetal)
-			.properties(p -> p.noOcclusion()
+			.properties(p -> part(p)
 				.mapColor(MapColor.GOLD))
 			.transform(TagGen.pickaxeOnly())
 			.blockstate((c, p) -> BlockStateGen.directionalBlockIgnoresWaterlogged(c, p, s -> {
@@ -154,7 +165,7 @@ public final class CEBlocks {
 
 	public static final BlockEntry<CamshaftBlock> CAMSHAFT = REGISTRATE.block("camshaft", CamshaftBlock::new)
 		.initialProperties(SharedProperties::softMetal)
-		.properties(p -> p.noOcclusion()
+		.properties(p -> part(p)
 			.mapColor(MapColor.METAL))
 		.transform(TagGen.pickaxeOnly())
 		.blockstate((c, p) -> BlockStateGen.axisBlock(c, p, s -> AssetLookup.partialBaseModel(c, p)))
@@ -164,7 +175,7 @@ public final class CEBlocks {
 
 	public static final BlockEntry<CamLobeBlock> CAM_LOBE = REGISTRATE.block("cam_lobe", CamLobeBlock::new)
 		.initialProperties(SharedProperties::softMetal)
-		.properties(p -> p.noOcclusion()
+		.properties(p -> part(p)
 			.mapColor(MapColor.METAL))
 		.transform(TagGen.pickaxeOnly())
 		.blockstate((c, p) -> BlockStateGen.axisBlock(c, p, s -> AssetLookup.partialBaseModel(c, p)))
@@ -175,7 +186,7 @@ public final class CEBlocks {
 	public static final BlockEntry<ManifoldBlock> INTAKE_MANIFOLD =
 		REGISTRATE.block("intake_manifold", p -> new ManifoldBlock(p, PortKind.INTAKE))
 			.initialProperties(SharedProperties::copperMetal)
-			.properties(p -> p.noOcclusion()
+			.properties(p -> part(p)
 				.mapColor(MapColor.COLOR_ORANGE))
 			.transform(TagGen.pickaxeOnly())
 			.blockstate(CEBlocks::pipeBlockstate)
@@ -186,7 +197,7 @@ public final class CEBlocks {
 	public static final BlockEntry<ThrottleBlock> THROTTLE =
 		REGISTRATE.block("throttle", ThrottleBlock::new)
 			.initialProperties(SharedProperties::copperMetal)
-			.properties(p -> p.noOcclusion()
+			.properties(p -> part(p)
 				.mapColor(MapColor.COLOR_ORANGE))
 			.transform(TagGen.pickaxeOnly())
 			.blockstate(CEBlocks::pipeBlockstate)
@@ -198,7 +209,7 @@ public final class CEBlocks {
 		REGISTRATE.block("maf_sensor", MafSensorBlock::new)
 			.lang("MAF Sensor")
 			.initialProperties(SharedProperties::copperMetal)
-			.properties(p -> p.noOcclusion()
+			.properties(p -> part(p)
 				.mapColor(MapColor.COLOR_ORANGE))
 			.transform(TagGen.pickaxeOnly())
 			.blockstate(CEBlocks::pipeBlockstate)
@@ -210,7 +221,7 @@ public final class CEBlocks {
 		REGISTRATE.block("heat_exchanger", HeatExchangerBlock::new)
 			.lang("Exhaust Heat Exchanger")
 			.initialProperties(SharedProperties::copperMetal)
-			.properties(p -> p.noOcclusion()
+			.properties(p -> part(p)
 				.mapColor(MapColor.COLOR_ORANGE)
 				.lightLevel(HeatExchangerBlock::light))
 			.transform(TagGen.pickaxeOnly())
@@ -222,7 +233,7 @@ public final class CEBlocks {
 	public static final BlockEntry<GovernorBlock> GOVERNOR =
 		REGISTRATE.block("governor", GovernorBlock::new)
 			.initialProperties(SharedProperties::softMetal)
-			.properties(p -> p.noOcclusion()
+			.properties(p -> part(p)
 				.mapColor(MapColor.GOLD))
 			.transform(TagGen.pickaxeOnly())
 			.blockstate((c, p) -> BlockStateGen.simpleBlock(c, p, s -> AssetLookup.partialBaseModel(c, p)))
@@ -233,7 +244,7 @@ public final class CEBlocks {
 	public static final BlockEntry<ManifoldBlock> EXHAUST_MANIFOLD =
 		REGISTRATE.block("exhaust_manifold", p -> new ManifoldBlock(p, PortKind.EXHAUST))
 			.initialProperties(SharedProperties::softMetal)
-			.properties(p -> p.noOcclusion()
+			.properties(p -> part(p)
 				.mapColor(MapColor.COLOR_GRAY))
 			.transform(TagGen.pickaxeOnly())
 			.blockstate(CEBlocks::pipeBlockstate)
@@ -244,7 +255,7 @@ public final class CEBlocks {
 	public static final BlockEntry<PortOpeningBlock> AIR_INTAKE =
 		REGISTRATE.block("air_intake", p -> new PortOpeningBlock(p, PortKind.INTAKE))
 			.initialProperties(SharedProperties::copperMetal)
-			.properties(p -> p.noOcclusion()
+			.properties(p -> part(p)
 				.mapColor(MapColor.COLOR_ORANGE))
 			.transform(TagGen.pickaxeOnly())
 			.blockstate((c, p) -> BlockStateGen.directionalBlockIgnoresWaterlogged(c, p,
@@ -256,7 +267,7 @@ public final class CEBlocks {
 	public static final BlockEntry<PortOpeningBlock> EXHAUST_OUTLET =
 		REGISTRATE.block("exhaust_outlet", p -> new PortOpeningBlock(p, PortKind.EXHAUST))
 			.initialProperties(SharedProperties::softMetal)
-			.properties(p -> p.noOcclusion()
+			.properties(p -> part(p)
 				.mapColor(MapColor.COLOR_GRAY))
 			.transform(TagGen.pickaxeOnly())
 			.blockstate((c, p) -> BlockStateGen.directionalBlockIgnoresWaterlogged(c, p,
@@ -267,7 +278,7 @@ public final class CEBlocks {
 
 	public static final BlockEntry<StarterBlock> STARTER = REGISTRATE.block("starter", StarterBlock::new)
 		.initialProperties(SharedProperties::softMetal)
-		.properties(p -> p.noOcclusion()
+		.properties(p -> part(p)
 			.mapColor(MapColor.METAL))
 		.transform(TagGen.pickaxeOnly())
 		.blockstate((c, p) -> BlockStateGen.directionalBlockIgnoresWaterlogged(c, p,
@@ -278,7 +289,7 @@ public final class CEBlocks {
 
 	public static final BlockEntry<BatteryBlock> BATTERY = REGISTRATE.block("battery", BatteryBlock::new)
 		.initialProperties(SharedProperties::softMetal)
-		.properties(p -> p.noOcclusion()
+		.properties(p -> part(p)
 			.mapColor(MapColor.METAL))
 		.transform(TagGen.pickaxeOnly())
 		.blockstate((c, p) -> BlockStateGen.simpleBlock(c, p, s -> AssetLookup.partialBaseModel(c, p)))
@@ -288,7 +299,7 @@ public final class CEBlocks {
 
 	public static final BlockEntry<AlternatorBlock> ALTERNATOR = REGISTRATE.block("alternator", AlternatorBlock::new)
 		.initialProperties(SharedProperties::softMetal)
-		.properties(p -> p.noOcclusion()
+		.properties(p -> part(p)
 			.mapColor(MapColor.METAL))
 		.transform(TagGen.pickaxeOnly())
 		.blockstate((c, p) -> BlockStateGen.axisBlock(c, p, s -> AssetLookup.partialBaseModel(c, p)))
@@ -300,7 +311,7 @@ public final class CEBlocks {
 	public static final BlockEntry<CastFlywheelBlock> CAST_FLYWHEEL =
 		REGISTRATE.block("cast_flywheel", CastFlywheelBlock::new)
 			.initialProperties(SharedProperties::softMetal)
-			.properties(p -> p.noOcclusion()
+			.properties(p -> part(p)
 				.mapColor(MapColor.METAL))
 			.transform(TagGen.pickaxeOnly())
 			.blockstate((c, p) -> BlockStateGen.axisBlock(c, p, s -> AssetLookup.partialBaseModel(c, p)))
@@ -311,7 +322,7 @@ public final class CEBlocks {
 	/** Set against an engine, it shows the engine's torque and power curves. */
 	public static final BlockEntry<DynoBlock> DYNO = REGISTRATE.block("dyno", DynoBlock::new)
 		.initialProperties(SharedProperties::softMetal)
-		.properties(p -> p.noOcclusion()
+		.properties(p -> part(p)
 			.mapColor(MapColor.METAL))
 		.transform(TagGen.pickaxeOnly())
 		.blockstate((c, p) -> BlockStateGen.simpleBlock(c, p, s -> AssetLookup.partialBaseModel(c, p)))
@@ -322,7 +333,7 @@ public final class CEBlocks {
 	/** Set against an engine, it keeps the last ten minutes of its speed, load and warmth and every time it changed state. */
 	public static final BlockEntry<BlackBoxBlock> BLACK_BOX = REGISTRATE.block("black_box", BlackBoxBlock::new)
 		.initialProperties(SharedProperties::softMetal)
-		.properties(p -> p.noOcclusion()
+		.properties(p -> part(p)
 			.mapColor(MapColor.COLOR_ORANGE))
 		.transform(TagGen.pickaxeOnly())
 		.blockstate((c, p) -> BlockStateGen.simpleBlock(c, p, s -> AssetLookup.partialBaseModel(c, p)))
@@ -332,7 +343,7 @@ public final class CEBlocks {
 
 	public static final BlockEntry<SumpBlock> SUMP = REGISTRATE.block("sump", SumpBlock::new)
 		.initialProperties(SharedProperties::softMetal)
-		.properties(p -> p.noOcclusion()
+		.properties(p -> part(p)
 			.mapColor(MapColor.METAL))
 		.transform(TagGen.pickaxeOnly())
 		.blockstate((c, p) -> BlockStateGen.simpleBlock(c, p, s -> AssetLookup.partialBaseModel(c, p)))
@@ -343,7 +354,7 @@ public final class CEBlocks {
 	public static final BlockEntry<TurbochargerBlock> TURBOCHARGER =
 		REGISTRATE.block("turbocharger", TurbochargerBlock::new)
 			.initialProperties(SharedProperties::copperMetal)
-			.properties(p -> p.noOcclusion()
+			.properties(p -> part(p)
 				.mapColor(MapColor.COLOR_ORANGE))
 			.transform(TagGen.pickaxeOnly())
 			.blockstate((c, p) -> BlockStateGen.directionalBlockIgnoresWaterlogged(c, p,
@@ -356,7 +367,7 @@ public final class CEBlocks {
 	public static final BlockEntry<VariableTurbochargerBlock> VARIABLE_TURBOCHARGER =
 		REGISTRATE.block("variable_turbocharger", VariableTurbochargerBlock::new)
 			.initialProperties(SharedProperties::copperMetal)
-			.properties(p -> p.noOcclusion()
+			.properties(p -> part(p)
 				.mapColor(MapColor.GOLD))
 			.transform(TagGen.pickaxeOnly())
 			.blockstate((c, p) -> BlockStateGen.directionalBlockIgnoresWaterlogged(c, p,
@@ -368,7 +379,7 @@ public final class CEBlocks {
 	public static final BlockEntry<SuperchargerBlock> SUPERCHARGER =
 		REGISTRATE.block("supercharger", SuperchargerBlock::new)
 			.initialProperties(SharedProperties::softMetal)
-			.properties(p -> p.noOcclusion()
+			.properties(p -> part(p)
 				.mapColor(MapColor.METAL))
 			.transform(TagGen.pickaxeOnly())
 			.blockstate((c, p) -> BlockStateGen.axisBlock(c, p, s -> AssetLookup.partialBaseModel(c, p)))
@@ -379,7 +390,7 @@ public final class CEBlocks {
 	public static final BlockEntry<IntercoolerBlock> INTERCOOLER =
 		REGISTRATE.block("intercooler", IntercoolerBlock::new)
 			.initialProperties(SharedProperties::copperMetal)
-			.properties(p -> p.noOcclusion()
+			.properties(p -> part(p)
 				.mapColor(MapColor.COLOR_ORANGE))
 			.transform(TagGen.pickaxeOnly())
 			.blockstate((c, p) -> BlockStateGen.axisBlock(c, p, s -> AssetLookup.partialBaseModel(c, p)))
@@ -390,7 +401,7 @@ public final class CEBlocks {
 	public static final BlockEntry<TransmissionBlock> TRANSMISSION =
 		REGISTRATE.block("transmission", TransmissionBlock::new)
 			.initialProperties(SharedProperties::softMetal)
-			.properties(p -> p.noOcclusion()
+			.properties(p -> part(p)
 				.mapColor(MapColor.METAL))
 			.transform(TagGen.pickaxeOnly())
 			.blockstate((c, p) -> BlockStateGen.axisBlock(c, p, s -> AssetLookup.partialBaseModel(c, p)))

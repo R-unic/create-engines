@@ -122,6 +122,8 @@ public final class CylinderModel {
 	public double intakePressure = 1;
 	/** Temperature of that air: compressing it heats it, which costs some of the density the pressure bought. */
 	public double intakeTemperature = 1;
+	/** How cold the block around the cylinder is, 0 (warm) to 1 (stone cold): cold walls quench some of the flame. */
+	public double coldness = 0;
 	/** Pressure the exhaust valve blows down into, ambient (1) unless a turbine is in the way. */
 	public double exhaustPressure = 1;
 	public FuelSupply fuelSupply = FuelSupply.NONE;
@@ -321,6 +323,7 @@ public final class CylinderModel {
 		copy.exhaustFactor = exhaustFactor;
 		copy.intakePressure = intakePressure;
 		copy.intakeTemperature = intakeTemperature;
+		copy.coldness = coldness;
 		copy.exhaustPressure = exhaustPressure;
 		return copy;
 	}
@@ -630,7 +633,8 @@ public final class CylinderModel {
 			return;
 		fuelPending -= burned;
 		fresh = Math.max(0, (fresh * moles - burned * burningFuel.airPerMb()) / moles);
-		double heat = burned * burningFuel.energyPerMb() * Mixture.efficiency(burnEquivalence);
+		double heat = burned * burningFuel.energyPerMb() * Mixture.efficiency(burnEquivalence)
+			* Thermal.burnFactor(coldness, burningFuel.coldSensitivity());
 		temperature += heat * (GAMMA - 1) / (moles + FUEL_HEAT_CAPACITY * fuelPending);
 		current.fuelBurned += burned;
 		if (fuelPending <= FUEL_EPSILON)

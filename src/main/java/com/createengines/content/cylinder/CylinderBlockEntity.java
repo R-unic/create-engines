@@ -10,12 +10,14 @@ import com.createengines.config.CEClientConfig;
 import com.createengines.content.EffectRate;
 import com.createengines.content.EngineNoteSound;
 import com.createengines.content.EnginePoses;
-import com.createengines.content.airflow.PortOpeningBlock;
 import com.createengines.content.camshaft.CamshaftBlockEntity;
 import com.createengines.content.crankshaft.CrankshaftBlock;
 import com.createengines.content.crankshaft.CrankshaftBlockEntity;
+import com.createengines.content.effects.EngineEffects;
+import com.createengines.content.effects.ExhaustLook;
 import com.createengines.content.head.GalleryMember;
 import com.createengines.engine.CylinderStatus;
+import com.createengines.engine.Diagnosis;
 import com.createengines.engine.sim.CamProfile;
 import com.createengines.engine.sim.CycleResult;
 import com.createengines.engine.sim.CylinderModel;
@@ -35,7 +37,6 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.core.particles.DustParticleOptions;
-import net.minecraft.core.particles.ParticleOptions;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
@@ -49,6 +50,8 @@ public class CylinderBlockEntity extends SmartBlockEntity implements IHaveGoggle
 
 	/** Where the cam says the charge fires: the top of the compression stroke. */
 	private static final double FIRING_CYCLE_ANGLE = 360;
+	/** Where in the cycle air is seen going in at the intake: the piston a little way down its intake stroke. */
+	private static final double DRAUGHT_CYCLE_ANGLE = 30;
 	/** The piston's crown above its wrist pin, in blocks (the 6/16 top of the piston model). */
 	private static final float PISTON_CROWN = 6 / 16f;
 	/** The head's face, in blocks from the cylinder's centre along the bore. */
@@ -64,6 +67,7 @@ public class CylinderBlockEntity extends SmartBlockEntity implements IHaveGoggle
 	private double lastCamCycle = Double.NaN;
 	private final EffectRate bangs = new EffectRate(EffectRate.BANG_INTERVAL);
 	private final EffectRate puffs = new EffectRate(EffectRate.SMOKE_INTERVAL);
+	private final EffectRate draughts = new EffectRate(EffectRate.SMOKE_INTERVAL);
 
 	public CylinderBlockEntity(BlockEntityType<?> type, BlockPos pos, BlockState state) {
 		super(type, pos, state);
@@ -111,10 +115,16 @@ public class CylinderBlockEntity extends SmartBlockEntity implements IHaveGoggle
 
 	/**
 	 * Everything you see and hear from a running cylinder, driven by the visible cam rather than by packets so it stays
-	 * in step with the moving parts: the bang at firing TDC, the gas in the bore, and smoke when the exhaust opens.
+	 * in step with the moving parts: the bang at firing TDC, the gas in the bore, the draught at the intake as the piston
+	 * starts down, and what the exhaust throws out when its valve opens. The heat off the head needs no cam.
 	 */
 	private void tickClient() {
 		CylinderStatus current = status;
+		if (current != null && ((level.getGameTime() + worldPosition.asLong()) & 3) == 0) {
+			CrankshaftBlockEntity crank = crankThrow();
+			EngineEffects.heat(level, worldPosition.relative(getBlockState().getValue(CylinderBlock.FACING)),
+				crank == null ? null : crank.engineSummary());
+		}
 		if (current == null || current.lobe() == null
 			|| !(level.getBlockEntity(current.lobe()) instanceof CamshaftBlockEntity lobe)) {
 			lastCamCycle = Double.NaN;
@@ -133,13 +143,23 @@ public class CylinderBlockEntity extends SmartBlockEntity implements IHaveGoggle
 		if (travelled > 360)
 			travelled = 720;
 
+		if (CylinderFault.underwater(current.faults()) && (level.getGameTime() & 3) == 0) {
+			EngineEffects.flooded(level, current);
+			BlockPos head = worldPosition.relative(getBlockState().getValue(CylinderBlock.FACING));
+			EngineEffects.submerged(level, level.random.nextBoolean() ? worldPosition : head);
+		}
 		boolean fired = current.result() == CycleResult.FIRED;
 		if (fired && crosses(previous, travelled, FIRING_CYCLE_ANGLE))
 			ignite();
 		tickChamber(current, cycle, renderTime);
+		if (!current.intakeInlets()
+			.isEmpty() && crosses(previous, travelled, DRAUGHT_CYCLE_ANGLE) && draughts.allow(level)) {
+			CrankshaftBlockEntity crank = crankThrow();
+			EngineEffects.draught(level, current, crank == null ? null : crank.engineSummary());
+		}
 		if (!current.exhaustOutlets()
-			.isEmpty() && crosses(previous, travelled, CamProfile.BASIC.exhaustOpen()))
-			tickExhaust(current);
+			.isEmpty() && crosses(previous, travelled, CamProfile.BASIC.exhaustOpen()) && puffs.allow(level))
+			EngineEffects.exhaust(level, current, crankThrow());
 	}
 
 	/** The bang, and a flash of flame and sparks at the roof of the chamber. */
@@ -205,7 +225,7 @@ public class CylinderBlockEntity extends SmartBlockEntity implements IHaveGoggle
 		int faults = current.faults();
 
 		if (cycle < 180) {
-			if (CylinderFault.NO_INTAKE.in(faults) || CylinderFault.INTAKE_BLOCKED.in(faults))
+			if (CylinderFault.intakeShut(faults))
 				return;
 			for (int i = 0; i < 2; i++)
 				dust(chamberPoint(bore, ROOF - random.nextDouble() * 0.12), along.scale(-0.045), 0.78f, 0.9f, 1f, 0.45f);
@@ -225,24 +245,18 @@ public class CylinderBlockEntity extends SmartBlockEntity implements IHaveGoggle
 			} else if (fired)
 				dust(chamberPoint(bore, crown + random.nextDouble() * (ROOF - crown)), jitter(random, 0.01), 0.85f,
 					0.35f, 0.1f, 0.4f);
-			else if (unlit(result))
+			else if (ExhaustLook.unlit(result))
 				dust(chamberPoint(bore, crown + random.nextDouble() * (ROOF - crown)), jitter(random, 0.01), 0.6f, 0.6f,
 					0.6f, 0.4f);
 		} else {
-			if (CylinderFault.NO_EXHAUST.in(faults) || CylinderFault.EXHAUST_BLOCKED.in(faults))
+			if (CylinderFault.exhaustShut(faults))
 				return;
 			float shade = current.rich() ? 0.08f : fired ? 0.3f : 0.6f;
-			if (fired || unlit(result))
+			if (fired || ExhaustLook.unlit(result))
 				for (int i = 0; i < 2; i++)
 					dust(chamberPoint(bore, crown + random.nextDouble() * 0.15), along.scale(0.04), shade, shade, shade,
 						0.5f);
 		}
-	}
-
-	/** Fuel went in and nothing lit it: it leaves the cylinder as it came. */
-	private static boolean unlit(CycleResult result) {
-		return result == CycleResult.NO_IGNITION || result == CycleResult.NO_SPARK
-			|| result == CycleResult.TOO_LEAN || result == CycleResult.TOO_RICH || result == CycleResult.FOULED;
 	}
 
 	/** A random spot inside the bore {@code distance} from the block's centre along it, towards the head if positive. */
@@ -267,37 +281,6 @@ public class CylinderBlockEntity extends SmartBlockEntity implements IHaveGoggle
 	private void dust(Vec3 at, Vec3 velocity, float red, float green, float blue, float size) {
 		level.addParticle(new DustParticleOptions(new Vector3f(red, green, blue), size), at.x, at.y, at.z, velocity.x,
 			velocity.y, velocity.z);
-	}
-
-	/** Smoke from the exhaust when the exhaust valve opens after a firing. */
-	private void tickExhaust(CylinderStatus current) {
-		if (!CEClientConfig.particles() || !puffs.allow(level))
-			return;
-		ParticleOptions particle;
-		int count;
-		if (current.result() == CycleResult.FIRED) {
-			particle = current.rich() ? ParticleTypes.LARGE_SMOKE : ParticleTypes.SMOKE;
-			count = current.rich() ? 3 : 2;
-		} else if (unlit(current.result())) {
-			particle = ParticleTypes.POOF;
-			count = 1;
-		} else
-			return;
-
-		for (BlockPos outlet : current.exhaustOutlets()) {
-			BlockState state = level.getBlockState(outlet);
-			if (!(state.getBlock() instanceof PortOpeningBlock))
-				continue;
-			Direction mouth = state.getValue(PortOpeningBlock.FACING);
-			Vec3 normal = Vec3.atLowerCornerOf(mouth.getNormal());
-			Vec3 at = Vec3.atCenterOf(outlet)
-				.add(normal.scale(0.55));
-			for (int i = 0; i < count; i++) {
-				Vec3 velocity = normal.scale(0.06)
-					.add((level.random.nextFloat() - 0.5) * 0.02, 0.02, (level.random.nextFloat() - 0.5) * 0.02);
-				level.addParticle(particle, at.x, at.y, at.z, velocity.x, velocity.y, velocity.z);
-			}
-		}
 	}
 
 	/** Whether a cam-cycle angle advancing from {@code from} by {@code travelled} passes {@code mark}. */
@@ -342,6 +325,12 @@ public class CylinderBlockEntity extends SmartBlockEntity implements IHaveGoggle
 			GoggleLines.add(CELang.translate("goggles.cycle." + result.name()
 					.toLowerCase(java.util.Locale.ROOT))
 				.style(colour), tooltip, 1);
+			// Why it did not fire, in words a player can act on (what a fault is stopping is listed with the faults below)
+			Diagnosis.Cause cause = Diagnosis.ofCylinder(0, result);
+			if (cause != Diagnosis.Cause.NONE)
+				GoggleLines.add(CELang.translate("goggles.cylinder.cause", CELang.translate(cause.langKey())
+						.string())
+					.style(ChatFormatting.GRAY), tooltip, 2);
 			if (current.rich())
 				GoggleLines.add(CELang.translate("goggles.cycle.rich")
 					.style(ChatFormatting.GOLD), tooltip, 1);

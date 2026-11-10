@@ -9,7 +9,7 @@ import com.createengines.content.EffectRate;
 import com.createengines.content.EngineNoteSound;
 import com.createengines.content.GoggleLines;
 import com.createengines.content.crankshaft.CrankshaftBlockEntity;
-import com.createengines.content.airflow.PortOpeningBlock;
+import com.createengines.content.effects.EngineEffects;
 import com.createengines.content.head.CylinderHeadBlockEntity;
 import com.createengines.content.head.GalleryMember;
 import com.createengines.engine.CylinderStatus;
@@ -33,9 +33,7 @@ import com.simibubi.create.foundation.fluid.SmartFluidTank;
 import net.createmod.catnip.animation.AnimationTickHolder;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
-import net.minecraft.core.Direction;
 import net.minecraft.core.HolderLookup;
-import net.minecraft.core.particles.ParticleOptions;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
@@ -43,7 +41,6 @@ import net.minecraft.sounds.SoundSource;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraft.world.phys.Vec3;
 import net.neoforged.neoforge.fluids.capability.IFluidHandler;
 
 /**
@@ -59,6 +56,8 @@ public class RotorHousingBlockEntity extends CrankshaftBlockEntity implements Ga
 
 	/** Where the cycle puts the charge's firing: the top of the compression stroke. */
 	private static final double FIRING_CYCLE_ANGLE = 360;
+	/** Where in a chamber's cycle air is seen going in at the intake: a little way into its intake stroke. */
+	private static final double DRAUGHT_CYCLE_ANGLE = 30;
 	/** Mixtures within these equivalence ratios read as balanced. */
 	private static final float LEAN_MIXTURE = (float) Mixture.LEAN_BAND;
 	private static final float RICH_MIXTURE = (float) Mixture.RICH_BAND;
@@ -72,6 +71,7 @@ public class RotorHousingBlockEntity extends CrankshaftBlockEntity implements Ga
 	private final double[] lastCycle = {Double.NaN, Double.NaN, Double.NaN};
 	private final EffectRate[] bangs = rates(EffectRate.BANG_INTERVAL);
 	private final EffectRate[] puffs = rates(EffectRate.SMOKE_INTERVAL);
+	private final EffectRate[] draughts = rates(EffectRate.SMOKE_INTERVAL);
 
 	private static EffectRate[] rates(int interval) {
 		EffectRate[] rates = new EffectRate[RotorHousingBlock.CHAMBERS];
@@ -209,10 +209,13 @@ public class RotorHousingBlockEntity extends CrankshaftBlockEntity implements Ga
 	}
 
 	/**
-	 * The bang and the smoke, driven by the drawn shaft so they stay in step with the turning rotor: each chamber's
-	 * cycle angle is two-thirds of the shaft's, a third of the way round from the last.
+	 * The bang, the draught at the intake and what the exhaust throws out, driven by the drawn shaft so they stay in step
+	 * with the turning rotor: each chamber's cycle angle is two-thirds of the shaft's, a third of the way round from the
+	 * last. The heat off the housing needs no turning.
 	 */
 	private void tickClient() {
+		if (((level.getGameTime() + worldPosition.asLong()) & 3) == 0)
+			EngineEffects.heat(level, worldPosition, engineSummary());
 		if (getTheoreticalSpeed() == 0) {
 			java.util.Arrays.fill(lastCycle, Double.NaN);
 			return;
@@ -233,11 +236,18 @@ public class RotorHousingBlockEntity extends CrankshaftBlockEntity implements Ga
 			// the others, and the effects' own rate limits are what thin them out
 			if (travelled > 360)
 				travelled = 720;
+			if (chamber == 0 && CylinderFault.underwater(current.faults()) && (level.getGameTime() & 3) == 0) {
+				EngineEffects.flooded(level, current);
+				EngineEffects.submerged(level, worldPosition);
+			}
 			if (current.result() == CycleResult.FIRED && crosses(previous, travelled, FIRING_CYCLE_ANGLE))
 				ignite(chamber);
+			if (!current.intakeInlets()
+				.isEmpty() && crosses(previous, travelled, DRAUGHT_CYCLE_ANGLE) && draughts[chamber].allow(level))
+				EngineEffects.draught(level, current, engineSummary());
 			if (!current.exhaustOutlets()
-				.isEmpty() && crosses(previous, travelled, CamProfile.ROTARY.exhaustOpen()))
-				tickExhaust(chamber, current);
+				.isEmpty() && crosses(previous, travelled, CamProfile.ROTARY.exhaustOpen()) && puffs[chamber].allow(level))
+				EngineEffects.exhaust(level, current, this);
 		}
 	}
 
@@ -267,43 +277,6 @@ public class RotorHousingBlockEntity extends CrankshaftBlockEntity implements Ga
 				worldPosition.getX() + 0.3 + random.nextDouble() * 0.4, worldPosition.getY() + 0.3 + random.nextDouble() * 0.4,
 				worldPosition.getZ() + 0.3 + random.nextDouble() * 0.4, (random.nextDouble() - 0.5) * 0.04,
 				(random.nextDouble() - 0.5) * 0.04, (random.nextDouble() - 0.5) * 0.04);
-	}
-
-	/** Smoke from the exhaust when the exhaust port opens after a firing. */
-	private void tickExhaust(int chamber, CylinderStatus current) {
-		if (!CEClientConfig.particles() || !puffs[chamber].allow(level))
-			return;
-		ParticleOptions particle;
-		int count;
-		if (current.result() == CycleResult.FIRED) {
-			particle = current.rich() ? ParticleTypes.LARGE_SMOKE : ParticleTypes.SMOKE;
-			count = current.rich() ? 3 : 2;
-		} else if (unlit(current.result())) {
-			particle = ParticleTypes.POOF;
-			count = 1;
-		} else
-			return;
-
-		for (BlockPos outlet : current.exhaustOutlets()) {
-			BlockState state = level.getBlockState(outlet);
-			if (!(state.getBlock() instanceof PortOpeningBlock))
-				continue;
-			Direction mouth = state.getValue(PortOpeningBlock.FACING);
-			Vec3 normal = Vec3.atLowerCornerOf(mouth.getNormal());
-			Vec3 at = Vec3.atCenterOf(outlet)
-				.add(normal.scale(0.55));
-			for (int i = 0; i < count; i++) {
-				Vec3 velocity = normal.scale(0.06)
-					.add((level.random.nextFloat() - 0.5) * 0.02, 0.02, (level.random.nextFloat() - 0.5) * 0.02);
-				level.addParticle(particle, at.x, at.y, at.z, velocity.x, velocity.y, velocity.z);
-			}
-		}
-	}
-
-	/** Fuel went in and nothing lit it: it leaves the chamber as it came. */
-	private static boolean unlit(CycleResult result) {
-		return result == CycleResult.NO_IGNITION || result == CycleResult.NO_SPARK || result == CycleResult.TOO_LEAN
-			|| result == CycleResult.TOO_RICH || result == CycleResult.FOULED;
 	}
 
 	// Goggles

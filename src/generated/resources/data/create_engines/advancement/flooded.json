@@ -1,0 +1,29 @@
+{
+  "parent": "create_engines:starter",
+  "criteria": {
+    "flooded": {
+      "conditions": {
+        "event": "flooded"
+      },
+      "trigger": "create_engines:event"
+    }
+  },
+  "display": {
+    "description": {
+      "translate": "advancement.create_engines.flooded.desc"
+    },
+    "icon": {
+      "count": 1,
+      "id": "create_engines:air_intake"
+    },
+    "title": {
+      "translate": "advancement.create_engines.flooded"
+    }
+  },
+  "requirements": [
+    [
+      "flooded"
+    ]
+  ],
+  "sends_telemetry_event": true
+}

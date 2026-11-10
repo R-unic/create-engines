@@ -4,6 +4,8 @@ import java.util.List;
 
 import org.jetbrains.annotations.Nullable;
 
+import com.createengines.config.CEClientConfig;
+import com.createengines.content.effects.EngineEffects;
 import com.createengines.engine.topology.EngineMember;
 import com.createengines.content.GoggleLines;
 import com.createengines.registry.CELang;
@@ -17,6 +19,7 @@ import net.minecraft.nbt.NbtUtils;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.phys.Vec3;
 
 /**
  * Consumes rotation from its input shaft and, while powered, cranks the engine it touches at that speed. The stress
@@ -83,8 +86,22 @@ public class StarterBlockEntity extends KineticBlockEntity implements EngineMemb
 	@Override
 	public void tick() {
 		super.tick();
-		if (turning && level != null && level.isClientSide)
+		if (turning && level != null && level.isClientSide) {
 			StarterWhirSound.ensurePlaying(this);
+			if (CEClientConfig.particles() && level.random.nextInt(4) == 0)
+				pinionSparks();
+		}
+	}
+
+	/** The pinion grinding on the crank's ring gear as it turns the engine over: a spark or two where they meet. */
+	private void pinionSparks() {
+		Vec3 towards = Vec3.atLowerCornerOf(getBlockState().getValue(StarterBlock.FACING)
+			.getNormal());
+		Vec3 at = Vec3.atCenterOf(worldPosition)
+			.add(towards.scale(0.5))
+			.add((level.random.nextDouble() - 0.5) * 0.5, (level.random.nextDouble() - 0.5) * 0.5,
+				(level.random.nextDouble() - 0.5) * 0.5);
+		EngineEffects.sparks(level, at, towards.scale(-0.05), 1, 0.08);
 	}
 
 	@Override

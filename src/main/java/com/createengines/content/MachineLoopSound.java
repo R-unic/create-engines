@@ -3,8 +3,6 @@ package com.createengines.content;
 import java.util.IdentityHashMap;
 import java.util.Map;
 
-import com.createengines.config.CEClientConfig;
-
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.resources.sounds.AbstractTickableSoundInstance;
 import net.minecraft.client.resources.sounds.SoundInstance;
@@ -17,7 +15,7 @@ import net.minecraft.util.Mth;
 /**
  * A seamless loop that follows a machine: one instance per source, faded in when the machine starts working, bent in
  * pitch and volume as its {@link LoopSource} says, and faded out and stopped when it winds down. Used for the whistle of
- * a spooling turbo and the whine of a supercharger. Client only; callers reach it from a client-side check, so a
+ * a spooling turbo, the whine of a supercharger, and an engine's valve gear and dry bearings. Client only; callers reach it from a client-side check, so a
  * dedicated server never loads this class.
  */
 public final class MachineLoopSound extends AbstractTickableSoundInstance {
@@ -27,12 +25,6 @@ public final class MachineLoopSound extends AbstractTickableSoundInstance {
 	private static final float FADE_OUT = 0.08f;
 	/** Below this the loop is wanted silent. */
 	private static final float AUDIBLE = 0.02f;
-	/**
-	 * Share of the way to what the source asks for that the level and pitch move each tick. A machine's figures reach the
-	 * client in steps, a few times a second, and the sound would follow them in jumps: this carries it between them.
-	 */
-	private static final float FOLLOW = 0.06f;
-
 	private final Object owner;
 	private final LoopSource source;
 	private final float loudest;
@@ -62,7 +54,7 @@ public final class MachineLoopSound extends AbstractTickableSoundInstance {
 	 * volume at zero, no free channel) never ticks to finish itself, so a dead one is replaced.
 	 */
 	public static void ensurePlaying(Object owner, BlockPos at, SoundEvent sound, float loudest, LoopSource source) {
-		if (CEClientConfig.boostVolume() <= 0)
+		if (source.loopVolume() <= 0)
 			return;
 		SoundManager sounds = Minecraft.getInstance()
 			.getSoundManager();
@@ -87,15 +79,18 @@ public final class MachineLoopSound extends AbstractTickableSoundInstance {
 			return;
 		}
 		float wanted = Mth.clamp(source.loopLevel(), 0, 1);
-		boolean working = wanted > AUDIBLE;
+		// A spinning part keeps turning after it is let go: it is working while it is asked to, and, for a source that
+		// coasts, until its own spin has run down
+		boolean working = wanted > AUDIBLE || source.loopCoasts() && level > AUDIBLE;
 		fade = Mth.clamp(fade + (working ? FADE_IN : -FADE_OUT), 0, 1);
 		if (fade <= 0 && !working) {
 			finish();
 			return;
 		}
-		level += (wanted - level) * FOLLOW;
-		currentPitch += (source.loopPitch() - currentPitch) * FOLLOW;
-		volume = loudest * CEClientConfig.boostVolume() * level * fade;
+		level += (wanted - level) * (wanted > level ? source.loopSpinUp() : source.loopSpinDown());
+		float wantedPitch = source.loopPitch();
+		currentPitch += (wantedPitch - currentPitch) * (wantedPitch > currentPitch ? source.loopSpinUp() : source.loopSpinDown());
+		volume = loudest * source.loopVolume() * level * fade;
 		pitch = Mth.clamp(currentPitch, 0.5f, 2f);
 	}
 

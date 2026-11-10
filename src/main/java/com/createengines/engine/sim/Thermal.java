@@ -56,6 +56,20 @@ public final class Thermal {
 	 */
 	static final double FRICTION_SHARE = 0.35;
 
+	/** Share of a fuel's heat release a stone-cold block quenches, for a fuel with a {@link FuelSpec#coldSensitivity()} of 1. */
+	public static final double MAX_COLD_BURN_LOSS = 0.12;
+	/** Below this a stopped block has given up its heat: nothing ticks, shimmers or glows any more. */
+	public static final double COOLING_FROM = 0.12;
+	/** Temperature at which exhaust parts begin to glow dull red, and the span over which the glow comes up to full. */
+	public static final double GLOW_FROM = 0.5;
+	public static final double GLOW_SPAN = 0.35;
+	/** Extra heat a cold block makes at idle, as a share of what it was making: a choke, in effect. */
+	public static final double WARMUP_ASSIST = 0.8;
+	/** Heat per cylinder per second at which the warm-up assist has faded out: about a cylinder's share at full load. */
+	static final double FULL_LOAD_HEAT = 2.5;
+	/** Heat per cylinder per second a heat source touching the engine puts in, by heat level (none, smouldering, kindled, seething). */
+	private static final double[] PREHEAT = {0, 0.4, 0.9, 1.6};
+
 	/** The heat per second that goes into the block, from what leaves the exhaust and the power lost to friction. */
 	public static double heatIn(double exhaustHeat, double frictionPower) {
 		return exhaustHeat * (1 - FRICTION_SHARE) + frictionPower * FRICTION_SHARE;
@@ -65,6 +79,43 @@ public final class Thermal {
 	/** Coolant spent per second over the last tick, for goggles. */
 	private double coolantRate;
 	private double coolantQuality;
+	/** Heat per cylinder per second an outside heat source is putting in (see {@link #setPreheat}). */
+	private double preheat;
+
+	/** How much of a fuel's burn a block this cold costs: 1 when warm. */
+	public static double burnFactor(double cold, double sensitivity) {
+		return Math.max(0.5, 1 - MAX_COLD_BURN_LOSS * cold * sensitivity);
+	}
+
+	/** Whether a block at {@code temperature} that is not turning is still giving up heat, which goggles call cooling. */
+	public static boolean isCooling(double temperature, boolean turning) {
+		return !turning && temperature >= COOLING_FROM;
+	}
+
+	/** How red-hot exhaust parts look at {@code temperature}, 0 (dark metal) to 1. */
+	public static double glow(double temperature) {
+		return Math.clamp((temperature - GLOW_FROM) / GLOW_SPAN, 0, 1);
+	}
+
+	/**
+	 * Chance per tick of a cooling block ticking as the metal contracts: it is quick while the block is hot, and sparser the
+	 * closer to cold it gets. Zero once it has cooled.
+	 */
+	public static double tickChance(double temperature) {
+		if (temperature < COOLING_FROM)
+			return 0;
+		return 0.004 + 0.045 * Math.clamp((temperature - COOLING_FROM) / (NORMAL - COOLING_FROM), 0, 1);
+	}
+
+	/** Heat level of a heat source touching the engine, {@link HeatRecovery#NONE} to {@link HeatRecovery#SEETHE}. */
+	public void setPreheat(int level) {
+		preheat = PREHEAT[Math.clamp(level, 0, PREHEAT.length - 1)];
+	}
+
+	/** Heat per cylinder per second an outside source is putting in now. */
+	public double preheat() {
+		return preheat;
+	}
 
 	public Thermal(double temperature) {
 		this.temperature = Math.max(0, temperature);
@@ -96,7 +147,8 @@ public final class Thermal {
 	 */
 	public void update(double exhaustHeat, int cylinders, double dt, CoolantSupply coolant) {
 		int n = Math.max(1, cylinders);
-		double in = exhaustHeat * HEAT_SHARE;
+		double light = Math.clamp(1 - exhaustHeat / (n * FULL_LOAD_HEAT), 0, 1);
+		double in = exhaustHeat * HEAT_SHARE * (1 + WARMUP_ASSIST * cold() * light) + preheat * n;
 		double out = PASSIVE * n * temperature * temperature;
 		coolantRate = 0;
 		coolantQuality = 0;

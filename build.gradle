@@ -51,6 +51,7 @@ neoForge {
             systemProperty 'create_engines.visualSmokeTest.scenes', project.hasProperty('smokeScenes') ? 'true' : 'false'
             systemProperty 'create_engines.visualSmokeTest.rotary', project.hasProperty('smokeRotary') ? 'true' : 'false'
             systemProperty 'create_engines.visualSmokeTest.newParts', project.hasProperty('smokeNewParts') ? 'true' : 'false'
+            systemProperty 'create_engines.visualSmokeTest.effects', project.hasProperty('smokeEffects') ? 'true' : 'false'
         }
 
         server {

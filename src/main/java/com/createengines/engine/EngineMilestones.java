@@ -168,6 +168,22 @@ public final class EngineMilestones {
 						  float temperature, float cool, boolean coolant, boolean pilotLit, boolean usedOilFuel) {
 	}
 
+	/**
+	 * Starting a cold block. {@code warmStart}: the engine caught with a heat source against its exchanger having already
+	 * taken the cold off the block. {@code hardStart}: it caught stone cold on a fuel that is slow to burn in a cold block
+	 * (ethanol or pressed oil); credited once it has warmed through, and so not stalled on the way.
+	 */
+	public static Set<Milestone> reachedWarmup(boolean running, boolean warmStart, boolean hardStart, float temperature) {
+		Set<Milestone> reached = EnumSet.noneOf(Milestone.class);
+		if (!running)
+			return reached;
+		if (warmStart)
+			reached.add(Milestone.PREHEATED);
+		if (hardStart && temperature >= WARM)
+			reached.add(Milestone.HARD_START);
+		return reached;
+	}
+
 	public static Set<Milestone> reachedService(Service s) {
 		Set<Milestone> reached = EnumSet.noneOf(Milestone.class);
 		if (!s.running())
@@ -203,6 +219,19 @@ public final class EngineMilestones {
 		Set<Milestone> reached = EnumSet.noneOf(Milestone.class);
 		if (running && firing >= 12 && flex < 0.005f)
 			reached.add(Milestone.STIFF_CRANK);
+		return reached;
+	}
+
+	/**
+	 * An engine and water: cranking one that can never light because it sits in it, or opens its intake or exhaust in it.
+	 *
+	 * @param cranking   a starter is turning the engine and it has not caught
+	 * @param underwater a cylinder is submerged, or its intake or exhaust has every opening underwater
+	 */
+	public static Set<Milestone> reachedWater(boolean cranking, boolean underwater) {
+		Set<Milestone> reached = EnumSet.noneOf(Milestone.class);
+		if (cranking && underwater)
+			reached.add(Milestone.FLOODED);
 		return reached;
 	}
 

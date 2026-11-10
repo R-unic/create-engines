@@ -56,6 +56,12 @@ Minecraft 1.21.1 · NeoForge 21.1.219 · Create 6.0.10
 - **Engine temperature**: a cold engine drags until it warms through, and a cooled one breathes better (about 4 to 9
   percent more power). Coolant, or just water, goes into the same sump and is spent carrying heat away, so there is no
   radiator to fit. Nothing ever overheats or wears out
+- **Warm-up and cooling**: a cold block burns fuel a little worse (ethanol and pressed oil most, gasoline least) and
+  warms quickest at idle. A Blaze Burner against the heat exchanger preheats it. A stopped engine ticks, shimmers and
+  its turbine wheel glows red as it cools, and goggles call it Cooling down
+- **Plain-language diagnosis**: goggles name an engine Healthy, Running rough or Failing with the one cause to fix
+  first, say why a cylinder misfired, and the Dynamometer shows how a new run compares with the last. Two Ponder
+  pages cover why an engine will not start and why it runs badly
 - **Dual-fuel pilot injection**: pipe diesel into the sump's pilot tank and a compression engine with no spark plug
   lights gasoline or ethanol with a small pilot shot
 - A forgiving early game: spark plug soot clears itself, goggles suggest fuel settings, and the Timing Tool can tune
@@ -71,6 +77,12 @@ Minecraft 1.21.1 · NeoForge 21.1.219 · Create 6.0.10
 - A 13-gear transmission with an Auto mode that shifts to suit the engine, and a **Dynamometer** that draws an engine's torque and power curves
 - A **Black Box** flight recorder that keeps ten minutes of an engine's speed, load and warmth and says why it stalled
 - An exhaust note made up from the engine's speed and firing order, so a V-twin lopes, a six hums and a dead cylinder limps
+- Exhaust that tells the truth: a thin haze when the mixture is right, black when it is rich, white vapour until the
+  block warms, a blue cast when fuel has thinned the oil, and a crack of flame when unburned fuel meets a hot pipe.
+  Engines cough as they catch and knock as they die, tick as they cool, squeal and spark when they run dry, draw the
+  air in at their intakes and steam in the rain
+- Nothing burns underwater: water against a cylinder, a head or a rotor housing stops the engine wherever its pipes
+  lead, and so does an intake or exhaust that opens in it. A flood stops an engine; it does not wash it away
 
 **Learn it**
 - Engineer's Goggles diagnostics on every part, Ponder scenes for every part, and advancements that reward actually
@@ -89,7 +101,7 @@ The server config (`serverconfig/create_engines-server.toml` in the world) carri
 and `[features]` switches (`forcedInduction`, `sparkFouling`, `oilDilution`, `oilAgeing`, `engineTemperature`,
 `pilotInjection`, `rotaryEngines`, `heatRecovery`), so a
 modpack can rebalance without code. Turning a feature off never removes blocks; they stop doing that job. The client
-config (`engineParticles`, `bangVolume`, `boostVolume`, `effectDensity`) thins out engine sound and particles on a big engine.
+config (`engineParticles`, `bangVolume`, `engineNoteVolume`, `mechanicalVolume`, `boostVolume`, `effectDensity`) thins out engine sound and particles on a big engine.
 Fuel properties are a datapack data map (`data_maps/fluid/fuel.json`), so other mods' fluids can be made into fuels.
 
 ## Recommended: raise Create's RPM limit

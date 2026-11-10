@@ -3,9 +3,13 @@ package com.createengines;
 import java.util.List;
 
 import com.createengines.client.VisualSmokeTest;
+import com.createengines.client.particle.ExhaustFlameParticle;
+import com.createengines.client.particle.GasParticle;
+import com.createengines.client.particle.SparkParticle;
 import com.createengines.config.CEClientConfig;
 import com.createengines.ponder.CEPonderPlugin;
 import com.createengines.registry.CEFluids;
+import com.createengines.registry.CEParticles;
 import com.createengines.registry.CEPartialModels;
 import com.tterrag.registrate.util.entry.FluidEntry;
 
@@ -16,6 +20,7 @@ import net.neoforged.fml.ModContainer;
 import net.neoforged.fml.common.Mod;
 import net.neoforged.fml.config.ModConfig;
 import net.neoforged.neoforge.client.event.RegisterColorHandlersEvent;
+import net.neoforged.neoforge.client.event.RegisterParticleProvidersEvent;
 import net.neoforged.neoforge.client.model.DynamicFluidContainerModel;
 
 @Mod(value = CreateEngines.MOD_ID, dist = Dist.CLIENT)
@@ -25,8 +30,15 @@ public class CreateEnginesClient {
 		modContainer.registerConfig(ModConfig.Type.CLIENT, CEClientConfig.SPEC);
 		CEPartialModels.init();
 		modEventBus.addListener(CreateEnginesClient::registerBucketColours);
+		modEventBus.addListener(CreateEnginesClient::registerParticles);
 		PonderIndex.addPlugin(new CEPonderPlugin());
 		VisualSmokeTest.register();
+	}
+
+	private static void registerParticles(RegisterParticleProvidersEvent event) {
+		event.registerSpriteSet(CEParticles.GAS.get(), GasParticle.Provider::new);
+		event.registerSpriteSet(CEParticles.EXHAUST_FLAME.get(), ExhaustFlameParticle.Provider::new);
+		event.registerSpriteSet(CEParticles.SPARK.get(), SparkParticle.Provider::new);
 	}
 
 	/**

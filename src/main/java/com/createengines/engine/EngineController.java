@@ -49,6 +49,7 @@ import com.createengines.engine.sim.IgnitionSource;
 import com.createengines.engine.sim.Mixture;
 import com.createengines.engine.sim.Roughness;
 import com.createengines.engine.sim.Sensors;
+import com.createengines.engine.sim.Thermal;
 import com.createengines.engine.sim.Throttle;
 import com.createengines.engine.sim.Torsion;
 import com.createengines.engine.sim.Intercooler;
@@ -166,6 +167,10 @@ public final class EngineController {
 	private boolean commanded;
 	/** The fuel gallery shared by every head, for telling which fuel the engine burns. */
 	private final GalleryFuelSupply fuels;
+	/** The engine was running the last time its milestones were looked at, and how it caught: warm, or cold on a slow fuel. */
+	private boolean wasRunning;
+	private boolean warmStart;
+	private boolean hardStart;
 
 	public EngineController(CrankshaftBlockEntity primary, EngineLayout layout, @Nullable Motion motion) {
 		this.primary = primary;
@@ -229,8 +234,10 @@ public final class EngineController {
 			model.fuelSupply = CylinderFault.NO_INJECTOR.in(cylinder.faults()) ? FuelSupply.NONE : fuelGallery;
 			model.ignition = cylinder.sparkPlug() ? plugs : IgnitionSource.NONE;
 			model.pilotSupply = pilots;
-			model.intakeFactor = flow(cylinder.intake());
-			model.exhaustFactor = flow(cylinder.exhaust());
+			// Underwater, nothing gets in or out, wherever the pipes lead
+			boolean submerged = CylinderFault.SUBMERGED.in(cylinder.faults());
+			model.intakeFactor = submerged ? 0 : flow(cylinder.intake());
+			model.exhaustFactor = submerged ? 0 : flow(cylinder.exhaust());
 			if (!Double.isNaN(cylinder.lobeLeaderTdc()))
 				model.shareLobe(cylinder.lobeLeaderTdc());
 			models.add(model);
@@ -512,11 +519,11 @@ public final class EngineController {
 		}
 		for (int i = 0; i < models.size(); i++) {
 			CylinderModel model = models.get(i);
-			int port = layout.cylinders()
-				.get(i)
-				.intake();
+			Cylinder placed = layout.cylinders()
+				.get(i);
+			int port = placed.intake();
 			if (model != null && port >= 0) {
-				model.intakeFactor = flow(port) * portOpening[port];
+				model.intakeFactor = CylinderFault.SUBMERGED.in(placed.faults()) ? 0 : flow(port) * portOpening[port];
 				model.fuelTrim = Throttle.fuelTrim(portOpening[port]);
 			}
 		}
@@ -712,6 +719,7 @@ public final class EngineController {
 		mafEnriching = false;
 		mafReading = false;
 		exchangerLevel = 0;
+		int preheat = 0;
 		boolean running = !sim.isStopped();
 		for (int port = 0; port < layout.ports()
 			.size(); port++) {
@@ -761,11 +769,14 @@ public final class EngineController {
 				if (be instanceof MafSensorBlockEntity maf && intake)
 					maf.reading(meanCharge, meanCut, meanAdded);
 				else if (be instanceof HeatExchangerBlockEntity exchanger && !intake) {
+					preheat = Math.max(preheat, exchanger.externalHeat());
 					exchanger.reading(heatShare);
 					exchangerLevel = Math.max(exchangerLevel, exchanger.heatLevel());
 				}
 			}
 		}
+		sim.thermal()
+			.setPreheat(preheat);
 	}
 
 	/**
@@ -985,20 +996,45 @@ public final class EngineController {
 		float[] angles = new float[firingAngles.size()];
 		for (int i = 0; i < angles.length; i++)
 			angles[i] = firingAngles.get(i);
+		float roughness = (float) (sim.isStopped() ? 0 : Dynamometer.roughnessLoss(torqueCurve, rippleCurve, sim.rpm()));
+		Diagnosis.Report report = diagnose(state, firing, roughness);
 		return new EngineSummary(state, (float) sim.rpm(), primary.publishedCapacity(),
 			(float) (smoothedLoad * torqueScale), (float) (sim.fuelRate() * 60), (float) sim.ripple(), firing,
 			working, (float) sim.inertia(), (float) sim.lubrication()
 				.effective(),
 			activeStarter != null, angles, layout.lines(), (float) sim.lubrication()
 				.dilution(),
-			(float) (sim.isStopped() ? 0 : Dynamometer.roughnessLoss(torqueCurve, rippleCurve, sim.rpm())),
+			roughness,
 			(float) sim.lubrication()
 				.condition(),
 			(float) sim.thermal()
 				.temperature(),
 			(float) sim.thermal()
 				.coolantRate(),
-			pilotLit(), filtered, (float) Torsion.scaled(flexLoss), longestLine);
+			pilotLit(), filtered, (float) Torsion.scaled(flexLoss), longestLine, report.health(), report.cause());
+	}
+
+	/**
+	 * Rates the engine for goggles: one health and the one thing most responsible. A cylinder left out of the simulation
+	 * for a missing part counts as one that is not firing, so the engine still shows it is short of a cylinder.
+	 */
+	private Diagnosis.Report diagnose(EngineState state, int firing, float roughness) {
+		Map<Diagnosis.Cause, Integer> causes = new java.util.EnumMap<>(Diagnosis.Cause.class);
+		for (int i = 0; i < models.size(); i++) {
+			CylinderModel model = models.get(i);
+			int faults = layout.cylinders()
+				.get(i)
+				.faults();
+			Diagnosis.Cause cause = model == null ? (faults == 0 ? Diagnosis.Cause.NONE : Diagnosis.Cause.BUILD)
+				: Diagnosis.ofCylinder(faults, model.lastCycle().result);
+			if (cause != Diagnosis.Cause.NONE)
+				causes.merge(cause, 1, Integer::sum);
+		}
+		boolean running = state == EngineState.RUNNING || state == EngineState.OVERLOADED || state == EngineState.CRANKING
+			|| state == EngineState.COASTING;
+		return Diagnosis.assess(running, models.size(), firing, causes, roughness, sim.lubrication()
+			.effective(), sim.thermal()
+				.cold());
 	}
 
 	/** Whether a pilot shot, and not compression or a spark, lit the charge in a cylinder on its last cycle. */
@@ -1038,15 +1074,14 @@ public final class EngineController {
 				timing = (float) model.timingError(sim.direction());
 			FuelSpec fuel = model == null ? null : model.fuelSupply.fuel();
 			float charge = last == null || last.fuelInjected <= 0 ? Float.NaN : (float) last.compressionTemp;
-			List<BlockPos> outlets = cylinder.exhaust() < 0 ? List.of() : layout.ports()
-				.get(cylinder.exhaust())
-				.outlets();
+			List<BlockPos> outlets = openings(cylinder.exhaust());
 			be.updateStatus(new CylinderStatus(layout.primary(), cylinder.faults(),
 				last == null ? com.createengines.engine.sim.CycleResult.NONE : last.result, last != null && last.rich(),
 				(float) cylinder.tdcAngle(), timing, charge, fuel == null ? Float.NaN : (float) fuel.autoignitionTemp(),
 				cylinder.lobe(), outlets, last != null && last.lean(),
 				last == null || last.equivalence <= 0 ? Float.NaN : (float) last.equivalence, cylinder.sparkPlug(),
-				model == null ? 0 : (float) model.fouling(), model == null ? 0 : (float) model.lobeShift()));
+				model == null ? 0 : (float) model.fouling(), model == null ? 0 : (float) model.lobeShift(),
+				openings(cylinder.intake())));
 		}
 
 		for (BlockPos pos : layout.batteries())
@@ -1088,15 +1123,20 @@ public final class EngineController {
 	private CylinderStatus status(Cylinder cylinder, @Nullable CylinderModel model) {
 		CycleStats last = model == null ? null : model.lastCycle();
 		FuelSpec fuel = model == null ? null : model.fuelSupply.fuel();
-		List<BlockPos> outlets = cylinder.exhaust() < 0 ? List.of() : layout.ports()
-			.get(cylinder.exhaust())
-			.outlets();
+		List<BlockPos> outlets = openings(cylinder.exhaust());
 		return new CylinderStatus(layout.primary(), cylinder.faults(),
 			last == null ? CycleResult.NONE : last.result, last != null && last.rich(), (float) cylinder.tdcAngle(),
 			Float.NaN, last == null || last.fuelInjected <= 0 ? Float.NaN : (float) last.compressionTemp,
 			fuel == null ? Float.NaN : (float) fuel.autoignitionTemp(), null, outlets, last != null && last.lean(),
 			last == null || last.equivalence <= 0 ? Float.NaN : (float) last.equivalence, cylinder.sparkPlug(),
-			model == null ? 0 : (float) model.fouling(), 0);
+			model == null ? 0 : (float) model.fouling(), 0, openings(cylinder.intake()));
+	}
+
+	/** Every opening of a port network, clear or not, for the effects at its mouths. */
+	private List<BlockPos> openings(int port) {
+		return port < 0 ? List.of() : layout.ports()
+			.get(port)
+			.outlets();
 	}
 
 	private void syncSuperchargers(Level level) {
@@ -1121,7 +1161,8 @@ public final class EngineController {
 						.isEmpty(),
 					!turbo.turbine()
 						.isEmpty(),
-					(float) turbo.vanes(), turbo.antiLagging()));
+					(float) turbo.vanes(), turbo.antiLagging(), (float) sim.thermal()
+						.temperature()));
 		}
 	}
 
@@ -1188,6 +1229,7 @@ public final class EngineController {
 		reportRotary(level, state);
 		reportRefining(level, state);
 		reportService(level, state);
+		reportWater(level, state);
 		award(level, EngineMilestones.reachedFlex(state == EngineState.RUNNING, firing, (float) Torsion.scaled(flexLoss)));
 		reportMechanics(level, state);
 		reportParts(level, state, firing);
@@ -1301,6 +1343,21 @@ public final class EngineController {
 	/** Credits the operator with oil that is kept fresh, an engine that has warmed up or is cooled, and a pilot shot at work. */
 	private void reportService(Level level, EngineState state) {
 		Fluid fuel = fuels.fluid();
+		boolean running = state == EngineState.RUNNING;
+		float temperature = (float) sim.thermal()
+			.temperature();
+		if (running && !wasRunning) {
+			// How the engine caught decides the warm-up steps, whatever happens to its temperature afterwards
+			warmStart = sim.thermal()
+				.preheat() > 0 && temperature >= Thermal.COLD_BELOW;
+			boolean slowFuel = fuel != null && (fuel.isSame(CEFluids.ETHANOL.get()) || fuel.isSame(CEFluids.PLANT_OIL.get()));
+			hardStart = slowFuel && temperature < Thermal.COLD_BELOW;
+		} else if (!running) {
+			warmStart = false;
+			hardStart = false;
+		}
+		wasRunning = running;
+		award(level, EngineMilestones.reachedWarmup(running, warmStart, hardStart, temperature));
 		award(level, EngineMilestones.reachedService(new EngineMilestones.Service(state == EngineState.RUNNING,
 			(float) sim.rpm(), exchanging, filtered, (float) sim.lubrication()
 				.condition(),
@@ -1311,6 +1368,14 @@ public final class EngineController {
 			sim.thermal()
 				.coolantRate() > 0,
 			pilotLit(), fuel != null && fuel.isSame(CEFluids.USED_OIL.get()))));
+	}
+
+	/** Credits the operator with trying to start an engine that sits underwater or opens there. */
+	private void reportWater(Level level, EngineState state) {
+		boolean underwater = false;
+		for (Cylinder placed : layout.cylinders())
+			underwater |= CylinderFault.underwater(placed.faults());
+		award(level, EngineMilestones.reachedWater(state == EngineState.CRANKING && activeStarter != null, underwater));
 	}
 
 	/** Credits the operator with a running rotary engine, a high-revving one, and one with several rotors. */
