@@ -11,8 +11,8 @@ Minecraft 1.21.1 · NeoForge 21.1.219 · Create 6.0.10
 > [!NOTE]
 > **Built with AI.** Nearly all of the code, models, textures, sounds, Ponder scenes and docs were written by an AI
 > (Claude) at my direction. I have played, tested and reworked almost all of it over many passes, and it ships with
-> unit tests and in-world GameTests. It is still a young mod, so you may find rough edges or odd balance. Please report
-> them on the issue tracker. From 1.0, block, item and fluid IDs, config keys and ranges, advancement IDs and the fuel
+> unit tests and in-world GameTests. It is still a young mod, but you shouldn't have to expect things to break. If something
+> does, please report it on the issue tracker. From 1.0, block, item and fluid IDs, config keys and ranges, advancement IDs and the fuel
 > data-map format stay stable within 1.x, and a release that changes how an existing engine behaves says so in its
 > changelog.
 
@@ -77,12 +77,12 @@ Minecraft 1.21.1 · NeoForge 21.1.219 · Create 6.0.10
   how they take a cold start (other mods' fuels too)
 
 **Make it powerful**
-- Turbochargers (stacked, twin, variable-geometry, with anti-lag), superchargers and intercoolers, with the sound to
-  match: a turbo whistle that climbs with the wheel, a blow-off flutter when redstone dumps the boost, anti-lag
+- Turbochargers (stacked, twin, variable-geometry, with anti-lag), superchargers (plain and variable-drive) and intercoolers, with the sound to
+  match: a turbo whistle that climbs with the wheel, a blow-off flutter when redstone dumps the boost or the throttle lifts, anti-lag
   crackle, and a supercharger whine that rises with its shaft
 - Precision cylinders, heads, pistons and injectors
 - Flywheels that matter: a rough engine is rated for less, and rotating mass smooths it out
-- A **Dynamometer** that draws an engine's torque and power curves
+- A 13-gear transmission with an Auto mode that shifts to suit the engine, and a **Dynamometer** that draws an engine's torque and power curves
 - A **Black Box** flight recorder that keeps ten minutes of an engine's speed, load and warmth and says why it stalled
 - An exhaust note made up from the engine's speed and firing order, so a V-twin lopes, a six hums and a dead cylinder limps
 - A **Muffler** that quiets the note, the bangs and the pops without costing the engine any power, and **Engine Casing**
@@ -137,4 +137,4 @@ Design notes and how the simulation works are in [docs/DESIGN.md](docs/DESIGN.md
 
 ## License
 
-All Rights Reserved.
+[MIT](LICENSE). Use it, change it, ship it in modpacks, no permission needed.

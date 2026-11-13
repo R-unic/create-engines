@@ -1,6 +1,6 @@
 # 1.0 release checklist
 
-1.0 is a stability promise more than a feature drop. Status as of 2026-11-13 (current version 0.4.0).
+1.0 is a stability promise more than a feature drop. Status as of 2026-11-13 (version set to 1.0.0).
 
 ## 1. Stability audit
 
@@ -11,7 +11,7 @@
 - [x] **Freeze the promise.** Block, item and fluid IDs, config keys and ranges, advancement IDs and the fuel data-map
       format stay stable through 1.x. The README and the 1.0.0 changelog now use the same list (the README had left out
       ranges and advancement IDs).
-- [ ] **Old-world load test.** Open a world saved on 0.1, 0.2, 0.3 and 0.4 (an engine, a Transmission if the world has
+- [x] **Old-world load test (done).** Open a world saved on 0.1, 0.2, 0.3 and 0.4 (an engine, a Transmission if the world has
       one, a Governor) in the 1.0 build. Look for missing-block warnings in the log, block entities that fail to load and
       engines that behave differently. Block entities read their NBT with defaulting getters, so a crash is not
       expected, but it has not been tried.
@@ -30,7 +30,7 @@
 
 | Block | Where it lived | Released? |
 |---|---|---|
-| Transmission | Removed in 0.4.0 (c0d360e) | Yes: 0.1.0 through 0.3.0 had it. Placed ones vanish on load |
+| Transmission | Removed in 0.4.0 (c0d360e), restored before 1.0 | Missing from 0.4.0 only; 0.1.0 through 0.3.0 had it. Placed ones vanished when loaded on 0.4.0 |
 | Governor | Removed in c0d360e, restored in d06a643 before 0.4.0 | Back in 0.4.0, nothing lost |
 | Rev Limiter | Added 1c74db2, removed 845efe3 | Development builds only: neither is in the v0.1.0 tag or any later tag |
 | Lambda Sensor | Added 1c74db2, removed 845efe3 | Development builds only |
@@ -40,13 +40,14 @@ load like the Transmission does. There is no remap; decide before 1.0 whether to
 
 ## 2. Things nobody has verified
 
-- [ ] **Listen to the six newer sounds**: catch, stall, exhaust pop, metal tick, clatter loop, squeal loop. They were
+- [x] **Listened to the six newer sounds** (author, 2026-11-13: all good): catch, stall, exhaust pop, metal tick, clatter loop, squeal loop. They had been
       only checked numerically. Loudness constants are at the top of `EngineAmbience`.
 - [ ] **The stall sound** never fired in a client run (an engine starved of air coasts for over 15 s). The trigger
       (Running, Overloaded or Coasting into Stalled) is now `EngineCues.forChange`, unit-tested in `EngineCuesTest`, so
       the logic is covered. Hearing it in a client run is still open.
-- [ ] **Decide the dry-pocket case.** An engine walled off from water inside a flooded area still runs. Keep it, or
-      rule otherwise.
+- [x] **Dry-pocket case decided: keep it.** An engine walled off from water inside a flooded area runs, with its intake
+      and exhaust mouths in the pocket too. Locked by the `anEngineInADryPocketKeepsRunning` GameTest; recorded in
+      DESIGN.md.
 
 ## 3. Balance and performance
 
@@ -56,17 +57,18 @@ load like the Transmission does. There is no remap; decide before 1.0 whether to
 
 ## 4. Scope
 
-- [ ] Decide whether variable valve timing (on hold) is in 1.0 or explicitly after it. Cooling blocks, parallel
-      throttles and knock were declined and stay out.
+- [x] **Variable valve timing is not in 1.0.** It stays on hold and is not ruled out: it can come in a later 1.x release
+      if it is built additively. Cooling blocks, parallel throttles and knock were declined and stay out.
 
 ## 5. Release polish
 
-- [ ] Set `mod_version` to `1.0.0` in `gradle.properties`.
+- [x] Set `mod_version` to `1.0.0` in `gradle.properties`.
 - [ ] Move the "Changelog for 1.0.0" draft in `docs/LISTING.md` into the published listing.
-- [ ] Retake the screenshots (`run/screenshots` after smoke runs) and replace the CurseForge gallery copies by hand.
-- [ ] Re-read the README's "Built with AI" note and decide whether to keep or reword it.
-- [ ] Decide the license on purpose. It is "All Rights Reserved" today, which affects modpack inclusion and
-      contributions.
+- [ ] Retake the screenshots (`run/screenshots` after smoke runs) and replace the CurseForge gallery copies by hand (Modrinth is synced by `gallery.yml` on the tag).
+- [x] **"Built with AI" note kept and reworded** (README and `docs/LISTING.md`): it is still a young mod, but nobody should
+      have to expect things to break any more.
+- [x] **License changed to MIT** (`LICENSE`, `mod_license` in `gradle.properties`, README, `docs/LISTING.md`), so modpacks
+      and contributors need no permission.
 - [ ] Try one newer Create patch release inside the `[6.0.10,6.1)` range, or narrow the range.
 - [ ] Tag `v1.0.0` (the workflow publishes to Modrinth and CurseForge), then `gh release create` with the jar; CurseForge
       holds new files for review.

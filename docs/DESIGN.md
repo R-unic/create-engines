@@ -69,6 +69,15 @@ before relying on it.
 - **Cranking is a speed floor, not a fixed speed.** Anything turning the crank (a starter, or another kinetic source on
   the crank's network) holds it at *at least* that speed; the engine may outrun it. This is what lets the engine pull
   away from a starter, and what made a released single cylinder behave correctly.
+- **Starters share the crank, and a heavy one is stronger and warms a cold engine.** Every powered starter turning the
+  crank the same way as the fastest one (and at least half its speed; a slower one would just be overrun by its clutch)
+  pushes on it. The cranking effort is divided by the pushers' total *strength*, and each feels that as stress on its
+  own input: a plain starter counts 1, the **Heavy Starter** (brass casing, one plain starter plus a large cogwheel in its
+  recipe) counts 2.5, as if geared down, so one runs a big engine off a weak source. While a heavy starter cranks it also
+  chokes a cold engine (`Thermal.setCrankAssist`): cold friction drag and the cold burn loss are not felt, held for 8 s
+  after it lets go and fading over the next 3 s, so an engine can catch and settle. The "Cold Start" advancement is
+  awarded when an engine below `Thermal.COLD_BELOW` catches with that assist on. Both live in `EngineController`'s
+  starter block; the heavy starter shares the starter's block entity, renderer and visual.
 - **A cylinder that can't burn fuel makes no power.** A new cylinder holds stale gas, not fresh air, so one with no
   intake can't fire on the air it was built with; and the exhaust port only gives back hot gas if the cylinder has
   burned fuel recently, so pumping air can't be turned into heat. A starter holding the crank above its own speed
@@ -225,6 +234,42 @@ circles or per-pixel noise, and do not posterise to a few colours.
 - **Ponder pages.** `heat_exchanger` (the exchanger, a basin and mixer on top, the three heat levels) and `fuels` (the
   whole refining chain at a pressed, a heated and a superheated basin). `fuels` is also attached to the plant oil, diesel,
   gasoline, sugar mash, ethanol and glycerin buckets, so every block and item in the mod now has a page.
+
+### Ethanol's place: the fuel boost cannot light early (2026-11-13)
+
+A dyno sweep of a 12-precision engine found gasoline and ethanol exactly parallel at every boost (ethanol 89 percent of
+gasoline's power from unboosted to full stack), because charge temperature never cost gasoline anything: ethanol's 3.4
+autoignition point was a claim with no mechanic behind it. Three changes give it a real job without taking gasoline's.
+
+- **Pre-ignition costs gasoline power, never the plug.** `FuelSpec.preignitionLoss(chargeTemp)`: a spark engine's charge
+  that is over its fuel's autoignition point when it lights loses 1.0 of the burn's heat per ambient temperature of
+  excess, capped at 35 percent (`CylinderModel.startBurning`, scaled by boost over `PREIGNITION_FULL_BOOST`, 0.5 atm).
+  Scaling by boost is deliberate: a charge runs hotter with speed alone (a crude gasoline engine reaches 3.1 at 256 RPM
+  unboosted), and that is not the boost's doing, so an unboosted engine never pre-ignites. Nothing fouls and nothing is
+  damaged. `CycleStats.preignition` and `CylinderStatus.preignition` carry it to the goggles ("Charge lights early: N
+  percent of the burn lost", sneak for the cure).
+- **Ethanol cools the charge it boils into** (`FuelSpec.chargeCooling` 0.08 ambient temperatures at an equivalence of 1,
+  `CylinderModel.evaporativeCooling`, set at each injection from that shot's equivalence and used by the next intake
+  stroke): denser air, which closes most of ethanol's power gap, and a cooler charge further from gasoline's line.
+- **Ethanol leaves no soot** (`FuelSpec.sootFactor` 0): a rich ethanol burn never fouls a plug, though a mixture too rich
+  to light still will not light.
+
+What the dyno shows now, 12 precision cylinders, best speed up to 256 RPM:
+
+| Build | Gasoline | Ethanol | Winner |
+|---|---|---|---|
+| Unboosted | 101.8k | 97.1k | gasoline |
+| One turbo | 179.0k | 172.9k | gasoline |
+| Two turbos, no intercooler | 217.9k | 284.9k | ethanol, by 31 percent |
+| Turbo and supercharger, no intercooler | 204.7k | 247.7k | ethanol, by 21 percent |
+| Two turbos and an intercooler | 330.7k | 312.4k | gasoline |
+| Two turbos, supercharger, intercooler | 256.9k | 246.5k | gasoline (ethanol is injector-bound) |
+
+Gasoline stays the usual fuel: it is about 1.6 times cheaper by volume everywhere and wins wherever the charge stays
+cool, which an intercooler does. Ethanol is the fuel for a hot boosted build, or one that cannot fit an intercooler.
+The fuel data map gained optional `cold_sensitivity`, `charge_cooling` and `soot_factor`; before this change it dropped
+each fuel's cold sensitivity (every shipped fuel read as 1, against the 0.8, 1.5 and 1.8 this document gives), so cold
+starts now differ by fuel as documented. Advancement: Cool Under Pressure (`ETHANOL_BOOSTED`).
 
 ### Valley cam lobes (2026-11-01)
 
@@ -389,7 +434,8 @@ faces; and anything that needs doing regularly (an oil change) can be automated 
   it fades in and out and takes its volume and pitch from `loopLevel()` and `loopPitch()` every tick. The turbo's loop level
   is its wheel speed above 4 percent and its pitch runs from 0.55 to about 1.8; the supercharger's level is its shaft speed
   over 96 RPM (a third as loud when it feeds no engine) and its pitch 0.6 to 1.8 by 200 RPM. The blow-off plays when redstone
-  holds the wastegate open with at least 0.25 bar on the gauge a moment before, louder for more boost; anti-lag pops
+  holds the wastegate open, or when the engine lifts off the throttle (`TurboStatus.offThrottle`, at most once a second), with
+  at least 0.25 bar on the gauge a moment before, louder for more boost; anti-lag pops
   reuse the cylinder bang, quieter and higher, at half the rate of the particles. The client config `boostVolume` scales the
   whistle, whine and blow-off; `bangVolume` still scales the pops. The recordings were analyzed (levels, spectrum, loop seam)
   but not listened to; if one is off, adjust its constants in the generator and regenerate it by name.
@@ -454,18 +500,21 @@ faces; and anything that needs doing regularly (an oil change) can be automated 
   a rumble of the same level.
 
 
-### Transmission removed (2026-11-13)
+### Transmission removed in 0.4.0, restored before 1.0 (2026-11-13)
 
-- The **Transmission** (thirteen gears, reverse and Auto, a Create split shaft) is gone, with its recipe, Ponder page,
-  advancements (Gear Up, Reverse Engineering, Gearhead, Let It Shift), goggles, model and tests. `AutoGearbox` and `Gears`
-  went too. Worlds saved with the block lose it on load.
-- **Why:** Create's Rotation Speed Controller does the same job for every ratio, and it sets the output speed whatever the
-  engine does, so what the machines downstream see is stable. A transmission was a redundant block to build and tune.
+- The **Transmission** (thirteen gears, reverse and Auto, a Create split shaft) was removed on 2026-11-13 and shipped
+  that way in 0.4.0. A player then asked for it back: it is compact, and its Auto mode shifting for you was the part
+  they missed. It came back whole (block, block entity, `AutoGearbox`, `Gears`, recipe, Ponder page, goggles, model,
+  advancements and tests), as the same block with the same ID. Worlds that loaded on 0.4.0 lost the block, and nothing
+  migrates it.
+- **Why it was removed:** Create's Rotation Speed Controller sets the output speed whatever the engine does, so what
+  the machines downstream see is stable. **Why it is back:** that does not shift by itself to suit the engine, and a
+  controller is a bigger build than one block on the shaft.
 - The **Governor** was removed in the same sweep and put back the same day. It is not redundant: it holds the engine's own
   speed by moving the fuel rack (or the throttle in a spark engine), which a Rotation Speed Controller after the crank
   does not do.
-- **How to apply:** do not re-add gear-changing blocks; point the player at the Rotation Speed Controller. The Full
-  Driveline capstone no longer asks for every gear (its parent is now Carried Through).
+- **How to apply:** the Transmission stays. Full Driveline asks for every gear again (its parent is the Transmission's
+  Gear Up).
 
 ### Livelier engines, and water (2026-11-09)
 
@@ -475,8 +524,9 @@ faces; and anything that needs doing regularly (an oil change) can be automated 
   mouth is in a fluid counts as shut (`PortOpeningBlock.isFlooded`, counted in `PortNetwork.flooded`): a network with
   no clear opening and at least one flooded one gives `INTAKE_FLOODED` or `EXHAUST_FLOODED` instead of the covered
   faults, so goggles say which it is. Cylinders, heads and housings rescan when a fluid arrives at or leaves a
-  neighbour (`EngineTopology.fluidMoved`). What is left open: an engine in a dry pocket walled off from the water
-  runs, because nothing is against it.
+  neighbour (`EngineTopology.fluidMoved`). An engine in a dry pocket walled off from the water
+  runs, intake and exhaust mouths included, because nothing is against it. That is the 1.0 ruling (the user's, 2026-11-13):
+  an engine works wherever its own faces are dry (`anEngineInADryPocketKeepsRunning`).
 - **Blocks are wash-proof.** Every block is registered through `CEBlocks.part`, which adds `forceSolidOn()`:
   crankshafts, cams and pipes have shapes too slight to count as solid, and flowing water used to break them and
   drop them as items. Found when the submerged GameTest's water took the crank journal out.
@@ -550,6 +600,42 @@ faces; and anything that needs doing regularly (an oil change) can be automated 
   `ServiceMilestonesTest`. GameTests: `aBlazeBurnerAgainstTheExchangerPreheatsTheEngine`,
   `anEngineWithNoIntakeReadsAsFailingForWantOfAir`.
 
+### Superchargers brought level with turbos, and the Variable-Drive Supercharger (2026-11-13)
+
+A supercharger used to lose to a turbo with anti-lag on nearly everything, with one niche (low load) to its name. The
+rule now is that each blower class is worth what its turbo class is, for different reasons: **Supercharger = Turbocharger,
+Variable-Drive Supercharger = Variable-Geometry Turbocharger.**
+
+- **What each is good for.** The turbo's boost is free (no shaft to turn), peaks in the middle of the rev range, and
+  scales with the engine's own output; it pays in lag, back-pressure, exhaust heat it must be fed and, with anti-lag,
+  fuel. The blower's boost is there at once, needs no exhaust or fuel (cold starts, throttled or governed engines, load
+  swings), adds no back-pressure, and keeps climbing at high revs and high boost where a turbine chokes the exhaust; it
+  pays in stress on the shaft that turns it. The dynamometer is steady state, so it shows none of the turbo's lag.
+- **Supercharger changes** (`engine.sim.Supercharger`): boost goes with shaft speed to the power 1.25, not 2 (a roots
+  blower is a flow pump), so half the design speed makes about 40 percent of the boost and not 25; its compressor is as
+  efficient as a turbo's (0.70, was 0.55, so it no longer heats the charge more); drag on its shaft is 2 stress per RPM
+  per cylinder at full boost (was 4). The bypass valve is soft (see below).
+- **Variable-Drive Supercharger** (`VariableSuperchargerBlock`, `Supercharger.variableDrive`). A Supercharger, a
+  Precision Mechanism and a brass sheet, as the Variable-Geometry Turbocharger is made from a Turbocharger. Its variable-ratio
+  drive overspeeds the rotors by up to 80 percent while the shaft is slow and is one to one from the design speed up
+  (`rotorSpeed`, `overdrive`), so at half the design speed it makes about 0.58 bar where a plain blower makes 0.38; its
+  tight rotors have a 0.73 compressor efficiency (a cooler charge than any turbo), drag 30 percent less on the shaft
+  (`VARIABLE_DRAG`) and a pressure that follows the shaft in a tenth of a second, not a fifth. Goggles show the overdrive.
+  Advancement: Overdrive (`VARIABLE_DRIVE`, 0.3 bar on a running engine with the drive overspeeding by at least a fifth),
+  which is also part of the Power Plant capstone. Ponder: the supercharger page covers it.
+- **How level are they** (`BoostParityTest`, 8 cylinders, net of the blower's shaft drag, same boost limit, steady-state
+  peak power, percent against the matching turbo at 0.4 / 0.5 / 0.6 / 0.8 / 1.0 bar). Supercharger against turbocharger:
+  crude cylinders minus 1.1, plus 0.3, minus 0.8, minus 2.9, minus 8.0; precision cylinders minus 2.4, minus 1.4, minus 0.2,
+  plus 1.9, plus 5.2. Variable-drive against variable-geometry: crude minus 0.6, plus 0.7, plus 1.9, plus 1.4, minus 5.2;
+  precision minus 1.1, plus 0.2, plus 1.4, plus 3.6, plus 7.2. The test pins 3.5 percent either way from 0.4 to 0.8 bar, that
+  the blower out-runs the turbo at 224 RPM, and that the variable drive beats the plain blower at 64 RPM. At 1.0 bar the
+  crude blower is short because its shaft, geared one to one to a crude engine's 96 RPM peak, is too slow to make a full
+  bar: gear it up, which is what its value panel and the Ponder page tell the player to do.
+- **The bypass valve is soft.** A turbo's wastegate opens as the boost climbs past the limit, so a turbo set to 0.5 bar
+  settles near 0.57. A blower's bypass now does the same, by up to 0.05 bar (`VALVE_SOFTNESS`), which is what closed the
+  gap at low limits; with a hard stop the blower trailed by 3 to 6 percent there. The limit on its value panel is
+  therefore the pressure the valve starts to open at, not a hard ceiling. It is capped at `MAX_LIMIT` (1.5 bar).
+
 ### Boiler heat, readouts, builder extras, muffler and casing (2026-11-13)
 
 - **Boiler heat** (`CECompat`). Create 6 reads a boiler's heaters through `BoilerHeater.REGISTRY`, keyed by block. The
@@ -602,6 +688,13 @@ faces; and anything that needs doing regularly (an oil change) can be automated 
 - **Engine Casing.** A plain cube (riveted plate, steel top and bottom) with no block entity and no behaviour: it joins
   no pipe, belongs to no engine and costs the scanner nothing. It is there to hide the sprawl. Advancement: Under the Hood
   (`CLAD`, a running engine with four or more casing blocks against its cylinders).
+  Since the casing rework it is drawn as a framed panel (steel beams and brass corner bolts round recessed riveted
+  plate), and it **covers shaft parts**: use one on a crankshaft, crank throw, camshaft or cam lobe and the part gets an
+  `encased` block state (`content.Encasing`). A cased part is the same block with the same block entity, so the engine
+  scan, sim and visuals are untouched; only its render shape flips from the animated renderer to the block model
+  `engine_casing/encased` (a casing with a recessed opening in each end, turned onto the axis by the blockstate), and its
+  shape becomes a full cube. The moving part is still drawn inside it, so the shaft shows in the openings. A wrench takes
+  the casing off and gives the item back; breaking a cased part drops the casing too. Advancement: Tucked In (`ENCASED`).
 - **Fuel tooltips** (`client.FuelTooltips`). Any container with a fuel in it (buckets, other mods' tanks) lists the fuel's
   energy per mB, whether it lights by compression (autoignition at or below `CEDataMaps.PILOT_IGNITION_LIMIT`, which also
   makes it a pilot fuel) or needs a spark plug, how it takes a cold start, and how much thicker a shot it needs. They are

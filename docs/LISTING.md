@@ -16,7 +16,7 @@ Copy-paste material for the project pages. Not shipped in the jar.
 | Loader | NeoForge |
 | Dependencies | Create 6.0.10 (required) |
 | Environment | Client and server (required on both) |
-| License | All Rights Reserved |
+| License | MIT |
 | Source | https://github.com/R-unic/create-engines |
 | Issues | https://github.com/R-unic/create-engines/issues |
 | Release type | Beta (0.x), switch to Release at 1.0 |
@@ -31,9 +31,10 @@ view after converting it, or retype the headings and lists. Modrinth takes the M
 ```markdown
 > **Built with AI.** Nearly all of the code, models, textures, sounds, Ponder scenes and docs were written by an AI
 > (Claude) at my direction. I have played, tested and reworked almost all of it over many passes, and it ships with
-> unit tests and in-world GameTests. It is still a young mod, so you may find rough edges or odd balance. Please report
-> them on the [issue tracker](https://github.com/R-unic/create-engines/issues). Until 1.0, a new version may change how
-> an existing engine behaves.
+> unit tests and in-world GameTests. It is still a young mod, but you shouldn't have to expect things to break. If something
+> does, please report it on the [issue tracker](https://github.com/R-unic/create-engines/issues). Block, item and fluid
+> IDs, config keys and ranges, advancement IDs and the fuel data-map format stay stable within 1.x, and a release that
+> changes how an existing engine behaves says so in its changelog.
 
 # Create: Engine Engineer
 
@@ -57,6 +58,9 @@ and the crank animates with them.
 - **Torsional flex**: a crank twists under load, so past eight throws on one unbroken crankshaft an engine's rating
   falls a little for each extra throw, to at most 35 percent. A V12 or flat twelve loses nothing. It only lowers the
   rating and never harms anything
+
+![A V8 built with the Bank Builder](https://raw.githubusercontent.com/R-unic/create-engines/master/docs/images/engine_showcase_v8.png)
+![A flat six](https://raw.githubusercontent.com/R-unic/create-engines/master/docs/images/engine_showcase_flat6.png)
 
 ## Feed and tune it
 
@@ -95,12 +99,13 @@ and the crank animates with them.
 
 ## Make it powerful
 
-- Turbochargers (stacked, twin, variable-geometry, with anti-lag), superchargers and intercoolers, with the sound to
-  match: a turbo whistle that climbs with the wheel, a blow-off flutter when redstone dumps the boost, anti-lag
+- Turbochargers (stacked, twin, variable-geometry, with anti-lag), superchargers (plain and variable-drive) and intercoolers, with the sound to
+  match: a turbo whistle that climbs with the wheel, a blow-off flutter when redstone dumps the boost or the throttle lifts, anti-lag
   crackle, and a supercharger whine that rises with its shaft
 - Precision cylinders, heads, pistons and injectors
 - Flywheels that matter: a rough engine is rated for less, and rotating mass smooths it out
-- A **Dynamometer** that draws an engine's torque and power curves
+- A 13-gear transmission with an Auto mode that shifts to suit the engine, and a **Dynamometer** that draws an
+  engine's torque and power curves
 - A **Black Box** flight recorder that keeps ten minutes of an engine's speed, load and warmth and says why it stalled
 - Engines that look and sound alive: exhaust colour that reads the mixture, flame from a hot pipe, a cough on starting,
   ticking as they cool, and a clatter or squeal when they run dry. Nothing runs underwater
@@ -110,6 +115,8 @@ and the crank animates with them.
   to clad a bank and hide the sprawl
 
 ![Flywheel, dynamometer and turbos](https://raw.githubusercontent.com/R-unic/create-engines/master/docs/images/engine_new_parts.png)
+![A twin-turbo V8](https://raw.githubusercontent.com/R-unic/create-engines/master/docs/images/engine_accessory_twin_turbo_v8.png)
+![A supercharged flat six, a blower and intercooler on each bank](https://raw.githubusercontent.com/R-unic/create-engines/master/docs/images/engine_accessory_blown_flat6.png)
 
 ## Learn it
 
@@ -119,6 +126,22 @@ Engineer advancement for finishing them all.
 
 ![Goggle readout on a firing cylinder](https://raw.githubusercontent.com/R-unic/create-engines/master/docs/images/engine_goggles_cylinder.png)
 ![Firing order Ponder scene](https://raw.githubusercontent.com/R-unic/create-engines/master/docs/images/engine_ponder_firing_order_960.png)
+
+## Gallery
+
+Every layout and every accessory, built and running in the mod.
+
+![A V8, seen from the exhaust side](https://raw.githubusercontent.com/R-unic/create-engines/master/docs/images/engine_showcase_v8_exhaust.png)
+![A V8 from above](https://raw.githubusercontent.com/R-unic/create-engines/master/docs/images/engine_showcase_v8_top.png)
+![A turbocharged inline six](https://raw.githubusercontent.com/R-unic/create-engines/master/docs/images/engine_showcase_inline6.png)
+![A twin-rotor Wankel](https://raw.githubusercontent.com/R-unic/create-engines/master/docs/images/engine_showcase_rotary.png)
+![The first engine, a single-cylinder diesel with a flywheel](https://raw.githubusercontent.com/R-unic/create-engines/master/docs/images/engine_showcase_first.png)
+![A turbo and its exhaust stack](https://raw.githubusercontent.com/R-unic/create-engines/master/docs/images/engine_accessory_turbo_stack.png)
+![The blowers of a supercharged flat six, each with its intercooler and air intake](https://raw.githubusercontent.com/R-unic/create-engines/master/docs/images/engine_accessory_blowers.png)
+![An inline six with a variable-drive supercharger](https://raw.githubusercontent.com/R-unic/create-engines/master/docs/images/engine_accessory_blown_inline6.png)
+![A diesel with a variable-geometry turbo and an intercooler](https://raw.githubusercontent.com/R-unic/create-engines/master/docs/images/engine_accessory_variable_turbo.png)
+![A flywheel and governor on a test-bed engine](https://raw.githubusercontent.com/R-unic/create-engines/master/docs/images/engine_accessory_flywheel_governor.png)
+![A dynamometer and second flywheel on a test-bed engine](https://raw.githubusercontent.com/R-unic/create-engines/master/docs/images/engine_accessory_dyno.png)
 
 ## Recommended: raise Create's RPM limit
 
@@ -150,8 +173,10 @@ config thins out engine sound and particles on a big engine. Fuel properties are
 The first stable release. Nothing in the engine's behaviour changes from 0.4.0; what changes is the promise.
 - Stable from here through 1.x: block, item and fluid IDs, config keys and ranges, advancement IDs and the fuel data-map
   format. A release that changes how an existing engine behaves will say so here.
-- The Transmission, removed in 0.4.0, is not coming back (use Create's Rotation Speed Controller). Any left in an
-  existing world disappear when it loads; nothing else in the world is touched.
+- The Transmission is back. It was removed in 0.4.0, and a player asked for it: it is compact, and its Auto mode shifts
+  for you, which a Rotation Speed Controller does not. It is the same block with the same ID, recipe and advancements
+  (Gear Up, Reverse Engineering, Gearhead, Let It Shift), and Full Driveline asks for every gear again. One placed before
+  0.4.0 and lost on load does not come back by itself; place a new one.
 - The Rev Limiter and Lambda Sensor existed only in development builds before 0.1.0. A world from one of those builds
   loses them on load too.
 - Docs: the README lists every server config key group, including `alternatorEnergy`.
