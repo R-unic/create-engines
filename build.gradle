@@ -54,6 +54,17 @@ neoForge {
             systemProperty 'create_engines.visualSmokeTest.effects', project.hasProperty('smokeEffects') ? 'true' : 'false'
         }
 
+        // Builds a handful of engines on stone pads and photographs them at 1920x1080 for the mod page, in a game
+        // folder of its own so it neither shares nor disturbs the settings of a development client.
+        showcase {
+            client()
+            gameDirectory = file('run/showcase')
+            systemProperty 'neoforge.enabledGameTestNamespaces', project.mod_id
+            systemProperty 'create_engines.showcase', 'true'
+            systemProperty 'create_engines.showcase.set', project.hasProperty('showcaseSet') ? project.property('showcaseSet') : 'engines'
+            programArguments.addAll '--width', '1920', '--height', '1080'
+        }
+
         server {
             server()
             programArgument '--nogui'

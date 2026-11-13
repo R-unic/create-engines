@@ -240,20 +240,33 @@ public final class VisualSmokeTest {
 		ponder("spark", 5100, CEBlocks.ALTERNATOR::asStack, 250, 450, 650);
 		ponder("throttle", 5900, CEBlocks.THROTTLE::asStack, 250, 650, 1000);
 		ponder("mixture", 7050, CEItems.FUEL_INJECTOR::asStack, 250, 650);
-		// Blocks added later, standing in the world: a turbo and an oil sump
+		// Blocks added later, standing in the world: a turbo, an oil sump and a motor-driven transmission
 		STEPS.add(new Step(7720, () -> {
 			Minecraft.getInstance().options.hideGui = true;
 			server(server -> {
 				var level = server.overworld();
 				BlockPos base = origin.offset(24, 0, 0);
+				var x = net.minecraft.world.level.block.state.properties.BlockStateProperties.AXIS;
 				level.setBlock(base.offset(0, 1, 0), CEBlocks.TURBOCHARGER.getDefaultState()
 					.setValue(com.createengines.content.turbo.TurbochargerBlock.FACING, Direction.WEST), 3);
 				level.setBlock(base.offset(2, 1, 0), CEBlocks.SUMP.getDefaultState(), 3);
+				level.setBlock(base.offset(0, 1, 3), com.simibubi.create.AllBlocks.CREATIVE_MOTOR.getDefaultState()
+					.setValue(com.simibubi.create.content.kinetics.motor.CreativeMotorBlock.FACING, Direction.EAST), 3);
+				if (level.getBlockEntity(base.offset(0, 1, 3)) instanceof com.simibubi.create.content.kinetics.motor.CreativeMotorBlockEntity motor)
+					motor.generatedSpeed.setValue(64);
+				level.setBlock(base.offset(1, 1, 3), com.simibubi.create.AllBlocks.SHAFT.getDefaultState()
+					.setValue(x, Direction.Axis.X), 3);
+				level.setBlock(base.offset(2, 1, 3), CEBlocks.TRANSMISSION.getDefaultState()
+					.setValue(x, Direction.Axis.X), 3);
+				level.setBlock(base.offset(3, 1, 3), com.simibubi.create.AllBlocks.SHAFT.getDefaultState()
+					.setValue(x, Direction.Axis.X), 3);
 			});
 		}));
 		frames("turbo_sump", 7740, 24 + 1.5, 2.6, -2.5, 0, 18);
+		frames("transmission", 7790, 24 + 2.5, 2.6, 0.2, 0, 25);
 		// The new Ponder scenes
 		ponder("turbocharger", 7850, CEBlocks.TURBOCHARGER::asStack, 250, 650, 1000);
+		ponder("transmission", 8900, CEBlocks.TRANSMISSION::asStack, 250, 650, 900);
 		ponder("sump", 9850, CEBlocks.SUMP::asStack, 250, 450, 650);
 		newScenes(10600);
 	}
