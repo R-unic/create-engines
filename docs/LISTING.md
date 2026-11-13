@@ -123,7 +123,7 @@ Engineer advancement for finishing them all.
 ## Recommended: raise Create's RPM limit
 
 Create caps rotation at 256 RPM by default, and engines hit that ceiling. Raise it: in
-`serverconfig/create-server.toml` under `[kinetics]`, set `maxRotationSpeed` to 1024 or higher. The engine simulation is
+`serverconfig/create-server.toml` under `[kinetics]`, set `maxRotationSpeed` to 512 (higher works too). The engine simulation is
 built to stay cheap at speed, and its torque rating follows the limit you set.
 
 ## For modpack makers

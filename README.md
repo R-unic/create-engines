@@ -116,7 +116,7 @@ Fuel properties are a datapack data map (`data_maps/fluid/fuel.json`), so other 
 
 Create caps rotation at 256 RPM by default, and engines hit that ceiling. We recommend raising it: in
 `serverconfig/create-server.toml` (or the world's `serverconfig` folder) under `[kinetics]`, set `maxRotationSpeed` to
-something like 1024 or higher. The engine simulation is built to stay cheap at speed, and its torque rating follows the
+512 (higher works too). The engine simulation is built to stay cheap at speed, and its torque rating follows the
 limit you set. Everything else on the kinetic network still obeys Create's own rules.
 
 ## Building
