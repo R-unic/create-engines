@@ -1,0 +1,34 @@
+name: Modrinth gallery
+
+# Replaces the Modrinth gallery with the screenshots docs/LISTING.md shows (scripts/sync-modrinth-gallery.sh).
+# Runs on a release tag, or by hand (tick "dry run" to just list what would be uploaded).
+# Uses the MODRINTH_TOKEN secret, which needs the "Write projects" scope as well as "Create versions".
+# CurseForge has no gallery API, so its gallery is still replaced by hand on the site.
+on:
+  push:
+    tags: ['v[0-9]+.[0-9]+.[0-9]+']
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: List the images without changing the gallery
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: gallery
+  cancel-in-progress: false
+
+jobs:
+  gallery:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Sync the gallery
+        env:
+          MODRINTH_TOKEN: ${{ secrets.MODRINTH_TOKEN }}
+          MODRINTH_ID: ${{ vars.MODRINTH_ID || 'create-engine-engineer' }}
+          DRY_RUN: ${{ inputs.dry_run && '1' || '0' }}
+        run: scripts/sync-modrinth-gallery.sh
