@@ -12,7 +12,8 @@ Minecraft 1.21.1 · NeoForge 21.1.219 · Create 6.0.10
 > **Built with AI.** Nearly all of the code, models, textures, sounds, Ponder scenes and docs were written by an AI
 > (Claude) at my direction. I have played, tested and reworked almost all of it over many passes, and it ships with
 > unit tests and in-world GameTests. It is still a young mod, so you may find rough edges or odd balance. Please report
-> them on the issue tracker. Until 1.0, a new version may change how an existing engine behaves.
+> them on the issue tracker. From 1.0, block, item and fluid IDs, config keys and the fuel data-map format stay stable within 1.x, and a
+> release that changes how an existing engine behaves says so in its changelog.
 
 ## Preview
 
@@ -104,8 +105,10 @@ Minecraft 1.21.1 · NeoForge 21.1.219 · Create 6.0.10
 
 ## Configuration
 
-The server config (`serverconfig/create_engines-server.toml` in the world) carries the engine calibration plus
-`[balance]` multipliers (`fuelConsumption`, `precisionBonus`, `boostStrength`, `rotaryPower`, `heatRecoveryOutput`, `coolingBonus`, `torsionalFlex`)
+The server config (`serverconfig/create_engines-server.toml` in the world) carries the engine calibration (`[engine]`:
+`stressPerTorque`, the inertia and friction values, and the limits on how far the scanner follows a crankshaft, a manifold
+or a coupling) plus
+`[balance]` multipliers (`fuelConsumption`, `precisionBonus`, `boostStrength`, `rotaryPower`, `heatRecoveryOutput`, `coolingBonus`, `torsionalFlex`, `alternatorEnergy`)
 and `[features]` switches (`forcedInduction`, `sparkFouling`, `oilDilution`, `oilAgeing`, `engineTemperature`,
 `pilotInjection`, `rotaryEngines`, `heatRecovery`), so a
 modpack can rebalance without code. Turning a feature off never removes blocks; they stop doing that job. The client
@@ -128,7 +131,8 @@ limit you set. Everything else on the kinetic network still obeys Create's own r
 Other useful tasks: `./gradlew test` (simulation unit tests), `./gradlew runGameTestServer` (in-world GameTests) and
 `./gradlew runVisualSmokeTest` (builds an engine and saves screenshots to `run/screenshots/`).
 
-Design notes and how the simulation works are in [docs/DESIGN.md](docs/DESIGN.md).
+Design notes and how the simulation works are in [docs/DESIGN.md](docs/DESIGN.md). What is left before 1.0 is in
+[docs/RELEASE_1_0.md](docs/RELEASE_1_0.md).
 
 ## License
 

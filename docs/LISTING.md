@@ -145,6 +145,17 @@ config thins out engine sound and particles on a big engine. Fuel properties are
 - [Design notes](https://github.com/R-unic/create-engines/blob/master/docs/DESIGN.md), how the simulation works
 ```
 
+## Changelog for 1.0.0
+
+The first stable release. Nothing in the engine's behaviour changes from 0.4.0; what changes is the promise.
+- Stable from here through 1.x: block, item and fluid IDs, config keys and ranges, advancement IDs and the fuel data-map
+  format. A release that changes how an existing engine behaves will say so here.
+- The Transmission, removed in 0.4.0, is not coming back (use Create's Rotation Speed Controller). Any left in an
+  existing world disappear when it loads; nothing else in the world is touched.
+- The Rev Limiter and Lambda Sensor existed only in development builds before 0.1.0. A world from one of those builds
+  loses them on load too.
+- Docs: the README lists every server config key group, including `alternatorEnergy`.
+
 ## Changelog for 0.4.0
 
 Create's Rotation Speed Controller holds a shaft at a set speed and trades speed for torque at any ratio, and it keeps
