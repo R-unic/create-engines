@@ -8,16 +8,23 @@
 - [x] GameTests pass: "All 116 required tests passed" (`./gradlew runGameTestServer --offline`).
 - [x] Config keys and ranges reviewed; README now lists every key group, including `alternatorEnergy`.
 - [x] Removed blocks inventoried (below).
-- [ ] **Freeze the promise.** Block, item and fluid IDs, config keys and ranges, advancement IDs and the fuel data-map
-      format stay stable through 1.x. The README and the 1.0.0 changelog say so; confirm the wording before tagging.
+- [x] **Freeze the promise.** Block, item and fluid IDs, config keys and ranges, advancement IDs and the fuel data-map
+      format stay stable through 1.x. The README and the 1.0.0 changelog now use the same list (the README had left out
+      ranges and advancement IDs).
 - [ ] **Old-world load test.** Open a world saved on 0.1, 0.2, 0.3 and 0.4 (an engine, a Transmission if the world has
       one, a Governor) in the 1.0 build. Look for missing-block warnings in the log, block entities that fail to load and
       engines that behave differently. Block entities read their NBT with defaulting getters, so a crash is not
       expected, but it has not been tried.
-- [ ] **Black Box tape size.** Each Black Box saves ten minutes of speed, load and warmth as int arrays in its block
-      entity. Measure the saved size and the sync packet size with several full boxes, and cap them if large.
+- [x] **Black Box tape size.** Worked out from the code, not measured in a world. Saved: 600 samples (`CAPACITY`) in
+      four int arrays plus at most 24 state changes of four ints, so about 9.6 KB + 0.4 KB = 10 KB of NBT per full box
+      before the region file compresses it. Synced to clients: the readout is boiled down to 40 columns (`COLUMNS`) in
+      four arrays plus the same events, about 1 KB. Both are bounded by constants, so a hundred full boxes cost about
+      1 MB on disk and nothing extra per sync. No cap needed.
 - [ ] **Dedicated server and two players.** Sync of goggle readouts, Display Link, Black Box, sump, starter and
       advancements; client-only code (sounds, particles, flywheel visuals) must not load on the server.
+      Static check done 2026-11-13: the only `net.minecraft.client` import in common code is `GoggleLines`, reached only
+      from goggle tooltip methods the server never calls; `CEBlocks` and `CEFluids` import only datagen and
+      client-extension types. Still open: an actual dedicated server with two players.
 
 ### Removed blocks
 

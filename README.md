@@ -12,8 +12,9 @@ Minecraft 1.21.1 · NeoForge 21.1.219 · Create 6.0.10
 > **Built with AI.** Nearly all of the code, models, textures, sounds, Ponder scenes and docs were written by an AI
 > (Claude) at my direction. I have played, tested and reworked almost all of it over many passes, and it ships with
 > unit tests and in-world GameTests. It is still a young mod, so you may find rough edges or odd balance. Please report
-> them on the issue tracker. From 1.0, block, item and fluid IDs, config keys and the fuel data-map format stay stable within 1.x, and a
-> release that changes how an existing engine behaves says so in its changelog.
+> them on the issue tracker. From 1.0, block, item and fluid IDs, config keys and ranges, advancement IDs and the fuel
+> data-map format stay stable within 1.x, and a release that changes how an existing engine behaves says so in its
+> changelog.
 
 ## Preview
 
