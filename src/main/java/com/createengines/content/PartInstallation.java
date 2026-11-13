@@ -2,6 +2,8 @@ package com.createengines.content;
 
 import org.jetbrains.annotations.Nullable;
 
+import com.simibubi.create.content.schematics.requirement.ItemRequirement;
+import com.simibubi.create.content.schematics.requirement.ItemRequirement.ItemUseType;
 import com.tterrag.registrate.util.entry.ItemEntry;
 
 import net.minecraft.core.BlockPos;
@@ -94,6 +96,20 @@ public final class PartInstallation {
 			return true;
 		}
 		return false;
+	}
+
+	/**
+	 * What a schematic cannon must be given to build {@code state}: the housing block and every part fitted in it. A
+	 * fitted part is only a block state flag, which Create would otherwise price at nothing, so a schematic of a finished
+	 * engine would come with its pistons, rods, injectors, plugs and rotors for free.
+	 */
+	public static ItemRequirement requirement(BlockState state, Slot... slots) {
+		ItemRequirement needed = new ItemRequirement(ItemUseType.CONSUME, state.getBlock()
+			.asItem());
+		for (Slot slot : slots)
+			if (state.getValue(slot.property()))
+				needed = needed.union(new ItemRequirement(ItemUseType.CONSUME, slot.fitted(state)));
+		return needed;
 	}
 
 	public static void dropParts(BlockState state, Level level, BlockPos pos, BlockState newState, Slot... slots) {

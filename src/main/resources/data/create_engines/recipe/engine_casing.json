@@ -1,0 +1,20 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "building",
+  "key": {
+    "S": {
+      "item": "create:iron_sheet"
+    },
+    "I": {
+      "item": "minecraft:iron_ingot"
+    }
+  },
+  "pattern": [
+    "SI",
+    "IS"
+  ],
+  "result": {
+    "count": 4,
+    "id": "create_engines:engine_casing"
+  }
+}

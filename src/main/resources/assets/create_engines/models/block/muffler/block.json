@@ -1,0 +1,236 @@
+{
+  "parent": "block/block",
+  "textures": {
+    "shell": "create_engines:block/heat_wrap",
+    "cap": "create_engines:block/black_oxide",
+    "band": "create_engines:block/cast_iron",
+    "stub": "create_engines:block/steel",
+    "particle": "create_engines:block/black_oxide"
+  },
+  "elements": [
+    {
+      "from": [
+        2,
+        0,
+        2
+      ],
+      "to": [
+        14,
+        2,
+        14
+      ],
+      "faces": {
+        "north": {
+          "texture": "#cap"
+        },
+        "south": {
+          "texture": "#cap"
+        },
+        "east": {
+          "texture": "#cap"
+        },
+        "west": {
+          "texture": "#cap"
+        },
+        "up": {
+          "texture": "#cap"
+        },
+        "down": {
+          "texture": "#cap"
+        }
+      }
+    },
+    {
+      "from": [
+        2,
+        14,
+        2
+      ],
+      "to": [
+        14,
+        16,
+        14
+      ],
+      "faces": {
+        "north": {
+          "texture": "#cap"
+        },
+        "south": {
+          "texture": "#cap"
+        },
+        "east": {
+          "texture": "#cap"
+        },
+        "west": {
+          "texture": "#cap"
+        },
+        "up": {
+          "texture": "#cap"
+        },
+        "down": {
+          "texture": "#cap"
+        }
+      }
+    },
+    {
+      "from": [
+        3,
+        2,
+        3
+      ],
+      "to": [
+        13,
+        14,
+        13
+      ],
+      "faces": {
+        "north": {
+          "texture": "#shell"
+        },
+        "south": {
+          "texture": "#shell"
+        },
+        "east": {
+          "texture": "#shell"
+        },
+        "west": {
+          "texture": "#shell"
+        },
+        "up": {
+          "texture": "#shell"
+        },
+        "down": {
+          "texture": "#shell"
+        }
+      }
+    },
+    {
+      "from": [
+        2.5,
+        4.5,
+        2.5
+      ],
+      "to": [
+        13.5,
+        5.5,
+        13.5
+      ],
+      "faces": {
+        "north": {
+          "texture": "#band"
+        },
+        "south": {
+          "texture": "#band"
+        },
+        "east": {
+          "texture": "#band"
+        },
+        "west": {
+          "texture": "#band"
+        },
+        "up": {
+          "texture": "#band"
+        },
+        "down": {
+          "texture": "#band"
+        }
+      }
+    },
+    {
+      "from": [
+        2.5,
+        10.5,
+        2.5
+      ],
+      "to": [
+        13.5,
+        11.5,
+        13.5
+      ],
+      "faces": {
+        "north": {
+          "texture": "#band"
+        },
+        "south": {
+          "texture": "#band"
+        },
+        "east": {
+          "texture": "#band"
+        },
+        "west": {
+          "texture": "#band"
+        },
+        "up": {
+          "texture": "#band"
+        },
+        "down": {
+          "texture": "#band"
+        }
+      }
+    },
+    {
+      "from": [
+        6,
+        0,
+        6
+      ],
+      "to": [
+        10,
+        1,
+        10
+      ],
+      "faces": {
+        "north": {
+          "texture": "#stub"
+        },
+        "south": {
+          "texture": "#stub"
+        },
+        "east": {
+          "texture": "#stub"
+        },
+        "west": {
+          "texture": "#stub"
+        },
+        "up": {
+          "texture": "#stub"
+        },
+        "down": {
+          "texture": "#stub"
+        }
+      }
+    },
+    {
+      "from": [
+        6,
+        15,
+        6
+      ],
+      "to": [
+        10,
+        16,
+        10
+      ],
+      "faces": {
+        "north": {
+          "texture": "#stub"
+        },
+        "south": {
+          "texture": "#stub"
+        },
+        "east": {
+          "texture": "#stub"
+        },
+        "west": {
+          "texture": "#stub"
+        },
+        "up": {
+          "texture": "#stub"
+        },
+        "down": {
+          "texture": "#stub"
+        }
+      }
+    }
+  ]
+}

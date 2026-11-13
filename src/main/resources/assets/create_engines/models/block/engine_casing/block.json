@@ -1,0 +1,42 @@
+{
+  "parent": "block/block",
+  "textures": {
+    "plate": "create_engines:block/rivet_plate",
+    "cap": "create_engines:block/steel",
+    "particle": "create_engines:block/rivet_plate"
+  },
+  "elements": [
+    {
+      "from": [
+        0,
+        0,
+        0
+      ],
+      "to": [
+        16,
+        16,
+        16
+      ],
+      "faces": {
+        "north": {
+          "texture": "#plate"
+        },
+        "south": {
+          "texture": "#plate"
+        },
+        "east": {
+          "texture": "#plate"
+        },
+        "west": {
+          "texture": "#plate"
+        },
+        "up": {
+          "texture": "#cap"
+        },
+        "down": {
+          "texture": "#cap"
+        }
+      }
+    }
+  ]
+}

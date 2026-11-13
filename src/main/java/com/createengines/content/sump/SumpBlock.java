@@ -1,5 +1,9 @@
 package com.createengines.content.sump;
 
+import java.util.List;
+
+import com.createengines.advancement.Achievements;
+import com.createengines.advancement.Milestone;
 import com.createengines.engine.topology.EngineTopology;
 import com.createengines.registry.CEBlockEntities;
 import com.createengines.registry.CEItems;
@@ -69,6 +73,21 @@ public class SumpBlock extends Block implements IBE<SumpBlockEntity> {
 			level.playSound(null, pos, SoundEvents.NETHERITE_BLOCK_BREAK, SoundSource.BLOCKS, 0.6f, 1.4f);
 		}
 		return InteractionResult.sidedSuccess(level.isClientSide);
+	}
+
+	/** A comparator reads whichever tank the pan's dial is set to, for a pump or an alarm that wants the oil topped up. */
+	@Override
+	protected boolean hasAnalogOutputSignal(BlockState state) {
+		return true;
+	}
+
+	@Override
+	protected int getAnalogOutputSignal(BlockState state, Level level, BlockPos pos) {
+		if (!(level.getBlockEntity(pos) instanceof SumpBlockEntity sump))
+			return 0;
+		if (sump.onEngine())
+			Achievements.award(level, List.of(pos), Milestone.SUMP_METERED);
+		return sump.comparatorSignal();
 	}
 
 	@Override

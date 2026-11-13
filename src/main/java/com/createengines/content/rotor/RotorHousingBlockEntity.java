@@ -13,6 +13,8 @@ import com.createengines.content.effects.EngineEffects;
 import com.createengines.content.head.CylinderHeadBlockEntity;
 import com.createengines.content.head.GalleryMember;
 import com.createengines.engine.CylinderStatus;
+import com.createengines.engine.EngineSummary;
+import com.createengines.engine.sim.Muffling;
 import com.createengines.engine.sim.CamProfile;
 import com.createengines.engine.sim.CycleResult;
 import com.createengines.engine.sim.CylinderModel;
@@ -264,7 +266,8 @@ public class RotorHousingBlockEntity extends CrankshaftBlockEntity implements Ga
 			false) == null)
 			return;
 		RandomSource random = level.random;
-		float volume = CEClientConfig.bangVolume();
+		EngineSummary engine = engineSummary();
+		float volume = CEClientConfig.bangVolume() * Muffling.volume(engine == null ? 0 : engine.muffling());
 		// The engine's note has the bang in it, on the same firing
 		boolean inTheNote = primaryPos() != null && EngineNoteSound.isPlayingFor(primaryPos());
 		if (volume > 0 && !inTheNote)

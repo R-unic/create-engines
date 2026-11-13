@@ -38,6 +38,9 @@ public final class Lubrication {
 	public static final double FILTER_AGEING = 0.5;
 	public static final double FILTER_CLEANING = 2;
 
+	/** Film at or below which the engine counts as dry. */
+	private static final double DRY_FILM = 0.02;
+
 	private double film;
 	private double dilution;
 	private double condition = 1;
@@ -95,6 +98,9 @@ public final class Lubrication {
 			condition = 1;
 			return;
 		}
+		// A dry engine has no oil to wear out
+		if (film <= DRY_FILM)
+			return;
 		setCondition(condition - revolutions * AGE_PER_REV * stress);
 	}
 
@@ -148,6 +154,11 @@ public final class Lubrication {
 		if (demand <= 0)
 			return;
 		double satisfied = Math.min(1, supply.draw(demand) / demand);
+		// Oil going into a dry engine is a fresh charge, whatever the condition of what ran out before
+		if (satisfied > 0 && film <= DRY_FILM) {
+			condition = 1;
+			dilution = 0;
+		}
 		if (film < satisfied)
 			film = Math.min(satisfied, film + RISE_PER_SECOND * seconds);
 		else

@@ -525,3 +525,50 @@ write_schematic("fuels", (7, 6, 7), [
     (5, 2, 3, "create:basin", {}),
     (5, 4, 3, "create:mechanical_mixer", {"axis": "x"}),
 ])
+
+# --- Muffler, engine casing and engine readouts ---------------------------------------------------------------------
+write_schematic("muffler", (7, 6, 7), [
+    (1, 1, 3, ce("crankshaft"), axis("x")),
+    (2, 1, 3, ce("crank_throw"), axis("x")),
+    (3, 1, 3, ce("crankshaft"), axis("x")),
+    (2, 2, 3, ce("cylinder"), cylinder("up")),
+    (2, 3, 3, ce("cylinder_head"), head("up")),
+    (2, 3, 2, ce("air_intake"), facing("north")),
+    (2, 3, 4, ce("exhaust_manifold"), pipe("north", "south")),
+    # The muffler sits in the exhaust run, between the head's pipe and the outlet
+    (2, 3, 5, ce("muffler"), axis("z")),
+    (2, 3, 6, ce("exhaust_outlet"), facing("south")),
+    (2, 4, 3, ce("cam_lobe"), axis("x")),
+    (1, 4, 3, ce("camshaft"), axis("x")),
+    (3, 4, 3, ce("camshaft"), axis("x")),
+])
+
+write_schematic("engine_casing", (7, 6, 7), [
+    (1, 1, 3, ce("crankshaft"), axis("x")),
+    (2, 1, 3, ce("crank_throw"), axis("x")),
+    (3, 1, 3, ce("crankshaft"), axis("x")),
+    (2, 2, 3, ce("cylinder"), cylinder("up")),
+    (2, 3, 3, ce("cylinder_head"), head("up")),
+    (2, 3, 2, ce("air_intake"), facing("north")),
+    (2, 3, 4, ce("exhaust_manifold"), pipe("north", "south")),
+    (2, 3, 5, ce("exhaust_outlet"), facing("south")),
+    (2, 4, 3, ce("cam_lobe"), axis("x")),
+    (1, 4, 3, ce("camshaft"), axis("x")),
+    (3, 4, 3, ce("camshaft"), axis("x")),
+    # The cowl: casing round the cylinder and the head, leaving the pipes' faces clear
+    (1, 2, 3, ce("engine_casing"), {}),
+    (3, 2, 3, ce("engine_casing"), {}),
+    (2, 2, 2, ce("engine_casing"), {}),
+    (2, 2, 4, ce("engine_casing"), {}),
+    (1, 3, 3, ce("engine_casing"), {}),
+    (3, 3, 3, ce("engine_casing"), {}),
+])
+
+write_schematic("engine_readouts", (6, 6, 6), [
+    (1, 2, 3, ce("crankshaft"), axis("x")),
+    (2, 2, 3, ce("crank_throw"), axis("x")),
+    (3, 2, 3, ce("crankshaft"), axis("x")),
+    (2, 3, 3, ce("cylinder"), cylinder("up")),
+    (2, 4, 3, ce("cylinder_head"), head("up")),
+    (3, 1, 3, ce("sump"), {}),
+])

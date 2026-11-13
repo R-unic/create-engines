@@ -1,0 +1,29 @@
+{
+  "parent": "create_engines:sump",
+  "criteria": {
+    "sump_metered": {
+      "conditions": {
+        "event": "sump_metered"
+      },
+      "trigger": "create_engines:event"
+    }
+  },
+  "display": {
+    "description": {
+      "translate": "advancement.create_engines.sump_metered.desc"
+    },
+    "icon": {
+      "count": 1,
+      "id": "create_engines:sump"
+    },
+    "title": {
+      "translate": "advancement.create_engines.sump_metered"
+    }
+  },
+  "requirements": [
+    [
+      "sump_metered"
+    ]
+  ],
+  "sends_telemetry_event": true
+}

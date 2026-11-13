@@ -37,6 +37,7 @@ import com.createengines.content.starter.StarterBlock;
 import com.createengines.content.sump.SumpBlock;
 import com.createengines.content.airflow.InlineDuct;
 import com.createengines.content.intercooler.IntercoolerBlock;
+import com.createengines.content.muffler.MufflerBlock;
 import com.createengines.content.supercharger.SuperchargerBlock;
 import com.createengines.content.turbo.TurbochargerBlock;
 import com.createengines.engine.CrankGeometry;
@@ -652,6 +653,7 @@ public final class EngineScanner {
 		List<BlockPos> turbos = new ArrayList<>();
 		List<BlockPos> superchargers = new ArrayList<>();
 		List<BlockPos> intercoolers = new ArrayList<>();
+		List<BlockPos> mufflers = new ArrayList<>();
 		for (BlockPos pos : visited) {
 			Block block = state(pos).getBlock();
 			if (block instanceof ThrottleBlock)
@@ -664,19 +666,22 @@ public final class EngineScanner {
 				superchargers.add(pos);
 			else if (block instanceof IntercoolerBlock)
 				intercoolers.add(pos);
+			else if (block instanceof MufflerBlock)
+				mufflers.add(pos);
 		}
 
-		// A compressor or turbine that the air can go round (another branch of the run reaches an opening without it)
-		// shares the flow with whatever is on that branch; one that every path goes through takes all of it
+		// A compressor, turbine or muffler that the air can go round (another branch of the run reaches an opening without
+		// it) shares the flow with whatever is on that branch; one that every path goes through takes all of it
 		Set<BlockPos> parallel = new HashSet<>();
-		for (List<BlockPos> stages : List.of(turbos, superchargers))
+		for (List<BlockPos> stages : List.of(turbos, superchargers, mufflers))
 			for (BlockPos stage : stages)
 				if (!trace(start, kind, stage).openings.isEmpty())
 					parallel.add(stage);
 
 		int number = ports.size();
 		ports.add(new PortNetwork(kind, open, flooded, Math.max(1, heads.size()), List.copyOf(openings), List.copyOf(throttles), List.copyOf(sensors),
-			List.copyOf(turbos), List.copyOf(superchargers), List.copyOf(intercoolers), Set.copyOf(parallel)));
+			List.copyOf(turbos), List.copyOf(superchargers), List.copyOf(intercoolers), Set.copyOf(parallel),
+			List.copyOf(mufflers)));
 		for (BlockPos pos : visited) {
 			index.put(pos, number);
 			members.add(pos);
@@ -760,9 +765,9 @@ public final class EngineScanner {
 			for (AxisDirection sign : AxisDirection.values()) {
 				Direction direction = Direction.fromAxisAndDirection(axis, sign);
 				BlockPos cursor = pos;
-				for (int i = 0; i < MAX_SHAFT_WALK * 4 && isCam(level.getBlockState(cursor), axis); i++) {
+				for (int i = 0; i < MAX_SHAFT_WALK * 4 && isCam(loadedState(level, cursor), axis); i++) {
 					for (Direction side : Direction.values()) {
-						BlockState sideState = level.getBlockState(cursor.relative(side));
+						BlockState sideState = loadedState(level, cursor.relative(side));
 						addHeadSeed(level, cursor.relative(side), sideState, seeds);
 						addCylinderSeed(level, cursor.relative(side), sideState, seeds);
 					}
@@ -772,7 +777,7 @@ public final class EngineScanner {
 		} else if (block instanceof BatteryBlock || block instanceof AlternatorBlock || block instanceof SumpBlock
 			|| block instanceof GovernorBlock) {
 			for (Direction direction : Direction.values())
-				addHeadSeed(level, pos.relative(direction), level.getBlockState(pos.relative(direction)), seeds);
+				addHeadSeed(level, pos.relative(direction), loadedState(level, pos.relative(direction)), seeds);
 		} else if (block instanceof ManifoldBlock || block instanceof PortOpeningBlock
 			|| block instanceof InlineDuct) {
 			Set<BlockPos> visited = new HashSet<>();
@@ -816,6 +821,11 @@ public final class EngineScanner {
 		for (Direction direction : Direction.values())
 			addIfCrank(level, pos.relative(direction), seeds);
 		return seeds;
+	}
+
+	/** The block at {@code pos}, or air if its chunk is not loaded: a lookup here must never load a chunk. */
+	private static BlockState loadedState(Level level, BlockPos pos) {
+		return level.isLoaded(pos) ? level.getBlockState(pos) : Blocks.AIR.defaultBlockState();
 	}
 
 	private static void addHeadSeed(Level level, BlockPos pos, BlockState state, Set<BlockPos> seeds) {

@@ -32,8 +32,8 @@ view after converting it, or retype the headings and lists. Modrinth takes the M
 > **Built with AI.** Nearly all of the code, models, textures, sounds, Ponder scenes and docs were written by an AI
 > (Claude) at my direction. I have played, tested and reworked almost all of it over many passes, and it ships with
 > unit tests and in-world GameTests. It is still a young mod, so you may find rough edges or odd balance. Please report
-> them on the [issue tracker](https://github.com/R-unic/create-engines/issues), and back up a world before adding the
-> mod to it. Until 1.0, a new version may change how an existing engine behaves.
+> them on the [issue tracker](https://github.com/R-unic/create-engines/issues). Until 1.0, a new version may change how
+> an existing engine behaves.
 
 # Create: Engine Engineer
 
@@ -51,7 +51,8 @@ and the crank animates with them.
 - Inline, V, flat and rotary (Wankel) layouts, with coupled crankshafts for bigger engines
 - Cam lobes that sit beside the cylinder block, so a V can run one camshaft in its valley and keep every head face free
   for pipes
-- A **Bank Builder** that lays out a whole inline, V or flat bank in one click, and a **Timing Tool** that sets the
+- A **Bank Builder** that lays out a whole inline, V or flat bank in one click (it fits the spark plugs you carry, and
+  lays a cam line beside the bank if you carry a camshaft and cam lobes), and a **Timing Tool** that sets the
   firing order for you
 - **Torsional flex**: a crank twists under load, so past eight throws on one unbroken crankshaft an engine's rating
   falls a little for each extra throw, to at most 35 percent. A V12 or flat twelve loses nothing. It only lowers the
@@ -64,7 +65,8 @@ and the crank animates with them.
 - A craftable fuel chain, all in Create basins: seeds to plant oil to diesel, sugar crops to ethanol, and biodiesel with
   glycerin on the side. The loop closes: glycerin goes into engine oil and coolant, and used oil is burned as fuel or
   recycled into oil or charcoal
-- An **Exhaust Heat Exchanger** that turns engine exhaust into basin heat, so an engine can cook its own fuel
+- An **Exhaust Heat Exchanger** that turns engine exhaust into basin heat, so an engine can cook its own fuel, and into
+  boiler heat, so the exhaust can make steam for Create steam engines on top of the engine's own power
 - Oil film and lubrication, starters, batteries and alternators, with Forge Energy output
 - An **oil sump that is the engine's service port**: one block against the engine takes its oil, coolant and pilot fuel
   from any face, so the cylinder heads keep their faces for air and fuel
@@ -81,6 +83,11 @@ and the crank animates with them.
 - A forgiving early game: spark plug soot clears itself, goggles suggest fuel settings, and the Timing Tool can tune
   every injector in one click
 - Governors and MAF sensors for the late game
+- **Engine readouts**: a Display Link set against a crankshaft shows an engine's state, speed, load, temperature and oil
+  on a display board or nixie tubes, and a comparator reads any of an oil sump's tanks, so a pump or an alarm can keep
+  the oil topped up
+- Fuel buckets say what they are on hover: their energy, whether they light by compression or need a spark plug, and how
+  they take a cold start (other mods' fuels too)
 - Other mods' fuels work too: anything tagged `c:diesel`, `c:gasoline`, `c:ethanol` or `c:plantoil`, or given an entry
   in the fuel data map
 
@@ -99,6 +106,8 @@ and the crank animates with them.
   ticking as they cool, and a clatter or squeal when they run dry. Nothing runs underwater
 - An exhaust note made up from the engine's speed and firing order, so a V-twin lopes, a six hums and a dead cylinder
   limps
+- A **Muffler** that quiets the note, the bangs and the pops without costing the engine any power, and **Engine Casing**
+  to clad a bank and hide the sprawl
 
 ![Flywheel, dynamometer and turbos](https://raw.githubusercontent.com/R-unic/create-engines/master/docs/images/engine_new_parts.png)
 
@@ -146,6 +155,18 @@ gone.
   instead. The Governor stays: it holds the engine's own speed, which a Rotation Speed Controller downstream does not.
 - Full Driveline no longer asks for every gear: it wants a charged battery, a flywheel that smooths the engine and a
   governor under redstone.
+- New: an exhaust heat exchanger under a fluid tank heats a boiler like a blaze burner (kindled is one level, seething
+  two), so exhaust can run Create steam engines. Advancement: Combined Cycle.
+- New: Display Link sources for engines (Engine Status, Speed, Load, Temperature, Oil Condition) on any crankshaft
+  block, and Oil Sump Levels on a sump. A sump also gives a comparator signal for the tank its new dial names, so a pump
+  or alarm can watch the oil. Advancements: Instrument Panel, Dipstick.
+- New: the Muffler quiets an engine's exhaust note, bangs and pops and costs it no power. Engine Casing is plain cladding
+  for hiding the sprawl. Advancements: Hush Now, Under the Hood.
+- New: fuel buckets show their energy, how they ignite and how they take a cold start when hovered.
+- The Bank Builder fits spark plugs and lays a cam line beside the bank (in the valley of a vee) when you carry them.
+  Advancement: Cam Included. A cogwheel placed or broken between cranks now couples or uncouples them at once.
+- Fixed: a schematic cannon built a finished cylinder, head or rotor housing with its pistons, rods, injectors, plugs
+  and rotor for free. It now asks for them.
 - A burning engine glows faintly: heads and rotor housings give off a little light while the charge fires.
 - Engines at the edge of loaded chunks no longer pull in chunks nobody is near.
 - Fuel recipes: plant oil takes six seeds or two saplings (100 mB and 50 mB), ethanol ferments from an apple or any

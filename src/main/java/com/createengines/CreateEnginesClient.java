@@ -2,6 +2,7 @@ package com.createengines;
 
 import java.util.List;
 
+import com.createengines.client.FuelTooltips;
 import com.createengines.client.VisualSmokeTest;
 import com.createengines.client.particle.ExhaustFlameParticle;
 import com.createengines.client.particle.GasParticle;
@@ -19,6 +20,7 @@ import net.neoforged.bus.api.IEventBus;
 import net.neoforged.fml.ModContainer;
 import net.neoforged.fml.common.Mod;
 import net.neoforged.fml.config.ModConfig;
+import net.neoforged.neoforge.common.NeoForge;
 import net.neoforged.neoforge.client.event.RegisterColorHandlersEvent;
 import net.neoforged.neoforge.client.event.RegisterParticleProvidersEvent;
 import net.neoforged.neoforge.client.model.DynamicFluidContainerModel;
@@ -31,6 +33,7 @@ public class CreateEnginesClient {
 		CEPartialModels.init();
 		modEventBus.addListener(CreateEnginesClient::registerBucketColours);
 		modEventBus.addListener(CreateEnginesClient::registerParticles);
+		NeoForge.EVENT_BUS.addListener(FuelTooltips::onTooltip);
 		PonderIndex.addPlugin(new CEPonderPlugin());
 		VisualSmokeTest.register();
 	}

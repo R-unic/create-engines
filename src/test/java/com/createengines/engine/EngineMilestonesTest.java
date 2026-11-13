@@ -103,12 +103,11 @@ class EngineMilestonesTest {
 	void oilAndMixtureMilestones() {
 		Snapshot dry = new Snapshot(EngineState.RUNNING, EngineState.RUNNING, 64, false, 1, 0, false, 0.02f, true, 0, false);
 		Set<Milestone> reached = EngineMilestones.reached(dry);
-		assertTrue(reached.contains(Milestone.DRY_RUN) && reached.contains(Milestone.SMOKE_SIGNALS));
-		assertFalse(reached.contains(Milestone.WELL_OILED));
+		assertTrue(reached.contains(Milestone.SMOKE_SIGNALS));
 		Snapshot oiled = new Snapshot(EngineState.RUNNING, EngineState.RUNNING, 64, false, 1, 0, true, 0.95f, false, 0, false);
 		reached = EngineMilestones.reached(oiled);
-		assertTrue(reached.contains(Milestone.WELL_OILED) && reached.contains(Milestone.SPARK_ENGINE));
-		assertFalse(reached.contains(Milestone.DRY_RUN));
+		assertTrue(reached.contains(Milestone.SPARK_ENGINE));
+		assertFalse(reached.contains(Milestone.SMOKE_SIGNALS));
 	}
 
 	@Test
@@ -196,7 +195,7 @@ class EngineMilestonesTest {
 		EngineMilestones.Parts everything = new EngineMilestones.Parts(true, true, true, true, true, true, 1, true, true,
 			true, true, PrecisionParts.ALL, true);
 		assertEquals(Set.of(Milestone.CAMSHAFT_TIMED, Milestone.PIPED_ENGINE, Milestone.THROTTLED,
-			Milestone.DIESEL_BURNED, Milestone.GASOLINE_BURNED, Milestone.OILED, Milestone.SUMP_OILING,
+			Milestone.DIESEL_BURNED, Milestone.GASOLINE_BURNED, Milestone.SUMP_OILING,
 			Milestone.MAF_READING, Milestone.GOVERNOR_ACTIVE, Milestone.GOVERNOR_COMMANDED, Milestone.PRECISION_BORE,
 			Milestone.PRECISION_HEAD, Milestone.PRECISION_PISTON, Milestone.PRECISION_INJECTOR,
 			Milestone.ROTOR_HOUSING_TURNED), EngineMilestones.reachedParts(everything));

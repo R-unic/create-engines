@@ -10,6 +10,10 @@ import com.createengines.content.crankshaft.CrankshaftBlock;
 import com.createengines.engine.topology.EngineTopology;
 import com.createengines.registry.CEBlockEntities;
 import com.createengines.registry.CEItems;
+import com.simibubi.create.api.schematic.requirement.SpecialBlockItemRequirement;
+import com.simibubi.create.content.schematics.requirement.ItemRequirement;
+
+import org.jetbrains.annotations.Nullable;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -22,6 +26,7 @@ import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.RenderShape;
+import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.StateDefinition;
@@ -43,7 +48,7 @@ import net.minecraft.world.phys.shapes.VoxelShape;
  * in on any side and is shared along the crankshaft like a head's. The charge is too thin to light itself, so it takes a
  * spark plug.
  */
-public class RotorHousingBlock extends CrankshaftBlock implements AirflowPort {
+public class RotorHousingBlock extends CrankshaftBlock implements AirflowPort, SpecialBlockItemRequirement {
 
 	public static final BooleanProperty HAS_ROTOR = BooleanProperty.create("rotor");
 	public static final BooleanProperty HAS_INJECTOR = BooleanProperty.create("injector");
@@ -94,6 +99,12 @@ public class RotorHousingBlock extends CrankshaftBlock implements AirflowPort {
 	@Override
 	public boolean acceptsPipe(BlockState state, Direction side, PortKind kind) {
 		return side.getAxis() != state.getValue(BlockStateProperties.AXIS);
+	}
+
+	/** A schematic of a fitted housing costs the rotor, injector and plug as well as the block. */
+	@Override
+	public ItemRequirement getRequiredItems(BlockState state, @Nullable BlockEntity blockEntity) {
+		return PartInstallation.requirement(state, PARTS);
 	}
 
 	@Override

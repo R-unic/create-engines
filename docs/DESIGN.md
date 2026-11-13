@@ -54,7 +54,7 @@ before relying on it.
 | Lubrication | **Engine Oil** (heated mixing of Plant Oil with a slime ball) is piped into any cylinder head, into a second tank beside the fuel tank, and shared along touching heads like fuel. It lubricates the whole engine: crank blocks and every piston and rod. Turning uses it up (about 0.01 mB per part per crank revolution); while the supply keeps up the film builds to full in a few seconds, and without oil it thins over a few hundred revolutions. A dry part drags: friction doubles, and speed-dependent friction quadruples, so a dry engine tops out at roughly half the speed and has less torque to spare, but it still runs. A new engine starts dry. Goggles show the lubrication. |
 | Oil sump | A **Sump** is an oil pan: a block with one engine-oil tank (1000 mB) and a fluid capability on every face, so Create pipes and pumps fill it and a bucket (right-click) fills or empties it. Touching any crankshaft block or cylinder head, it belongs to that engine (`EngineLayout.sumps()`), and the engine draws its lubrication oil from the pans before the heads' own oil tanks (`SumpOilSupply`). The point is face economy: Create pipes carry one fluid at a time, so a head used to need a fuel line and an oil line, two of its five free faces. Oil lubricates the whole engine anyway, so it now has one place to come in, away from the heads, and the head keeps only its fuel line. Heads still accept oil on any face, for engines built before the sump existed. Fluid only moves through pipes and pumps (or by hand); nothing pulls from adjacent tanks. |
 | Pushrod cams | A Cam Lobe works a cylinder it touches at the **head or at the cylinder block** (head first, then the block's four side faces, skipping the bore axis; the lobe's axis must not point into the face). The block position is a pushrod cam: the cylinder's timing, cam line and goggle readouts are the same, and the head draws no valve stems because the stems are inside. The point is face economy for compact engines: a head already spends faces on its cylinder, its two neighbours in the gallery, fuel and the intake and exhaust, so a V12 built of dense banks had no face left for a camshaft. A cam beside the block leaves both for pipes. A lobe that serves several cylinders times the first with its angle and the rest at the same offset from their own top dead centres (see *Valley cam lobes*), so one camshaft in the valley of a V works both banks. A 90° V12 (six throws, two cylinders each) cannot fire at exactly even intervals, because the second cylinder of every throw is 90° from the first and 60° does not divide that; goggles show the intervals it does get. Overlong goggle lines wrap to the screen (`content/GoggleLines`), and Ponder has pages for firing order (`firing_order`), the compact V (`compact_v`) and the air-fuel recipe (`mixture`). |
-| Governor | A **Governor** touches a crankshaft block or head (like a battery) and holds the crank at its Governed Speed (value box, 20 to 1000 RPM in 5s, so it can govern an engine under a raised Create RPM limit; the lowest on an engine governs). A redstone signal on the block commands a share of that setting: none leaves it alone, 1 to 15 asks for that fraction (`Governor.commanded`, never below 20 RPM), so a circuit can set an engine's speed; the lowest commanded speed governs and goggles say when redstone has turned it down. `sim.Governor` is a proportional controller with droop (full rack at 10% below the setting) and a slow reset that integrates the droop away, frozen while the rack is saturated so a start-up or an overload leaves no overshoot. Its output is a rack position, 0 to 1, put in `CylinderModel.governor`: a compression engine is governed on fuel alone, a spark engine on its air (throttle opening 8% to 100%) with the throttle linkage trimming the fuel, because a charge that is too lean will not light. It is deliberately outside the rating: the dynamometer copies leave it at 1, so a governor holds speed with the torque in hand and takes none away. The analog output is the rack position (15 wide open), which reads as a load meter through a comparator; with the rack at 100% the load is more than the engine can hold at that speed. The block is deliberately not a signal source: a block that powered its neighbours would feed its own output back in through any dust beside it as a command. It also burns less fuel than a racing engine when nothing loads it (`GovernorTest`). Achievements: Steady as She Goes, Cruise Control, Speed Dial. |
+| Governor | A **Governor** touches a crankshaft block or head (like a battery) and holds the crank at its Governed Speed (value box storing an exact RPM, 20 to 1000: the panel has a row of exact speeds up to 256 and a row in steps of 5 above that, so it can govern an engine under a raised Create RPM limit, and older saves, which held the setting in steps of 5, are converted when they load; the lowest on an engine governs). A redstone signal on the block commands a share of that setting: none leaves it alone, 1 to 15 asks for that fraction (`Governor.commanded`, never below 20 RPM), so a circuit can set an engine's speed; the lowest commanded speed governs and goggles say when redstone has turned it down. `sim.Governor` is a proportional controller with droop (full rack at 10% below the setting) and a slow reset that integrates the droop away, frozen while the rack is saturated so a start-up or an overload leaves no overshoot. Its output is a rack position, 0 to 1, put in `CylinderModel.governor`: a compression engine is governed on fuel alone, a spark engine on its air (throttle opening 8% to 100%) with the throttle linkage trimming the fuel, because a charge that is too lean will not light. It is deliberately outside the rating: the dynamometer copies leave it at 1, so a governor holds speed with the torque in hand and takes none away. The analog output is the rack position (15 wide open), which reads as a load meter through a comparator; with the rack at 100% the load is more than the engine can hold at that speed. The block is deliberately not a signal source: a block that powered its neighbours would feed its own output back in through any dust beside it as a command. It also burns less fuel than a racing engine when nothing loads it (`GovernorTest`). Achievements: Steady as She Goes, Cruise Control, Speed Dial. |
 | Firing order tool | A **Timing Tool** (item) sets an engine's throws and cam lobes for the player. `engine.topology.FiringPlanner` (pure Java) takes each working cylinder's throw, bore offset and lobe and searches throw angles (15 degree steps) and the crank revolution each cylinder fires on by simulated annealing, minimising uneven spacing, then neighbours firing in a row, with a penalty for a cylinder sharing a lobe with another it fires at a different time. Four styles, changed by sneak-use: smooth (any angle), cross-plane (quarter turns), flat-plane (half turns) and cams only (throws left alone, lobes chosen exactly). It reports the firing order and spacing in the action bar, says when a layout cannot fire evenly (a 90 degree V12) or when a lobe is shared, and counts any cylinder it skipped. Achievements: Timing Light, Right on Time. |
 | Precision parts | Four parts that each improve the crude cylinder in one way, and add up (`CylinderSpec.build`, `PrecisionParts`): a **Precision Cylinder** block (machined liner: 1.2x compression, 0.7x static and 0.8x viscous wall friction), a **Precision Cylinder Head** block (four valves: 1.5x valve flow, 0.8x ignition delay), a **Forged Piston** item (0.7x inertia, 0.8x and 0.7x friction) and a **Precision Injector** item (0.8x ignition delay, 0.7x burn time). The two items install into the same slots as the ordinary piston and injector: `PartInstallation.Slot` sets the slot's own property and a second grade property beside it, so everything that asks only whether a piston or injector is fitted is untouched. Recipes consume Create's Precision Mechanism (pistons and injectors come two to a craft) and need the crude part first. On a straight-12 on gasoline each part is worth 3 to 30 percent of peak power (the head most, as it helps at speed) and all four about 60 percent, before a turbo. Achievements: Tighter Tolerances, Four Valves a Cylinder, Forged in Fire, Common Rail, Blueprinted. |
 | Coupled crankshafts | Crank lines that Create's gearing holds at exactly the same speed are one engine. `EngineScanner` finds them by walking the kinetic connections out from the crank (`CrankCoupling`, which asks Create's `RotationPropagator`, by reflection, which blocks are connected and by what speed ratio, so cogwheels, gearboxes, chain drives, belts and bevels all couple, and so does an engine that is standing still). Any crank block at a ratio of exactly +1 or -1 within `maxCouplingWalk` kinetic blocks joins, up to `maxCoupledLines` lines. The lines are put in position order, and the first line's start is the primary: the only generator, with the other lines carrying rotation. Each line has a *sense*, +1 if the gearing turns it the way the first line turns and -1 if the other way, and a cylinder's top dead centre in the engine's frame is its sense times its own, so the simulation needs no knowledge of coupling at all: every cylinder of every line is on the one rotor by the usual formula. Drawing follows, a line being shown at the primary's angle times its sense (Create draws a shaft at time times speed, so no phase offset arises). The Timing Tool plans a reversed line as its mirror image, flipping the sign of both its bore offsets and its throw angles, and a starter turns the engine the way its line's sense gives. Batteries, oil pans, governors and starters touching any line belong to the engine; fuel and oil are one gallery. Goggles name the count. Achievements: In Step (four or more cylinders firing on coupled cranks), Hypercar Money (sixteen firing cylinders). |
@@ -107,13 +107,15 @@ before relying on it.
   the automatic mixture matching removed above: a throttled engine is no longer flooded by closing the valve, but a
   mixture tuned for one speed still drifts rich above it. The rack (redstone on the camshaft) still cuts fuel alone.
   Parallel throttles on one network are not modelled: the network takes the minimum.
-- **Rotors are not planned.** The Timing Tool leaves a rotor housing alone, so a multi-rotor engine's eccentric angles are set by hand, and rotary firing intervals are only listed in goggles, not checked for evenness by any milestone. A rotor's chamber is a sine of the shaft angle and a real Wankel's is not (its apex seals, side seals and port shapes are not modelled), and there is no apex-seal wear. Rotors cannot be mixed with piston cylinders on one housing, but a crankshaft line can hold both kinds of block.
+- **Rotors are planned, with limits.** The Timing Tool sets a multi-rotor engine's eccentric angles (`RotorPlanner`), and rotary firing intervals are only listed in goggles, not checked for evenness by any milestone. A rotor's chamber is a sine of the shaft angle and a real Wankel's is not (its apex seals, side seals and port shapes are not modelled), and there is no apex-seal wear. Rotors cannot be mixed with piston cylinders on one housing, but a crankshaft line can hold both kinds of block.
 - **Cam direction is ignored**: only the speed ratio's magnitude is checked, because Create gearing flips direction
   freely.
 - **Only an exact one-to-one gearing couples crankshafts.** Cranks geared at any other ratio are still separate engines
   that both feed one network (the faster wins, as Create does for any two sources). Create's own blocks do not tell the
-  engine scanner when they are placed, so a new coupling, or a broken one, is found at the next rescan, at most five
-  seconds later. A redstone gearshift that reverses a coupled line is likewise not noticed until then.
+  engine scanner when they are placed, but a player placing or breaking one (a cogwheel, a shaft, a chain drive, any
+  `IRotate` block) makes every engine within 64 blocks look again at once (`EngineTopology.gearingChanged`). Anything
+  else that changes the gearing (a deployer, a piston, a redstone gearshift that reverses a coupled line) is found at the
+  next rescan, at most five seconds later.
 - Pipes are arms around a core, with a fitting of their own picked by which sides are open: a plain coupling for a straight run, a cast elbow for a bend, a tee across the run for a branch, and the bulged node for anything else (`core_*` models, chosen in `CEBlocks.pipeBlockstate`). They are still boxes, not curved.
   The block models are generated by `tools/generate_models.py`; edit it and rerun rather than the JSON or the sheets.
   Animated parts (piston, rod, valve, crank, cam) keep the pivot and envelope the renderers expect, with detail inside it.
@@ -158,7 +160,7 @@ mix, not a better piston engine.
   dial plus a redstone dump.
 - **Bank Builder** (`BankBuilderItem`): use on a crank throw to place a cylinder and head, and fit pistons, rods and
   injectors from the player's inventory, on the clicked face of every throw: inline (that face), vee (and the face a
-  quarter turn round the crank) or flat (and the opposite face). Spark plugs, pipes, cams and fuel stay the builder's.
+  quarter turn round the crank) or flat (and the opposite face). Pipes and fuel stay the builder's; spark plugs and the cam line are laid only if the builder carries them (see "Boiler heat, readouts, builder extras, muffler and casing").
   Sneak-use cycles the layouts and then between standard and precision parts: a precision build places precision cylinders, heads, forged pistons and precision injectors, and swaps them in for standard parts already on the throws, handing the old ones back. Blocked places and missing blocks are reported. It places no cams: a vee's valley camshaft (see *Valley cam lobes*) is added by hand.
 - **Dynamometer block** (`DynoBlock`): set against any block of an engine, goggles draw its torque and power curves as
   bars, with peaks and the powerband, from the rating the engine itself uses. Redstone rises as the engine climbs to the
@@ -203,6 +205,17 @@ circles or per-pixel noise, and do not posterise to a few colours.
   (3.4 against gasoline's 2.7), so boost-heated charge will not light it early, but it carries 27 energy per mB against
   gasoline's 40. Gasoline is cracked from diesel with blaze powder in a heated basin, no longer superheated, so it costs no more to refine than
   diesel does. Ethanol is the dear one: 250 mB of mash and an apple or mushroom make only 50 mB (it was 100), and biodiesel takes 25 mB of it a batch, so the late-game precision boost builds that want its autoignition margin pay for it in crops. The ferments_mash item tag (apple, brown and red mushroom, c:mushrooms) lists what ferments it. Plant Oil also presses from two saplings (50 mB), alongside six seeds (100 mB).
+- **Superheat payoff (2026-11-13).** Nothing in the fuel chain needs a superheated basin to work, but two recipes pay for
+  one, which is the late-game reward for a big engine's Exhaust Heat Exchanger (about seven cylinders at speed):
+  `mixing/ethanol_superheated` (250 mB mash, a ferment item and a sugar make 100 mB of ethanol, twice the heated yield)
+  and `mixing/engine_oil_recycled_superheated` (400 mB used oil, charcoal and a clay ball make 300 mB of engine oil
+  against 250). **Why the extra sugar and clay ball:** Create's `BasinOperatingBlockEntity.getMatchingRecipes` ranks the
+  matching recipes only by how many item ingredients they have, most first, and ignores heat; a heated recipe still
+  matches over a superheated burner. A superheated recipe with no more items than its heated twin would tie or lose
+  (the used-oil coking recipe has no items at all), so each superheated recipe carries one more item than the heated one
+  it improves on. `FuelRecipeGameTests` pins this: the superheated recipe is the unique top match at a seething burner,
+  absent at a kindled one, and the heated recipe still runs when the extra item is missing. Keep this in mind for any
+  future heated/superheated pair: give the better one more items.
 - **Exhaust heat exchanger** (`HeatExchangerBlock`, a sensor on an exhaust network). The engine hands it its network's
   share of `CylinderModel.exhaustHeatLastTick` per second (about 3 per cylinder at speed, split between every exchanger
   on the network); it smooths that over about a second, turns it into a level with `HeatRecovery` (smouldering 1.5,
@@ -234,8 +247,8 @@ circles or per-pixel noise, and do not posterise to a few colours.
   and the cylinders' own goggles show their timing error as before. Advancement: *Cam in the Valley*
   (`VALLEY_CAM`, a running engine where a shared lobe times firing cylinders that top out at different crank angles).
   The `compact_v` Ponder page now builds the V around one valley camshaft.
-- **Not done.** Bank Builder still places no cams, so a vee built with it needs its valley camshaft added by hand. A
-  running engine that is reversed keeps working, but the lobe dials were set for the way it ran when timed.
+- **Not done.** A running engine that is reversed keeps working, but the lobe dials were set for the way it ran when
+  timed. (The Bank Builder now lays the valley camshaft for a builder who carries one.)
 
 ### Balance and power-creep pass (2026-11-01)
 
@@ -351,9 +364,10 @@ faces; and anything that needs doing regularly (an oil change) can be automated 
   `power_plant`, `fine_tuner`, `full_driveline`, `closed_loop`, `service_record`) and `chief_engineer`, which waits for the
   union of their milestones. A capstone is a single advancement with one criterion per milestone, so the advancement screen
   shows the progress and no event hook is needed; a player who reached a milestone before the capstone existed is credited
-  when they reach it again. New rows: `oil_exchange`, `used_oil`, `waste_oil`, `oil_filter`, `oil_kept_fresh`, `oil_spent`,
-  `warmed_up`, `coolant_used`, `cool_running`, `dual_fuel`, `steam_herd` (8 steam engines) and `steam_titan` (16); `well_oiled`
-  and `dry_run` now hang from Oil Change. Milestones are in `EngineMilestones.reachedService` and the `STEAM_*` ladder,
+  when they reach it again. New rows: `oil_exchange`, `used_oil`, `waste_oil`, `oil_filter`, `oil_kept_fresh`,
+  `warmed_up`, `coolant_used`, `cool_running`, `dual_fuel`, `steam_herd` (8 steam engines) and `steam_titan` (16). The
+  oil-trivia rows `engine_oil` (Oil Change), `well_oiled`, `dry_run` and `oil_spent` were later cut as redundant with the
+  oil pan; `sump` now hangs from `diesel`. Milestones are in `EngineMilestones.reachedService` and the `STEAM_*` ladder,
   both unit tested.
 - **Not done, and not verified.** The Minecraft-side code (sump, controller wiring, goggles, recipes, Ponder, advancements,
   lang) could not be built or run when this was written, because the build environment could not reach the NeoForge and
@@ -536,6 +550,69 @@ faces; and anything that needs doing regularly (an oil change) can be automated 
   `ServiceMilestonesTest`. GameTests: `aBlazeBurnerAgainstTheExchangerPreheatsTheEngine`,
   `anEngineWithNoIntakeReadsAsFailingForWantOfAir`.
 
+### Boiler heat, readouts, builder extras, muffler and casing (2026-11-13)
+
+- **Boiler heat** (`CECompat`). Create 6 reads a boiler's heaters through `BoilerHeater.REGISTRY`, keyed by block. The
+  Exhaust Heat Exchanger already carries a blaze burner's `HEAT_LEVEL`, so it is registered with Create's own
+  `BoilerHeater.BLAZE_BURNER`: kindled is one level of boiler, seething two, smouldering only passive heat. A fluid tank
+  over a hot exchanger with Create steam engines on it adds their power to the engine's (a combined cycle). The exchanger
+  pokes the tank (`FluidTankBlockEntity.updateBoilerTemperature`) when its level changes, because a boiler only looks at
+  its heaters when told to. Nothing in the simulation changed, so no balance table moved; the new power is Create's own
+  (steam engines, a boiler and its water) paid for with the exhaust the engine was throwing away, scaled by the
+  existing `heatRecoveryOutput` and `heatRecovery` settings. About 20 heat per second makes a seething exchanger, so
+  roughly seven cylinders at speed make two boiler levels per exchanger (by Create's own rules, up to two steam engines
+  at full efficiency, if the boiler is big enough and has the water), and exchangers on one network split the heat. Advancement: Combined Cycle (`COMBINED_CYCLE`, a hot exchanger under a boiler that has engines on it and
+  is taking heat). Not played end to end: the GameTest checks what Create is told, not a running boiler.
+- **Readouts** (`content.display`, `CEDisplaySources`). Create's Display Link reads a block through a `DisplaySource`
+  registered with `REGISTRATE.displaySource` and attached to the block with `DisplaySource.displaySource(...)`.
+  Crankshaft, crank throw and rotor housing offer Engine Status (state, RPM, load, temperature and oil, a line each),
+  Engine Speed (one RPM line for a nixie tube) and Engine Load, Temperature and Oil Condition (a percentage or progress
+  bar, chosen the way Create's fill level source is). Load is the network's torque over what the engine can give
+  (above 100 is overloaded); temperature is the block's heat over a warm engine's, so 100 is warm; oil is the
+  condition, 100 new. The oil sump offers Oil Sump Levels, one tank to a line. Every source refreshes every second
+  (`EngineReadout.REFRESH_TICKS`). The figures come from the synced `EngineSummary`, so they cost the engine nothing.
+  Advancement: Instrument Panel (`ENGINE_DISPLAYED`, a link reading a running engine). A Display Link has not been set up
+  through its screen in play: the GameTest checks that every source is attached to the right blocks.
+- **Sump comparator.** The sump has a second dial, above the Oil Exchange one, that picks which tank a comparator reads:
+  Engine Oil, Used Oil, Coolant or Pilot Fuel. The signal is 0 for an empty tank and 1 to 15 as it fills, 15 only when
+  full (`SumpBlockEntity.comparatorSignal`), refreshed every ten ticks, so a pump can top the oil up or an alarm can
+  sound when it runs low. Advancement: Dipstick (`SUMP_METERED`, a comparator reading the pan of a running engine).
+- **Schematic pricing.** Fitted parts are block state flags (see `PartInstallation`), and Create prices a block by its
+  item alone, so a Schematicannon used to build a finished cylinder, head or rotor housing with its pistons, rods,
+  injectors, plugs and rotor for free. Those three blocks now implement Create's `SpecialBlockItemRequirement`
+  (`PartInstallation.requirement`): the block plus every fitted part, precision grade respected.
+- **Bank Builder extras.** A builder that is carrying spark plugs fits one in each head it works on, and one carrying a
+  Cam Lobe lays a cam line parallel to the crank: a lobe at each throw's offset and Camshaft blocks in the gaps so the
+  line is unbroken (`BankBuilderItem.camOffsets`). The offset is the cell beside each cylinder block, on the side a quarter
+  turn round the crank from the bore: a flat gets a line by each bank, and a vee, whose second bank is on that very side,
+  gets one lobe in the valley that touches the block of both banks, which the shared-lobe timing already handles. The
+  extras use the player's real inventory even when creative (a creative builder otherwise has everything and would
+  put plugs in every diesel), and a creative player's stack is not used up. The line still has to be geared to half the
+  crank's speed, and the Timing Tool times the lobes. Advancement: Cam Included (`CAMS_LAID`). (The Timing Tool already
+  planned rotor housings; the "rotors are not planned" note above was out of date.)
+- **Muffler** (`MufflerBlock`, `engine.sim.Muffling`). An inline exhaust duct like the intercooler: pipes join its two
+  ends. It changes sound only: no power, no back-pressure, no simulation change at all. The scanner lists the mufflers on
+  each exhaust `PortNetwork` and, as for turbos, whether the run can go round them (`parallel`). A run is fully muffled by
+  one every path goes through and half muffled by one it can go round; the engine's `muffling` (in `EngineSummary`,
+  synced) is the average of its exhaust runs weighted by the heads they serve, so one bank of a V muffled is half. The
+  client scales the exhaust note, the cylinder and rotor bangs and the exhaust pops by `Muffling.volume` (a fully muffled
+  engine is a fifth as loud); the mechanical sounds (clatter, squeal, catch and stall) and the turbo and blower are not
+  the exhaust and are left alone. Goggles on a crankshaft say how much of the exhaust is muffled. Advancement: Hush Now
+  (`MUFFLED`, a running engine at half muffled or more). The volume was calculated, not listened to.
+- **Engine Casing.** A plain cube (riveted plate, steel top and bottom) with no block entity and no behaviour: it joins
+  no pipe, belongs to no engine and costs the scanner nothing. It is there to hide the sprawl. Advancement: Under the Hood
+  (`CLAD`, a running engine with four or more casing blocks against its cylinders).
+- **Fuel tooltips** (`client.FuelTooltips`). Any container with a fuel in it (buckets, other mods' tanks) lists the fuel's
+  energy per mB, whether it lights by compression (autoignition at or below `CEDataMaps.PILOT_IGNITION_LIMIT`, which also
+  makes it a pilot fuel) or needs a spark plug, how it takes a cold start, and how much thicker a shot it needs. They are
+  read from the same data map and tags as the simulation, so a datapack fuel is described correctly. No advancement: it is
+  an interface change, not something the engine does.
+- **Checks.** Unit tests `MufflingTest` and `LooksMilestonesTest`. GameTests `aSchematicOfAFittedEnginePricesItsParts`,
+  `aSumpComparatorReadsTheTankItIsSetTo`, `displayLinksCanReadAnEngineAndItsPan`, `aBoilerReadsTheHeatExchangerLikeABlazeBurner`,
+  `aMufflerInTheExhaustRunMutesTheEngine`, `theBankBuilderLaysPlugsAndCamsOnlyIfItIsCarryingThem`,
+  `theBankBuilderPutsAVeesLobeInItsValley` and `aCogPlacedBetweenTwoCranksCouplesThemAtOnce`. Three new Ponder pages
+  (`muffler`, `engine_casing`, `engine_readouts`) and extra steps on the heat exchanger, sump and Bank Builder pages: their
+  text is generated by datagen, but no scene has been watched in the game.
 
 ---
 

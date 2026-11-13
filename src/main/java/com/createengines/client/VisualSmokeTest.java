@@ -138,6 +138,7 @@ public final class VisualSmokeTest {
 			// The troubleshooting pages: the second page of the starter, the third of the crankshaft
 			ponderScene("troubleshooting_start", 200, CEBlocks.STARTER::asStack, 1, 150, 400, 700, 1000, 1300);
 			ponderScene("troubleshooting_running", 1700, CEBlocks.CRANKSHAFT::asStack, 3, 150, 400, 700, 1000, 1300);
+			newBlocks(3100);
 			return;
 		}
 
@@ -257,6 +258,59 @@ public final class VisualSmokeTest {
 		newScenes(10600);
 	}
 
+	/**
+	 * A muffler in the test engine's exhaust, engine casing round its cylinder, and an oil pan with a comparator and a lamp
+	 * against its crank, then the goggles on the muffled crank and pan, and every Ponder page that is new or gained steps;
+	 * then quits.
+	 */
+	private static void newBlocks(int start) {
+		STEPS.add(new Step(start, () -> {
+			Minecraft.getInstance().options.hideGui = true;
+			server(server -> {
+				var level = server.overworld();
+				// The outlet moves out a block and a muffler takes its place against the head
+				level.setBlock(origin.offset(TestEngine.EXHAUST.west()), CEBlocks.EXHAUST_OUTLET.getDefaultState()
+					.setValue(PortOpeningBlock.FACING, Direction.WEST), 3);
+				level.setBlock(origin.offset(TestEngine.EXHAUST), CEBlocks.MUFFLER.getDefaultState()
+					.setValue(net.minecraft.world.level.block.state.properties.BlockStateProperties.AXIS,
+						Direction.Axis.X), 3);
+				// Casing round the cylinder and the east side of the head, leaving the pipes' faces clear
+				for (BlockPos beside : List.of(new BlockPos(1, 3, 2), new BlockPos(3, 3, 2), new BlockPos(2, 3, 1),
+					new BlockPos(2, 3, 3), new BlockPos(3, 4, 2)))
+					level.setBlock(origin.offset(beside), CEBlocks.ENGINE_CASING.getDefaultState(), 3);
+				// An oil pan under the crank with oil in it, read by a comparator that lights a lamp
+				BlockPos pan = origin.offset(3, 1, 2);
+				level.setBlock(pan, CEBlocks.SUMP.getDefaultState(), 3);
+				level.setBlock(origin.offset(4, 0, 2), Blocks.STONE.defaultBlockState(), 3);
+				level.setBlock(origin.offset(4, 1, 2), Blocks.COMPARATOR.defaultBlockState()
+					.setValue(net.minecraft.world.level.block.HorizontalDirectionalBlock.FACING, Direction.WEST), 3);
+				level.setBlock(origin.offset(5, 1, 2), Blocks.REDSTONE_LAMP.defaultBlockState(), 3);
+				if (level.getBlockEntity(pan) instanceof com.createengines.content.sump.SumpBlockEntity sump)
+					sump.tank()
+						.fill(new FluidStack(CEFluids.ENGINE_OIL.get()
+							.getSource(), 500), IFluidHandler.FluidAction.EXECUTE);
+			});
+		}));
+		frames("muffler", start + 60, -2.0, 5.0, -0.5, -60, 22);
+		frames("casing", start + 100, 2.5, 5.2, -2.5, 0, 24);
+		frames("pan_comparator", start + 140, 4.5, 3.2, -1.5, 0, 28);
+		STEPS.add(new Step(start + 180, () -> view(-2.5, 6.5, -1.5, -55, 37)));
+		STEPS.add(new Step(start + 195, () -> shot("blocks_overview")));
+		STEPS.add(new Step(start + 200, () -> Minecraft.getInstance().options.hideGui = false));
+		goggles("muffled_crank", start + 205, 1.5, 2.0, 0.4, 0, 28);
+		goggles("sump", start + 235, 3.5, 2.0, 0.4, 0, 28);
+		// The pages that are new, and those that gained steps
+		ponder("muffler", start + 300, CEBlocks.MUFFLER::asStack, 100, 250, 400, 560);
+		ponder("engine_casing", start + 1000, CEBlocks.ENGINE_CASING::asStack, 100, 260, 400);
+		// The rotor housing's second page; its first is the rotary engine
+		ponderScene("engine_readouts", start + 1500, CEBlocks.ROTOR_HOUSING::asStack, 1, 100, 250, 400, 560);
+		ponder("heat_exchanger", start + 2300, CEBlocks.HEAT_EXCHANGER::asStack, 100, 600, 800, 880);
+		ponder("sump", start + 3500, CEBlocks.SUMP::asStack, 1300, 1450);
+		ponder("bank_builder", start + 5200, CEItems.BANK_BUILDER::asStack, 200, 520);
+		STEPS.add(new Step(start + 6000, () -> Minecraft.getInstance()
+			.stop()));
+	}
+
 	/** The firing order, compact V and mixture pages, from {@code start}; then quits. */
 	private static void newScenes(int start) {
 		ponderScene("firing_order", start, CEBlocks.CAM_LOBE::asStack, 1, 120, 400, 600, 780, 960, 1350, 1560);
@@ -340,7 +394,7 @@ public final class VisualSmokeTest {
 				BlockPos governor = at.offset(3, 3, 2);
 				level.setBlock(governor, CEBlocks.GOVERNOR.getDefaultState(), 3);
 				if (level.getBlockEntity(governor) instanceof GovernorBlockEntity be)
-					be.target.setValue(80 / GovernorBlockEntity.TARGET_STEP);
+					be.target.setValue(80);
 			});
 		}));
 		STEPS.add(new Step(start + 250, () -> server(server -> server.overworld()

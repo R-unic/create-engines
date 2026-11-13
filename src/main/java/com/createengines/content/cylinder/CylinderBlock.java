@@ -8,7 +8,9 @@ import com.createengines.engine.topology.EngineTopology;
 import com.createengines.registry.CEBlockEntities;
 import com.createengines.registry.CEItems;
 import com.mojang.serialization.MapCodec;
+import com.simibubi.create.api.schematic.requirement.SpecialBlockItemRequirement;
 import com.simibubi.create.content.equipment.wrench.IWrenchable;
+import com.simibubi.create.content.schematics.requirement.ItemRequirement;
 import com.simibubi.create.foundation.block.IBE;
 
 import net.minecraft.core.BlockPos;
@@ -24,6 +26,7 @@ import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.DirectionalBlock;
 import net.minecraft.world.level.block.Mirror;
 import net.minecraft.world.level.block.Rotation;
+import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.StateDefinition;
@@ -34,7 +37,8 @@ import net.minecraft.world.phys.BlockHitResult;
  * A cylinder bore. {@link #FACING} points along the bore, away from the crank throw it must sit on. It needs a piston
  * and a connecting rod installed before it does anything.
  */
-public class CylinderBlock extends DirectionalBlock implements IBE<CylinderBlockEntity>, IWrenchable {
+public class CylinderBlock extends DirectionalBlock
+	implements IBE<CylinderBlockEntity>, IWrenchable, SpecialBlockItemRequirement {
 
 	public static final BooleanProperty HAS_PISTON = BooleanProperty.create("piston");
 	public static final BooleanProperty HAS_ROD = BooleanProperty.create("connecting_rod");
@@ -88,6 +92,12 @@ public class CylinderBlock extends DirectionalBlock implements IBE<CylinderBlock
 	@Override
 	protected BlockState mirror(BlockState state, Mirror mirror) {
 		return state.rotate(mirror.getRotation(state.getValue(FACING)));
+	}
+
+	/** A schematic of a fitted cylinder costs the piston and rod as well as the block. */
+	@Override
+	public ItemRequirement getRequiredItems(BlockState state, @Nullable BlockEntity blockEntity) {
+		return PartInstallation.requirement(state, PARTS);
 	}
 
 	@Override

@@ -10,6 +10,7 @@ import com.createengines.content.crankshaft.CrankshaftBlockEntity;
 import com.createengines.engine.CylinderStatus;
 import com.createengines.engine.EngineState;
 import com.createengines.engine.EngineSummary;
+import com.createengines.engine.sim.Muffling;
 import com.createengines.engine.sim.CycleResult;
 import com.createengines.engine.sim.Thermal;
 import com.createengines.engine.topology.CylinderFault;
@@ -89,7 +90,7 @@ public final class EngineEffects {
 
 		float roll = random.nextFloat();
 		if (roll < look.pop())
-			afterfire(level, outlet.at, outlet.normal, 0.7f, 1);
+			afterfire(level, outlet.at, outlet.normal, 0.7f * Muffling.volume(engine == null ? 0 : engine.muffling()), 1);
 		else if (roll < look.pop() + look.flame())
 			flames(level, outlet.at, outlet.normal, 2, 0.14);
 	}

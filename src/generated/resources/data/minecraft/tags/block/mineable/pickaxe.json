@@ -27,6 +27,8 @@
     "create_engines:turbocharger",
     "create_engines:variable_turbocharger",
     "create_engines:supercharger",
-    "create_engines:intercooler"
+    "create_engines:intercooler",
+    "create_engines:muffler",
+    "create_engines:engine_casing"
   ]
 }

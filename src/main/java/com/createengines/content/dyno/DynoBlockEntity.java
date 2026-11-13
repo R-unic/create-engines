@@ -44,9 +44,10 @@ public class DynoBlockEntity extends SmartBlockEntity implements IHaveGoggleInfo
 	 * @param rpm      the speeds the curve was measured at
 	 * @param torque   stress capacity per RPM the engine can be rated for at each of them
 	 * @param current  the engine's speed now
+	 * @param rated    stress capacity per RPM the engine is rated at for the speed it is turning now
 	 * @param complete the whole curve has been measured
 	 */
-	public record Readout(float[] rpm, float[] torque, float current, boolean complete) {
+	public record Readout(float[] rpm, float[] torque, float current, float rated, boolean complete) {
 
 		/** Stress capacity, SU, at each speed. */
 		public float power(int index) {
@@ -71,7 +72,7 @@ public class DynoBlockEntity extends SmartBlockEntity implements IHaveGoggleInfo
 
 		boolean differsFrom(@Nullable Readout other) {
 			if (other == null || other.torque.length != torque.length || complete != other.complete
-				|| Math.abs(current - other.current) >= 1)
+				|| Math.abs(current - other.current) >= 1 || Math.abs(rated - other.rated) > 0.01f * Math.max(1, other.rated))
 				return true;
 			for (int i = 0; i < torque.length; i++)
 				if (Math.abs(torque[i] - other.torque[i]) > 0.01f * Math.max(1, other.torque[i]))
@@ -90,6 +91,7 @@ public class DynoBlockEntity extends SmartBlockEntity implements IHaveGoggleInfo
 			tag.putIntArray("Rpm", speeds);
 			tag.putIntArray("Torque", torques);
 			tag.putFloat("Current", current);
+			tag.putFloat("Rated", rated);
 			tag.putBoolean("Complete", complete);
 			return tag;
 		}
@@ -103,7 +105,7 @@ public class DynoBlockEntity extends SmartBlockEntity implements IHaveGoggleInfo
 				rpm[i] = speeds[i];
 				torque[i] = torques[i] / 10f;
 			}
-			return new Readout(rpm, torque, tag.getFloat("Current"), tag.getBoolean("Complete"));
+			return new Readout(rpm, torque, tag.getFloat("Current"), tag.getFloat("Rated"), tag.getBoolean("Complete"));
 		}
 	}
 
@@ -183,7 +185,7 @@ public class DynoBlockEntity extends SmartBlockEntity implements IHaveGoggleInfo
 			if (controller == null)
 				continue;
 			EngineController.Curve curve = controller.curve();
-			return new Readout(curve.rpm(), curve.torque(), curve.current(), curve.complete());
+			return new Readout(curve.rpm(), curve.torque(), curve.current(), curve.rated(), curve.complete());
 		}
 		return null;
 	}
@@ -247,6 +249,9 @@ public class DynoBlockEntity extends SmartBlockEntity implements IHaveGoggleInfo
 			.style(ChatFormatting.GRAY), tooltip, 1);
 		GoggleLines.add(CELang.translate("goggles.dyno.now", Math.round(current.current))
 			.style(ChatFormatting.DARK_GRAY), tooltip, 1);
+		if (current.rated > 0)
+			GoggleLines.add(CELang.translate("goggles.dyno.rated", compact(current.rated), compact(current.rated * current.current))
+				.style(ChatFormatting.DARK_GRAY), tooltip, 1);
 		addComparison(tooltip, current);
 		if (isPlayerSneaking)
 			GoggleLines.add(CELang.translate("goggles.dyno.hint")

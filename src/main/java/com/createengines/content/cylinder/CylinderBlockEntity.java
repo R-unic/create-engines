@@ -18,6 +18,8 @@ import com.createengines.content.effects.EngineEffects;
 import com.createengines.content.effects.ExhaustLook;
 import com.createengines.content.head.GalleryMember;
 import com.createengines.engine.CylinderStatus;
+import com.createengines.engine.EngineSummary;
+import com.createengines.engine.sim.Muffling;
 import com.createengines.engine.Diagnosis;
 import com.createengines.engine.sim.CamProfile;
 import com.createengines.engine.sim.CycleResult;
@@ -171,10 +173,11 @@ public class CylinderBlockEntity extends SmartBlockEntity implements IHaveGoggle
 			48, false) == null)
 			return;
 		RandomSource random = level.random;
-		float volume = CEClientConfig.bangVolume();
+		CrankshaftBlockEntity throwBlock = crankThrow();
+		EngineSummary engine = throwBlock == null ? null : throwBlock.engineSummary();
+		float volume = CEClientConfig.bangVolume() * Muffling.volume(engine == null ? 0 : engine.muffling());
 		// With the engine's own exhaust note playing, the bang is in the note: it comes from the same firing, so it lands
 		// with it, which a sample played from here a few tenths of a second ahead of the stream never would
-		CrankshaftBlockEntity throwBlock = crankThrow();
 		boolean inTheNote = throwBlock != null && throwBlock.primaryPos() != null
 			&& EngineNoteSound.isPlayingFor(throwBlock.primaryPos());
 		if (volume > 0 && !inTheNote)

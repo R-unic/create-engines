@@ -10,6 +10,7 @@ import org.jetbrains.annotations.Nullable;
 import com.createengines.advancement.CETriggers;
 import com.createengines.advancement.Milestone;
 import com.createengines.config.CEConfig;
+import com.createengines.content.camshaft.CamshaftBlock;
 import com.createengines.content.crankshaft.CrankshaftBlock;
 import com.createengines.content.cylinder.CylinderBlock;
 import com.createengines.content.head.CylinderHeadBlock;
@@ -55,8 +56,13 @@ import net.minecraft.world.level.block.state.properties.BlockStateProperties;
  * standard and precision parts. Precision builds use precision cylinders, heads, forged pistons and precision injectors,
  * and also swap those in for the standard parts already on the throws, handing the old ones back. Parts come out of the
  * player's inventory (a creative player needs none); a spot that is already built is only filled in, and a spot that is
- * blocked is left alone. It does not fit spark plugs, so a diesel is as it should be: plugs, pipes, cams and fuel are
- * still the builder's.
+ * blocked is left alone.
+ * <p>
+ * Two extras are laid only for a builder who is carrying them, creative or not, so a diesel stays as it should be:
+ * <b>spark plugs</b> go into the heads, and <b>camshafts and cam lobes</b> make a cam line beside the bank, parallel to
+ * the crank, with a lobe in reach of every cylinder: beside each block for an inline or a flat, in the valley for a vee,
+ * where one lobe times both banks. The line still has to be geared to half the crank's speed and its lobes timed (the
+ * Timing Tool does that). Pipes and fuel are still the builder's.
  */
 public class BankBuilderItem extends Item {
 
@@ -161,8 +167,28 @@ public class BankBuilderItem extends Item {
 	 * @param blocked     places something else was in the way of
 	 * @param missing     blocks that were needed and the builder did not have
 	 * @param upgraded    standard parts swapped for precision ones
+	 * @param camBlocks   camshaft and cam lobe blocks laid beside the bank
 	 */
-	public record Result(int throwsFound, int cylinders, int heads, int fitted, int blocked, int missing, int upgraded) {
+	public record Result(int throwsFound, int cylinders, int heads, int fitted, int blocked, int missing, int upgraded,
+						 int camBlocks) {
+	}
+
+	/**
+	 * Where the cam line or lines go, as offsets from a throw, for a layout built on the face {@code side}: beside the
+	 * cylinder block on the side a quarter turn round the crank from the bore (the next face a vee builds on), so
+	 * the lobe's axis is the crank's and does not point into the block. A vee has the one line in its valley, touching
+	 * the block of both banks; a flat has a line by each block.
+	 */
+	public static List<BlockPos> camOffsets(Layout layout, Axis axis, Direction side) {
+		Direction beside = side.getClockWise(axis);
+		return switch (layout) {
+			case INLINE, VEE -> List.of(BlockPos.ZERO.relative(side)
+				.relative(beside));
+			case FLAT -> List.of(BlockPos.ZERO.relative(side)
+				.relative(beside),
+				BlockPos.ZERO.relative(side.getOpposite())
+					.relative(beside));
+		};
 	}
 
 	/** The faces of a throw that a layout builds on, given the face that was clicked. */
@@ -200,6 +226,15 @@ public class BankBuilderItem extends Item {
 				.component()
 				.copy()
 				.withStyle(ChatFormatting.GRAY), false);
+		if (result.camBlocks() > 0) {
+			player.displayClientMessage(CELang.translate("tool.bank_builder.cams", result.camBlocks())
+				.component()
+				.copy()
+				.withStyle(ChatFormatting.GRAY), false);
+			if (player instanceof ServerPlayer server)
+				CETriggers.EVENT.get()
+					.trigger(server, Milestone.CAMS_LAID);
+		}
 		if (result.blocked() > 0)
 			player.displayClientMessage(CELang.translate("tool.bank_builder.blocked", result.blocked())
 				.component()
@@ -336,9 +371,60 @@ public class BankBuilderItem extends Item {
 					supplies.giveBack(CEItems.FUEL_INJECTOR.asStack());
 					counts[1]++;
 				}
+				// A plug only if the builder is carrying one: a diesel has none
+				BlockState plugged = level.getBlockState(headPos);
+				if (plugged.getBlock() instanceof CylinderHeadBlock && !plugged.getValue(CylinderHeadBlock.HAS_SPARK_PLUG)
+					&& supplies.takeExtra(CEItems.SPARK_PLUG.get())) {
+					level.setBlockAndUpdate(headPos, plugged.setValue(CylinderHeadBlock.HAS_SPARK_PLUG, true));
+					counts[0]++;
+				}
 			}
 		}
-		return new Result(throwPositions.size(), cylinders, heads, fitted + counts[0], blocked, missing, counts[1]);
+		int[] cams = layCams(level, throwPositions, axis, layout, side, supplies, player);
+		return new Result(throwPositions.size(), cylinders, heads, fitted + counts[0], blocked + cams[1],
+			missing + cams[2], counts[1], cams[0]);
+	}
+
+	/**
+	 * Lays the cam line for the bank, if the builder is carrying a cam lobe: a lobe at each throw's offset (see
+	 * {@link #camOffsets}), and camshaft blocks in the gaps between them so the line is unbroken, all along the crank's
+	 * axis. A cell that already holds a camshaft block is left, and one something else is in is blocked.
+	 *
+	 * @return the blocks laid at 0, the places blocked at 1 and the blocks the builder lacked at 2
+	 */
+	private static int[] layCams(Level level, List<BlockPos> throwPositions, Axis axis, Layout layout, Direction side,
+								 Supplies supplies, Player player) {
+		int[] laid = new int[3];
+		if (throwPositions.isEmpty() || !supplies.hasExtra(CEBlocks.CAM_LOBE.get()
+			.asItem()))
+			return laid;
+		for (BlockPos offset : camOffsets(layout, axis, side)) {
+			BlockPos first = throwPositions.get(0)
+				.offset(offset);
+			BlockPos last = throwPositions.get(throwPositions.size() - 1)
+				.offset(offset);
+			int span = axis.choose(last.getX() - first.getX(), last.getY() - first.getY(), last.getZ() - first.getZ());
+			for (int step = 0; step <= span; step++) {
+				BlockPos cell = first.relative(axis, step);
+				BlockState there = level.getBlockState(cell);
+				if (there.getBlock() instanceof CamshaftBlock && there.getValue(BlockStateProperties.AXIS) == axis)
+					continue;
+				boolean lobe = throwPositions.contains(cell.subtract(offset));
+				if (!canBuildOn(level, cell, player)) {
+					laid[1]++;
+					continue;
+				}
+				Block block = supplies.takeExtraBlock(lobe ? CEBlocks.CAM_LOBE.get() : CEBlocks.CAMSHAFT.get());
+				if (block == null) {
+					laid[2]++;
+					continue;
+				}
+				level.setBlockAndUpdate(cell, block.defaultBlockState()
+					.setValue(BlockStateProperties.AXIS, axis));
+				laid[0]++;
+			}
+		}
+		return laid;
 	}
 
 	/** Copies one block state property from {@code from} onto {@code to}, if {@code to} has it. */
@@ -425,6 +511,31 @@ public class BankBuilderItem extends Item {
 					return block;
 			}
 			return null;
+		}
+
+		/**
+		 * Whether the player is carrying {@code item}. The extras (spark plugs, cam blocks) are only ever laid by a builder
+		 * who has them, whether they are creative or not: a creative player has everything, but does not want plugs in a diesel.
+		 */
+		private boolean hasExtra(Item item) {
+			Inventory inventory = player.getInventory();
+			for (int i = 0; i < inventory.getContainerSize(); i++)
+				if (inventory.getItem(i)
+					.is(item))
+					return true;
+			return false;
+		}
+
+		/** Takes one of {@code item} if the player is carrying one; a creative player's stack is left as it was. */
+		private boolean takeExtra(Item item) {
+			if (!hasExtra(item))
+				return false;
+			return free || take(stack -> stack.is(item));
+		}
+
+		/** As {@link #takeExtra} for a block's item, answering with the block. */
+		private @Nullable Block takeExtraBlock(Block block) {
+			return takeExtra(block.asItem()) ? block : null;
 		}
 
 		/** Hands a part that was swapped out back to the player; a creative player has no use for it. */

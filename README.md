@@ -12,8 +12,7 @@ Minecraft 1.21.1 · NeoForge 21.1.219 · Create 6.0.10
 > **Built with AI.** Nearly all of the code, models, textures, sounds, Ponder scenes and docs were written by an AI
 > (Claude) at my direction. I have played, tested and reworked almost all of it over many passes, and it ships with
 > unit tests and in-world GameTests. It is still a young mod, so you may find rough edges or odd balance. Please report
-> them on the issue tracker, and back up a world before adding the mod to it. Until 1.0, a new version may change how
-> an existing engine behaves.
+> them on the issue tracker. Until 1.0, a new version may change how an existing engine behaves.
 
 ## Preview
 
@@ -37,7 +36,8 @@ Minecraft 1.21.1 · NeoForge 21.1.219 · Create 6.0.10
   and cranks geared together one to one count as separate lines. It takes from the rating only, never harms anything
 - Cam lobes that sit beside the cylinder block, so a V can run one camshaft in its valley and keep every head face
   free for pipes
-- A **Bank Builder** that lays out a whole inline, V or flat bank in one click, and a **Timing Tool** that sets the
+- A **Bank Builder** that lays out a whole inline, V or flat bank in one click (it fits the spark plugs you carry, and
+  lays a cam line beside the bank if you carry a camshaft and cam lobes), and a **Timing Tool** that sets the
   firing order for you
 
 **Feed and tune it**
@@ -45,7 +45,8 @@ Minecraft 1.21.1 · NeoForge 21.1.219 · Create 6.0.10
   with spark ignition
 - A craftable fuel chain: seeds to plant oil to diesel, sugar crops to ethanol, and biodiesel with glycerin on the
   side, all in Create basins. The loop closes: glycerin goes into engine oil and coolant, and used oil is burned as fuel or recycled into oil or charcoal
-- An **Exhaust Heat Exchanger** that turns engine exhaust into basin heat, so an engine can cook its own fuel
+- An **Exhaust Heat Exchanger** that turns engine exhaust into basin heat, so an engine can cook its own fuel, and
+  into boiler heat, so the exhaust can make steam for Create steam engines on top of the engine's own power
 - Oil film and lubrication, starters, batteries and alternators
 - Forge Energy out of an alternator, and other mods' fuels (anything tagged `c:diesel`, `c:gasoline`, `c:ethanol` or `c:plantoil`, or given an entry in the fuel data map) in the engines
 - An **oil sump that is the engine's service port**: one block against the engine takes its oil, its coolant and its
@@ -67,6 +68,11 @@ Minecraft 1.21.1 · NeoForge 21.1.219 · Create 6.0.10
 - A forgiving early game: spark plug soot clears itself, goggles suggest fuel settings, and the Timing Tool can tune
   every injector in one click
 - Governors and MAF sensors for the late game
+- **Engine readouts**: a Display Link set against a crankshaft shows an engine's state, speed, load, temperature and
+  oil on a display board or nixie tubes, and a comparator reads any of an oil sump's tanks, so a pump or an alarm can
+  keep the oil topped up
+- Fuel buckets say what they are on hover: their energy, whether they light by compression or need a spark plug, and
+  how they take a cold start (other mods' fuels too)
 
 **Make it powerful**
 - Turbochargers (stacked, twin, variable-geometry, with anti-lag), superchargers and intercoolers, with the sound to
@@ -77,6 +83,8 @@ Minecraft 1.21.1 · NeoForge 21.1.219 · Create 6.0.10
 - A **Dynamometer** that draws an engine's torque and power curves
 - A **Black Box** flight recorder that keeps ten minutes of an engine's speed, load and warmth and says why it stalled
 - An exhaust note made up from the engine's speed and firing order, so a V-twin lopes, a six hums and a dead cylinder limps
+- A **Muffler** that quiets the note, the bangs and the pops without costing the engine any power, and **Engine Casing**
+  to clad a bank and hide the sprawl
 - Exhaust that tells the truth: a thin haze when the mixture is right, black when it is rich, white vapour until the
   block warms, a blue cast when fuel has thinned the oil, and a crack of flame when unburned fuel meets a hot pipe.
   Engines cough as they catch and knock as they die, tick as they cool, squeal and spark when they run dry, draw the

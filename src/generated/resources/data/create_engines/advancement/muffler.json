@@ -1,28 +1,28 @@
 {
-  "parent": "create_engines:diesel",
+  "parent": "create_engines:pipework",
   "criteria": {
-    "engine_oil": {
+    "muffler": {
       "conditions": {
-        "event": "oiled"
+        "event": "muffled"
       },
       "trigger": "create_engines:event"
     }
   },
   "display": {
     "description": {
-      "translate": "advancement.create_engines.engine_oil.desc"
+      "translate": "advancement.create_engines.muffler.desc"
     },
     "icon": {
       "count": 1,
-      "id": "create_engines:engine_oil_bucket"
+      "id": "create_engines:muffler"
     },
     "title": {
-      "translate": "advancement.create_engines.engine_oil"
+      "translate": "advancement.create_engines.muffler"
     }
   },
   "requirements": [
     [
-      "engine_oil"
+      "muffler"
     ]
   ],
   "sends_telemetry_event": true

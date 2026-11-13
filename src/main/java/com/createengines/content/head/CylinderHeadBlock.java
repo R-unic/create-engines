@@ -12,7 +12,9 @@ import com.createengines.engine.topology.EngineTopology;
 import com.createengines.registry.CEBlockEntities;
 import com.createengines.registry.CEItems;
 import com.mojang.serialization.MapCodec;
+import com.simibubi.create.api.schematic.requirement.SpecialBlockItemRequirement;
 import com.simibubi.create.content.equipment.wrench.IWrenchable;
+import com.simibubi.create.content.schematics.requirement.ItemRequirement;
 import com.simibubi.create.foundation.block.IBE;
 
 import net.minecraft.core.BlockPos;
@@ -28,6 +30,7 @@ import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.DirectionalBlock;
 import net.minecraft.world.level.block.Mirror;
 import net.minecraft.world.level.block.Rotation;
+import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.StateDefinition;
@@ -42,7 +45,7 @@ import net.minecraft.world.phys.BlockHitResult;
  * a crankshaft shares one fuel gallery, so fuel piped into any one of them runs the whole engine.
  */
 public class CylinderHeadBlock extends DirectionalBlock
-	implements IBE<CylinderHeadBlockEntity>, IWrenchable, AirflowPort {
+	implements IBE<CylinderHeadBlockEntity>, IWrenchable, AirflowPort, SpecialBlockItemRequirement {
 
 	public static final BooleanProperty HAS_INJECTOR = BooleanProperty.create("injector");
 	public static final BooleanProperty HAS_SPARK_PLUG = BooleanProperty.create("spark_plug");
@@ -98,6 +101,12 @@ public class CylinderHeadBlock extends DirectionalBlock
 	@Override
 	protected BlockState mirror(BlockState state, Mirror mirror) {
 		return state.rotate(mirror.getRotation(state.getValue(FACING)));
+	}
+
+	/** A schematic of a fitted head costs the injector and plug as well as the block. */
+	@Override
+	public ItemRequirement getRequiredItems(BlockState state, @Nullable BlockEntity blockEntity) {
+		return PartInstallation.requirement(state, PARTS);
 	}
 
 	@Override

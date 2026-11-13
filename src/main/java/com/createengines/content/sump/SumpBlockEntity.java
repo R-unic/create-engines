@@ -58,12 +58,21 @@ public class SumpBlockEntity extends SmartBlockEntity implements IHaveGoggleInfo
 	private static final BehaviourType<SmartFluidTankBehaviour> COOLANT_TYPE = new BehaviourType<>("coolant_tank");
 	private static final BehaviourType<SmartFluidTankBehaviour> PILOT_TYPE = new BehaviourType<>("pilot_tank");
 	private static final BehaviourType<ScrollValueBehaviour> EXCHANGE_TYPE = new BehaviourType<>("oil_exchange");
+	private static final BehaviourType<ScrollValueBehaviour> SIGNAL_TYPE = new BehaviourType<>("sump_signal");
+
+	/** How often, in ticks, the comparator signal is worked out again. */
+	private static final int SIGNAL_INTERVAL = 10;
+	private static final int SIGNAL_TANKS = 4;
 
 	protected SmartFluidTankBehaviour tank;
 	protected SmartFluidTankBehaviour used;
 	protected SmartFluidTankBehaviour coolant;
 	protected SmartFluidTankBehaviour pilot;
 	public ScrollValueBehaviour exchange;
+	/** Which tank a comparator reads: 0 oil, 1 used oil, 2 coolant, 3 pilot fuel. */
+	public ScrollValueBehaviour signalTank;
+	private int signal;
+	private int sinceSignal;
 	private @Nullable BlockPos primaryPos;
 	private boolean filtered;
 	/** Oil swapped in the whole millibuckets the tanks deal in, with the fraction not yet moved carried here. */
@@ -108,6 +117,54 @@ public class SumpBlockEntity extends SmartBlockEntity implements IHaveGoggleInfo
 		exchange.withFormatter(v -> CELang.translate("value.oil_exchange." + v)
 			.string());
 		behaviours.add(exchange);
+
+		signalTank = new ScrollValueBehaviour(CELang.translate("value.sump_signal")
+			.component(), this, new SumpSignalBox()) {
+			@Override
+			public BehaviourType<?> getType() {
+				return SIGNAL_TYPE;
+			}
+		};
+		signalTank.between(0, SIGNAL_TANKS - 1);
+		signalTank.value = 0;
+		signalTank.withFormatter(v -> CELang.translate("value.sump_signal." + v)
+			.string());
+		behaviours.add(signalTank);
+	}
+
+	/** The tank a comparator is set to read. */
+	public int signalTankIndex() {
+		return signalTank == null ? 0 : Math.clamp(signalTank.getValue(), 0, SIGNAL_TANKS - 1);
+	}
+
+	/** What a comparator reads: 0 for an empty tank, 1 to 15 as it fills, 15 only when it is full. */
+	public int comparatorSignal() {
+		SmartFluidTank selected = switch (signalTankIndex()) {
+			case 1 -> usedTank();
+			case 2 -> coolantTank();
+			case 3 -> pilotTank();
+			default -> tank();
+		};
+		int amount = selected.getFluidAmount();
+		return amount <= 0 ? 0 : 1 + (int) (14L * Math.min(amount, selected.getCapacity()) / selected.getCapacity());
+	}
+
+	/** Whether this pan is feeding an engine, which is what makes reading it worth an advancement. */
+	public boolean onEngine() {
+		return primaryPos != null;
+	}
+
+	@Override
+	public void tick() {
+		super.tick();
+		if (level == null || level.isClientSide || ++sinceSignal < SIGNAL_INTERVAL)
+			return;
+		sinceSignal = 0;
+		int next = comparatorSignal();
+		if (next != signal) {
+			signal = next;
+			level.updateNeighbourForOutputSignal(worldPosition, getBlockState().getBlock());
+		}
 	}
 
 	/** The engine oil tank. */
@@ -245,6 +302,10 @@ public class SumpBlockEntity extends SmartBlockEntity implements IHaveGoggleInfo
 				GoggleLines.add(CELang.translate("goggles.sump.exchange.hint")
 					.style(ChatFormatting.DARK_GRAY), tooltip, 2);
 		}
+		if (isPlayerSneaking)
+			GoggleLines.add(CELang.translate("goggles.sump.signal", CELang.translate("value.sump_signal." + signalTankIndex())
+				.string())
+				.style(ChatFormatting.DARK_GRAY), tooltip, 2);
 		containedFluidTooltip(tooltip, isPlayerSneaking, fluidCapability());
 		return true;
 	}

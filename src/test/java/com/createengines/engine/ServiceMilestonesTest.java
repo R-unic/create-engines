@@ -37,12 +37,11 @@ class ServiceMilestonesTest {
 	}
 
 	@Test
-	void spentOilAndAFilterAreNoticed() {
+	void aFilterIsNoticed() {
 		Set<Milestone> reached = EngineMilestones.reachedService(service(true, 120, false, true, 0.2f, 0.7f, 0, false, false, false));
-		assertTrue(reached.contains(Milestone.OIL_SPENT));
 		assertTrue(reached.contains(Milestone.OIL_FILTERED));
 		assertFalse(EngineMilestones.reachedService(service(true, 120, false, false, 0.5f, 0.7f, 0, false, false, false))
-			.contains(Milestone.OIL_SPENT));
+			.contains(Milestone.OIL_FILTERED));
 	}
 
 	@Test

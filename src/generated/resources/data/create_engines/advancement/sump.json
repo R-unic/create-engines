@@ -1,5 +1,5 @@
 {
-  "parent": "create_engines:engine_oil",
+  "parent": "create_engines:diesel",
   "criteria": {
     "sump": {
       "conditions": {

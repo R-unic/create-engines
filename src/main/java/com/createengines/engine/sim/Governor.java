@@ -17,12 +17,34 @@ public final class Governor {
 	/** Reset rate: position gained per second per unit of relative speed error. */
 	private static final double RESET_RATE = 4;
 	/** Least air a governed spark engine is throttled to, so a lightly loaded one still has a charge to light. */
-	public static final double MIN_OPENING = 0.08;
+	public static final double MIN_OPENING = 0.03;
 	/** Slowest speed a redstone signal turns a governor down to, RPM: below this an engine only stalls. */
 	public static final double MIN_COMMANDED = 20;
 
+	/** Time constant of the flyweights' smoothing, seconds: a crank's speed pulses with every firing, and the rack should not follow that. */
+	private static final double SMOOTHING = 0.25;
+
 	private double reset;
 	private double position = 1;
+	private double smoothed = Double.NaN;
+
+	/**
+	 * Picks the rack up where it already is, e.g. after a reload or when the engine is rebuilt, so the governor takes
+	 * over from the position it was holding instead of throwing the rack wide open.
+	 *
+	 * @param held   the rack position to continue from, 0 to 1
+	 * @param rpm    the crank's speed now
+	 * @param target the speed being held, RPM
+	 */
+	public void seed(double held, double rpm, double target) {
+		if (!(target > 0) || !Double.isFinite(held) || !Double.isFinite(rpm))
+			return;
+		double clamped = Math.max(0, Math.min(1, held));
+		double error = (target - rpm) / target;
+		reset = Math.max(-1, Math.min(1, clamped - error / BAND));
+		position = clamped;
+		smoothed = rpm;
+	}
 
 	/**
 	 * @param rpm    the crank's speed now
@@ -31,7 +53,12 @@ public final class Governor {
 	 * @return the rack position, 0 (shut) to 1 (wide open)
 	 */
 	public double update(double rpm, double target, double dt) {
-		double error = (target - rpm) / target;
+		if (!(target > 0) || !Double.isFinite(rpm))
+			return position;
+		smoothed = Double.isNaN(smoothed) ? rpm : smoothed + (rpm - smoothed) * (dt / (SMOOTHING + dt));
+		// A speed well off the setting is acted on as it is: smoothing must never hold back the rack in an overspeed
+		double measured = rpm > target * (1 + BAND) ? rpm : smoothed;
+		double error = (target - measured) / target;
 		double raw = reset + error / BAND;
 		boolean saturatedHigh = raw >= 1 && error > 0;
 		boolean saturatedLow = raw <= 0 && error < 0;
@@ -50,6 +77,7 @@ public final class Governor {
 	public void reset() {
 		reset = 0;
 		position = 1;
+		smoothed = Double.NaN;
 	}
 
 	/**

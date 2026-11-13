@@ -54,6 +54,7 @@ import com.createengines.engine.sim.Thermal;
 import com.createengines.engine.sim.Throttle;
 import com.createengines.engine.sim.Torsion;
 import com.createengines.engine.sim.Intercooler;
+import com.createengines.engine.sim.Muffling;
 import com.createengines.engine.sim.Supercharger;
 import com.createengines.engine.sim.Turbocharger;
 import com.createengines.engine.sim.OilSupply;
@@ -94,6 +95,8 @@ public final class EngineController {
 
 	private static final int PUBLISH_INTERVAL = 10;
 	private static final int CAPACITY_INTERVAL = 5;
+	/** Ticks of a small, steady difference between the rating and the published capacity before it is published. */
+	private static final int SETTLE_INTERVAL = 40;
 	private static final int SYNC_INTERVAL = 10;
 	/** Crank speed below which a blower's gearing to it is not worked out. */
 	private static final double MIN_RATIO_RPM = 8;
@@ -155,6 +158,8 @@ public final class EngineController {
 	private @Nullable BlockPos activeStarter;
 	private EngineState previousState = EngineState.STALLED;
 	private final Governor governor = new Governor();
+	/** Whether the governor has been handed the rack position its block saved, once since it was last taken off. */
+	private boolean governorSeeded;
 	/** Ticks the governor has held the engine on its setting while carrying a load. */
 	private int governedTicks;
 	private final Map<Milestone, Integer> milestoneTicks = new EnumMap<>(Milestone.class);
@@ -688,17 +693,32 @@ public final class EngineController {
 	private void readGovernors(Level level) {
 		double target = Double.MAX_VALUE;
 		double setting = Double.MAX_VALUE;
+		double saved = -1;
 		for (BlockPos pos : layout.governors())
 			if (LoadedBlocks.blockEntity(level, pos) instanceof GovernorBlockEntity be) {
 				target = Math.min(target, be.governedSpeed());
 				setting = Math.min(setting, be.target());
+				saved = Math.max(saved, be.savedPosition());
 			}
 		boolean fitted = target < Double.MAX_VALUE;
 		double position = 1;
-		if (fitted)
+		if (fitted) {
+			if (!governorSeeded) {
+				// Just loaded or rebuilt: carry on from the rack the block last reported, not from wide open
+				governorSeeded = true;
+				if (saved >= 0)
+					governor.seed(saved, sim.rpm(), target);
+			}
 			position = governor.update(sim.rpm(), target, EngineSimulation.TICK);
-		else
+		} else if (!layout.governors()
+			.isEmpty()) {
+			// Its block is not loaded for a moment: keep the rack where it was, an unloaded governor must not race the engine
+			position = governor.position();
+			fitted = false;
+		} else {
 			governor.reset();
+			governorSeeded = false;
+		}
 		for (CylinderModel model : sim.cylinders())
 			model.governor = position;
 		boolean holding = fitted && !sim.isStopped() && Math.abs(sim.rpm() - target) <= GOVERNED_BAND * target
@@ -895,9 +915,11 @@ public final class EngineController {
 	 * @param rpm      the speeds it was measured at
 	 * @param torque   stress capacity per RPM the engine can be rated for at each, after roughness and the rating margin
 	 * @param current  the engine's speed now
+	 * @param rated    stress capacity per RPM it is rated at for the speed it is turning now: the best of {@code torque}
+	 *                 at or below that speed, which is what the network is offered
 	 * @param complete the whole curve has been measured
 	 */
-	public record Curve(float[] rpm, float[] torque, float current, boolean complete) {
+	public record Curve(float[] rpm, float[] torque, float current, float rated, boolean complete) {
 	}
 
 	/** What a dynamometer block shows; asking for it counts as a dynamometer reading this engine. */
@@ -912,7 +934,8 @@ public final class EngineController {
 			rpm[i] = (float) Dynamometer.speed(i);
 			torque[i] = (float) (Math.max(0, torqueCurve[i]) * Roughness.smoothness(rippleCurve[i]) * scale);
 		}
-		return new Curve(rpm, torque, (float) sim.rpm(), rated && rating == null);
+		return new Curve(rpm, torque, (float) sim.rpm(), (float) (ratedTorque() * CEConfig.STRESS_PER_TORQUE.get()),
+			rated && rating == null);
 	}
 
 	private double ratedTorque() {
@@ -951,7 +974,10 @@ public final class EngineController {
 		ticksSinceCapacity++;
 		boolean dropped = target == 0 && current != 0;
 		boolean significant = Math.abs(target - current) > Math.max(0.5, 0.05 * current);
-		if (dropped || significant && ticksSinceCapacity >= CAPACITY_INTERVAL) {
+		// A change too small to be worth a network update is still published once things have been steady a while, so what
+		// the network offers never sits a few percent off what the dynamometer rates the engine at
+		boolean drifted = Math.abs(target - current) > 0.5 && ticksSinceCapacity >= SETTLE_INTERVAL;
+		if (dropped || significant && ticksSinceCapacity >= CAPACITY_INTERVAL || drifted) {
 			primary.publishCapacity((float) target);
 			ticksSinceCapacity = 0;
 		}
@@ -1015,7 +1041,31 @@ public final class EngineController {
 				.temperature(),
 			(float) sim.thermal()
 				.coolantRate(),
-			pilotLit(), filtered, (float) Torsion.scaled(flexLoss), longestLine, report.health(), report.cause());
+			pilotLit(), filtered, (float) Torsion.scaled(flexLoss), longestLine, report.health(), report.cause(), muffling());
+	}
+
+	/**
+	 * How much of the engine's exhaust goes through a muffler, 0 to 1: each exhaust run counts by the heads it serves, as
+	 * fully muffled if every path through it goes through a muffler and half if a muffler can be gone round.
+	 */
+	private float muffling() {
+		java.util.List<EngineLayout.PortNetwork> runs = layout.ports()
+			.stream()
+			.filter(network -> network.kind() == com.createengines.content.airflow.PortKind.EXHAUST)
+			.toList();
+		int[] heads = new int[runs.size()];
+		float[] muffled = new float[runs.size()];
+		for (int i = 0; i < runs.size(); i++) {
+			EngineLayout.PortNetwork run = runs.get(i);
+			boolean series = run.mufflers()
+				.stream()
+				.anyMatch(muffler -> !run.parallel()
+					.contains(muffler));
+			heads[i] = run.heads();
+			muffled[i] = Muffling.run(series, !series && !run.mufflers()
+				.isEmpty());
+		}
+		return Muffling.engine(heads, muffled);
 	}
 
 	/**
@@ -1248,6 +1298,7 @@ public final class EngineController {
 		award(level, EngineMilestones.reachedFlex(state == EngineState.RUNNING, firing, (float) Torsion.scaled(flexLoss)));
 		reportMechanics(level, state);
 		reportParts(level, state, firing);
+		reportLooks(level, state);
 		EngineMilestones.Snapshot snapshot = new EngineMilestones.Snapshot(state, previousState, rpm,
 			activeStarter != null, firing, primary.publishedCapacity() * rpm, sparkFiring, (float) sim.lubrication()
 				.effective(),
@@ -1304,6 +1355,24 @@ public final class EngineController {
 			!layout.sumps()
 				.isEmpty(),
 			mafReading, governing, commanded, precision, rotorHousing && !sim.isStopped())));
+	}
+
+	/** Credits the operator with a muffler quieting the running engine and with casing built round its cylinders. */
+	private void reportLooks(Level level, EngineState state) {
+		boolean running = state == EngineState.RUNNING;
+		int casings = 0;
+		if (running) {
+			java.util.Set<net.minecraft.core.BlockPos> counted = new java.util.HashSet<>();
+			for (Cylinder placed : layout.cylinders())
+				for (net.minecraft.core.Direction side : net.minecraft.core.Direction.values()) {
+					net.minecraft.core.BlockPos beside = placed.pos()
+						.relative(side);
+					if (level.getBlockState(beside)
+						.is(com.createengines.registry.CEBlocks.ENGINE_CASING.get()) && counted.add(beside))
+						casings++;
+				}
+		}
+		award(level, EngineMilestones.reachedLooks(running, muffling(), casings));
 	}
 
 	/** Credits the operator with a flywheel that smooths a running engine, variable vanes at work, and anti-lag. */

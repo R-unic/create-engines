@@ -738,6 +738,30 @@ def intercooler():
     write_item("intercooler/item", "intercooler/block")
 
 
+def muffler():
+    """A muffler along the Y axis (the block state turns it): a wrapped canister between two end caps, with banding
+    round it and an exhaust stub on each end."""
+    textures = {"shell": SMOOTH, "cap": DARK, "band": IRON, "stub": IRON_BLOCK, "particle": DARK}
+    elements = [
+        box((2, 0, 2), (14, 2, 14), "cap"),
+        box((2, 14, 2), (14, 16, 14), "cap"),
+        box((3, 2, 3), (13, 14, 13), "shell"),
+        box((2.5, 4.5, 2.5), (13.5, 5.5, 13.5), "band"),
+        box((2.5, 10.5, 2.5), (13.5, 11.5, 13.5), "band"),
+        box((6, 0, 6), (10, 1, 10), "stub"),
+        box((6, 15, 6), (10, 16, 10), "stub"),
+    ]
+    write("muffler/block", textures, elements)
+    write_item("muffler/item", "muffler/block")
+
+
+def engine_casing():
+    """A cube of riveted plate, steel on top and bottom: plain cladding to build a cowl round an engine."""
+    textures = {"plate": RIVETED, "cap": IRON_BLOCK, "particle": RIVETED}
+    write("engine_casing/block", textures, [box((0, 0, 0), (16, 16, 16), "plate", up="cap", down="cap")])
+    write_item("engine_casing/item", "engine_casing/block")
+
+
 def sump():
     """An oil pan: a shallow sheet-metal tub under a bolted flange, with a drain plug, dipstick and filler."""
     textures = {"pan": DARK, "flange": IRON, "rib": IRON_BLOCK, "bolt": BRASS, "cap": COPPER, "particle": DARK}
@@ -998,6 +1022,8 @@ def main():
     dyno()
     black_box()
     intercooler()
+    muffler()
+    engine_casing()
     sump()
 
 

@@ -3,10 +3,14 @@ package com.createengines.content.airflow;
 import java.util.List;
 import java.util.Locale;
 
+import com.createengines.advancement.Achievements;
+import com.createengines.advancement.Milestone;
 import com.createengines.content.GoggleLines;
+import com.createengines.engine.LoadedBlocks;
 import com.createengines.engine.sim.HeatRecovery;
 import com.createengines.engine.sim.Tuning;
 import com.createengines.registry.CELang;
+import com.simibubi.create.content.fluids.tank.FluidTankBlockEntity;
 import com.simibubi.create.content.processing.burner.BlazeBurnerBlock;
 import com.simibubi.create.content.processing.burner.BlazeBurnerBlock.HeatLevel;
 
@@ -36,6 +40,10 @@ public class HeatExchangerBlockEntity extends SensorBlockEntity {
 	private static final HeatLevel[] LEVELS = {HeatLevel.NONE, HeatLevel.SMOULDERING, HeatLevel.KINDLED, HeatLevel.SEETHING};
 
 	private static final int SOURCE_INTERVAL = 20;
+	/** How often, in ticks, it looks for a boiler on top of it. */
+	private static final int BOILER_INTERVAL = 100;
+
+	private int boilerCheck;
 
 	private int sourceLevel;
 	private int sourceCheck;
@@ -52,6 +60,20 @@ public class HeatExchangerBlockEntity extends SensorBlockEntity {
 	@Override
 	public boolean onEngine() {
 		return onEngine;
+	}
+
+	@Override
+	public void tick() {
+		super.tick();
+		if (level == null || level.isClientSide || !onEngine || heatLevel < HeatRecovery.KINDLE
+			|| ++boilerCheck % BOILER_INTERVAL != 0)
+			return;
+		// A boiler over this exchanger that has engines on it and is taking heat: the exhaust is making steam
+		if (LoadedBlocks.blockEntity(level, worldPosition.above()) instanceof FluidTankBlockEntity tank) {
+			FluidTankBlockEntity controller = tank.getControllerBE();
+			if (controller != null && controller.boiler.attachedEngines > 0 && controller.boiler.activeHeat > 0)
+				Achievements.award(level, List.of(worldPosition), Milestone.COMBINED_CYCLE);
+		}
 	}
 
 	public float heat() {
@@ -71,6 +93,8 @@ public class HeatExchangerBlockEntity extends SensorBlockEntity {
 		sourceCheck = SOURCE_INTERVAL;
 		int best = HeatRecovery.NONE;
 		for (Direction side : Direction.values()) {
+			if (!level.isLoaded(worldPosition.relative(side)))
+				continue;
 			BlockState neighbour = level.getBlockState(worldPosition.relative(side));
 			if (neighbour.getBlock() instanceof HeatExchangerBlock)
 				continue;
@@ -128,8 +152,12 @@ public class HeatExchangerBlockEntity extends SensorBlockEntity {
 		if (!state.hasProperty(BlazeBurnerBlock.HEAT_LEVEL))
 			return;
 		HeatLevel target = LEVELS[heatLevel];
-		if (state.getValue(BlazeBurnerBlock.HEAT_LEVEL) != target)
+		if (state.getValue(BlazeBurnerBlock.HEAT_LEVEL) != target) {
 			level.setBlock(worldPosition, state.setValue(BlazeBurnerBlock.HEAT_LEVEL, target), Block.UPDATE_ALL);
+			// A boiler on top only looks at its heaters when told to, and a block update need not reach it
+			if (LoadedBlocks.blockEntity(level, worldPosition.above()) instanceof FluidTankBlockEntity tank)
+				tank.updateBoilerTemperature();
+		}
 	}
 
 	@Override

@@ -12,6 +12,7 @@ import com.createengines.engine.TurboStatus;
 import com.createengines.registry.CEBlocks;
 import com.createengines.registry.CEFluids;
 import com.createengines.registry.CEItems;
+import com.simibubi.create.AllBlocks;
 import com.simibubi.create.content.fluids.tank.FluidTankBlockEntity;
 import com.simibubi.create.content.processing.burner.BlazeBurnerBlock;
 import com.simibubi.create.content.processing.burner.BlazeBurnerBlock.HeatLevel;
@@ -1092,7 +1093,7 @@ public final class EngineScenes {
 			.showText(110)
 			.attachKeyFrame()
 			.colored(PonderPalette.BLUE)
-			.text("Its Governed Speed is set with the value panel, in steps of 5 RPM, up to 1000. A spark engine is governed on its throttle instead, because a charge that is too lean will not light.")
+			.text("Its Governed Speed is set with the value panel to any exact speed up to 256 RPM, or in steps of 5 up to 1000. A spark engine is governed on its throttle instead, because a charge that is too lean will not light.")
 			.pointAt(util.vector()
 				.blockSurface(block, Direction.NORTH))
 			.placeNearTarget();
@@ -2220,6 +2221,25 @@ public final class EngineScenes {
 				.blockSurface(sumpPos, Direction.WEST))
 			.placeNearTarget();
 		scene.idle(160);
+
+		scene.overlay()
+			.showText(150)
+			.attachKeyFrame()
+			.colored(PonderPalette.GREEN)
+			.text("A comparator against the sump reads one tank: 0 when it is empty, 15 when it is full. Scroll the upper dial to pick Engine Oil, Used Oil, Coolant or Pilot Fuel. Use it to switch a pump or sound an alarm when the oil runs low.")
+			.pointAt(util.vector()
+				.blockSurface(sumpPos, Direction.NORTH))
+			.placeNearTarget();
+		scene.idle(160);
+
+		scene.overlay()
+			.showText(110)
+			.colored(PonderPalette.BLUE)
+			.text("A Display Link set against the sump lists the levels of all four tanks on a display board.")
+			.pointAt(util.vector()
+				.blockSurface(sumpPos, Direction.EAST))
+			.placeNearTarget();
+		scene.idle(120);
 		scene.markAsFinished();
 	}
 
@@ -2564,7 +2584,7 @@ public final class EngineScenes {
 		scene.overlay()
 			.showText(110)
 			.attachKeyFrame()
-			.text("Use it on a throw: the cylinder and head go on the face you click, on every throw of the crankshaft. It takes blocks, pistons, rods and injectors from your pockets (spark plugs stay yours).")
+			.text("Use it on a throw: the cylinder and head go on the face you click, on every throw of the crankshaft. It takes blocks, pistons, rods and injectors from your pockets, and spark plugs too if you carry any: a diesel needs none.")
 			.pointAt(util.vector()
 				.topOf(2, 5, 3))
 			.placeNearTarget();
@@ -2586,7 +2606,7 @@ public final class EngineScenes {
 		scene.overlay()
 			.showText(110)
 			.colored(PonderPalette.GREEN)
-			.text("Vee builds the face a quarter turn round instead, for a 90 degree V. Then add pipes, cams and fuel, and let the Timing Tool set the firing order.")
+			.text("Vee builds the face a quarter turn round instead, for a 90 degree V. Carry a Camshaft and Cam Lobes and it lays the cam line too: beside each cylinder block, or in the valley of a vee, where one lobe times both banks. Gear it to half the crank's speed, add pipes and fuel, and let the Timing Tool set the firing order.")
 			.pointAt(util.vector()
 				.blockSurface(throwPos, Direction.NORTH))
 			.placeNearTarget();
@@ -2838,6 +2858,247 @@ public final class EngineScenes {
 		scene.markAsFinished();
 	}
 
+	public static void muffler(SceneBuilder builder, SceneBuildingUtil util) {
+		CreateSceneBuilder scene = new CreateSceneBuilder(builder);
+		scene.title("muffler", "Quieting the Exhaust");
+		scene.configureBasePlate(0, 0, 7);
+		scene.world()
+			.showSection(util.select()
+				.layer(0), Direction.UP);
+
+		Selection crank = util.select()
+			.fromTo(1, 1, 3, 3, 1, 3);
+		Selection cam = util.select()
+			.fromTo(1, 4, 3, 3, 4, 3);
+		Selection engine = util.select()
+			.fromTo(2, 2, 3, 2, 3, 3)
+			.add(cam)
+			.add(util.select()
+				.position(2, 3, 2));
+		Selection pipe = util.select()
+			.position(2, 3, 4);
+		Selection outlet = util.select()
+			.position(2, 3, 6);
+		Selection muffler = util.select()
+			.position(2, 3, 5);
+		BlockPos mufflerPos = util.grid()
+			.at(2, 3, 5);
+
+		setThrow(scene, util.select()
+			.position(2, 1, 3), 0);
+		setLobe(scene, util.select()
+			.position(2, 4, 3), LOBE_FOR_UPRIGHT_CYLINDER);
+		scene.world()
+			.showSection(crank, Direction.DOWN);
+		scene.world()
+			.showSection(engine, Direction.DOWN);
+		scene.world()
+			.showSection(pipe, Direction.NORTH);
+		scene.world()
+			.showSection(outlet, Direction.NORTH);
+		scene.world()
+			.setKineticSpeed(crank, 64);
+		scene.world()
+			.setKineticSpeed(cam, 32);
+		scene.idle(20);
+		scene.overlay()
+			.showText(100)
+			.attachKeyFrame()
+			.text("Every firing is a bang, and a big engine's exhaust carries a long way.")
+			.pointAt(util.vector()
+				.topOf(2, 3, 6))
+			.placeNearTarget();
+		scene.idle(110);
+
+		scene.world()
+			.showSection(muffler, Direction.DOWN);
+		scene.idle(15);
+		scene.overlay()
+			.showText(120)
+			.attachKeyFrame()
+			.colored(PonderPalette.GREEN)
+			.text("A Muffler set in the exhaust run takes the bark out of it. The engine's exhaust note, its bangs and its pops all come out quieter.")
+			.pointAt(util.vector()
+				.topOf(mufflerPos))
+			.placeNearTarget();
+		scene.idle(130);
+
+		scene.overlay()
+			.showText(110)
+			.colored(PonderPalette.BLUE)
+			.text("It costs the engine nothing: no power and no back-pressure. It changes what you hear and nothing else.")
+			.pointAt(util.vector()
+				.blockSurface(mufflerPos, Direction.EAST))
+			.placeNearTarget();
+		scene.idle(120);
+
+		scene.overlay()
+			.showText(140)
+			.attachKeyFrame()
+			.text("It quiets the exhaust that goes through it. On a V with one bank muffled the engine is half as quiet, and a muffler the exhaust can go round does half as much. The exhaust pipes join its two ends.")
+			.pointAt(util.vector()
+				.blockSurface(mufflerPos, Direction.WEST))
+			.placeNearTarget();
+		scene.idle(150);
+		scene.markAsFinished();
+	}
+
+	public static void engineCasing(SceneBuilder builder, SceneBuildingUtil util) {
+		CreateSceneBuilder scene = new CreateSceneBuilder(builder);
+		scene.title("engine_casing", "Cladding an Engine");
+		scene.configureBasePlate(0, 0, 7);
+		scene.world()
+			.showSection(util.select()
+				.layer(0), Direction.UP);
+
+		Selection crank = util.select()
+			.fromTo(1, 1, 3, 3, 1, 3);
+		Selection cam = util.select()
+			.fromTo(1, 4, 3, 3, 4, 3);
+		Selection engine = util.select()
+			.fromTo(2, 2, 3, 2, 3, 3)
+			.add(cam)
+			.add(util.select()
+				.fromTo(2, 3, 2, 2, 3, 2))
+			.add(util.select()
+				.fromTo(2, 3, 4, 2, 3, 5));
+		Selection cowl = util.select()
+			.position(1, 2, 3)
+			.add(util.select()
+				.position(3, 2, 3))
+			.add(util.select()
+				.position(2, 2, 2))
+			.add(util.select()
+				.position(2, 2, 4))
+			.add(util.select()
+				.position(1, 3, 3))
+			.add(util.select()
+				.position(3, 3, 3));
+
+		setThrow(scene, util.select()
+			.position(2, 1, 3), 0);
+		setLobe(scene, util.select()
+			.position(2, 4, 3), LOBE_FOR_UPRIGHT_CYLINDER);
+		scene.world()
+			.showSection(crank, Direction.DOWN);
+		scene.world()
+			.showSection(engine, Direction.DOWN);
+		scene.world()
+			.setKineticSpeed(crank, 64);
+		scene.world()
+			.setKineticSpeed(cam, 32);
+		scene.idle(20);
+		scene.overlay()
+			.showText(100)
+			.attachKeyFrame()
+			.text("A bank of cylinders with its pipework is a lot of loose parts to look at.")
+			.pointAt(util.vector()
+				.topOf(2, 3, 3))
+			.placeNearTarget();
+		scene.idle(110);
+
+		scene.world()
+			.showSection(cowl, Direction.DOWN);
+		scene.idle(15);
+		scene.overlay()
+			.showText(120)
+			.attachKeyFrame()
+			.colored(PonderPalette.GREEN)
+			.text("Engine Casing is plain riveted plate for building a cowl round an engine. It does nothing to how the engine runs, so clad it however you like.")
+			.pointAt(util.vector()
+				.topOf(1, 2, 3))
+			.placeNearTarget();
+		scene.idle(130);
+
+		scene.overlay()
+			.showText(130)
+			.colored(PonderPalette.BLUE)
+			.text("Leave the faces that pipes, sensors, the camshaft and an oil sump use clear: casing joins nothing, so it cannot stand in for them.")
+			.pointAt(util.vector()
+				.blockSurface(util.grid()
+					.at(2, 3, 3), Direction.EAST))
+			.placeNearTarget();
+		scene.idle(140);
+		scene.markAsFinished();
+	}
+
+	public static void engineReadouts(SceneBuilder builder, SceneBuildingUtil util) {
+		CreateSceneBuilder scene = new CreateSceneBuilder(builder);
+		scene.title("engine_readouts", "Reading an Engine from Afar");
+		scene.configureBasePlate(0, 0, 6);
+		scene.world()
+			.showSection(util.select()
+				.layer(0), Direction.UP);
+
+		Selection crank = util.select()
+			.fromTo(1, 2, 3, 3, 2, 3);
+		Selection engine = util.select()
+			.fromTo(2, 3, 3, 2, 4, 3);
+		Selection sump = util.select()
+			.position(3, 1, 3);
+		BlockPos crankPos = util.grid()
+			.at(3, 2, 3);
+		BlockPos sumpPos = util.grid()
+			.at(3, 1, 3);
+
+		setThrow(scene, util.select()
+			.position(2, 2, 3), 0);
+		scene.world()
+			.showSection(crank, Direction.DOWN);
+		scene.world()
+			.showSection(engine, Direction.DOWN);
+		scene.world()
+			.setKineticSpeed(crank, 48);
+		scene.idle(20);
+		scene.overlay()
+			.showText(100)
+			.attachKeyFrame()
+			.text("Goggles show an engine's figures, but only from beside it. A Display Link can carry them anywhere.")
+			.pointAt(util.vector()
+				.topOf(2, 4, 3))
+			.placeNearTarget();
+		scene.idle(110);
+
+		scene.overlay()
+			.showControls(util.vector()
+				.blockSurface(crankPos, Direction.SOUTH), Pointing.RIGHT, 50)
+			.rightClick()
+			.withItem(new ItemStack(AllBlocks.DISPLAY_LINK.get()));
+		scene.idle(15);
+		scene.overlay()
+			.showText(130)
+			.attachKeyFrame()
+			.colored(PonderPalette.GREEN)
+			.text("Set a Display Link against any crankshaft block of an engine, and give it a display board or nixie tubes. Engine Status lists what the engine is doing, its speed, load, temperature and oil, a line each.")
+			.pointAt(util.vector()
+				.blockSurface(crankPos, Direction.SOUTH))
+			.placeNearTarget();
+		scene.idle(140);
+
+		scene.overlay()
+			.showText(140)
+			.attachKeyFrame()
+			.colored(PonderPalette.BLUE)
+			.text("Engine Speed gives the RPM for a nixie tube. Engine Load, Temperature and Oil Condition each give a percentage or a progress bar. Load is how much of its rating the network asks of it, and temperature reads 100 when the block is warm.")
+			.pointAt(util.vector()
+				.blockSurface(crankPos, Direction.UP))
+			.placeNearTarget();
+		scene.idle(150);
+
+		scene.world()
+			.showSection(sump, Direction.UP);
+		scene.idle(15);
+		scene.overlay()
+			.showText(130)
+			.attachKeyFrame()
+			.text("Against an oil sump, Oil Sump Levels lists what is in each of its four tanks. A comparator on the sump reads one of them too, to switch a pump or sound an alarm when the oil runs low.")
+			.pointAt(util.vector()
+				.blockSurface(sumpPos, Direction.NORTH))
+			.placeNearTarget();
+		scene.idle(140);
+		scene.markAsFinished();
+	}
+
 	public static void heatExchanger(SceneBuilder builder, SceneBuildingUtil util) {
 		CreateSceneBuilder scene = new CreateSceneBuilder(builder);
 		scene.title("heat_exchanger", "Cooking Fuel on Exhaust Heat");
@@ -2930,7 +3191,7 @@ public final class EngineScenes {
 			.showText(120)
 			.attachKeyFrame()
 			.colored(PonderPalette.RED)
-			.text("From about seven it counts as superheated, the hottest heat a basin recipe can ask for.")
+			.text("From about seven it counts as superheated, like a blaze burner fed blaze cake: enough to distil Ethanol twice as far and to recycle Used Oil into more Engine Oil.")
 			.pointAt(util.vector()
 				.topOf(exchanger))
 			.placeNearTarget();
@@ -2944,6 +3205,22 @@ public final class EngineScenes {
 				.topOf(exchanger))
 			.placeNearTarget();
 		scene.idle(150);
+
+		scene.world()
+			.hideSection(mixer, Direction.UP);
+		scene.idle(15);
+		scene.world()
+			.replaceBlocks(basin, AllBlocks.FLUID_TANK.getDefaultState(), true);
+		scene.idle(10);
+		scene.overlay()
+			.showText(150)
+			.attachKeyFrame()
+			.colored(PonderPalette.GREEN)
+			.text("A fluid tank in its place is a boiler heated the same way: kindled is one level of boiler and seething is two. Put Create steam engines on it, and their power adds to the engine's: a combined cycle, from heat that was going up the chimney.")
+			.pointAt(util.vector()
+				.topOf(2, 4, 4))
+			.placeNearTarget();
+		scene.idle(160);
 		scene.markAsFinished();
 	}
 
@@ -3014,6 +3291,15 @@ public final class EngineScenes {
 
 		scene.overlay()
 			.showText(150)
+			.colored(PonderPalette.RED)
+			.text("Superheated, as over a big engine's Exhaust Heat Exchanger, Sugar Mash with an apple or mushroom and a sugar distils 100 mB of Ethanol instead of 50. Create runs the recipe that asks for the most items, so the extra sugar is what selects it.")
+			.pointAt(util.vector()
+				.topOf(5, 2, 3))
+			.placeNearTarget();
+		scene.idle(160);
+
+		scene.overlay()
+			.showText(150)
 			.colored(PonderPalette.BLUE)
 			.text("Diesel burns by compression alone. Gasoline and Ethanol need a spark plug, or a diesel pilot shot. Ethanol carries less energy than gasoline, but a hot, boosted charge will not light it early.")
 			.pointAt(util.vector()
@@ -3025,7 +3311,7 @@ public final class EngineScenes {
 			.showText(150)
 			.attachKeyFrame()
 			.colored(PonderPalette.GREEN)
-			.text("Water with Glycerin makes Engine Coolant. Used Oil from an oil exchange heated with charcoal makes Engine Oil again, or coked on its own it makes charcoal, which goes back into Diesel. Nothing is wasted.")
+			.text("Water with Glycerin makes Engine Coolant. Used Oil from an oil exchange heated with charcoal makes Engine Oil again, 300 mB instead of 250 if superheated with a clay ball as well, or coked on its own it makes charcoal, which goes back into Diesel. Nothing is wasted.")
 			.pointAt(util.vector()
 				.topOf(3, 2, 3))
 			.placeNearTarget();

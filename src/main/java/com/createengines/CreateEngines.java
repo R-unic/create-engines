@@ -9,8 +9,10 @@ import com.createengines.config.CEConfig;
 import com.createengines.engine.topology.EngineTopology;
 import com.createengines.registry.CEBlockEntities;
 import com.createengines.registry.CEBlocks;
+import com.createengines.registry.CECompat;
 import com.createengines.registry.CECreativeTabs;
 import com.createengines.registry.CEDataMaps;
+import com.createengines.registry.CEDisplaySources;
 import com.createengines.registry.CEFluids;
 import com.createengines.registry.CEItems;
 import com.createengines.registry.CELang;
@@ -43,6 +45,7 @@ public class CreateEngines {
 
 		CECreativeTabs.register(modEventBus);
 		CETriggers.register(modEventBus);
+		CEDisplaySources.register();
 		CEBlocks.register();
 		CEItems.register();
 		CEFluids.register();
@@ -52,6 +55,7 @@ public class CreateEngines {
 		CELang.register();
 		CEAdvancements.register();
 
+		modEventBus.addListener(CECompat::onCommonSetup);
 		modEventBus.addListener(CEDataMaps::register);
 		modEventBus.addListener(CEBlockEntities::registerCapabilities);
 		modEventBus.addListener(CEConfig::onConfig);
@@ -59,6 +63,8 @@ public class CreateEngines {
 
 		NeoForge.EVENT_BUS.addListener(EngineTopology::onLevelTick);
 		NeoForge.EVENT_BUS.addListener(EngineTopology::onLevelUnload);
+		NeoForge.EVENT_BUS.addListener(EngineTopology::onBlockPlaced);
+		NeoForge.EVENT_BUS.addListener(EngineTopology::onBlockBroken);
 		NeoForge.EVENT_BUS.addListener(Operators::onBlockPlaced);
 		NeoForge.EVENT_BUS.addListener(Operators::onBlockUsed);
 		NeoForge.EVENT_BUS.addListener(Operators::onBlockBroken);

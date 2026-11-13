@@ -113,6 +113,16 @@ class GovernorTest {
 		assertTrue(firing >= 3, "most cylinders should still be firing under the throttle: " + firing);
 	}
 
+	/** The throttle can close far enough to hold a spark engine at a slow setting, not just the speed it idles at. */
+	@Test
+	void aSparkEngineCanBeGovernedSlowly() {
+		for (int cylinders : new int[] {4, 12}) {
+			EngineSimulation sim = engine(cylinders, FuelSpec.GASOLINE, true);
+			double[] state = run(sim, new Governor(), 40, 0, 25, null);
+			assertEquals(40, state[0], 8, cylinders + " cylinders held at 40 RPM");
+		}
+	}
+
 	@Test
 	void aGovernorDoesNotChangeWhatTheEngineIsRatedAt() {
 		EngineSimulation sim = engine(4, FuelSpec.DIESEL, false);
@@ -175,6 +185,35 @@ class GovernorTest {
 		double[] state = run(sim, new Governor(), Governor.commanded(120, 8), 0, 20, range);
 		assertEquals(64, state[0], 3, "commanded speed");
 		assertTrue(range[1] - range[0] < 8, "steady: " + range[0] + " to " + range[1]);
+	}
+
+	/** Picking up from a saved rack position carries on from it rather than throwing the rack open. */
+	@Test
+	void aSeededGovernorContinuesFromItsSavedRack() {
+		Governor governor = new Governor();
+		governor.seed(0.4, 80, 80);
+		assertEquals(0.4, governor.update(80, 80, EngineSimulation.TICK), 0.05);
+		governor.reset();
+		governor.seed(Double.NaN, 80, 80);
+		assertEquals(1, governor.update(0, 80, EngineSimulation.TICK), 1e-9);
+	}
+
+	/** Bad input never produces a NaN rack. */
+	@Test
+	void badInputLeavesTheRackAlone() {
+		Governor governor = new Governor();
+		governor.update(80, 80, EngineSimulation.TICK);
+		double before = governor.position();
+		assertEquals(before, governor.update(Double.NaN, 80, EngineSimulation.TICK), 1e-9);
+		assertEquals(before, governor.update(80, 0, EngineSimulation.TICK), 1e-9);
+	}
+
+	/** An overspeed shuts the rack at once, however smooth the reading. */
+	@Test
+	void anOverspeedShutsTheRackAtOnce() {
+		Governor governor = new Governor();
+		governor.update(80, 80, EngineSimulation.TICK);
+		assertEquals(0, governor.update(120, 80, EngineSimulation.TICK), 1e-9);
 	}
 
 	@Test

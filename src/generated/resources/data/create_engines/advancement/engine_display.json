@@ -1,0 +1,29 @@
+{
+  "parent": "create_engines:alive",
+  "criteria": {
+    "engine_display": {
+      "conditions": {
+        "event": "engine_displayed"
+      },
+      "trigger": "create_engines:event"
+    }
+  },
+  "display": {
+    "description": {
+      "translate": "advancement.create_engines.engine_display.desc"
+    },
+    "icon": {
+      "count": 1,
+      "id": "create:display_link"
+    },
+    "title": {
+      "translate": "advancement.create_engines.engine_display"
+    }
+  },
+  "requirements": [
+    [
+      "engine_display"
+    ]
+  ],
+  "sends_telemetry_event": true
+}

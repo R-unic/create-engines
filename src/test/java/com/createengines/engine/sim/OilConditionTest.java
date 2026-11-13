@@ -29,6 +29,18 @@ class OilConditionTest {
 	}
 
 	@Test
+	void aDryEngineAgesNoOilAndTheFirstOilInIsFresh() {
+		Lubrication oil = new Lubrication(0);
+		oil.age(1e6, 1);
+		assertEquals(1, oil.condition(), "no oil in the engine, none to wear out");
+		oil.setCondition(0);
+		oil.update(10, 0.1, 4, mb -> mb);
+		assertEquals(1, oil.condition(), "oil poured into a dry engine is new");
+		oil.age(300, 1);
+		assertTrue(oil.condition() < 1, "once oiled it ages as usual");
+	}
+
+	@Test
 	void hotAndThinnedOilAgesFasterAndAFilterSlowsIt() {
 		Lubrication oil = new Lubrication(1);
 		double warm = oil.stress(Thermal.NORMAL, false);

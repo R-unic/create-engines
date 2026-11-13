@@ -1,28 +1,28 @@
 {
-  "parent": "create_engines:engine_oil",
+  "parent": "create_engines:alive",
   "criteria": {
-    "oil_spent": {
+    "engine_casing": {
       "conditions": {
-        "event": "oil_spent"
+        "event": "clad"
       },
       "trigger": "create_engines:event"
     }
   },
   "display": {
     "description": {
-      "translate": "advancement.create_engines.oil_spent.desc"
+      "translate": "advancement.create_engines.engine_casing.desc"
     },
     "icon": {
       "count": 1,
-      "id": "create_engines:used_oil_bucket"
+      "id": "create_engines:engine_casing"
     },
     "title": {
-      "translate": "advancement.create_engines.oil_spent"
+      "translate": "advancement.create_engines.engine_casing"
     }
   },
   "requirements": [
     [
-      "oil_spent"
+      "engine_casing"
     ]
   ],
   "sends_telemetry_event": true

@@ -16,6 +16,7 @@ import com.createengines.config.CEClientConfig;
 import com.createengines.content.crankshaft.CrankshaftBlockEntity;
 import com.createengines.engine.EngineState;
 import com.createengines.engine.EngineSummary;
+import com.createengines.engine.sim.Muffling;
 import com.createengines.registry.CESounds;
 
 import net.minecraft.client.Minecraft;
@@ -138,7 +139,8 @@ public final class EngineNoteSound extends AbstractTickableSoundInstance {
 			stop();
 			return;
 		}
-		volume = LOUDEST * CEClientConfig.engineNoteVolume() * fade;
+		volume = LOUDEST * CEClientConfig.engineNoteVolume() * fade
+			* Muffling.volume(summary == null ? 0 : summary.muffling());
 	}
 
 	/** How much of the note is burning in each state: a coasting or cranking engine only pumps air. */

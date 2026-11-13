@@ -15,6 +15,7 @@ import com.createengines.CreateEngines;
 import com.createengines.registry.CEBlocks;
 import com.createengines.registry.CEFluids;
 import com.createengines.registry.CEItems;
+import com.simibubi.create.AllBlocks;
 import com.tterrag.registrate.providers.ProviderType;
 import com.tterrag.registrate.providers.RegistrateAdvancementProvider;
 
@@ -75,6 +76,8 @@ public final class CEAdvancements {
 			"Run an engine that takes air in and lets exhaust out through piped manifolds.");
 		on("throttle", "pipework", () -> CEBlocks.THROTTLE.get(), AdvancementType.TASK, Milestone.THROTTLED,
 			"Pedal to the Metal", "Run an engine whose intake a Throttle Body is holding partly closed.");
+		on("muffler", "pipework", () -> CEBlocks.MUFFLER.get(), AdvancementType.TASK, Milestone.MUFFLED,
+			"Hush Now", "Run an engine whose exhaust goes through a Muffler: it quiets the note, the bangs and the pops, and costs nothing.");
 		on("starter", "crankshaft", () -> CEBlocks.STARTER.get(), AdvancementType.TASK, Milestone.CRANKING,
 			"Turn the Key", "Crank an engine over with a Starter.");
 
@@ -83,10 +86,10 @@ public final class CEAdvancements {
 			Milestone.DIESEL_BURNED, "Rudolf's Recipe", "Run an engine on Diesel, which lights readily under compression.");
 		on("gasoline", "diesel", () -> CEFluids.GASOLINE.getBucket().orElseThrow(), AdvancementType.TASK,
 			Milestone.GASOLINE_BURNED, "Refined Taste", "Run an engine on Gasoline. It will not light by compression, so it needs a spark.");
-		on("engine_oil", "diesel", () -> CEFluids.ENGINE_OIL.getBucket().orElseThrow(), AdvancementType.TASK,
-			Milestone.OILED, "Oil Change", "Run an engine whose moving parts are lubricated with Engine Oil.");
-		on("sump", "engine_oil", () -> CEBlocks.SUMP.get(), AdvancementType.TASK, Milestone.SUMP_OILING,
+		on("sump", "diesel", () -> CEBlocks.SUMP.get(), AdvancementType.TASK, Milestone.SUMP_OILING,
 			"Oil Pan", "Run an engine kept oiled from an Oil Sump set against its crankshaft or head.");
+		on("sump_metered", "sump", () -> CEBlocks.SUMP.get(), AdvancementType.TASK, Milestone.SUMP_METERED,
+			"Dipstick", "Read a running engine's Oil Sump with a comparator, to switch a pump or sound an alarm when the oil runs low.");
 
 		// Exhaust heat
 		on("heat_exchanger", "pipework", () -> CEBlocks.HEAT_EXCHANGER.get(), AdvancementType.TASK,
@@ -94,7 +97,10 @@ public final class CEAdvancements {
 			"Run an engine whose exhaust runs through an Exhaust Heat Exchanger hot enough to cook heated basin recipes, with the basin on top of it.");
 		on("superheat", "heat_exchanger", () -> CEBlocks.HEAT_EXCHANGER.get(), AdvancementType.GOAL,
 			Milestone.SUPERHEAT_RECOVERED, "Exhausting Work",
-			"Run a big engine whose exhaust heat exchanger is hot enough to superheat a basin, as a Blaze Burner fed blaze cake would.");
+			"Run a big engine whose exhaust heat exchanger is hot enough to superheat a basin, as a Blaze Burner fed blaze cake would. Superheated, Sugar Mash with a fermenting item and a sugar distils twice the Ethanol.");
+		on("combined_cycle", "heat_exchanger", () -> AllBlocks.STEAM_ENGINE.get(), AdvancementType.GOAL,
+			Milestone.COMBINED_CYCLE, "Combined Cycle",
+			"Heat a boiler from an engine's exhaust: set a fluid tank over a hot Exhaust Heat Exchanger and run a Create steam engine off it.");
 
 		// Ignition and electrics
 		on("spark_plug", "cylinder_head", () -> CEItems.SPARK_PLUG.get(), AdvancementType.TASK, Milestone.SPARK_ENGINE,
@@ -118,6 +124,10 @@ public final class CEAdvancements {
 		// Running
 		on("alive", "starter", () -> CEBlocks.CYLINDER.get(), AdvancementType.GOAL, Milestone.ENGINE_RUNNING,
 			"It's Alive!", "Get an engine running on its own power.");
+		on("engine_casing", "alive", () -> CEBlocks.ENGINE_CASING.get(), AdvancementType.TASK, Milestone.CLAD,
+			"Under the Hood", "Run an engine with four or more blocks of Engine Casing built round its cylinders.");
+		on("engine_display", "alive", () -> AllBlocks.DISPLAY_LINK.get(), AdvancementType.TASK, Milestone.ENGINE_DISPLAYED,
+			"Instrument Panel", "Point a Display Link at a running engine's crankshaft and show its figures on a Display Board or nixie tubes.");
 		on("four_cylinders", "alive", () -> CEBlocks.CRANK_THROW.get(), AdvancementType.TASK, Milestone.FOUR_CYLINDERS,
 			"Four on the Floor", "Run an engine with four firing cylinders.");
 		on("eight_cylinders", "four_cylinders", () -> CEBlocks.CRANK_THROW.get(), AdvancementType.GOAL,
@@ -144,10 +154,6 @@ public final class CEAdvancements {
 		on("steam_beater", "heavy_duty", () -> CEBlocks.CRANKSHAFT.get(), AdvancementType.CHALLENGE,
 			Milestone.STEAM_BEATER, "Steam Is for Kettles",
 			"Run an engine rated for 65536 stress units or more: four Create steam engines' worth from one crankshaft.");
-		on("well_oiled", "engine_oil", () -> CEFluids.ENGINE_OIL.getBucket().orElseThrow(), AdvancementType.TASK,
-			Milestone.WELL_OILED, "Well Oiled Machine", "Run an engine with every part fully lubricated.");
-		on("dry_run", "engine_oil", () -> CEBlocks.CRANKSHAFT.get(), AdvancementType.TASK, Milestone.DRY_RUN,
-			"Running on Hope", "Run an engine with no oil in it. It drags terribly, but it runs.");
 		on("smoke_signals", "alive", () -> CEBlocks.EXHAUST_OUTLET.get(), AdvancementType.TASK, Milestone.SMOKE_SIGNALS,
 			"Smoke Signals", "Run so rich that fuel pours out of the exhaust as black smoke.");
 		on("dialed_in", "alive", () -> CEBlocks.CYLINDER_HEAD.get(), AdvancementType.GOAL, Milestone.DIALED_IN,
@@ -215,6 +221,8 @@ public final class CEAdvancements {
 			"Bang Bang", "Set a turbocharger's anti-lag and keep it spooled off the throttle by burning fuel in the exhaust.");
 		on("bank_builder", "crankshaft", () -> CEItems.BANK_BUILDER.get(), AdvancementType.TASK, Milestone.BANK_BUILT,
 			"Assembly Line", "Use a Bank Builder on a crankshaft to lay out its cylinders and heads in one click.");
+		on("bank_cams", "bank_builder", () -> CEBlocks.CAM_LOBE.get(), AdvancementType.TASK, Milestone.CAMS_LAID,
+			"Cam Included", "Carry a Camshaft and Cam Lobes when you use a Bank Builder, and it lays the cam line beside the bank too.");
 		on("vee_engine", "four_cylinders", () -> CEItems.BANK_BUILDER.get(), AdvancementType.GOAL, Milestone.VEE_ENGINE,
 			"Vee for Victory", "Run an engine of four or more cylinders with two banks on the same crank throws, a quarter turn apart.");
 		on("flat_engine", "four_cylinders", () -> CEItems.BANK_BUILDER.get(), AdvancementType.GOAL, Milestone.FLAT_ENGINE,
@@ -268,8 +276,6 @@ public final class CEAdvancements {
 			"Filtered", "Run an engine with an Oil Filter fitted in its oil pan. The oil ages more slowly and fuel is cleaned out of it faster.");
 		on("oil_kept_fresh", "oil_exchange", () -> CEFluids.ENGINE_OIL.getBucket().orElseThrow(), AdvancementType.GOAL,
 			Milestone.OIL_KEPT_FRESH, "Always Fresh", "Run an engine at speed while an oil exchange keeps the oil nearly new.");
-		on("oil_spent", "engine_oil", () -> CEFluids.USED_OIL.getBucket().orElseThrow(), AdvancementType.TASK,
-			Milestone.OIL_SPENT, "Overdue", "Let an engine's oil go almost completely spent. It drags a little more, but nothing breaks.");
 
 		// Temperature and coolant
 		on("warmed_up", "alive", () -> CEBlocks.CYLINDER.get(), AdvancementType.TASK, Milestone.WARMED_UP,
@@ -322,7 +328,7 @@ public final class CEAdvancements {
 			"Finish the driveline track: a charged battery, a flywheel smoothing the engine and a governor under redstone.");
 		capstone("closed_loop", "diesel", () -> CEFluids.ETHANOL.getBucket().orElseThrow(), fuel, "Closed Loop",
 			"Finish the fuel track: burn gasoline, ethanol and waste oil, superheat from the exhaust and light a dual-fuel engine.");
-		capstone("service_record", "engine_oil", () -> CEItems.OIL_FILTER.get(), service, "Service Record",
+		capstone("service_record", "sump", () -> CEItems.OIL_FILTER.get(), service, "Service Record",
 			"Finish the service track: an oil pan keeping the oil fresh, a filter, a warm block, an engine running cool, a block heater and a stone-cold start on a slow fuel.");
 		List<Milestone> everything = new ArrayList<>();
 		for (List<Milestone> track : List.of(builder, power, tuning, driveline, fuel, service))

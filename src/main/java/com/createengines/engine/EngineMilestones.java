@@ -23,8 +23,6 @@ public final class EngineMilestones {
 	/** Eight steam engines' worth, and sixteen: the top of the power ladder. */
 	public static final float STEAM_HERD = 8 * STEAM_ENGINE;
 	public static final float STEAM_TITAN = 16 * STEAM_ENGINE;
-	public static final float WELL_OILED = 0.9f;
-	public static final float DRY = 0.1f;
 	public static final float BOOST = 0.3f;
 	public static final float BIG_BOOST = 1f;
 	/** Plug soot at which a spark plug counts as fouled. */
@@ -143,8 +141,7 @@ public final class EngineMilestones {
 		return reached;
 	}
 
-	/** Condition at or below which oil counts as spent, and at or above which it counts as kept fresh. */
-	public static final float SPENT_OIL = 0.3f;
+	/** Condition at or above which oil counts as kept fresh. */
 	public static final float FRESH_OIL = 0.9f;
 	/** Temperature at which a block has warmed through (see {@link com.createengines.engine.sim.Thermal}). */
 	public static final float WARM = 0.6f;
@@ -195,8 +192,6 @@ public final class EngineMilestones {
 		}
 		if (s.filtered())
 			reached.add(Milestone.OIL_FILTERED);
-		if (s.condition() <= SPENT_OIL)
-			reached.add(Milestone.OIL_SPENT);
 		if (s.temperature() >= WARM)
 			reached.add(Milestone.WARMED_UP);
 		if (s.coolant())
@@ -356,6 +351,23 @@ public final class EngineMilestones {
 						boolean governing, boolean commanded, int precision, boolean rotorHousingTurning) {
 	}
 
+	/** How much of an engine's exhaust must go through a muffler for it to count as muffled. */
+	public static final float MUFFLED_AT = 0.5f;
+	/** Blocks of engine casing round an engine's cylinders for it to count as clad. */
+	public static final int CLAD_BLOCKS = 4;
+
+	/** What a running engine's looks and sound have earned: a muffler quieting it, and casing built round it. */
+	public static Set<Milestone> reachedLooks(boolean running, float muffling, int casings) {
+		Set<Milestone> reached = EnumSet.noneOf(Milestone.class);
+		if (!running)
+			return reached;
+		if (muffling >= MUFFLED_AT)
+			reached.add(Milestone.MUFFLED);
+		if (casings >= CLAD_BLOCKS)
+			reached.add(Milestone.CLAD);
+		return reached;
+	}
+
 	public static Set<Milestone> reachedParts(Parts p) {
 		Set<Milestone> reached = EnumSet.noneOf(Milestone.class);
 		if (p.rotorHousingTurning())
@@ -372,11 +384,8 @@ public final class EngineMilestones {
 			reached.add(Milestone.DIESEL_BURNED);
 		if (p.gasoline())
 			reached.add(Milestone.GASOLINE_BURNED);
-		if (p.lubrication() >= OILED) {
-			reached.add(Milestone.OILED);
-			if (p.sump())
-				reached.add(Milestone.SUMP_OILING);
-		}
+		if (p.lubrication() >= OILED && p.sump())
+			reached.add(Milestone.SUMP_OILING);
 		if (p.mafReading())
 			reached.add(Milestone.MAF_READING);
 		if (p.governing())
@@ -435,10 +444,6 @@ public final class EngineMilestones {
 				reached.add(Milestone.PRECISION_ENGINE);
 			if (s.sparkFiring())
 				reached.add(Milestone.SPARK_ENGINE);
-			if (s.lubrication() >= WELL_OILED)
-				reached.add(Milestone.WELL_OILED);
-			if (s.lubrication() < DRY)
-				reached.add(Milestone.DRY_RUN);
 			if (s.rich())
 				reached.add(Milestone.SMOKE_SIGNALS);
 			if (s.balanced() && s.rpm() >= DIALED_IN_RPM)

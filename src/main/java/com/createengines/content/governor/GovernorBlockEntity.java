@@ -11,6 +11,9 @@ import com.simibubi.create.foundation.blockEntity.SmartBlockEntity;
 import com.simibubi.create.foundation.blockEntity.behaviour.BehaviourType;
 import com.simibubi.create.foundation.blockEntity.behaviour.BlockEntityBehaviour;
 import com.simibubi.create.foundation.blockEntity.behaviour.ValueBoxTransform;
+import com.simibubi.create.foundation.blockEntity.behaviour.ValueSettingsBehaviour.ValueSettings;
+import com.simibubi.create.foundation.blockEntity.behaviour.ValueSettingsBoard;
+import com.simibubi.create.foundation.blockEntity.behaviour.ValueSettingsFormatter;
 import com.simibubi.create.foundation.blockEntity.behaviour.scrollValue.ScrollValueBehaviour;
 
 import net.createmod.catnip.math.VecHelper;
@@ -20,8 +23,11 @@ import net.minecraft.core.Direction;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
+import net.minecraft.util.Mth;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.Vec3;
 
 /**
@@ -32,11 +38,15 @@ import net.minecraft.world.phys.Vec3;
  */
 public class GovernorBlockEntity extends SmartBlockEntity implements IHaveGoggleInformation, EngineMember {
 
-	/** The target is set in steps of this many RPM. */
-	public static final int TARGET_STEP = 5;
-	public static final int MIN_TARGET = 4;
-	public static final int MAX_TARGET = 200;
-	public static final int DEFAULT_TARGET = 16;
+	/** The target is stored as an exact speed in RPM. Above {@link #EXACT_MAX} the value panel sets it in these steps. */
+	public static final int COARSE_STEP = 5;
+	/** The highest speed the value panel's exact row reaches: Create's default RPM limit. */
+	public static final int EXACT_MAX = 256;
+	public static final int MIN_TARGET = 20;
+	public static final int MAX_TARGET = 1000;
+	public static final int DEFAULT_TARGET = 80;
+	/** Marks data written with the target in RPM; older data holds it in steps of {@link #COARSE_STEP}. */
+	private static final String EXACT_KEY = "ExactRpm";
 	private static final int SYNC_INTERVAL = 10;
 	private static final BehaviourType<ScrollValueBehaviour> TARGET_TYPE = new BehaviourType<>("governed_speed");
 
@@ -63,16 +73,47 @@ public class GovernorBlockEntity extends SmartBlockEntity implements IHaveGoggle
 			public BehaviourType<?> getType() {
 				return TARGET_TYPE;
 			}
+
+			/** Two rows: any exact speed up to a standard engine's limit, and steps of 5 for a raised one. */
+			@Override
+			public ValueSettingsBoard createBoard(Player player, BlockHitResult hitResult) {
+				return new ValueSettingsBoard(label, EXACT_MAX, 16,
+					List.of(CELang.translate("value.governed_speed.exact")
+						.component(),
+						CELang.translate("value.governed_speed.coarse")
+							.component()),
+					new ValueSettingsFormatter(settings -> Component.literal(rpmOf(settings) + " RPM")));
+			}
+
+			@Override
+			public ValueSettings getValueSettings() {
+				int rpm = getValue();
+				return rpm <= EXACT_MAX ? new ValueSettings(0, rpm) : new ValueSettings(1, rpm / COARSE_STEP);
+			}
+
+			@Override
+			public void setValueSettings(Player player, ValueSettings settings, boolean ctrlDown) {
+				int rpm = Mth.clamp(rpmOf(settings), MIN_TARGET, MAX_TARGET);
+				if (rpm == getValue())
+					return;
+				setValue(rpm);
+				playFeedbackSound(this);
+			}
 		};
 		target.between(MIN_TARGET, MAX_TARGET);
 		target.value = DEFAULT_TARGET;
-		target.withFormatter(v -> v * TARGET_STEP + " RPM");
+		target.withFormatter(v -> v + " RPM");
 		behaviours.add(target);
+	}
+
+	/** The speed a value panel selection stands for: exact in the first row, in steps of 5 in the second. */
+	private static int rpmOf(ValueSettings settings) {
+		return settings.row() == 0 ? settings.value() : settings.value() * COARSE_STEP;
 	}
 
 	/** The speed the governor holds, RPM. */
 	public double target() {
-		return Math.max(MIN_TARGET, target.getValue()) * TARGET_STEP;
+		return Math.max(MIN_TARGET, target.getValue());
 	}
 
 	/** The redstone strength at the block, which asks for a share of the setting. */
@@ -88,6 +129,11 @@ public class GovernorBlockEntity extends SmartBlockEntity implements IHaveGoggle
 	/** The redstone strength being put out for comparators: how far open the rack is held, 15 wide open. */
 	public int signal() {
 		return signal;
+	}
+
+	/** The rack position the block last held while on an engine, or -1 when it has none to give (never on one, or reset). */
+	public double savedPosition() {
+		return onEngine ? position : -1;
 	}
 
 	/** Called by the engine every tick with the crank's speed, where the rack is and the speed being held. */
@@ -145,6 +191,7 @@ public class GovernorBlockEntity extends SmartBlockEntity implements IHaveGoggle
 		tag.putFloat("Rpm", rpm);
 		tag.putFloat("Position", position);
 		tag.putFloat("Held", held);
+		tag.putBoolean(EXACT_KEY, true);
 	}
 
 	@Override
@@ -155,6 +202,9 @@ public class GovernorBlockEntity extends SmartBlockEntity implements IHaveGoggle
 		rpm = tag.getFloat("Rpm");
 		position = tag.contains("Position") ? tag.getFloat("Position") : 1;
 		held = tag.getFloat("Held");
+		// Saved before the target was exact: its value is in steps of 5 RPM
+		if (target != null && tag.contains("ScrollValue") && !tag.contains(EXACT_KEY))
+			target.value = Mth.clamp(target.value * COARSE_STEP, MIN_TARGET, MAX_TARGET);
 	}
 
 	@Override

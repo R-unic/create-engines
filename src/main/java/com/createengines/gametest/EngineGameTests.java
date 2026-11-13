@@ -277,6 +277,189 @@ public class EngineGameTests {
 		helper.succeed();
 	}
 
+	/**
+	 * A schematic cannon prices a block by its item alone unless the block says otherwise. Parts fitted into a cylinder,
+	 * head or rotor housing are block state flags, so without a requirement of our own a finished engine would be built
+	 * with its pistons, rods, injectors, plugs and rotors for free.
+	 */
+	@GameTest(template = "empty")
+	public static void aSchematicOfAFittedEnginePricesItsParts(GameTestHelper helper) {
+		BlockState cylinder = CEBlocks.CYLINDER.getDefaultState()
+			.setValue(CylinderBlock.HAS_PISTON, true)
+			.setValue(CylinderBlock.FORGED_PISTON, true)
+			.setValue(CylinderBlock.HAS_ROD, true);
+		assertPriced(helper, cylinder, CEBlocks.CYLINDER.asItem(), CEItems.FORGED_PISTON.get(),
+			CEItems.CONNECTING_ROD.get());
+		assertNotPriced(helper, cylinder, CEItems.PISTON.get());
+
+		BlockState head = CEBlocks.CYLINDER_HEAD.getDefaultState()
+			.setValue(CylinderHeadBlock.HAS_INJECTOR, true)
+			.setValue(CylinderHeadBlock.HAS_SPARK_PLUG, true);
+		assertPriced(helper, head, CEBlocks.CYLINDER_HEAD.asItem(), CEItems.FUEL_INJECTOR.get(),
+			CEItems.SPARK_PLUG.get());
+		assertNotPriced(helper, head, CEItems.PRECISION_INJECTOR.get());
+
+		BlockState housing = CEBlocks.ROTOR_HOUSING.getDefaultState()
+			.setValue(RotorHousingBlock.HAS_ROTOR, true)
+			.setValue(RotorHousingBlock.HAS_INJECTOR, true)
+			.setValue(RotorHousingBlock.FINE_INJECTOR, true);
+		assertPriced(helper, housing, CEBlocks.ROTOR_HOUSING.asItem(), CEItems.ROTOR.get(),
+			CEItems.PRECISION_INJECTOR.get());
+		assertNotPriced(helper, housing, CEItems.SPARK_PLUG.get());
+
+		// A bare housing costs the block and nothing else
+		BlockState bare = CEBlocks.CYLINDER.getDefaultState();
+		helper.assertTrue(com.simibubi.create.content.schematics.requirement.ItemRequirement.of(bare, null)
+			.getRequiredItems()
+			.size() == 1, "A bare cylinder should cost only itself");
+		helper.succeed();
+	}
+
+	/** A comparator against an oil pan reads the tank its dial names: nothing when empty, 15 only when full. */
+	@GameTest(template = "empty")
+	public static void aSumpComparatorReadsTheTankItIsSetTo(GameTestHelper helper) {
+		BlockPos sump = new BlockPos(3, 1, 2);
+		helper.setBlock(sump, CEBlocks.SUMP.getDefaultState());
+		SumpBlockEntity pan = helper.getBlockEntity(sump);
+		BlockState state = helper.getBlockState(sump);
+		BlockPos absolute = helper.absolutePos(sump);
+		helper.assertTrue(state.getAnalogOutputSignal(helper.getLevel(), absolute) == 0, "An empty pan reads nothing");
+
+		pan.fluidCapability()
+			.fill(new FluidStack(CEFluids.ENGINE_OIL.get()
+				.getSource(), 500), FluidAction.EXECUTE);
+		int half = state.getAnalogOutputSignal(helper.getLevel(), absolute);
+		helper.assertTrue(half > 1 && half < 15, "A half-full oil tank should read in between, read " + half);
+		pan.fluidCapability()
+			.fill(new FluidStack(CEFluids.ENGINE_OIL.get()
+				.getSource(), 500), FluidAction.EXECUTE);
+		helper.assertTrue(state.getAnalogOutputSignal(helper.getLevel(), absolute) == 15, "A full oil tank reads 15");
+
+		// The dial moves the reading to another tank, which is still empty
+		pan.signalTank.setValue(2);
+		helper.assertTrue(state.getAnalogOutputSignal(helper.getLevel(), absolute) == 0,
+			"Set to coolant it should read the empty coolant tank");
+		pan.fluidCapability()
+			.fill(new FluidStack(CEFluids.COOLANT.get()
+				.getSource(), 500), FluidAction.EXECUTE);
+		helper.assertTrue(state.getAnalogOutputSignal(helper.getLevel(), absolute) == 15,
+			"Set to coolant it should read the full coolant tank");
+		helper.succeed();
+	}
+
+	/**
+	 * A vanilla comparator beside an oil pan reads the tank its dial names, so a lamp it feeds lights once the pan holds oil.
+	 * A comparator's facing is its input side, so it faces the pan and the lamp sits behind it.
+	 */
+	@GameTest(template = "empty", timeoutTicks = 200)
+	public static void aComparatorBesideAnOilPanLightsALampOnceItHoldsOil(GameTestHelper helper) {
+		BlockPos pan = new BlockPos(2, 1, 2);
+		BlockPos lamp = new BlockPos(4, 1, 2);
+		helper.setBlock(pan, CEBlocks.SUMP.getDefaultState());
+		helper.setBlock(new BlockPos(3, 0, 2), Blocks.STONE);
+		helper.setBlock(new BlockPos(3, 1, 2), Blocks.COMPARATOR.defaultBlockState()
+			.setValue(net.minecraft.world.level.block.HorizontalDirectionalBlock.FACING, Direction.WEST));
+		helper.setBlock(lamp, Blocks.REDSTONE_LAMP);
+		helper.runAtTickTime(5, () -> {
+			helper.assertBlockProperty(lamp, BlockStateProperties.LIT, false);
+			SumpBlockEntity sump = helper.getBlockEntity(pan);
+			sump.fluidCapability()
+				.fill(new FluidStack(CEFluids.ENGINE_OIL.get()
+					.getSource(), 500), FluidAction.EXECUTE);
+		});
+		helper.succeedWhen(() -> {
+			helper.assertTrue(helper.getTick() > 5, "Not filled yet");
+			helper.assertBlockProperty(lamp, BlockStateProperties.LIT, true);
+		});
+	}
+
+	/** Every crankshaft block offers the engine's readouts to a Display Link, and the oil pan its levels. */
+	@GameTest(template = "empty")
+	public static void displayLinksCanReadAnEngineAndItsPan(GameTestHelper helper) {
+		buildSingleCylinder(helper, true);
+		BlockPos sump = new BlockPos(3, 1, 2);
+		helper.setBlock(sump, CEBlocks.SUMP.getDefaultState());
+		var onCrank = com.simibubi.create.api.behaviour.display.DisplaySource.getAll(helper.getLevel(),
+			helper.absolutePos(PRIMARY));
+		for (var source : java.util.List.of(com.createengines.registry.CEDisplaySources.ENGINE_STATUS,
+			com.createengines.registry.CEDisplaySources.ENGINE_SPEED, com.createengines.registry.CEDisplaySources.ENGINE_LOAD,
+			com.createengines.registry.CEDisplaySources.ENGINE_TEMPERATURE,
+			com.createengines.registry.CEDisplaySources.ENGINE_OIL))
+			helper.assertTrue(onCrank.contains(source.get()), "A crankshaft should offer " + source.getId());
+		helper.assertTrue(com.simibubi.create.api.behaviour.display.DisplaySource
+			.getAll(helper.getLevel(), helper.absolutePos(sump))
+			.contains(com.createengines.registry.CEDisplaySources.SUMP_LEVELS.get()), "An oil pan should offer its levels");
+
+		// The figures are shares of what the engine can give: flat out is 1, overloaded is more
+		var overloaded = new EngineSummary(EngineState.OVERLOADED, 128f, 100f, 150f, 0f, 0f, 1, 1, 1f, 1f, false,
+			new float[0]);
+		helper.assertTrue(Math.abs(com.createengines.content.display.EngineReadout.load(overloaded) - 1.5f) < 1e-4,
+			"150 asked of 100 available is a load of 1.5");
+		var idle = new EngineSummary(EngineState.STALLED, 0f, 100f, 0f, 0f, 0f, 0, 1, 1f, 1f, false, new float[0]);
+		helper.assertTrue(com.createengines.content.display.EngineReadout.load(idle) == 0f, "Nothing asked is a load of 0");
+		helper.succeed();
+	}
+
+	/** A boiler reads an exhaust heat exchanger as it reads a blaze burner: kindled is one level, seething two, cold none. */
+	@GameTest(template = "empty")
+	public static void aBoilerReadsTheHeatExchangerLikeABlazeBurner(GameTestHelper helper) {
+		BlockPos pos = new BlockPos(2, 1, 2);
+		BlockPos absolute = helper.absolutePos(pos);
+		for (var level : java.util.Map.of(com.simibubi.create.content.processing.burner.BlazeBurnerBlock.HeatLevel.NONE, -1f,
+			com.simibubi.create.content.processing.burner.BlazeBurnerBlock.HeatLevel.KINDLED, 1f,
+			com.simibubi.create.content.processing.burner.BlazeBurnerBlock.HeatLevel.SEETHING, 2f)
+			.entrySet()) {
+			BlockState state = CEBlocks.HEAT_EXCHANGER.getDefaultState()
+				.setValue(com.simibubi.create.content.processing.burner.BlazeBurnerBlock.HEAT_LEVEL, level.getKey());
+			float heat = com.simibubi.create.api.boiler.BoilerHeater.findHeat(helper.getLevel(), absolute, state);
+			helper.assertTrue(heat == level.getValue(), "A " + level.getKey() + " exchanger should give a boiler "
+				+ level.getValue() + " but gives " + heat);
+		}
+		helper.succeed();
+	}
+
+	/**
+	 * A muffler in an exhaust run mutes the engine, and nothing else: the exhaust still has its way out. The engine has
+	 * no muffler to begin with and all of its exhaust goes through the one set in front of its outlet.
+	 */
+	@GameTest(template = "empty", timeoutTicks = 200)
+	public static void aMufflerInTheExhaustRunMutesTheEngine(GameTestHelper helper) {
+		buildSingleCylinder(helper, true);
+		helper.runAtTickTime(60, () -> {
+			helper.assertTrue(summary(helper).muffling() == 0f, "An engine with no muffler is not muffled: " + summary(helper));
+			// The outlet moves out one block and a muffler takes its place against the head
+			helper.setBlock(TestEngine.EXHAUST.west(), CEBlocks.EXHAUST_OUTLET.getDefaultState()
+				.setValue(com.createengines.content.airflow.PortOpeningBlock.FACING, Direction.WEST));
+			helper.setBlock(TestEngine.EXHAUST, CEBlocks.MUFFLER.getDefaultState()
+				.setValue(BlockStateProperties.AXIS, Axis.X));
+		});
+		helper.runAtTickTime(120, () -> {
+			EngineSummary summary = summary(helper);
+			helper.assertTrue(summary.muffling() == 1f, "All of its exhaust goes through the muffler: " + summary);
+			helper.assertTrue(!cylinder(helper).exhaustOutlets()
+				.isEmpty(), "The exhaust still reaches an outlet through the muffler");
+			helper.succeed();
+		});
+	}
+
+	private static void assertPriced(GameTestHelper helper, BlockState state, Item... items) {
+		var needed = com.simibubi.create.content.schematics.requirement.ItemRequirement.of(state, null)
+			.getRequiredItems();
+		for (Item item : items)
+			helper.assertTrue(needed.stream()
+				.anyMatch(requirement -> requirement.stack.is(item)),
+				state + " should cost " + item + ", costs " + needed.stream()
+					.map(requirement -> requirement.stack.getItem())
+					.toList());
+	}
+
+	private static void assertNotPriced(GameTestHelper helper, BlockState state, Item item) {
+		helper.assertTrue(com.simibubi.create.content.schematics.requirement.ItemRequirement.of(state, null)
+			.getRequiredItems()
+			.stream()
+			.noneMatch(requirement -> requirement.stack.is(item)), state + " should not cost " + item);
+	}
+
 	private static void assertListedOnce(GameTestHelper helper, Collection<ItemStack> listed,
 		RegistryEntry<Item, Item> entry, String tab) {
 		long count = listed.stream()
@@ -1201,7 +1384,7 @@ public class EngineGameTests {
 		helper.setBlock(at, CEBlocks.GOVERNOR.getDefaultState());
 		GovernorBlockEntity governor = helper.getBlockEntity(at);
 		int target = 80;
-		governor.target.setValue(target / GovernorBlockEntity.TARGET_STEP);
+		governor.target.setValue(target);
 		float[] peak = new float[1];
 		helper.runAtTickTime(300, () -> helper.setBlock(STARTER_POWER, Blocks.AIR));
 		helper.succeedWhen(() -> {
@@ -1227,7 +1410,7 @@ public class EngineGameTests {
 		BlockPos at = new BlockPos(3, 3, 2);
 		helper.setBlock(at, CEBlocks.GOVERNOR.getDefaultState());
 		GovernorBlockEntity governor = helper.getBlockEntity(at);
-		governor.target.setValue(80 / GovernorBlockEntity.TARGET_STEP);
+		governor.target.setValue(80);
 		helper.assertTrue(governor.command() == 0, "Nothing powers it yet: " + governor.command());
 		helper.assertTrue(Math.abs(governor.governedSpeed() - 80) < 1e-9, "No signal leaves the setting: " + governor.governedSpeed());
 		helper.assertFalse(helper.getBlockState(at)
@@ -2020,6 +2203,105 @@ public class EngineGameTests {
 		helper.assertTrue(player.getInventory()
 			.contains(CEItems.PISTON.asStack()), "And so did the standard piston");
 		helper.succeed();
+	}
+
+	/**
+	 * A builder carrying spark plugs fits them in the heads, and one carrying a camshaft and cam lobes lays a cam line
+	 * beside the bank; a creative builder with none of either does neither, so a diesel stays a diesel. An inline bank
+	 * gets a lobe beside each cylinder block and camshaft blocks in the gaps, and a vee a lobe in its valley.
+	 */
+	@GameTest(template = "empty")
+	public static void theBankBuilderLaysPlugsAndCamsOnlyIfItIsCarryingThem(GameTestHelper helper) {
+		for (int x = 1; x <= 5; x++)
+			helper.setBlock(new BlockPos(x, 3, 3), (x == 2 || x == 4 ? CEBlocks.CRANK_THROW : CEBlocks.CRANKSHAFT)
+				.getDefaultState()
+				.setValue(BlockStateProperties.AXIS, Axis.X));
+		Direction beside = Direction.UP.getClockWise(Axis.X);
+		var creative = helper.makeMockPlayer(GameType.CREATIVE);
+
+		var plain = BankBuilderItem.build(helper.getLevel(), helper.absolutePos(new BlockPos(2, 3, 3)), Direction.UP,
+			BankBuilderItem.Layout.INLINE, creative, true);
+		helper.assertTrue(plain.cylinders() == 2 && plain.camBlocks() == 0, "Nothing carried, no cams laid: " + plain);
+		helper.assertBlockState(new BlockPos(2, 5, 3), s -> s.getBlock() instanceof CylinderHeadBlock
+			&& !s.getValue(CylinderHeadBlock.HAS_SPARK_PLUG), () -> "A diesel head has no plug");
+
+		creative.getInventory()
+			.add(new ItemStack(CEItems.SPARK_PLUG.get(), 2));
+		creative.getInventory()
+			.add(new ItemStack(CEBlocks.CAM_LOBE.get(), 2));
+		creative.getInventory()
+			.add(new ItemStack(CEBlocks.CAMSHAFT.get(), 1));
+		var cammed = BankBuilderItem.build(helper.getLevel(), helper.absolutePos(new BlockPos(2, 3, 3)), Direction.UP,
+			BankBuilderItem.Layout.INLINE, creative, true);
+		helper.assertTrue(cammed.camBlocks() == 3, "Two lobes and the camshaft between them: " + cammed);
+		for (int x : new int[] {2, 4}) {
+			helper.assertBlockState(new BlockPos(x, 5, 3), s -> s.getValue(CylinderHeadBlock.HAS_SPARK_PLUG),
+				() -> "The carried plugs were fitted");
+			helper.assertBlockState(new BlockPos(x, 3, 3).relative(Direction.UP)
+				.relative(beside), s -> s.getBlock() == CEBlocks.CAM_LOBE.get() && s.getValue(BlockStateProperties.AXIS) == Axis.X,
+				() -> "A lobe beside the cylinder block at x=" + x);
+		}
+		helper.assertBlockState(new BlockPos(3, 3, 3).relative(Direction.UP)
+			.relative(beside), s -> s.getBlock() == CEBlocks.CAMSHAFT.get(), () -> "A camshaft block joins the lobes");
+		helper.succeed();
+	}
+
+	/** A vee has its one lobe in the valley, which touches the cylinder block of both banks. */
+	@GameTest(template = "empty")
+	public static void theBankBuilderPutsAVeesLobeInItsValley(GameTestHelper helper) {
+		for (int x = 1; x <= 5; x++)
+			helper.setBlock(new BlockPos(x, 3, 3), (x == 2 || x == 4 ? CEBlocks.CRANK_THROW : CEBlocks.CRANKSHAFT)
+				.getDefaultState()
+				.setValue(BlockStateProperties.AXIS, Axis.X));
+		Direction beside = Direction.UP.getClockWise(Axis.X);
+		var creative = helper.makeMockPlayer(GameType.CREATIVE);
+		creative.getInventory()
+			.add(new ItemStack(CEBlocks.CAM_LOBE.get(), 2));
+		creative.getInventory()
+			.add(new ItemStack(CEBlocks.CAMSHAFT.get(), 1));
+		var vee = BankBuilderItem.build(helper.getLevel(), helper.absolutePos(new BlockPos(2, 3, 3)), Direction.UP,
+			BankBuilderItem.Layout.VEE, creative, true);
+		helper.assertTrue(vee.cylinders() == 4 && vee.camBlocks() == 3, "Two banks and one cam line: " + vee);
+		for (int x : new int[] {2, 4}) {
+			BlockPos valley = new BlockPos(x, 3, 3).relative(Direction.UP)
+				.relative(beside);
+			helper.assertBlockState(valley, s -> s.getBlock() == CEBlocks.CAM_LOBE.get(), () -> "A lobe in the valley at x=" + x);
+			helper.assertBlockState(new BlockPos(x, 3, 3).relative(Direction.UP), s -> s.getBlock() instanceof CylinderBlock,
+				() -> "It touches the first bank at x=" + x);
+			helper.assertBlockState(new BlockPos(x, 3, 3).relative(beside), s -> s.getBlock() instanceof CylinderBlock,
+				() -> "And the second at x=" + x);
+		}
+		helper.succeed();
+	}
+
+	/**
+	 * Placing a cogwheel that gears two cranks together couples them at once. Create's blocks do not tell the engine
+	 * scanner they were placed, so without the hook the coupling waited for the next revalidation, up to five seconds on.
+	 */
+	@GameTest(template = "empty", timeoutTicks = 200)
+	public static void aCogPlacedBetweenTwoCranksCouplesThemAtOnce(GameTestHelper helper) {
+		buildSingleCylinder(helper, true);
+		TestEngine.addCoupledLine(helper.getLevel(), helper.absolutePos(BlockPos.ZERO));
+		BlockPos gap = new BlockPos(0, 2, 3);
+		helper.setBlock(gap, Blocks.AIR);
+		helper.runAtTickTime(20, () -> {
+			EngineLayout apart = EngineScanner.scan(helper.getLevel(), helper.absolutePos(PRIMARY));
+			helper.assertTrue(apart != null && apart.lines() == 1, "Without the middle cog the lines are separate");
+			BlockState cog = alongX(AllBlocks.COGWHEEL.getDefaultState());
+			helper.setBlock(gap, cog);
+			com.createengines.engine.topology.EngineTopology.gearingChanged(helper.getLevel(), helper.absolutePos(gap), cog);
+		});
+		// Four ticks later, far inside the revalidation interval: the engine has been rescanned and has both lines
+		helper.runAtTickTime(24, () -> {
+			CrankshaftBlockEntity first = helper.getBlockEntity(PRIMARY);
+			helper.assertTrue(first.controller() != null && first.controller()
+				.layout()
+				.lines() == 2, "The engine should already have both lines: "
+					+ (first.controller() == null ? null : first.controller()
+						.layout()
+						.lines()));
+			helper.succeed();
+		});
 	}
 
 	/** The boost limit and the anti-lag setting are both scroll values: saving must keep them apart. */

@@ -22,18 +22,21 @@ import com.createengines.content.flywheel.CastFlywheelBlock;
 import com.createengines.content.governor.GovernorBlock;
 import com.createengines.content.head.CylinderHeadBlock;
 import com.createengines.content.intercooler.IntercoolerBlock;
+import com.createengines.content.muffler.MufflerBlock;
 import com.createengines.content.rotor.RotorHousingBlock;
 import com.createengines.content.starter.StarterBlock;
 import com.createengines.content.sump.SumpBlock;
 import com.createengines.content.supercharger.SuperchargerBlock;
 import com.createengines.content.turbo.TurbochargerBlock;
 import com.createengines.content.turbo.VariableTurbochargerBlock;
+import com.simibubi.create.api.behaviour.display.DisplaySource;
 import com.simibubi.create.content.processing.burner.BlazeBurnerBlock;
 import com.simibubi.create.foundation.data.AssetLookup;
 import com.simibubi.create.foundation.data.BlockStateGen;
 import com.simibubi.create.foundation.data.ModelGen;
 import com.simibubi.create.foundation.data.SharedProperties;
 import com.simibubi.create.foundation.data.TagGen;
+import com.tterrag.registrate.builders.BlockBuilder;
 import com.tterrag.registrate.providers.DataGenContext;
 import com.tterrag.registrate.providers.RegistrateBlockstateProvider;
 import com.tterrag.registrate.util.entry.BlockEntry;
@@ -61,6 +64,7 @@ public final class CEBlocks {
 	}
 
 	public static final BlockEntry<CrankshaftBlock> CRANKSHAFT = REGISTRATE.block("crankshaft", CrankshaftBlock::new)
+		.transform(CEBlocks::engineReadouts)
 		.initialProperties(SharedProperties::softMetal)
 		.properties(p -> part(p)
 			.mapColor(MapColor.METAL))
@@ -71,6 +75,7 @@ public final class CEBlocks {
 		.register();
 
 	public static final BlockEntry<CrankThrowBlock> CRANK_THROW = REGISTRATE.block("crank_throw", CrankThrowBlock::new)
+		.transform(CEBlocks::engineReadouts)
 		.initialProperties(SharedProperties::softMetal)
 		.properties(p -> part(p)
 			.mapColor(MapColor.METAL))
@@ -86,6 +91,7 @@ public final class CEBlocks {
 	 */
 	public static final BlockEntry<RotorHousingBlock> ROTOR_HOUSING =
 		REGISTRATE.block("rotor_housing", RotorHousingBlock::new)
+				.transform(CEBlocks::engineReadouts)
 			.initialProperties(SharedProperties::softMetal)
 			.properties(p -> part(p)
 				.mapColor(MapColor.COLOR_ORANGE)
@@ -345,6 +351,7 @@ public final class CEBlocks {
 		.register();
 
 	public static final BlockEntry<SumpBlock> SUMP = REGISTRATE.block("sump", SumpBlock::new)
+		.transform(DisplaySource.displaySource(CEDisplaySources.SUMP_LEVELS))
 		.initialProperties(SharedProperties::softMetal)
 		.properties(p -> part(p)
 			.mapColor(MapColor.METAL))
@@ -401,7 +408,39 @@ public final class CEBlocks {
 			.transform(ModelGen.customItemModel())
 			.register();
 
+	/** A baffled canister in an exhaust run: it quiets the engine's exhaust note, bangs and pops, and costs it nothing. */
+	public static final BlockEntry<MufflerBlock> MUFFLER =
+		REGISTRATE.block("muffler", MufflerBlock::new)
+			.initialProperties(SharedProperties::softMetal)
+			.properties(p -> part(p)
+				.mapColor(MapColor.COLOR_GRAY))
+			.transform(TagGen.pickaxeOnly())
+			.blockstate((c, p) -> BlockStateGen.axisBlock(c, p, s -> AssetLookup.partialBaseModel(c, p)))
+			.item()
+			.transform(ModelGen.customItemModel())
+			.register();
+
+	/** Plain riveted plates to build a cowl round an engine with: it does nothing but hide the sprawl. */
+	public static final BlockEntry<Block> ENGINE_CASING =
+		REGISTRATE.block("engine_casing", Block::new)
+			.initialProperties(SharedProperties::softMetal)
+			.properties(p -> p.mapColor(MapColor.METAL))
+			.transform(TagGen.pickaxeOnly())
+			.blockstate((c, p) -> BlockStateGen.simpleBlock(c, p, s -> AssetLookup.partialBaseModel(c, p)))
+			.item()
+			.transform(ModelGen.customItemModel())
+			.register();
+
 	private CEBlocks() {
+	}
+
+	/** What a Display Link set against a crankshaft block of an engine can show. */
+	private static <B extends Block, P> BlockBuilder<B, P> engineReadouts(BlockBuilder<B, P> builder) {
+		return builder.transform(DisplaySource.displaySource(CEDisplaySources.ENGINE_STATUS))
+			.transform(DisplaySource.displaySource(CEDisplaySources.ENGINE_SPEED))
+			.transform(DisplaySource.displaySource(CEDisplaySources.ENGINE_LOAD))
+			.transform(DisplaySource.displaySource(CEDisplaySources.ENGINE_TEMPERATURE))
+			.transform(DisplaySource.displaySource(CEDisplaySources.ENGINE_OIL));
 	}
 
 	/** A pipe is a core with an arm model on each side it is connected through. */

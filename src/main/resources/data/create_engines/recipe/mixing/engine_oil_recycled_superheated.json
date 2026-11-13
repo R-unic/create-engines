@@ -1,0 +1,1 @@
+{"type":"create:mixing","heat_requirement":"superheated","ingredients":[{"type":"neoforge:single","amount":400,"fluid":"create_engines:used_oil"},{"item":"minecraft:charcoal"},{"item":"minecraft:clay_ball"}],"results":[{"amount":300,"id":"create_engines:engine_oil"}]}

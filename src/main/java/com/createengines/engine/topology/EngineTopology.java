@@ -13,6 +13,9 @@ import org.jetbrains.annotations.Nullable;
 import com.createengines.content.EngineGlow;
 import com.createengines.content.crankshaft.CrankshaftBlockEntity;
 import com.createengines.engine.EngineController;
+import com.createengines.engine.LoadedBlocks;
+
+import com.simibubi.create.content.kinetics.base.IRotate;
 
 import net.createmod.catnip.data.WorldAttached;
 import net.minecraft.core.BlockPos;
@@ -22,6 +25,8 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.LevelAccessor;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.LiquidBlock;
+import net.minecraft.world.level.block.state.BlockState;
+import net.neoforged.neoforge.event.level.BlockEvent;
 import net.neoforged.neoforge.event.level.LevelEvent;
 import net.neoforged.neoforge.event.tick.LevelTickEvent;
 
@@ -37,6 +42,8 @@ public final class EngineTopology {
 	private static final WorldAttached<EngineTopology> TOPOLOGIES = new WorldAttached<>(level -> new EngineTopology());
 	/** Safety net for changes no block reports (e.g. a Create flywheel added through a shaft). */
 	private static final int REVALIDATE_INTERVAL = 100;
+	/** How far, in blocks, a kinetic block placed or broken is looked for geared cranks. */
+	private static final int GEARING_REACH = 64;
 
 	private final Set<BlockPos> dirty = new HashSet<>();
 	private final Map<BlockPos, Set<BlockPos>> enginesByMember = new HashMap<>();
@@ -58,6 +65,28 @@ public final class EngineTopology {
 		if (changed instanceof LiquidBlock || !level.getFluidState(neighbour)
 			.isEmpty())
 			markDirty(level, pos);
+	}
+
+	/**
+	 * Placing or breaking a block of Create's kinetic network changes what a crankshaft is geared to, and Create's blocks
+	 * never say so: every engine near it looks at its gearing again at once rather than at the next revalidation.
+	 */
+	public static void onBlockPlaced(BlockEvent.EntityPlaceEvent event) {
+		gearingChanged(event.getLevel(), event.getPos(), event.getPlacedBlock());
+	}
+
+	public static void onBlockBroken(BlockEvent.BreakEvent event) {
+		gearingChanged(event.getLevel(), event.getPos(), event.getState());
+	}
+
+	/** A block of the kinetic network was placed or broken at {@code pos}: engines within reach look at their gearing again. */
+	public static void gearingChanged(LevelAccessor level, BlockPos pos, BlockState state) {
+		if (level.isClientSide() || !(state.getBlock() instanceof IRotate))
+			return;
+		EngineTopology topology = TOPOLOGIES.get(level);
+		for (BlockPos primary : topology.layouts.keySet())
+			if (primary.distSqr(pos) <= GEARING_REACH * GEARING_REACH)
+				topology.dirty.add(primary);
 	}
 
 	public static void onLevelTick(LevelTickEvent.Post event) {
@@ -133,7 +162,7 @@ public final class EngineTopology {
 					.stream()
 					.noneMatch(s -> segments.contains(s.pos())))
 					continue;
-				if (level.getBlockEntity(old.getKey()) instanceof CrankshaftBlockEntity be) {
+				if (LoadedBlocks.blockEntity(level, old.getKey()) instanceof CrankshaftBlockEntity be) {
 					EngineController.Motion motion = be.captureMotion();
 					if (motion != null) {
 						carried.put(layout.primary(), motion);
@@ -145,7 +174,7 @@ public final class EngineTopology {
 
 		for (Map.Entry<BlockPos, EngineLayout> old : previous.entrySet()) {
 			if (!rebuilt.containsKey(old.getKey())
-				&& level.getBlockEntity(old.getKey()) instanceof CrankshaftBlockEntity be)
+				&& LoadedBlocks.blockEntity(level, old.getKey()) instanceof CrankshaftBlockEntity be)
 				be.releaseEngine();
 			for (BlockPos member : old.getValue()
 				.members()) {
@@ -158,7 +187,7 @@ public final class EngineTopology {
 		}
 
 		for (EngineLayout layout : rebuilt.values())
-			if (level.getBlockEntity(layout.primary()) instanceof CrankshaftBlockEntity be)
+			if (LoadedBlocks.blockEntity(level, layout.primary()) instanceof CrankshaftBlockEntity be)
 				be.adoptLayout(layout, carried.get(layout.primary()));
 	}
 

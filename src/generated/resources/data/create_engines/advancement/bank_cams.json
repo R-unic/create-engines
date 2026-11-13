@@ -1,28 +1,28 @@
 {
-  "parent": "create_engines:engine_oil",
+  "parent": "create_engines:bank_builder",
   "criteria": {
-    "dry_run": {
+    "bank_cams": {
       "conditions": {
-        "event": "dry_run"
+        "event": "cams_laid"
       },
       "trigger": "create_engines:event"
     }
   },
   "display": {
     "description": {
-      "translate": "advancement.create_engines.dry_run.desc"
+      "translate": "advancement.create_engines.bank_cams.desc"
     },
     "icon": {
       "count": 1,
-      "id": "create_engines:crankshaft"
+      "id": "create_engines:cam_lobe"
     },
     "title": {
-      "translate": "advancement.create_engines.dry_run"
+      "translate": "advancement.create_engines.bank_cams"
     }
   },
   "requirements": [
     [
-      "dry_run"
+      "bank_cams"
     ]
   ],
   "sends_telemetry_event": true

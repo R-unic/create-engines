@@ -52,6 +52,8 @@ public final class CELang {
 		raw("value.boost_limit", "Boost Limit");
 		raw("value.anti_lag", "Anti-Lag");
 		raw("value.governed_speed", "Governed Speed");
+		raw("value.governed_speed.exact", "Exact RPM");
+		raw("value.governed_speed.coarse", "RPM in fives");
 
 		raw("goggles.governor", "Governor");
 		raw("goggles.governor.no_engine", "Not touching a crankshaft block or a cylinder head");
@@ -75,7 +77,8 @@ public final class CELang {
 		raw("tool.bank_builder.layout.inline", "Inline (the face you click)");
 		raw("tool.bank_builder.layout.vee", "Vee (that face and the next, a quarter turn round)");
 		raw("tool.bank_builder.layout.flat", "Flat (that face and the one opposite)");
-		raw("tool.bank_builder.hint", "Use on a crank throw to set a cylinder and head on that face of every throw of the crankshaft, with the pistons, rods and injectors you carry. Sneak-use to change layout, and then between standard and precision parts: a precision build swaps precision parts in for standard ones too");
+		raw("tool.bank_builder.hint", "Use on a crank throw to set a cylinder and head on that face of every throw of the crankshaft, with the pistons, rods, injectors and spark plugs you carry, and a cam line beside the bank if you carry Camshafts and Cam Lobes. Sneak-use to change layout, and then between standard and precision parts: a precision build swaps precision parts in for standard ones too");
+		raw("tool.bank_builder.cams", "Laid %1$s cam block(s) beside the bank. Gear the line to half the crank's speed, then time the lobes with a Timing Tool");
 		raw("tool.bank_builder.no_crank", "Use it on a crankshaft throw");
 		raw("tool.bank_builder.no_throws", "That crankshaft has no throw to build on");
 		raw("tool.bank_builder.built", "Placed %1$s cylinder(s) and %2$s head(s) on %3$s throw(s)");
@@ -118,7 +121,7 @@ public final class CELang {
 		raw("goggles.heat_exchanger.superheated", "Superheating a basin on top of it");
 		raw("goggles.heat_exchanger.disabled", "Heat recovery is switched off in this server's config");
 		raw("goggles.heat_exchanger.hint",
-			"Set a basin on top of it. About two cylinders at speed heat the basin for heated recipes, about seven superheat it. Exchangers on the same exhaust share its heat. The redstone output is how hot it runs, 15 at twice the heat superheating takes");
+			"Set a basin on top of it. About two cylinders at speed heat the basin for heated recipes, about seven superheat it, which doubles the Ethanol a batch of Sugar Mash distils and makes recycled Engine Oil go further. Exchangers on the same exhaust share its heat. The redstone output is how hot it runs, 15 at twice the heat superheating takes");
 
 		raw("goggles.dyno", "Dynamometer");
 		raw("goggles.dyno.no_engine", "Not against an engine: set it against a crankshaft, a cylinder or a head");
@@ -130,6 +133,7 @@ public final class CELang {
 		raw("goggles.dyno.peak_power", "Peak power: %1$s SU at %2$s RPM");
 		raw("goggles.dyno.powerband", "Powerband: %1$s to %2$s RPM, within a tenth of peak power");
 		raw("goggles.dyno.now", "Engine now: %1$s RPM");
+		raw("goggles.dyno.rated", "Rated now: %1$s SU per RPM, %2$s SU at this speed");
 		raw("goggles.recorder", "Flight Recorder");
 		raw("goggles.recorder.no_engine", "Not against an engine: set it against a crankshaft, a cylinder or a head");
 		raw("goggles.recorder.empty", "Nothing on the tape yet");
@@ -293,6 +297,40 @@ public final class CELang {
 		raw("goggles.sump.exchange.hint",
 			"Spent oil leaves as Used Oil from any face, by pipe or bucket, and fresh oil piped in takes its place. Burn the used oil, refine it, coke it or let it go");
 		raw("goggles.sump.used_full", "Used Oil tank full: pipe it away or the exchange stops");
+		raw("goggles.muffled", "Exhaust muffled: %1$s%% of it runs through a muffler, which only quiets it");
+		raw("tooltip.fuel", "Engine fuel");
+		raw("tooltip.fuel.energy", "Energy: %1$s per mB");
+		raw("tooltip.fuel.compression", "Lights by compression: no spark plug needed, and it can pilot a dual-fuel engine");
+		raw("tooltip.fuel.spark", "Needs a spark plug: too hard to light by compression");
+		raw("tooltip.fuel.cold.good", "Starts well in a cold engine");
+		raw("tooltip.fuel.cold.poor", "Burns poorly in a cold block: warm the engine first");
+		raw("tooltip.fuel.thin", "Thin: the injectors need %1$s times the usual shot");
+		raw("value.sump_signal", "Comparator Reads");
+		raw("value.sump_signal.0", "Engine Oil");
+		raw("value.sump_signal.1", "Used Oil");
+		raw("value.sump_signal.2", "Coolant");
+		raw("value.sump_signal.3", "Pilot Fuel");
+		raw("goggles.sump.signal", "A comparator reads the %1$s tank: 0 when empty, 15 when full");
+		raw("display_source.engine_status", "Engine Status");
+		raw("display_source.engine_speed", "Engine Speed");
+		raw("display_source.engine_load", "Engine Load");
+		raw("display_source.engine_temperature", "Engine Temperature");
+		raw("display_source.engine_oil", "Engine Oil Condition");
+		raw("display_source.sump_levels", "Oil Sump Levels");
+		raw("display.engine.none", "No engine");
+		raw("display.engine.state.stalled", "Stalled");
+		raw("display.engine.state.cranking", "Cranking");
+		raw("display.engine.state.coasting", "Coasting");
+		raw("display.engine.state.running", "Running");
+		raw("display.engine.state.overloaded", "Overloaded");
+		raw("display.engine.speed", "%1$s RPM");
+		raw("display.engine.load", "Load %1$s%%");
+		raw("display.engine.temperature", "Temp %1$s%%");
+		raw("display.engine.oil", "Oil %1$s%%");
+		raw("display.sump.oil", "Oil %1$s mB");
+		raw("display.sump.used", "Used %1$s mB");
+		raw("display.sump.coolant", "Coolant %1$s mB");
+		raw("display.sump.pilot", "Pilot %1$s mB");
 		raw("value.oil_exchange", "Oil Exchange");
 		raw("value.oil_exchange.0", "Off");
 		raw("value.oil_exchange.1", "Trickle");

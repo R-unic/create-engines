@@ -1,0 +1,1 @@
+{"type":"create:mixing","heat_requirement":"superheated","ingredients":[{"type":"neoforge:single","amount":250,"fluid":"create_engines:sugar_mash"},{"tag":"create_engines:ferments_mash"},{"item":"minecraft:sugar"}],"results":[{"amount":100,"id":"create_engines:ethanol"}]}
