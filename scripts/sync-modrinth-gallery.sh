@@ -35,10 +35,9 @@ for e in "${entries[@]}"; do
   file="${e%%$'\t'*}"; title="${e#*$'\t'}"
   featured=false; [ "$i" -eq 0 ] && featured=true
   echo "upload $file"
-  curl -fsS -X POST "${auth[@]}" -H "Content-Type: image/png" --data-binary "@docs/images/$file" \
-    --get "$api/project/$project/gallery" \
-    --data-urlencode "ext=png" --data-urlencode "featured=$featured" \
-    --data-urlencode "title=$title" --data-urlencode "ordering=$i" >/dev/null
+  # --get would turn the image body into query text, so the query string is built by hand
+  q=$(jq -rn --arg t "$title" '$t | @uri')
+  curl -fsS -X POST "${auth[@]}" -H "Content-Type: image/png" --data-binary "@docs/images/$file"     "$api/project/$project/gallery?ext=png&featured=$featured&title=$q&ordering=$i" >/dev/null
   i=$((i + 1))
 done
 
