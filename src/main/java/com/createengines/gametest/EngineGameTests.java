@@ -20,7 +20,10 @@ import com.createengines.content.rotor.RotorHousingBlock;
 import com.createengines.content.rotor.RotorHousingBlockEntity;
 import com.createengines.content.governor.GovernorBlockEntity;
 import com.createengines.content.starter.StarterBlock;
+import com.createengines.content.starter.StarterBlockEntity;
 import com.createengines.content.sump.SumpBlockEntity;
+import com.createengines.content.transmission.Gears;
+import com.createengines.content.transmission.TransmissionBlockEntity;
 import com.createengines.content.blackbox.BlackBoxBlockEntity;
 import com.createengines.content.dyno.DynoBlockEntity;
 import com.createengines.content.tool.BankBuilderItem;
@@ -692,6 +695,26 @@ public class EngineGameTests {
 		});
 	}
 
+	/**
+	 * An engine in a dry pocket under water keeps running: water a block away, behind glass, touches nothing of it. Only
+	 * fluid against a face counts, and that is the ruling for 1.0.
+	 */
+	@GameTest(template = "empty", timeoutTicks = 3000)
+	public static void anEngineInADryPocketKeepsRunning(GameTestHelper helper) {
+		buildSingleCylinder(helper, true);
+		helper.runAtTickTime(300, () -> helper.setBlock(STARTER_POWER, Blocks.AIR));
+		helper.runAtTickTime(500, () -> {
+			helper.assertTrue(summary(helper).state() == EngineState.RUNNING, "Engine should be running first");
+			flood(helper, TestEngine.HEAD.east().east());
+		});
+		helper.succeedWhen(() -> {
+			helper.assertTrue(helper.getTick() > 700, "Not long enough in the pocket yet");
+			helper.assertFalse(CylinderFault.underwater(cylinder(helper).faults()),
+				"Water a block away touches nothing: " + cylinder(helper));
+			helper.assertTrue(summary(helper).state() == EngineState.RUNNING, "Engine should still run: " + summary(helper));
+		});
+	}
+
 	/** Water over the exhaust outlet of a running engine: the gas cannot get out against it, and the engine chokes. */
 	@GameTest(template = "empty", timeoutTicks = 3000)
 	public static void floodingTheExhaustStallsARunningEngine(GameTestHelper helper) {
@@ -923,8 +946,8 @@ public class EngineGameTests {
 		helper.runAtTickTime(1200, () -> {
 			EngineSummary summary = summary(helper);
 			helper.assertTrue(summary.state() == EngineState.RUNNING, "A dry engine still runs: " + summary);
-			helper.assertTrue(summary.rpm() < 100,
-				"A dry engine should top out well below an oiled one's 120+: " + summary);
+			helper.assertTrue(summary.rpm() < 127,
+				"A dry engine should top out well below an oiled one's 150+: " + summary);
 			helper.succeed();
 		});
 	}
@@ -1330,7 +1353,7 @@ public class EngineGameTests {
 		try {
 			int before = head.tank()
 				.getFluidAmount();
-			com.createengines.engine.sim.Tuning.fuelConsumption = 3;
+			com.createengines.engine.sim.Tuning.fuelConsumption = 3 * com.createengines.engine.sim.CylinderSpec.SPEED_GAIN;
 			double delivered = supply.draw(10);
 			helper.assertTrue(Math.abs(delivered - 10) < 1e-9, "The engine should still get what it asked for: " + delivered);
 			helper.assertTrue(before - head.tank()
@@ -1338,7 +1361,7 @@ public class EngineGameTests {
 					.getFluidAmount()));
 			before = head.tank()
 				.getFluidAmount();
-			com.createengines.engine.sim.Tuning.fuelConsumption = 0.5;
+			com.createengines.engine.sim.Tuning.fuelConsumption = 0.5 * com.createengines.engine.sim.CylinderSpec.SPEED_GAIN;
 			delivered = supply.draw(10);
 			helper.assertTrue(Math.abs(delivered - 10) < 1e-9, "Nor should it get less at a thrifty setting: " + delivered);
 			helper.assertTrue(before - head.tank()
@@ -1696,6 +1719,38 @@ public class EngineGameTests {
 		});
 	}
 
+	/**
+	 * The same rig with a variable-drive supercharger on a shaft turning at half the design speed: its drive overspeeds
+	 * the rotors, so it makes the boost its bypass allows where a plain blower at that speed would fall short of it.
+	 */
+	@GameTest(template = "empty", timeoutTicks = 1700)
+	public static void aVariableDriveSuperchargerBoostsOnASlowShaft(GameTestHelper helper) {
+		buildSingleCylinder(helper, true);
+		BlockPos blower = HEAD.east();
+		helper.setBlock(TestEngine.AIR_INTAKE, Blocks.AIR);
+		helper.setBlock(blower.east(), CEBlocks.AIR_INTAKE.getDefaultState()
+			.setValue(PortOpeningBlock.FACING, Direction.EAST));
+		helper.setBlock(blower, CEBlocks.VARIABLE_SUPERCHARGER.getDefaultState()
+			.setValue(BlockStateProperties.AXIS, Axis.Y));
+		helper.setBlock(blower.below(), AllBlocks.CREATIVE_MOTOR.getDefaultState()
+			.setValue(CreativeMotorBlock.FACING, Direction.UP));
+		CreativeMotorBlockEntity motor = helper.getBlockEntity(blower.below());
+		motor.generatedSpeed.setValue(64);
+		helper.runAtTickTime(300, () -> helper.setBlock(STARTER_POWER, Blocks.AIR));
+		helper.runAtTickTime(900, () -> {
+			EngineSummary summary = summary(helper);
+			helper.assertTrue(summary.state() == EngineState.RUNNING,
+				"Engine should run through the variable-drive supercharger: " + summary + ", cylinder " + cylinder(helper));
+			SuperchargerBlockEntity be = helper.getBlockEntity(blower);
+			helper.assertTrue(be.variableDrive(), "It should be a variable-drive blower");
+			helper.assertTrue(be.onEngine(), "The blower should feed the engine's cylinder");
+			helper.assertTrue(Math.abs(be.shaftRpm() - 64) < 1, "Its shaft should turn at the motor's speed: " + be.shaftRpm());
+			helper.assertTrue(be.boost() > 0.45f, "Half the design speed should still make the boost its bypass allows: " + be.boost());
+			helper.assertTrue(be.calculateStressApplied() > 0, "Turning the blower should cost stress");
+			helper.succeed();
+		});
+	}
+
 	/** An intercooler in the intake run is a junction like a pipe: air goes in at one end and out of the other. */
 	@GameTest(template = "empty", timeoutTicks = 1700)
 	public static void anIntercoolerInTheIntakeRunJoinsTheEngine(GameTestHelper helper) {
@@ -1718,6 +1773,137 @@ public class EngineGameTests {
 		});
 	}
 
+	/** A creative motor, a transmission and a shaft in a line along X. */
+	private static void buildTransmission(GameTestHelper helper, int gear) {
+		helper.setBlock(new BlockPos(0, 1, 1), AllBlocks.CREATIVE_MOTOR.getDefaultState()
+			.setValue(CreativeMotorBlock.FACING, Direction.EAST));
+		CreativeMotorBlockEntity motor = helper.getBlockEntity(new BlockPos(0, 1, 1));
+		motor.generatedSpeed.setValue(64);
+		helper.setBlock(new BlockPos(1, 1, 1), CEBlocks.TRANSMISSION.getDefaultState()
+			.setValue(BlockStateProperties.AXIS, Axis.X));
+		helper.setBlock(new BlockPos(2, 1, 1), AllBlocks.SHAFT.getDefaultState()
+			.setValue(BlockStateProperties.AXIS, Axis.X));
+		TransmissionBlockEntity transmission = helper.getBlockEntity(new BlockPos(1, 1, 1));
+		transmission.panel.setValue(gear);
+	}
+
+	private static float outputSpeed(GameTestHelper helper) {
+		KineticBlockEntity shaft = helper.getBlockEntity(new BlockPos(2, 1, 1));
+		return shaft.getSpeed();
+	}
+
+	/** Each gear turns the output at its own fraction of the input, neutral lets nothing through, reverse turns it back. */
+	@GameTest(template = "empty", timeoutTicks = 200)
+	public static void aTransmissionTurnsItsOutputAtTheSelectedGear(GameTestHelper helper) {
+		buildTransmission(helper, Gears.FIRST);
+		BlockPos at = new BlockPos(1, 1, 1);
+		int[] gears = {Gears.FIRST, 2, 7, Gears.TOP, Gears.NEUTRAL, Gears.REVERSE};
+		float[] speeds = {5.333f, 6.557f, 18.497f, 64, 0, -21.333f};
+		for (int i = 0; i < gears.length; i++) {
+			int gear = gears[i];
+			float speed = speeds[i];
+			helper.runAtTickTime(20 + i * 20, () -> {
+				TransmissionBlockEntity transmission = helper.getBlockEntity(at);
+				transmission.panel.setValue(gear);
+			});
+			helper.runAtTickTime(32 + i * 20, () -> helper.assertTrue(Math.abs(outputSpeed(helper) - speed) < 0.1f,
+				"Gear " + gear + " should turn the output at " + speed + " RPM, not " + outputSpeed(helper)));
+		}
+		helper.runAtTickTime(150, helper::succeed);
+	}
+
+	/** A redstone signal selects the gear over the panel, and the panel takes over again without one. */
+	@GameTest(template = "empty", timeoutTicks = 200)
+	public static void redstoneOverridesTheTransmissionPanel(GameTestHelper helper) {
+		buildTransmission(helper, Gears.FIRST);
+		BlockPos power = new BlockPos(1, 2, 1);
+		helper.runAtTickTime(20, () -> helper.assertTrue(Math.abs(outputSpeed(helper) - 5.333f) < 0.1f,
+			"The panel's first gear should be in use: " + outputSpeed(helper)));
+		helper.runAtTickTime(25, () -> helper.setBlock(power, Blocks.REDSTONE_BLOCK));
+		helper.runAtTickTime(45, () -> helper.assertTrue(outputSpeed(helper) < -20,
+			"A strong signal selects reverse: " + outputSpeed(helper)));
+		helper.runAtTickTime(50, () -> helper.setBlock(power, Blocks.AIR));
+		helper.runAtTickTime(70, () -> {
+			helper.assertTrue(Math.abs(outputSpeed(helper) - 5.333f) < 0.1f,
+				"Without a signal the panel decides again: " + outputSpeed(helper));
+			helper.succeed();
+		});
+	}
+
+	/** In a low gear a crank carries a load that overstresses it direct: the speed-for-torque trade the block is for. */
+	@GameTest(template = "empty", timeoutTicks = 2000)
+	public static void aLowGearLetsAnEngineCarryWhatItCannotDirect(GameTestHelper helper) {
+		buildSingleCylinder(helper, true);
+		// The press row hangs off a transmission after the cam drive, in first gear
+		helper.setBlock(PRESS, CEBlocks.TRANSMISSION.getDefaultState()
+			.setValue(BlockStateProperties.AXIS, Axis.X));
+		TransmissionBlockEntity box = helper.getBlockEntity(PRESS);
+		box.panel.setValue(Gears.FIRST);
+		helper.runAtTickTime(300, () -> helper.setBlock(STARTER_POWER, Blocks.AIR));
+		helper.runAtTickTime(500, () -> {
+			for (int i = 0; i < 3; i++)
+				helper.setBlock(PRESS.east(1 + i), AllBlocks.MECHANICAL_PRESS.getDefaultState()
+					.setValue(BlockStateProperties.HORIZONTAL_FACING, Direction.EAST));
+		});
+		helper.runAtTickTime(1500, () -> {
+			CrankshaftBlockEntity crank = helper.getBlockEntity(PRIMARY);
+			helper.assertFalse(crank.isOverStressed(),
+				"Three presses overstress this engine direct, but first gear should carry them");
+			KineticBlockEntity press = helper.getBlockEntity(PRESS.east());
+			helper.assertTrue(press.getSpeed() != 0, "The presses should turn behind the transmission");
+			helper.succeed();
+		});
+	}
+
+	private static void placePresses(GameTestHelper helper) {
+		for (int i = 0; i < 3; i++)
+			helper.setBlock(PRESS.east(1 + i), AllBlocks.MECHANICAL_PRESS.getDefaultState()
+				.setValue(BlockStateProperties.HORIZONTAL_FACING, Direction.EAST));
+	}
+
+	/** On auto, a transmission that starts in first gear climbs until the engine is carrying about as much as it can. */
+	@GameTest(template = "empty", timeoutTicks = 4000)
+	public static void anAutoTransmissionClimbsToWhatTheEngineCanPull(GameTestHelper helper) {
+		buildSingleCylinder(helper, true);
+		helper.setBlock(PRESS, CEBlocks.TRANSMISSION.getDefaultState()
+			.setValue(BlockStateProperties.AXIS, Axis.X));
+		TransmissionBlockEntity box = helper.getBlockEntity(PRESS);
+		box.panel.setValue(Gears.AUTO);
+		helper.runAtTickTime(300, () -> helper.setBlock(STARTER_POWER, Blocks.AIR));
+		helper.runAtTickTime(500, () -> placePresses(helper));
+		helper.runAtTickTime(3600, () -> {
+			CrankshaftBlockEntity crank = helper.getBlockEntity(PRIMARY);
+			helper.assertFalse(crank.isOverStressed(), "Auto should have found a gear that carries the presses");
+			helper.assertTrue(box.gear() > Gears.FIRST, "With room to spare it should have climbed out of first: " + box.gear());
+			helper.assertTrue(box.gear() < Gears.TOP, "Three presses overstress this engine direct, so not to the top: " + box.gear());
+			KineticBlockEntity press = helper.getBlockEntity(PRESS.east());
+			helper.assertTrue(press.getSpeed() != 0, "The presses should turn behind the transmission");
+			helper.succeed();
+		});
+	}
+
+	/** Put on auto while overstressed in a gear that is too tall, a transmission drops to one the engine can carry. */
+	@GameTest(template = "empty", timeoutTicks = 4000)
+	public static void anAutoTransmissionDownshiftsOutOfAnOverload(GameTestHelper helper) {
+		buildSingleCylinder(helper, true);
+		helper.setBlock(PRESS, CEBlocks.TRANSMISSION.getDefaultState()
+			.setValue(BlockStateProperties.AXIS, Axis.X));
+		TransmissionBlockEntity box = helper.getBlockEntity(PRESS);
+		box.panel.setValue(Gears.TOP);
+		helper.runAtTickTime(300, () -> helper.setBlock(STARTER_POWER, Blocks.AIR));
+		helper.runAtTickTime(500, () -> placePresses(helper));
+		helper.runAtTickTime(1500, () -> {
+			CrankshaftBlockEntity crank = helper.getBlockEntity(PRIMARY);
+			helper.assertTrue(crank.isOverStressed(), "In the top gear three presses should overstress the engine");
+			box.panel.setValue(Gears.AUTO);
+		});
+		helper.runAtTickTime(3600, () -> {
+			CrankshaftBlockEntity crank = helper.getBlockEntity(PRIMARY);
+			helper.assertFalse(crank.isOverStressed(), "Auto should have dropped to a gear the engine can carry: gear " + box.gear());
+			helper.assertTrue(box.gear() < Gears.TOP, "It should have left the top gear: " + box.gear());
+			helper.succeed();
+		});
+	}
 	/** An exhaust manifold joined to a head, with an outlet on the end of it, carries the exhaust and the engine runs. */
 	@GameTest(template = "empty", timeoutTicks = 900)
 	public static void anExhaustManifoldCarriesTheExhaustFromAHead(GameTestHelper helper) {
@@ -2560,6 +2746,99 @@ public class EngineGameTests {
 			for (int i = 0; i < presses; i++)
 				helper.setBlock(PRESS.east(i), AllBlocks.MECHANICAL_PRESS.getDefaultState()
 					.setValue(BlockStateProperties.HORIZONTAL_FACING, Direction.EAST));
+		});
+	}
+
+	private static BlockState heavyStarter() {
+		return CEBlocks.HEAVY_STARTER.getDefaultState()
+			.setValue(StarterBlock.FACING, Direction.UP);
+	}
+
+	@GameTest(template = "empty", timeoutTicks = 1200)
+	public static void heavyStarterPutsLessStressOnItsInput(GameTestHelper helper) {
+		buildSingleCylinder(helper, false);
+		float[] plain = new float[1];
+		helper.runAtTickTime(300, () -> {
+			StarterBlockEntity starter = helper.getBlockEntity(STARTER);
+			plain[0] = starter.calculateStressApplied();
+			helper.assertTrue(plain[0] > 0, "Cranking should stress the starter's input");
+			helper.setBlock(STARTER, heavyStarter());
+		});
+		helper.runAtTickTime(800, () -> {
+			StarterBlockEntity starter = helper.getBlockEntity(STARTER);
+			float heavy = starter.calculateStressApplied();
+			helper.assertTrue(heavy > 0 && heavy < plain[0] * 0.6f,
+				"Heavy starter should gear the effort down: plain " + plain[0] + ", heavy " + heavy);
+			helper.succeed();
+		});
+	}
+
+	@GameTest(template = "empty", timeoutTicks = 1200)
+	public static void startersTurningTheSameWayShareTheEffort(GameTestHelper helper) {
+		buildSingleCylinder(helper, false);
+		float[] alone = new float[1];
+		helper.runAtTickTime(300, () -> {
+			alone[0] = ((StarterBlockEntity) helper.getBlockEntity(STARTER)).calculateStressApplied();
+			helper.assertTrue(alone[0] > 0, "A lone starter should feel the whole effort");
+			// A second starter on the next crank block along, with its own motor and redstone
+			helper.setBlock(new BlockPos(3, 1, 2), CEBlocks.STARTER.getDefaultState()
+				.setValue(StarterBlock.FACING, Direction.UP));
+			helper.setBlock(new BlockPos(3, 0, 2), AllBlocks.CREATIVE_MOTOR.getDefaultState()
+				.setValue(CreativeMotorBlock.FACING, Direction.UP));
+			((CreativeMotorBlockEntity) helper.getBlockEntity(new BlockPos(3, 0, 2))).generatedSpeed.setValue(TestEngine.MOTOR_RPM);
+			helper.setBlock(new BlockPos(4, 1, 2), Blocks.REDSTONE_BLOCK.defaultBlockState());
+		});
+		helper.runAtTickTime(800, () -> {
+			StarterBlockEntity first = helper.getBlockEntity(STARTER);
+			StarterBlockEntity second = helper.getBlockEntity(new BlockPos(3, 1, 2));
+			float shared = first.calculateStressApplied();
+			helper.assertTrue(shared > 0 && shared < alone[0] * 0.7f,
+				"Each starter should feel about half the effort: alone " + alone[0] + ", shared " + shared);
+			helper.assertTrue(Math.abs(second.calculateStressApplied() - shared) < shared * 0.35f,
+				"Equal starters should carry equal shares");
+			helper.succeed();
+		});
+	}
+
+	@GameTest(template = "empty", timeoutTicks = 1200)
+	public static void heavyStarterChokesAColdEngineThenLetsGo(GameTestHelper helper) {
+		buildSingleCylinder(helper, false);
+		helper.setBlock(STARTER, heavyStarter());
+		helper.runAtTickTime(200, () -> {
+			CrankshaftBlockEntity crank = helper.getBlockEntity(PRIMARY);
+			helper.assertTrue(summary(helper).temperature() < 0.3f, "A new engine should be cold: " + summary(helper));
+			helper.assertTrue(crank.controller()
+				.crankAssist() > 0.99, "The heavy starter should be choking the cold engine");
+			helper.setBlock(STARTER_POWER, Blocks.AIR);
+		});
+		helper.runAtTickTime(600, () -> {
+			CrankshaftBlockEntity crank = helper.getBlockEntity(PRIMARY);
+			helper.assertTrue(crank.controller()
+				.crankAssist() == 0, "The choke should let go once the starter has");
+			helper.succeed();
+		});
+	}
+
+	@GameTest(template = "empty", timeoutTicks = 900)
+	public static void plainStarterDoesNotChokeAColdEngine(GameTestHelper helper) {
+		buildSingleCylinder(helper, false);
+		helper.runAtTickTime(200, () -> {
+			CrankshaftBlockEntity crank = helper.getBlockEntity(PRIMARY);
+			helper.assertTrue(crank.controller()
+				.crankAssist() == 0, "A plain starter should leave the cold alone");
+			helper.succeed();
+		});
+	}
+
+	@GameTest(template = "empty", timeoutTicks = 1200)
+	public static void heavyStarterStartsAnEngine(GameTestHelper helper) {
+		buildSingleCylinder(helper, true);
+		helper.setBlock(STARTER, heavyStarter());
+		helper.runAtTickTime(300, () -> helper.setBlock(STARTER_POWER, Blocks.AIR));
+		helper.runAtTickTime(600, () -> {
+			helper.assertTrue(summary(helper).state() == EngineState.RUNNING,
+				"A fuelled engine should catch and run on a heavy starter: " + summary(helper));
+			helper.succeed();
 		});
 	}
 }

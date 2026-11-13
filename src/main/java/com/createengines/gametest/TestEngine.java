@@ -50,7 +50,7 @@ public final class TestEngine {
 	public static final BlockPos ALTERNATOR = new BlockPos(0, 2, 2);
 	/** On top of the first journal, touching the crank, so its plugs fire from it. */
 	public static final BlockPos BATTERY = new BlockPos(1, 3, 2);
-	public static final int MOTOR_RPM = 64;
+	public static final int MOTOR_RPM = 80;
 
 	private static BlockState axisX(BlockState state) {
 		return state.setValue(BlockStateProperties.AXIS, Axis.X);

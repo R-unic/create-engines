@@ -9,6 +9,7 @@ import org.jetbrains.annotations.Nullable;
 import com.createengines.engine.LoadedBlocks;
 import com.createengines.content.GoggleLines;
 import com.createengines.content.crankshaft.CrankshaftBlockEntity;
+import com.createengines.content.display.EngineReadout;
 import com.createengines.engine.EngineController;
 import com.createengines.engine.sim.RunComparison;
 import com.createengines.engine.topology.EngineScanner;
@@ -236,7 +237,7 @@ public class DynoBlockEntity extends SmartBlockEntity implements IHaveGoggleInfo
 				Math.round(current.rpm[torquePeak]))
 			.style(ChatFormatting.GRAY), tooltip, 1);
 		GoggleLines.add(CELang.translate("goggles.dyno.peak_power", compact(current.power(powerPeak)),
-				Math.round(current.rpm[powerPeak]))
+				Math.round(current.rpm[powerPeak]), EngineReadout.hp(EngineReadout.horsepower(current.power(powerPeak))))
 			.style(ChatFormatting.GRAY), tooltip, 1);
 		int low = powerPeak;
 		int high = powerPeak;
@@ -250,7 +251,8 @@ public class DynoBlockEntity extends SmartBlockEntity implements IHaveGoggleInfo
 		GoggleLines.add(CELang.translate("goggles.dyno.now", Math.round(current.current))
 			.style(ChatFormatting.DARK_GRAY), tooltip, 1);
 		if (current.rated > 0)
-			GoggleLines.add(CELang.translate("goggles.dyno.rated", compact(current.rated), compact(current.rated * current.current))
+			GoggleLines.add(CELang.translate("goggles.dyno.rated", compact(current.rated), compact(current.rated * current.current),
+				EngineReadout.hp(EngineReadout.horsepower(current.rated, current.current)))
 				.style(ChatFormatting.DARK_GRAY), tooltip, 1);
 		addComparison(tooltip, current);
 		if (isPlayerSneaking)

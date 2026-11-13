@@ -30,8 +30,11 @@ import com.createengines.content.starter.StarterVisual;
 import com.createengines.content.sump.SumpBlockEntity;
 import com.createengines.content.supercharger.SuperchargerBlockEntity;
 import com.createengines.content.supercharger.SuperchargerVisual;
+import com.createengines.content.transmission.TransmissionBlockEntity;
 import com.createengines.content.turbo.TurbochargerBlockEntity;
 import com.createengines.content.turbo.TurbochargerRenderer;
+import com.simibubi.create.content.kinetics.transmission.SplitShaftRenderer;
+import com.simibubi.create.content.kinetics.transmission.SplitShaftVisual;
 import com.simibubi.create.content.kinetics.base.KineticBlockEntityRenderer;
 import com.tterrag.registrate.util.entry.BlockEntityEntry;
 
@@ -98,7 +101,7 @@ public final class CEBlockEntities {
 	public static final BlockEntityEntry<StarterBlockEntity> STARTER = REGISTRATE
 		.blockEntity("starter", StarterBlockEntity::new)
 		.visual(() -> StarterVisual::create, false)
-		.validBlocks(CEBlocks.STARTER)
+		.validBlocks(CEBlocks.STARTER, CEBlocks.HEAVY_STARTER)
 		.renderer(() -> StarterRenderer::new)
 		.register();
 
@@ -145,8 +148,15 @@ public final class CEBlockEntities {
 	public static final BlockEntityEntry<SuperchargerBlockEntity> SUPERCHARGER = REGISTRATE
 		.blockEntity("supercharger", SuperchargerBlockEntity::new)
 		.visual(() -> SuperchargerVisual::create, false)
-		.validBlocks(CEBlocks.SUPERCHARGER)
+		.validBlocks(CEBlocks.SUPERCHARGER, CEBlocks.VARIABLE_SUPERCHARGER)
 		.renderer(() -> KineticBlockEntityRenderer::new)
+		.register();
+
+	public static final BlockEntityEntry<TransmissionBlockEntity> TRANSMISSION = REGISTRATE
+		.blockEntity("transmission", TransmissionBlockEntity::new)
+		.visual(() -> SplitShaftVisual::new, false)
+		.validBlocks(CEBlocks.TRANSMISSION)
+		.renderer(() -> SplitShaftRenderer::new)
 		.register();
 
 	private CEBlockEntities() {

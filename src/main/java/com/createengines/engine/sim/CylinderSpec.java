@@ -46,8 +46,17 @@ public record CylinderSpec(double compressionRatio, double rodRatio, double inta
 			frictionStatic, frictionViscous, inertia, 1);
 	}
 
+	/**
+	 * How much faster every combustion engine turns than the original tuning. Burn and ignition times shrink, breathing
+	 * and viscous drag scale up, so the whole torque curve slides up the RPM axis by this factor with its torque
+	 * unchanged. Stress per torque is lowered by the same factor, so an engine's SU at its best speed stays where it was.
+	 */
+	public static final double SPEED_GAIN = 1.27;
+
 	/** Andesite-age cylinder: low compression, slow breathing, slow combustion, lots of friction. */
-	public static final CylinderSpec CRUDE = new CylinderSpec(12, 4 / 14d, 20, 20, 0.5, 0.02, 0.06, 0.08, 0.01, 0.15);
+	public static final CylinderSpec CRUDE =
+		new CylinderSpec(12, 4 / 14d, 20 * SPEED_GAIN, 20 * SPEED_GAIN, 0.5, 0.02 / SPEED_GAIN, 0.06 / SPEED_GAIN, 0.08,
+			0.01 / SPEED_GAIN, 0.15);
 
 	/**
 	 * Swept volume of a rotor's chamber against an ordinary cylinder's. A rotor fires once a turn of the shaft to a
@@ -67,7 +76,8 @@ public record CylinderSpec(double compressionRatio, double rodRatio, double inta
 	 * Its volume is a plain sine of the cycle angle, so the rod ratio is next to nothing.
 	 */
 	public static final CylinderSpec ROTARY =
-		new CylinderSpec(9.5, 1e-4, 32, 32, 0.5 * ROTARY_DISPLACEMENT, 0.02, 0.09, 0.05, 0.006, 0.07, ROTARY_DISPLACEMENT);
+		new CylinderSpec(9.5, 1e-4, 32 * SPEED_GAIN, 32 * SPEED_GAIN, 0.5 * ROTARY_DISPLACEMENT, 0.02 / SPEED_GAIN,
+			0.09 / SPEED_GAIN, 0.05, 0.006 / SPEED_GAIN, 0.07, ROTARY_DISPLACEMENT);
 
 	/**
 	 * A rotary chamber with a precision injector fitted: it lights sooner and burns faster, as in a piston engine. The

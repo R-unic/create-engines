@@ -65,8 +65,12 @@ public class TurbochargerBlockEntity extends SmartBlockEntity
 	private float wheelSpeed;
 	/** Client only: whether the wastegate was being held open by redstone at the last tick, and the best boost lately. */
 	private boolean wasVenting;
+	/** Client only: whether the engine was off the throttle at the last tick; true while there is no status to go on. */
+	private boolean wasLifted = true;
 	private float heldBoost;
 	private final EffectRate popRate = new EffectRate(EffectRate.BANG_INTERVAL * 2);
+	/** The valve opens at most about once a second on a throttle lift, however the driver blips it. */
+	private final EffectRate liftRate = new EffectRate(20);
 
 	public TurbochargerBlockEntity(BlockEntityType<?> type, BlockPos pos, BlockState state) {
 		super(type, pos, state);
@@ -209,15 +213,21 @@ public class TurbochargerBlockEntity extends SmartBlockEntity
 	}
 
 	/**
-	 * The blow-off valve: redstone opens the wastegate fully while there is boost to dump, and the charge goes with a thump,
-	 * a hiss and a flutter. Played when the valve opens, louder for more boost. The boost it was holding is remembered for a
-	 * moment, since by the time the client hears of the open valve the gauge has started to fall.
+	 * The blow-off valve: it opens when redstone opens the wastegate fully, and when the engine lifts off the throttle with
+	 * boost still in the pipe (as a real valve does when the throttle plate shuts against a spinning compressor), and the
+	 * charge goes with a thump, a hiss and a flutter. Played when the valve opens, louder for more boost. The boost it was
+	 * holding is remembered for a moment, since by the time the client hears of the open valve the gauge has started to fall.
 	 */
 	private void blowOff() {
 		float boost = status == null ? 0 : status.boost();
 		heldBoost = Math.max(boost, heldBoost - 0.01f);
 		boolean venting = status != null && status.wastegate() > 0.5f && dumping();
-		if (venting && !wasVenting && heldBoost >= 0.25f) {
+		boolean lifted = status == null || status.offThrottle();
+		boolean opens = venting && !wasVenting;
+		if (!opens && lifted && !wasLifted && heldBoost >= 0.25f && liftRate.allow(level))
+			opens = true;
+		wasLifted = lifted;
+		if (opens && heldBoost >= 0.25f) {
 			if (CEClientConfig.boostVolume() > 0)
 				level.playLocalSound(worldPosition, CESounds.TURBO_BLOWOFF.get(), SoundSource.BLOCKS,
 					Math.min(1.2f, 0.4f + heldBoost) * CEClientConfig.boostVolume(), 0.95f + level.random.nextFloat() * 0.1f,

@@ -18,6 +18,7 @@
     "create_engines:air_intake",
     "create_engines:exhaust_outlet",
     "create_engines:starter",
+    "create_engines:heavy_starter",
     "create_engines:battery",
     "create_engines:alternator",
     "create_engines:cast_flywheel",
@@ -27,8 +28,10 @@
     "create_engines:turbocharger",
     "create_engines:variable_turbocharger",
     "create_engines:supercharger",
+    "create_engines:variable_supercharger",
     "create_engines:intercooler",
     "create_engines:muffler",
-    "create_engines:engine_casing"
+    "create_engines:engine_casing",
+    "create_engines:transmission"
   ]
 }

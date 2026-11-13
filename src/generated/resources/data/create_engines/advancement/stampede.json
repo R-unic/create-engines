@@ -1,0 +1,30 @@
+{
+  "parent": "create_engines:engine_display",
+  "criteria": {
+    "stampede": {
+      "conditions": {
+        "event": "stampede"
+      },
+      "trigger": "create_engines:event"
+    }
+  },
+  "display": {
+    "description": {
+      "translate": "advancement.create_engines.stampede.desc"
+    },
+    "frame": "goal",
+    "icon": {
+      "count": 1,
+      "id": "create:display_link"
+    },
+    "title": {
+      "translate": "advancement.create_engines.stampede"
+    }
+  },
+  "requirements": [
+    [
+      "stampede"
+    ]
+  ],
+  "sends_telemetry_event": true
+}

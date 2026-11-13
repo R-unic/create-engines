@@ -230,7 +230,7 @@ public final class EngineSimulation {
 		if (thermalLive && Tuning.engineTemperature)
 			thermal.update(Thermal.heatIn(exhaustHeat / TICK, tickFrictionWork / TICK), cylinders.size(), TICK, coolant);
 		tickFrictionWork = 0;
-		double cold = thermal.cold();
+		double cold = thermal.felt();
 		for (CylinderModel cylinder : cylinders)
 			cylinder.coldness = cold;
 		for (Turbocharger turbo : turbos)
@@ -717,7 +717,8 @@ public final class EngineSimulation {
 
 	/** Fuel injected per second over the last cycle, mB/s. */
 	public double fuelRate() {
-		return fuelRate;
+		// Engines turn faster than they once did for the same stress, and the tanks are charged less to match
+		return fuelRate / CylinderSpec.SPEED_GAIN;
 	}
 
 	public boolean isStopped() {

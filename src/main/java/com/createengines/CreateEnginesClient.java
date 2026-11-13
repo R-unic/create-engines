@@ -3,6 +3,7 @@ package com.createengines;
 import java.util.List;
 
 import com.createengines.client.FuelTooltips;
+import com.createengines.client.ShowcaseRun;
 import com.createengines.client.VisualSmokeTest;
 import com.createengines.client.particle.ExhaustFlameParticle;
 import com.createengines.client.particle.GasParticle;
@@ -36,6 +37,7 @@ public class CreateEnginesClient {
 		NeoForge.EVENT_BUS.addListener(FuelTooltips::onTooltip);
 		PonderIndex.addPlugin(new CEPonderPlugin());
 		VisualSmokeTest.register();
+		ShowcaseRun.register();
 	}
 
 	private static void registerParticles(RegisterParticleProvidersEvent event) {

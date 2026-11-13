@@ -79,6 +79,8 @@ public final class Thermal {
 	/** Coolant spent per second over the last tick, for goggles. */
 	private double coolantRate;
 	private double coolantQuality;
+	/** How much of the cold a starter is choking out of the engine, 0 to 1 (see {@link #setCrankAssist}). */
+	private double crankAssist;
 	/** Heat per cylinder per second an outside heat source is putting in (see {@link #setPreheat}). */
 	private double preheat;
 
@@ -105,6 +107,15 @@ public final class Thermal {
 		if (temperature < COOLING_FROM)
 			return 0;
 		return 0.004 + 0.045 * Math.clamp((temperature - COOLING_FROM) / (NORMAL - COOLING_FROM), 0, 1);
+	}
+
+	/** A starter that warms cold engines is cranking, or has just stopped: that share of the cold is not felt. */
+	public void setCrankAssist(double assist) {
+		crankAssist = Math.clamp(assist, 0, 1);
+	}
+
+	public double crankAssist() {
+		return crankAssist;
 	}
 
 	/** Heat level of a heat source touching the engine, {@link HeatRecovery#NONE} to {@link HeatRecovery#SEETHE}. */
@@ -171,6 +182,11 @@ public final class Thermal {
 		return Tuning.engineTemperature ? Math.clamp((COLD_BELOW - temperature) / COLD_BELOW, 0, 1) : 0;
 	}
 
+	/** How cold the engine behaves: {@link #cold()}, less whatever a starter is choking out of it. */
+	public double felt() {
+		return cold() * (1 - crankAssist);
+	}
+
 	/**
 	 * How much of the cooling bonus the engine has earned, 0 to 1: nothing at {@link #COOL_NONE} or warmer, all of it at
 	 * {@link #COOL_FULL}. A cold engine has not earned it either, so it fades out between the point where it stops dragging and the thermostat.
@@ -185,7 +201,7 @@ public final class Thermal {
 
 	/** Multiplier on all friction: a cold engine drags. */
 	public double drag() {
-		return 1 + MAX_COLD_FRICTION * cold();
+		return 1 + MAX_COLD_FRICTION * felt();
 	}
 
 	/** Multiplier on the temperature of the air the cylinders draw: a cool engine pulls in a denser charge. */

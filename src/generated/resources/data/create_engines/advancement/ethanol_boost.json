@@ -1,0 +1,30 @@
+{
+  "parent": "create_engines:ethanol",
+  "criteria": {
+    "ethanol_boost": {
+      "conditions": {
+        "event": "ethanol_boosted"
+      },
+      "trigger": "create_engines:event"
+    }
+  },
+  "display": {
+    "description": {
+      "translate": "advancement.create_engines.ethanol_boost.desc"
+    },
+    "frame": "goal",
+    "icon": {
+      "count": 1,
+      "id": "create_engines:ethanol_bucket"
+    },
+    "title": {
+      "translate": "advancement.create_engines.ethanol_boost"
+    }
+  },
+  "requirements": [
+    [
+      "ethanol_boost"
+    ]
+  ],
+  "sends_telemetry_event": true
+}

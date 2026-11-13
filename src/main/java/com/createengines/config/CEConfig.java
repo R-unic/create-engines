@@ -46,7 +46,7 @@ public final class CEConfig {
 				"A crude single cylinder makes roughly 0.4 units at moderate speed.",
 				"Calibrated so a tuned straight-12 on gasoline (about 60k SU at its best speed) is several times a",
 				"Create steam engine (16k SU), which it costs far more to build and fuel.")
-			.defineInRange("stressPerTorque", 100.0, 1.0, 10000.0);
+			.defineInRange("stressPerTorque", 78.7, 1.0, 10000.0);
 		JOURNAL_INERTIA = builder.comment("Rotational inertia of a crankshaft journal block.")
 			.defineInRange("journalInertia", 0.15, 0.0, 100.0);
 		THROW_INERTIA = builder.comment("Rotational inertia of a crank throw block.")

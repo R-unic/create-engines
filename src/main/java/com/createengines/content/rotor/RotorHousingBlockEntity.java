@@ -334,6 +334,18 @@ public class RotorHousingBlockEntity extends CrankshaftBlockEntity implements Ga
 					GoggleLines.add(CELang.translate("goggles.mixture.suggest",
 							GalleryMember.balancedMetering(meteringFraction(), first.mixture()))
 						.style(ChatFormatting.AQUA), tooltip, 2);
+				float worstEarly = 0;
+				for (CylinderStatus chamber : chambers)
+					if (chamber != null)
+						worstEarly = Math.max(worstEarly, chamber.preignition());
+				int early = Math.round(worstEarly * 100);
+				if (first.sparkPlug() && early >= 2) {
+					GoggleLines.add(CELang.translate("goggles.preignition", early)
+						.style(early >= 15 ? ChatFormatting.RED : ChatFormatting.GOLD), tooltip, 1);
+					if (isPlayerSneaking)
+						GoggleLines.add(CELang.translate("goggles.preignition.hint")
+							.style(ChatFormatting.DARK_GRAY), tooltip, 2);
+				}
 				int soot = Math.round(first.fouling() * 100);
 				if (first.sparkPlug() && soot >= 5) {
 					GoggleLines.add(CELang.translate("goggles.fouling", soot)

@@ -26,7 +26,9 @@ import com.createengines.content.muffler.MufflerBlock;
 import com.createengines.content.rotor.RotorHousingBlock;
 import com.createengines.content.starter.StarterBlock;
 import com.createengines.content.sump.SumpBlock;
+import com.createengines.content.supercharger.VariableSuperchargerBlock;
 import com.createengines.content.supercharger.SuperchargerBlock;
+import com.createengines.content.transmission.TransmissionBlock;
 import com.createengines.content.turbo.TurbochargerBlock;
 import com.createengines.content.turbo.VariableTurbochargerBlock;
 import com.simibubi.create.api.behaviour.display.DisplaySource;
@@ -63,13 +65,23 @@ public final class CEBlocks {
 			.forceSolidOn();
 	}
 
+	/** A shaft part shows its animated model when bare and the shared casing model, turned onto its axis, when cased. */
+	private static net.neoforged.neoforge.client.model.generators.ModelFile shaftModel(
+		com.tterrag.registrate.providers.DataGenContext<net.minecraft.world.level.block.Block, ? extends net.minecraft.world.level.block.Block> c,
+		com.tterrag.registrate.providers.RegistrateBlockstateProvider p, net.minecraft.world.level.block.state.BlockState s) {
+		return s.getValue(com.createengines.content.Encasing.ENCASED)
+			? p.models()
+				.getExistingFile(p.modLoc("block/engine_casing/encased"))
+			: AssetLookup.partialBaseModel(c, p);
+	}
+
 	public static final BlockEntry<CrankshaftBlock> CRANKSHAFT = REGISTRATE.block("crankshaft", CrankshaftBlock::new)
 		.transform(CEBlocks::engineReadouts)
 		.initialProperties(SharedProperties::softMetal)
 		.properties(p -> part(p)
 			.mapColor(MapColor.METAL))
 		.transform(TagGen.pickaxeOnly())
-		.blockstate((c, p) -> BlockStateGen.axisBlock(c, p, s -> AssetLookup.partialBaseModel(c, p)))
+		.blockstate((c, p) -> BlockStateGen.axisBlock(c, p, s -> shaftModel(c, p, s)))
 		.item()
 		.transform(ModelGen.customItemModel())
 		.register();
@@ -80,7 +92,7 @@ public final class CEBlocks {
 		.properties(p -> part(p)
 			.mapColor(MapColor.METAL))
 		.transform(TagGen.pickaxeOnly())
-		.blockstate((c, p) -> BlockStateGen.axisBlock(c, p, s -> AssetLookup.partialBaseModel(c, p)))
+		.blockstate((c, p) -> BlockStateGen.axisBlock(c, p, s -> shaftModel(c, p, s)))
 		.item()
 		.transform(ModelGen.customItemModel())
 		.register();
@@ -177,7 +189,7 @@ public final class CEBlocks {
 		.properties(p -> part(p)
 			.mapColor(MapColor.METAL))
 		.transform(TagGen.pickaxeOnly())
-		.blockstate((c, p) -> BlockStateGen.axisBlock(c, p, s -> AssetLookup.partialBaseModel(c, p)))
+		.blockstate((c, p) -> BlockStateGen.axisBlock(c, p, s -> shaftModel(c, p, s)))
 		.item()
 		.transform(ModelGen.customItemModel())
 		.register();
@@ -187,7 +199,7 @@ public final class CEBlocks {
 		.properties(p -> part(p)
 			.mapColor(MapColor.METAL))
 		.transform(TagGen.pickaxeOnly())
-		.blockstate((c, p) -> BlockStateGen.axisBlock(c, p, s -> AssetLookup.partialBaseModel(c, p)))
+		.blockstate((c, p) -> BlockStateGen.axisBlock(c, p, s -> shaftModel(c, p, s)))
 		.item()
 		.transform(ModelGen.customItemModel())
 		.register();
@@ -296,6 +308,18 @@ public final class CEBlocks {
 		.transform(ModelGen.customItemModel())
 		.register();
 
+	public static final BlockEntry<StarterBlock> HEAVY_STARTER = REGISTRATE
+		.block("heavy_starter", p -> new StarterBlock(p, StarterBlock.HEAVY_STRENGTH, true))
+		.initialProperties(SharedProperties::softMetal)
+		.properties(p -> part(p)
+			.mapColor(MapColor.GOLD))
+		.transform(TagGen.pickaxeOnly())
+		.blockstate((c, p) -> BlockStateGen.directionalBlockIgnoresWaterlogged(c, p,
+			s -> AssetLookup.partialBaseModel(c, p)))
+		.item()
+		.transform(ModelGen.customItemModel())
+		.register();
+
 	public static final BlockEntry<BatteryBlock> BATTERY = REGISTRATE.block("battery", BatteryBlock::new)
 		.initialProperties(SharedProperties::softMetal)
 		.properties(p -> part(p)
@@ -397,6 +421,19 @@ public final class CEBlocks {
 			.transform(ModelGen.customItemModel())
 			.register();
 
+	/** A supercharger with a variable-ratio drive and tight rotors: it boosts sooner, takes less power and runs cooler. */
+	public static final BlockEntry<VariableSuperchargerBlock> VARIABLE_SUPERCHARGER =
+		REGISTRATE.block("variable_supercharger", VariableSuperchargerBlock::new)
+			.lang("Variable-Drive Supercharger")
+			.initialProperties(SharedProperties::softMetal)
+			.properties(p -> part(p)
+				.mapColor(MapColor.GOLD))
+			.transform(TagGen.pickaxeOnly())
+			.blockstate((c, p) -> BlockStateGen.axisBlock(c, p, s -> AssetLookup.partialBaseModel(c, p)))
+			.item()
+			.transform(ModelGen.customItemModel())
+			.register();
+
 	public static final BlockEntry<IntercoolerBlock> INTERCOOLER =
 		REGISTRATE.block("intercooler", IntercoolerBlock::new)
 			.initialProperties(SharedProperties::copperMetal)
@@ -431,6 +468,17 @@ public final class CEBlocks {
 			.transform(ModelGen.customItemModel())
 			.register();
 
+	public static final BlockEntry<TransmissionBlock> TRANSMISSION =
+		REGISTRATE.block("transmission", TransmissionBlock::new)
+			.initialProperties(SharedProperties::softMetal)
+			.properties(p -> part(p)
+				.mapColor(MapColor.METAL))
+			.transform(TagGen.pickaxeOnly())
+			.blockstate((c, p) -> BlockStateGen.axisBlock(c, p, s -> AssetLookup.partialBaseModel(c, p)))
+			.item()
+			.transform(ModelGen.customItemModel())
+			.register();
+
 	private CEBlocks() {
 	}
 
@@ -438,6 +486,7 @@ public final class CEBlocks {
 	private static <B extends Block, P> BlockBuilder<B, P> engineReadouts(BlockBuilder<B, P> builder) {
 		return builder.transform(DisplaySource.displaySource(CEDisplaySources.ENGINE_STATUS))
 			.transform(DisplaySource.displaySource(CEDisplaySources.ENGINE_SPEED))
+			.transform(DisplaySource.displaySource(CEDisplaySources.ENGINE_POWER))
 			.transform(DisplaySource.displaySource(CEDisplaySources.ENGINE_LOAD))
 			.transform(DisplaySource.displaySource(CEDisplaySources.ENGINE_TEMPERATURE))
 			.transform(DisplaySource.displaySource(CEDisplaySources.ENGINE_OIL));

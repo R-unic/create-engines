@@ -31,6 +31,7 @@ import com.createengines.content.head.GalleryMember;
 import com.createengines.content.rotor.RotorHousingBlockEntity;
 import com.createengines.content.starter.StarterBlockEntity;
 import com.createengines.content.sump.SumpBlockEntity;
+import com.createengines.content.supercharger.SuperchargerBlock;
 import com.createengines.content.supercharger.SuperchargerBlockEntity;
 import com.createengines.content.turbo.TurbochargerBlock;
 import com.createengines.content.turbo.TurbochargerBlockEntity;
@@ -98,6 +99,10 @@ public final class EngineController {
 	/** Ticks of a small, steady difference between the rating and the published capacity before it is published. */
 	private static final int SETTLE_INTERVAL = 40;
 	private static final int SYNC_INTERVAL = 10;
+	/** How long a heavy starter goes on choking an engine after it lets go, ticks, and the last stretch over which that fades. */
+	private static final int COLD_ASSIST_HOLD = 160;
+	private static final int COLD_ASSIST_FADE = 60;
+
 	/** Crank speed below which a blower's gearing to it is not worked out. */
 	private static final double MIN_RATIO_RPM = 8;
 	private static final double MAX_DRIVE_RATIO = 16;
@@ -155,6 +160,8 @@ public final class EngineController {
 	private Dynamometer.@Nullable Measurement rating;
 	private boolean rated;
 	private boolean cranking;
+	/** Ticks left that a heavy starter is still choking the engine; full strength until {@link #COLD_ASSIST_FADE} remain. */
+	private int coldAssistTicks;
 	private @Nullable BlockPos activeStarter;
 	private EngineState previousState = EngineState.STALLED;
 	private final Governor governor = new Governor();
@@ -297,6 +304,8 @@ public final class EngineController {
 		for (EngineLayout.Inline placed : layout.superchargers()) {
 			Supercharger blower = new Supercharger(breathingOn(placed.intake()));
 			blower.parallel = placed.parallel();
+			blower.variableDrive = level.getBlockState(placed.pos())
+				.getBlock() instanceof SuperchargerBlock block && block.variableDrive();
 			blowers.add(blower);
 			sim.addSupercharger(blower);
 		}
@@ -447,16 +456,36 @@ public final class EngineController {
 			floorDirection = (int) Math.signum(crankSpeed);
 		}
 		activeStarter = null;
+		double starterTop = 0;
 		for (BlockPos pos : layout.starters()) {
 			if (!(LoadedBlocks.blockEntity(level, pos) instanceof StarterBlockEntity starter) || !starter.wantsToCrank())
 				continue;
 			double omega = EngineSimulation.rpmToOmega(Math.abs(starter.getSpeed()));
+			if (omega > starterTop)
+				starterTop = omega;
 			if (omega > floor) {
 				floor = omega;
 				floorDirection = starter.crankDirection() * senseAt(pos);
 				activeStarter = pos;
 			}
 		}
+		// Starters turning the crank the same way as the one that sets the pace all push on it, so a big engine can be
+		// cranked by several drives, each feeling its share of the effort. One much slower than the leader would just
+		// be overrun by its clutch, so it sits out.
+		List<BlockPos> pushing = new ArrayList<>();
+		if (activeStarter != null)
+			for (BlockPos pos : layout.starters())
+				if (LoadedBlocks.blockEntity(level, pos) instanceof StarterBlockEntity starter && starter.wantsToCrank()
+					&& starter.crankDirection() * senseAt(pos) == floorDirection
+					&& EngineSimulation.rpmToOmega(Math.abs(starter.getSpeed())) >= starterTop * 0.5)
+					pushing.add(pos);
+		// A heavy starter keeps choking a cold engine for a few seconds after it lets go, so it can catch and settle
+		boolean warming = false;
+		for (BlockPos pos : pushing)
+			warming |= LoadedBlocks.blockEntity(level, pos) instanceof StarterBlockEntity starter && starter.warmsColdEngines();
+		coldAssistTicks = warming ? COLD_ASSIST_HOLD : Math.max(0, coldAssistTicks - 1);
+		sim.thermal()
+			.setCrankAssist(Math.min(1, coldAssistTicks / (double) COLD_ASSIST_FADE));
 
 		// An overstressed network has stopped everything on it, so nothing is drawing on the engine
 		double load = crankSpeed == 0 || primary.isOverStressed() ? 0
@@ -472,16 +501,29 @@ public final class EngineController {
 
 		// The starter feels the effort of turning the engine as stress on its own input shaft
 		double crankingStress = sim.crankingTorque() * torqueScale;
+		// A stronger starter takes more of the effort, and gears it down: every starter pushing feels the same stress
+		// on its input, however many there are and however strong, so a heavy one runs a big engine off a weak source
+		double strength = 0;
+		for (BlockPos pos : pushing)
+			if (LoadedBlocks.blockEntity(level, pos) instanceof StarterBlockEntity starter)
+				strength += starter.strength();
+		double share = crankingStress / Math.max(1, strength);
 		for (BlockPos pos : layout.starters())
 			if (LoadedBlocks.blockEntity(level, pos) instanceof StarterBlockEntity starter) {
-				boolean active = pos.equals(activeStarter);
-				starter.updateCranking(layout.primary(), active ? crankingStress : 0, active);
+				boolean active = pushing.contains(pos);
+				starter.updateCranking(layout.primary(), active ? share : 0, active);
 			}
 
 		publishSpeed();
 		publishCapacity(torqueScale);
 		if (ticks % SYNC_INTERVAL == 0)
 			syncDiagnostics(level, torqueScale);
+	}
+
+	/** How much of the engine's cold a starter is choking out of it now, 0 to 1. */
+	public double crankAssist() {
+		return sim.thermal()
+			.crankAssist();
 	}
 
 	/**
@@ -877,6 +919,7 @@ public final class EngineController {
 		for (Supercharger blower : sim.superchargers()) {
 			key.add((int) Math.round(blower.limit * 20));
 			key.add((int) Math.round(blower.driveRatio * 4));
+			key.add(blower.variableDrive ? 1 : 0);
 		}
 		key.add(sim.intercoolers()
 			.size());
@@ -1136,7 +1179,7 @@ public final class EngineController {
 				cylinder.lobe(), outlets, last != null && last.lean(),
 				last == null || last.equivalence <= 0 ? Float.NaN : (float) last.equivalence, cylinder.sparkPlug(),
 				model == null ? 0 : (float) model.fouling(), model == null ? 0 : (float) model.lobeShift(),
-				openings(cylinder.intake())));
+				openings(cylinder.intake()), last == null ? 0 : (float) last.preignition));
 		}
 
 		for (BlockPos pos : layout.batteries())
@@ -1194,7 +1237,8 @@ public final class EngineController {
 			Float.NaN, last == null || last.fuelInjected <= 0 ? Float.NaN : (float) last.compressionTemp,
 			fuel == null ? Float.NaN : (float) fuel.autoignitionTemp(), null, outlets, last != null && last.lean(),
 			last == null || last.equivalence <= 0 ? Float.NaN : (float) last.equivalence, cylinder.sparkPlug(),
-			model == null ? 0 : (float) model.fouling(), 0, openings(cylinder.intake()));
+			model == null ? 0 : (float) model.fouling(), 0, openings(cylinder.intake()),
+			last == null ? 0 : (float) last.preignition);
 	}
 
 	/** Every opening of a port network, clear or not, for the effects at its mouths. */
@@ -1227,7 +1271,7 @@ public final class EngineController {
 					!turbo.turbine()
 						.isEmpty(),
 					(float) turbo.vanes(), turbo.antiLagging(), (float) sim.thermal()
-						.temperature()));
+						.temperature(), turbo.offThrottle));
 		}
 	}
 
@@ -1420,8 +1464,21 @@ public final class EngineController {
 	/** Credits the operator with an engine burning ethanol, and one whose exhaust heat is cooking a basin's recipe. */
 	private void reportRefining(Level level, EngineState state) {
 		Fluid fuel = fuels.fluid();
-		award(level, EngineMilestones.reachedRefining(state == EngineState.RUNNING,
-			fuel != null && fuel.isSame(CEFluids.ETHANOL.get()), exchangerLevel));
+		boolean ethanol = fuel != null && fuel.isSame(CEFluids.ETHANOL.get());
+		// Ethanol under boost that has the charge past where gasoline lights itself early, and still lighting only at the plug
+		boolean coolCharge = false;
+		if (ethanol && state == EngineState.RUNNING)
+			for (CylinderModel model : models) {
+				if (model == null)
+					continue;
+				CycleStats last = model.lastCycle();
+				if (last.result.fired() && model.intakePressure > 1.2
+					&& last.compressionTemp >= FuelSpec.GASOLINE.autoignitionTemp()) {
+					coolCharge = true;
+					break;
+				}
+			}
+		award(level, EngineMilestones.reachedRefining(state == EngineState.RUNNING, ethanol, exchangerLevel, coolCharge));
 	}
 
 	/** Credits the operator with oil that is kept fresh, an engine that has warmed up or is cooled, and a pilot shot at work. */
@@ -1436,6 +1493,7 @@ public final class EngineController {
 				.preheat() > 0 && temperature >= Thermal.COLD_BELOW;
 			boolean slowFuel = fuel != null && (fuel.isSame(CEFluids.ETHANOL.get()) || fuel.isSame(CEFluids.PLANT_OIL.get()));
 			hardStart = slowFuel && temperature < Thermal.COLD_BELOW;
+			award(level, EngineMilestones.reachedColdStart(coldAssistTicks > 0 && temperature < Thermal.COLD_BELOW));
 		} else if (!running) {
 			warmStart = false;
 			hardStart = false;
@@ -1485,14 +1543,18 @@ public final class EngineController {
 				for (CylinderModel cylinder : turbo.compressor())
 					stages.computeIfAbsent(cylinder, $ -> new int[3])[turbo.parallelCompressor ? 2 : 0]++;
 		float blowerBoost = 0;
+		float overdriven = 0;
 		for (Supercharger blower : blowers) {
 			if (blower.boost() >= EngineMilestones.STAGE_BOOST)
 				for (CylinderModel cylinder : blower.compressor())
 					stages.computeIfAbsent(cylinder, $ -> new int[3])[1]++;
 			if (blower.compressor()
 				.stream()
-				.anyMatch(cylinder -> cylinder.lastCycle().result.fired()))
+				.anyMatch(cylinder -> cylinder.lastCycle().result.fired())) {
 				blowerBoost = Math.max(blowerBoost, (float) blower.boost());
+				if (blower.variableDrive && blower.overdrive() >= EngineMilestones.OVERDRIVE_ACTIVE)
+					overdriven = Math.max(overdriven, (float) blower.boost());
+			}
 		}
 		int turboStages = 0;
 		int blowerStages = 0;
@@ -1512,7 +1574,7 @@ public final class EngineController {
 				if (cylinder.lastCycle().result.fired())
 					cooled = Math.max(cooled, (float) (cylinder.intakePressure - 1));
 		award(level, EngineMilestones.reachedInduction(new EngineMilestones.Induction(
-			state == EngineState.RUNNING, blowerBoost, turboStages, blowerStages, twinStages, cooled)));
+			state == EngineState.RUNNING, blowerBoost, turboStages, blowerStages, twinStages, cooled, overdriven)));
 	}
 
 	/** Called when this engine is being replaced or dismantled: stop driving the network. */

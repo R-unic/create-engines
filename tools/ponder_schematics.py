@@ -277,6 +277,17 @@ write_schematic("supercharger", (7, 6, 7), [
     (3, 4, 3, ce("camshaft"), axis("x")),
 ])
 
+write_schematic("transmission", (8, 4, 5), [
+    (0, 1, 2, "create:creative_motor", facing("east")),
+    (1, 1, 2, "create:shaft", {"axis": "x", "waterlogged": "false"}),
+    (2, 1, 2, ce("transmission"), axis("x")),
+    (3, 1, 2, "create:shaft", {"axis": "x", "waterlogged": "false"}),
+    (4, 1, 2, "create:shaft", {"axis": "x", "waterlogged": "false"}),
+    (5, 1, 2, "create:flywheel", {"axis": "x", "waterlogged": "false"}),
+    # A lever beside the transmission selects a gear by redstone strength
+    (2, 1, 3, "minecraft:lever", {"face": "floor", "facing": "north", "powered": "false"}),
+])
+
 write_schematic("sump", (6, 6, 6), [
     (1, 2, 3, ce("crankshaft"), axis("x")),
     (2, 2, 3, ce("crank_throw"), axis("x")),

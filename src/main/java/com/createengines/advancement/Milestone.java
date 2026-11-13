@@ -42,6 +42,12 @@ public enum Milestone {
 	TWIN_TURBO,
 	TWINCHARGED,
 	COOLED_CHARGE,
+	VARIABLE_DRIVE,
+	// Transmission
+	SHIFTED,
+	REVERSE,
+	EVERY_GEAR,
+	AUTO_SHIFTED,
 	// Engine management
 	MAF_TRIM,
 	MAF_ENRICH,
@@ -64,6 +70,7 @@ public enum Milestone {
 	SUMP_OILING,
 	SUMP_METERED,
 	ENGINE_DISPLAYED,
+	STAMPEDE,
 	MAF_READING,
 	PRECISION_BORE,
 	PRECISION_HEAD,
@@ -93,12 +100,14 @@ public enum Milestone {
 	TWIN_ROTORS,
 	// Refining fuel and recovering exhaust heat
 	ETHANOL_BURNED,
+	ETHANOL_BOOSTED,
 	HEAT_RECOVERED,
 	SUPERHEAT_RECOVERED,
 	COMBINED_CYCLE,
 	// How an engine sounds and looks
 	MUFFLED,
 	CLAD,
+	ENCASED,
 	// Oil service, temperature, coolant and pilot injection
 	OIL_EXCHANGED,
 	OIL_FILTERED,
@@ -113,7 +122,9 @@ public enum Milestone {
 	// A long crank, split up
 	STIFF_CRANK,
 	// Water: nothing burns down there
-	FLOODED;
+	FLOODED,
+	// A heavy starter gets a cold engine going
+	COLD_START;
 
 	/** The name the advancement's criterion carries. */
 	public String id() {

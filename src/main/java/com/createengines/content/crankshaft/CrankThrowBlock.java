@@ -1,5 +1,7 @@
 package com.createengines.content.crankshaft;
 
+import com.createengines.content.Encasing;
+
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.block.Block;
@@ -26,6 +28,6 @@ public class CrankThrowBlock extends CrankshaftBlock {
 
 	@Override
 	public VoxelShape getShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext context) {
-		return SHAPE;
+		return Encasing.shape(state, SHAPE);
 	}
 }

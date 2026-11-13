@@ -14,11 +14,14 @@ OUT = "src/main/resources/assets/create_engines/models/block"
 FACES = ("north", "south", "east", "west", "up", "down")
 
 
-def box(a, b, tex, **overrides):
-    """One element from corner a to corner b. tex is the texture for every face; overrides retexture single faces."""
+def box(a, b, tex, uv=None, **overrides):
+    """One element from corner a to corner b. tex is the texture for every face; overrides retexture single faces; uv
+    maps a face name to the [u0, v0, u1, v1] patch of its texture to show, instead of the one under it."""
     faces = {}
     for face in FACES:
         faces[face] = {"texture": "#" + overrides.get(face, tex)}
+        if uv and face in uv:
+            faces[face]["uv"] = uv[face]
     return {"from": [round(v, 4) for v in a], "to": [round(v, 4) for v in b], "faces": faces}
 
 
@@ -633,6 +636,49 @@ def supercharger():
     write("supercharger/item", {**textures, **rotor_textures}, elements + rotor)
 
 
+def variable_supercharger():
+    """A supercharger in gold-coloured casing with a variable-ratio drive: the same ring plates, flanges and rotor
+    (shared, so it spins), with a drive housing and its actuator on the corner and a gold band round the middle."""
+    textures = {"housing": BRASS_CASING, "plate": IRON, "fin": DARK, "bolt": BRASS, "flange": COPPER_CASING,
+                "drive": IRON_BLOCK, "actuator": COPPER_CASING, "particle": BRASS_CASING}
+
+    def ring(y0, y1, hole, tex):
+        lo, hi = 8 - hole, 8 + hole
+        return [box((1, y0, 1), (15, y1, lo), tex), box((1, y0, hi), (15, y1, 15), tex),
+                box((1, y0, lo), (lo, y1, hi), tex), box((hi, y0, lo), (15, y1, hi), tex)]
+
+    elements = ring(0, 2, 3, "plate") + ring(14, 16, 3, "plate")
+    elements += [
+        box((1.5, 2, 1.5), (14.5, 14, 4), "housing"),
+        box((1.5, 2, 12), (14.5, 14, 14.5), "housing"),
+        box((1.5, 2, 4), (4, 14, 12), "housing"),
+        box((12, 2, 4), (14.5, 14, 12), "housing"),
+        # One cooling fin, and a band of drive plates in place of the other: the variable-ratio drive
+        box((1, 5, 1), (15, 6, 15), "fin"),
+        box((1, 10, 1), (15, 10.75, 15), "drive"),
+        box((1.25, 11, 1.25), (14.75, 11.75, 14.75), "drive"),
+        # Its actuator, on the corner away from the flanges
+        box((1, 6.5, 14.5), (4.5, 9.5, 16), "actuator"),
+        box((2, 7.25, 15.75), (3.5, 8.75, 16.4), "bolt"),
+    ]
+    elements += [box((6, 4, 0), (10, 12, 1.5), "flange"), box((6, 4, 14.5), (10, 12, 16), "flange"),
+                 box((0, 4, 6), (1.5, 12, 10), "flange"), box((14.5, 4, 6), (16, 12, 10), "flange")]
+    for x in (1.6, 13.4):
+        for z in (1.6, 13.4):
+            elements.append(box((x, 15.8, z), (x + 1, 16.2, z + 1), "bolt"))
+            elements.append(box((x, -0.2, z), (x + 1, 0.2, z + 1), "bolt"))
+    write("variable_supercharger/block", textures, elements)
+
+    rotor_textures = {"shaft": IRON, "lobe": BRASS, "particle": BRASS}
+    rotor = [
+        box((6, 0, 6), (10, 16, 10), "shaft"),
+        box((4.5, 3, 6.75), (11.5, 13, 9.25), "lobe"),
+        box((6.75, 3, 4.5), (9.25, 13, 11.5), "lobe"),
+        box((5.25, 4, 5.25), (10.75, 12, 10.75), "lobe"),
+    ]
+    write("variable_supercharger/item", {**textures, **rotor_textures}, elements + rotor)
+
+
 def cast_flywheel():
     """A heavy iron disc on the shaft, along the Y axis (the block state turns it). The block model is only the bearing
     collars either side; the disc is a separate model so it can spin with the shaft."""
@@ -755,11 +801,75 @@ def muffler():
     write_item("muffler/item", "muffler/block")
 
 
+CASING_TEXTURES = {"plate": RIVETED, "frame": IRON_BLOCK, "bolt": BRASS, "cap": IRON_BLOCK, "dark": DARK,
+                   "particle": RIVETED}
+
+
+def casing_cage():
+    """The frame of an engine casing: a brass bolt block at each corner and a steel beam along each edge, so that
+    the riveted plate between them sits a half pixel in, as a panel does. Texture patches are taken from the middle
+    of the tile, clear of its rim, so the beams read as one piece."""
+    elements = []
+    near_far = (0, 14)
+    for x in near_far:
+        for y in near_far:
+            for z in near_far:
+                elements.append(box((x, y, z), (x + 2, y + 2, z + 2), "bolt",
+                                    uv={f: [6, 6, 8, 8] for f in FACES}))
+    along = [2, 6, 14, 8]
+    across = [6, 2, 8, 14]
+    for u in near_far:
+        for v in near_far:
+            # Along x, along z and along y
+            elements.append(box((2, u, v), (14, u + 2, v + 2), "frame",
+                                uv={"north": along, "south": along, "up": along, "down": along}))
+            elements.append(box((u, v, 2), (u + 2, v + 2, 14), "frame",
+                                uv={"east": along, "west": along, "up": across, "down": across}))
+            elements.append(box((u, 2, v), (u + 2, 14, v + 2), "frame",
+                                uv={f: across for f in ("north", "south", "east", "west")}))
+    return elements
+
+
+def casing_ring(y0, y1):
+    """One end plate of a cased shaft part: steel round a square opening, its walls dark."""
+    return [
+        box((2, y0, 2), (5, y1, 14), "plate", up="cap", down="cap", east="dark"),
+        box((11, y0, 2), (14, y1, 14), "plate", up="cap", down="cap", west="dark"),
+        box((5, y0, 2), (11, y1, 5), "plate", up="cap", down="cap", south="dark"),
+        box((5, y0, 11), (11, y1, 14), "plate", up="cap", down="cap", north="dark"),
+    ]
+
+
 def engine_casing():
-    """A cube of riveted plate, steel on top and bottom: plain cladding to build a cowl round an engine."""
-    textures = {"plate": RIVETED, "cap": IRON_BLOCK, "particle": RIVETED}
-    write("engine_casing/block", textures, [box((0, 0, 0), (16, 16, 16), "plate", up="cap", down="cap")])
+    """A cube of engine casing: a framed, riveted panel on every face, plain cladding to build a cowl round an engine
+    with. The cased variant is the same cube with a recessed opening in each end for the shaft, as Create's casings
+    have, drawn standing on the Y axis and turned onto the part's axis by the blockstate."""
+    write("engine_casing/block", CASING_TEXTURES,
+          casing_cage() + [box((0.5, 0.5, 0.5), (15.5, 15.5, 15.5), "plate")])
     write_item("engine_casing/item", "engine_casing/block")
+    write("engine_casing/encased", CASING_TEXTURES,
+          casing_cage() + [box((0.5, 2, 0.5), (15.5, 14, 15.5), "plate", up="dark", down="dark")]
+          + casing_ring(0.5, 2) + casing_ring(14, 15.5))
+
+
+def transmission():
+    """A split-shaft gearbox: a casing round the axis, with the shaft halves drawn by the renderer in the openings.
+    Stepped bands on the faces show the gear train and a small selector plate shows it is a gearbox."""
+    textures = {"casing": CASING, "band": BRASS, "cover": IRON, "dial": DARK, "bolt": BRASS, "particle": CASING}
+    elements = [
+        box((2, 2, 2), (14, 14, 14), "casing"),
+        box((1, 3, 1), (15, 5, 15), "cover"),
+        box((1, 11, 1), (15, 13, 15), "cover"),
+        box((4, 5, 1.6), (12, 11, 2), "dial"),
+        box((4, 5, 14), (12, 11, 14.4), "dial"),
+        box((1.6, 5, 4), (2, 11, 12), "dial"),
+        box((14, 5, 4), (14.4, 11, 12), "dial"),
+        box((6, 6.5, 14.4), (10, 9.5, 15), "band"),
+    ]
+    for x in (2, 13):
+        for z in (2, 13):
+            elements.append(box((x, 14, z), (x + 1, 14.6, z + 1), "bolt"))
+    write("transmission/block", textures, elements)
 
 
 def sump():
@@ -1018,10 +1128,12 @@ def main():
     turbocharger()
     variable_turbocharger()
     supercharger()
+    variable_supercharger()
     cast_flywheel()
     dyno()
     black_box()
     intercooler()
+    transmission()
     muffler()
     engine_casing()
     sump()

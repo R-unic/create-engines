@@ -108,6 +108,9 @@ public final class CEAdvancements {
 		on("ethanol", "spark_plug", () -> CEFluids.ETHANOL.getBucket().orElseThrow(), AdvancementType.TASK,
 			Milestone.ETHANOL_BURNED, "Home Brew",
 			"Run a spark engine on Ethanol, fermented from crops and distilled in a heated basin. Its autoignition point is so high that boost will not light it early.");
+		on("ethanol_boost", "ethanol", () -> CEFluids.ETHANOL.getBucket().orElseThrow(), AdvancementType.GOAL,
+			Milestone.ETHANOL_BOOSTED, "Cool Under Pressure",
+			"Run a boosted engine on Ethanol with its charge squeezed past the heat where gasoline would light itself early and lose power. Ethanol waits for the plug, and its boiling cools the charge.");
 		has("sugar_mash", "diesel", () -> CEFluids.SUGAR_MASH.getBucket().orElseThrow(), "Mash Up",
 			"Press sugar cane, beetroot or potatoes with water in a basin into Sugar Mash, the start of ethanol.");
 		has("glycerin", "ethanol", () -> CEFluids.GLYCERIN.getBucket().orElseThrow(), "Byproduct",
@@ -126,8 +129,13 @@ public final class CEAdvancements {
 			"It's Alive!", "Get an engine running on its own power.");
 		on("engine_casing", "alive", () -> CEBlocks.ENGINE_CASING.get(), AdvancementType.TASK, Milestone.CLAD,
 			"Under the Hood", "Run an engine with four or more blocks of Engine Casing built round its cylinders.");
+		on("encased_shaft", "engine_casing", () -> CEBlocks.CRANKSHAFT.get(), AdvancementType.TASK, Milestone.ENCASED,
+			"Tucked In", "Use Engine Casing on a crankshaft, crank throw, camshaft or cam lobe to cover it, the way andesite casing covers a shaft. A wrench takes the casing off again.");
 		on("engine_display", "alive", () -> AllBlocks.DISPLAY_LINK.get(), AdvancementType.TASK, Milestone.ENGINE_DISPLAYED,
 			"Instrument Panel", "Point a Display Link at a running engine's crankshaft and show its figures on a Display Board or nixie tubes.");
+		on("stampede", "engine_display", () -> AllBlocks.DISPLAY_LINK.get(), AdvancementType.GOAL,
+			Milestone.STAMPEDE, "Stampede",
+			"Show an engine delivering 500 horsepower or more on a Display Link.");
 		on("four_cylinders", "alive", () -> CEBlocks.CRANK_THROW.get(), AdvancementType.TASK, Milestone.FOUR_CYLINDERS,
 			"Four on the Floor", "Run an engine with four firing cylinders.");
 		on("eight_cylinders", "four_cylinders", () -> CEBlocks.CRANK_THROW.get(), AdvancementType.GOAL,
@@ -164,10 +172,12 @@ public final class CEAdvancements {
 			Milestone.THINNED_OIL, "Gas in the Oil", "Run rich for so long that unburned fuel thins the engine oil.");
 		on("stalled", "alive", () -> CEBlocks.STARTER.get(), AdvancementType.TASK, Milestone.STALLED,
 			"Stall Out", "Let a turning engine die.");
+		on("heavy_starter", "starter", () -> CEBlocks.HEAVY_STARTER.get(), AdvancementType.TASK, Milestone.COLD_START,
+			"Cold Start", "Get a stone-cold engine going with a Heavy Starter: it chokes the engine into catching.");
 		on("flooded", "starter", () -> CEBlocks.AIR_INTAKE.get(), AdvancementType.TASK, Milestone.FLOODED,
 			"That's Not Air",
 			"Crank an engine that sits underwater, or opens its air intake or exhaust outlet there. Nothing burns down there.");
-		on("overloaded", "alive", () -> CEBlocks.CRANKSHAFT.get(), AdvancementType.TASK, Milestone.OVERLOADED,
+		on("overloaded", "alive", () -> CEBlocks.TRANSMISSION.get(), AdvancementType.TASK, Milestone.OVERLOADED,
 			"Overworked", "Ask an engine for more torque than it is rated for.");
 
 		// Forced induction
@@ -181,6 +191,9 @@ public final class CEAdvancements {
 		on("supercharger", "turbocharger", () -> CEBlocks.SUPERCHARGER.get(), AdvancementType.TASK,
 			Milestone.SUPERCHARGED, "Blown Away",
 			"Run a Supercharger at 0.3 bar of boost on a running engine: drive its shaft and put it in the intake run for boost with no lag.");
+		on("variable_drive", "supercharger", () -> CEBlocks.VARIABLE_SUPERCHARGER.get(), AdvancementType.TASK,
+			Milestone.VARIABLE_DRIVE, "Overdrive",
+			"Run a Variable-Drive Supercharger at 0.3 bar of boost on a running engine while its variable drive is overspeeding the rotors, with the shaft well under its design speed.");
 		on("compound_boost", "turbocharger", () -> CEBlocks.TURBOCHARGER.get(), AdvancementType.GOAL,
 			Milestone.COMPOUND_BOOST, "Compound Interest",
 			"Run two turbochargers on the same cylinders, each making at least 0.2 bar of boost, with all the air going through both so their pressures multiply.");
@@ -265,6 +278,16 @@ public final class CEAdvancements {
 		on("twin_rotors", "rotary_engine", () -> CEBlocks.ROTOR_HOUSING.get(), AdvancementType.GOAL,
 			Milestone.TWIN_ROTORS, "Two Triangles", "Run an engine with two rotors firing on the same shaft.");
 
+		// Gearing
+		on("transmission", "crankshaft", () -> CEBlocks.TRANSMISSION.get(), AdvancementType.TASK, Milestone.SHIFTED,
+			"Gear Up", "Change gear on a Transmission that is carrying drive.");
+		on("reverse", "transmission", () -> CEBlocks.TRANSMISSION.get(), AdvancementType.TASK, Milestone.REVERSE,
+			"Reverse Engineering", "Run a transmission's output backwards in reverse gear.");
+		on("every_gear", "transmission", () -> CEBlocks.TRANSMISSION.get(), AdvancementType.GOAL, Milestone.EVERY_GEAR,
+			"Gearhead", "Shift a loaded transmission through all thirteen gears and reverse.");
+		on("auto_gearbox", "transmission", () -> CEBlocks.TRANSMISSION.get(), AdvancementType.TASK, Milestone.AUTO_SHIFTED,
+			"Let It Shift", "Set a Transmission to auto and let it change gear on its own while it is carrying drive.");
+
 		// Oil service: an oil pan's exchange dial, filter and used oil
 		on("oil_exchange", "sump", () -> CEBlocks.SUMP.get(), AdvancementType.TASK, Milestone.OIL_EXCHANGED,
 			"Fresh Start", "Set an oil pan's Oil Exchange dial and pipe fresh oil in and Used Oil out, so a running engine changes its own oil.");
@@ -309,11 +332,11 @@ public final class CEAdvancements {
 			Milestone.VEE_ENGINE, Milestone.FLAT_ENGINE, Milestone.EVEN_FIRING, Milestone.VALLEY_CAM,
 			Milestone.ROTARY_ENGINE);
 		List<Milestone> power = List.of(Milestone.STEAM_HERD, Milestone.REDLINE, Milestone.BIG_BOOST,
-			Milestone.TWINCHARGED, Milestone.PRECISION_ENGINE, Milestone.ANTI_LAG);
+			Milestone.TWINCHARGED, Milestone.PRECISION_ENGINE, Milestone.ANTI_LAG, Milestone.VARIABLE_DRIVE);
 		List<Milestone> tuning = List.of(Milestone.DIALED_IN, Milestone.MAF_TRIM, Milestone.MAF_ENRICH,
 			Milestone.GOVERNED, Milestone.FUEL_TUNED, Milestone.TOOL_TIMED);
-		List<Milestone> driveline = List.of(Milestone.CHARGED_BATTERY, Milestone.FLYWHEEL_SMOOTH,
-			Milestone.GOVERNOR_COMMANDED);
+		List<Milestone> driveline = List.of(Milestone.EVERY_GEAR, Milestone.CHARGED_BATTERY,
+			Milestone.FLYWHEEL_SMOOTH, Milestone.GOVERNOR_COMMANDED);
 		List<Milestone> fuel = List.of(Milestone.GASOLINE_BURNED, Milestone.ETHANOL_BURNED,
 			Milestone.SUPERHEAT_RECOVERED, Milestone.DUAL_FUEL, Milestone.WASTE_OIL_BURNED);
 		List<Milestone> service = List.of(Milestone.OIL_KEPT_FRESH, Milestone.OIL_FILTERED, Milestone.SUMP_OILING,
@@ -321,11 +344,11 @@ public final class CEAdvancements {
 		capstone("master_builder", "crankshaft", () -> CEBlocks.CRANK_THROW.get(), builder, "Master Builder",
 			"Finish the builder's track: a twelve with a stiff crank, coupled cranks, a vee, a flat, even firing, a valley cam and a Wankel.");
 		capstone("power_plant", "heavy_duty", () -> CEBlocks.TURBOCHARGER.get(), power, "Power Plant",
-			"Finish the power track: eight steam engines' worth, redline, big boost, twincharging, precision parts and anti-lag.");
+			"Finish the power track: eight steam engines' worth, redline, big boost, twincharging, precision parts, anti-lag and a variable-drive supercharger on its overdrive.");
 		capstone("fine_tuner", "timing_tool", () -> CEBlocks.MAF_SENSOR.get(), tuning, "Fine Tuner",
 			"Finish the tuning track: a balanced mixture, MAF trimming and enrichment, a governor holding speed, a fuel tune and a timed engine.");
-		capstone("full_driveline", "flywheel", () -> CEBlocks.CAST_FLYWHEEL.get(), driveline, "Full Driveline",
-			"Finish the driveline track: a charged battery, a flywheel smoothing the engine and a governor under redstone.");
+		capstone("full_driveline", "transmission", () -> CEBlocks.TRANSMISSION.get(), driveline, "Full Driveline",
+			"Finish the driveline track: every gear, a charged battery, a flywheel smoothing the engine and a governor under redstone.");
 		capstone("closed_loop", "diesel", () -> CEFluids.ETHANOL.getBucket().orElseThrow(), fuel, "Closed Loop",
 			"Finish the fuel track: burn gasoline, ethanol and waste oil, superheat from the exhaust and light a dual-fuel engine.");
 		capstone("service_record", "sump", () -> CEItems.OIL_FILTER.get(), service, "Service Record",

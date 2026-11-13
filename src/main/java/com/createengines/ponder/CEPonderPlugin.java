@@ -67,10 +67,12 @@ public class CEPonderPlugin implements PonderPlugin {
 			.addStoryBoard("spark", TroubleshootingScenes::runningBadly);
 		scenes.forComponents(CEBlocks.TURBOCHARGER)
 			.addStoryBoard("turbocharger", EngineScenes::turbocharger);
-		scenes.forComponents(CEBlocks.SUPERCHARGER, CEBlocks.INTERCOOLER)
+		scenes.forComponents(CEBlocks.SUPERCHARGER, CEBlocks.VARIABLE_SUPERCHARGER, CEBlocks.INTERCOOLER)
 			.addStoryBoard("supercharger", EngineScenes::supercharger);
 		scenes.forComponents(CEBlocks.TURBOCHARGER)
 			.addStoryBoard("supercharger", EngineScenes::supercharger);
+		scenes.forComponents(CEBlocks.TRANSMISSION)
+			.addStoryBoard("transmission", EngineScenes::transmission);
 		scenes.forComponents(CEBlocks.ROTOR_HOUSING, CEItems.ROTOR)
 			.addStoryBoard("rotor", EngineScenes::rotor);
 		scenes.forComponents(CEBlocks.SUMP, CEItems.OIL_FILTER)

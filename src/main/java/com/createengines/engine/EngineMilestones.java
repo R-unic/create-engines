@@ -129,11 +129,21 @@ public final class EngineMilestones {
 	 * {@link com.createengines.engine.sim.HeatRecovery#SEETHE}).
 	 */
 	public static Set<Milestone> reachedRefining(boolean running, boolean ethanol, int heatLevel) {
+		return reachedRefining(running, ethanol, heatLevel, false);
+	}
+
+	/**
+	 * As {@link #reachedRefining(boolean, boolean, int)}, given whether an ethanol engine is boosted with its charge past
+	 * the point where gasoline would light itself early and lose power.
+	 */
+	public static Set<Milestone> reachedRefining(boolean running, boolean ethanol, int heatLevel, boolean coolCharge) {
 		Set<Milestone> reached = EnumSet.noneOf(Milestone.class);
 		if (!running)
 			return reached;
 		if (ethanol)
 			reached.add(Milestone.ETHANOL_BURNED);
+		if (ethanol && coolCharge)
+			reached.add(Milestone.ETHANOL_BOOSTED);
 		if (heatLevel >= com.createengines.engine.sim.HeatRecovery.KINDLE)
 			reached.add(Milestone.HEAT_RECOVERED);
 		if (heatLevel >= com.createengines.engine.sim.HeatRecovery.SEETHE)
@@ -230,6 +240,14 @@ public final class EngineMilestones {
 		return reached;
 	}
 
+	/** An engine that was cold when it caught, and had a heavy starter choking it into doing so. */
+	public static Set<Milestone> reachedColdStart(boolean assistedWhileCold) {
+		Set<Milestone> reached = EnumSet.noneOf(Milestone.class);
+		if (assistedWhileCold)
+			reached.add(Milestone.COLD_START);
+		return reached;
+	}
+
 	public static Set<Milestone> reachedRotary(Rotary r) {
 		Set<Milestone> reached = EnumSet.noneOf(Milestone.class);
 		if (!r.running() || r.rotorsFiring() < 1)
@@ -301,10 +319,20 @@ public final class EngineMilestones {
 	 * @param blowerStages most superchargers making at least {@link #STAGE_BOOST} on one cylinder
 	 * @param twinStages   most turbochargers side by side making at least {@link #STAGE_BOOST} on one cylinder
 	 * @param cooledBoost  the strongest boost, atmospheres, on a firing cylinder that breathes through an intercooler
+	 * @param overdriven   the strongest boost, atmospheres, a variable-drive supercharger makes on a firing cylinder while its
+	 *                     variable drive is overspeeding the rotors by at least {@link #OVERDRIVE_ACTIVE}
 	 */
 	public record Induction(boolean running, float blowerBoost, int turboStages, int blowerStages, int twinStages,
-							float cooledBoost) {
+							float cooledBoost, float overdriven) {
+
+		public Induction(boolean running, float blowerBoost, int turboStages, int blowerStages, int twinStages,
+						 float cooledBoost) {
+			this(running, blowerBoost, turboStages, blowerStages, twinStages, cooledBoost, 0);
+		}
 	}
+
+	/** Share by which a variable-drive blower's drive has to be overspeeding its rotors to count as working. */
+	public static final float OVERDRIVE_ACTIVE = 0.2f;
 
 	public static Set<Milestone> reachedInduction(Induction i) {
 		Set<Milestone> reached = EnumSet.noneOf(Milestone.class);
@@ -320,6 +348,8 @@ public final class EngineMilestones {
 			reached.add(Milestone.TWINCHARGED);
 		if (i.cooledBoost() >= BOOST)
 			reached.add(Milestone.COOLED_CHARGE);
+		if (i.overdriven() >= BOOST)
+			reached.add(Milestone.VARIABLE_DRIVE);
 		return reached;
 	}
 

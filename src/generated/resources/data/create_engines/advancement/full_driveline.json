@@ -1,9 +1,15 @@
 {
-  "parent": "create_engines:flywheel",
+  "parent": "create_engines:transmission",
   "criteria": {
     "charged_battery": {
       "conditions": {
         "event": "charged_battery"
+      },
+      "trigger": "create_engines:event"
+    },
+    "every_gear": {
+      "conditions": {
+        "event": "every_gear"
       },
       "trigger": "create_engines:event"
     },
@@ -27,13 +33,16 @@
     "frame": "challenge",
     "icon": {
       "count": 1,
-      "id": "create_engines:cast_flywheel"
+      "id": "create_engines:transmission"
     },
     "title": {
       "translate": "advancement.create_engines.full_driveline"
     }
   },
   "requirements": [
+    [
+      "every_gear"
+    ],
     [
       "charged_battery"
     ],

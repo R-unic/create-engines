@@ -14,7 +14,7 @@
     },
     "icon": {
       "count": 1,
-      "id": "create_engines:crankshaft"
+      "id": "create_engines:transmission"
     },
     "title": {
       "translate": "advancement.create_engines.overloaded"

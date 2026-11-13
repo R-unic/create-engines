@@ -26,11 +26,13 @@ import net.minecraft.nbt.NbtUtils;
  * @param fouling         soot on the spark plug from running rich, 0 (clean) to 1
  * @param lobeShift      cam degrees a lobe shared with other cylinders adds to its angle for this one, for animation
  * @param intakeInlets    where this cylinder's air comes in, for the draught at its intakes
+ * @param preignition     share of the burn lost last cycle because boost heated the charge past its fuel's autoignition
+ *                        point, 0 (none) up to {@link com.createengines.engine.sim.FuelSpec#PREIGNITION_MAX_LOSS}
  */
 public record CylinderStatus(BlockPos primary, int faults, CycleResult result, boolean rich, float tdcAngle,
 							 float timingError, float chargeTemp, float ignitionTemp, @Nullable BlockPos lobe,
 							 List<BlockPos> exhaustOutlets, boolean lean, float mixture, boolean sparkPlug,
-							 float fouling, float lobeShift, List<BlockPos> intakeInlets) {
+							 float fouling, float lobeShift, List<BlockPos> intakeInlets, float preignition) {
 
 	public CompoundTag write() {
 		CompoundTag tag = new CompoundTag();
@@ -59,6 +61,7 @@ public record CylinderStatus(BlockPos primary, int faults, CycleResult result, b
 			inlets[i] = intakeInlets.get(i)
 				.asLong();
 		tag.putLongArray("Inlets", inlets);
+		tag.putFloat("Preignition", preignition);
 		return tag;
 	}
 
@@ -79,7 +82,8 @@ public record CylinderStatus(BlockPos primary, int faults, CycleResult result, b
 			tag.getFloat("Tdc"), tag.getFloat("Timing"), tag.getFloat("Charge"), tag.getFloat("Ignition"),
 			NbtUtils.readBlockPos(tag, "Lobe")
 				.orElse(null), List.copyOf(outlets), tag.getBoolean("Lean"), tag.getFloat("Mixture"),
-			tag.getBoolean("Plug"), tag.getFloat("Fouling"), tag.getFloat("LobeShift"), List.copyOf(inlets));
+			tag.getBoolean("Plug"), tag.getFloat("Fouling"), tag.getFloat("LobeShift"), List.copyOf(inlets),
+			tag.getFloat("Preignition"));
 	}
 
 	/** Whether anything a player would see has changed. */
@@ -91,7 +95,7 @@ public record CylinderStatus(BlockPos primary, int faults, CycleResult result, b
 			|| changed(mixture, other.mixture, 0.05f) || changed(fouling, other.fouling, 0.05f) || changed(tdcAngle, other.tdcAngle, 0.5f)
 			|| changed(timingError, other.timingError, 0.5f) || changed(chargeTemp, other.chargeTemp, 0.05f)
 			|| changed(ignitionTemp, other.ignitionTemp, 0.01f) || !Objects.equals(lobe, other.lobe) || changed(lobeShift, other.lobeShift, 0.5f)
-			|| !exhaustOutlets.equals(other.exhaustOutlets) || !intakeInlets.equals(other.intakeInlets);
+			|| changed(preignition, other.preignition, 0.01f) || !exhaustOutlets.equals(other.exhaustOutlets) || !intakeInlets.equals(other.intakeInlets);
 	}
 
 	private static boolean changed(float a, float b, float tolerance) {

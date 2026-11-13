@@ -1947,12 +1947,31 @@ public final class EngineScenes {
 			.modifyBlockEntityNBT(turbo, TurbochargerBlockEntity.class,
 				nbt -> nbt.put("Status", new TurboStatus(0.1f, 0.02f, 1f, 1.01f, true, true).write()));
 		scene.overlay()
-			.showText(100)
-			.text("A redstone signal on the turbocharger opens the wastegate fully and dumps the boost, like a blow-off valve.")
+			.showText(130)
+			.text("A redstone signal on the turbocharger opens the wastegate fully and dumps the boost, like a blow-off valve. Lifting off the throttle with boost in the pipe does the same.")
 			.pointAt(util.vector()
 				.blockSurface(turboPos, Direction.DOWN))
 			.placeNearTarget();
 		scene.idle(110);
+
+		scene.overlay()
+			.showText(150)
+			.attachKeyFrame()
+			.colored(PonderPalette.GREEN)
+			.text("Pick a Turbocharger for an engine that runs hard and steady. Its boost is free: nothing loads a shaft, it grows with the engine's own exhaust, and it is strongest in the middle of the rev range. It pays in lag, in back-pressure, and in the fuel it needs to keep spinning.")
+			.pointAt(util.vector()
+				.blockSurface(turboPos, Direction.NORTH))
+			.placeNearTarget();
+		scene.idle(160);
+
+		scene.overlay()
+			.showText(130)
+			.colored(PonderPalette.BLUE)
+			.text("A Supercharger is worth the same, for other jobs: boost at once, with no exhaust to wait for. See its page for when to choose one instead.")
+			.pointAt(util.vector()
+				.blockSurface(turboPos, Direction.NORTH))
+			.placeNearTarget();
+		scene.idle(140);
 		scene.markAsFinished();
 	}
 
@@ -2027,7 +2046,7 @@ public final class EngineScenes {
 			.showText(120)
 			.attachKeyFrame()
 			.colored(PonderPalette.GREEN)
-			.text("It needs no exhaust and has no lag. Its boost goes with the square of its shaft speed: 0.9 bar at 128 RPM, a quarter of that at half the speed.")
+			.text("It needs no exhaust and has no lag. Its boost climbs with its shaft speed to the power of one and a quarter: 0.9 bar at 128 RPM, and still 40 percent of that at half the speed.")
 			.pointAt(util.vector()
 				.blockSurface(blowerPos, Direction.EAST))
 			.placeNearTarget();
@@ -2057,13 +2076,22 @@ public final class EngineScenes {
 			.placeNearTarget();
 		scene.idle(120);
 
+		scene.overlay()
+			.showText(130)
+			.colored(PonderPalette.GREEN)
+			.text("A Variable-Drive Supercharger, made from a Supercharger and a Precision Mechanism, overspeeds its rotors while the shaft is slow, so it boosts sooner, takes less power to turn and leaves the air cooler.")
+			.pointAt(util.vector()
+				.blockSurface(blowerPos, Direction.EAST))
+			.placeNearTarget();
+		scene.idle(140);
+
 		scene.world()
 			.showSection(cooler, Direction.SOUTH);
 		scene.idle(15);
 		scene.overlay()
 			.showText(120)
 			.attachKeyFrame()
-			.text("Squeezing air heats it, and a blower heats it more than a turbo does. An Intercooler in the run, after the compressors, takes 60 percent of that heat back out.")
+			.text("Squeezing air heats it, whichever compressor does it. An Intercooler in the run, after the compressors, takes 60 percent of that heat back out.")
 			.pointAt(util.vector()
 				.topOf(coolerPos))
 			.placeNearTarget();
@@ -2085,6 +2113,156 @@ public final class EngineScenes {
 			.text("Stages in series compound. When all the air has to pass through two compressors in turn, their pressures multiply, and each turbine in the exhaust adds its back-pressure. Stages side by side, with a branch the air can take round either, share the flow: the cylinders get their average pressure, and the smaller wheels spool sooner.")
 			.pointAt(util.vector()
 				.topOf(blowerPos))
+			.placeNearTarget();
+		scene.idle(140);
+
+		scene.overlay()
+			.showText(160)
+			.attachKeyFrame()
+			.colored(PonderPalette.GREEN)
+			.text("Pick a Supercharger when the engine cannot wait for exhaust: a cold start, an engine that stalls under load, one held at low speed by a governor or throttle, or a load that swings. Its boost needs no fuel and adds no back-pressure, and it keeps its power at high revs and high boost, where a turbine chokes the exhaust.")
+			.pointAt(util.vector()
+				.blockSurface(blowerPos, Direction.EAST))
+			.placeNearTarget();
+		scene.idle(170);
+
+		scene.overlay()
+			.showText(140)
+			.colored(PonderPalette.RED)
+			.text("It pays in stress on the shaft that turns it, and it makes only as much boost as that shaft's speed allows, so gear the shaft up for a bigger engine. Net of that stress it makes about what a Turbocharger does at the same limit, and a Variable-Drive Supercharger about what a Variable-Geometry Turbocharger does: choose by how the engine is used, not by which is better.")
+			.pointAt(util.vector()
+				.blockSurface(blowerPos, Direction.EAST))
+			.placeNearTarget();
+		scene.idle(150);
+		scene.markAsFinished();
+	}
+
+	public static void transmission(SceneBuilder builder, SceneBuildingUtil util) {
+		CreateSceneBuilder scene = new CreateSceneBuilder(builder);
+		scene.title("transmission", "Gearing with a Transmission");
+		scene.configureBasePlate(0, 0, 8);
+		scene.world()
+			.showSection(util.select()
+				.layer(0), Direction.UP);
+
+		Selection input = util.select()
+			.fromTo(0, 1, 2, 1, 1, 2);
+		Selection box = util.select()
+			.position(2, 1, 2);
+		Selection output = util.select()
+			.fromTo(3, 1, 2, 5, 1, 2);
+		Selection lever = util.select()
+			.position(2, 1, 3);
+		BlockPos boxPos = util.grid()
+			.at(2, 1, 2);
+
+		scene.world()
+			.showSection(input, Direction.DOWN);
+		scene.world()
+			.setKineticSpeed(input, 64);
+		scene.idle(10);
+		scene.world()
+			.showSection(box, Direction.DOWN);
+		scene.world()
+			.showSection(output, Direction.DOWN);
+		scene.world()
+			.setKineticSpeed(box, 64);
+		scene.world()
+			.setKineticSpeed(output, 5);
+		scene.idle(15);
+		scene.overlay()
+			.showText(110)
+			.attachKeyFrame()
+			.text("A Transmission is a gearbox with selectable gears. Rotation goes in at one end of its shaft and comes out of the other at the speed of the gear it is in.")
+			.pointAt(util.vector()
+				.topOf(boxPos))
+			.placeNearTarget();
+		scene.idle(120);
+
+		scene.overlay()
+			.showText(120)
+			.attachKeyFrame()
+			.colored(PonderPalette.GREEN)
+			.text("In first gear the output turns twelve times slower than the input. A load behind it asks the engine for a twelfth of the torque it would direct, so an engine can carry a far heavier load, slowly.")
+			.pointAt(util.vector()
+				.topOf(4, 1, 2))
+			.placeNearTarget();
+		scene.idle(130);
+
+		scene.overlay()
+			.showControls(util.vector()
+				.blockSurface(boxPos, Direction.NORTH), Pointing.RIGHT, 40)
+			.rightClick();
+		scene.idle(10);
+		scene.world()
+			.setKineticSpeed(output, 28);
+		scene.overlay()
+			.showText(110)
+			.attachKeyFrame()
+			.colored(PonderPalette.BLUE)
+			.text("The value panel picks the gear, from first to thirteenth, each about a quarter faster than the one below. Ninth turns the output at a little over two fifths of the input...")
+			.pointAt(util.vector()
+				.blockSurface(boxPos, Direction.NORTH))
+			.placeNearTarget();
+		scene.idle(120);
+
+		scene.world()
+			.setKineticSpeed(output, 64);
+		scene.overlay()
+			.showText(90)
+			.text("...and thirteenth drives it direct. The fastest output, but the load asks the crank for its full torque.")
+			.pointAt(util.vector()
+				.topOf(4, 1, 2))
+			.placeNearTarget();
+		scene.idle(100);
+
+		scene.world()
+			.setKineticSpeed(output, 0);
+		scene.overlay()
+			.showText(90)
+			.text("Neutral lets nothing through, so an engine can start with no load on it.")
+			.pointAt(util.vector()
+				.topOf(4, 1, 2))
+			.placeNearTarget();
+		scene.idle(100);
+
+		scene.world()
+			.setKineticSpeed(output, -21);
+		scene.overlay()
+			.showText(90)
+			.text("Reverse turns the output slowly the other way.")
+			.pointAt(util.vector()
+				.topOf(4, 1, 2))
+			.placeNearTarget();
+		scene.idle(100);
+
+		scene.world()
+			.showSection(lever, Direction.DOWN);
+		scene.idle(10);
+		scene.world()
+			.setKineticSpeed(output, 5);
+		scene.world()
+			.toggleRedstonePower(lever);
+		scene.effects()
+			.indicateRedstone(util.grid()
+				.at(2, 1, 3));
+		scene.overlay()
+			.showText(120)
+			.attachKeyFrame()
+			.colored(PonderPalette.RED)
+			.text("A redstone signal picks the gear instead of the panel: strength 1 is neutral, 2 to 14 are first to thirteenth, and 15 is reverse. Shifting briefly cuts the output off.")
+			.pointAt(util.vector()
+				.topOf(2, 1, 3))
+			.placeNearTarget();
+		scene.idle(130);
+
+		scene.overlay()
+			.showText(130)
+			.attachKeyFrame()
+			.colored(PonderPalette.GREEN)
+			.text("Past reverse on the panel is Auto. The Transmission watches the engine behind it and holds the tallest gear it can pull without overloading: it climbs a gear at a time while there is room, and drops straight to a gear that fits when the load gets too heavy.")
+			.pointAt(util.vector()
+				.blockSurface(boxPos, Direction.NORTH))
 			.placeNearTarget();
 		scene.idle(140);
 		scene.markAsFinished();
@@ -2676,7 +2854,7 @@ public final class EngineScenes {
 		scene.overlay()
 			.showText(100)
 			.colored(PonderPalette.GREEN)
-			.text("It gives a redstone signal that rises as the engine's speed climbs to the speed of its peak power: a shift light.")
+			.text("It gives a redstone signal that rises as the engine's speed climbs to the speed of its peak power: a shift light for a transmission.")
 			.pointAt(util.vector()
 				.blockSurface(dynoPos, Direction.EAST))
 			.placeNearTarget();
@@ -2855,6 +3033,15 @@ public final class EngineScenes {
 				.blockSurface(turboPos, Direction.NORTH))
 			.placeNearTarget();
 		scene.idle(110);
+
+		scene.overlay()
+			.showText(130)
+			.colored(PonderPalette.BLUE)
+			.text("The Variable-Drive Supercharger is the blower's version of this upgrade, from a Precision Mechanism too: it overspeeds its rotors while the shaft is slow, so it boosts sooner, takes less power to turn and runs cooler.")
+			.pointAt(util.vector()
+				.blockSurface(turboPos, Direction.NORTH))
+			.placeNearTarget();
+		scene.idle(140);
 		scene.markAsFinished();
 	}
 

@@ -7,6 +7,7 @@ import org.jetbrains.annotations.Nullable;
 import com.createengines.engine.LoadedBlocks;
 import com.createengines.content.EngineNoteSound;
 import com.createengines.content.RenderRotation;
+import com.createengines.content.display.EngineReadout;
 import com.createengines.content.effects.EngineAmbience;
 import com.createengines.content.effects.EngineEffects;
 import com.createengines.content.effects.MechanicalNoise;
@@ -414,7 +415,12 @@ public class CrankshaftBlockEntity extends GeneratingKineticBlockEntity implemen
 				.style(ChatFormatting.GRAY), tooltip, 1);
 			GoggleLines.add(CELang.translate("goggles.su_per_rpm", format(engine.loadTorque()))
 				.style(engine.loadTorque() > engine.availableTorque() ? ChatFormatting.GOLD : ChatFormatting.AQUA), tooltip, 2);
-			GoggleLines.add(CELang.translate("goggles.fuel_use")
+			GoggleLines.add(CELang.translate("goggles.horsepower")
+					.style(ChatFormatting.GRAY), tooltip, 1);
+				GoggleLines.add(CELang.translate("goggles.hp", EngineReadout.hp(EngineReadout.output(engine)),
+						EngineReadout.hp(EngineReadout.capacity(engine)))
+					.style(engine.loadTorque() > engine.availableTorque() ? ChatFormatting.GOLD : ChatFormatting.AQUA), tooltip, 2);
+				GoggleLines.add(CELang.translate("goggles.fuel_use")
 				.style(ChatFormatting.GRAY), tooltip, 1);
 			GoggleLines.add(CELang.translate("goggles.mb_per_minute", format(engine.fuelPerMinute()))
 				.style(ChatFormatting.AQUA), tooltip, 2);

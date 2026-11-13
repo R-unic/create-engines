@@ -24,6 +24,8 @@ public final class CycleStats {
 	public double mafAdded;
 	/** Pilot fuel injected to light the charge this cycle, mB: above zero means the pilot, not compression, lit it. */
 	public double pilotShot;
+	/** Share of the burn's heat lost because the charge lit itself early, 0 to {@link FuelSpec#PREIGNITION_MAX_LOSS}. */
+	public double preignition;
 	public CycleResult result = CycleResult.NONE;
 
 	public double unburnedFraction() {
@@ -53,6 +55,7 @@ public final class CycleStats {
 		mafCut = other.mafCut;
 		mafAdded = other.mafAdded;
 		pilotShot = other.pilotShot;
+		preignition = other.preignition;
 		result = other.result;
 	}
 
@@ -70,6 +73,7 @@ public final class CycleStats {
 		mafCut = 0;
 		mafAdded = 0;
 		pilotShot = 0;
+		preignition = 0;
 		result = CycleResult.NONE;
 	}
 }

@@ -57,6 +57,12 @@ public final class FuelTooltips {
 		Component cold = cold(fuel);
 		if (cold != null)
 			lines.add(grey(cold));
+		if (fuel.chargeCooling() > 0)
+			lines.add(grey(CELang.translate("tooltip.fuel.cooling")
+				.component()));
+		if (fuel.sootFactor() <= 0)
+			lines.add(grey(CELang.translate("tooltip.fuel.clean")
+				.component()));
 		if (fuel.injectorFlow() > THIN)
 			lines.add(grey(CELang.translate("tooltip.fuel.thin", number(fuel.injectorFlow()))
 				.component()));

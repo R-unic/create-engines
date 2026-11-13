@@ -5,6 +5,7 @@ import java.util.List;
 import org.jetbrains.annotations.Nullable;
 
 import com.createengines.content.head.GalleryMember;
+import com.createengines.engine.sim.CylinderSpec;
 import com.createengines.engine.sim.FuelSpec;
 import com.createengines.engine.sim.FuelSupply;
 import com.createengines.engine.sim.Tuning;
@@ -71,7 +72,8 @@ public final class GalleryFuelSupply implements FuelSupply {
 			creditFluid = fluid;
 		}
 		// The server can make an engine thirstier or thriftier: the tanks pay this much per unit the engine burns
-		double consumption = Math.max(Tuning.fuelConsumption, 1e-6);
+		// Each mB burned costs the tanks less, by as much as engines turn faster, so fuel per SU is what it was
+		double consumption = Math.max(Tuning.fuelConsumption, 1e-6) / CylinderSpec.SPEED_GAIN;
 		double wanted = mb * consumption;
 		int needed = (int) Math.ceil(wanted - credit);
 		for (BlockPos pos : heads) {

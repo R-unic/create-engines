@@ -3,6 +3,7 @@ package com.createengines.registry;
 import static com.createengines.CreateEngines.REGISTRATE;
 
 import com.createengines.content.display.EngineFillDisplaySource;
+import com.createengines.content.display.EngineHorsepowerDisplaySource;
 import com.createengines.content.display.EngineReadout;
 import com.createengines.content.display.EngineSpeedDisplaySource;
 import com.createengines.content.display.EngineStatusDisplaySource;
@@ -21,6 +22,9 @@ public final class CEDisplaySources {
 			.register();
 	public static final RegistryEntry<DisplaySource, EngineSpeedDisplaySource> ENGINE_SPEED =
 		REGISTRATE.displaySource("engine_speed", EngineSpeedDisplaySource::new)
+			.register();
+	public static final RegistryEntry<DisplaySource, EngineHorsepowerDisplaySource> ENGINE_POWER =
+		REGISTRATE.displaySource("engine_power", EngineHorsepowerDisplaySource::new)
 			.register();
 	public static final RegistryEntry<DisplaySource, EngineFillDisplaySource> ENGINE_LOAD =
 		REGISTRATE.displaySource("engine_load", () -> new EngineFillDisplaySource(EngineReadout::load))

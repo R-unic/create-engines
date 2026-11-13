@@ -149,6 +149,17 @@ public final class CylinderModel {
 	private double exhaustHeat;
 	private double exhaustHeatLastTick;
 
+	/** How far the last shot's evaporating cooled the charge the next intake stroke draws in, ambient temperatures. */
+	private double evaporativeCooling;
+	/** Share of the burn's heat the charge lost by lighting itself early, from {@link FuelSpec#preignitionLoss}; 0 for most burns. */
+	private double preignitionLoss;
+	/** Boost, in atmospheres over ambient, at which a hot charge pre-ignites to the full; a lighter boost loses a share of it. */
+	private static final double PREIGNITION_FULL_BOOST = 0.5;
+	/** The most equivalence ratio that counts toward evaporative cooling: fuel past a rich burn only floods the cylinder. */
+	private static final double MAX_COOLED_EQUIVALENCE = 1.2;
+	/** The coldest charge evaporative cooling can make, ambient temperatures: a cool engine and an intercooler already reach this far. */
+	private static final double MIN_CHARGE_TEMP = 0.6;
+
 	private double fuelPending;
 	private double timeSinceInjection;
 	private boolean burning;
@@ -362,6 +373,8 @@ public final class CylinderModel {
 		exhaustHeatLastTick = 0;
 		fuelPending = 0;
 		burning = false;
+		evaporativeCooling = 0;
+		preignitionLoss = 0;
 	}
 
 	/** Takes over another model's gas and cycle state, e.g. when the engine is rebuilt around this cylinder. */
@@ -379,6 +392,8 @@ public final class CylinderModel {
 		burning = other.burning;
 		burnRate = other.burnRate;
 		burnEquivalence = other.burnEquivalence;
+		evaporativeCooling = other.evaporativeCooling;
+		preignitionLoss = other.preignitionLoss;
 		fouling = other.fouling;
 		burningFuel = other.burningFuel;
 		travelSinceCycle = other.travelSinceCycle;
@@ -474,13 +489,16 @@ public final class CylinderModel {
 			moles -= out;
 			return;
 		}
-		// Gas at the intake's temperature is what raises the pressure, so a hotter charge means fewer moles for it
-		double in = (target - p) * volume / intakeTemperature;
+		// Gas at the intake's temperature is what raises the pressure, so a hotter charge means fewer moles for it. A fuel that
+		// boils off heat (ethanol) cools the charge it was mixed into, and a cooler charge is a denser one
+		double chargeTemp = evaporativeCooling <= 0 ? intakeTemperature
+			: Math.max(MIN_CHARGE_TEMP, intakeTemperature - evaporativeCooling);
+		double in = (target - p) * volume / chargeTemp;
 		double reingested = Math.min(intakeBackflow, in);
 		double inFresh = in <= 0 ? 1 : (reingested * intakeBackflowFresh + (in - reingested)) / in;
 		intakeBackflow -= reingested;
 		fresh = (moles * fresh + in * inFresh) / (moles + in);
-		temperature = (moles * temperature + in * intakeTemperature) / (moles + in);
+		temperature = (moles * temperature + in * chargeTemp) / (moles + in);
 		moles += in;
 	}
 
@@ -550,10 +568,13 @@ public final class CylinderModel {
 		current.fuelInjected += delivered;
 		current.freshAirAtInjection = air;
 		current.compressionTemp = Math.max(current.compressionTemp, temperature);
-		if (delivered <= 0)
+		if (delivered <= 0) {
+			evaporativeCooling = 0;
 			return;
+		}
 		if (air >= MIN_FRESH_AIR)
 			current.equivalence = delivered * fuel.airPerMb() / air;
+		evaporativeCooling = fuel.chargeCooling() * Math.min(current.equivalence, MAX_COOLED_EQUIVALENCE);
 		fuelPending += delivered;
 		timeSinceInjection = 0;
 		burningFuel = fuel;
@@ -609,6 +630,12 @@ public final class CylinderModel {
 		double air = fresh * moles;
 		burnEquivalence = air < MIN_FRESH_AIR ? RICH_LIMIT : fuelPending * burningFuel.airPerMb() / air;
 		burnRate = fuelPending / spec.burnDuration() * Mixture.flameSpeed(burnEquivalence);
+		// A spark engine's charge that the boost has already squeezed past its autoignition point burns early and loses
+		// power for it. A compression engine lights itself on purpose, so it loses nothing, and neither does an unboosted
+		// engine: a charge runs hotter with speed alone, and that is the engine's business, not the boost's.
+		double boost = Math.min(1, Math.max(0, (intakePressure - 1) / PREIGNITION_FULL_BOOST));
+		preignitionLoss = ignition.installed() && boost > 0 ? burningFuel.preignitionLoss(temperature) * boost : 0;
+		current.preignition = Math.max(current.preignition, preignitionLoss);
 	}
 
 	private void combust(double dt) {
@@ -634,7 +661,7 @@ public final class CylinderModel {
 		fuelPending -= burned;
 		fresh = Math.max(0, (fresh * moles - burned * burningFuel.airPerMb()) / moles);
 		double heat = burned * burningFuel.energyPerMb() * Mixture.efficiency(burnEquivalence)
-			* Thermal.burnFactor(coldness, burningFuel.coldSensitivity());
+			* Thermal.burnFactor(coldness, burningFuel.coldSensitivity()) * (1 - preignitionLoss);
 		temperature += heat * (GAMMA - 1) / (moles + FUEL_HEAT_CAPACITY * fuelPending);
 		current.fuelBurned += burned;
 		if (fuelPending <= FUEL_EPSILON)
@@ -669,7 +696,7 @@ public final class CylinderModel {
 				if (current.sparks > 0)
 					fouling = Math.max(0, fouling - FOULING_SCRUB);
 			} else if (unburned > Mixture.RICH_UNBURNED)
-				fouling = Math.min(1, fouling + FOULING_RATE * unburned);
+				fouling = Math.min(1, fouling + FOULING_RATE * unburned * (burningFuel == null ? 1 : burningFuel.sootFactor()));
 			else
 				fouling = Math.max(0, fouling - FOULING_BURN_OFF);
 		}

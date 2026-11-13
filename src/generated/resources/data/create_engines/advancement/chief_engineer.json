@@ -55,6 +55,12 @@
       },
       "trigger": "create_engines:event"
     },
+    "every_gear": {
+      "conditions": {
+        "event": "every_gear"
+      },
+      "trigger": "create_engines:event"
+    },
     "flat_engine": {
       "conditions": {
         "event": "flat_engine"
@@ -193,6 +199,12 @@
       },
       "trigger": "create_engines:event"
     },
+    "variable_drive": {
+      "conditions": {
+        "event": "variable_drive"
+      },
+      "trigger": "create_engines:event"
+    },
     "vee_engine": {
       "conditions": {
         "event": "vee_engine"
@@ -269,6 +281,9 @@
       "anti_lag"
     ],
     [
+      "variable_drive"
+    ],
+    [
       "dialed_in"
     ],
     [
@@ -285,6 +300,9 @@
     ],
     [
       "tool_timed"
+    ],
+    [
+      "every_gear"
     ],
     [
       "charged_battery"

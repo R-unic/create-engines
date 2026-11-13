@@ -130,10 +130,10 @@ public final class CELang {
 		raw("goggles.dyno.power", "Power   %1$s");
 		raw("goggles.dyno.range", "%1$s RPM across to %2$s RPM");
 		raw("goggles.dyno.peak_torque", "Peak torque: %1$s SU per RPM at %2$s RPM");
-		raw("goggles.dyno.peak_power", "Peak power: %1$s SU at %2$s RPM");
+		raw("goggles.dyno.peak_power", "Peak power: %1$s SU (%3$s hp) at %2$s RPM");
 		raw("goggles.dyno.powerband", "Powerband: %1$s to %2$s RPM, within a tenth of peak power");
 		raw("goggles.dyno.now", "Engine now: %1$s RPM");
-		raw("goggles.dyno.rated", "Rated now: %1$s SU per RPM, %2$s SU at this speed");
+		raw("goggles.dyno.rated", "Rated now: %1$s SU per RPM, %2$s SU (%3$s hp) at this speed");
 		raw("goggles.recorder", "Flight Recorder");
 		raw("goggles.recorder.no_engine", "Not against an engine: set it against a crankshaft, a cylinder or a head");
 		raw("goggles.recorder.empty", "Nothing on the tape yet");
@@ -182,9 +182,18 @@ public final class CELang {
 		raw("goggles.supercharger.bypass", "Bypass valve bleeding %1$s%% of the boost");
 		raw("goggles.supercharger.dumping", "Redstone is dumping the boost (bypass %1$s%%)");
 		raw("goggles.supercharger.fed", "Feeding %1$s cylinders");
+		raw("goggles.supercharger.overdrive", "Variable drive overspeeding the rotors by %1$s%%");
 		raw("goggles.supercharger.limit", "Boost limit: %1$s bar");
 		raw("goggles.supercharger.hint",
-			"Boost goes with the square of the shaft speed, at once and with no need for exhaust: 0.9 bar at 128 RPM. The work of turning it is stress on the shaft, so gear it for the boost you want. It heats the air more than a turbo does, so an Intercooler helps. Redstone opens the bypass fully");
+			"Boost goes with the shaft speed to the power of one and a quarter, at once and with no need for exhaust: 0.9 bar at 128 RPM, and already 40 percent of that at half the speed. The work of turning it is stress on the shaft, so gear it for the boost you want. Redstone opens the bypass fully. A Variable-Drive Supercharger overspeeds its rotors while the shaft is slow, so it boosts sooner, takes less power to turn and runs cooler");
+
+		raw("goggles.transmission", "Transmission");
+		raw("goggles.transmission.neutral", "Neutral: no drive reaches the output");
+		raw("goggles.transmission.gear", "Gear %1$s: %2$s turns of the input to one of the output");
+		raw("goggles.transmission.auto", "Auto, in gear %1$s: %2$s turns of the input to one of the output");
+		raw("goggles.transmission.reverse", "Reverse: %1$s turns of the input to one of the output, backwards");
+		raw("goggles.transmission.hint",
+			"The panel sets the gear: neutral, thirteen forward gears, reverse, or Auto. Auto takes the tallest gear the engine can pull without overloading, down to a lower one when the load is too heavy and up again when there is room. A redstone signal picks a gear instead: 1 neutral, 2 to 14 first to thirteenth, 15 reverse. A low gear lets the engine carry a heavier load at a slower output");
 
 		raw("goggles.engine", "Engine");
 		raw("goggles.state.stalled", "Stalled");
@@ -204,6 +213,8 @@ public final class CELang {
 		raw("goggles.available_torque", "Rated torque:");
 		raw("goggles.load", "Load:");
 		raw("goggles.su_per_rpm", "%1$s SU/RPM");
+		raw("goggles.horsepower", "Power");
+		raw("goggles.hp", "%1$s hp of %2$s hp");
 		raw("goggles.fuel_use", "Fuel use:");
 		raw("goggles.mb_per_minute", "%1$s mB/min");
 		raw("goggles.ripple", "Speed ripple: %1$s%%");
@@ -228,7 +239,9 @@ public final class CELang {
 		raw("goggles.cycle.too_rich", "Misfire: mixture too rich for the spark to light");
 		raw("goggles.cycle.fouled", "Misfire: the plug is fouled with soot and can't light a rich mixture");
 		raw("goggles.fouling", "Spark plug soot: %1$s%%");
-		raw("goggles.fouling.hint", "Caused by running rich. Lean the injector until the mixture burns clean and the plug cleans itself");
+		raw("goggles.preignition", "Charge lights early: %1$s%% of the burn lost");
+		raw("goggles.preignition.hint", "Boost has heated the charge past what this fuel stands. Cool it with an Intercooler, ease the boost, or burn Ethanol, which waits for the plug");
+		raw("goggles.fouling.hint","Caused by running rich. Lean the injector until the mixture burns clean and the plug cleans itself");
 		raw("goggles.cycle.rich", "Running rich: unburned fuel");
 		raw("goggles.cycle.lean", "Running lean: air to spare");
 		raw("goggles.mixture", "Air-fuel mixture: %1$s");
@@ -278,6 +291,7 @@ public final class CELang {
 		raw("goggles.starter.idle", "Idle: needs a redstone signal and input rotation");
 		raw("goggles.starter.cranking", "Cranking the engine");
 		raw("goggles.starter.overrun", "Engaged, engine outrunning it");
+		raw("goggles.starter.warming", "Cranking and choking a cold engine");
 		raw("goggles.starter.no_engine", "Not touching a crankshaft");
 
 		raw("goggles.head", "Cylinder Head");
@@ -304,7 +318,9 @@ public final class CELang {
 		raw("tooltip.fuel.spark", "Needs a spark plug: too hard to light by compression");
 		raw("tooltip.fuel.cold.good", "Starts well in a cold engine");
 		raw("tooltip.fuel.cold.poor", "Burns poorly in a cold block: warm the engine first");
-		raw("tooltip.fuel.thin", "Thin: the injectors need %1$s times the usual shot");
+		raw("tooltip.fuel.cooling", "Boils off enough heat to cool the charge: denser air, and it will not light early under boost");
+		raw("tooltip.fuel.clean", "Burns clean: no soot on a spark plug, however rich");
+		raw("tooltip.fuel.thin","Thin: the injectors need %1$s times the usual shot");
 		raw("value.sump_signal", "Comparator Reads");
 		raw("value.sump_signal.0", "Engine Oil");
 		raw("value.sump_signal.1", "Used Oil");
@@ -313,6 +329,7 @@ public final class CELang {
 		raw("goggles.sump.signal", "A comparator reads the %1$s tank: 0 when empty, 15 when full");
 		raw("display_source.engine_status", "Engine Status");
 		raw("display_source.engine_speed", "Engine Speed");
+		raw("display_source.engine_power", "Engine Horsepower");
 		raw("display_source.engine_load", "Engine Load");
 		raw("display_source.engine_temperature", "Engine Temperature");
 		raw("display_source.engine_oil", "Engine Oil Condition");
@@ -324,6 +341,7 @@ public final class CELang {
 		raw("display.engine.state.running", "Running");
 		raw("display.engine.state.overloaded", "Overloaded");
 		raw("display.engine.speed", "%1$s RPM");
+		raw("display.engine.power", "%1$s hp");
 		raw("display.engine.load", "Load %1$s%%");
 		raw("display.engine.temperature", "Temp %1$s%%");
 		raw("display.engine.oil", "Oil %1$s%%");

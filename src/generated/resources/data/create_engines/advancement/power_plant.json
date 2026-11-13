@@ -1,15 +1,9 @@
 {
   "parent": "create_engines:heavy_duty",
   "criteria": {
-    "steam_herd": {
+    "anti_lag": {
       "conditions": {
-        "event": "steam_herd"
-      },
-      "trigger": "create_engines:event"
-    },
-    "redline": {
-      "conditions": {
-        "event": "redline"
+        "event": "anti_lag"
       },
       "trigger": "create_engines:event"
     },
@@ -19,21 +13,33 @@
       },
       "trigger": "create_engines:event"
     },
-    "twincharged": {
-      "conditions": {
-        "event": "twincharged"
-      },
-      "trigger": "create_engines:event"
-    },
     "precision_engine": {
       "conditions": {
         "event": "precision_engine"
       },
       "trigger": "create_engines:event"
     },
-    "anti_lag": {
+    "redline": {
       "conditions": {
-        "event": "anti_lag"
+        "event": "redline"
+      },
+      "trigger": "create_engines:event"
+    },
+    "steam_herd": {
+      "conditions": {
+        "event": "steam_herd"
+      },
+      "trigger": "create_engines:event"
+    },
+    "twincharged": {
+      "conditions": {
+        "event": "twincharged"
+      },
+      "trigger": "create_engines:event"
+    },
+    "variable_drive": {
+      "conditions": {
+        "event": "variable_drive"
       },
       "trigger": "create_engines:event"
     }
@@ -69,6 +75,9 @@
     ],
     [
       "anti_lag"
+    ],
+    [
+      "variable_drive"
     ]
   ],
   "sends_telemetry_event": true

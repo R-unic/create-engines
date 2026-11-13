@@ -350,7 +350,15 @@ public class CylinderBlockEntity extends SmartBlockEntity implements IHaveGoggle
 				GoggleLines.add(CELang.translate("goggles.mixture.suggest",
 						GalleryMember.balancedMetering(head.meteringFraction(), current.mixture()))
 					.style(ChatFormatting.AQUA), tooltip, 2);
-			if (current.sparkPlug()) {
+			if (current.sparkPlug() && Math.round(current.preignition() * 100) >= 2) {
+					int early = Math.round(current.preignition() * 100);
+					GoggleLines.add(CELang.translate("goggles.preignition", early)
+						.style(early >= 15 ? ChatFormatting.RED : ChatFormatting.GOLD), tooltip, 1);
+					if (isPlayerSneaking)
+						GoggleLines.add(CELang.translate("goggles.preignition.hint")
+							.style(ChatFormatting.DARK_GRAY), tooltip, 2);
+				}
+				if (current.sparkPlug()) {
 				GoggleLines.add(CELang.translate("goggles.ignition.spark")
 					.style(ChatFormatting.GRAY), tooltip, 1);
 				int soot = Math.round(current.fouling() * 100);

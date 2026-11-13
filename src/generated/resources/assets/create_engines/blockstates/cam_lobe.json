@@ -1,15 +1,28 @@
 {
   "variants": {
-    "axis=x": {
+    "axis=x,encased=false": {
       "model": "create_engines:block/cam_lobe/block",
       "x": 90,
       "y": 90
     },
-    "axis=y": {
+    "axis=x,encased=true": {
+      "model": "create_engines:block/engine_casing/encased",
+      "x": 90,
+      "y": 90
+    },
+    "axis=y,encased=false": {
       "model": "create_engines:block/cam_lobe/block"
     },
-    "axis=z": {
+    "axis=y,encased=true": {
+      "model": "create_engines:block/engine_casing/encased"
+    },
+    "axis=z,encased=false": {
       "model": "create_engines:block/cam_lobe/block",
+      "x": 90,
+      "y": 180
+    },
+    "axis=z,encased=true": {
+      "model": "create_engines:block/engine_casing/encased",
       "x": 90,
       "y": 180
     }

@@ -3,7 +3,8 @@
     "create_engines:plant_oil": {
       "energy_per_mb": 30,
       "autoignition_temperature": 1.7,
-      "air_per_mb": 1.6
+      "air_per_mb": 1.6,
+      "cold_sensitivity": 1.5
     },
     "create_engines:diesel": {
       "energy_per_mb": 36,
@@ -13,7 +14,8 @@
     "create_engines:gasoline": {
       "energy_per_mb": 40,
       "autoignition_temperature": 2.7,
-      "air_per_mb": 1.5
+      "air_per_mb": 1.5,
+      "cold_sensitivity": 0.8
     },
     "create_engines:used_oil": {
       "energy_per_mb": 22,
@@ -23,7 +25,10 @@
     "create_engines:ethanol": {
       "energy_per_mb": 27,
       "autoignition_temperature": 3.4,
-      "air_per_mb": 1.0
+      "air_per_mb": 1.0,
+      "cold_sensitivity": 1.8,
+      "charge_cooling": 0.08,
+      "soot_factor": 0.0
     }
   }
 }
