@@ -60,21 +60,20 @@ public final class EngineAmbience {
 		if (level == null)
 			return;
 		EngineState now = summary.state();
-		boolean burning = now == EngineState.RUNNING || now == EngineState.OVERLOADED;
 		boolean turning = Math.abs(summary.rpm()) > 1 && now != EngineState.STALLED && now != EngineState.INCOMPLETE
 			&& now != EngineState.BROKEN;
 		long time = level.getGameTime();
 		RandomSource random = level.random;
 
-		if (last != null && last != now) {
-			if (burning && (last == EngineState.CRANKING || last == EngineState.STALLED)) {
+		EngineCues cue = EngineCues.forChange(last, now);
+		if (cue != EngineCues.NONE) {
+			if (cue == EngineCues.CATCH) {
 				if (time - caughtAt >= REPEAT_TICKS)
 					// A big engine catches with a deeper cough than a single
 					play(level, CESounds.ENGINE_CATCH.get(), 0.8f,
 						1.12f - 0.02f * Math.min(12, summary.cylinders()) + random.nextFloat() * 0.06f);
 				caughtAt = time;
-			} else if (now == EngineState.STALLED && (last == EngineState.RUNNING || last == EngineState.OVERLOADED
-				|| last == EngineState.COASTING)) {
+			} else {
 				if (time - stalledAt >= REPEAT_TICKS)
 					play(level, CESounds.ENGINE_STALL.get(), 0.7f, 0.95f + random.nextFloat() * 0.1f);
 				stalledAt = time;

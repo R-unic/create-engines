@@ -42,8 +42,9 @@ load like the Transmission does. There is no remap; decide before 1.0 whether to
 
 - [ ] **Listen to the six newer sounds**: catch, stall, exhaust pop, metal tick, clatter loop, squeal loop. They were
       only checked numerically. Loudness constants are at the top of `EngineAmbience`.
-- [ ] **The stall sound** never fired in a client run (an engine starved of air coasts for over 15 s). Make it
-      reachable in a test, or check it by hand.
+- [ ] **The stall sound** never fired in a client run (an engine starved of air coasts for over 15 s). The trigger
+      (Running, Overloaded or Coasting into Stalled) is now `EngineCues.forChange`, unit-tested in `EngineCuesTest`, so
+      the logic is covered. Hearing it in a client run is still open.
 - [ ] **Decide the dry-pocket case.** An engine walled off from water inside a flooded area still runs. Keep it, or
       rule otherwise.
 
