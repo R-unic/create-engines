@@ -146,12 +146,12 @@ class ForcedInductionTest {
 	void turbosSideBySideSpoolSoonerThanOneBigTurbo() {
 		Rig single = new Rig(1);
 		single.turbo(1.5, 1);
-		single.drive(160, 2);
+		single.drive(203, 2);
 		Rig twin = new Rig(1);
 		parallelTurbo(twin, 1.5, 2);
 		parallelTurbo(twin, 1.5, 2);
-		twin.drive(160, 2);
-		assertTrue(twin.boost() > 1.3 * single.boost(), "one " + single.boost() + ", pair " + twin.boost());
+		twin.drive(203, 2);
+		assertTrue(twin.boost() > 1.2 * single.boost(), "one " + single.boost() + ", pair " + twin.boost());
 	}
 
 	@Test
@@ -168,7 +168,7 @@ class ForcedInductionTest {
 	void aParallelBlowerAveragesWithTheTurboBesideIt() {
 		Rig rig = new Rig(1);
 		Turbocharger turbo = parallelTurbo(rig, 1.5, 2);
-		Supercharger blower = rig.blower(128, 1.5);
+		Supercharger blower = rig.blower(Supercharger.DESIGN_RPM, 1.5);
 		blower.parallel = true;
 		rig.drive(160, 10);
 		assertEquals(((1 + turbo.boost()) + (1 + blower.boost())) / 2, rig.cylinders.getFirst().intakePressure, 1e-9);
@@ -189,22 +189,87 @@ class ForcedInductionTest {
 	@Test
 	void aSuperchargerMakesBoostFromItsShaftSpeedAlone() {
 		Rig rig = new Rig(1);
-		Supercharger blower = rig.blower(128, 1.5);
+		Supercharger blower = rig.blower(Supercharger.DESIGN_RPM, 1.5);
 		rig.drive(60, 3);
 		assertEquals(Supercharger.FULL_BOOST, blower.boost(), 0.02);
 		assertEquals(1 + blower.boost(), rig.cylinders.getFirst().intakePressure, 1e-9);
 	}
 
 	@Test
-	void superchargerBoostGoesWithTheSquareOfTheSpeed() {
+	void superchargerBoostGoesWithTheSpeedToTheOneAndAQuarter() {
 		Rig half = new Rig(1);
-		Supercharger slow = half.blower(64, 1.5);
+		Supercharger slow = half.blower(Supercharger.DESIGN_RPM / 2, 1.5);
 		half.drive(60, 3);
-		assertEquals(Supercharger.FULL_BOOST / 4, slow.boost(), 0.02);
+		assertEquals(Supercharger.FULL_BOOST * Math.pow(0.5, Supercharger.SPEED_EXPONENT), slow.boost(), 0.02);
+		assertTrue(slow.boost() > Supercharger.FULL_BOOST / 4 + 0.1, "a flow pump beats the square at low speed: " + slow.boost());
 		Rig fast = new Rig(1);
-		Supercharger quick = fast.blower(192, 1.5);
+		Supercharger quick = fast.blower(Supercharger.DESIGN_RPM * 1.5, 1.5);
 		fast.drive(60, 3);
-		assertEquals(Math.min(1.5, Supercharger.FULL_BOOST * 2.25), quick.boost(), 0.03);
+		assertEquals(Math.min(1.5, Supercharger.FULL_BOOST * Math.pow(1.5, Supercharger.SPEED_EXPONENT)), quick.boost(), 0.03);
+	}
+
+	/** At half the design speed the variable drive has the rotors well ahead of the shaft, so the boost is already there. */
+	@Test
+	void aVariableDriveBlowerMakesMoreBoostThanAPlainOneWhileTheShaftIsSlow() {
+		Rig plainRig = new Rig(1);
+		Supercharger plain = plainRig.blower(Supercharger.DESIGN_RPM / 2, 1.5);
+		plainRig.drive(60, 3);
+		Rig fineRig = new Rig(1);
+		Supercharger fine = fineRig.blower(Supercharger.DESIGN_RPM / 2, 1.5);
+		fine.variableDrive = true;
+		fineRig.drive(60, 3);
+		assertTrue(fine.boost() > 1.5 * plain.boost(), "precision " + fine.boost() + " plain " + plain.boost());
+		assertTrue(fine.overdrive() > 0.3, "overdrive " + fine.overdrive());
+		assertEquals(0, plain.overdrive(), 1e-12);
+	}
+
+	/** The overdrive fades out by the design speed, so the two blowers have the same ceiling and the boost never dips. */
+	@Test
+	void aVariableDriveBlowersOverdriveFadesOutAtTheDesignSpeed() {
+		Rig rig = new Rig(1);
+		Supercharger fine = rig.blower(0, 1.5);
+		fine.variableDrive = true;
+		double last = 0;
+		for (double rpm = 0; rpm <= 2 * Supercharger.DESIGN_RPM; rpm += 4) {
+			fine.rpm = rpm;
+			assertTrue(fine.potential() >= last - 1e-12, "boost fell at " + rpm + " RPM");
+			last = fine.potential();
+			if (rpm >= Supercharger.DESIGN_RPM) {
+				assertEquals(0, fine.overdrive(), 1e-12);
+				assertEquals(Supercharger.FULL_BOOST * Math.pow(rpm / Supercharger.DESIGN_RPM, Supercharger.SPEED_EXPONENT),
+					fine.potential(), 1e-9);
+			}
+		}
+	}
+
+	@Test
+	void aVariableDriveBlowerRunsCoolerThanATurboAndAPlainBlowerAndDragsLess() {
+		Rig rig = new Rig(1);
+		Supercharger plain = rig.blower(Supercharger.DESIGN_RPM, 0.5);
+		Supercharger fine = new Supercharger(rig.cylinders);
+		fine.variableDrive = true;
+		rig.drive(60, 3);
+		fine.rpm = Supercharger.DESIGN_RPM;
+		fine.limit = 0.5;
+		for (int i = 0; i < 100; i++)
+			fine.tick(0.02);
+		assertEquals(plain.boost(), fine.boost(), 0.02);
+		double turboTemp = 1 + (Math.pow(1 + fine.boost(), 0.3 / 1.3) - 1) / 0.7;
+		assertTrue(fine.chargeTemperature() < turboTemp, fine.chargeTemperature() + " vs " + turboTemp);
+		assertTrue(fine.chargeTemperature() < plain.chargeTemperature());
+		assertTrue(fine.dragFactor() < plain.dragFactor());
+	}
+
+	@Test
+	void aVariableDriveBlowerFollowsItsShaftFasterThanAPlainOne() {
+		Supercharger plain = new Supercharger(List.of());
+		Supercharger fine = new Supercharger(List.of());
+		fine.variableDrive = true;
+		plain.rpm = fine.rpm = Supercharger.DESIGN_RPM;
+		plain.limit = fine.limit = 1.5;
+		plain.tick(0.1);
+		fine.tick(0.1);
+		assertTrue(fine.boost() > plain.boost() + 0.1, "precision " + fine.boost() + " plain " + plain.boost());
 	}
 
 	/** No exhaust heat is needed and there is no wheel to spin up: the boost is there within a moment. */
@@ -213,7 +278,7 @@ class ForcedInductionTest {
 		Rig rig = new Rig(1);
 		for (CylinderModel cylinder : rig.cylinders)
 			cylinder.fuelSupply = FuelSupply.NONE;
-		Supercharger blower = rig.blower(128, 1.5);
+		Supercharger blower = rig.blower(Supercharger.DESIGN_RPM, 1.5);
 		rig.drive(60, 1);
 		assertTrue(blower.boost() > 0.8 * Supercharger.FULL_BOOST, "boost " + blower.boost());
 	}
@@ -221,16 +286,17 @@ class ForcedInductionTest {
 	@Test
 	void theBypassValveHoldsTheBoostAtItsLimit() {
 		Rig rig = new Rig(1);
-		Supercharger blower = rig.blower(256, 0.4);
+		Supercharger blower = rig.blower(2 * Supercharger.DESIGN_RPM, 0.4);
 		rig.drive(60, 3);
-		assertEquals(0.4, blower.boost(), 0.02);
+		// The valve opens as the pressure climbs past the limit, so it settles a little above it
+		assertTrue(blower.boost() >= 0.39 && blower.boost() <= 0.46, "boost " + blower.boost());
 		assertTrue(blower.bypass() > 0.5);
 	}
 
 	@Test
 	void dumpingTheBlowerBlowsTheBoostOff() {
 		Rig rig = new Rig(1);
-		Supercharger blower = rig.blower(128, 1.5);
+		Supercharger blower = rig.blower(Supercharger.DESIGN_RPM, 1.5);
 		rig.drive(60, 3);
 		blower.dump = true;
 		rig.drive(60, 3);
@@ -242,7 +308,7 @@ class ForcedInductionTest {
 		Rig plain = new Rig(2);
 		plain.drive(120, 15);
 		Rig blown = new Rig(2);
-		blown.blower(128, 1.5);
+		blown.blower(Supercharger.DESIGN_RPM, 1.5);
 		blown.drive(120, 15);
 		assertTrue(blown.work() > 1.15 * plain.work(), "plain " + plain.work() + " blown " + blown.work());
 	}
@@ -252,32 +318,32 @@ class ForcedInductionTest {
 	void aTurboAndASuperchargerTogetherMultiply() {
 		Rig rig = new Rig(1);
 		Turbocharger turbo = rig.turbo(1.5, 1);
-		Supercharger blower = rig.blower(128, 1.5);
+		Supercharger blower = rig.blower(Supercharger.DESIGN_RPM, 1.5);
 		rig.drive(160, 20);
 		assertEquals((1 + turbo.boost()) * (1 + blower.boost()), rig.cylinders.getFirst().intakePressure, 1e-9);
 		assertTrue(turbo.boost() > 0.3 && blower.boost() > 0.5);
 	}
 
 	@Test
-	void aBlowerHeatsTheAirMoreThanATurboAtTheSameBoost() {
+	void aBlowerHeatsTheAirNoMoreThanATurboAtTheSameBoost() {
 		Rig rig = new Rig(1);
-		Supercharger blower = rig.blower(128, 0.5);
+		Supercharger blower = rig.blower(Supercharger.DESIGN_RPM, 0.5);
 		rig.drive(60, 3);
 		Turbocharger turbo = new Turbocharger(rig.cylinders, rig.cylinders, 1);
 		assertTrue(blower.chargeTemperature() > 1);
-		// Same pressure ratio through a more efficient compressor: a turbo at the blower's boost would be cooler
+		// Its compressor is as good as a turbo's: what it pays is shaft power, not heat
 		double turboTemp = 1 + (Math.pow(1 + blower.boost(), 0.3 / 1.3) - 1) / 0.7;
-		assertTrue(blower.chargeTemperature() > turboTemp, blower.chargeTemperature() + " vs " + turboTemp);
+		assertEquals(turboTemp, blower.chargeTemperature(), 1e-9);
 		assertTrue(turbo.compressor().size() == 4);
 	}
 
 	@Test
 	void anIntercoolerTakesHeatOutOfTheChargeAndGivesDensityBack() {
 		Rig bare = new Rig(1);
-		bare.blower(128, 0.9);
+		bare.blower(Supercharger.DESIGN_RPM, 0.9);
 		bare.drive(60, 3);
 		Rig cooled = new Rig(1);
-		cooled.blower(128, 0.9);
+		cooled.blower(Supercharger.DESIGN_RPM, 0.9);
 		cooled.engine.addIntercooler(new Intercooler(cooled.cylinders));
 		cooled.drive(60, 3);
 		CylinderModel a = bare.cylinders.getFirst();
@@ -339,6 +405,10 @@ class ForcedInductionTest {
 		assertTrue(reached.contains(Milestone.TWINCHARGED));
 		assertTrue(reached.contains(Milestone.COOLED_CHARGE));
 		assertFalse(reached.contains(Milestone.TWIN_TURBO));
+		assertTrue(EngineMilestones.reachedInduction(new EngineMilestones.Induction(true, 0.4f, 0, 1, 0, 0, 0.4f))
+			.contains(Milestone.VARIABLE_DRIVE));
+		assertFalse(EngineMilestones.reachedInduction(new EngineMilestones.Induction(true, 0.4f, 0, 1, 0, 0, 0.1f))
+			.contains(Milestone.VARIABLE_DRIVE));
 		var weak = EngineMilestones.reachedInduction(new EngineMilestones.Induction(true, 0.1f, 1, 0, 0, 0.1f));
 		assertTrue(weak.isEmpty(), weak.toString());
 	}

@@ -120,12 +120,12 @@ class OilConditionTest {
 		double before = sim.lubrication().condition();
 		for (int i = 0; i < 20 * 120; i++) {
 			// Something holds the crank at 128 RPM, as a starter or another source would
-			sim.tickCranked(0, EngineSimulation.rpmToOmega(1024), EngineSimulation.rpmToOmega(128), 1);
+			sim.tickCranked(0, EngineSimulation.rpmToOmega(1024), EngineSimulation.rpmToOmega(128 * CylinderSpec.SPEED_GAIN), 1);
 			sim.ageOil(false);
 		}
 		double spent = before - sim.lubrication().condition();
 		// 128 RPM for two minutes is 256 turns of a 3000-turn oil life
-		assertEquals(256 * Lubrication.AGE_PER_REV, spent, 0.02, "spent " + spent);
+		assertEquals(256 * CylinderSpec.SPEED_GAIN * Lubrication.AGE_PER_REV, spent, 0.02, "spent " + spent);
 	}
 
 	/** Condition an engine at 128 RPM settles at, exchanging {@code rate} mB of oil per second. */

@@ -118,8 +118,8 @@ class GovernorTest {
 	void aSparkEngineCanBeGovernedSlowly() {
 		for (int cylinders : new int[] {4, 12}) {
 			EngineSimulation sim = engine(cylinders, FuelSpec.GASOLINE, true);
-			double[] state = run(sim, new Governor(), 40, 0, 25, null);
-			assertEquals(40, state[0], 8, cylinders + " cylinders held at 40 RPM");
+			double[] state = run(sim, new Governor(), 40 * CylinderSpec.SPEED_GAIN, 0, 25, null);
+			assertEquals((40 * CylinderSpec.SPEED_GAIN), state[0], 8, cylinders + " cylinders held at 40 RPM");
 		}
 	}
 

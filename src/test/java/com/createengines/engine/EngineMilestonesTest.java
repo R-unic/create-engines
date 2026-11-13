@@ -216,6 +216,10 @@ class EngineMilestonesTest {
 		assertTrue(EngineMilestones.reachedRefining(false, true, HeatRecovery.SEETHE)
 			.isEmpty(), "a stopped engine");
 		assertEquals(Set.of(Milestone.ETHANOL_BURNED), EngineMilestones.reachedRefining(true, true, HeatRecovery.SMOULDER));
+		assertEquals(Set.of(Milestone.ETHANOL_BURNED, Milestone.ETHANOL_BOOSTED),
+			EngineMilestones.reachedRefining(true, true, HeatRecovery.NONE, true), "boosted ethanol with a hot charge");
+		assertTrue(EngineMilestones.reachedRefining(true, false, HeatRecovery.NONE, true)
+			.isEmpty(), "a hot charge on any other fuel is not ethanol's doing");
 		assertEquals(Set.of(Milestone.HEAT_RECOVERED), EngineMilestones.reachedRefining(true, false, HeatRecovery.KINDLE),
 			"enough heat to cook heated recipes");
 		assertEquals(Set.of(Milestone.HEAT_RECOVERED, Milestone.SUPERHEAT_RECOVERED),

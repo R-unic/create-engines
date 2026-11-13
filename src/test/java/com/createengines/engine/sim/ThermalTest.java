@@ -228,9 +228,9 @@ class ThermalTest {
 
 	@Test
 	void aLightlyFuelledEngineStillWarmsThroughFromItsOwnFriction() {
-		double starved = sixteenAt(67, 0.25);
+		double starved = sixteenAt(67 * CylinderSpec.SPEED_GAIN, 0.25);
 		assertTrue(starved > Thermal.COLD_BELOW + 0.04, "a big engine turning slowly on little fuel is not stuck cold: " + starved);
-		assertTrue(starved < sixteenAt(67, 1), "but it is still cooler than one burning a full shot");
+		assertTrue(starved < sixteenAt(67 * CylinderSpec.SPEED_GAIN, 1), "but it is still cooler than one burning a full shot");
 	}
 
 	@Test

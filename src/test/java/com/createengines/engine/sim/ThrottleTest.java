@@ -86,7 +86,7 @@ class ThrottleTest {
 	/** Where the engine already fills, a bigger bore has nothing to add and costs almost nothing (a slightly leaner charge). */
 	@Test
 	void aBoreOpenedPastTheIntakeBarelyChangesLowSpeed() {
-		for (double rpm : new double[] {32, 64, 128}) {
+		for (double rpm : new double[] {32 * CylinderSpec.SPEED_GAIN, 64 * CylinderSpec.SPEED_GAIN, 128 * CylinderSpec.SPEED_GAIN}) {
 			double plain = runThrottled(rpm, 1).work;
 			double wide = runThrottled(rpm, 1.4).work;
 			assertTrue(wide >= plain * 0.97, rpm + " RPM made " + wide + " work against " + plain);

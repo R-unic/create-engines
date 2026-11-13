@@ -11,7 +11,7 @@ import org.junit.jupiter.api.Test;
 
 class PilotInjectionTest {
 
-	private static final FuelSpec ETHANOL = new FuelSpec(27, 3.4, 1.0);
+	private static final FuelSpec ETHANOL = FuelSpec.ETHANOL;
 
 	/** A pilot tank that counts what it gives. */
 	private static final class Pilot implements FuelSupply {

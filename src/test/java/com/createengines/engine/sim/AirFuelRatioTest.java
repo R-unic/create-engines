@@ -178,6 +178,18 @@ class AirFuelRatioTest {
 		assertTrue(rig.cylinder.fouling() < 0.05, "fouling " + rig.cylinder.fouling());
 	}
 
+	/** Ethanol burns clean however rich it is run: the plug never gets soot (the engine still can't light a mixture too rich to burn). */
+	@Test
+	void ethanolLeavesNoSootOnAPlug() {
+		Rig rig = new Rig(unlimited(FuelSpec.ETHANOL), IgnitionSource.UNLIMITED, 128).mixture(1.7);
+		double worst = 0;
+		for (int i = 0; i < 60; i++) {
+			rig.run(0.25);
+			worst = Math.max(worst, rig.cylinder.fouling());
+		}
+		assertEquals(0, worst, 1e-9, "a rich ethanol burn should not foul the plug");
+	}
+
 	@Test
 	void anEngineWithNoPlugHasNothingToFoul() {
 		Rig rig = new Rig(DIESEL, IgnitionSource.NONE, 160).mixture(2)

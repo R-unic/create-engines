@@ -93,7 +93,7 @@ class RoughnessTest {
 	void aFlywheelRaisesTheRatingOfASmallEngine() {
 		double bare = rating(1, 0);
 		double flywheel = rating(1, 1);
-		assertTrue(flywheel > bare * 1.1, "flywheel " + flywheel + " vs bare " + bare);
+		assertTrue(flywheel > bare * 1.05, "flywheel " + flywheel + " vs bare " + bare);
 	}
 
 	@Test

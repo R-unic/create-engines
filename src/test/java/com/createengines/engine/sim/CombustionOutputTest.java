@@ -17,7 +17,7 @@ import com.createengines.engine.EngineMilestones;
 class CombustionOutputTest {
 
 	/** The server config default, SU per unit of simulated torque. */
-	private static final double STRESS_PER_TORQUE = 100;
+	private static final double STRESS_PER_TORQUE = 78.7;
 	private static final double STEAM_ENGINE = EngineMilestones.STEAM_ENGINE;
 
 	/** An in-line engine of {@code cylinders}, evenly fired, on a MAF-trimmed 200% shot. Returns the most power it makes, SU. */

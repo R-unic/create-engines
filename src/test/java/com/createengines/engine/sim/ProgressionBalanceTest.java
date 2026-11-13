@@ -28,11 +28,11 @@ import com.createengines.engine.EngineMilestones;
  */
 class ProgressionBalanceTest {
 
-	private static final double SU_PER_TORQUE = 100;
+	private static final double SU_PER_TORQUE = 78.7;
 	private static final double STEAM = EngineMilestones.STEAM_ENGINE;
 	private static final CylinderSpec PRECISE = CylinderSpec.build(true, true, true, true);
 	/** Ethanol as shipped in {@code data_maps/fluid/fuel.json}. */
-	private static final FuelSpec ETHANOL = new FuelSpec(27, 3.4, 1.0);
+	private static final FuelSpec ETHANOL = FuelSpec.ETHANOL;
 
 	/** What an engine does at its best speed under Create's usual 256 RPM limit. */
 	private record Run(double power, double rpm, double fuel) {
@@ -324,14 +324,76 @@ class ProgressionBalanceTest {
 		}
 	}
 
-	/** Past what the injectors can feed, another stage of boost buys nothing, but it costs a sixth at most, never the engine. */
+	/**
+	 * Past what the injectors can feed, another stage of boost buys nothing, and on gasoline the charge it heats past its
+	 * autoignition point loses a share of the burn too. It costs a third at most, never the engine, and ethanol (which that
+	 * charge cannot light early) loses only to its injector.
+	 */
 	@Test
 	void overStackingBoostFlattensOutInsteadOfFallingOff() {
 		for (int cylinders : new int[] {8, 12, 16}) {
 			double three = new Build().cylinders(cylinders).precise().turbos(2).intercooler().run().power();
 			double four = new Build().cylinders(cylinders).precise().turbos(2).blower().intercooler().run().power();
-			assertTrue(four > 0.8 * three, cylinders + " cylinders: four stages " + four + " against three " + three);
+			assertTrue(four > 0.65 * three, cylinders + " cylinders: four stages " + four + " against three " + three);
+			double threeEthanol = new Build().cylinders(cylinders).precise().fuel(ETHANOL, true).turbos(2).intercooler().run().power();
+			double fourEthanol =
+				new Build().cylinders(cylinders).precise().fuel(ETHANOL, true).turbos(2).blower().intercooler().run().power();
+			// What holds ethanol back at four stages is the injector, which a thin fuel reaches sooner, not its charge
+			assertTrue(fourEthanol > 0.75 * threeEthanol,
+				cylinders + " cylinders on ethanol: four stages " + fourEthanol + " against three " + threeEthanol);
 		}
+	}
+
+	// ---- Ethanol's place: the fuel boost cannot light early ------------------------------------------------------
+
+	/** Where the charge runs hot, gasoline lights itself early under boost and loses power; ethanol's charge stays unlit until the plug. */
+	@Test
+	void ethanolOutRunsGasolineWhereTheBoostHeatsTheCharge() {
+		for (int cylinders : new int[] {8, 12, 16}) {
+			double gasoline = new Build().cylinders(cylinders).precise().turbos(2).run().power();
+			double ethanol = new Build().cylinders(cylinders).precise().fuel(ETHANOL, true).turbos(2).run().power();
+			assertTrue(ethanol > 1.1 * gasoline,
+				cylinders + " cylinders, two turbos and no intercooler: ethanol " + ethanol + " against gasoline " + gasoline);
+			double gasolineBoth = new Build().cylinders(cylinders).precise().turbos(1).blower().run().power();
+			double ethanolBoth = new Build().cylinders(cylinders).precise().fuel(ETHANOL, true).turbos(1).blower().run().power();
+			assertTrue(ethanolBoth > 1.05 * gasolineBoth,
+				cylinders + " cylinders, a turbo and a supercharger: ethanol " + ethanolBoth + " against gasoline " + gasolineBoth);
+		}
+	}
+
+	/** A cool charge never pre-ignites, so gasoline's power and its price by volume win there, and ethanol only has to be close. */
+	@Test
+	void gasolineStillWinsWhereTheChargeStaysCool() {
+		Run naGasoline = new Build().precise().run();
+		Run naEthanol = new Build().precise().fuel(ETHANOL, true).run();
+		Run oneGasoline = new Build().precise().turbos(1).run();
+		Run oneEthanol = new Build().precise().fuel(ETHANOL, true).turbos(1).run();
+		Run cooledGasoline = new Build().precise().turbos(2).intercooler().run();
+		Run cooledEthanol = new Build().precise().fuel(ETHANOL, true).turbos(2).intercooler().run();
+		assertTrue(naGasoline.power() > naEthanol.power(), "unboosted: " + naGasoline.power() + " against " + naEthanol.power());
+		assertTrue(oneGasoline.power() > oneEthanol.power(), "one turbo: " + oneGasoline.power() + " against " + oneEthanol.power());
+		assertTrue(cooledGasoline.power() > cooledEthanol.power(),
+			"two turbos and an intercooler: " + cooledGasoline.power() + " against " + cooledEthanol.power());
+		// Ethanol is within reach of it, so it is a choice and never a trap
+		assertTrue(naEthanol.power() > 0.9 * naGasoline.power());
+		assertTrue(oneEthanol.power() > 0.9 * oneGasoline.power());
+		assertTrue(cooledEthanol.power() > 0.84 * cooledGasoline.power(), cooledEthanol.power() + " against " + cooledGasoline.power());
+		// And gasoline is a good deal cheaper by volume everywhere, which is why it stays the usual choice
+		assertTrue(naGasoline.fuel() < 0.75 * naEthanol.fuel(), naGasoline.fuel() + " against " + naEthanol.fuel());
+		assertTrue(oneGasoline.fuel() < 0.75 * oneEthanol.fuel(), oneGasoline.fuel() + " against " + oneEthanol.fuel());
+		assertTrue(cooledGasoline.fuel() < 0.75 * cooledEthanol.fuel(), cooledGasoline.fuel() + " against " + cooledEthanol.fuel());
+	}
+
+	@Test
+	void preIgnitionOnlyCostsPowerAndOnlyPastTheAutoignitionPoint() {
+		FuelSpec gasoline = FuelSpec.GASOLINE;
+		assertTrue(gasoline.preignitionLoss(gasoline.autoignitionTemp() - 0.1) == 0, "a charge under the point loses nothing");
+		assertTrue(gasoline.preignitionLoss(gasoline.autoignitionTemp() + 0.1) > 0, "one over it does");
+		assertTrue(gasoline.preignitionLoss(gasoline.autoignitionTemp() + 0.3) > gasoline.preignitionLoss(gasoline.autoignitionTemp() + 0.1),
+			"and the hotter, the more");
+		assertTrue(gasoline.preignitionLoss(99) == FuelSpec.PREIGNITION_MAX_LOSS && FuelSpec.PREIGNITION_MAX_LOSS < 0.5,
+			"it is capped, so it can never stop an engine");
+		assertTrue(ETHANOL.preignitionLoss(3.1) == 0, "boost heat in a cylinder does not reach ethanol's point");
 	}
 
 	@Test

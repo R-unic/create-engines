@@ -96,7 +96,7 @@ class SparkIgnitionTest {
 	/** Twice the shot that smokes a diesel at speed drowns a spark engine outright. */
 	@Test
 	void aSparkCannotLightAMixtureDrownedInFuel() {
-		CycleStats cycle = runAt(160, GASOLINE, 2, IgnitionSource.UNLIMITED).lastCycle();
+		CycleStats cycle = runAt(160 * CylinderSpec.SPEED_GAIN, GASOLINE, 2, IgnitionSource.UNLIMITED).lastCycle();
 		assertTrue(cycle.result == CycleResult.TOO_RICH || cycle.result == CycleResult.FOULED, "was " + cycle.result);
 		assertEquals(0, cycle.fuelBurned);
 	}

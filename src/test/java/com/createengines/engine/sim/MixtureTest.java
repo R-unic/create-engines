@@ -46,7 +46,7 @@ class MixtureTest {
 	@Test
 	void aFixedShotRunsRicherAsTheEngineSpeedsUp() {
 		CycleStats slow = runAt(32, UNLIMITED).lastCycle();
-		CycleStats fast = runAt(256, UNLIMITED).lastCycle();
+		CycleStats fast = runAt(256 * CylinderSpec.SPEED_GAIN, UNLIMITED).lastCycle();
 		assertTrue(slow.result.fired() && fast.result.fired());
 		assertFalse(slow.rich(), "32 RPM should not run rich");
 		assertTrue(fast.rich(), "256 RPM should run rich on the same setting");

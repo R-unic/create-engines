@@ -12,7 +12,7 @@ import org.junit.jupiter.api.Test;
 /** The Wankel rotor: three ported chambers on a shaft that turns three times to the rotor's once. */
 class RotaryEngineTest {
 
-	private static final double STRESS_PER_TORQUE = 100;
+	private static final double STRESS_PER_TORQUE = 78.7;
 	private static final double MAX_OMEGA = EngineSimulation.rpmToOmega(256);
 
 	/** The three chambers of a rotor whose eccentric points at its mark at {@code eccentric} degrees. */
