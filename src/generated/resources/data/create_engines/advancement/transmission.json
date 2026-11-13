@@ -1,0 +1,29 @@
+{
+  "parent": "create_engines:crankshaft",
+  "criteria": {
+    "transmission": {
+      "conditions": {
+        "event": "shifted"
+      },
+      "trigger": "create_engines:event"
+    }
+  },
+  "display": {
+    "description": {
+      "translate": "advancement.create_engines.transmission.desc"
+    },
+    "icon": {
+      "count": 1,
+      "id": "create_engines:transmission"
+    },
+    "title": {
+      "translate": "advancement.create_engines.transmission"
+    }
+  },
+  "requirements": [
+    [
+      "transmission"
+    ]
+  ],
+  "sends_telemetry_event": true
+}
