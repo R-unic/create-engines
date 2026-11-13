@@ -51,18 +51,6 @@ public final class CELang {
 		raw("value.maf_target", "Mixture Target");
 		raw("value.boost_limit", "Boost Limit");
 		raw("value.anti_lag", "Anti-Lag");
-		raw("value.governed_speed", "Governed Speed");
-
-		raw("goggles.governor", "Governor");
-		raw("goggles.governor.no_engine", "Not touching a crankshaft block or a cylinder head");
-		raw("goggles.governor.speed", "Crank speed: %1$s RPM");
-		raw("goggles.governor.rack", "Fuel rack held at: %1$s%%");
-		raw("goggles.governor.open", "Rack wide open: the load is more than the engine can hold at this speed");
-		raw("goggles.governor.target", "Set to: %1$s RPM");
-		raw("goggles.governor.commanded", "Redstone has turned it down: holding %1$s RPM");
-		raw("goggles.governor.hint",
-			"Fuel (or throttle, in a spark engine) is cut as the engine passes the setting and opened as it falls, over about %1$s%% of the speed. The lowest setting on an engine governs. A redstone signal on the block holds the engine at that share of the setting, 15 being all of it, never below 20 RPM. The redstone output is the rack position, 15 wide open, and reaches comparators only");
-
 		raw("tool.timing_tool.style", "Timing Tool: %1$s");
 		raw("tool.timing_tool.style.smooth", "Smooth (any throw angle)");
 		raw("tool.timing_tool.style.cross_plane", "Cross-plane (quarter turns)");
@@ -181,14 +169,6 @@ public final class CELang {
 		raw("goggles.supercharger.limit", "Boost limit: %1$s bar");
 		raw("goggles.supercharger.hint",
 			"Boost goes with the square of the shaft speed, at once and with no need for exhaust: 0.9 bar at 128 RPM. The work of turning it is stress on the shaft, so gear it for the boost you want. It heats the air more than a turbo does, so an Intercooler helps. Redstone opens the bypass fully");
-
-		raw("goggles.transmission", "Transmission");
-		raw("goggles.transmission.neutral", "Neutral: no drive reaches the output");
-		raw("goggles.transmission.gear", "Gear %1$s: %2$s turns of the input to one of the output");
-		raw("goggles.transmission.auto", "Auto, in gear %1$s: %2$s turns of the input to one of the output");
-		raw("goggles.transmission.reverse", "Reverse: %1$s turns of the input to one of the output, backwards");
-		raw("goggles.transmission.hint",
-			"The panel sets the gear: neutral, thirteen forward gears, reverse, or Auto. Auto takes the tallest gear the engine can pull without overloading, down to a lower one when the load is too heavy and up again when there is room. A redstone signal picks a gear instead: 1 neutral, 2 to 14 first to thirteenth, 15 reverse. A low gear lets the engine carry a heavier load at a slower output");
 
 		raw("goggles.engine", "Engine");
 		raw("goggles.state.stalled", "Stalled");

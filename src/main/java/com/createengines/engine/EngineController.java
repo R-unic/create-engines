@@ -15,6 +15,7 @@ import org.jetbrains.annotations.Nullable;
 import com.createengines.advancement.Achievements;
 import com.createengines.advancement.Milestone;
 import com.createengines.config.CEConfig;
+import com.createengines.content.EngineGlow;
 import com.createengines.content.airflow.HeatExchangerBlockEntity;
 import com.createengines.content.airflow.MafSensorBlockEntity;
 import com.createengines.content.airflow.PortKind;
@@ -26,7 +27,6 @@ import com.createengines.content.crankshaft.CrankshaftBlockEntity;
 import com.createengines.content.cylinder.CylinderBlockEntity;
 import com.createengines.content.head.CylinderHeadBlockEntity;
 import com.createengines.content.head.GalleryMember;
-import com.createengines.content.governor.GovernorBlockEntity;
 import com.createengines.content.rotor.RotorHousingBlockEntity;
 import com.createengines.content.starter.StarterBlockEntity;
 import com.createengines.content.sump.SumpBlockEntity;
@@ -44,7 +44,6 @@ import com.createengines.engine.sim.Dynamometer;
 import com.createengines.engine.sim.EngineSimulation;
 import com.createengines.engine.sim.FuelSpec;
 import com.createengines.engine.sim.FuelSupply;
-import com.createengines.engine.sim.Governor;
 import com.createengines.engine.sim.IgnitionSource;
 import com.createengines.engine.sim.Mixture;
 import com.createengines.engine.sim.Roughness;
@@ -108,10 +107,6 @@ public final class EngineController {
 	 * breathes less as it does, so it drifts richer after the tune.
 	 */
 	private static final double TUNE_MIXTURE = 0.9;
-	/** How close to its setting, as a share of it, a governed engine has to be held to count as on speed. */
-	private static final double GOVERNED_BAND = 0.03;
-	/** Ticks a governor has to hold an engine on its setting under load for it to count, ten seconds. */
-	private static final int GOVERNED_TICKS = 200;
 
 	private final CrankshaftBlockEntity primary;
 	private final EngineLayout layout;
@@ -154,17 +149,12 @@ public final class EngineController {
 	private @Nullable BlockPos activeStarter;
 	private EngineState previousState = EngineState.STALLED;
 	private final Map<Milestone, Integer> milestoneTicks = new EnumMap<>(Milestone.class);
-	private final Governor governor = new Governor();
-	/** Ticks the governor has held the engine on its setting while carrying a load. */
-	private int governedTicks;
 	/** What the engine-management blocks last saw, for milestones. */
 	private boolean mafTrimming;
 	private boolean mafEnriching;
 	private boolean mafReading;
 	/** Heat level of the hottest exhaust heat exchanger on the engine, {@code HeatRecovery.NONE} to {@code SEETHE}. */
 	private int exchangerLevel;
-	private boolean governing;
-	private boolean commanded;
 	/** The fuel gallery shared by every head, for telling which fuel the engine burns. */
 	private final GalleryFuelSupply fuels;
 	/** The engine was running the last time its milestones were looked at, and how it caught: warm, or cold on a slow fuel. */
@@ -414,7 +404,10 @@ public final class EngineController {
 			publishSpeed();
 			publishCapacity(torqueScale);
 			if (ticks % SYNC_INTERVAL == 0)
+			{
 				primary.updateSummary(summary(layout.incomplete() ? EngineState.INCOMPLETE : EngineState.BROKEN, torqueScale));
+				glow(level, false);
+			}
 			return;
 		}
 
@@ -423,7 +416,6 @@ public final class EngineController {
 		readThrottles(level);
 		readTurbos(level);
 		readSuperchargers(level);
-		readGovernors(level);
 		if (ticks % RACK_INTERVAL == 1)
 			readFuelRacks(level);
 		if (ticks % RATING_INTERVAL == 1)
@@ -439,7 +431,7 @@ public final class EngineController {
 		}
 		activeStarter = null;
 		for (BlockPos pos : layout.starters()) {
-			if (!(level.getBlockEntity(pos) instanceof StarterBlockEntity starter) || !starter.wantsToCrank())
+			if (!(LoadedBlocks.blockEntity(level, pos) instanceof StarterBlockEntity starter) || !starter.wantsToCrank())
 				continue;
 			double omega = EngineSimulation.rpmToOmega(Math.abs(starter.getSpeed()));
 			if (omega > floor) {
@@ -464,7 +456,7 @@ public final class EngineController {
 		// The starter feels the effort of turning the engine as stress on its own input shaft
 		double crankingStress = sim.crankingTorque() * torqueScale;
 		for (BlockPos pos : layout.starters())
-			if (level.getBlockEntity(pos) instanceof StarterBlockEntity starter) {
+			if (LoadedBlocks.blockEntity(level, pos) instanceof StarterBlockEntity starter) {
 				boolean active = pos.equals(activeStarter);
 				starter.updateCranking(layout.primary(), active ? crankingStress : 0, active);
 			}
@@ -492,7 +484,7 @@ public final class EngineController {
 			CamLine line = layout.camLines()
 				.get(i);
 			Camshaft camshaft = camshafts.get(i);
-			if (!(level.getBlockEntity(line.segments()
+			if (!(LoadedBlocks.blockEntity(level, line.segments()
 				.getFirst()) instanceof CamshaftBlockEntity cam)) {
 				camshaft.ratio = 0;
 				continue;
@@ -508,14 +500,14 @@ public final class EngineController {
 	 */
 	private void readThrottles(Level level) {
 		for (int port = 0; port < portOpening.length; port++) {
-			// Starting from 1 would cap a bore opened past the intake right back at it
-			List<Double> openings = new ArrayList<>();
+			// Starting from 1 would cap a bore opened past the intake right back at it, so start from none found
+			double narrowest = Double.POSITIVE_INFINITY;
 			for (BlockPos pos : layout.ports()
 				.get(port)
 				.throttles())
-				if (level.getBlockEntity(pos) instanceof ThrottleBlockEntity throttle)
-					openings.add(throttle.opening());
-			portOpening[port] = Throttle.inSeries(openings);
+				if (LoadedBlocks.blockEntity(level, pos) instanceof ThrottleBlockEntity throttle)
+					narrowest = Math.min(narrowest, throttle.opening());
+			portOpening[port] = narrowest == Double.POSITIVE_INFINITY ? 1 : narrowest;
 		}
 		for (int i = 0; i < models.size(); i++) {
 			CylinderModel model = models.get(i);
@@ -533,7 +525,7 @@ public final class EngineController {
 	private void readTurbos(Level level) {
 		for (int i = 0; i < turbos.size(); i++) {
 			Turbocharger turbo = turbos.get(i);
-			if (level.getBlockEntity(layout.turbos()
+			if (LoadedBlocks.blockEntity(level, layout.turbos()
 				.get(i)
 				.pos()) instanceof TurbochargerBlockEntity be) {
 				turbo.limit = be.boostLimit();
@@ -546,7 +538,7 @@ public final class EngineController {
 
 	/**
 	 * Whether every cylinder feeding a turbo's turbine is off the throttle: its fuel cut by a limiter, its rack shut by
-	 * redstone, its throttle closed or its governor holding it back. Then there is hardly any heat in the exhaust, and
+	 * redstone or its throttle closed. Then there is hardly any heat in the exhaust, and
 	 * anti-lag has something to do.
 	 */
 	private static boolean offThrottle(Turbocharger turbo) {
@@ -554,7 +546,7 @@ public final class EngineController {
 			.isEmpty())
 			return false;
 		for (CylinderModel cylinder : turbo.turbine())
-			if (!(cylinder.rack < 0.3 || cylinder.fuelTrim < 0.3 || cylinder.governor < 0.3))
+			if (!(cylinder.rack < 0.3 || cylinder.fuelTrim < 0.3))
 				return false;
 		return true;
 	}
@@ -566,7 +558,7 @@ public final class EngineController {
 	private void readSuperchargers(Level level) {
 		double crankRpm = sim.rpm();
 		for (int i = 0; i < blowers.size(); i++) {
-			if (!(level.getBlockEntity(layout.superchargers()
+			if (!(LoadedBlocks.blockEntity(level, layout.superchargers()
 				.get(i)
 				.pos()) instanceof SuperchargerBlockEntity be))
 				continue;
@@ -602,7 +594,7 @@ public final class EngineController {
 			BlockPos head = layout.cylinders()
 				.get(i)
 				.head();
-			if (model != null && head != null && level.getBlockEntity(head) instanceof GalleryMember be)
+			if (model != null && head != null && LoadedBlocks.blockEntity(level, head) instanceof GalleryMember be)
 				model.metering = be.meteringFraction();
 			if (model != null)
 				model.airMatch = airMatch(level, i);
@@ -643,7 +635,7 @@ public final class EngineController {
 		int tuned = 0;
 		for (Map.Entry<BlockPos, double[]> entry : readings.entrySet()) {
 			ScrollValueBehaviour metering =
-				switch (level.getBlockEntity(entry.getKey())) {
+				switch (LoadedBlocks.blockEntity(level, entry.getKey())) {
 					case CylinderHeadBlockEntity head -> head.metering;
 					case RotorHousingBlockEntity housing -> housing.metering;
 					case null, default -> null;
@@ -672,41 +664,9 @@ public final class EngineController {
 			for (BlockPos pos : layout.ports()
 				.get(port)
 				.sensors())
-				if (level.getBlockEntity(pos) instanceof MafSensorBlockEntity maf)
+				if (LoadedBlocks.blockEntity(level, pos) instanceof MafSensorBlockEntity maf)
 					target = target == 0 ? maf.targetMixture() : Math.min(target, maf.targetMixture());
 		return target;
-	}
-
-	/**
-	 * Governors on the engine: the lowest speed set governs, and the rack (the throttle, in a spark engine) is moved to
-	 * hold the crank there. Read every tick because a governor is a feedback loop: it has to keep up with the load.
-	 */
-	private void readGovernors(Level level) {
-		double target = Double.MAX_VALUE;
-		double setting = Double.MAX_VALUE;
-		for (BlockPos pos : layout.governors())
-			if (level.getBlockEntity(pos) instanceof GovernorBlockEntity be) {
-				target = Math.min(target, be.governedSpeed());
-				setting = Math.min(setting, be.target());
-			}
-		boolean fitted = target < Double.MAX_VALUE;
-		double position = 1;
-		if (fitted)
-			position = governor.update(sim.rpm(), target, EngineSimulation.TICK);
-		else
-			governor.reset();
-		for (CylinderModel model : sim.cylinders())
-			model.governor = position;
-		boolean holding = fitted && !sim.isStopped() && Math.abs(sim.rpm() - target) <= GOVERNED_BAND * target
-			&& position > 0.05 && position < 0.95;
-		governedTicks = holding ? governedTicks + 1 : 0;
-		governing = fitted && !sim.isStopped() && position < 0.95;
-		// A redstone signal has turned the governed speed down
-		commanded = governing && target < setting - 0.5;
-		float rpm = (float) sim.rpm();
-		for (BlockPos pos : layout.governors())
-			if (level.getBlockEntity(pos) instanceof GovernorBlockEntity be)
-				be.reading(rpm, (float) position, (float) be.governedSpeed());
 	}
 
 	/**
@@ -756,7 +716,7 @@ public final class EngineController {
 			// Exchangers on one network split its heat between them
 			int exchangers = 0;
 			for (BlockPos pos : network.sensors())
-				if (!intake && level.getBlockEntity(pos) instanceof HeatExchangerBlockEntity)
+				if (!intake && LoadedBlocks.blockEntity(level, pos) instanceof HeatExchangerBlockEntity)
 					exchangers++;
 			float heatShare = exchangers == 0 ? 0 : (float) (heat / EngineSimulation.TICK / exchangers);
 			if (intake) {
@@ -765,7 +725,7 @@ public final class EngineController {
 				mafEnriching |= breathing > 0 && meanAdded >= EngineMilestones.MAF_ENRICHING;
 			}
 			for (BlockPos pos : network.sensors()) {
-				var be = level.getBlockEntity(pos);
+				var be = LoadedBlocks.blockEntity(level, pos);
 				if (be instanceof MafSensorBlockEntity maf && intake)
 					maf.reading(meanCharge, meanCut, meanAdded);
 				else if (be instanceof HeatExchangerBlockEntity exchanger && !intake) {
@@ -790,7 +750,7 @@ public final class EngineController {
 		double swapped = 0;
 		boolean fitted = false;
 		for (BlockPos pos : layout.sumps()) {
-			if (!level.isLoaded(pos) || !(level.getBlockEntity(pos) instanceof SumpBlockEntity sump))
+			if (!level.isLoaded(pos) || !(LoadedBlocks.blockEntity(level, pos) instanceof SumpBlockEntity sump))
 				continue;
 			fitted |= sump.filtered();
 			swapped += sump.exchange(EngineSimulation.TICK);
@@ -1048,23 +1008,24 @@ public final class EngineController {
 	private void syncDiagnostics(Level level, double torqueScale) {
 		EngineState state = state();
 		primary.updateSummary(summary(state, torqueScale));
+		glow(level, state == EngineState.RUNNING || state == EngineState.OVERLOADED);
 		reportMilestones(level, state);
 		syncTurbos(level);
 		syncSuperchargers(level);
 
 		for (EngineLayout.Segment segment : layout.segments())
-			if (level.getBlockEntity(segment.pos()) instanceof CrankshaftBlockEntity crank)
+			if (LoadedBlocks.blockEntity(level, segment.pos()) instanceof CrankshaftBlockEntity crank)
 				crank.setPrimary(layout.primary(), segment.sense());
 
 		for (int i = 0; i < models.size(); i++) {
 			Cylinder cylinder = layout.cylinders()
 				.get(i);
 			if (cylinder.rotary()) {
-				if (level.getBlockEntity(cylinder.pos()) instanceof RotorHousingBlockEntity housing)
+				if (LoadedBlocks.blockEntity(level, cylinder.pos()) instanceof RotorHousingBlockEntity housing)
 					housing.updateChamber(cylinder.chamber(), status(cylinder, models.get(i)));
 				continue;
 			}
-			if (!(level.getBlockEntity(cylinder.pos()) instanceof CylinderBlockEntity be))
+			if (!(LoadedBlocks.blockEntity(level, cylinder.pos()) instanceof CylinderBlockEntity be))
 				continue;
 			CylinderModel model = models.get(i);
 			CycleStats last = model == null ? null : model.lastCycle();
@@ -1085,13 +1046,13 @@ public final class EngineController {
 		}
 
 		for (BlockPos pos : layout.batteries())
-			if (level.getBlockEntity(pos) instanceof BatteryBlockEntity battery)
+			if (LoadedBlocks.blockEntity(level, pos) instanceof BatteryBlockEntity battery)
 				battery.attachToEngine(layout.primary());
 		for (BlockPos pos : layout.sumps())
-			if (level.getBlockEntity(pos) instanceof SumpBlockEntity sump)
+			if (LoadedBlocks.blockEntity(level, pos) instanceof SumpBlockEntity sump)
 				sump.attachToEngine(layout.primary());
 		for (BlockPos pos : layout.alternators())
-			if (level.getBlockEntity(pos) instanceof AlternatorBlockEntity alternator)
+			if (LoadedBlocks.blockEntity(level, pos) instanceof AlternatorBlockEntity alternator)
 				alternator.attachToEngine(layout.primary(), layout.batteries());
 
 		for (int line = 0; line < camshafts.size(); line++) {
@@ -1099,7 +1060,7 @@ public final class EngineController {
 			for (BlockPos pos : layout.camLines()
 				.get(line)
 				.segments()) {
-				if (!(level.getBlockEntity(pos) instanceof CamshaftBlockEntity cam))
+				if (!(LoadedBlocks.blockEntity(level, pos) instanceof CamshaftBlockEntity cam))
 					continue;
 				int actuated = 0;
 				float timing = Float.NaN;
@@ -1116,6 +1077,16 @@ public final class EngineController {
 				cam.updateStatus(layout.primary(), (float) camshaft.ratio, camshaft.isPhaseLocked(),
 					(float) racks[line], actuated, timing);
 			}
+		}
+	}
+
+	/** Gives the heads and rotor housings of a burning engine their faint glow, and takes it away when the burning stops. */
+	private void glow(Level level, boolean burning) {
+		for (int i = 0; i < models.size(); i++) {
+			Cylinder cylinder = layout.cylinders()
+				.get(i);
+			boolean lit = burning && models.get(i) != null;
+			EngineGlow.set(level, cylinder.rotary() || cylinder.head() == null ? cylinder.pos() : cylinder.head(), lit);
 		}
 	}
 
@@ -1142,7 +1113,7 @@ public final class EngineController {
 	private void syncSuperchargers(Level level) {
 		for (int i = 0; i < blowers.size(); i++) {
 			Supercharger blower = blowers.get(i);
-			if (level.getBlockEntity(layout.superchargers()
+			if (LoadedBlocks.blockEntity(level, layout.superchargers()
 				.get(i)
 				.pos()) instanceof SuperchargerBlockEntity be)
 				be.updateBlower(layout.primary(), blower.compressor()
@@ -1155,7 +1126,7 @@ public final class EngineController {
 			Turbo placed = layout.turbos()
 				.get(i);
 			Turbocharger turbo = turbos.get(i);
-			if (level.getBlockEntity(placed.pos()) instanceof TurbochargerBlockEntity be)
+			if (LoadedBlocks.blockEntity(level, placed.pos()) instanceof TurbochargerBlockEntity be)
 				be.updateStatus(new TurboStatus((float) turbo.spool(), (float) turbo.boost(), (float) turbo.wastegate(),
 					(float) turbo.backPressure(), (float) charge(turbo), !turbo.compressor()
 						.isEmpty(),
@@ -1240,7 +1211,7 @@ public final class EngineController {
 				.dilution(),
 			pushrod, firingAngles.size() == cylinders && EngineMilestones.evenFiring(toArray(firingAngles)),
 			mafTrimming, mafEnriching,
-			governedTicks >= GOVERNED_TICKS, precision && cylinders >= EngineMilestones.EVEN_FIRING_CYLINDERS,
+			precision && cylinders >= EngineMilestones.EVEN_FIRING_CYLINDERS,
 			layout.lines() > 1);
 		previousState = state;
 		award(level, EngineMilestones.reached(snapshot));
@@ -1259,7 +1230,7 @@ public final class EngineController {
 
 	/**
 	 * Credits the operator with the parts the engine is putting to work: the camshaft that times it, the pipes it
-	 * breathes through, the throttle, the fuel and oil it burns, its sensors and governor, and its precision parts.
+	 * breathes through, the throttle, the fuel and oil it burns, its sensors, and its precision parts.
 	 */
 	private void reportParts(Level level, EngineState state, int firing) {
 		boolean camTimed = false;
@@ -1288,7 +1259,7 @@ public final class EngineController {
 				.effective(),
 			!layout.sumps()
 				.isEmpty(),
-			mafReading, governing, commanded, precision, rotorHousing && !sim.isStopped())));
+			mafReading, precision, rotorHousing && !sim.isStopped())));
 	}
 
 	/** Credits the operator with a flywheel that smooths a running engine, variable vanes at work, and anti-lag. */

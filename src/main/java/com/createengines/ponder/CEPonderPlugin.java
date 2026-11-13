@@ -44,8 +44,6 @@ public class CEPonderPlugin implements PonderPlugin {
 			.addStoryBoard("throttle", EngineScenes::throttle);
 		scenes.forComponents(CEBlocks.MAF_SENSOR)
 			.addStoryBoard("maf_sensor", EngineScenes::mafSensor);
-		scenes.forComponents(CEBlocks.GOVERNOR)
-			.addStoryBoard("governor", EngineScenes::governor);
 		scenes.forComponents(CEItems.TIMING_TOOL)
 			.addStoryBoard("timing_tool", EngineScenes::timingTool);
 		scenes.forComponents(CEBlocks.PRECISION_CYLINDER, CEBlocks.PRECISION_CYLINDER_HEAD, CEItems.FORGED_PISTON,
@@ -71,8 +69,6 @@ public class CEPonderPlugin implements PonderPlugin {
 			.addStoryBoard("supercharger", EngineScenes::supercharger);
 		scenes.forComponents(CEBlocks.TURBOCHARGER)
 			.addStoryBoard("supercharger", EngineScenes::supercharger);
-		scenes.forComponents(CEBlocks.TRANSMISSION)
-			.addStoryBoard("transmission", EngineScenes::transmission);
 		scenes.forComponents(CEBlocks.ROTOR_HOUSING, CEItems.ROTOR)
 			.addStoryBoard("rotor", EngineScenes::rotor);
 		scenes.forComponents(CEBlocks.SUMP, CEItems.OIL_FILTER)

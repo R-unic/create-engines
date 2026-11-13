@@ -55,12 +55,6 @@
       },
       "trigger": "create_engines:event"
     },
-    "every_gear": {
-      "conditions": {
-        "event": "every_gear"
-      },
-      "trigger": "create_engines:event"
-    },
     "flat_engine": {
       "conditions": {
         "event": "flat_engine"
@@ -82,18 +76,6 @@
     "gasoline_burned": {
       "conditions": {
         "event": "gasoline_burned"
-      },
-      "trigger": "create_engines:event"
-    },
-    "governed": {
-      "conditions": {
-        "event": "governed"
-      },
-      "trigger": "create_engines:event"
-    },
-    "governor_commanded": {
-      "conditions": {
-        "event": "governor_commanded"
       },
       "trigger": "create_engines:event"
     },
@@ -284,25 +266,16 @@
       "maf_enrich"
     ],
     [
-      "governed"
-    ],
-    [
       "fuel_tuned"
     ],
     [
       "tool_timed"
     ],
     [
-      "every_gear"
-    ],
-    [
       "charged_battery"
     ],
     [
       "flywheel_smooth"
-    ],
-    [
-      "governor_commanded"
     ],
     [
       "gasoline_burned"

@@ -1,5 +1,6 @@
 package com.createengines.content.rotor;
 
+import com.createengines.content.EngineGlow;
 import com.createengines.content.PartInstallation;
 import com.createengines.content.PartInstallation.Slot;
 import com.createengines.content.airflow.AirflowPort;
@@ -62,13 +63,14 @@ public class RotorHousingBlock extends CrankshaftBlock implements AirflowPort {
 		registerDefaultState(defaultBlockState().setValue(HAS_ROTOR, false)
 			.setValue(HAS_INJECTOR, false)
 			.setValue(FINE_INJECTOR, false)
-			.setValue(HAS_SPARK_PLUG, false));
+			.setValue(HAS_SPARK_PLUG, false)
+			.setValue(BlockStateProperties.LIT, false));
 	}
 
 	@Override
 	protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {
 		super.createBlockStateDefinition(builder);
-		builder.add(HAS_ROTOR, HAS_INJECTOR, FINE_INJECTOR, HAS_SPARK_PLUG);
+		builder.add(HAS_ROTOR, HAS_INJECTOR, FINE_INJECTOR, HAS_SPARK_PLUG, BlockStateProperties.LIT);
 	}
 
 	/** A housing is an eccentric journal with a rotor on it: it has an angle, like a throw. */
@@ -112,6 +114,8 @@ public class RotorHousingBlock extends CrankshaftBlock implements AirflowPort {
 
 	@Override
 	public void onPlace(BlockState state, Level level, BlockPos pos, BlockState oldState, boolean isMoving) {
+		if (EngineGlow.onlyGlowChanged(state, oldState))
+			return;
 		super.onPlace(state, level, pos, oldState, isMoving);
 		if (!oldState.is(this))
 			Pipes.attachNeighbours(level, pos, state);
@@ -128,6 +132,8 @@ public class RotorHousingBlock extends CrankshaftBlock implements AirflowPort {
 
 	@Override
 	public void onRemove(BlockState state, Level level, BlockPos pos, BlockState newState, boolean isMoving) {
+		if (EngineGlow.onlyGlowChanged(state, newState))
+			return;
 		PartInstallation.dropParts(state, level, pos, newState, PARTS);
 		super.onRemove(state, level, pos, newState, isMoving);
 	}

@@ -277,17 +277,6 @@ write_schematic("supercharger", (7, 6, 7), [
     (3, 4, 3, ce("camshaft"), axis("x")),
 ])
 
-write_schematic("transmission", (8, 4, 5), [
-    (0, 1, 2, "create:creative_motor", facing("east")),
-    (1, 1, 2, "create:shaft", {"axis": "x", "waterlogged": "false"}),
-    (2, 1, 2, ce("transmission"), axis("x")),
-    (3, 1, 2, "create:shaft", {"axis": "x", "waterlogged": "false"}),
-    (4, 1, 2, "create:shaft", {"axis": "x", "waterlogged": "false"}),
-    (5, 1, 2, "create:flywheel", {"axis": "x", "waterlogged": "false"}),
-    # A lever beside the transmission selects a gear by redstone strength
-    (2, 1, 3, "minecraft:lever", {"face": "floor", "facing": "north", "powered": "false"}),
-])
-
 write_schematic("sump", (6, 6, 6), [
     (1, 2, 3, ce("crankshaft"), axis("x")),
     (2, 2, 3, ce("crank_throw"), axis("x")),
@@ -361,23 +350,6 @@ write_schematic("maf_sensor", (6, 6, 6), [
     (1, 4, 3, ce("camshaft"), axis("x")),
     (3, 4, 3, ce("camshaft"), axis("x")),
     (3, 3, 2, "minecraft:redstone_lamp", {"lit": "false"}),
-])
-
-# A governor against the crankshaft, with a comparator reading it and a lamp beyond
-write_schematic("governor", (6, 6, 6), [
-    (1, 1, 3, ce("crankshaft"), axis("x")),
-    (2, 1, 3, ce("crank_throw"), axis("x")),
-    (3, 1, 3, ce("crankshaft"), axis("x")),
-    (2, 2, 3, ce("cylinder"), cylinder("up")),
-    (2, 3, 3, ce("cylinder_head"), head("up")),
-    (2, 3, 2, ce("air_intake"), facing("north")),
-    (2, 3, 4, ce("exhaust_outlet"), facing("south")),
-    (2, 4, 3, ce("cam_lobe"), axis("x")),
-    (1, 4, 3, ce("camshaft"), axis("x")),
-    (3, 4, 3, ce("camshaft"), axis("x")),
-    (3, 2, 3, ce("governor"), {}),
-    (4, 2, 3, "minecraft:comparator", {"facing": "east", "mode": "compare", "powered": "false"}),
-    (5, 2, 3, "minecraft:redstone_lamp", {"lit": "false"}),
 ])
 
 # The same four cylinders as the firing order page, for setting them with the timing tool

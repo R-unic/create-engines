@@ -7,9 +7,9 @@
       },
       "trigger": "create_engines:event"
     },
-    "maf_trim": {
+    "fuel_tuned": {
       "conditions": {
-        "event": "maf_trim"
+        "event": "fuel_tuned"
       },
       "trigger": "create_engines:event"
     },
@@ -19,15 +19,9 @@
       },
       "trigger": "create_engines:event"
     },
-    "governed": {
+    "maf_trim": {
       "conditions": {
-        "event": "governed"
-      },
-      "trigger": "create_engines:event"
-    },
-    "fuel_tuned": {
-      "conditions": {
-        "event": "fuel_tuned"
+        "event": "maf_trim"
       },
       "trigger": "create_engines:event"
     },
@@ -60,9 +54,6 @@
     ],
     [
       "maf_enrich"
-    ],
-    [
-      "governed"
     ],
     [
       "fuel_tuned"

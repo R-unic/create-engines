@@ -44,16 +44,9 @@ public enum Milestone {
 	TWIN_TURBO,
 	TWINCHARGED,
 	COOLED_CHARGE,
-	// Transmission
-	SHIFTED,
-	REVERSE,
-	EVERY_GEAR,
-	AUTO_SHIFTED,
 	// Engine management
 	MAF_TRIM,
 	MAF_ENRICH,
-	// Speed control
-	GOVERNED,
 	// Output and precision parts
 	STEAM_BEATER,
 	PRECISION_ENGINE,
@@ -71,8 +64,6 @@ public enum Milestone {
 	OILED,
 	SUMP_OILING,
 	MAF_READING,
-	GOVERNOR_ACTIVE,
-	GOVERNOR_COMMANDED,
 	PRECISION_BORE,
 	PRECISION_HEAD,
 	PRECISION_PISTON,

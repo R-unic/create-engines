@@ -2,6 +2,7 @@ package com.createengines.content.head;
 
 import org.jetbrains.annotations.Nullable;
 
+import com.createengines.content.EngineGlow;
 import com.createengines.content.PartInstallation;
 import com.createengines.content.PartInstallation.Slot;
 import com.createengines.content.airflow.AirflowPort;
@@ -30,6 +31,7 @@ import net.minecraft.world.level.block.Rotation;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.StateDefinition;
+import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.minecraft.world.level.block.state.properties.BooleanProperty;
 import net.minecraft.world.phys.BlockHitResult;
 
@@ -64,7 +66,8 @@ public class CylinderHeadBlock extends DirectionalBlock
 		registerDefaultState(defaultBlockState().setValue(FACING, Direction.UP)
 			.setValue(HAS_INJECTOR, false)
 			.setValue(FINE_INJECTOR, false)
-			.setValue(HAS_SPARK_PLUG, false));
+			.setValue(HAS_SPARK_PLUG, false)
+			.setValue(BlockStateProperties.LIT, false));
 	}
 
 	/** Whether this is the precision head. */
@@ -79,7 +82,7 @@ public class CylinderHeadBlock extends DirectionalBlock
 
 	@Override
 	protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {
-		builder.add(FACING, HAS_INJECTOR, FINE_INJECTOR, HAS_SPARK_PLUG);
+		builder.add(FACING, HAS_INJECTOR, FINE_INJECTOR, HAS_SPARK_PLUG, BlockStateProperties.LIT);
 	}
 
 	@Override
@@ -121,6 +124,8 @@ public class CylinderHeadBlock extends DirectionalBlock
 	@Override
 	protected void onPlace(BlockState state, Level level, BlockPos pos, BlockState oldState, boolean movedByPiston) {
 		super.onPlace(state, level, pos, oldState, movedByPiston);
+		if (EngineGlow.onlyGlowChanged(state, oldState))
+			return;
 		if (!oldState.is(this))
 			Pipes.attachNeighbours(level, pos, state);
 		EngineTopology.markDirty(level, pos);
@@ -130,7 +135,8 @@ public class CylinderHeadBlock extends DirectionalBlock
 	protected void onRemove(BlockState state, Level level, BlockPos pos, BlockState newState, boolean movedByPiston) {
 		PartInstallation.dropParts(state, level, pos, newState, PARTS);
 		IBE.onRemove(state, level, pos, newState);
-		EngineTopology.markDirty(level, pos);
+		if (!EngineGlow.onlyGlowChanged(state, newState))
+			EngineTopology.markDirty(level, pos);
 	}
 
 	@Override

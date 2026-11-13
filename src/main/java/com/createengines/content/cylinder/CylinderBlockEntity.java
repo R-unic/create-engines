@@ -6,6 +6,7 @@ import org.jetbrains.annotations.Nullable;
 
 import org.joml.Vector3f;
 
+import com.createengines.engine.LoadedBlocks;
 import com.createengines.config.CEClientConfig;
 import com.createengines.content.EffectRate;
 import com.createengines.content.EngineNoteSound;
@@ -99,7 +100,7 @@ public class CylinderBlockEntity extends SmartBlockEntity implements IHaveGoggle
 	/** The crank throw this cylinder's connecting rod is on, if any: a plain journal has no pin for the rod to ride. */
 	public @Nullable CrankshaftBlockEntity crankThrow() {
 		Direction bore = getBlockState().getValue(CylinderBlock.FACING);
-		if (level != null && level.getBlockEntity(worldPosition.relative(bore.getOpposite()))
+		if (level != null && LoadedBlocks.blockEntity(level, worldPosition.relative(bore.getOpposite()))
 			instanceof CrankshaftBlockEntity crank && crank.getBlockState()
 				.getBlock() instanceof CrankshaftBlock block && block.isThrow())
 			return crank;
@@ -126,7 +127,7 @@ public class CylinderBlockEntity extends SmartBlockEntity implements IHaveGoggle
 				crank == null ? null : crank.engineSummary());
 		}
 		if (current == null || current.lobe() == null
-			|| !(level.getBlockEntity(current.lobe()) instanceof CamshaftBlockEntity lobe)) {
+			|| !(LoadedBlocks.blockEntity(level, current.lobe()) instanceof CamshaftBlockEntity lobe)) {
 			lastCamCycle = Double.NaN;
 			return;
 		}
@@ -342,7 +343,7 @@ public class CylinderBlockEntity extends SmartBlockEntity implements IHaveGoggle
 					.style(current.mixture() < LEAN_MIXTURE || current.mixture() > RICH_MIXTURE ? ChatFormatting.GOLD
 						: ChatFormatting.GRAY), tooltip, 1);
 			if (!Float.isNaN(current.mixture()) && (current.mixture() < LEAN_MIXTURE || current.mixture() > RICH_MIXTURE)
-				&& level.getBlockEntity(worldPosition.relative(state.getValue(CylinderBlock.FACING))) instanceof GalleryMember head)
+				&& LoadedBlocks.blockEntity(level, worldPosition.relative(state.getValue(CylinderBlock.FACING))) instanceof GalleryMember head)
 				GoggleLines.add(CELang.translate("goggles.mixture.suggest",
 						GalleryMember.balancedMetering(head.meteringFraction(), current.mixture()))
 					.style(ChatFormatting.AQUA), tooltip, 2);

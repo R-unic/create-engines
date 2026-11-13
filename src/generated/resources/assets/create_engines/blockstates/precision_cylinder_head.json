@@ -1,209 +1,417 @@
 {
   "variants": {
-    "facing=down,fine_injector=false,injector=false,spark_plug=false": {
+    "facing=down,fine_injector=false,injector=false,lit=false,spark_plug=false": {
       "model": "create_engines:block/precision_cylinder_head/block",
       "x": 180
     },
-    "facing=down,fine_injector=false,injector=false,spark_plug=true": {
+    "facing=down,fine_injector=false,injector=false,lit=false,spark_plug=true": {
       "model": "create_engines:block/precision_cylinder_head/block_plug",
       "x": 180
     },
-    "facing=down,fine_injector=false,injector=true,spark_plug=false": {
-      "model": "create_engines:block/precision_cylinder_head/block_injector",
-      "x": 180
-    },
-    "facing=down,fine_injector=false,injector=true,spark_plug=true": {
-      "model": "create_engines:block/precision_cylinder_head/block_injector_plug",
-      "x": 180
-    },
-    "facing=down,fine_injector=true,injector=false,spark_plug=false": {
+    "facing=down,fine_injector=false,injector=false,lit=true,spark_plug=false": {
       "model": "create_engines:block/precision_cylinder_head/block",
       "x": 180
     },
-    "facing=down,fine_injector=true,injector=false,spark_plug=true": {
+    "facing=down,fine_injector=false,injector=false,lit=true,spark_plug=true": {
       "model": "create_engines:block/precision_cylinder_head/block_plug",
       "x": 180
     },
-    "facing=down,fine_injector=true,injector=true,spark_plug=false": {
+    "facing=down,fine_injector=false,injector=true,lit=false,spark_plug=false": {
       "model": "create_engines:block/precision_cylinder_head/block_injector",
       "x": 180
     },
-    "facing=down,fine_injector=true,injector=true,spark_plug=true": {
+    "facing=down,fine_injector=false,injector=true,lit=false,spark_plug=true": {
       "model": "create_engines:block/precision_cylinder_head/block_injector_plug",
       "x": 180
     },
-    "facing=east,fine_injector=false,injector=false,spark_plug=false": {
+    "facing=down,fine_injector=false,injector=true,lit=true,spark_plug=false": {
+      "model": "create_engines:block/precision_cylinder_head/block_injector",
+      "x": 180
+    },
+    "facing=down,fine_injector=false,injector=true,lit=true,spark_plug=true": {
+      "model": "create_engines:block/precision_cylinder_head/block_injector_plug",
+      "x": 180
+    },
+    "facing=down,fine_injector=true,injector=false,lit=false,spark_plug=false": {
+      "model": "create_engines:block/precision_cylinder_head/block",
+      "x": 180
+    },
+    "facing=down,fine_injector=true,injector=false,lit=false,spark_plug=true": {
+      "model": "create_engines:block/precision_cylinder_head/block_plug",
+      "x": 180
+    },
+    "facing=down,fine_injector=true,injector=false,lit=true,spark_plug=false": {
+      "model": "create_engines:block/precision_cylinder_head/block",
+      "x": 180
+    },
+    "facing=down,fine_injector=true,injector=false,lit=true,spark_plug=true": {
+      "model": "create_engines:block/precision_cylinder_head/block_plug",
+      "x": 180
+    },
+    "facing=down,fine_injector=true,injector=true,lit=false,spark_plug=false": {
+      "model": "create_engines:block/precision_cylinder_head/block_injector",
+      "x": 180
+    },
+    "facing=down,fine_injector=true,injector=true,lit=false,spark_plug=true": {
+      "model": "create_engines:block/precision_cylinder_head/block_injector_plug",
+      "x": 180
+    },
+    "facing=down,fine_injector=true,injector=true,lit=true,spark_plug=false": {
+      "model": "create_engines:block/precision_cylinder_head/block_injector",
+      "x": 180
+    },
+    "facing=down,fine_injector=true,injector=true,lit=true,spark_plug=true": {
+      "model": "create_engines:block/precision_cylinder_head/block_injector_plug",
+      "x": 180
+    },
+    "facing=east,fine_injector=false,injector=false,lit=false,spark_plug=false": {
       "model": "create_engines:block/precision_cylinder_head/block",
       "x": 90,
       "y": 90
     },
-    "facing=east,fine_injector=false,injector=false,spark_plug=true": {
+    "facing=east,fine_injector=false,injector=false,lit=false,spark_plug=true": {
       "model": "create_engines:block/precision_cylinder_head/block_plug",
       "x": 90,
       "y": 90
     },
-    "facing=east,fine_injector=false,injector=true,spark_plug=false": {
-      "model": "create_engines:block/precision_cylinder_head/block_injector",
-      "x": 90,
-      "y": 90
-    },
-    "facing=east,fine_injector=false,injector=true,spark_plug=true": {
-      "model": "create_engines:block/precision_cylinder_head/block_injector_plug",
-      "x": 90,
-      "y": 90
-    },
-    "facing=east,fine_injector=true,injector=false,spark_plug=false": {
+    "facing=east,fine_injector=false,injector=false,lit=true,spark_plug=false": {
       "model": "create_engines:block/precision_cylinder_head/block",
       "x": 90,
       "y": 90
     },
-    "facing=east,fine_injector=true,injector=false,spark_plug=true": {
+    "facing=east,fine_injector=false,injector=false,lit=true,spark_plug=true": {
       "model": "create_engines:block/precision_cylinder_head/block_plug",
       "x": 90,
       "y": 90
     },
-    "facing=east,fine_injector=true,injector=true,spark_plug=false": {
+    "facing=east,fine_injector=false,injector=true,lit=false,spark_plug=false": {
       "model": "create_engines:block/precision_cylinder_head/block_injector",
       "x": 90,
       "y": 90
     },
-    "facing=east,fine_injector=true,injector=true,spark_plug=true": {
+    "facing=east,fine_injector=false,injector=true,lit=false,spark_plug=true": {
       "model": "create_engines:block/precision_cylinder_head/block_injector_plug",
       "x": 90,
       "y": 90
     },
-    "facing=north,fine_injector=false,injector=false,spark_plug=false": {
+    "facing=east,fine_injector=false,injector=true,lit=true,spark_plug=false": {
+      "model": "create_engines:block/precision_cylinder_head/block_injector",
+      "x": 90,
+      "y": 90
+    },
+    "facing=east,fine_injector=false,injector=true,lit=true,spark_plug=true": {
+      "model": "create_engines:block/precision_cylinder_head/block_injector_plug",
+      "x": 90,
+      "y": 90
+    },
+    "facing=east,fine_injector=true,injector=false,lit=false,spark_plug=false": {
+      "model": "create_engines:block/precision_cylinder_head/block",
+      "x": 90,
+      "y": 90
+    },
+    "facing=east,fine_injector=true,injector=false,lit=false,spark_plug=true": {
+      "model": "create_engines:block/precision_cylinder_head/block_plug",
+      "x": 90,
+      "y": 90
+    },
+    "facing=east,fine_injector=true,injector=false,lit=true,spark_plug=false": {
+      "model": "create_engines:block/precision_cylinder_head/block",
+      "x": 90,
+      "y": 90
+    },
+    "facing=east,fine_injector=true,injector=false,lit=true,spark_plug=true": {
+      "model": "create_engines:block/precision_cylinder_head/block_plug",
+      "x": 90,
+      "y": 90
+    },
+    "facing=east,fine_injector=true,injector=true,lit=false,spark_plug=false": {
+      "model": "create_engines:block/precision_cylinder_head/block_injector",
+      "x": 90,
+      "y": 90
+    },
+    "facing=east,fine_injector=true,injector=true,lit=false,spark_plug=true": {
+      "model": "create_engines:block/precision_cylinder_head/block_injector_plug",
+      "x": 90,
+      "y": 90
+    },
+    "facing=east,fine_injector=true,injector=true,lit=true,spark_plug=false": {
+      "model": "create_engines:block/precision_cylinder_head/block_injector",
+      "x": 90,
+      "y": 90
+    },
+    "facing=east,fine_injector=true,injector=true,lit=true,spark_plug=true": {
+      "model": "create_engines:block/precision_cylinder_head/block_injector_plug",
+      "x": 90,
+      "y": 90
+    },
+    "facing=north,fine_injector=false,injector=false,lit=false,spark_plug=false": {
       "model": "create_engines:block/precision_cylinder_head/block",
       "x": 90
     },
-    "facing=north,fine_injector=false,injector=false,spark_plug=true": {
+    "facing=north,fine_injector=false,injector=false,lit=false,spark_plug=true": {
       "model": "create_engines:block/precision_cylinder_head/block_plug",
       "x": 90
     },
-    "facing=north,fine_injector=false,injector=true,spark_plug=false": {
-      "model": "create_engines:block/precision_cylinder_head/block_injector",
-      "x": 90
-    },
-    "facing=north,fine_injector=false,injector=true,spark_plug=true": {
-      "model": "create_engines:block/precision_cylinder_head/block_injector_plug",
-      "x": 90
-    },
-    "facing=north,fine_injector=true,injector=false,spark_plug=false": {
+    "facing=north,fine_injector=false,injector=false,lit=true,spark_plug=false": {
       "model": "create_engines:block/precision_cylinder_head/block",
       "x": 90
     },
-    "facing=north,fine_injector=true,injector=false,spark_plug=true": {
+    "facing=north,fine_injector=false,injector=false,lit=true,spark_plug=true": {
       "model": "create_engines:block/precision_cylinder_head/block_plug",
       "x": 90
     },
-    "facing=north,fine_injector=true,injector=true,spark_plug=false": {
+    "facing=north,fine_injector=false,injector=true,lit=false,spark_plug=false": {
       "model": "create_engines:block/precision_cylinder_head/block_injector",
       "x": 90
     },
-    "facing=north,fine_injector=true,injector=true,spark_plug=true": {
+    "facing=north,fine_injector=false,injector=true,lit=false,spark_plug=true": {
       "model": "create_engines:block/precision_cylinder_head/block_injector_plug",
       "x": 90
     },
-    "facing=south,fine_injector=false,injector=false,spark_plug=false": {
+    "facing=north,fine_injector=false,injector=true,lit=true,spark_plug=false": {
+      "model": "create_engines:block/precision_cylinder_head/block_injector",
+      "x": 90
+    },
+    "facing=north,fine_injector=false,injector=true,lit=true,spark_plug=true": {
+      "model": "create_engines:block/precision_cylinder_head/block_injector_plug",
+      "x": 90
+    },
+    "facing=north,fine_injector=true,injector=false,lit=false,spark_plug=false": {
+      "model": "create_engines:block/precision_cylinder_head/block",
+      "x": 90
+    },
+    "facing=north,fine_injector=true,injector=false,lit=false,spark_plug=true": {
+      "model": "create_engines:block/precision_cylinder_head/block_plug",
+      "x": 90
+    },
+    "facing=north,fine_injector=true,injector=false,lit=true,spark_plug=false": {
+      "model": "create_engines:block/precision_cylinder_head/block",
+      "x": 90
+    },
+    "facing=north,fine_injector=true,injector=false,lit=true,spark_plug=true": {
+      "model": "create_engines:block/precision_cylinder_head/block_plug",
+      "x": 90
+    },
+    "facing=north,fine_injector=true,injector=true,lit=false,spark_plug=false": {
+      "model": "create_engines:block/precision_cylinder_head/block_injector",
+      "x": 90
+    },
+    "facing=north,fine_injector=true,injector=true,lit=false,spark_plug=true": {
+      "model": "create_engines:block/precision_cylinder_head/block_injector_plug",
+      "x": 90
+    },
+    "facing=north,fine_injector=true,injector=true,lit=true,spark_plug=false": {
+      "model": "create_engines:block/precision_cylinder_head/block_injector",
+      "x": 90
+    },
+    "facing=north,fine_injector=true,injector=true,lit=true,spark_plug=true": {
+      "model": "create_engines:block/precision_cylinder_head/block_injector_plug",
+      "x": 90
+    },
+    "facing=south,fine_injector=false,injector=false,lit=false,spark_plug=false": {
       "model": "create_engines:block/precision_cylinder_head/block",
       "x": 90,
       "y": 180
     },
-    "facing=south,fine_injector=false,injector=false,spark_plug=true": {
+    "facing=south,fine_injector=false,injector=false,lit=false,spark_plug=true": {
       "model": "create_engines:block/precision_cylinder_head/block_plug",
       "x": 90,
       "y": 180
     },
-    "facing=south,fine_injector=false,injector=true,spark_plug=false": {
-      "model": "create_engines:block/precision_cylinder_head/block_injector",
-      "x": 90,
-      "y": 180
-    },
-    "facing=south,fine_injector=false,injector=true,spark_plug=true": {
-      "model": "create_engines:block/precision_cylinder_head/block_injector_plug",
-      "x": 90,
-      "y": 180
-    },
-    "facing=south,fine_injector=true,injector=false,spark_plug=false": {
+    "facing=south,fine_injector=false,injector=false,lit=true,spark_plug=false": {
       "model": "create_engines:block/precision_cylinder_head/block",
       "x": 90,
       "y": 180
     },
-    "facing=south,fine_injector=true,injector=false,spark_plug=true": {
+    "facing=south,fine_injector=false,injector=false,lit=true,spark_plug=true": {
       "model": "create_engines:block/precision_cylinder_head/block_plug",
       "x": 90,
       "y": 180
     },
-    "facing=south,fine_injector=true,injector=true,spark_plug=false": {
+    "facing=south,fine_injector=false,injector=true,lit=false,spark_plug=false": {
       "model": "create_engines:block/precision_cylinder_head/block_injector",
       "x": 90,
       "y": 180
     },
-    "facing=south,fine_injector=true,injector=true,spark_plug=true": {
+    "facing=south,fine_injector=false,injector=true,lit=false,spark_plug=true": {
       "model": "create_engines:block/precision_cylinder_head/block_injector_plug",
       "x": 90,
       "y": 180
     },
-    "facing=up,fine_injector=false,injector=false,spark_plug=false": {
+    "facing=south,fine_injector=false,injector=true,lit=true,spark_plug=false": {
+      "model": "create_engines:block/precision_cylinder_head/block_injector",
+      "x": 90,
+      "y": 180
+    },
+    "facing=south,fine_injector=false,injector=true,lit=true,spark_plug=true": {
+      "model": "create_engines:block/precision_cylinder_head/block_injector_plug",
+      "x": 90,
+      "y": 180
+    },
+    "facing=south,fine_injector=true,injector=false,lit=false,spark_plug=false": {
+      "model": "create_engines:block/precision_cylinder_head/block",
+      "x": 90,
+      "y": 180
+    },
+    "facing=south,fine_injector=true,injector=false,lit=false,spark_plug=true": {
+      "model": "create_engines:block/precision_cylinder_head/block_plug",
+      "x": 90,
+      "y": 180
+    },
+    "facing=south,fine_injector=true,injector=false,lit=true,spark_plug=false": {
+      "model": "create_engines:block/precision_cylinder_head/block",
+      "x": 90,
+      "y": 180
+    },
+    "facing=south,fine_injector=true,injector=false,lit=true,spark_plug=true": {
+      "model": "create_engines:block/precision_cylinder_head/block_plug",
+      "x": 90,
+      "y": 180
+    },
+    "facing=south,fine_injector=true,injector=true,lit=false,spark_plug=false": {
+      "model": "create_engines:block/precision_cylinder_head/block_injector",
+      "x": 90,
+      "y": 180
+    },
+    "facing=south,fine_injector=true,injector=true,lit=false,spark_plug=true": {
+      "model": "create_engines:block/precision_cylinder_head/block_injector_plug",
+      "x": 90,
+      "y": 180
+    },
+    "facing=south,fine_injector=true,injector=true,lit=true,spark_plug=false": {
+      "model": "create_engines:block/precision_cylinder_head/block_injector",
+      "x": 90,
+      "y": 180
+    },
+    "facing=south,fine_injector=true,injector=true,lit=true,spark_plug=true": {
+      "model": "create_engines:block/precision_cylinder_head/block_injector_plug",
+      "x": 90,
+      "y": 180
+    },
+    "facing=up,fine_injector=false,injector=false,lit=false,spark_plug=false": {
       "model": "create_engines:block/precision_cylinder_head/block"
     },
-    "facing=up,fine_injector=false,injector=false,spark_plug=true": {
+    "facing=up,fine_injector=false,injector=false,lit=false,spark_plug=true": {
       "model": "create_engines:block/precision_cylinder_head/block_plug"
     },
-    "facing=up,fine_injector=false,injector=true,spark_plug=false": {
-      "model": "create_engines:block/precision_cylinder_head/block_injector"
-    },
-    "facing=up,fine_injector=false,injector=true,spark_plug=true": {
-      "model": "create_engines:block/precision_cylinder_head/block_injector_plug"
-    },
-    "facing=up,fine_injector=true,injector=false,spark_plug=false": {
+    "facing=up,fine_injector=false,injector=false,lit=true,spark_plug=false": {
       "model": "create_engines:block/precision_cylinder_head/block"
     },
-    "facing=up,fine_injector=true,injector=false,spark_plug=true": {
+    "facing=up,fine_injector=false,injector=false,lit=true,spark_plug=true": {
       "model": "create_engines:block/precision_cylinder_head/block_plug"
     },
-    "facing=up,fine_injector=true,injector=true,spark_plug=false": {
+    "facing=up,fine_injector=false,injector=true,lit=false,spark_plug=false": {
       "model": "create_engines:block/precision_cylinder_head/block_injector"
     },
-    "facing=up,fine_injector=true,injector=true,spark_plug=true": {
+    "facing=up,fine_injector=false,injector=true,lit=false,spark_plug=true": {
       "model": "create_engines:block/precision_cylinder_head/block_injector_plug"
     },
-    "facing=west,fine_injector=false,injector=false,spark_plug=false": {
+    "facing=up,fine_injector=false,injector=true,lit=true,spark_plug=false": {
+      "model": "create_engines:block/precision_cylinder_head/block_injector"
+    },
+    "facing=up,fine_injector=false,injector=true,lit=true,spark_plug=true": {
+      "model": "create_engines:block/precision_cylinder_head/block_injector_plug"
+    },
+    "facing=up,fine_injector=true,injector=false,lit=false,spark_plug=false": {
+      "model": "create_engines:block/precision_cylinder_head/block"
+    },
+    "facing=up,fine_injector=true,injector=false,lit=false,spark_plug=true": {
+      "model": "create_engines:block/precision_cylinder_head/block_plug"
+    },
+    "facing=up,fine_injector=true,injector=false,lit=true,spark_plug=false": {
+      "model": "create_engines:block/precision_cylinder_head/block"
+    },
+    "facing=up,fine_injector=true,injector=false,lit=true,spark_plug=true": {
+      "model": "create_engines:block/precision_cylinder_head/block_plug"
+    },
+    "facing=up,fine_injector=true,injector=true,lit=false,spark_plug=false": {
+      "model": "create_engines:block/precision_cylinder_head/block_injector"
+    },
+    "facing=up,fine_injector=true,injector=true,lit=false,spark_plug=true": {
+      "model": "create_engines:block/precision_cylinder_head/block_injector_plug"
+    },
+    "facing=up,fine_injector=true,injector=true,lit=true,spark_plug=false": {
+      "model": "create_engines:block/precision_cylinder_head/block_injector"
+    },
+    "facing=up,fine_injector=true,injector=true,lit=true,spark_plug=true": {
+      "model": "create_engines:block/precision_cylinder_head/block_injector_plug"
+    },
+    "facing=west,fine_injector=false,injector=false,lit=false,spark_plug=false": {
       "model": "create_engines:block/precision_cylinder_head/block",
       "x": 90,
       "y": 270
     },
-    "facing=west,fine_injector=false,injector=false,spark_plug=true": {
+    "facing=west,fine_injector=false,injector=false,lit=false,spark_plug=true": {
       "model": "create_engines:block/precision_cylinder_head/block_plug",
       "x": 90,
       "y": 270
     },
-    "facing=west,fine_injector=false,injector=true,spark_plug=false": {
+    "facing=west,fine_injector=false,injector=false,lit=true,spark_plug=false": {
+      "model": "create_engines:block/precision_cylinder_head/block",
+      "x": 90,
+      "y": 270
+    },
+    "facing=west,fine_injector=false,injector=false,lit=true,spark_plug=true": {
+      "model": "create_engines:block/precision_cylinder_head/block_plug",
+      "x": 90,
+      "y": 270
+    },
+    "facing=west,fine_injector=false,injector=true,lit=false,spark_plug=false": {
       "model": "create_engines:block/precision_cylinder_head/block_injector",
       "x": 90,
       "y": 270
     },
-    "facing=west,fine_injector=false,injector=true,spark_plug=true": {
+    "facing=west,fine_injector=false,injector=true,lit=false,spark_plug=true": {
       "model": "create_engines:block/precision_cylinder_head/block_injector_plug",
       "x": 90,
       "y": 270
     },
-    "facing=west,fine_injector=true,injector=false,spark_plug=false": {
-      "model": "create_engines:block/precision_cylinder_head/block",
-      "x": 90,
-      "y": 270
-    },
-    "facing=west,fine_injector=true,injector=false,spark_plug=true": {
-      "model": "create_engines:block/precision_cylinder_head/block_plug",
-      "x": 90,
-      "y": 270
-    },
-    "facing=west,fine_injector=true,injector=true,spark_plug=false": {
+    "facing=west,fine_injector=false,injector=true,lit=true,spark_plug=false": {
       "model": "create_engines:block/precision_cylinder_head/block_injector",
       "x": 90,
       "y": 270
     },
-    "facing=west,fine_injector=true,injector=true,spark_plug=true": {
+    "facing=west,fine_injector=false,injector=true,lit=true,spark_plug=true": {
+      "model": "create_engines:block/precision_cylinder_head/block_injector_plug",
+      "x": 90,
+      "y": 270
+    },
+    "facing=west,fine_injector=true,injector=false,lit=false,spark_plug=false": {
+      "model": "create_engines:block/precision_cylinder_head/block",
+      "x": 90,
+      "y": 270
+    },
+    "facing=west,fine_injector=true,injector=false,lit=false,spark_plug=true": {
+      "model": "create_engines:block/precision_cylinder_head/block_plug",
+      "x": 90,
+      "y": 270
+    },
+    "facing=west,fine_injector=true,injector=false,lit=true,spark_plug=false": {
+      "model": "create_engines:block/precision_cylinder_head/block",
+      "x": 90,
+      "y": 270
+    },
+    "facing=west,fine_injector=true,injector=false,lit=true,spark_plug=true": {
+      "model": "create_engines:block/precision_cylinder_head/block_plug",
+      "x": 90,
+      "y": 270
+    },
+    "facing=west,fine_injector=true,injector=true,lit=false,spark_plug=false": {
+      "model": "create_engines:block/precision_cylinder_head/block_injector",
+      "x": 90,
+      "y": 270
+    },
+    "facing=west,fine_injector=true,injector=true,lit=false,spark_plug=true": {
+      "model": "create_engines:block/precision_cylinder_head/block_injector_plug",
+      "x": 90,
+      "y": 270
+    },
+    "facing=west,fine_injector=true,injector=true,lit=true,spark_plug=false": {
+      "model": "create_engines:block/precision_cylinder_head/block_injector",
+      "x": 90,
+      "y": 270
+    },
+    "facing=west,fine_injector=true,injector=true,lit=true,spark_plug=true": {
       "model": "create_engines:block/precision_cylinder_head/block_injector_plug",
       "x": 90,
       "y": 270

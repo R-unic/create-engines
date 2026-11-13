@@ -4,6 +4,7 @@ import java.util.List;
 
 import org.jetbrains.annotations.Nullable;
 
+import com.createengines.engine.LoadedBlocks;
 import com.createengines.content.RenderRotation;
 import com.createengines.content.crankshaft.CrankshaftBlockEntity;
 import com.createengines.content.crankshaft.SideValueBox;
@@ -69,7 +70,7 @@ public class CamshaftBlockEntity extends KineticBlockEntity implements EngineMem
 	public double rotation(float renderTime) {
 		float speed = getTheoreticalSpeed();
 		if (phaseLocked && primaryPos != null && level != null
-			&& level.getBlockEntity(primaryPos) instanceof CrankshaftBlockEntity crank) {
+			&& LoadedBlocks.blockEntity(level, primaryPos) instanceof CrankshaftBlockEntity crank) {
 			float crankSpeed = crank.getTheoreticalSpeed();
 			if (crankSpeed != 0 && speed != 0)
 				return rotation.follow(renderTime, crank.rotation(renderTime) * Math.signum(speed * crankSpeed) / 2);

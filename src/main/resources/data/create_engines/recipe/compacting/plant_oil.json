@@ -12,11 +12,17 @@
     },
     {
       "tag": "c:seeds"
+    },
+    {
+      "tag": "c:seeds"
+    },
+    {
+      "tag": "c:seeds"
     }
   ],
   "results": [
     {
-      "amount": 50,
+      "amount": 100,
       "id": "create_engines:plant_oil"
     }
   ]

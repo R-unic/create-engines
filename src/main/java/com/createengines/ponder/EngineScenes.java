@@ -1013,138 +1013,6 @@ public final class EngineScenes {
 		scene.markAsFinished();
 	}
 
-	public static void governor(SceneBuilder builder, SceneBuildingUtil util) {
-		CreateSceneBuilder scene = new CreateSceneBuilder(builder);
-		scene.title("governor", "Holding an Engine at a Speed");
-		scene.configureBasePlate(0, 0, 6);
-		scene.world()
-			.showSection(util.select()
-				.layer(0), Direction.UP);
-
-		Selection crank = util.select()
-			.fromTo(1, 1, 3, 3, 1, 3);
-		Selection cam = util.select()
-			.fromTo(1, 4, 3, 3, 4, 3);
-		Selection engine = util.select()
-			.fromTo(2, 2, 3, 2, 3, 3)
-			.add(cam)
-			.add(util.select()
-				.fromTo(2, 3, 2, 2, 3, 2))
-			.add(util.select()
-				.position(2, 3, 4));
-		Selection governor = util.select()
-			.position(3, 2, 3);
-		Selection lamp = util.select()
-			.fromTo(4, 2, 3, 5, 2, 3);
-		BlockPos block = util.grid()
-			.at(3, 2, 3);
-
-		setThrow(scene, util.select()
-			.position(2, 1, 3), 0);
-		setLobe(scene, util.select()
-			.position(2, 4, 3), LOBE_FOR_UPRIGHT_CYLINDER);
-		scene.world()
-			.showSection(crank, Direction.DOWN);
-		scene.world()
-			.showSection(engine, Direction.DOWN);
-		scene.world()
-			.setKineticSpeed(crank, 64);
-		scene.world()
-			.setKineticSpeed(cam, 32);
-		scene.idle(20);
-
-		scene.overlay()
-			.showText(110)
-			.attachKeyFrame()
-			.colored(PonderPalette.RED)
-			.text("An engine's speed depends on its load: let go of it and it races, load it and it lugs down. Everything it drives runs at whatever pace that happens to be.")
-			.pointAt(util.vector()
-				.topOf(2, 3, 3))
-			.placeNearTarget();
-		scene.world()
-			.setKineticSpeed(crank, 112);
-		scene.world()
-			.setKineticSpeed(cam, 56);
-		scene.idle(120);
-
-		scene.world()
-			.setKineticSpeed(crank, 64);
-		scene.world()
-			.setKineticSpeed(cam, 32);
-		scene.world()
-			.showSection(governor, Direction.DOWN);
-		scene.idle(15);
-		scene.overlay()
-			.showText(120)
-			.attachKeyFrame()
-			.text("A Governor set against a crankshaft block or a cylinder head moves the fuel rack to hold the crank at a set speed: it eases the fuel off as the engine speeds up and opens it as it slows.")
-			.pointAt(util.vector()
-				.topOf(block))
-			.placeNearTarget();
-		scene.idle(130);
-
-		scene.overlay()
-			.showControls(util.vector()
-				.blockSurface(block, Direction.NORTH), Pointing.RIGHT, 40)
-			.rightClick();
-		scene.idle(10);
-		scene.overlay()
-			.showText(110)
-			.attachKeyFrame()
-			.colored(PonderPalette.BLUE)
-			.text("Its Governed Speed is set with the value panel, in steps of 5 RPM, up to 1000. A spark engine is governed on its throttle instead, because a charge that is too lean will not light.")
-			.pointAt(util.vector()
-				.blockSurface(block, Direction.NORTH))
-			.placeNearTarget();
-		scene.idle(120);
-
-		scene.overlay()
-			.showText(110)
-			.colored(PonderPalette.GREEN)
-			.text("It holds the speed with the torque in hand, so the engine's rating is untouched. If the load is more than the engine can carry at that speed, the rack stays wide open and the engine slows.")
-			.pointAt(util.vector()
-				.topOf(block))
-			.placeNearTarget();
-		scene.idle(120);
-
-		scene.world()
-			.showSection(lamp, Direction.DOWN);
-		scene.idle(15);
-		scene.world()
-			.modifyBlock(util.grid()
-				.at(5, 2, 3), state -> state.setValue(BlockStateProperties.LIT, true), false);
-		scene.effects()
-			.indicateRedstone(util.grid()
-				.at(5, 2, 3));
-		scene.overlay()
-			.showText(110)
-			.attachKeyFrame()
-			.text("A comparator reads how far open the rack is held, 15 wide open and 0 shut, so it works as a load meter. The Governor never powers its neighbours directly.")
-			.pointAt(util.vector()
-				.topOf(4, 2, 3))
-			.placeNearTarget();
-		scene.idle(120);
-
-		scene.overlay()
-			.showText(130)
-			.attachKeyFrame()
-			.colored(PonderPalette.GREEN)
-			.text("Power the Governor with redstone and it holds only that share of its setting: strength 15 is all of it, 8 about half, never below 20 RPM. A circuit can command an engine's speed.")
-			.pointAt(util.vector()
-				.topOf(block))
-			.placeNearTarget();
-		scene.idle(140);
-
-		scene.overlay()
-			.showText(110)
-			.text("It also eases the fuel off whenever the engine would race, so an unloaded governed engine idles on a fraction of the fuel a racing one burns.")
-			.pointAt(util.vector()
-				.topOf(2, 3, 3))
-			.placeNearTarget();
-		scene.idle(120);
-		scene.markAsFinished();
-	}
-
 	public static void timingTool(SceneBuilder builder, SceneBuildingUtil util) {
 		CreateSceneBuilder scene = new CreateSceneBuilder(builder);
 		scene.title("timing_tool", "Setting a Firing Order");
@@ -2089,137 +1957,6 @@ public final class EngineScenes {
 		scene.markAsFinished();
 	}
 
-	public static void transmission(SceneBuilder builder, SceneBuildingUtil util) {
-		CreateSceneBuilder scene = new CreateSceneBuilder(builder);
-		scene.title("transmission", "Gearing with a Transmission");
-		scene.configureBasePlate(0, 0, 8);
-		scene.world()
-			.showSection(util.select()
-				.layer(0), Direction.UP);
-
-		Selection input = util.select()
-			.fromTo(0, 1, 2, 1, 1, 2);
-		Selection box = util.select()
-			.position(2, 1, 2);
-		Selection output = util.select()
-			.fromTo(3, 1, 2, 5, 1, 2);
-		Selection lever = util.select()
-			.position(2, 1, 3);
-		BlockPos boxPos = util.grid()
-			.at(2, 1, 2);
-
-		scene.world()
-			.showSection(input, Direction.DOWN);
-		scene.world()
-			.setKineticSpeed(input, 64);
-		scene.idle(10);
-		scene.world()
-			.showSection(box, Direction.DOWN);
-		scene.world()
-			.showSection(output, Direction.DOWN);
-		scene.world()
-			.setKineticSpeed(box, 64);
-		scene.world()
-			.setKineticSpeed(output, 5);
-		scene.idle(15);
-		scene.overlay()
-			.showText(110)
-			.attachKeyFrame()
-			.text("A Transmission is a gearbox with selectable gears. Rotation goes in at one end of its shaft and comes out of the other at the speed of the gear it is in.")
-			.pointAt(util.vector()
-				.topOf(boxPos))
-			.placeNearTarget();
-		scene.idle(120);
-
-		scene.overlay()
-			.showText(120)
-			.attachKeyFrame()
-			.colored(PonderPalette.GREEN)
-			.text("In first gear the output turns twelve times slower than the input. A load behind it asks the engine for a twelfth of the torque it would direct, so an engine can carry a far heavier load, slowly.")
-			.pointAt(util.vector()
-				.topOf(4, 1, 2))
-			.placeNearTarget();
-		scene.idle(130);
-
-		scene.overlay()
-			.showControls(util.vector()
-				.blockSurface(boxPos, Direction.NORTH), Pointing.RIGHT, 40)
-			.rightClick();
-		scene.idle(10);
-		scene.world()
-			.setKineticSpeed(output, 28);
-		scene.overlay()
-			.showText(110)
-			.attachKeyFrame()
-			.colored(PonderPalette.BLUE)
-			.text("The value panel picks the gear, from first to thirteenth, each about a quarter faster than the one below. Ninth turns the output at a little over two fifths of the input...")
-			.pointAt(util.vector()
-				.blockSurface(boxPos, Direction.NORTH))
-			.placeNearTarget();
-		scene.idle(120);
-
-		scene.world()
-			.setKineticSpeed(output, 64);
-		scene.overlay()
-			.showText(90)
-			.text("...and thirteenth drives it direct. The fastest output, but the load asks the crank for its full torque.")
-			.pointAt(util.vector()
-				.topOf(4, 1, 2))
-			.placeNearTarget();
-		scene.idle(100);
-
-		scene.world()
-			.setKineticSpeed(output, 0);
-		scene.overlay()
-			.showText(90)
-			.text("Neutral lets nothing through, so an engine can start with no load on it.")
-			.pointAt(util.vector()
-				.topOf(4, 1, 2))
-			.placeNearTarget();
-		scene.idle(100);
-
-		scene.world()
-			.setKineticSpeed(output, -21);
-		scene.overlay()
-			.showText(90)
-			.text("Reverse turns the output slowly the other way.")
-			.pointAt(util.vector()
-				.topOf(4, 1, 2))
-			.placeNearTarget();
-		scene.idle(100);
-
-		scene.world()
-			.showSection(lever, Direction.DOWN);
-		scene.idle(10);
-		scene.world()
-			.setKineticSpeed(output, 5);
-		scene.world()
-			.toggleRedstonePower(lever);
-		scene.effects()
-			.indicateRedstone(util.grid()
-				.at(2, 1, 3));
-		scene.overlay()
-			.showText(120)
-			.attachKeyFrame()
-			.colored(PonderPalette.RED)
-			.text("A redstone signal picks the gear instead of the panel: strength 1 is neutral, 2 to 14 are first to thirteenth, and 15 is reverse. Shifting briefly cuts the output off.")
-			.pointAt(util.vector()
-				.topOf(2, 1, 3))
-			.placeNearTarget();
-		scene.idle(130);
-
-		scene.overlay()
-			.showText(130)
-			.attachKeyFrame()
-			.colored(PonderPalette.GREEN)
-			.text("Past reverse on the panel is Auto. The Transmission watches the engine behind it and holds the tallest gear it can pull without overloading: it climbs a gear at a time while there is room, and drops straight to a gear that fits when the load gets too heavy.")
-			.pointAt(util.vector()
-				.blockSurface(boxPos, Direction.NORTH))
-			.placeNearTarget();
-		scene.idle(140);
-		scene.markAsFinished();
-	}
-
 	public static void sump(SceneBuilder builder, SceneBuildingUtil util) {
 		CreateSceneBuilder scene = new CreateSceneBuilder(builder);
 		scene.title("sump", "An Oil Sump");
@@ -2787,7 +2524,7 @@ public final class EngineScenes {
 		scene.overlay()
 			.showText(100)
 			.colored(PonderPalette.GREEN)
-			.text("It gives a redstone signal that rises as the engine's speed climbs to the speed of its peak power: a shift light for a transmission.")
+			.text("It gives a redstone signal that rises as the engine's speed climbs to the speed of its peak power: a shift light.")
 			.pointAt(util.vector()
 				.blockSurface(dynoPos, Direction.EAST))
 			.placeNearTarget();
@@ -3061,7 +2798,7 @@ public final class EngineScenes {
 			.showText(120)
 			.attachKeyFrame()
 			.colored(PonderPalette.RED)
-			.text("From about seven it counts as superheated, enough to crack diesel into gasoline without a blaze burner.")
+			.text("From about seven it counts as superheated, the hottest heat a basin recipe can ask for.")
 			.pointAt(util.vector()
 				.topOf(exchanger))
 			.placeNearTarget();
@@ -3103,7 +2840,7 @@ public final class EngineScenes {
 		scene.overlay()
 			.showText(130)
 			.attachKeyFrame()
-			.text("Seeds pressed in a Basin make Plant Oil, four seeds to 50 mB. Sugar cane, beetroot or potatoes pressed with water make Sugar Mash.")
+			.text("Seeds or saplings pressed in a Basin make Plant Oil, six seeds to 100 mB or two saplings to 50 mB. Sugar cane, beetroot or potatoes pressed with water make Sugar Mash.")
 			.pointAt(util.vector()
 				.topOf(1, 2, 3))
 			.placeNearTarget();
@@ -3116,7 +2853,7 @@ public final class EngineScenes {
 			.showText(140)
 			.attachKeyFrame()
 			.colored(PonderPalette.GREEN)
-			.text("Over a blaze burner, or an Exhaust Heat Exchanger, a heated Basin cooks Plant Oil with coal into Diesel, and Sugar Mash with a brown mushroom into Ethanol.")
+			.text("Over a blaze burner, or an Exhaust Heat Exchanger, a heated Basin cooks Plant Oil with coal into Diesel, and Sugar Mash with an apple or any mushroom into Ethanol.")
 			.pointAt(util.vector()
 				.topOf(3, 2, 3))
 			.placeNearTarget();
@@ -3137,7 +2874,7 @@ public final class EngineScenes {
 			.showText(120)
 			.attachKeyFrame()
 			.colored(PonderPalette.RED)
-			.text("Superheated, Diesel with blaze powder cracks into Gasoline.")
+			.text("Heated too, Diesel with blaze powder cracks into Gasoline, at no more than the cost of making Diesel.")
 			.pointAt(util.vector()
 				.topOf(5, 2, 3))
 			.placeNearTarget();

@@ -1,209 +1,417 @@
 {
   "variants": {
-    "axis=x,fine_injector=false,injector=false,rotor=false,spark_plug=false": {
+    "axis=x,fine_injector=false,injector=false,lit=false,rotor=false,spark_plug=false": {
       "model": "create_engines:block/rotor_housing/block",
       "x": 90,
       "y": 90
     },
-    "axis=x,fine_injector=false,injector=false,rotor=false,spark_plug=true": {
+    "axis=x,fine_injector=false,injector=false,lit=false,rotor=false,spark_plug=true": {
       "model": "create_engines:block/rotor_housing/block_plug",
       "x": 90,
       "y": 90
     },
-    "axis=x,fine_injector=false,injector=false,rotor=true,spark_plug=false": {
+    "axis=x,fine_injector=false,injector=false,lit=false,rotor=true,spark_plug=false": {
       "model": "create_engines:block/rotor_housing/block",
       "x": 90,
       "y": 90
     },
-    "axis=x,fine_injector=false,injector=false,rotor=true,spark_plug=true": {
+    "axis=x,fine_injector=false,injector=false,lit=false,rotor=true,spark_plug=true": {
       "model": "create_engines:block/rotor_housing/block_plug",
       "x": 90,
       "y": 90
     },
-    "axis=x,fine_injector=false,injector=true,rotor=false,spark_plug=false": {
-      "model": "create_engines:block/rotor_housing/block_injector",
-      "x": 90,
-      "y": 90
-    },
-    "axis=x,fine_injector=false,injector=true,rotor=false,spark_plug=true": {
-      "model": "create_engines:block/rotor_housing/block_injector_plug",
-      "x": 90,
-      "y": 90
-    },
-    "axis=x,fine_injector=false,injector=true,rotor=true,spark_plug=false": {
-      "model": "create_engines:block/rotor_housing/block_injector",
-      "x": 90,
-      "y": 90
-    },
-    "axis=x,fine_injector=false,injector=true,rotor=true,spark_plug=true": {
-      "model": "create_engines:block/rotor_housing/block_injector_plug",
-      "x": 90,
-      "y": 90
-    },
-    "axis=x,fine_injector=true,injector=false,rotor=false,spark_plug=false": {
+    "axis=x,fine_injector=false,injector=false,lit=true,rotor=false,spark_plug=false": {
       "model": "create_engines:block/rotor_housing/block",
       "x": 90,
       "y": 90
     },
-    "axis=x,fine_injector=true,injector=false,rotor=false,spark_plug=true": {
+    "axis=x,fine_injector=false,injector=false,lit=true,rotor=false,spark_plug=true": {
       "model": "create_engines:block/rotor_housing/block_plug",
       "x": 90,
       "y": 90
     },
-    "axis=x,fine_injector=true,injector=false,rotor=true,spark_plug=false": {
+    "axis=x,fine_injector=false,injector=false,lit=true,rotor=true,spark_plug=false": {
       "model": "create_engines:block/rotor_housing/block",
       "x": 90,
       "y": 90
     },
-    "axis=x,fine_injector=true,injector=false,rotor=true,spark_plug=true": {
+    "axis=x,fine_injector=false,injector=false,lit=true,rotor=true,spark_plug=true": {
       "model": "create_engines:block/rotor_housing/block_plug",
       "x": 90,
       "y": 90
     },
-    "axis=x,fine_injector=true,injector=true,rotor=false,spark_plug=false": {
+    "axis=x,fine_injector=false,injector=true,lit=false,rotor=false,spark_plug=false": {
       "model": "create_engines:block/rotor_housing/block_injector",
       "x": 90,
       "y": 90
     },
-    "axis=x,fine_injector=true,injector=true,rotor=false,spark_plug=true": {
+    "axis=x,fine_injector=false,injector=true,lit=false,rotor=false,spark_plug=true": {
       "model": "create_engines:block/rotor_housing/block_injector_plug",
       "x": 90,
       "y": 90
     },
-    "axis=x,fine_injector=true,injector=true,rotor=true,spark_plug=false": {
+    "axis=x,fine_injector=false,injector=true,lit=false,rotor=true,spark_plug=false": {
       "model": "create_engines:block/rotor_housing/block_injector",
       "x": 90,
       "y": 90
     },
-    "axis=x,fine_injector=true,injector=true,rotor=true,spark_plug=true": {
+    "axis=x,fine_injector=false,injector=true,lit=false,rotor=true,spark_plug=true": {
       "model": "create_engines:block/rotor_housing/block_injector_plug",
       "x": 90,
       "y": 90
     },
-    "axis=y,fine_injector=false,injector=false,rotor=false,spark_plug=false": {
+    "axis=x,fine_injector=false,injector=true,lit=true,rotor=false,spark_plug=false": {
+      "model": "create_engines:block/rotor_housing/block_injector",
+      "x": 90,
+      "y": 90
+    },
+    "axis=x,fine_injector=false,injector=true,lit=true,rotor=false,spark_plug=true": {
+      "model": "create_engines:block/rotor_housing/block_injector_plug",
+      "x": 90,
+      "y": 90
+    },
+    "axis=x,fine_injector=false,injector=true,lit=true,rotor=true,spark_plug=false": {
+      "model": "create_engines:block/rotor_housing/block_injector",
+      "x": 90,
+      "y": 90
+    },
+    "axis=x,fine_injector=false,injector=true,lit=true,rotor=true,spark_plug=true": {
+      "model": "create_engines:block/rotor_housing/block_injector_plug",
+      "x": 90,
+      "y": 90
+    },
+    "axis=x,fine_injector=true,injector=false,lit=false,rotor=false,spark_plug=false": {
+      "model": "create_engines:block/rotor_housing/block",
+      "x": 90,
+      "y": 90
+    },
+    "axis=x,fine_injector=true,injector=false,lit=false,rotor=false,spark_plug=true": {
+      "model": "create_engines:block/rotor_housing/block_plug",
+      "x": 90,
+      "y": 90
+    },
+    "axis=x,fine_injector=true,injector=false,lit=false,rotor=true,spark_plug=false": {
+      "model": "create_engines:block/rotor_housing/block",
+      "x": 90,
+      "y": 90
+    },
+    "axis=x,fine_injector=true,injector=false,lit=false,rotor=true,spark_plug=true": {
+      "model": "create_engines:block/rotor_housing/block_plug",
+      "x": 90,
+      "y": 90
+    },
+    "axis=x,fine_injector=true,injector=false,lit=true,rotor=false,spark_plug=false": {
+      "model": "create_engines:block/rotor_housing/block",
+      "x": 90,
+      "y": 90
+    },
+    "axis=x,fine_injector=true,injector=false,lit=true,rotor=false,spark_plug=true": {
+      "model": "create_engines:block/rotor_housing/block_plug",
+      "x": 90,
+      "y": 90
+    },
+    "axis=x,fine_injector=true,injector=false,lit=true,rotor=true,spark_plug=false": {
+      "model": "create_engines:block/rotor_housing/block",
+      "x": 90,
+      "y": 90
+    },
+    "axis=x,fine_injector=true,injector=false,lit=true,rotor=true,spark_plug=true": {
+      "model": "create_engines:block/rotor_housing/block_plug",
+      "x": 90,
+      "y": 90
+    },
+    "axis=x,fine_injector=true,injector=true,lit=false,rotor=false,spark_plug=false": {
+      "model": "create_engines:block/rotor_housing/block_injector",
+      "x": 90,
+      "y": 90
+    },
+    "axis=x,fine_injector=true,injector=true,lit=false,rotor=false,spark_plug=true": {
+      "model": "create_engines:block/rotor_housing/block_injector_plug",
+      "x": 90,
+      "y": 90
+    },
+    "axis=x,fine_injector=true,injector=true,lit=false,rotor=true,spark_plug=false": {
+      "model": "create_engines:block/rotor_housing/block_injector",
+      "x": 90,
+      "y": 90
+    },
+    "axis=x,fine_injector=true,injector=true,lit=false,rotor=true,spark_plug=true": {
+      "model": "create_engines:block/rotor_housing/block_injector_plug",
+      "x": 90,
+      "y": 90
+    },
+    "axis=x,fine_injector=true,injector=true,lit=true,rotor=false,spark_plug=false": {
+      "model": "create_engines:block/rotor_housing/block_injector",
+      "x": 90,
+      "y": 90
+    },
+    "axis=x,fine_injector=true,injector=true,lit=true,rotor=false,spark_plug=true": {
+      "model": "create_engines:block/rotor_housing/block_injector_plug",
+      "x": 90,
+      "y": 90
+    },
+    "axis=x,fine_injector=true,injector=true,lit=true,rotor=true,spark_plug=false": {
+      "model": "create_engines:block/rotor_housing/block_injector",
+      "x": 90,
+      "y": 90
+    },
+    "axis=x,fine_injector=true,injector=true,lit=true,rotor=true,spark_plug=true": {
+      "model": "create_engines:block/rotor_housing/block_injector_plug",
+      "x": 90,
+      "y": 90
+    },
+    "axis=y,fine_injector=false,injector=false,lit=false,rotor=false,spark_plug=false": {
       "model": "create_engines:block/rotor_housing/block"
     },
-    "axis=y,fine_injector=false,injector=false,rotor=false,spark_plug=true": {
+    "axis=y,fine_injector=false,injector=false,lit=false,rotor=false,spark_plug=true": {
       "model": "create_engines:block/rotor_housing/block_plug"
     },
-    "axis=y,fine_injector=false,injector=false,rotor=true,spark_plug=false": {
+    "axis=y,fine_injector=false,injector=false,lit=false,rotor=true,spark_plug=false": {
       "model": "create_engines:block/rotor_housing/block"
     },
-    "axis=y,fine_injector=false,injector=false,rotor=true,spark_plug=true": {
+    "axis=y,fine_injector=false,injector=false,lit=false,rotor=true,spark_plug=true": {
       "model": "create_engines:block/rotor_housing/block_plug"
     },
-    "axis=y,fine_injector=false,injector=true,rotor=false,spark_plug=false": {
-      "model": "create_engines:block/rotor_housing/block_injector"
-    },
-    "axis=y,fine_injector=false,injector=true,rotor=false,spark_plug=true": {
-      "model": "create_engines:block/rotor_housing/block_injector_plug"
-    },
-    "axis=y,fine_injector=false,injector=true,rotor=true,spark_plug=false": {
-      "model": "create_engines:block/rotor_housing/block_injector"
-    },
-    "axis=y,fine_injector=false,injector=true,rotor=true,spark_plug=true": {
-      "model": "create_engines:block/rotor_housing/block_injector_plug"
-    },
-    "axis=y,fine_injector=true,injector=false,rotor=false,spark_plug=false": {
+    "axis=y,fine_injector=false,injector=false,lit=true,rotor=false,spark_plug=false": {
       "model": "create_engines:block/rotor_housing/block"
     },
-    "axis=y,fine_injector=true,injector=false,rotor=false,spark_plug=true": {
+    "axis=y,fine_injector=false,injector=false,lit=true,rotor=false,spark_plug=true": {
       "model": "create_engines:block/rotor_housing/block_plug"
     },
-    "axis=y,fine_injector=true,injector=false,rotor=true,spark_plug=false": {
+    "axis=y,fine_injector=false,injector=false,lit=true,rotor=true,spark_plug=false": {
       "model": "create_engines:block/rotor_housing/block"
     },
-    "axis=y,fine_injector=true,injector=false,rotor=true,spark_plug=true": {
+    "axis=y,fine_injector=false,injector=false,lit=true,rotor=true,spark_plug=true": {
       "model": "create_engines:block/rotor_housing/block_plug"
     },
-    "axis=y,fine_injector=true,injector=true,rotor=false,spark_plug=false": {
+    "axis=y,fine_injector=false,injector=true,lit=false,rotor=false,spark_plug=false": {
       "model": "create_engines:block/rotor_housing/block_injector"
     },
-    "axis=y,fine_injector=true,injector=true,rotor=false,spark_plug=true": {
+    "axis=y,fine_injector=false,injector=true,lit=false,rotor=false,spark_plug=true": {
       "model": "create_engines:block/rotor_housing/block_injector_plug"
     },
-    "axis=y,fine_injector=true,injector=true,rotor=true,spark_plug=false": {
+    "axis=y,fine_injector=false,injector=true,lit=false,rotor=true,spark_plug=false": {
       "model": "create_engines:block/rotor_housing/block_injector"
     },
-    "axis=y,fine_injector=true,injector=true,rotor=true,spark_plug=true": {
+    "axis=y,fine_injector=false,injector=true,lit=false,rotor=true,spark_plug=true": {
       "model": "create_engines:block/rotor_housing/block_injector_plug"
     },
-    "axis=z,fine_injector=false,injector=false,rotor=false,spark_plug=false": {
+    "axis=y,fine_injector=false,injector=true,lit=true,rotor=false,spark_plug=false": {
+      "model": "create_engines:block/rotor_housing/block_injector"
+    },
+    "axis=y,fine_injector=false,injector=true,lit=true,rotor=false,spark_plug=true": {
+      "model": "create_engines:block/rotor_housing/block_injector_plug"
+    },
+    "axis=y,fine_injector=false,injector=true,lit=true,rotor=true,spark_plug=false": {
+      "model": "create_engines:block/rotor_housing/block_injector"
+    },
+    "axis=y,fine_injector=false,injector=true,lit=true,rotor=true,spark_plug=true": {
+      "model": "create_engines:block/rotor_housing/block_injector_plug"
+    },
+    "axis=y,fine_injector=true,injector=false,lit=false,rotor=false,spark_plug=false": {
+      "model": "create_engines:block/rotor_housing/block"
+    },
+    "axis=y,fine_injector=true,injector=false,lit=false,rotor=false,spark_plug=true": {
+      "model": "create_engines:block/rotor_housing/block_plug"
+    },
+    "axis=y,fine_injector=true,injector=false,lit=false,rotor=true,spark_plug=false": {
+      "model": "create_engines:block/rotor_housing/block"
+    },
+    "axis=y,fine_injector=true,injector=false,lit=false,rotor=true,spark_plug=true": {
+      "model": "create_engines:block/rotor_housing/block_plug"
+    },
+    "axis=y,fine_injector=true,injector=false,lit=true,rotor=false,spark_plug=false": {
+      "model": "create_engines:block/rotor_housing/block"
+    },
+    "axis=y,fine_injector=true,injector=false,lit=true,rotor=false,spark_plug=true": {
+      "model": "create_engines:block/rotor_housing/block_plug"
+    },
+    "axis=y,fine_injector=true,injector=false,lit=true,rotor=true,spark_plug=false": {
+      "model": "create_engines:block/rotor_housing/block"
+    },
+    "axis=y,fine_injector=true,injector=false,lit=true,rotor=true,spark_plug=true": {
+      "model": "create_engines:block/rotor_housing/block_plug"
+    },
+    "axis=y,fine_injector=true,injector=true,lit=false,rotor=false,spark_plug=false": {
+      "model": "create_engines:block/rotor_housing/block_injector"
+    },
+    "axis=y,fine_injector=true,injector=true,lit=false,rotor=false,spark_plug=true": {
+      "model": "create_engines:block/rotor_housing/block_injector_plug"
+    },
+    "axis=y,fine_injector=true,injector=true,lit=false,rotor=true,spark_plug=false": {
+      "model": "create_engines:block/rotor_housing/block_injector"
+    },
+    "axis=y,fine_injector=true,injector=true,lit=false,rotor=true,spark_plug=true": {
+      "model": "create_engines:block/rotor_housing/block_injector_plug"
+    },
+    "axis=y,fine_injector=true,injector=true,lit=true,rotor=false,spark_plug=false": {
+      "model": "create_engines:block/rotor_housing/block_injector"
+    },
+    "axis=y,fine_injector=true,injector=true,lit=true,rotor=false,spark_plug=true": {
+      "model": "create_engines:block/rotor_housing/block_injector_plug"
+    },
+    "axis=y,fine_injector=true,injector=true,lit=true,rotor=true,spark_plug=false": {
+      "model": "create_engines:block/rotor_housing/block_injector"
+    },
+    "axis=y,fine_injector=true,injector=true,lit=true,rotor=true,spark_plug=true": {
+      "model": "create_engines:block/rotor_housing/block_injector_plug"
+    },
+    "axis=z,fine_injector=false,injector=false,lit=false,rotor=false,spark_plug=false": {
       "model": "create_engines:block/rotor_housing/block",
       "x": 90,
       "y": 180
     },
-    "axis=z,fine_injector=false,injector=false,rotor=false,spark_plug=true": {
+    "axis=z,fine_injector=false,injector=false,lit=false,rotor=false,spark_plug=true": {
       "model": "create_engines:block/rotor_housing/block_plug",
       "x": 90,
       "y": 180
     },
-    "axis=z,fine_injector=false,injector=false,rotor=true,spark_plug=false": {
+    "axis=z,fine_injector=false,injector=false,lit=false,rotor=true,spark_plug=false": {
       "model": "create_engines:block/rotor_housing/block",
       "x": 90,
       "y": 180
     },
-    "axis=z,fine_injector=false,injector=false,rotor=true,spark_plug=true": {
+    "axis=z,fine_injector=false,injector=false,lit=false,rotor=true,spark_plug=true": {
       "model": "create_engines:block/rotor_housing/block_plug",
       "x": 90,
       "y": 180
     },
-    "axis=z,fine_injector=false,injector=true,rotor=false,spark_plug=false": {
+    "axis=z,fine_injector=false,injector=false,lit=true,rotor=false,spark_plug=false": {
+      "model": "create_engines:block/rotor_housing/block",
+      "x": 90,
+      "y": 180
+    },
+    "axis=z,fine_injector=false,injector=false,lit=true,rotor=false,spark_plug=true": {
+      "model": "create_engines:block/rotor_housing/block_plug",
+      "x": 90,
+      "y": 180
+    },
+    "axis=z,fine_injector=false,injector=false,lit=true,rotor=true,spark_plug=false": {
+      "model": "create_engines:block/rotor_housing/block",
+      "x": 90,
+      "y": 180
+    },
+    "axis=z,fine_injector=false,injector=false,lit=true,rotor=true,spark_plug=true": {
+      "model": "create_engines:block/rotor_housing/block_plug",
+      "x": 90,
+      "y": 180
+    },
+    "axis=z,fine_injector=false,injector=true,lit=false,rotor=false,spark_plug=false": {
       "model": "create_engines:block/rotor_housing/block_injector",
       "x": 90,
       "y": 180
     },
-    "axis=z,fine_injector=false,injector=true,rotor=false,spark_plug=true": {
+    "axis=z,fine_injector=false,injector=true,lit=false,rotor=false,spark_plug=true": {
       "model": "create_engines:block/rotor_housing/block_injector_plug",
       "x": 90,
       "y": 180
     },
-    "axis=z,fine_injector=false,injector=true,rotor=true,spark_plug=false": {
+    "axis=z,fine_injector=false,injector=true,lit=false,rotor=true,spark_plug=false": {
       "model": "create_engines:block/rotor_housing/block_injector",
       "x": 90,
       "y": 180
     },
-    "axis=z,fine_injector=false,injector=true,rotor=true,spark_plug=true": {
+    "axis=z,fine_injector=false,injector=true,lit=false,rotor=true,spark_plug=true": {
       "model": "create_engines:block/rotor_housing/block_injector_plug",
       "x": 90,
       "y": 180
     },
-    "axis=z,fine_injector=true,injector=false,rotor=false,spark_plug=false": {
-      "model": "create_engines:block/rotor_housing/block",
-      "x": 90,
-      "y": 180
-    },
-    "axis=z,fine_injector=true,injector=false,rotor=false,spark_plug=true": {
-      "model": "create_engines:block/rotor_housing/block_plug",
-      "x": 90,
-      "y": 180
-    },
-    "axis=z,fine_injector=true,injector=false,rotor=true,spark_plug=false": {
-      "model": "create_engines:block/rotor_housing/block",
-      "x": 90,
-      "y": 180
-    },
-    "axis=z,fine_injector=true,injector=false,rotor=true,spark_plug=true": {
-      "model": "create_engines:block/rotor_housing/block_plug",
-      "x": 90,
-      "y": 180
-    },
-    "axis=z,fine_injector=true,injector=true,rotor=false,spark_plug=false": {
+    "axis=z,fine_injector=false,injector=true,lit=true,rotor=false,spark_plug=false": {
       "model": "create_engines:block/rotor_housing/block_injector",
       "x": 90,
       "y": 180
     },
-    "axis=z,fine_injector=true,injector=true,rotor=false,spark_plug=true": {
+    "axis=z,fine_injector=false,injector=true,lit=true,rotor=false,spark_plug=true": {
       "model": "create_engines:block/rotor_housing/block_injector_plug",
       "x": 90,
       "y": 180
     },
-    "axis=z,fine_injector=true,injector=true,rotor=true,spark_plug=false": {
+    "axis=z,fine_injector=false,injector=true,lit=true,rotor=true,spark_plug=false": {
       "model": "create_engines:block/rotor_housing/block_injector",
       "x": 90,
       "y": 180
     },
-    "axis=z,fine_injector=true,injector=true,rotor=true,spark_plug=true": {
+    "axis=z,fine_injector=false,injector=true,lit=true,rotor=true,spark_plug=true": {
+      "model": "create_engines:block/rotor_housing/block_injector_plug",
+      "x": 90,
+      "y": 180
+    },
+    "axis=z,fine_injector=true,injector=false,lit=false,rotor=false,spark_plug=false": {
+      "model": "create_engines:block/rotor_housing/block",
+      "x": 90,
+      "y": 180
+    },
+    "axis=z,fine_injector=true,injector=false,lit=false,rotor=false,spark_plug=true": {
+      "model": "create_engines:block/rotor_housing/block_plug",
+      "x": 90,
+      "y": 180
+    },
+    "axis=z,fine_injector=true,injector=false,lit=false,rotor=true,spark_plug=false": {
+      "model": "create_engines:block/rotor_housing/block",
+      "x": 90,
+      "y": 180
+    },
+    "axis=z,fine_injector=true,injector=false,lit=false,rotor=true,spark_plug=true": {
+      "model": "create_engines:block/rotor_housing/block_plug",
+      "x": 90,
+      "y": 180
+    },
+    "axis=z,fine_injector=true,injector=false,lit=true,rotor=false,spark_plug=false": {
+      "model": "create_engines:block/rotor_housing/block",
+      "x": 90,
+      "y": 180
+    },
+    "axis=z,fine_injector=true,injector=false,lit=true,rotor=false,spark_plug=true": {
+      "model": "create_engines:block/rotor_housing/block_plug",
+      "x": 90,
+      "y": 180
+    },
+    "axis=z,fine_injector=true,injector=false,lit=true,rotor=true,spark_plug=false": {
+      "model": "create_engines:block/rotor_housing/block",
+      "x": 90,
+      "y": 180
+    },
+    "axis=z,fine_injector=true,injector=false,lit=true,rotor=true,spark_plug=true": {
+      "model": "create_engines:block/rotor_housing/block_plug",
+      "x": 90,
+      "y": 180
+    },
+    "axis=z,fine_injector=true,injector=true,lit=false,rotor=false,spark_plug=false": {
+      "model": "create_engines:block/rotor_housing/block_injector",
+      "x": 90,
+      "y": 180
+    },
+    "axis=z,fine_injector=true,injector=true,lit=false,rotor=false,spark_plug=true": {
+      "model": "create_engines:block/rotor_housing/block_injector_plug",
+      "x": 90,
+      "y": 180
+    },
+    "axis=z,fine_injector=true,injector=true,lit=false,rotor=true,spark_plug=false": {
+      "model": "create_engines:block/rotor_housing/block_injector",
+      "x": 90,
+      "y": 180
+    },
+    "axis=z,fine_injector=true,injector=true,lit=false,rotor=true,spark_plug=true": {
+      "model": "create_engines:block/rotor_housing/block_injector_plug",
+      "x": 90,
+      "y": 180
+    },
+    "axis=z,fine_injector=true,injector=true,lit=true,rotor=false,spark_plug=false": {
+      "model": "create_engines:block/rotor_housing/block_injector",
+      "x": 90,
+      "y": 180
+    },
+    "axis=z,fine_injector=true,injector=true,lit=true,rotor=false,spark_plug=true": {
+      "model": "create_engines:block/rotor_housing/block_injector_plug",
+      "x": 90,
+      "y": 180
+    },
+    "axis=z,fine_injector=true,injector=true,lit=true,rotor=true,spark_plug=false": {
+      "model": "create_engines:block/rotor_housing/block_injector",
+      "x": 90,
+      "y": 180
+    },
+    "axis=z,fine_injector=true,injector=true,lit=true,rotor=true,spark_plug=true": {
       "model": "create_engines:block/rotor_housing/block_injector_plug",
       "x": 90,
       "y": 180

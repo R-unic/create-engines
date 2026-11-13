@@ -1,12 +1,6 @@
 {
-  "parent": "create_engines:transmission",
+  "parent": "create_engines:flywheel",
   "criteria": {
-    "every_gear": {
-      "conditions": {
-        "event": "every_gear"
-      },
-      "trigger": "create_engines:event"
-    },
     "charged_battery": {
       "conditions": {
         "event": "charged_battery"
@@ -18,12 +12,6 @@
         "event": "flywheel_smooth"
       },
       "trigger": "create_engines:event"
-    },
-    "governor_commanded": {
-      "conditions": {
-        "event": "governor_commanded"
-      },
-      "trigger": "create_engines:event"
     }
   },
   "display": {
@@ -33,7 +21,7 @@
     "frame": "challenge",
     "icon": {
       "count": 1,
-      "id": "create_engines:transmission"
+      "id": "create_engines:cast_flywheel"
     },
     "title": {
       "translate": "advancement.create_engines.full_driveline"
@@ -41,16 +29,10 @@
   },
   "requirements": [
     [
-      "every_gear"
-    ],
-    [
       "charged_battery"
     ],
     [
       "flywheel_smooth"
-    ],
-    [
-      "governor_commanded"
     ]
   ],
   "sends_telemetry_event": true

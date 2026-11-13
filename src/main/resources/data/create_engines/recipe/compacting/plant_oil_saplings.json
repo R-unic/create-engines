@@ -1,0 +1,17 @@
+{
+  "type": "create:compacting",
+  "ingredients": [
+    {
+      "tag": "minecraft:saplings"
+    },
+    {
+      "tag": "minecraft:saplings"
+    }
+  ],
+  "results": [
+    {
+      "amount": 50,
+      "id": "create_engines:plant_oil"
+    }
+  ]
+}

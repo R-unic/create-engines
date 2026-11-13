@@ -6,6 +6,7 @@ import java.util.Set;
 
 import org.jetbrains.annotations.Nullable;
 
+import com.createengines.engine.LoadedBlocks;
 import com.createengines.content.GoggleLines;
 import com.createengines.content.crankshaft.CrankshaftBlockEntity;
 import com.createengines.engine.EngineController;
@@ -172,12 +173,12 @@ public class DynoBlockEntity extends SmartBlockEntity implements IHaveGoggleInfo
 			Set<BlockPos> seeds = EngineScanner.crankSeeds(level, worldPosition.relative(face));
 			if (seeds.isEmpty())
 				continue;
-			if (!(level.getBlockEntity(seeds.iterator()
+			if (!(LoadedBlocks.blockEntity(level, seeds.iterator()
 				.next()) instanceof CrankshaftBlockEntity crank))
 				continue;
 			EngineController controller = crank.controller();
 			BlockPos primary = crank.primaryPos();
-			if (controller == null && primary != null && level.getBlockEntity(primary) instanceof CrankshaftBlockEntity main)
+			if (controller == null && primary != null && LoadedBlocks.blockEntity(level, primary) instanceof CrankshaftBlockEntity main)
 				controller = main.controller();
 			if (controller == null)
 				continue;

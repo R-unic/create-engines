@@ -738,26 +738,6 @@ def intercooler():
     write_item("intercooler/item", "intercooler/block")
 
 
-def transmission():
-    """A split-shaft gearbox: a casing round the axis, with the shaft halves drawn by the renderer in the openings.
-    Stepped bands on the faces show the gear train and a small selector plate shows it is a gearbox."""
-    textures = {"casing": CASING, "band": BRASS, "cover": IRON, "dial": DARK, "bolt": BRASS, "particle": CASING}
-    elements = [
-        box((2, 2, 2), (14, 14, 14), "casing"),
-        box((1, 3, 1), (15, 5, 15), "cover"),
-        box((1, 11, 1), (15, 13, 15), "cover"),
-        box((4, 5, 1.6), (12, 11, 2), "dial"),
-        box((4, 5, 14), (12, 11, 14.4), "dial"),
-        box((1.6, 5, 4), (2, 11, 12), "dial"),
-        box((14, 5, 4), (14.4, 11, 12), "dial"),
-        box((6, 6.5, 14.4), (10, 9.5, 15), "band"),
-    ]
-    for x in (2, 13):
-        for z in (2, 13):
-            elements.append(box((x, 14, z), (x + 1, 14.6, z + 1), "bolt"))
-    write("transmission/block", textures, elements)
-
-
 def sump():
     """An oil pan: a shallow sheet-metal tub under a bolted flange, with a drain plug, dipstick and filler."""
     textures = {"pan": DARK, "flange": IRON, "rib": IRON_BLOCK, "bolt": BRASS, "cap": COPPER, "particle": DARK}
@@ -785,7 +765,7 @@ def sump():
            box((5, 9, 5), (11, 10, 11), "boss"), box((6.5, 10, 6.5), (9.5, 11.5, 9.5), "boss")])
 
 
-# --- precision parts and the governor ------------------------------------------------------------------------------
+# --- precision parts ------------------------------------------------------------------------------
 
 def precision_cylinder():
     """A liner-bored cylinder in brass: the same four posts and rims, with a bright machined sleeve showing between."""
@@ -846,34 +826,6 @@ def precision_injector_item():
           [box((6, 0, 6), (10, 9, 10), "body"), box((5, 9, 5), (11, 12, 11), "cap"),
            box((7, -3, 7), (9, 0, 9), "nozzle"), box((4, 10, 7), (6, 11.5, 9), "rail"),
            box((6.5, -3.6, 6.5), (9.5, -3, 9.5), "nozzle")])
-
-
-def governor():
-    """A flyball governor in a brass casing: the weights on their arms stand out above the lid, spindle between."""
-    textures = {"plate": IRON, "body": BRASS_CASING, "lid": BRASS, "spindle": IRON_BLOCK, "ball": RED, "arm": IRON,
-                "vent": IRON_BLOCK, "bolt": BRASS, "particle": BRASS_CASING}
-    elements = [
-        box((1, 0, 1), (15, 2.5, 15), "plate"),
-        box((2, 2.5, 2), (14, 9, 14), "body"),
-        box((3, 9, 3), (13, 10, 13), "lid"),
-        # The spindle with a collar at the top, and a weight on a pair of arms each side
-        box((7.2, 10, 7.2), (8.8, 15, 8.8), "spindle"),
-        box((6.4, 14.2, 6.4), (9.6, 15.6, 9.6), "lid"),
-        box((3.2, 11.6, 7.4), (7.2, 12.2, 8.6), "arm"),
-        box((8.8, 11.6, 7.4), (12.8, 12.2, 8.6), "arm"),
-        box((1.9, 10.4, 6.9), (4.1, 12.6, 9.1), "ball"),
-        box((11.9, 10.4, 6.9), (14.1, 12.6, 9.1), "ball"),
-        # A vent plate on each side
-        box((4, 4, 1.6), (12, 7.5, 2), "vent"),
-        box((4, 4, 14), (12, 7.5, 14.4), "vent"),
-        box((1.6, 4, 4), (2, 7.5, 12), "vent"),
-        box((14, 4, 4), (14.4, 7.5, 12), "vent"),
-    ]
-    for x in (1.6, 13.4):
-        for z in (1.6, 13.4):
-            elements.append(box((x, 2.5, z), (x + 1, 3.1, z + 1), "bolt"))
-    write("governor/block", textures, elements)
-    write_item("governor/item", "governor/block")
 
 
 def timing_tool():
@@ -993,7 +945,6 @@ def main():
     precision_head()
     forged_piston()
     precision_injector_item()
-    governor()
     timing_tool()
     bank_builder()
     crankshaft()
@@ -1018,7 +969,6 @@ def main():
     dyno()
     black_box()
     intercooler()
-    transmission()
     sump()
 
 

@@ -1,7 +1,0 @@
-{
-  "variants": {
-    "": {
-      "model": "create_engines:block/governor/block"
-    }
-  }
-}

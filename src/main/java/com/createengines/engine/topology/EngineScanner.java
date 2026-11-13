@@ -31,7 +31,6 @@ import com.createengines.content.crankshaft.CrankshaftBlockEntity;
 import com.createengines.content.flywheel.CastFlywheelBlock;
 import com.createengines.content.cylinder.CylinderBlock;
 import com.createengines.content.head.CylinderHeadBlock;
-import com.createengines.content.governor.GovernorBlock;
 import com.createengines.content.rotor.RotorHousingBlock;
 import com.createengines.content.starter.StarterBlock;
 import com.createengines.content.sump.SumpBlock;
@@ -75,7 +74,6 @@ public final class EngineScanner {
 	private final List<CamLine> camLines = new ArrayList<>();
 	private final Map<BlockPos, Integer> camIndex = new HashMap<>();
 	private final Set<BlockPos> sumps = new LinkedHashSet<>();
-	private final Set<BlockPos> governors = new LinkedHashSet<>();
 	private boolean incomplete;
 	/** A plain shaft sits between blocks of a crank line. */
 	private boolean brokenCrank;
@@ -259,7 +257,7 @@ public final class EngineScanner {
 		Line first = lines.getFirst();
 		return new EngineLayout(first.start, first.axis, List.copyOf(segments), List.copyOf(cylinders),
 			List.copyOf(ports), List.copyOf(camLines), List.copyOf(starters), List.copyOf(batteries),
-			List.copyOf(alternators), List.copyOf(sumps), List.copyOf(governors), List.copyOf(heads),
+			List.copyOf(alternators), List.copyOf(sumps), List.copyOf(heads),
 			turbos(), inlines(true), inlines(false), flywheelInertia, lines.size(), Set.copyOf(members), incomplete, brokenCrank);
 	}
 
@@ -301,8 +299,7 @@ public final class EngineScanner {
 			Block block = state(neighbour).getBlock();
 			if (block instanceof BatteryBlock && batteries.add(neighbour.immutable())
 				|| block instanceof AlternatorBlock && alternators.add(neighbour.immutable())
-				|| block instanceof SumpBlock && sumps.add(neighbour.immutable())
-				|| block instanceof GovernorBlock && governors.add(neighbour.immutable()))
+				|| block instanceof SumpBlock && sumps.add(neighbour.immutable()))
 				members.add(neighbour.immutable());
 		}
 	}
@@ -769,8 +766,7 @@ public final class EngineScanner {
 					cursor = cursor.relative(direction);
 				}
 			}
-		} else if (block instanceof BatteryBlock || block instanceof AlternatorBlock || block instanceof SumpBlock
-			|| block instanceof GovernorBlock) {
+		} else if (block instanceof BatteryBlock || block instanceof AlternatorBlock || block instanceof SumpBlock) {
 			for (Direction direction : Direction.values())
 				addHeadSeed(level, pos.relative(direction), level.getBlockState(pos.relative(direction)), seeds);
 		} else if (block instanceof ManifoldBlock || block instanceof PortOpeningBlock

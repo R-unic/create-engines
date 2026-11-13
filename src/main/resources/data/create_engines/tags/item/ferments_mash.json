@@ -1,0 +1,9 @@
+{
+  "replace": false,
+  "values": [
+    "minecraft:apple",
+    "minecraft:brown_mushroom",
+    "minecraft:red_mushroom",
+    { "id": "#c:mushrooms", "required": false }
+  ]
+}

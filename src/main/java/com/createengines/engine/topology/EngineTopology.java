@@ -10,6 +10,7 @@ import java.util.Set;
 
 import org.jetbrains.annotations.Nullable;
 
+import com.createengines.content.EngineGlow;
 import com.createengines.content.crankshaft.CrankshaftBlockEntity;
 import com.createengines.engine.EngineController;
 
@@ -70,8 +71,11 @@ public final class EngineTopology {
 	}
 
 	private void tick(ServerLevel level) {
-		if (++ticks % REVALIDATE_INTERVAL == 0)
-			dirty.addAll(layouts.keySet());
+		// Each engine is revalidated once per interval, on its own tick, so many engines never rescan in the same tick
+		int phase = ++ticks % REVALIDATE_INTERVAL;
+		for (BlockPos primary : layouts.keySet())
+			if (Math.floorMod(primary.hashCode(), REVALIDATE_INTERVAL) == phase)
+				dirty.add(primary);
 		if (dirty.isEmpty())
 			return;
 
@@ -144,10 +148,13 @@ public final class EngineTopology {
 				&& level.getBlockEntity(old.getKey()) instanceof CrankshaftBlockEntity be)
 				be.releaseEngine();
 			for (BlockPos member : old.getValue()
-				.members())
-				if (!enginesByMember.containsKey(member) && level.isLoaded(member)
-					&& level.getBlockEntity(member) instanceof EngineMember engineMember)
+				.members()) {
+				if (enginesByMember.containsKey(member))
+					continue;
+				EngineGlow.set(level, member, false);
+				if (level.isLoaded(member) && level.getBlockEntity(member) instanceof EngineMember engineMember)
 					engineMember.detachFromEngine();
+			}
 		}
 
 		for (EngineLayout layout : rebuilt.values())

@@ -2,6 +2,7 @@ package com.createengines.registry;
 
 import static com.createengines.CreateEngines.REGISTRATE;
 
+import com.createengines.content.EngineGlow;
 import com.createengines.content.airflow.HeatExchangerBlock;
 import com.createengines.content.airflow.MafSensorBlock;
 import com.createengines.content.airflow.ManifoldBlock;
@@ -18,14 +19,12 @@ import com.createengines.content.crankshaft.CrankshaftBlock;
 import com.createengines.content.cylinder.CylinderBlock;
 import com.createengines.content.dyno.DynoBlock;
 import com.createengines.content.flywheel.CastFlywheelBlock;
-import com.createengines.content.governor.GovernorBlock;
 import com.createengines.content.head.CylinderHeadBlock;
 import com.createengines.content.intercooler.IntercoolerBlock;
 import com.createengines.content.rotor.RotorHousingBlock;
 import com.createengines.content.starter.StarterBlock;
 import com.createengines.content.sump.SumpBlock;
 import com.createengines.content.supercharger.SuperchargerBlock;
-import com.createengines.content.transmission.TransmissionBlock;
 import com.createengines.content.turbo.TurbochargerBlock;
 import com.createengines.content.turbo.VariableTurbochargerBlock;
 import com.simibubi.create.content.processing.burner.BlazeBurnerBlock;
@@ -88,7 +87,8 @@ public final class CEBlocks {
 		REGISTRATE.block("rotor_housing", RotorHousingBlock::new)
 			.initialProperties(SharedProperties::softMetal)
 			.properties(p -> part(p)
-				.mapColor(MapColor.COLOR_ORANGE))
+				.mapColor(MapColor.COLOR_ORANGE)
+				.lightLevel(EngineGlow::light))
 			.transform(TagGen.pickaxeOnly())
 			.blockstate((c, p) -> BlockStateGen.axisBlock(c, p, s -> {
 				boolean injector = s.getValue(RotorHousingBlock.HAS_INJECTOR);
@@ -117,7 +117,8 @@ public final class CEBlocks {
 		REGISTRATE.block("cylinder_head", CylinderHeadBlock::new)
 			.initialProperties(SharedProperties::copperMetal)
 			.properties(p -> part(p)
-				.mapColor(MapColor.COLOR_ORANGE))
+				.mapColor(MapColor.COLOR_ORANGE)
+				.lightLevel(EngineGlow::light))
 			.transform(TagGen.pickaxeOnly())
 			.blockstate((c, p) -> BlockStateGen.directionalBlockIgnoresWaterlogged(c, p, s -> {
 				boolean injector = s.getValue(CylinderHeadBlock.HAS_INJECTOR);
@@ -149,7 +150,8 @@ public final class CEBlocks {
 		REGISTRATE.block("precision_cylinder_head", p -> new CylinderHeadBlock(p, true))
 			.initialProperties(SharedProperties::copperMetal)
 			.properties(p -> part(p)
-				.mapColor(MapColor.GOLD))
+				.mapColor(MapColor.GOLD)
+				.lightLevel(EngineGlow::light))
 			.transform(TagGen.pickaxeOnly())
 			.blockstate((c, p) -> BlockStateGen.directionalBlockIgnoresWaterlogged(c, p, s -> {
 				boolean injector = s.getValue(CylinderHeadBlock.HAS_INJECTOR);
@@ -226,17 +228,6 @@ public final class CEBlocks {
 				.lightLevel(HeatExchangerBlock::light))
 			.transform(TagGen.pickaxeOnly())
 			.blockstate(CEBlocks::heatExchangerBlockstate)
-			.item()
-			.transform(ModelGen.customItemModel())
-			.register();
-
-	public static final BlockEntry<GovernorBlock> GOVERNOR =
-		REGISTRATE.block("governor", GovernorBlock::new)
-			.initialProperties(SharedProperties::softMetal)
-			.properties(p -> part(p)
-				.mapColor(MapColor.GOLD))
-			.transform(TagGen.pickaxeOnly())
-			.blockstate((c, p) -> BlockStateGen.simpleBlock(c, p, s -> AssetLookup.partialBaseModel(c, p)))
 			.item()
 			.transform(ModelGen.customItemModel())
 			.register();
@@ -392,17 +383,6 @@ public final class CEBlocks {
 			.initialProperties(SharedProperties::copperMetal)
 			.properties(p -> part(p)
 				.mapColor(MapColor.COLOR_ORANGE))
-			.transform(TagGen.pickaxeOnly())
-			.blockstate((c, p) -> BlockStateGen.axisBlock(c, p, s -> AssetLookup.partialBaseModel(c, p)))
-			.item()
-			.transform(ModelGen.customItemModel())
-			.register();
-
-	public static final BlockEntry<TransmissionBlock> TRANSMISSION =
-		REGISTRATE.block("transmission", TransmissionBlock::new)
-			.initialProperties(SharedProperties::softMetal)
-			.properties(p -> part(p)
-				.mapColor(MapColor.METAL))
 			.transform(TagGen.pickaxeOnly())
 			.blockstate((c, p) -> BlockStateGen.axisBlock(c, p, s -> AssetLookup.partialBaseModel(c, p)))
 			.item()

@@ -80,7 +80,7 @@ and the crank animates with them.
   lights gasoline or ethanol with a small pilot shot
 - A forgiving early game: spark plug soot clears itself, goggles suggest fuel settings, and the Timing Tool can tune
   every injector in one click
-- Governors and MAF sensors for the late game
+- MAF sensors for the late game
 - Other mods' fuels work too: anything tagged `c:diesel`, `c:gasoline`, `c:ethanol` or `c:plantoil`, or given an entry
   in the fuel data map
 
@@ -93,8 +93,7 @@ and the crank animates with them.
   crackle, and a supercharger whine that rises with its shaft
 - Precision cylinders, heads, pistons and injectors
 - Flywheels that matter: a rough engine is rated for less, and rotating mass smooths it out
-- A 13-gear transmission with an Auto mode that shifts to suit the engine, and a **Dynamometer** that draws an
-  engine's torque and power curves
+- A **Dynamometer** that draws an engine's torque and power curves
 - A **Black Box** flight recorder that keeps ten minutes of an engine's speed, load and warmth and says why it stalled
 - Engines that look and sound alive: exhaust colour that reads the mixture, flame from a hot pipe, a cough on starting,
   ticking as they cool, and a clatter or squeal when they run dry. Nothing runs underwater
@@ -136,6 +135,21 @@ config thins out engine sound and particles on a big engine. Fuel properties are
 - [Source and issue tracker](https://github.com/R-unic/create-engines)
 - [Design notes](https://github.com/R-unic/create-engines/blob/master/docs/DESIGN.md), how the simulation works
 ```
+
+## Changelog for 0.4.0
+
+Create's Rotation Speed Controller holds a shaft at a set speed and trades speed for torque at any ratio, and it keeps
+what an engine drives steady however the engine's own speed moves. The Governor and the Transmission did the same job
+worse, so both are gone.
+- Removed: the Governor, the Transmission and their recipes, Ponder pages and advancements (Steady as She Goes, Speed
+  Dial, Cruise Control, Gear Up, Reverse Engineering, Gearhead and Let It Shift). Any in an existing world disappear when
+  it loads. Put a Rotation Speed Controller after the crankshaft instead.
+- Full Driveline now asks for a charged battery and a flywheel that smooths the engine, and Fine Tuner no longer asks for
+  a governed engine.
+- A burning engine glows faintly: heads and rotor housings give off a little light while the charge fires.
+- Engines at the edge of loaded chunks no longer pull in chunks nobody is near.
+- Fuel recipes: plant oil takes four seeds or two saplings (100 mB and 50 mB), ethanol ferments from an apple or any
+  mushroom and makes 50 mB a batch, biodiesel needs 25 mB of ethanol, and gasoline needs only a Blaze Burner's heat.
 
 ## Changelog for 0.3.0
 

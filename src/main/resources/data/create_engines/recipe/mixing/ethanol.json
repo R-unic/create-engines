@@ -8,12 +8,12 @@
       "fluid": "create_engines:sugar_mash"
     },
     {
-      "item": "minecraft:brown_mushroom"
+      "tag": "create_engines:ferments_mash"
     }
   ],
   "results": [
     {
-      "amount": 100,
+      "amount": 50,
       "id": "create_engines:ethanol"
     }
   ]

@@ -66,7 +66,7 @@ Minecraft 1.21.1 · NeoForge 21.1.219 · Create 6.0.10
   lights gasoline or ethanol with a small pilot shot
 - A forgiving early game: spark plug soot clears itself, goggles suggest fuel settings, and the Timing Tool can tune
   every injector in one click
-- Governors and MAF sensors for the late game
+- MAF sensors for the late game
 
 **Make it powerful**
 - Turbochargers (stacked, twin, variable-geometry, with anti-lag), superchargers and intercoolers, with the sound to
@@ -74,7 +74,7 @@ Minecraft 1.21.1 · NeoForge 21.1.219 · Create 6.0.10
   crackle, and a supercharger whine that rises with its shaft
 - Precision cylinders, heads, pistons and injectors
 - Flywheels that matter: a rough engine is rated for less, and rotating mass smooths it out
-- A 13-gear transmission with an Auto mode that shifts to suit the engine, and a **Dynamometer** that draws an engine's torque and power curves
+- A **Dynamometer** that draws an engine's torque and power curves
 - A **Black Box** flight recorder that keeps ten minutes of an engine's speed, load and warmth and says why it stalled
 - An exhaust note made up from the engine's speed and firing order, so a V-twin lopes, a six hums and a dead cylinder limps
 - Exhaust that tells the truth: a thin haze when the mixture is right, black when it is rich, white vapour until the

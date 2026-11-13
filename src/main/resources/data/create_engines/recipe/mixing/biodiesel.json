@@ -9,7 +9,7 @@
     },
     {
       "type": "neoforge:single",
-      "amount": 50,
+      "amount": 25,
       "fluid": "create_engines:ethanol"
     },
     {

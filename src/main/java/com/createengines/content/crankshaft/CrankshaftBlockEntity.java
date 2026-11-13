@@ -4,6 +4,7 @@ import java.util.List;
 
 import org.jetbrains.annotations.Nullable;
 
+import com.createengines.engine.LoadedBlocks;
 import com.createengines.content.EngineNoteSound;
 import com.createengines.content.RenderRotation;
 import com.createengines.content.effects.EngineAmbience;
@@ -144,7 +145,7 @@ public class CrankshaftBlockEntity extends GeneratingKineticBlockEntity implemen
 		if (ambience != null)
 			return ambience.catching();
 		return primaryPos != null && !primaryPos.equals(worldPosition) && level != null
-			&& level.getBlockEntity(primaryPos) instanceof CrankshaftBlockEntity primary && primary.ambience != null
+			&& LoadedBlocks.blockEntity(level, primaryPos) instanceof CrankshaftBlockEntity primary && primary.ambience != null
 			&& primary.ambience.catching();
 	}
 
@@ -263,7 +264,7 @@ public class CrankshaftBlockEntity extends GeneratingKineticBlockEntity implemen
 	public double rotation(float renderTime) {
 		float speed = getTheoreticalSpeed();
 		if (primaryPos != null && !primaryPos.equals(worldPosition) && level != null
-			&& level.getBlockEntity(primaryPos) instanceof CrankshaftBlockEntity primary
+			&& LoadedBlocks.blockEntity(level, primaryPos) instanceof CrankshaftBlockEntity primary
 			&& primary.getTheoreticalSpeed() * sense == speed)
 			return rotation.follow(renderTime, sense * primary.rotation.at(renderTime, primary.getTheoreticalSpeed()));
 		return rotation.at(renderTime, speed);
@@ -329,7 +330,7 @@ public class CrankshaftBlockEntity extends GeneratingKineticBlockEntity implemen
 	public @Nullable EngineSummary engineSummary() {
 		if (summary != null)
 			return summary;
-		if (primaryPos != null && level != null && level.getBlockEntity(primaryPos) instanceof CrankshaftBlockEntity p)
+		if (primaryPos != null && level != null && LoadedBlocks.blockEntity(level, primaryPos) instanceof CrankshaftBlockEntity p)
 			return p.summary;
 		return null;
 	}

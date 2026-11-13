@@ -6,6 +6,7 @@ import java.util.Set;
 
 import org.jetbrains.annotations.Nullable;
 
+import com.createengines.engine.LoadedBlocks;
 import com.createengines.advancement.Achievements;
 import com.createengines.advancement.Milestone;
 import com.createengines.content.GoggleLines;
@@ -105,12 +106,12 @@ public class BlackBoxBlockEntity extends SmartBlockEntity implements IHaveGoggle
 			Set<BlockPos> seeds = EngineScanner.crankSeeds(level, worldPosition.relative(face));
 			if (seeds.isEmpty())
 				continue;
-			if (!(level.getBlockEntity(seeds.iterator()
+			if (!(LoadedBlocks.blockEntity(level, seeds.iterator()
 				.next()) instanceof CrankshaftBlockEntity crank))
 				continue;
 			EngineSummary summary = crank.summary();
 			BlockPos primary = crank.primaryPos();
-			if (summary == null && primary != null && level.getBlockEntity(primary) instanceof CrankshaftBlockEntity main)
+			if (summary == null && primary != null && LoadedBlocks.blockEntity(level, primary) instanceof CrankshaftBlockEntity main)
 				summary = main.summary();
 			if (summary != null)
 				return summary;

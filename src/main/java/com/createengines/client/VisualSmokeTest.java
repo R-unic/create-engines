@@ -11,7 +11,6 @@ import com.createengines.content.airflow.ManifoldBlock;
 import com.createengines.content.airflow.PortOpeningBlock;
 import com.createengines.content.crankshaft.CrankshaftBlockEntity;
 import com.createengines.content.cylinder.CylinderBlock;
-import com.createengines.content.governor.GovernorBlockEntity;
 import com.createengines.content.tool.TimingToolItem;
 import com.createengines.engine.topology.FiringPlanner;
 import com.createengines.content.head.CylinderHeadBlock;
@@ -239,33 +238,20 @@ public final class VisualSmokeTest {
 		ponder("spark", 5100, CEBlocks.ALTERNATOR::asStack, 250, 450, 650);
 		ponder("throttle", 5900, CEBlocks.THROTTLE::asStack, 250, 650, 1000);
 		ponder("mixture", 7050, CEItems.FUEL_INJECTOR::asStack, 250, 650);
-		// Blocks added later, standing in the world: a turbo, an oil sump and a motor-driven transmission
+		// Blocks added later, standing in the world: a turbo and an oil sump
 		STEPS.add(new Step(7720, () -> {
 			Minecraft.getInstance().options.hideGui = true;
 			server(server -> {
 				var level = server.overworld();
 				BlockPos base = origin.offset(24, 0, 0);
-				var x = net.minecraft.world.level.block.state.properties.BlockStateProperties.AXIS;
 				level.setBlock(base.offset(0, 1, 0), CEBlocks.TURBOCHARGER.getDefaultState()
 					.setValue(com.createengines.content.turbo.TurbochargerBlock.FACING, Direction.WEST), 3);
 				level.setBlock(base.offset(2, 1, 0), CEBlocks.SUMP.getDefaultState(), 3);
-				level.setBlock(base.offset(0, 1, 3), com.simibubi.create.AllBlocks.CREATIVE_MOTOR.getDefaultState()
-					.setValue(com.simibubi.create.content.kinetics.motor.CreativeMotorBlock.FACING, Direction.EAST), 3);
-				if (level.getBlockEntity(base.offset(0, 1, 3)) instanceof com.simibubi.create.content.kinetics.motor.CreativeMotorBlockEntity motor)
-					motor.generatedSpeed.setValue(64);
-				level.setBlock(base.offset(1, 1, 3), com.simibubi.create.AllBlocks.SHAFT.getDefaultState()
-					.setValue(x, Direction.Axis.X), 3);
-				level.setBlock(base.offset(2, 1, 3), CEBlocks.TRANSMISSION.getDefaultState()
-					.setValue(x, Direction.Axis.X), 3);
-				level.setBlock(base.offset(3, 1, 3), com.simibubi.create.AllBlocks.SHAFT.getDefaultState()
-					.setValue(x, Direction.Axis.X), 3);
 			});
 		}));
 		frames("turbo_sump", 7740, 24 + 1.5, 2.6, -2.5, 0, 18);
-		frames("transmission", 7790, 24 + 2.5, 2.6, 0.2, 0, 25);
 		// The new Ponder scenes
 		ponder("turbocharger", 7850, CEBlocks.TURBOCHARGER::asStack, 250, 650, 1000);
-		ponder("transmission", 8900, CEBlocks.TRANSMISSION::asStack, 250, 650, 900);
 		ponder("sump", 9850, CEBlocks.SUMP::asStack, 250, 450, 650);
 		newScenes(10600);
 	}
@@ -322,8 +308,8 @@ public final class VisualSmokeTest {
 	private static final BlockPos PRECISION_OFFSET = new BlockPos(72, 0, 0);
 
 	/**
-	 * A fresh engine built from precision parts under a governor, then the pages for the governor, the timing tool and
-	 * the precision parts, and the end of the run.
+	 * A fresh engine built from precision parts, then the pages for the timing tool and the precision parts, and the
+	 * end of the run.
 	 */
 	private static void precision(int start) {
 		int dx = PRECISION_OFFSET.getX();
@@ -350,10 +336,6 @@ public final class VisualSmokeTest {
 						.fill(new FluidStack(CEFluids.ENGINE_OIL.get()
 							.getSource(), 250), IFluidHandler.FluidAction.EXECUTE);
 				}
-				BlockPos governor = at.offset(3, 3, 2);
-				level.setBlock(governor, CEBlocks.GOVERNOR.getDefaultState(), 3);
-				if (level.getBlockEntity(governor) instanceof GovernorBlockEntity be)
-					be.target.setValue(80 / GovernorBlockEntity.TARGET_STEP);
 			});
 		}));
 		STEPS.add(new Step(start + 250, () -> server(server -> server.overworld()
@@ -365,10 +347,8 @@ public final class VisualSmokeTest {
 			Minecraft.getInstance().options.hideGui = false;
 			server(server -> command(server, "item replace entity @a armor.head with create:goggles"));
 		}));
-		goggles("governor", start + 560, dx + 3.5, 4.5, -0.5, 0, 18);
 		goggles("precision_head", start + 590, dx + 2.5, 5.0, -1.0, 0, 11);
 		goggles("precision_cylinder", start + 620, dx + 2.5, 2.0, -0.5, 0, 2.3f);
-		ponder("governor", start + 700, CEBlocks.GOVERNOR::asStack, 250, 550, 800);
 		ponder("timing_tool", start + 1700, CEItems.TIMING_TOOL::asStack, 250, 550, 800);
 		ponder("precision_parts", start + 2700, CEBlocks.PRECISION_CYLINDER::asStack, 250, 550, 800);
 		coupled(start + 3700);
