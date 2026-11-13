@@ -37,6 +37,11 @@ public class SuperchargerBlock extends RotatedPillarKineticBlock implements Inli
 		super(properties);
 	}
 
+	/** Whether this blower has a variable-ratio drive and tight rotors; the {@link VariableSuperchargerBlock} does. */
+	public boolean variableDrive() {
+		return false;
+	}
+
 	@Override
 	public boolean hasShaftTowards(LevelReader world, BlockPos pos, BlockState state, Direction face) {
 		return face.getAxis() == state.getValue(AXIS);

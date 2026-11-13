@@ -1,0 +1,7 @@
+{
+  "parent": "create_engines:block/starter/block",
+  "textures": {
+    "body": "create:block/brass_casing",
+    "particle": "create:block/brass_casing"
+  }
+}

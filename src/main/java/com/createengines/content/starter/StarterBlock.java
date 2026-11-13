@@ -24,8 +24,33 @@ import net.minecraft.world.level.block.state.BlockState;
  */
 public class StarterBlock extends DirectionalKineticBlock implements IBE<StarterBlockEntity> {
 
+	/** How many times a plain starter's effort the heavy starter's reduction gearing takes on. */
+	public static final double HEAVY_STRENGTH = 2.5;
+
+	private final double strength;
+	private final boolean warmsColdEngines;
+
 	public StarterBlock(Properties properties) {
+		this(properties, 1, false);
+	}
+
+	public StarterBlock(Properties properties, double strength, boolean warmsColdEngines) {
 		super(properties);
+		this.strength = strength;
+		this.warmsColdEngines = warmsColdEngines;
+	}
+
+	/**
+	 * Its share of the cranking effort when starters work together: a stronger starter takes more of it, and so puts that
+	 * much less stress on its own input than a plain one would turning the same engine.
+	 */
+	public double strength() {
+		return strength;
+	}
+
+	/** Whether it chokes and glows a cold engine into catching while it cranks, so the engine's cold does not hold it back. */
+	public boolean warmsColdEngines() {
+		return warmsColdEngines;
 	}
 
 	@Override

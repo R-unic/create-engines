@@ -47,6 +47,16 @@ public class StarterBlockEntity extends KineticBlockEntity implements EngineMemb
 		return level != null && level.hasNeighborSignal(worldPosition) && getSpeed() != 0;
 	}
 
+	/** Its share of the effort of turning the engine over, relative to a plain starter's (see {@link StarterBlock#strength()}). */
+	public double strength() {
+		return getBlockState().getBlock() instanceof StarterBlock block ? block.strength() : 1;
+	}
+
+	/** Whether it makes a cold engine catch while it cranks (see {@link StarterBlock#warmsColdEngines()}). */
+	public boolean warmsColdEngines() {
+		return getBlockState().getBlock() instanceof StarterBlock block && block.warmsColdEngines();
+	}
+
 	/** Which way it turns the crank. A starter turned the other way cranks the engine the other way. */
 	public int crankDirection() {
 		return getSpeed() > 0 ? 1 : -1;
@@ -152,6 +162,9 @@ public class StarterBlockEntity extends KineticBlockEntity implements EngineMemb
 		if (primaryPos == null) {
 			key = "goggles.starter.no_engine";
 			colour = ChatFormatting.RED;
+		} else if (cranking && warmsColdEngines()) {
+			key = "goggles.starter.warming";
+			colour = ChatFormatting.GOLD;
 		} else if (cranking) {
 			key = "goggles.starter.cranking";
 			colour = ChatFormatting.YELLOW;

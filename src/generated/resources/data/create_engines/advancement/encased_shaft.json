@@ -1,0 +1,29 @@
+{
+  "parent": "create_engines:engine_casing",
+  "criteria": {
+    "encased_shaft": {
+      "conditions": {
+        "event": "encased"
+      },
+      "trigger": "create_engines:event"
+    }
+  },
+  "display": {
+    "description": {
+      "translate": "advancement.create_engines.encased_shaft.desc"
+    },
+    "icon": {
+      "count": 1,
+      "id": "create_engines:crankshaft"
+    },
+    "title": {
+      "translate": "advancement.create_engines.encased_shaft"
+    }
+  },
+  "requirements": [
+    [
+      "encased_shaft"
+    ]
+  ],
+  "sends_telemetry_event": true
+}

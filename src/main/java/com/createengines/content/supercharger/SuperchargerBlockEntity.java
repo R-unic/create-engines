@@ -43,7 +43,7 @@ public class SuperchargerBlockEntity extends KineticBlockEntity implements Engin
 	public static final int MAX_LIMIT = (int) Math.round(Supercharger.MAX_LIMIT * 10);
 	public static final int DEFAULT_LIMIT = (int) Math.round(Supercharger.DEFAULT_LIMIT * 10);
 	/** Stress per RPM the blower puts on its shaft for each cylinder it feeds, at its full design boost. */
-	public static final float STRESS_PER_CYLINDER = 4;
+	public static final float STRESS_PER_CYLINDER = 2;
 	private static final BehaviourType<ScrollValueBehaviour> LIMIT_TYPE = new BehaviourType<>("supercharger_limit");
 
 	public ScrollValueBehaviour limit;
@@ -127,6 +127,11 @@ public class SuperchargerBlockEntity extends KineticBlockEntity implements Engin
 		return true;
 	}
 
+	/** Whether this is a variable-drive blower, with a variable-ratio drive and tight rotors. */
+	public boolean variableDrive() {
+		return getBlockState().getBlock() instanceof SuperchargerBlock block && block.variableDrive();
+	}
+
 	/** The boost the engine last reported, atmospheres. */
 	public float boost() {
 		return boost;
@@ -143,7 +148,8 @@ public class SuperchargerBlockEntity extends KineticBlockEntity implements Engin
 	 * it is to turn.
 	 */
 	public void updateBlower(BlockPos primary, int cylinders, float boost, float bypass) {
-		float next = cylinders * STRESS_PER_CYLINDER * (float) Math.min(1.7, boost / Supercharger.FULL_BOOST);
+		float next = cylinders * STRESS_PER_CYLINDER * (float) Math.min(1.7, boost / Supercharger.FULL_BOOST)
+			* (variableDrive() ? (float) Supercharger.VARIABLE_DRAG : 1);
 		boolean changed = !primary.equals(primaryPos) || cylinders != served || Math.abs(boost - this.boost) >= 0.01f
 			|| Math.abs(bypass - this.bypass) >= 0.05f;
 		primaryPos = primary;
@@ -220,6 +226,12 @@ public class SuperchargerBlockEntity extends KineticBlockEntity implements Engin
 			if (isPlayerSneaking)
 				GoggleLines.add(CELang.translate("goggles.supercharger.fed", served)
 					.style(ChatFormatting.DARK_GRAY), tooltip, 1);
+			if (variableDrive() && shaftRpm() < Supercharger.DESIGN_RPM) {
+				int overdrive = (int) Math.round(Supercharger.OVERDRIVE * 100 * (1 - shaftRpm() / Supercharger.DESIGN_RPM));
+				if (overdrive > 0)
+					GoggleLines.add(CELang.translate("goggles.supercharger.overdrive", overdrive)
+						.style(ChatFormatting.GOLD), tooltip, 1);
+			}
 		}
 		GoggleLines.add(CELang.translate("goggles.supercharger.limit", String.format(Locale.ROOT, "%.1f", boostLimit()))
 			.style(ChatFormatting.DARK_AQUA), tooltip, 1);

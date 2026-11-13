@@ -1,0 +1,17 @@
+{
+  "variants": {
+    "axis=x": {
+      "model": "create_engines:block/variable_supercharger/block",
+      "x": 90,
+      "y": 90
+    },
+    "axis=y": {
+      "model": "create_engines:block/variable_supercharger/block"
+    },
+    "axis=z": {
+      "model": "create_engines:block/variable_supercharger/block",
+      "x": 90,
+      "y": 180
+    }
+  }
+}

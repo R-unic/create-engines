@@ -1,0 +1,24 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "key": {
+    "B": {
+      "item": "create:brass_sheet"
+    },
+    "S": {
+      "item": "create_engines:supercharger"
+    },
+    "M": {
+      "item": "create:precision_mechanism"
+    }
+  },
+  "pattern": [
+    "B",
+    "S",
+    "M"
+  ],
+  "result": {
+    "count": 1,
+    "id": "create_engines:variable_supercharger"
+  }
+}

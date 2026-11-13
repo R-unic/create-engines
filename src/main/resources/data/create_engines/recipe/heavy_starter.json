@@ -1,0 +1,29 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "key": {
+    "R": {
+      "item": "minecraft:redstone"
+    },
+    "S": {
+      "item": "create:shaft"
+    },
+    "C": {
+      "item": "create:brass_casing"
+    },
+    "G": {
+      "item": "create:large_cogwheel"
+    },
+    "T": {
+      "item": "create_engines:starter"
+    }
+  },
+  "pattern": [
+    "RTS",
+    "CG "
+  ],
+  "result": {
+    "count": 1,
+    "id": "create_engines:heavy_starter"
+  }
+}
