@@ -44,6 +44,8 @@ public class CEPonderPlugin implements PonderPlugin {
 			.addStoryBoard("throttle", EngineScenes::throttle);
 		scenes.forComponents(CEBlocks.MAF_SENSOR)
 			.addStoryBoard("maf_sensor", EngineScenes::mafSensor);
+		scenes.forComponents(CEBlocks.GOVERNOR)
+			.addStoryBoard("governor", EngineScenes::governor);
 		scenes.forComponents(CEItems.TIMING_TOOL)
 			.addStoryBoard("timing_tool", EngineScenes::timingTool);
 		scenes.forComponents(CEBlocks.PRECISION_CYLINDER, CEBlocks.PRECISION_CYLINDER_HEAD, CEItems.FORGED_PISTON,

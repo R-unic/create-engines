@@ -19,6 +19,7 @@ import com.createengines.content.crankshaft.CrankshaftBlock;
 import com.createengines.content.cylinder.CylinderBlock;
 import com.createengines.content.dyno.DynoBlock;
 import com.createengines.content.flywheel.CastFlywheelBlock;
+import com.createengines.content.governor.GovernorBlock;
 import com.createengines.content.head.CylinderHeadBlock;
 import com.createengines.content.intercooler.IntercoolerBlock;
 import com.createengines.content.rotor.RotorHousingBlock;
@@ -228,6 +229,17 @@ public final class CEBlocks {
 				.lightLevel(HeatExchangerBlock::light))
 			.transform(TagGen.pickaxeOnly())
 			.blockstate(CEBlocks::heatExchangerBlockstate)
+			.item()
+			.transform(ModelGen.customItemModel())
+			.register();
+
+	public static final BlockEntry<GovernorBlock> GOVERNOR =
+		REGISTRATE.block("governor", GovernorBlock::new)
+			.initialProperties(SharedProperties::softMetal)
+			.properties(p -> part(p)
+				.mapColor(MapColor.GOLD))
+			.transform(TagGen.pickaxeOnly())
+			.blockstate((c, p) -> BlockStateGen.simpleBlock(c, p, s -> AssetLookup.partialBaseModel(c, p)))
 			.item()
 			.transform(ModelGen.customItemModel())
 			.register();

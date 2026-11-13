@@ -13,6 +13,7 @@
     "create_engines:throttle",
     "create_engines:maf_sensor",
     "create_engines:heat_exchanger",
+    "create_engines:governor",
     "create_engines:exhaust_manifold",
     "create_engines:air_intake",
     "create_engines:exhaust_outlet",

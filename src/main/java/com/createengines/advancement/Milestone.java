@@ -52,6 +52,8 @@ public enum Milestone {
 	PRECISION_ENGINE,
 	// Firing order tool
 	TOOL_TIMED,
+	// Speed control
+	GOVERNED,
 	// Big engines and coupled cranks
 	SIXTEEN_CYLINDERS,
 	COUPLED_CRANKS,
@@ -69,6 +71,8 @@ public enum Milestone {
 	PRECISION_PISTON,
 	PRECISION_INJECTOR,
 	ALTERNATOR_CHARGING,
+	GOVERNOR_ACTIVE,
+	GOVERNOR_COMMANDED,
 	ENERGY_GENERATED,
 	TOOL_USED,
 	FUEL_TUNED,

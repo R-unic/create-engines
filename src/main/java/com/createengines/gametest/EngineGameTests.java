@@ -18,6 +18,7 @@ import com.createengines.content.head.CylinderHeadBlock;
 import com.createengines.content.head.CylinderHeadBlockEntity;
 import com.createengines.content.rotor.RotorHousingBlock;
 import com.createengines.content.rotor.RotorHousingBlockEntity;
+import com.createengines.content.governor.GovernorBlockEntity;
 import com.createengines.content.starter.StarterBlock;
 import com.createengines.content.sump.SumpBlockEntity;
 import com.createengines.content.blackbox.BlackBoxBlockEntity;
@@ -1187,6 +1188,56 @@ public class EngineGameTests {
 			com.createengines.engine.sim.Tuning.rotaryEngines = true;
 		}
 		helper.succeed();
+	}
+
+	/**
+	 * A governor against the crankshaft holds the engine at its setting: left to itself the single cylinder would rev
+	 * well past 80, but with the rack governed it settles there with the rack part-closed to do it.
+	 */
+	@GameTest(template = "empty", timeoutTicks = 1500)
+	public static void aGovernorHoldsAnEngineAtItsSetSpeed(GameTestHelper helper) {
+		buildSingleCylinder(helper, true);
+		BlockPos at = new BlockPos(3, 3, 2);
+		helper.setBlock(at, CEBlocks.GOVERNOR.getDefaultState());
+		GovernorBlockEntity governor = helper.getBlockEntity(at);
+		int target = 80;
+		governor.target.setValue(target / GovernorBlockEntity.TARGET_STEP);
+		float[] peak = new float[1];
+		helper.runAtTickTime(300, () -> helper.setBlock(STARTER_POWER, Blocks.AIR));
+		helper.succeedWhen(() -> {
+			EngineSummary summary = summary(helper);
+			if (helper.getTick() > 450)
+				peak[0] = Math.max(peak[0], summary.rpm());
+			helper.assertTrue(helper.getTick() > 1200, "Watching the governor");
+			helper.assertTrue(summary.state() == EngineState.RUNNING, "The governed engine should run: " + summary);
+			helper.assertTrue(Math.abs(summary.rpm() - target) <= 6, "It should hold its setting: " + summary);
+			helper.assertTrue(peak[0] <= target * 1.12f, "It should never run away, peak " + peak[0] + " RPM");
+			helper.assertTrue(governor.signal() > 0 && governor.signal() < 15,
+				"Holding the speed takes part of the rack, not all or none: " + governor.signal());
+		});
+	}
+
+	/**
+	 * A governor reads the redstone signal at its block as a command, and does not power its neighbours itself (so its
+	 * own output can never come back as a command): next to a block of redstone it asks for all of its setting.
+	 */
+	@GameTest(template = "empty", timeoutTicks = 100)
+	public static void aGovernorTakesARedstoneCommandAndPowersNothing(GameTestHelper helper) {
+		buildSingleCylinder(helper, true);
+		BlockPos at = new BlockPos(3, 3, 2);
+		helper.setBlock(at, CEBlocks.GOVERNOR.getDefaultState());
+		GovernorBlockEntity governor = helper.getBlockEntity(at);
+		governor.target.setValue(80 / GovernorBlockEntity.TARGET_STEP);
+		helper.assertTrue(governor.command() == 0, "Nothing powers it yet: " + governor.command());
+		helper.assertTrue(Math.abs(governor.governedSpeed() - 80) < 1e-9, "No signal leaves the setting: " + governor.governedSpeed());
+		helper.assertFalse(helper.getBlockState(at)
+			.isSignalSource(), "It reaches comparators only");
+		helper.setBlock(at.above(), Blocks.REDSTONE_BLOCK);
+		helper.runAfterDelay(2, () -> {
+			helper.assertTrue(governor.command() == 15, "A block of redstone is a full command: " + governor.command());
+			helper.assertTrue(Math.abs(governor.governedSpeed() - 80) < 1e-9, "A full command asks for the whole setting");
+			helper.succeed();
+		});
 	}
 
 	/**

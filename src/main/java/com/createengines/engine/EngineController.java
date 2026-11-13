@@ -26,6 +26,7 @@ import com.createengines.content.camshaft.CamshaftBlockEntity;
 import com.createengines.content.crankshaft.CrankshaftBlockEntity;
 import com.createengines.content.cylinder.CylinderBlockEntity;
 import com.createengines.content.head.CylinderHeadBlockEntity;
+import com.createengines.content.governor.GovernorBlockEntity;
 import com.createengines.content.head.GalleryMember;
 import com.createengines.content.rotor.RotorHousingBlockEntity;
 import com.createengines.content.starter.StarterBlockEntity;
@@ -43,6 +44,7 @@ import com.createengines.engine.sim.CylinderSpec;
 import com.createengines.engine.sim.Dynamometer;
 import com.createengines.engine.sim.EngineSimulation;
 import com.createengines.engine.sim.FuelSpec;
+import com.createengines.engine.sim.Governor;
 import com.createengines.engine.sim.FuelSupply;
 import com.createengines.engine.sim.IgnitionSource;
 import com.createengines.engine.sim.Mixture;
@@ -106,6 +108,10 @@ public final class EngineController {
 	 * Mixture {@link #tuneFuel} aims for. A little lean of balanced, because an engine that burns cleaner speeds up, and
 	 * breathes less as it does, so it drifts richer after the tune.
 	 */
+	/** How close to its setting, as a share of it, a governed engine has to be held to count as on speed. */
+	private static final double GOVERNED_BAND = 0.03;
+	/** Ticks a governor has to hold an engine on its setting under load for it to count, ten seconds. */
+	private static final int GOVERNED_TICKS = 200;
 	private static final double TUNE_MIXTURE = 0.9;
 
 	private final CrankshaftBlockEntity primary;
@@ -148,12 +154,17 @@ public final class EngineController {
 	private boolean cranking;
 	private @Nullable BlockPos activeStarter;
 	private EngineState previousState = EngineState.STALLED;
+	private final Governor governor = new Governor();
+	/** Ticks the governor has held the engine on its setting while carrying a load. */
+	private int governedTicks;
 	private final Map<Milestone, Integer> milestoneTicks = new EnumMap<>(Milestone.class);
 	/** What the engine-management blocks last saw, for milestones. */
 	private boolean mafTrimming;
 	private boolean mafEnriching;
 	private boolean mafReading;
 	/** Heat level of the hottest exhaust heat exchanger on the engine, {@code HeatRecovery.NONE} to {@code SEETHE}. */
+	private boolean governing;
+	private boolean commanded;
 	private int exchangerLevel;
 	/** The fuel gallery shared by every head, for telling which fuel the engine burns. */
 	private final GalleryFuelSupply fuels;
@@ -416,6 +427,7 @@ public final class EngineController {
 		readThrottles(level);
 		readTurbos(level);
 		readSuperchargers(level);
+		readGovernors(level);
 		if (ticks % RACK_INTERVAL == 1)
 			readFuelRacks(level);
 		if (ticks % RATING_INTERVAL == 1)
@@ -538,7 +550,7 @@ public final class EngineController {
 
 	/**
 	 * Whether every cylinder feeding a turbo's turbine is off the throttle: its fuel cut by a limiter, its rack shut by
-	 * redstone or its throttle closed. Then there is hardly any heat in the exhaust, and
+	 * redstone, its throttle closed or its governor holding it back. Then there is hardly any heat in the exhaust, and
 	 * anti-lag has something to do.
 	 */
 	private static boolean offThrottle(Turbocharger turbo) {
@@ -546,7 +558,7 @@ public final class EngineController {
 			.isEmpty())
 			return false;
 		for (CylinderModel cylinder : turbo.turbine())
-			if (!(cylinder.rack < 0.3 || cylinder.fuelTrim < 0.3))
+			if (!(cylinder.rack < 0.3 || cylinder.fuelTrim < 0.3 || cylinder.governor < 0.3))
 				return false;
 		return true;
 	}
@@ -667,6 +679,38 @@ public final class EngineController {
 				if (LoadedBlocks.blockEntity(level, pos) instanceof MafSensorBlockEntity maf)
 					target = target == 0 ? maf.targetMixture() : Math.min(target, maf.targetMixture());
 		return target;
+	}
+
+	/**
+	 * Governors on the engine: the lowest speed set governs, and the rack (the throttle, in a spark engine) is moved to
+	 * hold the crank there. Read every tick because a governor is a feedback loop: it has to keep up with the load.
+	 */
+	private void readGovernors(Level level) {
+		double target = Double.MAX_VALUE;
+		double setting = Double.MAX_VALUE;
+		for (BlockPos pos : layout.governors())
+			if (LoadedBlocks.blockEntity(level, pos) instanceof GovernorBlockEntity be) {
+				target = Math.min(target, be.governedSpeed());
+				setting = Math.min(setting, be.target());
+			}
+		boolean fitted = target < Double.MAX_VALUE;
+		double position = 1;
+		if (fitted)
+			position = governor.update(sim.rpm(), target, EngineSimulation.TICK);
+		else
+			governor.reset();
+		for (CylinderModel model : sim.cylinders())
+			model.governor = position;
+		boolean holding = fitted && !sim.isStopped() && Math.abs(sim.rpm() - target) <= GOVERNED_BAND * target
+			&& position > 0.05 && position < 0.95;
+		governedTicks = holding ? governedTicks + 1 : 0;
+		governing = fitted && !sim.isStopped() && position < 0.95;
+		// A redstone signal has turned the governed speed down
+		commanded = governing && target < setting - 0.5;
+		float rpm = (float) sim.rpm();
+		for (BlockPos pos : layout.governors())
+			if (LoadedBlocks.blockEntity(level, pos) instanceof GovernorBlockEntity be)
+				be.reading(rpm, (float) position, (float) be.governedSpeed());
 	}
 
 	/**
@@ -1211,7 +1255,7 @@ public final class EngineController {
 				.dilution(),
 			pushrod, firingAngles.size() == cylinders && EngineMilestones.evenFiring(toArray(firingAngles)),
 			mafTrimming, mafEnriching,
-			precision && cylinders >= EngineMilestones.EVEN_FIRING_CYLINDERS,
+			governedTicks >= GOVERNED_TICKS, precision && cylinders >= EngineMilestones.EVEN_FIRING_CYLINDERS,
 			layout.lines() > 1);
 		previousState = state;
 		award(level, EngineMilestones.reached(snapshot));
@@ -1230,7 +1274,7 @@ public final class EngineController {
 
 	/**
 	 * Credits the operator with the parts the engine is putting to work: the camshaft that times it, the pipes it
-	 * breathes through, the throttle, the fuel and oil it burns, its sensors, and its precision parts.
+	 * breathes through, the throttle, the fuel and oil it burns, its sensors and governor, and its precision parts.
 	 */
 	private void reportParts(Level level, EngineState state, int firing) {
 		boolean camTimed = false;
@@ -1259,7 +1303,7 @@ public final class EngineController {
 				.effective(),
 			!layout.sumps()
 				.isEmpty(),
-			mafReading, precision, rotorHousing && !sim.isStopped())));
+			mafReading, governing, commanded, precision, rotorHousing && !sim.isStopped())));
 	}
 
 	/** Credits the operator with a flywheel that smooths a running engine, variable vanes at work, and anti-lag. */

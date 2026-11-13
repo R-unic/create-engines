@@ -110,6 +110,13 @@ public final class CylinderModel {
 	 * small, up to the most the injector can deliver ({@link #INJECTOR_CAPACITY}). Fuel Metering no longer applies.
 	 */
 	public double airMatch = 0;
+	/**
+	 * Rack position a mechanical governor holds the engine at, 0 (shut) to 1 (wide open); 1 where there is none. A
+	 * compression engine is governed on fuel alone. A spark engine can't be, because a lean charge won't light, so the
+	 * governor throttles its air and the throttle linkage trims its fuel to follow. Not part of the engine's rating: a
+	 * governor holds speed with the torque in hand, it does not take any away.
+	 */
+	public double governor = 1;
 	public double exhaustFactor = 1;
 	/** Pressure of the air the intake valve draws on, ambient (1) unless a compressor is pushing it. */
 	public double intakePressure = 1;
@@ -413,7 +420,7 @@ public final class CylinderModel {
 		// Rule 3: valves, opened by the cam
 		if (timed()) {
 			double mid = SimMath.wrap(camFrom + camDelta / 2);
-			exchangeIntake(v1, spec.intakeFlow() * intakeCurve.at(mid) * intakeFactor, dt);
+			exchangeIntake(v1, spec.intakeFlow() * intakeCurve.at(mid) * intakeFactor * governedAir(), dt);
 			exchangeExhaust(v1, spec.exhaustFlow() * exhaustCurve.at(mid) * exhaustFactor, dt);
 		}
 
@@ -439,6 +446,16 @@ public final class CylinderModel {
 
 	private double pressure(double volume) {
 		return moles * temperature / volume;
+	}
+
+	/** How open the governor leaves the intake: a spark engine is throttled, a compression engine breathes freely. */
+	private double governedAir() {
+		return ignition.installed() ? Governor.opening(governor) : 1;
+	}
+
+	/** Share of the shot the governor lets through. */
+	private double governedFuel() {
+		return ignition.installed() ? Throttle.fuelTrim(Governor.opening(governor)) : governor;
 	}
 
 	/**
@@ -517,11 +534,12 @@ public final class CylinderModel {
 	private void inject() {
 		FuelSpec fuel = fuelSupply.fuel();
 		double air = fresh * moles;
-		double shot = (fuel == null ? 0 : usualShot(fuel)) * rack * metering * fuelTrim;
+		double shot = (fuel == null ? 0 : usualShot(fuel)) * rack * metering * fuelTrim * governedFuel();
 		if (fuel != null && airMatch > 0 && shot > 0) {
 			// A MAF sensor sets the shot from the air, whichever way that moves it. The rack still says how much of it is
-			// wanted.
-			double matched = rack * Math.min(air / fuel.airPerMb() * airMatch, injectorLimit(fuel));
+			// wanted, and so does a compression engine's governor; a spark engine's throttle is already in the air.
+			double matched = rack * (ignition.installed() ? 1 : governor)
+				* Math.min(air / fuel.airPerMb() * airMatch, injectorLimit(fuel));
 			if (matched < shot)
 				current.mafCut = 1 - matched / shot;
 			else if (matched > shot)

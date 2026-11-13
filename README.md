@@ -66,7 +66,7 @@ Minecraft 1.21.1 · NeoForge 21.1.219 · Create 6.0.10
   lights gasoline or ethanol with a small pilot shot
 - A forgiving early game: spark plug soot clears itself, goggles suggest fuel settings, and the Timing Tool can tune
   every injector in one click
-- MAF sensors for the late game
+- Governors and MAF sensors for the late game
 
 **Make it powerful**
 - Turbochargers (stacked, twin, variable-geometry, with anti-lag), superchargers and intercoolers, with the sound to

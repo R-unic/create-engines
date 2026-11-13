@@ -13,6 +13,12 @@
       },
       "trigger": "create_engines:event"
     },
+    "governed": {
+      "conditions": {
+        "event": "governed"
+      },
+      "trigger": "create_engines:event"
+    },
     "maf_enrich": {
       "conditions": {
         "event": "maf_enrich"
@@ -54,6 +60,9 @@
     ],
     [
       "maf_enrich"
+    ],
+    [
+      "governed"
     ],
     [
       "fuel_tuned"

@@ -58,6 +58,7 @@ public final class EngineMilestones {
 	 * @param evenFiring     every cylinder is firing, at least four, evenly spaced around the cycle
 	 * @param mafTrimming    a MAF sensor is holding the shots of the firing cylinders on its network back
 	 * @param mafEnriching   a MAF sensor is adding fuel to the shots of the firing cylinders on its network
+	 * @param governed       a governor has held the engine on its setting, under load, for a good while
 	 * @param precisionEngine every cylinder of an engine of four or more is built entirely from precision parts
 	 * @param coupled        the engine has more than one crankshaft, geared together
 	 */
@@ -65,28 +66,29 @@ public final class EngineMilestones {
 						   float capacity, boolean sparkFiring, float lubrication, boolean rich, float boost,
 						   boolean dumping, float fouling, boolean balanced, float dilution,
 						   boolean pushrod, boolean evenFiring, boolean mafTrimming, boolean mafEnriching,
-						   boolean precisionEngine, boolean coupled) {
+						   boolean governed, boolean precisionEngine,
+						   boolean coupled) {
 
 		public Snapshot(EngineState state, EngineState previous, float rpm, boolean starterEngaged, int firing,
 						float capacity, boolean sparkFiring, float lubrication, boolean rich, float boost,
 						boolean dumping, float fouling, boolean balanced, float dilution, boolean pushrod,
 						boolean evenFiring) {
 			this(state, previous, rpm, starterEngaged, firing, capacity, sparkFiring, lubrication, rich, boost, dumping,
-				fouling, balanced, dilution, pushrod, evenFiring, false, false, false, false);
+				fouling, balanced, dilution, pushrod, evenFiring, false, false, false, false, false);
 		}
 
 		public Snapshot(EngineState state, EngineState previous, float rpm, boolean starterEngaged, int firing,
 						float capacity, boolean sparkFiring, float lubrication, boolean rich, float boost,
 						boolean dumping, float fouling, boolean balanced, float dilution) {
 			this(state, previous, rpm, starterEngaged, firing, capacity, sparkFiring, lubrication, rich, boost, dumping,
-				fouling, balanced, dilution, false, false, false, false, false, false);
+				fouling, balanced, dilution, false, false, false, false, false, false, false);
 		}
 
 		public Snapshot(EngineState state, EngineState previous, float rpm, boolean starterEngaged, int firing,
 						float capacity, boolean sparkFiring, float lubrication, boolean rich, float boost,
 						boolean dumping) {
 			this(state, previous, rpm, starterEngaged, firing, capacity, sparkFiring, lubrication, rich, boost, dumping,
-				0, false, 0, false, false, false, false, false, false);
+				0, false, 0, false, false, false, false, false, false, false);
 		}
 	}
 
@@ -344,12 +346,14 @@ public final class EngineMilestones {
 	 * @param lubrication    how well oiled the engine is, 0 to 1
 	 * @param sump           an oil sump is on the engine
 	 * @param mafReading     a MAF sensor is reading the air that cylinders draw
+	 * @param governing      a governor is pulling the fuel rack back to hold the engine's speed
+	 * @param commanded      a redstone signal has turned that governed speed down
 	 * @param precision      {@link PrecisionParts} bits of the precision parts in firing cylinders
 	 * @param rotorHousingTurning a rotor housing is in a crankshaft that is turning, running or not
 	 */
 	public record Parts(boolean running, boolean camTimed, boolean piped, boolean throttled, boolean diesel,
 						boolean gasoline, float lubrication, boolean sump, boolean mafReading,
-						int precision, boolean rotorHousingTurning) {
+						boolean governing, boolean commanded, int precision, boolean rotorHousingTurning) {
 	}
 
 	public static Set<Milestone> reachedParts(Parts p) {
@@ -375,6 +379,10 @@ public final class EngineMilestones {
 		}
 		if (p.mafReading())
 			reached.add(Milestone.MAF_READING);
+		if (p.governing())
+			reached.add(Milestone.GOVERNOR_ACTIVE);
+		if (p.governing() && p.commanded())
+			reached.add(Milestone.GOVERNOR_COMMANDED);
 		if (PrecisionParts.has(p.precision(), PrecisionParts.BORE))
 			reached.add(Milestone.PRECISION_BORE);
 		if (PrecisionParts.has(p.precision(), PrecisionParts.HEAD))
@@ -421,6 +429,8 @@ public final class EngineMilestones {
 				reached.add(Milestone.STEAM_HERD);
 			if (s.capacity() >= STEAM_TITAN)
 				reached.add(Milestone.STEAM_TITAN);
+			if (s.governed())
+				reached.add(Milestone.GOVERNED);
 			if (s.precisionEngine())
 				reached.add(Milestone.PRECISION_ENGINE);
 			if (s.sparkFiring())

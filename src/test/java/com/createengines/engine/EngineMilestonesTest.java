@@ -56,7 +56,7 @@ class EngineMilestonesTest {
 
 	private static Snapshot twoCranks(int firing, boolean coupled) {
 		return new Snapshot(EngineState.RUNNING, EngineState.RUNNING, 64, false, firing, 100, false, 0.5f, false, 0, false,
-			0, false, 0, false, false, false, false, false, coupled);
+			0, false, 0, false, false, false, false, false, false, coupled);
 	}
 
 	@Test
@@ -189,25 +189,25 @@ class EngineMilestonesTest {
 	@Test
 	void partsAreRewardedForWorkingInARunningEngine() {
 		EngineMilestones.Parts idle = new EngineMilestones.Parts(false, true, true, true, true, true, 1, true, true,
-			PrecisionParts.ALL, false);
+			true, true, PrecisionParts.ALL, false);
 		assertTrue(EngineMilestones.reachedParts(idle)
 			.isEmpty(), "fitting parts to an engine that is not running earns nothing");
 
 		EngineMilestones.Parts everything = new EngineMilestones.Parts(true, true, true, true, true, true, 1, true, true,
-			PrecisionParts.ALL, true);
+			true, true, PrecisionParts.ALL, true);
 		assertEquals(Set.of(Milestone.CAMSHAFT_TIMED, Milestone.PIPED_ENGINE, Milestone.THROTTLED,
 			Milestone.DIESEL_BURNED, Milestone.GASOLINE_BURNED, Milestone.OILED, Milestone.SUMP_OILING,
-			Milestone.MAF_READING, Milestone.PRECISION_BORE,
+			Milestone.MAF_READING, Milestone.GOVERNOR_ACTIVE, Milestone.GOVERNOR_COMMANDED, Milestone.PRECISION_BORE,
 			Milestone.PRECISION_HEAD, Milestone.PRECISION_PISTON, Milestone.PRECISION_INJECTOR,
 			Milestone.ROTOR_HOUSING_TURNED), EngineMilestones.reachedParts(everything));
 
 		EngineMilestones.Parts dry = new EngineMilestones.Parts(true, false, false, false, false, false, 0.2f, true,
-			false, PrecisionParts.PISTON, false);
+			false, false, false, PrecisionParts.PISTON, false);
 		assertEquals(Set.of(Milestone.PRECISION_PISTON), EngineMilestones.reachedParts(dry),
 			"a sump on a dry engine has not oiled anything");
 
 		EngineMilestones.Parts housing = new EngineMilestones.Parts(false, false, false, false, false, false, 0, false,
-			false, 0, true);
+			false, false, false, 0, true);
 		assertEquals(Set.of(Milestone.ROTOR_HOUSING_TURNED), EngineMilestones.reachedParts(housing),
 			"a rotor housing counts as soon as the shaft turns");
 	}

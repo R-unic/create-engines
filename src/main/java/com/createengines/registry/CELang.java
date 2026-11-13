@@ -51,6 +51,18 @@ public final class CELang {
 		raw("value.maf_target", "Mixture Target");
 		raw("value.boost_limit", "Boost Limit");
 		raw("value.anti_lag", "Anti-Lag");
+		raw("value.governed_speed", "Governed Speed");
+
+		raw("goggles.governor", "Governor");
+		raw("goggles.governor.no_engine", "Not touching a crankshaft block or a cylinder head");
+		raw("goggles.governor.speed", "Crank speed: %1$s RPM");
+		raw("goggles.governor.rack", "Fuel rack held at: %1$s%%");
+		raw("goggles.governor.open", "Rack wide open: the load is more than the engine can hold at this speed");
+		raw("goggles.governor.target", "Set to: %1$s RPM");
+		raw("goggles.governor.commanded", "Redstone has turned it down: holding %1$s RPM");
+		raw("goggles.governor.hint",
+			"Fuel (or throttle, in a spark engine) is cut as the engine passes the setting and opened as it falls, over about %1$s%% of the speed. The lowest setting on an engine governs. A redstone signal on the block holds the engine at that share of the setting, 15 being all of it, never below 20 RPM. The redstone output is the rack position, 15 wide open, and reaches comparators only");
+
 		raw("tool.timing_tool.style", "Timing Tool: %1$s");
 		raw("tool.timing_tool.style.smooth", "Smooth (any throw angle)");
 		raw("tool.timing_tool.style.cross_plane", "Cross-plane (quarter turns)");

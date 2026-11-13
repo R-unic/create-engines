@@ -12,6 +12,12 @@
         "event": "flywheel_smooth"
       },
       "trigger": "create_engines:event"
+    },
+    "governor_commanded": {
+      "conditions": {
+        "event": "governor_commanded"
+      },
+      "trigger": "create_engines:event"
     }
   },
   "display": {
@@ -33,6 +39,9 @@
     ],
     [
       "flywheel_smooth"
+    ],
+    [
+      "governor_commanded"
     ]
   ],
   "sends_telemetry_event": true

@@ -79,6 +79,18 @@
       },
       "trigger": "create_engines:event"
     },
+    "governed": {
+      "conditions": {
+        "event": "governed"
+      },
+      "trigger": "create_engines:event"
+    },
+    "governor_commanded": {
+      "conditions": {
+        "event": "governor_commanded"
+      },
+      "trigger": "create_engines:event"
+    },
     "hard_start": {
       "conditions": {
         "event": "hard_start"
@@ -266,6 +278,9 @@
       "maf_enrich"
     ],
     [
+      "governed"
+    ],
+    [
       "fuel_tuned"
     ],
     [
@@ -276,6 +291,9 @@
     ],
     [
       "flywheel_smooth"
+    ],
+    [
+      "governor_commanded"
     ],
     [
       "gasoline_burned"

@@ -352,6 +352,23 @@ write_schematic("maf_sensor", (6, 6, 6), [
     (3, 3, 2, "minecraft:redstone_lamp", {"lit": "false"}),
 ])
 
+# A governor against the crankshaft, with a comparator reading it and a lamp beyond
+write_schematic("governor", (6, 6, 6), [
+    (1, 1, 3, ce("crankshaft"), axis("x")),
+    (2, 1, 3, ce("crank_throw"), axis("x")),
+    (3, 1, 3, ce("crankshaft"), axis("x")),
+    (2, 2, 3, ce("cylinder"), cylinder("up")),
+    (2, 3, 3, ce("cylinder_head"), head("up")),
+    (2, 3, 2, ce("air_intake"), facing("north")),
+    (2, 3, 4, ce("exhaust_outlet"), facing("south")),
+    (2, 4, 3, ce("cam_lobe"), axis("x")),
+    (1, 4, 3, ce("camshaft"), axis("x")),
+    (3, 4, 3, ce("camshaft"), axis("x")),
+    (3, 2, 3, ce("governor"), {}),
+    (4, 2, 3, "minecraft:comparator", {"facing": "east", "mode": "compare", "powered": "false"}),
+    (5, 2, 3, "minecraft:redstone_lamp", {"lit": "false"}),
+])
+
 # The same four cylinders as the firing order page, for setting them with the timing tool
 write_schematic("timing_tool", (8, 5, 8), firing_order)
 

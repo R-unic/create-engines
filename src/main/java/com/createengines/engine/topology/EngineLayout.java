@@ -19,6 +19,7 @@ import net.minecraft.core.Direction.Axis;
  * @param batteries  batteries touching the crankshaft or a cylinder head, which fire every spark plug
  * @param alternators alternators touching the crankshaft or a cylinder head, which charge those batteries
  * @param sumps      oil pans touching the crankshaft or a cylinder head, which oil the whole engine
+ * @param governors  mechanical governors touching the crankshaft or a cylinder head, which hold a set speed
  * @param turbos     turbochargers on the engine's port networks
  * @param superchargers superchargers in the engine's intake networks
  * @param intercoolers intercoolers in the engine's intake networks
@@ -33,7 +34,7 @@ import net.minecraft.core.Direction.Axis;
 public record EngineLayout(BlockPos primary, Axis axis, List<Segment> segments, List<Cylinder> cylinders,
 						   List<PortNetwork> ports, List<CamLine> camLines, List<BlockPos> starters,
 						   List<BlockPos> batteries, List<BlockPos> alternators, List<BlockPos> sumps,
-						   List<BlockPos> heads,
+						   List<BlockPos> governors, List<BlockPos> heads,
 						   List<Turbo> turbos, List<Inline> superchargers, List<Inline> intercoolers, double flywheelInertia,
 							   int lines, Set<BlockPos> members, boolean incomplete,
 							   boolean broken) {

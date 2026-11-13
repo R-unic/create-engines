@@ -21,6 +21,7 @@ import com.createengines.content.cylinder.CylinderBlockEntity;
 import com.createengines.content.cylinder.CylinderVisual;
 import com.createengines.content.head.CylinderHeadBlockEntity;
 import com.createengines.content.head.CylinderHeadVisual;
+import com.createengines.content.governor.GovernorBlockEntity;
 import com.createengines.content.rotor.RotorHousingBlockEntity;
 import com.createengines.content.rotor.RotorHousingVisual;
 import com.createengines.content.starter.StarterBlockEntity;
@@ -87,6 +88,11 @@ public final class CEBlockEntities {
 	public static final BlockEntityEntry<HeatExchangerBlockEntity> HEAT_EXCHANGER = REGISTRATE
 		.blockEntity("heat_exchanger", HeatExchangerBlockEntity::new)
 		.validBlocks(CEBlocks.HEAT_EXCHANGER)
+		.register();
+
+	public static final BlockEntityEntry<GovernorBlockEntity> GOVERNOR = REGISTRATE
+		.blockEntity("governor", GovernorBlockEntity::new)
+		.validBlocks(CEBlocks.GOVERNOR)
 		.register();
 
 	public static final BlockEntityEntry<StarterBlockEntity> STARTER = REGISTRATE

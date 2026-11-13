@@ -80,7 +80,7 @@ and the crank animates with them.
   lights gasoline or ethanol with a small pilot shot
 - A forgiving early game: spark plug soot clears itself, goggles suggest fuel settings, and the Timing Tool can tune
   every injector in one click
-- MAF sensors for the late game
+- Governors and MAF sensors for the late game
 - Other mods' fuels work too: anything tagged `c:diesel`, `c:gasoline`, `c:ethanol` or `c:plantoil`, or given an entry
   in the fuel data map
 
@@ -139,16 +139,16 @@ config thins out engine sound and particles on a big engine. Fuel properties are
 ## Changelog for 0.4.0
 
 Create's Rotation Speed Controller holds a shaft at a set speed and trades speed for torque at any ratio, and it keeps
-what an engine drives steady however the engine's own speed moves. The Governor and the Transmission did the same job
-worse, so both are gone.
-- Removed: the Governor, the Transmission and their recipes, Ponder pages and advancements (Steady as She Goes, Speed
-  Dial, Cruise Control, Gear Up, Reverse Engineering, Gearhead and Let It Shift). Any in an existing world disappear when
-  it loads. Put a Rotation Speed Controller after the crankshaft instead.
-- Full Driveline now asks for a charged battery and a flywheel that smooths the engine, and Fine Tuner no longer asks for
-  a governed engine.
+what an engine drives steady however the engine's own speed moves. The Transmission did the same job worse, so it is
+gone.
+- Removed: the Transmission and its recipe, Ponder page and advancements (Gear Up, Reverse Engineering, Gearhead and Let
+  It Shift). Any in an existing world disappear when it loads. Put a Rotation Speed Controller after the crankshaft
+  instead. The Governor stays: it holds the engine's own speed, which a Rotation Speed Controller downstream does not.
+- Full Driveline no longer asks for every gear: it wants a charged battery, a flywheel that smooths the engine and a
+  governor under redstone.
 - A burning engine glows faintly: heads and rotor housings give off a little light while the charge fires.
 - Engines at the edge of loaded chunks no longer pull in chunks nobody is near.
-- Fuel recipes: plant oil takes four seeds or two saplings (100 mB and 50 mB), ethanol ferments from an apple or any
+- Fuel recipes: plant oil takes six seeds or two saplings (100 mB and 50 mB), ethanol ferments from an apple or any
   mushroom and makes 50 mB a batch, biodiesel needs 25 mB of ethanol, and gasoline needs only a Blaze Burner's heat.
 
 ## Changelog for 0.3.0

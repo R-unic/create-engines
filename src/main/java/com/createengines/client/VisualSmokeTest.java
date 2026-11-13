@@ -11,6 +11,7 @@ import com.createengines.content.airflow.ManifoldBlock;
 import com.createengines.content.airflow.PortOpeningBlock;
 import com.createengines.content.crankshaft.CrankshaftBlockEntity;
 import com.createengines.content.cylinder.CylinderBlock;
+import com.createengines.content.governor.GovernorBlockEntity;
 import com.createengines.content.tool.TimingToolItem;
 import com.createengines.engine.topology.FiringPlanner;
 import com.createengines.content.head.CylinderHeadBlock;
@@ -308,8 +309,8 @@ public final class VisualSmokeTest {
 	private static final BlockPos PRECISION_OFFSET = new BlockPos(72, 0, 0);
 
 	/**
-	 * A fresh engine built from precision parts, then the pages for the timing tool and the precision parts, and the
-	 * end of the run.
+	 * A fresh engine built from precision parts under a governor, then the pages for the governor, the timing tool and
+	 * the precision parts, and the end of the run.
 	 */
 	private static void precision(int start) {
 		int dx = PRECISION_OFFSET.getX();
@@ -336,6 +337,10 @@ public final class VisualSmokeTest {
 						.fill(new FluidStack(CEFluids.ENGINE_OIL.get()
 							.getSource(), 250), IFluidHandler.FluidAction.EXECUTE);
 				}
+				BlockPos governor = at.offset(3, 3, 2);
+				level.setBlock(governor, CEBlocks.GOVERNOR.getDefaultState(), 3);
+				if (level.getBlockEntity(governor) instanceof GovernorBlockEntity be)
+					be.target.setValue(80 / GovernorBlockEntity.TARGET_STEP);
 			});
 		}));
 		STEPS.add(new Step(start + 250, () -> server(server -> server.overworld()
@@ -347,8 +352,10 @@ public final class VisualSmokeTest {
 			Minecraft.getInstance().options.hideGui = false;
 			server(server -> command(server, "item replace entity @a armor.head with create:goggles"));
 		}));
+		goggles("governor", start + 560, dx + 3.5, 4.5, -0.5, 0, 18);
 		goggles("precision_head", start + 590, dx + 2.5, 5.0, -1.0, 0, 11);
 		goggles("precision_cylinder", start + 620, dx + 2.5, 2.0, -0.5, 0, 2.3f);
+		ponder("governor", start + 700, CEBlocks.GOVERNOR::asStack, 250, 550, 800);
 		ponder("timing_tool", start + 1700, CEItems.TIMING_TOOL::asStack, 250, 550, 800);
 		ponder("precision_parts", start + 2700, CEBlocks.PRECISION_CYLINDER::asStack, 250, 550, 800);
 		coupled(start + 3700);

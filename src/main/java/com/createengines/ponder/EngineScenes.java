@@ -1013,6 +1013,138 @@ public final class EngineScenes {
 		scene.markAsFinished();
 	}
 
+	public static void governor(SceneBuilder builder, SceneBuildingUtil util) {
+		CreateSceneBuilder scene = new CreateSceneBuilder(builder);
+		scene.title("governor", "Holding an Engine at a Speed");
+		scene.configureBasePlate(0, 0, 6);
+		scene.world()
+			.showSection(util.select()
+				.layer(0), Direction.UP);
+
+		Selection crank = util.select()
+			.fromTo(1, 1, 3, 3, 1, 3);
+		Selection cam = util.select()
+			.fromTo(1, 4, 3, 3, 4, 3);
+		Selection engine = util.select()
+			.fromTo(2, 2, 3, 2, 3, 3)
+			.add(cam)
+			.add(util.select()
+				.fromTo(2, 3, 2, 2, 3, 2))
+			.add(util.select()
+				.position(2, 3, 4));
+		Selection governor = util.select()
+			.position(3, 2, 3);
+		Selection lamp = util.select()
+			.fromTo(4, 2, 3, 5, 2, 3);
+		BlockPos block = util.grid()
+			.at(3, 2, 3);
+
+		setThrow(scene, util.select()
+			.position(2, 1, 3), 0);
+		setLobe(scene, util.select()
+			.position(2, 4, 3), LOBE_FOR_UPRIGHT_CYLINDER);
+		scene.world()
+			.showSection(crank, Direction.DOWN);
+		scene.world()
+			.showSection(engine, Direction.DOWN);
+		scene.world()
+			.setKineticSpeed(crank, 64);
+		scene.world()
+			.setKineticSpeed(cam, 32);
+		scene.idle(20);
+
+		scene.overlay()
+			.showText(110)
+			.attachKeyFrame()
+			.colored(PonderPalette.RED)
+			.text("An engine's speed depends on its load: let go of it and it races, load it and it lugs down. Everything it drives runs at whatever pace that happens to be.")
+			.pointAt(util.vector()
+				.topOf(2, 3, 3))
+			.placeNearTarget();
+		scene.world()
+			.setKineticSpeed(crank, 112);
+		scene.world()
+			.setKineticSpeed(cam, 56);
+		scene.idle(120);
+
+		scene.world()
+			.setKineticSpeed(crank, 64);
+		scene.world()
+			.setKineticSpeed(cam, 32);
+		scene.world()
+			.showSection(governor, Direction.DOWN);
+		scene.idle(15);
+		scene.overlay()
+			.showText(120)
+			.attachKeyFrame()
+			.text("A Governor set against a crankshaft block or a cylinder head moves the fuel rack to hold the crank at a set speed: it eases the fuel off as the engine speeds up and opens it as it slows.")
+			.pointAt(util.vector()
+				.topOf(block))
+			.placeNearTarget();
+		scene.idle(130);
+
+		scene.overlay()
+			.showControls(util.vector()
+				.blockSurface(block, Direction.NORTH), Pointing.RIGHT, 40)
+			.rightClick();
+		scene.idle(10);
+		scene.overlay()
+			.showText(110)
+			.attachKeyFrame()
+			.colored(PonderPalette.BLUE)
+			.text("Its Governed Speed is set with the value panel, in steps of 5 RPM, up to 1000. A spark engine is governed on its throttle instead, because a charge that is too lean will not light.")
+			.pointAt(util.vector()
+				.blockSurface(block, Direction.NORTH))
+			.placeNearTarget();
+		scene.idle(120);
+
+		scene.overlay()
+			.showText(110)
+			.colored(PonderPalette.GREEN)
+			.text("It holds the speed with the torque in hand, so the engine's rating is untouched. If the load is more than the engine can carry at that speed, the rack stays wide open and the engine slows.")
+			.pointAt(util.vector()
+				.topOf(block))
+			.placeNearTarget();
+		scene.idle(120);
+
+		scene.world()
+			.showSection(lamp, Direction.DOWN);
+		scene.idle(15);
+		scene.world()
+			.modifyBlock(util.grid()
+				.at(5, 2, 3), state -> state.setValue(BlockStateProperties.LIT, true), false);
+		scene.effects()
+			.indicateRedstone(util.grid()
+				.at(5, 2, 3));
+		scene.overlay()
+			.showText(110)
+			.attachKeyFrame()
+			.text("A comparator reads how far open the rack is held, 15 wide open and 0 shut, so it works as a load meter. The Governor never powers its neighbours directly.")
+			.pointAt(util.vector()
+				.topOf(4, 2, 3))
+			.placeNearTarget();
+		scene.idle(120);
+
+		scene.overlay()
+			.showText(130)
+			.attachKeyFrame()
+			.colored(PonderPalette.GREEN)
+			.text("Power the Governor with redstone and it holds only that share of its setting: strength 15 is all of it, 8 about half, never below 20 RPM. A circuit can command an engine's speed.")
+			.pointAt(util.vector()
+				.topOf(block))
+			.placeNearTarget();
+		scene.idle(140);
+
+		scene.overlay()
+			.showText(110)
+			.text("It also eases the fuel off whenever the engine would race, so an unloaded governed engine idles on a fraction of the fuel a racing one burns.")
+			.pointAt(util.vector()
+				.topOf(2, 3, 3))
+			.placeNearTarget();
+		scene.idle(120);
+		scene.markAsFinished();
+	}
+
 	public static void timingTool(SceneBuilder builder, SceneBuildingUtil util) {
 		CreateSceneBuilder scene = new CreateSceneBuilder(builder);
 		scene.title("timing_tool", "Setting a Firing Order");
