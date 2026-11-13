@@ -168,7 +168,8 @@ gone.
 - Fixed: a schematic cannon built a finished cylinder, head or rotor housing with its pistons, rods, injectors, plugs
   and rotor for free. It now asks for them.
 - A burning engine glows faintly: heads and rotor housings give off a little light while the charge fires.
-- Engines at the edge of loaded chunks no longer pull in chunks nobody is near.
+- Engines at the edge of loaded chunks no longer pull in chunks nobody is near, and an engine whose chunk has unloaded no longer pulls it back in.
+- Raise Create's maxRotationSpeed to 512 (higher works too) to let engines run past 256 RPM.
 - Fuel recipes: plant oil takes six seeds or two saplings (100 mB and 50 mB), ethanol ferments from an apple or any
   mushroom and makes 50 mB a batch, biodiesel needs 25 mB of ethanol, and gasoline needs only a Blaze Burner's heat.
 
