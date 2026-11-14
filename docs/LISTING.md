@@ -176,6 +176,8 @@ advancements change, and worlds from 1.0.0 load as they are.
 - Casing clads more. Besides crankshafts, throws, camshafts and cam lobes, it now covers cylinders, plain intake and
   exhaust manifolds, and Create's own shafts, cogwheels and large cogwheels (use it on them as you would Create's
   casings; they drop the shaft or cogwheel when broken). Throttles and sensors stay uncovered.
+- Cam lobes are drawn as separate intake, exhaust and injector lobes, each turning to its own valve timing, so you can
+  watch a valve open as its lobe comes round.
 - Wrenching a casing off: sneak with a wrench to remove the casing and keep the part inside, instead of breaking it.
 - The turbo wastegate chuffs when it swings open to hold the boost limit.
 - Fixed: a stopped engine kept firing its effects on the client, and a crank zeroed by a rotation conflict now asks to

@@ -63,9 +63,9 @@ public final class EnginePoses {
 	}
 
 	/**
-	 * Angles of a lobe set's three lobes about the cam's axis, in degrees: each is turned so that its nose is at the
-	 * follower it works (the cylinder's head, or its block through pushrods) exactly when that follower's lift peaks in
-	 * the simulation's cycle, and so that a larger lobe angle means the nose gets there later. A cam turning the other
+	 * Angles of a lobe set's three lobes about the cam's axis, in degrees: each is turned so that its nose is on the
+	 * far side of the shaft from the follower it works (the cylinder's head, or its block through pushrods) exactly when
+	 * that follower's lift peaks in the simulation's cycle, and so that a larger lobe angle means the nose gets there later. A cam turning the other
 	 * way reaches every mark in reverse order, so the offsets between lobes mirror with it.
 	 */
 	public record LobeAngles(float intake, float exhaust, float injector) {
@@ -130,7 +130,8 @@ public final class EnginePoses {
 
 	/** The cam is at cycle {@code peak} when it has turned {@code (peak - 360) / 2} past the lobe angle. */
 	private static float lobeAngle(double toward, double sense, double base, double peak) {
-		return (float) (toward + sense * (base - (peak - 360) / 2)) % 360;
+		// A half turn on: seen in game, the nose was away from the follower while its valve was open
+		return (float) (toward + 180 + sense * (base - (peak - 360) / 2)) % 360;
 	}
 
 	/**
