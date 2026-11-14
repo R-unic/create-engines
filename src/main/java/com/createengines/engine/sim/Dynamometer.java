@@ -26,6 +26,8 @@ public final class Dynamometer {
 		320, 384, 448, 512, 640, 768, 1024, 1536, 2048, 3072, 4096, 6144, 8192};
 	/** The fastest speed measured when no limit is given: Create's usual limit. */
 	public static final double DEFAULT_MAX_RPM = 256;
+	/** Speed, RPM, below which the curve's points are crawl speeds that {@link #roughnessLoss} does not judge a faster engine by. */
+	public static final double CRAWL_RPM = 32;
 	/** Rotor cycles to run at each speed: the first settles the fresh gas, the last is measured. */
 	private static final int CYCLES = 2;
 	/** Extra ticks to let a turbo spool up to the boost this speed gives, about five seconds. */
@@ -115,8 +117,17 @@ public final class Dynamometer {
 
 	/** The share of the peak torque at or below {@code rpm} that roughness takes off the rating. */
 	public static double roughnessLoss(double[] curve, double[] ripples, double rpm) {
-		double peak = peakTorque(curve, rpm);
-		return peak <= 0 ? 0 : Math.max(0, 1 - ratedTorque(curve, ripples, rpm) / peak);
+		// Below the crawl floor every engine is at its roughest and makes its biggest pulse, so that point would set the
+		// peak for every speed above it and charge the torque curve's fall to roughness. Only an engine that is itself
+		// below the floor is judged by it.
+		int from = rpm >= CRAWL_RPM ? 1 : 0;
+		double peak = 0;
+		double rated = 0;
+		for (int i = from; i < curve.length && i < ALL_SPEEDS.length && (i == 0 || ALL_SPEEDS[i] <= rpm); i++) {
+			peak = Math.max(peak, curve[i]);
+			rated = Math.max(rated, curve[i] * Roughness.smoothness(i < ripples.length ? ripples[i] : 0));
+		}
+		return peak <= 0 ? 0 : Math.max(0, 1 - rated / peak);
 	}
 
 	/** The speed, RPM, the curve's {@code index}th point is measured at. */

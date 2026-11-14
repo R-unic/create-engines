@@ -73,13 +73,23 @@ class DynamometerCurveTest {
 
 	@Test
 	void roughnessHoldsBackTheRatingOfTheSpeedThatCausesIt() {
-		double[] curve = {10, 8};
-		double[] ripples = {Roughness.FREE_RIPPLE + 1, 0};
+		double[] curve = {10, 8, 6};
+		double[] ripples = {Roughness.FREE_RIPPLE + 1, 0, 0};
 		// The first point is as rough as it can be, so it counts at its smoothed value and the second wins
 		assertEquals(10 * (1 - Roughness.MAX_LOSS), Dynamometer.ratedTorque(curve, ripples, 16), 1e-12);
 		assertEquals(8, Dynamometer.ratedTorque(curve, ripples, 32), 1e-12);
-		assertEquals(0.2, Dynamometer.roughnessLoss(curve, ripples, 32), 1e-12);
 		assertEquals(Roughness.MAX_LOSS, Dynamometer.roughnessLoss(curve, ripples, 16), 1e-12);
+	}
+
+	@Test
+	void crawlSpeedsDoNotChargeAFasterEngineForItsFallingTorque() {
+		// Torque peaks at the roughest, slowest point: from 32 RPM up it is the smoothness that is judged, not that peak
+		double[] curve = {10, 8, 6};
+		double[] ripples = {Roughness.FREE_RIPPLE + 1, 0, 0};
+		assertEquals(0, Dynamometer.roughnessLoss(curve, ripples, 48), 1e-12);
+		assertEquals(0, Dynamometer.roughnessLoss(curve, ripples, 256), 1e-12);
+		double[] rough = {10, 8, 6};
+		assertEquals(Roughness.MAX_LOSS, Dynamometer.roughnessLoss(rough, new double[] {0, 1, 1}, 48), 1e-12);
 	}
 
 	@Test
