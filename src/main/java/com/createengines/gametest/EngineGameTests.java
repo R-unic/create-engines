@@ -4,6 +4,7 @@ import java.util.Collection;
 import java.util.function.BiConsumer;
 
 import com.createengines.CreateEngines;
+import com.createengines.config.CEConfig;
 import com.createengines.content.airflow.HeatExchangerBlockEntity;
 import com.createengines.content.airflow.MafSensorBlockEntity;
 import com.createengines.content.airflow.ManifoldBlock;
@@ -488,9 +489,9 @@ public class EngineGameTests {
 	}
 
 	/** Four presses are more than it's rated for: Create overstresses the network, and the engine keeps running. */
-	@GameTest(template = "empty", timeoutTicks = 1400)
+	@GameTest(template = "empty_large", timeoutTicks = 1400)
 	public static void overloadOverstressesWithoutStalling(GameTestHelper helper) {
-		runWithPresses(helper, 4);
+		runWithPresses(helper, scaledPresses(4));
 		helper.runAtTickTime(1000, () -> {
 			CrankshaftBlockEntity crank = helper.getBlockEntity(PRIMARY);
 			EngineSummary summary = summary(helper);
@@ -1908,7 +1909,20 @@ public class EngineGameTests {
 	}
 
 	private static void placePresses(GameTestHelper helper) {
-		for (int i = 0; i < 3; i++)
+		placePresses(helper, 3);
+	}
+
+	/**
+	 * How many presses overload the single cylinder when four did at a stress scale of 40 per unit of torque, the scale
+	 * these tests were first calibrated at. The engine's rating follows the config, so the load has to as well. A row of
+	 * that many presses is longer than the small template, so these tests use the large one.
+	 */
+	private static int scaledPresses(int calibrated) {
+		return (int) Math.ceil(calibrated * CEConfig.STRESS_PER_TORQUE.get() / 40.0 * 1.1);
+	}
+
+	private static void placePresses(GameTestHelper helper, int presses) {
+		for (int i = 0; i < presses; i++)
 			helper.setBlock(PRESS.east(1 + i), AllBlocks.MECHANICAL_PRESS.getDefaultState()
 				.setValue(BlockStateProperties.HORIZONTAL_FACING, Direction.EAST));
 	}
@@ -1935,7 +1949,7 @@ public class EngineGameTests {
 	}
 
 	/** Put on auto while overstressed in a gear that is too tall, a transmission drops to one the engine can carry. */
-	@GameTest(template = "empty", timeoutTicks = 4000)
+	@GameTest(template = "empty_large", timeoutTicks = 4000)
 	public static void anAutoTransmissionDownshiftsOutOfAnOverload(GameTestHelper helper) {
 		buildSingleCylinder(helper, true);
 		helper.setBlock(PRESS, CEBlocks.TRANSMISSION.getDefaultState()
@@ -1943,7 +1957,7 @@ public class EngineGameTests {
 		TransmissionBlockEntity box = helper.getBlockEntity(PRESS);
 		box.panel.setValue(Gears.TOP);
 		helper.runAtTickTime(300, () -> helper.setBlock(STARTER_POWER, Blocks.AIR));
-		helper.runAtTickTime(500, () -> placePresses(helper));
+		helper.runAtTickTime(500, () -> placePresses(helper, scaledPresses(3)));
 		helper.runAtTickTime(1500, () -> {
 			CrankshaftBlockEntity crank = helper.getBlockEntity(PRIMARY);
 			helper.assertTrue(crank.isOverStressed(), "In the top gear three presses should overstress the engine");
