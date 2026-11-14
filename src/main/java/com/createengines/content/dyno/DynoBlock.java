@@ -1,6 +1,7 @@
 package com.createengines.content.dyno;
 
 import com.createengines.registry.CEBlockEntities;
+import com.simibubi.create.content.equipment.wrench.IWrenchable;
 import com.simibubi.create.foundation.block.IBE;
 
 import net.minecraft.core.BlockPos;
@@ -17,7 +18,7 @@ import net.minecraft.world.phys.shapes.VoxelShape;
  * the engine's torque and power curves, its peak figures and its powerband. It also gives a redstone signal that
  * rises as the engine's speed climbs towards the speed it makes its peak power at.
  */
-public class DynoBlock extends Block implements IBE<DynoBlockEntity> {
+public class DynoBlock extends Block implements IWrenchable, IBE<DynoBlockEntity> {
 
 	private static final VoxelShape SHAPE = Block.box(0, 0, 0, 16, 12, 16);
 

@@ -3,6 +3,7 @@ package com.createengines.content.airflow;
 import org.jetbrains.annotations.Nullable;
 
 import com.createengines.engine.topology.EngineTopology;
+import com.simibubi.create.content.equipment.wrench.IWrenchable;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -24,7 +25,7 @@ import com.mojang.serialization.MapCodec;
  * face, or nothing can flow through it. The back of it, opposite the mouth, is what connects: to a pipe, or straight
  * to a cylinder head.
  */
-public class PortOpeningBlock extends DirectionalBlock implements AirflowPort {
+public class PortOpeningBlock extends DirectionalBlock implements AirflowPort, IWrenchable {
 
 	public static final DirectionProperty FACING = DirectionalBlock.FACING;
 

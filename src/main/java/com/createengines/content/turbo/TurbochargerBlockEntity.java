@@ -65,6 +65,8 @@ public class TurbochargerBlockEntity extends SmartBlockEntity
 	private float wheelSpeed;
 	/** Client only: whether the wastegate was being held open by redstone at the last tick, and the best boost lately. */
 	private boolean wasVenting;
+	private boolean wasRegulating;
+	private final EffectRate chuffRate = new EffectRate(40);
 	/** Client only: whether the engine was off the throttle at the last tick; true while there is no status to go on. */
 	private boolean wasLifted = true;
 	private float heldBoost;
@@ -227,6 +229,14 @@ public class TurbochargerBlockEntity extends SmartBlockEntity
 		if (!opens && lifted && !wasLifted && heldBoost >= 0.25f && liftRate.allow(level))
 			opens = true;
 		wasLifted = lifted;
+		// The wastegate swinging open to hold the limit chuffs too: a softer, higher flutter, at most every couple of seconds.
+		boolean regulating = status != null && status.wastegate() > 0.5f && !dumping();
+		boolean chuffs = !opens && regulating && !wasRegulating && boost >= 0.25f && chuffRate.allow(level);
+		wasRegulating = regulating;
+		if (chuffs && CEClientConfig.boostVolume() > 0)
+			level.playLocalSound(worldPosition, CESounds.TURBO_BLOWOFF.get(), SoundSource.BLOCKS,
+				Math.min(0.9f, 0.3f + boost * 0.5f) * CEClientConfig.boostVolume(), 1.15f + level.random.nextFloat() * 0.1f,
+				false);
 		if (opens && heldBoost >= 0.25f) {
 			if (CEClientConfig.boostVolume() > 0)
 				level.playLocalSound(worldPosition, CESounds.TURBO_BLOWOFF.get(), SoundSource.BLOCKS,

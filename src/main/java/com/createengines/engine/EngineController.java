@@ -432,6 +432,11 @@ public final class EngineController {
 			{
 				primary.updateSummary(summary(layout.incomplete() ? EngineState.INCOMPLETE : EngineState.BROKEN, torqueScale));
 				glow(level, false);
+				// Nothing is simulated, so the cylinders' last results are stale: left in place they keep firing on the
+				// client for as long as anything turns a cam
+				for (Cylinder cylinder : layout.cylinders())
+					if (!cylinder.rotary() && LoadedBlocks.blockEntity(level, cylinder.pos()) instanceof CylinderBlockEntity be)
+						be.detachFromEngine();
 			}
 			return;
 		}
@@ -877,8 +882,13 @@ public final class EngineController {
 			target = sim.direction() * Math.min(maxSpeed, Math.max(1, Math.round(sim.rpm())));
 		float current = primary.getGeneratedSpeed();
 		ticksSincePublish++;
-		if (target == current)
+		if (target == current) {
+			// Create zeroes a crank when a rotation conflict breaks a source beside it (a hand crank turned against the
+			// engine), and never asks it again: the engine would run on, firing, with a crank that does not turn
+			if (target != 0 && primary.getSpeed() == 0 && !primary.hasSource() && ticks % 20 == 0)
+				primary.updateGeneratedRotation();
 			return;
+		}
 		boolean startOrStop = target == 0 || current == 0 || Math.signum(target) != Math.signum(current);
 		boolean significant = Math.abs(target - current) >= Math.max(1, Math.abs(current) * 0.04f);
 		if (startOrStop || significant && ticksSincePublish >= PUBLISH_INTERVAL) {
@@ -1048,7 +1058,8 @@ public final class EngineController {
 			if (model == null)
 				continue;
 			working++;
-			if (model.lastCycle().result.fired())
+			// A stopped engine's cylinders keep the result of the last cycle they ran, which is not firing now
+			if (state != EngineState.STALLED && model.lastCycle().result.fired())
 				firing++;
 			Camshaft camshaft = model.camshaft();
 			if (camshaft != null && camshaft.isPhaseLocked())

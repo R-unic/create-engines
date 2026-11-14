@@ -7,6 +7,7 @@ import com.createengines.advancement.Milestone;
 import com.createengines.engine.topology.EngineTopology;
 import com.createengines.registry.CEBlockEntities;
 import com.createengines.registry.CEItems;
+import com.simibubi.create.content.equipment.wrench.IWrenchable;
 import com.simibubi.create.foundation.block.IBE;
 
 import net.minecraft.core.BlockPos;
@@ -30,7 +31,7 @@ import net.neoforged.neoforge.fluids.FluidUtil;
  * fuel. Fill it by hand with a bucket, or pipe fluids into any face; it sorts them out. An oil filter fits in it by
  * right-click, and comes out again by sneak-right-click with an empty hand. See {@link SumpBlockEntity}.
  */
-public class SumpBlock extends Block implements IBE<SumpBlockEntity> {
+public class SumpBlock extends Block implements IWrenchable, IBE<SumpBlockEntity> {
 
 	public SumpBlock(Properties properties) {
 		super(properties);

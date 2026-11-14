@@ -1855,6 +1855,58 @@ public class EngineGameTests {
 		});
 	}
 
+	/** In neutral a transmission passes no load back: presses that would overstress the engine direct leave it alone. */
+	@GameTest(template = "empty", timeoutTicks = 2000)
+	public static void aNeutralTransmissionCannotOverstressTheEngine(GameTestHelper helper) {
+		buildSingleCylinder(helper, true);
+		helper.setBlock(PRESS, CEBlocks.TRANSMISSION.getDefaultState()
+			.setValue(BlockStateProperties.AXIS, Axis.X));
+		TransmissionBlockEntity box = helper.getBlockEntity(PRESS);
+		box.panel.setValue(Gears.NEUTRAL);
+		helper.runAtTickTime(300, () -> helper.setBlock(STARTER_POWER, Blocks.AIR));
+		for (int tick = 500; tick <= 1500; tick += 250) {
+			boolean last = tick == 1500;
+			boolean first = tick == 500;
+			helper.runAtTickTime(tick, () -> {
+				if (first)
+					placePresses(helper);
+				CrankshaftBlockEntity crank = helper.getBlockEntity(PRIMARY);
+				helper.assertFalse(crank.isOverStressed(), "A transmission in neutral carries no load");
+				KineticBlockEntity press = helper.getBlockEntity(PRESS.east());
+				helper.assertTrue(press.getSpeed() == 0, "Nothing should turn behind a neutral transmission: " + press.getSpeed());
+				if (last)
+					helper.succeed();
+			});
+		}
+	}
+
+	/** Moved from neutral to auto under load, a transmission picks a gear the engine can carry and drives the presses. */
+	@GameTest(template = "empty", timeoutTicks = 4000)
+	public static void aTransmissionShiftsFromNeutralToAuto(GameTestHelper helper) {
+		buildSingleCylinder(helper, true);
+		helper.setBlock(PRESS, CEBlocks.TRANSMISSION.getDefaultState()
+			.setValue(BlockStateProperties.AXIS, Axis.X));
+		TransmissionBlockEntity box = helper.getBlockEntity(PRESS);
+		box.panel.setValue(Gears.NEUTRAL);
+		helper.runAtTickTime(300, () -> helper.setBlock(STARTER_POWER, Blocks.AIR));
+		helper.runAtTickTime(500, () -> placePresses(helper));
+		helper.runAtTickTime(1200, () -> {
+			helper.assertTrue(box.gear() == Gears.NEUTRAL, "It should still be in neutral: " + box.gear());
+			box.panel.setValue(Gears.AUTO);
+		});
+		helper.runAtTickTime(1300, () -> {
+			helper.assertTrue(box.isAuto(), "The panel should be on auto");
+			helper.assertTrue(box.gear() != Gears.NEUTRAL, "Auto should have taken it out of neutral: " + box.gear());
+		});
+		helper.runAtTickTime(3600, () -> {
+			CrankshaftBlockEntity crank = helper.getBlockEntity(PRIMARY);
+			helper.assertFalse(crank.isOverStressed(), "Auto should carry the presses without overstressing: gear " + box.gear());
+			KineticBlockEntity press = helper.getBlockEntity(PRESS.east());
+			helper.assertTrue(press.getSpeed() != 0, "The presses should turn once auto is driving them");
+			helper.succeed();
+		});
+	}
+
 	private static void placePresses(GameTestHelper helper) {
 		for (int i = 0; i < 3; i++)
 			helper.setBlock(PRESS.east(1 + i), AllBlocks.MECHANICAL_PRESS.getDefaultState()

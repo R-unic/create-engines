@@ -2,6 +2,7 @@ package com.createengines.registry;
 
 import static com.createengines.CreateEngines.REGISTRATE;
 
+import com.createengines.content.EngineCasingBlock;
 import com.createengines.content.EngineGlow;
 import com.createengines.content.airflow.HeatExchangerBlock;
 import com.createengines.content.airflow.MafSensorBlock;
@@ -458,8 +459,8 @@ public final class CEBlocks {
 			.register();
 
 	/** Plain riveted plates to build a cowl round an engine with: it does nothing but hide the sprawl. */
-	public static final BlockEntry<Block> ENGINE_CASING =
-		REGISTRATE.block("engine_casing", Block::new)
+	public static final BlockEntry<EngineCasingBlock> ENGINE_CASING =
+		REGISTRATE.block("engine_casing", EngineCasingBlock::new)
 			.initialProperties(SharedProperties::softMetal)
 			.properties(p -> p.mapColor(MapColor.METAL))
 			.transform(TagGen.pickaxeOnly())

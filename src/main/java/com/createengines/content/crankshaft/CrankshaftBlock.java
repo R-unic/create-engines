@@ -60,6 +60,13 @@ public class CrankshaftBlock extends RotatedPillarKineticBlock implements IBE<Cr
 		return result != null ? result : super.onWrenched(state, context);
 	}
 
+	/** Sneaking with the wrench takes the casing off too, instead of breaking the part inside it. */
+	@Override
+	public InteractionResult onSneakWrenched(BlockState state, UseOnContext context) {
+		InteractionResult result = Encasing.uncase(state, context);
+		return result != null ? result : super.onSneakWrenched(state, context);
+	}
+
 	public boolean isThrow() {
 		return false;
 	}

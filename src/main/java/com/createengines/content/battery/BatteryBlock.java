@@ -2,6 +2,7 @@ package com.createengines.content.battery;
 
 import com.createengines.engine.topology.EngineTopology;
 import com.createengines.registry.CEBlockEntities;
+import com.simibubi.create.content.equipment.wrench.IWrenchable;
 import com.simibubi.create.foundation.block.IBE;
 
 import net.minecraft.core.BlockPos;
@@ -19,7 +20,7 @@ import net.minecraft.world.phys.shapes.VoxelShape;
  * {@link com.createengines.content.alternator.AlternatorBlock alternator} touching it, or touching the same engine,
  * fills it.
  */
-public class BatteryBlock extends Block implements IBE<BatteryBlockEntity> {
+public class BatteryBlock extends Block implements IWrenchable, IBE<BatteryBlockEntity> {
 
 	private static final VoxelShape SHAPE = Block.box(2, 0, 2, 14, 16, 14);
 

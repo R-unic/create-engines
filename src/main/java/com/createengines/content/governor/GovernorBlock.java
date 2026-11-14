@@ -2,6 +2,7 @@ package com.createengines.content.governor;
 
 import com.createengines.engine.topology.EngineTopology;
 import com.createengines.registry.CEBlockEntities;
+import com.simibubi.create.content.equipment.wrench.IWrenchable;
 import com.simibubi.create.foundation.block.IBE;
 
 import net.minecraft.core.BlockPos;
@@ -21,7 +22,7 @@ import net.minecraft.world.phys.shapes.VoxelShape;
  * output is how far open it holds the rack, 15 wide open and 0 shut, so it reads as a load meter, but it reaches
  * comparators only: a block that powered its neighbours would feed its own output back in as a command.
  */
-public class GovernorBlock extends Block implements IBE<GovernorBlockEntity> {
+public class GovernorBlock extends Block implements IWrenchable, IBE<GovernorBlockEntity> {
 
 	private static final VoxelShape SHAPE = Block.box(1, 0, 1, 15, 12, 15);
 

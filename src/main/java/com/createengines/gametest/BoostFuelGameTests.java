@@ -68,6 +68,12 @@ public class BoostFuelGameTests {
 				.setValue(CreativeMotorBlock.FACING, Direction.UP));
 			CreativeMotorBlockEntity motor = helper.getBlockEntity(BLOWER.below());
 			motor.generatedSpeed.setValue(blowerRpm);
+			// Let the bypass valve pass all the boost the blower can make
+			com.createengines.content.supercharger.SuperchargerBlockEntity charger = helper.getBlockEntity(BLOWER);
+			charger.limit.setValue(com.createengines.content.supercharger.SuperchargerBlockEntity.MAX_LIMIT);
+			// Boosted air needs a bigger shot than the default: the stock one leaves the charge too lean to light
+			CylinderHeadBlockEntity boosted = helper.getBlockEntity(HEAD);
+			boosted.metering.setValue(CylinderHeadBlockEntity.MAX_METERING);
 		}
 		helper.runAtTickTime(300, () -> helper.setBlock(TestEngine.STARTER_POWER, Blocks.AIR));
 	}

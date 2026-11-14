@@ -48,7 +48,7 @@ public class TransmissionBlockEntity extends SplitShaftBlockEntity {
 
 	public ScrollValueBehaviour panel;
 
-	private int gear = Gears.FIRST;
+	private int gear = Gears.NEUTRAL;
 	/** The gear auto has chosen; kept while another setting is selected so it can pick up where it was. */
 	private int autoGear = Gears.FIRST;
 	/** Whether auto was the setting at the last look, to start it from the gear in use. */
@@ -57,6 +57,12 @@ public class TransmissionBlockEntity extends SplitShaftBlockEntity {
 	private int autoTicks;
 	/** Bit for each gear that has carried drive, for the achievement for using them all. */
 	private int gearsUsed;
+	/**
+	 * The end an engine drives it from, once it has been driven by one. Drive arriving at the other end is refused, so
+	 * that an engine that stops (a broken crank throw) does not leave whatever sits on the other side driving the crank
+	 * backwards through the box, with the input and output swapped.
+	 */
+	private @Nullable Direction inputFace;
 
 	public TransmissionBlockEntity(BlockEntityType<?> type, BlockPos pos, BlockState state) {
 		super(type, pos, state);
@@ -86,7 +92,7 @@ public class TransmissionBlockEntity extends SplitShaftBlockEntity {
 			}
 		};
 		panel.between(Gears.NEUTRAL, Gears.AUTO);
-		panel.value = Gears.FIRST;
+		panel.value = Gears.NEUTRAL;
 		panel.withFormatter(Gears::label);
 		panel.withCallback(value -> updateGear());
 		behaviours.add(panel);
@@ -103,7 +109,13 @@ public class TransmissionBlockEntity extends SplitShaftBlockEntity {
 	}
 
 	private int signalGear() {
-		return level == null ? -1 : Gears.fromSignal(level.getBestNeighborSignal(worldPosition));
+		if (level == null)
+			return -1;
+		// Reading a signal looks at every neighbour, and at a chunk's edge that would load the chunk beside it
+		for (Direction side : Direction.values())
+			if (!level.isLoaded(worldPosition.relative(side)))
+				return -1;
+		return Gears.fromSignal(level.getBestNeighborSignal(worldPosition));
 	}
 
 	/** A redstone signal selects a gear outright; with none, the panel does, and on auto the block's own choice. */
@@ -158,8 +170,29 @@ public class TransmissionBlockEntity extends SplitShaftBlockEntity {
 		if (level == null || level.isClientSide || ++autoTicks < AUTO_INTERVAL)
 			return;
 		autoTicks = 0;
+		trackInput();
 		if (isAuto())
 			autoShift();
+	}
+
+	/** Remembers the end an engine drives this from, and forgets it when nothing shaft-like is left there. */
+	private void trackInput() {
+		if (inputFace != null) {
+			BlockPos beside = worldPosition.relative(inputFace);
+			if (!level.isLoaded(beside))
+				return;
+			BlockState state = level.getBlockState(beside);
+			if (!(state.getBlock() instanceof com.simibubi.create.content.kinetics.base.IRotate rotate)
+				|| !rotate.hasShaftTowards(level, beside, state, inputFace.getOpposite())) {
+				inputFace = null;
+				setChanged();
+			}
+			return;
+		}
+		if (hasSource() && getSpeed() != 0 && engine() != null) {
+			inputFace = getSourceFacing();
+			setChanged();
+		}
 	}
 
 	/** Looks at the engine and moves auto's choice a gear if it should. */
@@ -209,7 +242,7 @@ public class TransmissionBlockEntity extends SplitShaftBlockEntity {
 	@Override
 	public float getRotationSpeedModifier(Direction face) {
 		if (hasSource() && face != getSourceFacing())
-			return Gears.speedModifier(gear);
+			return inputFace != null && getSourceFacing() != inputFace ? 0 : Gears.speedModifier(gear);
 		return 1;
 	}
 
@@ -226,18 +259,21 @@ public class TransmissionBlockEntity extends SplitShaftBlockEntity {
 		tag.putInt("AutoGear", autoGear);
 		tag.putInt("GearsUsed", gearsUsed);
 		tag.putBoolean("ThirteenGears", true);
+		if (inputFace != null)
+			tag.putInt("InputFace", inputFace.get3DDataValue());
 	}
 
 	@Override
 	protected void read(CompoundTag tag, HolderLookup.Provider registries, boolean clientPacket) {
 		super.read(tag, registries, clientPacket);
-		int saved = tag.contains("Gear") ? tag.getInt("Gear") : Gears.FIRST;
+		int saved = tag.contains("Gear") ? tag.getInt("Gear") : Gears.NEUTRAL;
 		if (!tag.getBoolean("ThirteenGears") && tag.contains("Gear")) {
 			// Saved with four gears: first to fourth and reverse are other positions now
 			saved = Gears.fromLegacy(saved);
 			if (panel != null)
 				panel.value = Gears.fromLegacy(panel.value);
 		}
+		inputFace = tag.contains("InputFace") ? Direction.from3DDataValue(tag.getInt("InputFace")) : null;
 		gear = Gears.clamp(saved);
 		autoGear = tag.contains("AutoGear") ? Gears.clamp(tag.getInt("AutoGear")) : gear;
 		gearsUsed = tag.contains("ThirteenGears") ? tag.getInt("GearsUsed") : 0;

@@ -1,6 +1,7 @@
 package com.createengines.content.blackbox;
 
 import com.createengines.registry.CEBlockEntities;
+import com.simibubi.create.content.equipment.wrench.IWrenchable;
 import com.simibubi.create.foundation.block.IBE;
 
 import net.minecraft.core.BlockPos;
@@ -16,7 +17,7 @@ import net.minecraft.world.phys.shapes.VoxelShape;
  * last ten minutes of the engine's speed, load and warmth, and every time the engine changed state, with the cause the
  * figures point to. Goggles on it read the tape back.
  */
-public class BlackBoxBlock extends Block implements IBE<BlackBoxBlockEntity> {
+public class BlackBoxBlock extends Block implements IWrenchable, IBE<BlackBoxBlockEntity> {
 
 	private static final VoxelShape SHAPE = Block.box(1, 0, 1, 15, 10, 15);
 
