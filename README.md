@@ -86,7 +86,7 @@ Minecraft 1.21.1 · NeoForge 21.1.219 · Create 6.0.10
 - A **Black Box** flight recorder that keeps ten minutes of an engine's speed, load and warmth and says why it stalled
 - An exhaust note made up from the engine's speed and firing order, so a V-twin lopes, a six hums and a dead cylinder limps
 - A **Muffler** that quiets the note, the bangs and the pops without costing the engine any power, and **Engine Casing**
-  to clad a bank and hide the sprawl
+  that joins into one plate and clads cylinders, pipes, cams, and Create's own shafts and cogwheels to hide the sprawl
 - Exhaust that tells the truth: a thin haze when the mixture is right, black when it is rich, white vapour until the
   block warms, a blue cast when fuel has thinned the oil, and a crack of flame when unburned fuel meets a hot pipe.
   Engines cough as they catch and knock as they die, tick as they cool, squeal and spark when they run dry, draw the
@@ -132,7 +132,7 @@ limit you set. Everything else on the kinetic network still obeys Create's own r
 Other useful tasks: `./gradlew test` (simulation unit tests), `./gradlew runGameTestServer` (in-world GameTests) and
 `./gradlew runVisualSmokeTest` (builds an engine and saves screenshots to `run/screenshots/`).
 
-Design notes and how the simulation works are in [docs/DESIGN.md](docs/DESIGN.md). What is left before 1.0 is in
+Design notes and how the simulation works are in [docs/DESIGN.md](docs/DESIGN.md). The 1.0 release checklist is in
 [docs/RELEASE_1_0.md](docs/RELEASE_1_0.md).
 
 ## License

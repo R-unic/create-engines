@@ -2,7 +2,11 @@ package com.createengines.registry;
 
 import static com.createengines.CreateEngines.REGISTRATE;
 
+import com.createengines.content.CESpriteShifts;
+import com.createengines.content.EngineCasedCogwheelBlock;
+import com.createengines.content.EngineCasedShaftBlock;
 import com.createengines.content.EngineCasingBlock;
+import com.createengines.content.Encasing;
 import com.createengines.content.EngineGlow;
 import com.createengines.content.airflow.HeatExchangerBlock;
 import com.createengines.content.airflow.MafSensorBlock;
@@ -32,10 +36,16 @@ import com.createengines.content.supercharger.SuperchargerBlock;
 import com.createengines.content.transmission.TransmissionBlock;
 import com.createengines.content.turbo.TurbochargerBlock;
 import com.createengines.content.turbo.VariableTurbochargerBlock;
+import com.simibubi.create.AllBlocks;
 import com.simibubi.create.api.behaviour.display.DisplaySource;
+import com.simibubi.create.content.decoration.encasing.EncasedCTBehaviour;
+import com.simibubi.create.content.decoration.encasing.EncasingRegistry;
+import com.simibubi.create.content.kinetics.base.RotatedPillarKineticBlock;
+import com.simibubi.create.content.kinetics.simpleRelays.encased.EncasedCogwheelBlock;
 import com.simibubi.create.content.processing.burner.BlazeBurnerBlock;
 import com.simibubi.create.foundation.data.AssetLookup;
 import com.simibubi.create.foundation.data.BlockStateGen;
+import com.simibubi.create.foundation.data.CreateRegistrate;
 import com.simibubi.create.foundation.data.ModelGen;
 import com.simibubi.create.foundation.data.SharedProperties;
 import com.simibubi.create.foundation.data.TagGen;
@@ -44,9 +54,12 @@ import com.tterrag.registrate.providers.DataGenContext;
 import com.tterrag.registrate.providers.RegistrateBlockstateProvider;
 import com.tterrag.registrate.util.entry.BlockEntry;
 
+import java.util.function.BiPredicate;
+
 import net.minecraft.core.Direction;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockBehaviour;
+import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.material.MapColor;
 import net.neoforged.neoforge.client.model.generators.ModelFile;
 
@@ -82,7 +95,8 @@ public final class CEBlocks {
 		.properties(p -> part(p)
 			.mapColor(MapColor.METAL))
 		.transform(TagGen.pickaxeOnly())
-		.blockstate((c, p) -> BlockStateGen.axisBlock(c, p, s -> shaftModel(c, p, s)))
+		.transform(CEBlocks::casedShaftPart)
+			.blockstate((c, p) -> BlockStateGen.axisBlock(c, p, s -> shaftModel(c, p, s)))
 		.item()
 		.transform(ModelGen.customItemModel())
 		.register();
@@ -93,7 +107,8 @@ public final class CEBlocks {
 		.properties(p -> part(p)
 			.mapColor(MapColor.METAL))
 		.transform(TagGen.pickaxeOnly())
-		.blockstate((c, p) -> BlockStateGen.axisBlock(c, p, s -> shaftModel(c, p, s)))
+		.transform(CEBlocks::casedShaftPart)
+			.blockstate((c, p) -> BlockStateGen.axisBlock(c, p, s -> shaftModel(c, p, s)))
 		.item()
 		.transform(ModelGen.customItemModel())
 		.register();
@@ -123,12 +138,13 @@ public final class CEBlocks {
 			.register();
 
 	public static final BlockEntry<CylinderBlock> CYLINDER = REGISTRATE.block("cylinder", CylinderBlock::new)
+		.transform(CEBlocks::casedPart)
 		.initialProperties(SharedProperties::softMetal)
 		.properties(p -> part(p)
 			.mapColor(MapColor.METAL))
 		.transform(TagGen.pickaxeOnly())
 		.blockstate((c, p) -> BlockStateGen.directionalBlockIgnoresWaterlogged(c, p,
-			s -> AssetLookup.partialBaseModel(c, p)))
+			s -> cylinderModel(c, p, s)))
 		.item()
 		.transform(ModelGen.customItemModel())
 		.register();
@@ -155,12 +171,13 @@ public final class CEBlocks {
 	/** A brass, liner-bored cylinder: higher compression and less wall friction than the crude one. */
 	public static final BlockEntry<CylinderBlock> PRECISION_CYLINDER =
 		REGISTRATE.block("precision_cylinder", p -> new CylinderBlock(p, true))
+				.transform(CEBlocks::casedPart)
 			.initialProperties(SharedProperties::softMetal)
 			.properties(p -> part(p)
 				.mapColor(MapColor.GOLD))
 			.transform(TagGen.pickaxeOnly())
 			.blockstate((c, p) -> BlockStateGen.directionalBlockIgnoresWaterlogged(c, p,
-				s -> AssetLookup.partialBaseModel(c, p)))
+				s -> cylinderModel(c, p, s)))
 			.item()
 			.transform(ModelGen.customItemModel())
 			.register();
@@ -190,7 +207,8 @@ public final class CEBlocks {
 		.properties(p -> part(p)
 			.mapColor(MapColor.METAL))
 		.transform(TagGen.pickaxeOnly())
-		.blockstate((c, p) -> BlockStateGen.axisBlock(c, p, s -> shaftModel(c, p, s)))
+		.transform(CEBlocks::casedShaftPart)
+			.blockstate((c, p) -> BlockStateGen.axisBlock(c, p, s -> shaftModel(c, p, s)))
 		.item()
 		.transform(ModelGen.customItemModel())
 		.register();
@@ -200,13 +218,15 @@ public final class CEBlocks {
 		.properties(p -> part(p)
 			.mapColor(MapColor.METAL))
 		.transform(TagGen.pickaxeOnly())
-		.blockstate((c, p) -> BlockStateGen.axisBlock(c, p, s -> shaftModel(c, p, s)))
+		.transform(CEBlocks::casedShaftPart)
+			.blockstate((c, p) -> BlockStateGen.axisBlock(c, p, s -> shaftModel(c, p, s)))
 		.item()
 		.transform(ModelGen.customItemModel())
 		.register();
 
 	public static final BlockEntry<ManifoldBlock> INTAKE_MANIFOLD =
 		REGISTRATE.block("intake_manifold", p -> new ManifoldBlock(p, PortKind.INTAKE))
+				.transform(CEBlocks::casedPart)
 			.initialProperties(SharedProperties::copperMetal)
 			.properties(p -> part(p)
 				.mapColor(MapColor.COLOR_ORANGE))
@@ -265,6 +285,7 @@ public final class CEBlocks {
 
 	public static final BlockEntry<ManifoldBlock> EXHAUST_MANIFOLD =
 		REGISTRATE.block("exhaust_manifold", p -> new ManifoldBlock(p, PortKind.EXHAUST))
+				.transform(CEBlocks::casedPart)
 			.initialProperties(SharedProperties::softMetal)
 			.properties(p -> part(p)
 				.mapColor(MapColor.COLOR_GRAY))
@@ -460,13 +481,46 @@ public final class CEBlocks {
 
 	/** Plain riveted plates to build a cowl round an engine with: it does nothing but hide the sprawl. */
 	public static final BlockEntry<EngineCasingBlock> ENGINE_CASING =
-		REGISTRATE.block("engine_casing", EngineCasingBlock::new)
+			REGISTRATE.block("engine_casing", EngineCasingBlock::new)
+				.initialProperties(SharedProperties::softMetal)
+				.properties(p -> p.mapColor(MapColor.METAL))
+				.transform(TagGen.pickaxeOnly())
+				.blockstate((c, p) -> BlockStateGen.simpleBlock(c, p, s -> AssetLookup.partialBaseModel(c, p)))
+				.onRegister(CreateRegistrate.connectedTextures(() -> new EncasedCTBehaviour(CESpriteShifts.ENGINE_CASING)))
+				.onRegister(CreateRegistrate.casingConnectivity(
+					(block, cc) -> cc.makeCasing(block, CESpriteShifts.ENGINE_CASING)))
+				.item()
+				.transform(ModelGen.customItemModel())
+				.register();
+
+	/** A Create shaft in Engine Casing: use the casing on it, wrench it off. Drops the shaft when broken, as Create's do. */
+	public static final BlockEntry<EngineCasedShaftBlock> ENGINE_CASED_SHAFT =
+		REGISTRATE.block("engine_cased_shaft", p -> new EngineCasedShaftBlock(p, ENGINE_CASING::get))
 			.initialProperties(SharedProperties::softMetal)
-			.properties(p -> p.mapColor(MapColor.METAL))
+			.properties(p -> p.mapColor(MapColor.METAL)
+				.noOcclusion())
 			.transform(TagGen.pickaxeOnly())
-			.blockstate((c, p) -> BlockStateGen.simpleBlock(c, p, s -> AssetLookup.partialBaseModel(c, p)))
-			.item()
-			.transform(ModelGen.customItemModel())
+			.blockstate((c, p) -> BlockStateGen.axisBlock(c, p,
+				s -> p.models().getExistingFile(p.modLoc("block/engine_cased_shaft/block"))))
+			.onRegister(CreateRegistrate.connectedTextures(() -> new EncasedCTBehaviour(CESpriteShifts.ENGINE_CASING)))
+			.onRegister(CreateRegistrate.casingConnectivity((block, cc) -> cc.make(block, CESpriteShifts.ENGINE_CASING,
+				(s, f) -> f.getAxis() != s.getValue(RotatedPillarKineticBlock.AXIS))))
+			.transform(EncasingRegistry.addVariantTo(AllBlocks.SHAFT))
+			.loot((p, b) -> p.dropOther(b, AllBlocks.SHAFT.get()))
+			.register();
+
+	public static final BlockEntry<EngineCasedCogwheelBlock> ENGINE_CASED_COGWHEEL =
+		REGISTRATE.block("engine_cased_cogwheel", p -> new EngineCasedCogwheelBlock(p, false, ENGINE_CASING::get))
+			.transform(CEBlocks.casedCogwheel("engine_cased_cogwheel"))
+			.transform(EncasingRegistry.addVariantTo(AllBlocks.COGWHEEL))
+			.loot((p, b) -> p.dropOther(b, AllBlocks.COGWHEEL.get()))
+			.register();
+
+	public static final BlockEntry<EngineCasedCogwheelBlock> ENGINE_CASED_LARGE_COGWHEEL =
+		REGISTRATE.block("engine_cased_large_cogwheel", p -> new EngineCasedCogwheelBlock(p, true, ENGINE_CASING::get))
+			.transform(CEBlocks.casedCogwheel("engine_cased_large_cogwheel"))
+			.transform(EncasingRegistry.addVariantTo(AllBlocks.LARGE_COGWHEEL))
+			.loot((p, b) -> p.dropOther(b, AllBlocks.LARGE_COGWHEEL.get()))
 			.register();
 
 	public static final BlockEntry<TransmissionBlock> TRANSMISSION =
@@ -481,6 +535,56 @@ public final class CEBlocks {
 			.register();
 
 	private CEBlocks() {
+	}
+
+	/** The model a cylinder shows: its own, or a plain casing cube once clad. */
+	private static net.neoforged.neoforge.client.model.generators.ModelFile cylinderModel(
+		com.tterrag.registrate.providers.DataGenContext<Block, ? extends Block> c, RegistrateBlockstateProvider p,
+		BlockState s) {
+		return s.getValue(Encasing.ENCASED) ? p.models()
+			.getExistingFile(p.modLoc("block/engine_casing/block")) : AssetLookup.partialBaseModel(c, p);
+	}
+
+	/** A part that Engine Casing covers whole: every face of it joins the casing beside it once clad. */
+	private static <B extends Block, P> BlockBuilder<B, P> casedPart(BlockBuilder<B, P> builder) {
+		return casedFaces(builder, (state, face) -> state.getValue(Encasing.ENCASED));
+	}
+
+	/** A shaft part that casing covers: the four faces along its axis join the casing beside them. */
+	private static <B extends Block, P> BlockBuilder<B, P> casedShaftPart(BlockBuilder<B, P> builder) {
+		return casedFaces(builder, (state, face) -> state.getValue(Encasing.ENCASED)
+			&& face.getAxis() != state.getValue(RotatedPillarKineticBlock.AXIS));
+	}
+
+	private static <B extends Block, P> BlockBuilder<B, P> casedFaces(BlockBuilder<B, P> builder,
+																	 BiPredicate<BlockState, Direction> faces) {
+		return builder
+			.onRegister(CreateRegistrate.connectedTextures(() -> new EncasedCTBehaviour(CESpriteShifts.ENGINE_CASING)))
+			.onRegister(CreateRegistrate.casingConnectivity(
+				(block, cc) -> cc.make(block, CESpriteShifts.ENGINE_CASING, faces)));
+	}
+
+	/** An encased cogwheel: Create's models, drawn with Engine Casing, and the casing's ends joining the casing beside. */
+	private static <B extends EncasedCogwheelBlock, P> com.tterrag.registrate.util.nullness.NonNullUnaryOperator<BlockBuilder<B, P>> casedCogwheel(
+		String name) {
+		return builder -> builder.initialProperties(SharedProperties::softMetal)
+			.properties(p -> p.mapColor(MapColor.METAL)
+				.noOcclusion())
+			.transform(TagGen.pickaxeOnly())
+			.blockstate((c, p) -> BlockStateGen.axisBlock(c, p, s -> {
+				boolean top = s.getValue(EncasedCogwheelBlock.TOP_SHAFT);
+				boolean bottom = s.getValue(EncasedCogwheelBlock.BOTTOM_SHAFT);
+				String suffix = top && bottom ? "_top_bottom" : top ? "_top" : bottom ? "_bottom" : "";
+				return p.models()
+					.getExistingFile(p.modLoc("block/" + name + "/block" + suffix));
+			}))
+			.onRegister(CreateRegistrate.connectedTextures(
+				() -> new com.simibubi.create.content.kinetics.simpleRelays.encased.EncasedCogCTBehaviour(
+					CESpriteShifts.ENGINE_CASING)))
+			.onRegister(CreateRegistrate.casingConnectivity((block, cc) -> cc.make(block, CESpriteShifts.ENGINE_CASING,
+				(s, f) -> f.getAxis() == s.getValue(RotatedPillarKineticBlock.AXIS)
+					&& !s.getValue(f.getAxisDirection() == Direction.AxisDirection.POSITIVE
+						? EncasedCogwheelBlock.TOP_SHAFT : EncasedCogwheelBlock.BOTTOM_SHAFT))));
 	}
 
 	/** What a Display Link set against a crankshaft block of an engine can show. */
@@ -498,6 +602,12 @@ public final class CEBlocks {
 																 RegistrateBlockstateProvider provider) {
 		String name = context.getName();
 		var builder = provider.getMultipartBuilder(context.get());
+		builder.part()
+			.modelFile(provider.models()
+				.getExistingFile(provider.modLoc("block/engine_casing/block")))
+			.addModel()
+			.condition(Encasing.ENCASED, true)
+			.end();
 		if (name.endsWith("_manifold"))
 			// The pipes have a fitting of their own for a straight run, a bend and a tee, picked by which sides are open
 			for (int mask = 0; mask < 1 << Direction.values().length; mask++) {
@@ -506,18 +616,21 @@ public final class CEBlocks {
 					.addModel();
 				for (Direction direction : Direction.values())
 					part.condition(ManifoldBlock.CONNECTIONS.get(direction), (mask >> direction.ordinal() & 1) == 1);
-				part.end();
+				part.condition(Encasing.ENCASED, false)
+					.end();
 			}
 		else
 			builder.part()
 				.modelFile(pipeModel(provider, name, "core"))
 				.addModel()
+				.condition(Encasing.ENCASED, false)
 				.end();
 		for (Direction direction : Direction.values())
 			builder.part()
 				.modelFile(pipeModel(provider, name, "arm_" + direction.getName()))
 				.addModel()
 				.condition(ManifoldBlock.CONNECTIONS.get(direction), true)
+				.condition(Encasing.ENCASED, false)
 				.end();
 	}
 

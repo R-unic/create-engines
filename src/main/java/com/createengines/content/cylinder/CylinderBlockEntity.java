@@ -16,6 +16,7 @@ import com.createengines.content.crankshaft.CrankshaftBlock;
 import com.createengines.content.crankshaft.CrankshaftBlockEntity;
 import com.createengines.content.effects.EngineEffects;
 import com.createengines.content.effects.ExhaustLook;
+import com.createengines.content.effects.GlowParticleOptions;
 import com.createengines.content.head.GalleryMember;
 import com.createengines.engine.CylinderStatus;
 import com.createengines.engine.EngineSummary;
@@ -44,6 +45,7 @@ import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.sounds.SoundSource;
+import net.minecraft.util.Mth;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
@@ -60,7 +62,9 @@ public class CylinderBlockEntity extends SmartBlockEntity implements IHaveGoggle
 	/** The head's face, in blocks from the cylinder's centre along the bore. */
 	private static final double ROOF = 0.5;
 	/** How far from the bore's axis gas is drawn, which keeps it between the frame posts. */
-	private static final double LATERAL = 0.26;
+	private static final double LATERAL = 0.3;
+	/** Half the width of the piston (10 of 16 pixels), which the gas volume fills out to. */
+	private static final double CHAMBER_RADIUS = 5.2 / 16f;
 
 	/** Mixtures within these equivalence ratios read as balanced. */
 	private static final float LEAN_MIXTURE = (float) Mixture.LEAN_BAND;
@@ -165,6 +169,39 @@ public class CylinderBlockEntity extends SmartBlockEntity implements IHaveGoggle
 			EngineEffects.exhaust(level, current, crankThrow());
 	}
 
+	/**
+	 * Where the gas in this cylinder is at {@code renderTime}, for drawing it as a body: the cam cycle angle, and the
+	 * space between the piston's crown and the head along the bore. Null when nothing should be drawn: no engine status or
+	 * cam, a stopped engine, no piston, or particles switched off.
+	 */
+	public @Nullable Chamber chamber(float renderTime) {
+		CylinderStatus current = status;
+		if (level == null || current == null || current.lobe() == null || !CEClientConfig.particles())
+			return null;
+		if (!(LoadedBlocks.blockEntity(level, current.lobe()) instanceof CamshaftBlockEntity lobe)
+			|| lobe.getTheoreticalSpeed() == 0)
+			return null;
+		EnginePoses.CylinderPose pose = EnginePoses.cylinder(this, renderTime);
+		if (!pose.showPiston())
+			return null;
+		Direction bore = getBlockState().getValue(CylinderBlock.FACING);
+		float wrist = pose.piston()
+			.transformPosition(0.5f, 0, 0.5f, new Vector3f())
+			.get(bore.getAxis()
+				.ordinal());
+		double crown = (wrist - 0.5) * bore.getAxisDirection()
+			.getStep() + PISTON_CROWN;
+		if (ROOF - crown < 0.08)
+			return null;
+		float camAngle = (float) Math.abs(lobe.rotation(renderTime) % 360);
+		double cycle = CylinderModel.camCycleAngle(camAngle, lobe.lobeAngle() + current.lobeShift());
+		return new Chamber(cycle, crown, ROOF, CHAMBER_RADIUS, current, worldPosition.asLong());
+	}
+
+	/** The gas in a cylinder's bore: see {@link #chamber}. */
+	public record Chamber(double cycle, double crown, double roof, double radius, CylinderStatus status, long pos) {
+	}
+
 	/** The bang, and a flash of flame and sparks at the roof of the chamber. */
 	private void ignite() {
 		if (!bangs.allow(level))
@@ -186,13 +223,22 @@ public class CylinderBlockEntity extends SmartBlockEntity implements IHaveGoggle
 		if (!CEClientConfig.particles())
 			return;
 		Direction bore = getBlockState().getValue(CylinderBlock.FACING);
-		for (int i = 0; i < 6; i++) {
+		Vec3 along = Vec3.atLowerCornerOf(bore.getNormal());
+		// A flash at the plug that blooms into a fireball: white-hot core, orange body, all added together
+		for (int i = 0; i < 3; i++) {
+			Vec3 at = chamberPoint(bore, ROOF - 0.04 - random.nextDouble() * 0.06);
+			Vec3 v = along.scale(-0.03 - random.nextDouble() * 0.02).add(swirl(at, along, 0.012));
+			level.addParticle(GlowParticleOptions.fire(0xFFFFFF, 0xFFB44A, 0.12f, 0.9f, 1.5f, 5), at.x, at.y, at.z, v.x, v.y, v.z);
+		}
+		for (int i = 0; i < 4; i++) {
+			Vec3 at = chamberPoint(bore, ROOF - random.nextDouble() * 0.12);
+			Vec3 v = along.scale(-0.025).add(swirl(at, along, 0.02));
+			level.addParticle(GlowParticleOptions.fire(0xFFD680, 0xE0420A, 0.16f, 0.65f, 1.3f, 9), at.x, at.y, at.z, v.x, v.y, v.z);
+		}
+		for (int i = 0; i < 3; i++) {
 			Vec3 at = chamberPoint(bore, ROOF - random.nextDouble() * 0.1);
-			Vec3 push = Vec3.atLowerCornerOf(bore.getNormal())
-				.scale(-0.02);
-			level.addParticle(i < 4 ? ParticleTypes.SMALL_FLAME : ParticleTypes.ELECTRIC_SPARK, at.x, at.y, at.z,
-				push.x + (random.nextDouble() - 0.5) * 0.04, push.y + (random.nextDouble() - 0.5) * 0.04,
-				push.z + (random.nextDouble() - 0.5) * 0.04);
+			level.addParticle(ParticleTypes.ELECTRIC_SPARK, at.x, at.y, at.z, (random.nextDouble() - 0.5) * 0.06,
+				along.y * -0.03 + (random.nextDouble() - 0.5) * 0.06, (random.nextDouble() - 0.5) * 0.06);
 		}
 	}
 
@@ -228,39 +274,93 @@ public class CylinderBlockEntity extends SmartBlockEntity implements IHaveGoggle
 		boolean fired = result == CycleResult.FIRED;
 		int faults = current.faults();
 
+		double depth = ROOF - crown;
+		// The old dust motes stay on top of the volume as fine detail: a speck of the stroke's colour now and then
+		if (random.nextInt(2) == 0) {
+			float mix = cycle < 180 ? 0 : cycle < 360 ? (float) (cycle - 180) / 180 : 1;
+			boolean hot = fired && cycle >= 360 && cycle < 540;
+			float red = hot ? 1f : Mth.lerp(mix, 0.78f, 1f);
+			float green = hot ? 0.45f : Mth.lerp(mix, 0.9f, 0.5f);
+			float blue = hot ? 0.1f : Mth.lerp(mix, 1f, 0.15f);
+			if (cycle >= 540 || (cycle >= 360 && !fired))
+				red = green = blue = current.rich() ? 0.1f : 0.45f;
+			dust(chamberPoint(bore, crown + random.nextDouble() * depth), jitter(random, 0.012), red, green, blue, 0.4f);
+		}
 		if (cycle < 180) {
 			if (CylinderFault.intakeShut(faults))
 				return;
-			for (int i = 0; i < 2; i++)
-				dust(chamberPoint(bore, ROOF - random.nextDouble() * 0.12), along.scale(-0.045), 0.78f, 0.9f, 1f, 0.45f);
+			// Cool air pours in past the valve at the roof, swirling as it falls after the piston
+			for (int i = 0; i < 3; i++) {
+				Vec3 at = chamberPoint(bore, ROOF - random.nextDouble() * 0.1);
+				Vec3 v = along.scale(-(0.05 + 0.04 * random.nextDouble())).add(swirl(at, along, 0.03));
+				level.addParticle(GlowParticleOptions.mist(0xD8F0FF, 0x6FA8E8, 0.085f, 0.5f, 0.7f, 8), at.x, at.y, at.z, v.x, v.y, v.z);
+			}
 		} else if (cycle < 360) {
+			// The charge is squeezed and heats: pale blue haze turning to a hot orange glow as the crown rises
 			float squeeze = (float) (cycle - 180) / 180;
-			int count = squeeze > 0.6f ? 2 : 1;
-			for (int i = 0; i < count; i++)
-				dust(chamberPoint(bore, crown + random.nextDouble() * (ROOF - crown)), jitter(random, 0.012),
-					0.78f + 0.22f * squeeze, 0.9f - 0.4f * squeeze, 1f - 0.9f * squeeze, 0.4f);
+			int count = 1 + (int) (squeeze * 3);
+			int cold = blend(0x9CCBFF, 0xFFA040, squeeze);
+			int warm = blend(0x5C8CD0, 0xC0300C, squeeze);
+			for (int i = 0; i < count; i++) {
+				Vec3 at = chamberPoint(bore, crown + random.nextDouble() * depth);
+				Vec3 v = swirl(at, along, 0.02 + 0.03 * squeeze);
+				level.addParticle(GlowParticleOptions.fire(cold, warm, 0.07f + 0.05f * squeeze, 0.18f + 0.4f * squeeze, 1.1f, 7),
+					at.x, at.y, at.z, v.x, v.y, v.z);
+			}
 		} else if (cycle < 540) {
 			if (fired && cycle < 450) {
-				for (int i = 0; i < 2; i++) {
-					Vec3 at = chamberPoint(bore, crown + random.nextDouble() * (ROOF - crown));
-					Vec3 drift = jitter(random, 0.012);
-					level.addParticle(ParticleTypes.SMALL_FLAME, at.x, at.y, at.z, drift.x, drift.y, drift.z);
+				// The burn: a churning white-yellow to red fireball filling the space the piston is leaving
+				float burn = (float) (cycle - 360) / 90;
+				for (int i = 0; i < 4; i++) {
+					Vec3 at = chamberPoint(bore, crown + random.nextDouble() * depth);
+					Vec3 v = along.scale(-0.012).add(swirl(at, along, 0.035));
+					level.addParticle(GlowParticleOptions.fire(blend(0xFFF2C0, 0xFFB040, burn), blend(0xFF6A18, 0x7A1404, burn),
+						0.13f, 0.7f - 0.3f * burn, 1.25f, 7), at.x, at.y, at.z, v.x, v.y, v.z);
 				}
-			} else if (fired)
-				dust(chamberPoint(bore, crown + random.nextDouble() * (ROOF - crown)), jitter(random, 0.01), 0.85f,
-					0.35f, 0.1f, 0.4f);
-			else if (ExhaustLook.unlit(result))
-				dust(chamberPoint(bore, crown + random.nextDouble() * (ROOF - crown)), jitter(random, 0.01), 0.6f, 0.6f,
-					0.6f, 0.4f);
+			} else if (fired) {
+				// Spent gas glowing as it cools
+				Vec3 at = chamberPoint(bore, crown + random.nextDouble() * depth);
+				Vec3 v = swirl(at, along, 0.015);
+				level.addParticle(GlowParticleOptions.fire(0xFF7424, 0x3A1006, 0.1f, 0.4f, 1.0f, 9), at.x, at.y, at.z, v.x, v.y, v.z);
+			} else if (ExhaustLook.unlit(result)) {
+				Vec3 at = chamberPoint(bore, crown + random.nextDouble() * depth);
+				Vec3 v = swirl(at, along, 0.01);
+				level.addParticle(GlowParticleOptions.mist(0x9A9A9A, 0x555555, 0.09f, 0.35f, 1.1f, 9), at.x, at.y, at.z, v.x, v.y, v.z);
+			}
 		} else {
 			if (CylinderFault.exhaustShut(faults))
 				return;
-			float shade = current.rich() ? 0.08f : fired ? 0.3f : 0.6f;
-			if (fired || ExhaustLook.unlit(result))
-				for (int i = 0; i < 2; i++)
-					dust(chamberPoint(bore, crown + random.nextDouble() * 0.15), along.scale(0.04), shade, shade, shade,
-						0.5f);
+			if (!fired && !ExhaustLook.unlit(result))
+				return;
+			// Smoke swept up out of the bore ahead of the rising piston and out through the valve
+			int smoke = current.rich() ? 0x1C1C1C : fired ? 0x6A6A6A : 0x9C9C9C;
+			for (int i = 0; i < 3; i++) {
+				Vec3 at = chamberPoint(bore, crown + random.nextDouble() * 0.15);
+				Vec3 v = along.scale(0.05 + 0.03 * random.nextDouble()).add(swirl(at, along, 0.025));
+				level.addParticle(GlowParticleOptions.mist(smoke, blend(smoke, 0x202020, 0.5f), 0.09f, 0.45f, 1.3f, 8),
+					at.x, at.y, at.z, v.x, v.y, v.z);
+			}
+			if (fired && random.nextInt(3) == 0) {
+				Vec3 at = chamberPoint(bore, crown + random.nextDouble() * 0.15);
+				level.addParticle(GlowParticleOptions.fire(0xFF8A30, 0x501408, 0.05f, 0.5f, 0.8f, 7), at.x, at.y, at.z,
+					along.x * 0.05, along.y * 0.05, along.z * 0.05);
+			}
 		}
+	}
+
+	/** Gas circling the bore: the tangent about its axis at {@code at}, {@code speed} per 0.25 blocks out from the axis. */
+	private Vec3 swirl(Vec3 at, Vec3 along, double speed) {
+		Vec3 radial = at.subtract(Vec3.atCenterOf(worldPosition));
+		radial = radial.subtract(along.scale(radial.dot(along)));
+		return along.cross(radial).scale(speed * 4);
+	}
+
+	/** The colour {@code mix} of the way from one 0xRRGGBB to another. */
+	private static int blend(int from, int to, float mix) {
+		int out = 0;
+		for (int shift = 16; shift >= 0; shift -= 8)
+			out |= Math.round(Mth.lerp(mix, from >> shift & 255, to >> shift & 255)) << shift;
+		return out;
 	}
 
 	/** A random spot inside the bore {@code distance} from the block's centre along it, towards the head if positive. */

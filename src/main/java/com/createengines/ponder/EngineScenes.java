@@ -3191,7 +3191,7 @@ public final class EngineScenes {
 			.showText(120)
 			.attachKeyFrame()
 			.colored(PonderPalette.GREEN)
-			.text("Engine Casing is plain riveted plate for building a cowl round an engine. It does nothing to how the engine runs, so clad it however you like.")
+			.text("Engine Casing is plain riveted plate for building a cowl round an engine. It does nothing to how the engine runs, and it can be used on shafts, cogwheels, cylinders and pipes too. Casing beside casing joins into one plate, so clad it however you like.")
 			.pointAt(util.vector()
 				.topOf(1, 2, 3))
 			.placeNearTarget();

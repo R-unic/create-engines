@@ -3,6 +3,7 @@ package com.createengines.content;
 import org.joml.Matrix3f;
 import org.joml.Matrix4f;
 
+import com.createengines.client.render.ChamberVolume;
 import com.createengines.content.camshaft.CamLobeBlock;
 import com.createengines.content.camshaft.CamshaftBlockEntity;
 import com.createengines.content.crankshaft.CrankThrowBlock;
@@ -23,6 +24,7 @@ import net.createmod.catnip.render.CachedBuffers;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.blockentity.BlockEntityRendererProvider;
+import net.minecraft.core.Direction.Axis;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
@@ -108,16 +110,32 @@ public final class EnginePartRenderers {
 		protected void render(CamshaftBlockEntity be, float renderTime, PoseStack ms, MultiBufferSource buffer,
 							  int light) {
 			BlockState state = be.getBlockState();
-			PartialModel model = state.getBlock() instanceof CamLobeBlock ? CEPartialModels.CAM_LOBE
-				: CEPartialModels.CAMSHAFT;
-			draw(model, state, EnginePoses.rotatingPart(state.getValue(BlockStateProperties.AXIS),
-				EnginePoses.camAngle(be, renderTime)), ms, buffer, light);
+			boolean lobes = state.getBlock() instanceof CamLobeBlock;
+			Axis axis = state.getValue(BlockStateProperties.AXIS);
+			draw(lobes ? CEPartialModels.CAM_LOBE_SHAFT : CEPartialModels.CAMSHAFT, state,
+				EnginePoses.rotatingPart(axis, EnginePoses.camAngle(be, renderTime)), ms, buffer, light);
+			if (!lobes)
+				return;
+			EnginePoses.LobeAngles angles = EnginePoses.lobeAngles(be, renderTime);
+			draw(CEPartialModels.CAM_LOBE_INTAKE, state, EnginePoses.rotatingPart(axis, angles.intake()), ms, buffer, light);
+			draw(CEPartialModels.CAM_LOBE_EXHAUST, state, EnginePoses.rotatingPart(axis, angles.exhaust()), ms, buffer,
+				light);
+			draw(CEPartialModels.CAM_LOBE_INJECTOR, state, EnginePoses.rotatingPart(axis, angles.injector()), ms, buffer,
+				light);
 		}
 	}
 
 	public static class Cylinder extends Base<CylinderBlockEntity> {
 		public Cylinder(BlockEntityRendererProvider.Context context) {
 			super(context);
+		}
+
+		@Override
+		protected void renderSafe(CylinderBlockEntity be, float partialTicks, PoseStack ms, MultiBufferSource buffer,
+								  int light, int overlay) {
+			super.renderSafe(be, partialTicks, ms, buffer, light, overlay);
+			// The gas is drawn here whether or not Flywheel draws the moving parts
+			ChamberVolume.render(be, AnimationTickHolder.getRenderTime(be.getLevel()), ms, buffer);
 		}
 
 		@Override

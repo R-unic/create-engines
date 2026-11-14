@@ -5,12 +5,17 @@ import java.util.Map;
 
 import org.jetbrains.annotations.Nullable;
 
+import com.createengines.content.Encasing;
 import com.createengines.engine.topology.EngineTopology;
 import com.simibubi.create.content.equipment.wrench.IWrenchable;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
+import net.minecraft.world.ItemInteractionResult;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.context.BlockPlaceContext;
 import net.minecraft.world.item.context.UseOnContext;
 import net.minecraft.world.level.BlockGetter;
@@ -21,6 +26,7 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.StateDefinition;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.minecraft.world.level.block.state.properties.BooleanProperty;
+import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.Vec3;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.Shapes;
@@ -60,7 +66,7 @@ public class ManifoldBlock extends Block implements AirflowPort, IWrenchable {
 		BlockState state = defaultBlockState();
 		for (BooleanProperty property : CONNECTIONS.values())
 			state = state.setValue(property, false);
-		registerDefaultState(state);
+		registerDefaultState(state.setValue(Encasing.ENCASED, false));
 	}
 
 	private static Map<Direction, BooleanProperty> connections() {
@@ -87,6 +93,7 @@ public class ManifoldBlock extends Block implements AirflowPort, IWrenchable {
 	protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {
 		CONNECTIONS.values()
 			.forEach(builder::add);
+		builder.add(Encasing.ENCASED);
 	}
 
 	@Override
@@ -116,7 +123,25 @@ public class ManifoldBlock extends Block implements AirflowPort, IWrenchable {
 					shape = Shapes.or(shape, ARMS.get(direction));
 			SHAPES[mask] = shape;
 		}
-		return shape;
+		return Encasing.shape(state, shape);
+	}
+
+	/** Engine Casing goes over a plain manifold, not over a throttle or a sensor, which have a face to show. */
+	@Override
+	protected ItemInteractionResult useItemOn(ItemStack stack, BlockState state, Level level, BlockPos pos,
+											  Player player, InteractionHand hand, BlockHitResult hit) {
+		if (getClass() != ManifoldBlock.class)
+			return super.useItemOn(stack, state, level, pos, player, hand, hit);
+		ItemInteractionResult result = Encasing.encase(stack, state, level, pos, player);
+		return result == ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION
+			? super.useItemOn(stack, state, level, pos, player, hand, hit) : result;
+	}
+
+	/** Sneaking with the wrench takes the casing off too, instead of breaking the pipe inside it. */
+	@Override
+	public InteractionResult onSneakWrenched(BlockState state, UseOnContext context) {
+		InteractionResult result = Encasing.uncase(state, context);
+		return result != null ? result : IWrenchable.super.onSneakWrenched(state, context);
 	}
 
 	@Override
@@ -147,6 +172,7 @@ public class ManifoldBlock extends Block implements AirflowPort, IWrenchable {
 
 	@Override
 	protected void onRemove(BlockState state, Level level, BlockPos pos, BlockState newState, boolean movedByPiston) {
+		Encasing.dropOnRemove(state, level, pos, newState);
 		super.onRemove(state, level, pos, newState, movedByPiston);
 		EngineTopology.markDirty(level, pos);
 	}
@@ -154,6 +180,9 @@ public class ManifoldBlock extends Block implements AirflowPort, IWrenchable {
 	/** Cuts or restores the connection on whichever side of the pipe was clicked. */
 	@Override
 	public InteractionResult onWrenched(BlockState state, UseOnContext context) {
+		InteractionResult uncased = Encasing.uncase(state, context);
+		if (uncased != null)
+			return uncased;
 		Level level = context.getLevel();
 		BlockPos pos = context.getClickedPos();
 		Vec3 offset = context.getClickLocation()

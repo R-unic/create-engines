@@ -349,7 +349,150 @@ def puff(seed):
     return rows
 
 
+GLOWS = 2
+
+
+def glow(seed):
+    """A soft round blob of light, white so the game can tint it: opaque in the middle and fading in a few flat steps
+    to the edge, the way a pixel-art lamp glow is drawn, with a little noise on each step so no ring is perfect.
+    Drawn additively it is a flame; drawn normally it is haze."""
+    rows = []
+    for j in range(SIZE):
+        row = []
+        for i in range(SIZE):
+            reach = math.hypot(i - 7.5, j - 7.5) / 7.6
+            level = max(0.0, 1 - reach) ** 1.5 * 5 + 0.5 * (hashed(i, j, seed) - 0.5)
+            steps = int(level)
+            if steps <= 0:
+                row.append((0, 0, 0, 0))
+            else:
+                row.append((255, 255, 255, min(255, 56 + 50 * steps)))
+        rows.append(row)
+    return rows
+
+
+def casing_plate(x, y):
+    """The flat plate of engine casing: rows of broken strokes in steel, the same in every tile so that connected
+    tiles read as one sheet."""
+    return 7.2 + (hashed(0, y, 5) - 0.5) * 1.1 + (hashed(x // 3 + (y * 5) % 3, y, 6) - 0.5) * 0.9
+
+
+def casing_tile(up, down, left, right, top_right, top_left, bottom_right, bottom_left):
+    """One tile of the engine casing's connected sheet. A side that joins another casing carries the plate on across;
+    a side that does not gets Create's frame (dark outer rim, bright inner rim) and, where the plate bends back round a
+    missing diagonal, a small notch in the frame. Rivets sit only in the corners where two frames meet."""
+    size = len(STEEL)
+    top_open, bottom_open, left_open, right_open = not up, not down, not left, not right
+    rows = []
+    for y in range(SIZE):
+        row = []
+        for x in range(SIZE):
+            index = None
+            if top_open and y == 0:
+                index = 0 if (x == 0 and left_open) or (x == 15 and right_open) else 2
+            elif bottom_open and y == 15:
+                index = 0 if (x == 0 and left_open) or (x == 15 and right_open) else 1
+            elif left_open and x == 0:
+                index = 2
+            elif right_open and x == 15:
+                index = 1
+            elif top_open and y == 1:
+                index = size - 1
+            elif left_open and x == 1:
+                index = size - 2
+            elif right_open and x == 14:
+                index = size - 3
+            elif bottom_open and y == 14:
+                index = size - 4
+            if index is None:
+                # Notches where two joined sides meet at a corner that is not joined
+                if up and left and not top_left:
+                    index = {(0, 0): 0, (1, 0): 2, (0, 1): 2, (1, 1): size - 1}.get((x, y))
+                if index is None and up and right and not top_right:
+                    index = {(15, 0): 0, (14, 0): 2, (15, 1): 1, (14, 1): size - 3}.get((x, y))
+                if index is None and down and left and not bottom_left:
+                    index = {(0, 15): 0, (1, 15): 1, (0, 14): 2, (1, 14): size - 4}.get((x, y))
+                if index is None and down and right and not bottom_right:
+                    index = {(15, 15): 0, (14, 15): 1, (15, 14): 1, (14, 14): size - 4}.get((x, y))
+            if index is None:
+                index = casing_plate(x, y)
+                for corner_x, corner_y, one, other in ((3, 3, top_open, left_open), (12, 3, top_open, right_open),
+                                                        (3, 12, bottom_open, left_open), (12, 12, bottom_open, right_open)):
+                    if one and other:
+                        if (x, y) == (corner_x, corner_y):
+                            index = 11
+                        elif (x, y) == (corner_x + 1, corner_y + 1):
+                            index = 3
+            row.append(pick(STEEL, index))
+        rows.append(row)
+    return rows
+
+
+def connected_index(up, down, left, right, top_right, top_left, bottom_right, bottom_left):
+    """Create's AllCTTypes.OMNIDIRECTIONAL tile choice (sheet of 8 by 8 tiles), copied so the sheet matches it."""
+    a = b = 0
+    borders = (not up) + (not down) + (not left) + (not right)
+    if up:
+        a += 1
+    if down:
+        a += 2
+    if left:
+        b += 1
+    if right:
+        b += 2
+    if borders == 0:
+        if top_right:
+            a += 1
+        if top_left:
+            a += 2
+        if bottom_right:
+            b += 2
+        if bottom_left:
+            b += 1
+    if borders == 1:
+        if not right and (top_left or bottom_left):
+            b = 4
+            a = -1 + bottom_left + top_left * 2
+        if not left and (top_right or bottom_right):
+            b = 5
+            a = -1 + bottom_right + top_right * 2
+        if not down and (top_left or top_right):
+            b = 6
+            a = -1 + top_left + top_right * 2
+        if not up and (bottom_left or bottom_right):
+            b = 7
+            a = -1 + bottom_left + bottom_right * 2
+    if borders == 2:
+        if ((up and left and top_left) or (down and left and bottom_left) or (up and right and top_right)
+                or (down and right and bottom_right)):
+            a += 3
+    return a + 8 * b
+
+
+def engine_casing():
+    """The engine casing and its connected-texture sheet: the plain tile, and one tile for every way a face can join
+    its neighbours, placed where Create's connected-texture code looks for them."""
+    tiles = {}
+    for context in range(256):
+        c = tuple(bool(context >> bit & 1) for bit in range(8))
+        index = connected_index(*c)
+        tile = casing_tile(*c)
+        # Contexts that share a tile must draw it the same, or the sheet cannot show both
+        assert tiles.setdefault(index, tile) == tile, (index, c)
+    write_png("block/engine_casing", casing_tile(False, False, False, False, False, False, False, False))
+    blank = casing_tile(True, True, True, True, True, True, True, True)
+    sheet = [[None] * 128 for _ in range(128)]
+    for index in range(64):
+        tile = tiles.get(index, blank)
+        for y in range(SIZE):
+            for x in range(SIZE):
+                sheet[index // 8 * SIZE + y][index % 8 * SIZE + x] = tile[y][x]
+    write_png("block/engine_casing_connected", sheet)
+
+
 def main():
+    for index in range(GLOWS):
+        write_png("particle/glow_%d" % index, glow(17 + 11 * index))
     for name, painter in (("brass", brass), ("copper", copper), ("copper_panel", copper_panel), ("steel", steel),
                           ("cast_iron", cast_iron), ("black_oxide", black_oxide), ("rivet_plate", rivet_plate),
                           ("enamel_red", enamel_red), ("ceramic", ceramic), ("screen", screen), ("heat_wrap", heat_wrap),
@@ -362,6 +505,7 @@ def main():
     heat("kindled", KINDLED, 31)
     heat("seething", SEETHING, 41)
     tread_plate()
+    engine_casing()
     for index in range(PUFFS):
         write_png("particle/puff_%d" % index, puff(61 + 7 * index))
     # A spark is one solid square, sized and coloured by the particle that draws it

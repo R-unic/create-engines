@@ -1,11 +1,13 @@
 package com.createengines.content;
 
-import com.simibubi.create.content.equipment.wrench.IWrenchable;
+import com.simibubi.create.content.decoration.encasing.CasingBlock;
 
-import net.minecraft.world.level.block.Block;
-
-/** The plain Engine Casing block; wrenchable so it can be picked up like the rest of Create's casings. */
-public class EngineCasingBlock extends Block implements IWrenchable {
+/**
+ * The plain Engine Casing block. Like Create's own casings it is wrenchable (to pick it up) and joins the casing beside
+ * it: its faces, and those of the parts it clads, carry on across a run of casing as one plate (see
+ * {@link CESpriteShifts}).
+ */
+public class EngineCasingBlock extends CasingBlock {
 
 	public EngineCasingBlock(Properties properties) {
 		super(properties);

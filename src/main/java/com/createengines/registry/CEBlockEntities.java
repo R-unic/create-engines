@@ -35,7 +35,13 @@ import com.createengines.content.turbo.TurbochargerBlockEntity;
 import com.createengines.content.turbo.TurbochargerRenderer;
 import com.simibubi.create.content.kinetics.transmission.SplitShaftRenderer;
 import com.simibubi.create.content.kinetics.transmission.SplitShaftVisual;
+import com.simibubi.create.content.kinetics.base.KineticBlockEntity;
 import com.simibubi.create.content.kinetics.base.KineticBlockEntityRenderer;
+import com.simibubi.create.content.kinetics.base.ShaftRenderer;
+import com.simibubi.create.content.kinetics.base.ShaftVisual;
+import com.simibubi.create.content.kinetics.simpleRelays.SimpleKineticBlockEntity;
+import com.simibubi.create.content.kinetics.simpleRelays.encased.EncasedCogRenderer;
+import com.simibubi.create.content.kinetics.simpleRelays.encased.EncasedCogVisual;
 import com.tterrag.registrate.util.entry.BlockEntityEntry;
 
 import net.neoforged.neoforge.capabilities.Capabilities;
@@ -157,6 +163,28 @@ public final class CEBlockEntities {
 		.visual(() -> SplitShaftVisual::new, false)
 		.validBlocks(CEBlocks.TRANSMISSION)
 		.renderer(() -> SplitShaftRenderer::new)
+		.register();
+
+	/** The blocks Create puts in its own casings, as ours: a shaft or cog clad in Engine Casing. */
+	public static final BlockEntityEntry<KineticBlockEntity> ENCASED_SHAFT = REGISTRATE
+		.blockEntity("engine_cased_shaft", KineticBlockEntity::new)
+		.visual(() -> ShaftVisual::new, false)
+		.validBlocks(CEBlocks.ENGINE_CASED_SHAFT)
+		.renderer(() -> ShaftRenderer::new)
+		.register();
+
+	public static final BlockEntityEntry<SimpleKineticBlockEntity> ENCASED_COGWHEEL = REGISTRATE
+		.blockEntity("engine_cased_cogwheel", SimpleKineticBlockEntity::new)
+		.visual(() -> EncasedCogVisual::small, false)
+		.validBlocks(CEBlocks.ENGINE_CASED_COGWHEEL)
+		.renderer(() -> EncasedCogRenderer::small)
+		.register();
+
+	public static final BlockEntityEntry<SimpleKineticBlockEntity> ENCASED_LARGE_COGWHEEL = REGISTRATE
+		.blockEntity("engine_cased_large_cogwheel", SimpleKineticBlockEntity::new)
+		.visual(() -> EncasedCogVisual::large, false)
+		.validBlocks(CEBlocks.ENGINE_CASED_LARGE_COGWHEEL)
+		.renderer(() -> EncasedCogRenderer::large)
 		.register();
 
 	private CEBlockEntities() {

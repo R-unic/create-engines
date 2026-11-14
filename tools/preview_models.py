@@ -173,6 +173,23 @@ def render(models, size, yaw_deg, create_root, pitch_deg=30.0, background=(66, 7
         rd = y * sp + rz * cp
         return size / 2 + rx * scale, size / 2 - ry * scale, rd
 
+    def turned(p, element):
+        """A point moved by the element's rotation, if it has one (one axis, about an origin)."""
+        spec = element.get("rotation")
+        if not spec:
+            return p
+        a = math.radians(spec["angle"])
+        c, s_ = math.cos(a), math.sin(a)
+        o = spec["origin"]
+        x, y, z = p[0] - o[0], p[1] - o[1], p[2] - o[2]
+        if spec["axis"] == "y":
+            x, z = x * c + z * s_, -x * s_ + z * c
+        elif spec["axis"] == "x":
+            y, z = y * c - z * s_, y * s_ + z * c
+        else:
+            x, y = x * c - y * s_, x * s_ + y * c
+        return (x + o[0], y + o[1], z + o[2])
+
     for path, offset in models:
         data = load_model(path)
         textures = data.get("textures", {})
@@ -181,7 +198,7 @@ def render(models, size, yaw_deg, create_root, pitch_deg=30.0, background=(66, 7
             t = [element["to"][k] + offset[k] for k in range(3)]
             for face, spec in element["faces"].items():
                 corners, default_uv = quad(face, f, t)
-                pts = [project(p) for p in corners]
+                pts = [project(turned(p, element)) for p in corners]
                 # Facing the camera: the signed area of the quad on screen
                 area = (pts[1][0] - pts[0][0]) * (pts[3][1] - pts[0][1]) - (pts[1][1] - pts[0][1]) * (pts[3][0] - pts[0][0])
                 if area <= 0:
@@ -194,7 +211,7 @@ def render(models, size, yaw_deg, create_root, pitch_deg=30.0, background=(66, 7
                 uv = spec.get("uv")
                 if uv is None:
                     corners, uv = quad(face, element["from"], element["to"])
-                    pts = [project((c[0] + offset[0], c[1] + offset[1], c[2] + offset[2])) for c in corners]
+                    pts = [project(turned((c[0] + offset[0], c[1] + offset[1], c[2] + offset[2]), element)) for c in corners]
                 u0, v0, u1, v1 = uv
                 ax, ay = pts[1][0] - pts[0][0], pts[1][1] - pts[0][1]
                 bx, by = pts[3][0] - pts[0][0], pts[3][1] - pts[0][1]

@@ -1,0 +1,237 @@
+{
+  "parent": "block/block",
+  "textures": {
+    "axis": "create:block/axis",
+    "end": "create:block/axis_top",
+    "lobe": "create_engines:block/cast_iron",
+    "spacer": "create_engines:block/black_oxide",
+    "bearing": "create:block/andesite_casing",
+    "particle": "create_engines:block/cast_iron"
+  },
+  "elements": [
+    {
+      "from": [
+        6.5,
+        0,
+        6.5
+      ],
+      "to": [
+        9.5,
+        16,
+        9.5
+      ],
+      "faces": {
+        "north": {
+          "texture": "#axis"
+        },
+        "south": {
+          "texture": "#axis"
+        },
+        "east": {
+          "texture": "#axis"
+        },
+        "west": {
+          "texture": "#axis"
+        },
+        "up": {
+          "texture": "#end"
+        },
+        "down": {
+          "texture": "#end"
+        }
+      }
+    },
+    {
+      "from": [
+        5.5,
+        2,
+        5.5
+      ],
+      "to": [
+        10.5,
+        3,
+        10.5
+      ],
+      "faces": {
+        "north": {
+          "texture": "#bearing"
+        },
+        "south": {
+          "texture": "#bearing"
+        },
+        "east": {
+          "texture": "#bearing"
+        },
+        "west": {
+          "texture": "#bearing"
+        },
+        "up": {
+          "texture": "#bearing"
+        },
+        "down": {
+          "texture": "#bearing"
+        }
+      }
+    },
+    {
+      "from": [
+        5.5,
+        13,
+        5.5
+      ],
+      "to": [
+        10.5,
+        14,
+        10.5
+      ],
+      "faces": {
+        "north": {
+          "texture": "#bearing"
+        },
+        "south": {
+          "texture": "#bearing"
+        },
+        "east": {
+          "texture": "#bearing"
+        },
+        "west": {
+          "texture": "#bearing"
+        },
+        "up": {
+          "texture": "#bearing"
+        },
+        "down": {
+          "texture": "#bearing"
+        }
+      }
+    },
+    {
+      "from": [
+        5.75,
+        3,
+        5.75
+      ],
+      "to": [
+        10.25,
+        4,
+        10.25
+      ],
+      "faces": {
+        "north": {
+          "texture": "#spacer"
+        },
+        "south": {
+          "texture": "#spacer"
+        },
+        "east": {
+          "texture": "#spacer"
+        },
+        "west": {
+          "texture": "#spacer"
+        },
+        "up": {
+          "texture": "#spacer"
+        },
+        "down": {
+          "texture": "#spacer"
+        }
+      }
+    },
+    {
+      "from": [
+        5.75,
+        6,
+        5.75
+      ],
+      "to": [
+        10.25,
+        7,
+        10.25
+      ],
+      "faces": {
+        "north": {
+          "texture": "#spacer"
+        },
+        "south": {
+          "texture": "#spacer"
+        },
+        "east": {
+          "texture": "#spacer"
+        },
+        "west": {
+          "texture": "#spacer"
+        },
+        "up": {
+          "texture": "#spacer"
+        },
+        "down": {
+          "texture": "#spacer"
+        }
+      }
+    },
+    {
+      "from": [
+        5.75,
+        9,
+        5.75
+      ],
+      "to": [
+        10.25,
+        10,
+        10.25
+      ],
+      "faces": {
+        "north": {
+          "texture": "#spacer"
+        },
+        "south": {
+          "texture": "#spacer"
+        },
+        "east": {
+          "texture": "#spacer"
+        },
+        "west": {
+          "texture": "#spacer"
+        },
+        "up": {
+          "texture": "#spacer"
+        },
+        "down": {
+          "texture": "#spacer"
+        }
+      }
+    },
+    {
+      "from": [
+        5.75,
+        12,
+        5.75
+      ],
+      "to": [
+        10.25,
+        13,
+        10.25
+      ],
+      "faces": {
+        "north": {
+          "texture": "#spacer"
+        },
+        "south": {
+          "texture": "#spacer"
+        },
+        "east": {
+          "texture": "#spacer"
+        },
+        "west": {
+          "texture": "#spacer"
+        },
+        "up": {
+          "texture": "#spacer"
+        },
+        "down": {
+          "texture": "#spacer"
+        }
+      }
+    }
+  ]
+}

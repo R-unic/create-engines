@@ -70,6 +70,7 @@ RED = "create_engines:block/enamel_red"
 RIVETED = "create_engines:block/rivet_plate"
 MAGMA = "create_engines:block/heat_kindled"
 LAVA = "create_engines:block/heat_seething"
+GLASS = "minecraft:block/glass"
 
 
 # --- crank, throw, cam ---------------------------------------------------------------------------------------------
@@ -172,12 +173,25 @@ def cam_lobe():
         elements += cam_disc(y, y + 2, rows)
     write("cam_lobe/block", textures, elements)
 
+    # The same set in pieces, for the renderer: each lobe is turned on its own to the angle its valve needs, so the
+    # shaft with its collars and spacers and the three lobes are drawn apart (the whole set above is the item)
+    body = elements[:3 + 4]
+    write("cam_lobe/shaft", textures, body)
+    for name, y in (("intake", 4), ("exhaust", 7), ("injector", 10)):
+        write("cam_lobe/" + name, textures, cam_disc(y, y + 2, rows))
+
 
 # --- cylinder, piston, rod -----------------------------------------------------------------------------------------
 
+def glass_panels():
+    """A pane in each side, set between the corner posts and the rims, so the bore is enclosed but still visible."""
+    return [box((3, 2, 1), (13, 14, 2), "glass"), box((3, 2, 14), (13, 14, 15), "glass"),
+            box((1, 2, 3), (2, 14, 13), "glass"), box((14, 2, 3), (15, 14, 13), "glass")]
+
+
 def cylinder():
     """Four corner posts and a rim at each end, so the piston shows through the open sides."""
-    textures = {"frame": CASING, "rim": IRON, "particle": CASING}
+    textures = {"frame": CASING, "rim": IRON, "glass": GLASS, "particle": CASING}
     elements = []
     for x in (0, 13):
         for z in (0, 13):
@@ -185,7 +199,8 @@ def cylinder():
     for y0, y1 in ((0, 2), (14, 16)):
         elements += [box((3, y0, 0), (13, y1, 3), "rim"), box((3, y0, 13), (13, y1, 16), "rim"),
                      box((0, y0, 3), (3, y1, 13), "rim"), box((13, y0, 3), (16, y1, 13), "rim")]
-    write("cylinder/block", textures, elements)
+    elements += glass_panels()
+    write("cylinder/block", textures, elements, render_type="minecraft:cutout")
 
 
 def piston():
@@ -507,6 +522,58 @@ def alternator():
     write("alternator/block", textures, elements)
 
 
+TURBO_WHEEL_TEXTURES = {"blade": BRASS, "hot": IRON_BLOCK, "shaft": IRON, "hub": IRON, "particle": BRASS}
+
+
+def spun_box(a, b, tex, angle):
+    """A box turned about the vertical axis through the middle of the block."""
+    element = box(a, b, tex)
+    if angle:
+        element["rotation"] = {"origin": [8, (a[1] + b[1]) / 2, 8], "axis": "y", "angle": angle}
+    return element
+
+
+def blade_fan(slices, tex, thickness=0.55):
+    """Eight vanes from four crossed plates (two square on, two at 45 degrees). Each slice is (y0, y1, radius): the
+    stack steps in towards the nose, so the vanes sweep back from the hub like a real impeller. Plates at different
+    angles are offset a hair in height so crossing faces never fight."""
+    half = thickness / 2
+    parts = []
+    for i, angle in enumerate((0, 45, 90, -45)):
+        nudge = 0.02 * i
+        for y0, y1, r in slices:
+            lo, hi = (y0, y1 - nudge) if y0 < y1 else (y1 + nudge, y0)
+            a = (8 - r, lo, 8 - half) if angle in (0, 45, -45) else (8 - half, lo, 8 - r)
+            b = (8 + r, hi, 8 + half) if angle in (0, 45, -45) else (8 + half, hi, 8 + r)
+            parts.append(spun_box(a, b, tex, 0 if angle in (0, 90) else angle))
+    return parts
+
+
+def turbo_wheel():
+    """Compressor wheel up (+Y), turbine wheel down, joined by the shaft. Each is a stepped, tapering hub on a back
+    plate with a fan of vanes whose outline steps in towards the nose; the turbine is the finer, heavier of the two."""
+    parts = [box((7.25, 6, 7.25), (8.75, 10, 8.75), "shaft")]
+    # Compressor: back plate, tapering hub, nose nut, and vanes that shorten as they rise
+    parts += [
+        box((4.6, 10, 4.6), (11.4, 10.5, 11.4), "blade"),
+        box((6.5, 10.5, 6.5), (9.5, 12.2, 9.5), "hub"),
+        box((7, 12.2, 7), (9, 13.8, 9), "hub"),
+        box((7.4, 13.8, 7.4), (8.6, 14.8, 8.6), "hub"),
+        box((7.75, 14.8, 7.75), (8.25, 15.5, 8.25), "blade"),
+    ]
+    parts += blade_fan([(10.5, 11.9, 5.2), (11.9, 13.1, 4.4), (13.1, 14.1, 3.4), (14.1, 14.9, 2.4)], "blade")
+    # Turbine: heavier back plate, a shorter, fatter hub, and a denser, shallower fan
+    parts += [
+        box((4.2, 5.5, 4.2), (11.8, 6, 11.8), "hot"),
+        box((6.4, 3.8, 6.4), (9.6, 5.5, 9.6), "hub"),
+        box((6.9, 2.4, 6.9), (9.1, 3.8, 9.1), "hub"),
+        box((7.4, 1.4, 7.4), (8.6, 2.4, 8.6), "hub"),
+        box((7.75, 0.8, 7.75), (8.25, 1.4, 8.25), "hot"),
+    ]
+    parts += blade_fan([(5.5, 4.4, 4.6), (4.4, 3.4, 3.8), (3.4, 2.4, 3.0), (2.4, 1.4, 2.1)], "hot", 0.45)
+    return parts
+
+
 def turbocharger():
     """Compressor housing up (+Y), turbine housing down, bearing housing between. The wheels are a separate model so
     they can spin; both housings are open at the middle of their outer faces so the wheels show."""
@@ -533,18 +600,8 @@ def turbocharger():
             elements.append(box((x, -0.2, z), (x + 1, 0.4, z + 1), "bolt"))
     write("turbocharger/block", textures, elements)
 
-    wheel_textures = {"blade": BRASS, "hot": IRON_BLOCK, "shaft": IRON, "particle": BRASS}
-    wheel = [
-        box((7.25, 6, 7.25), (8.75, 10, 8.75), "shaft"),
-        # Compressor wheel: a hub with a cross of vanes
-        box((6.5, 10, 6.5), (9.5, 15.2, 9.5), "blade"),
-        box((5.4, 10.4, 7.5), (10.6, 14.8, 8.5), "blade"),
-        box((7.5, 10.4, 5.4), (8.5, 14.8, 10.6), "blade"),
-        # Turbine wheel below it, darker for the heat
-        box((6.7, 0.8, 6.7), (9.3, 6, 9.3), "hot"),
-        box((5.8, 1.2, 7.6), (10.2, 5.6, 8.4), "hot"),
-        box((7.6, 1.2, 5.8), (8.4, 5.6, 10.2), "hot"),
-    ]
+    wheel_textures = TURBO_WHEEL_TEXTURES
+    wheel = turbo_wheel()
     write("turbocharger/wheel", wheel_textures, wheel)
     write("turbocharger/item", {**textures, **wheel_textures}, elements + wheel)
 
@@ -579,16 +636,8 @@ def variable_turbocharger():
             elements.append(box((x, -0.2, z), (x + 1, 0.4, z + 1), "bolt"))
     write("variable_turbocharger/block", textures, elements)
 
-    wheel_textures = {"blade": BRASS, "hot": IRON_BLOCK, "shaft": IRON, "particle": BRASS}
-    wheel = [
-        box((7.25, 6, 7.25), (8.75, 10, 8.75), "shaft"),
-        box((6.5, 10, 6.5), (9.5, 15.2, 9.5), "blade"),
-        box((5.4, 10.4, 7.5), (10.6, 14.8, 8.5), "blade"),
-        box((7.5, 10.4, 5.4), (8.5, 14.8, 10.6), "blade"),
-        box((6.7, 0.8, 6.7), (9.3, 6, 9.3), "hot"),
-        box((5.8, 1.2, 7.6), (10.2, 5.6, 8.4), "hot"),
-        box((7.6, 1.2, 5.8), (8.4, 5.6, 10.2), "hot"),
-    ]
+    wheel_textures = TURBO_WHEEL_TEXTURES
+    wheel = turbo_wheel()
     write("variable_turbocharger/item", {**textures, **wheel_textures}, elements + wheel)
 
 
@@ -801,55 +850,56 @@ def muffler():
     write_item("muffler/item", "muffler/block")
 
 
-CASING_TEXTURES = {"plate": RIVETED, "frame": IRON_BLOCK, "bolt": BRASS, "cap": IRON_BLOCK, "dark": DARK,
-                   "particle": RIVETED}
+CASING_SPRITE = "create_engines:block/engine_casing"
+CASING_TEXTURES = {"casing": CASING_SPRITE, "cap": IRON_BLOCK, "dark": DARK, "particle": CASING_SPRITE}
 
 
-def casing_cage():
-    """The frame of an engine casing: a brass bolt block at each corner and a steel beam along each edge, so that
-    the riveted plate between them sits a half pixel in, as a panel does. Texture patches are taken from the middle
-    of the tile, clear of its rim, so the beams read as one piece."""
-    elements = []
-    near_far = (0, 14)
-    for x in near_far:
-        for y in near_far:
-            for z in near_far:
-                elements.append(box((x, y, z), (x + 2, y + 2, z + 2), "bolt",
-                                    uv={f: [6, 6, 8, 8] for f in FACES}))
-    along = [2, 6, 14, 8]
-    across = [6, 2, 8, 14]
-    for u in near_far:
-        for v in near_far:
-            # Along x, along z and along y
-            elements.append(box((2, u, v), (14, u + 2, v + 2), "frame",
-                                uv={"north": along, "south": along, "up": along, "down": along}))
-            elements.append(box((u, v, 2), (u + 2, v + 2, 14), "frame",
-                                uv={"east": along, "west": along, "up": across, "down": across}))
-            elements.append(box((u, 2, v), (u + 2, 14, v + 2), "frame",
-                                uv={f: across for f in ("north", "south", "east", "west")}))
-    return elements
-
-
-def casing_ring(y0, y1):
-    """One end plate of a cased shaft part: steel round a square opening, its walls dark."""
-    return [
-        box((2, y0, 2), (5, y1, 14), "plate", up="cap", down="cap", east="dark"),
-        box((11, y0, 2), (14, y1, 14), "plate", up="cap", down="cap", west="dark"),
-        box((5, y0, 2), (11, y1, 5), "plate", up="cap", down="cap", south="dark"),
-        box((5, y0, 11), (11, y1, 14), "plate", up="cap", down="cap", north="dark"),
-    ]
+def casing_faces(faces, texture="casing", cull=True):
+    """Full-tile faces of a cube, for the sides named; CULLED against the neighbour so a clad run draws only its skin."""
+    return {f: dict({"texture": "#" + texture, "uv": [0, 0, 16, 16]}, **({"cullface": f} if cull else {})) for f in faces}
 
 
 def engine_casing():
-    """A cube of engine casing: a framed, riveted panel on every face, plain cladding to build a cowl round an engine
-    with. The cased variant is the same cube with a recessed opening in each end for the shaft, as Create's casings
-    have, drawn standing on the Y axis and turned onto the part's axis by the blockstate."""
+    """The engine casing, a cube of one face-filling tile so that its connected-texture sheet can join a run of it into
+    one plate, and its cased variant. The cased variant is the same cube with its two ends opened into a recessed square
+    for the part inside (a shaft, a crank, a cam), drawn standing on the Y axis and turned onto the part's axis by the
+    blockstate. The sides use the casing sprite exactly, so they join the casing beside them too; the ends do not."""
     write("engine_casing/block", CASING_TEXTURES,
-          casing_cage() + [box((0.5, 0.5, 0.5), (15.5, 15.5, 15.5), "plate")])
+          [{"from": [0, 0, 0], "to": [16, 16, 16], "faces": casing_faces(FACES)}])
     write_item("engine_casing/item", "engine_casing/block")
-    write("engine_casing/encased", CASING_TEXTURES,
-          casing_cage() + [box((0.5, 2, 0.5), (15.5, 14, 15.5), "plate", up="dark", down="dark")]
-          + casing_ring(0.5, 2) + casing_ring(14, 15.5))
+    elements = [{"from": [0, 0, 0], "to": [16, 16, 16],
+                 "faces": casing_faces(("north", "south", "east", "west"))}]
+    for y0, y1, end in ((14, 16, "up"), (0, 2, "down")):
+        # A square plate round an 8 by 8 opening: four strips, each showing its end and the wall of the opening
+        for a, b, wall in (((0, y0, 0), (16, y1, 4), "south"), ((0, y0, 12), (16, y1, 16), "north"),
+                           ((0, y0, 4), (4, y1, 12), "east"), ((12, y0, 4), (16, y1, 12), "west")):
+            elements.append({"from": list(a), "to": list(b),
+                             "faces": {end: {"texture": "#cap"}, wall: {"texture": "#dark"}}})
+    # A dark floor behind each opening, so the shaft shows against it rather than through the casing
+    elements.append({"from": [4, 14, 4], "to": [12, 14, 12], "faces": {"up": {"texture": "#dark"}}})
+    elements.append({"from": [4, 2, 4], "to": [12, 2, 12], "faces": {"down": {"texture": "#dark"}}})
+    write("engine_casing/encased", CASING_TEXTURES, elements)
+
+    # Create's own encased shaft and cogwheel models, dressed in the engine casing
+    opening = {"casing": CASING_SPRITE, "opening": DARK, "particle": CASING_SPRITE}
+    write_child("engine_cased_shaft/block", "create:block/encased_shaft/block", opening)
+    write_child("engine_cased_shaft/item", "create:block/encased_shaft/item", opening)
+    for name, side in (("engine_cased_cogwheel", "create_engines:block/engine_cased_cogwheel_side"),
+                       ("engine_cased_large_cogwheel", "create_engines:block/engine_cased_cogwheel_side_connected")):
+        create = "encased_cogwheel" if name == "engine_cased_cogwheel" else "encased_large_cogwheel"
+        textures = {"casing": CASING_SPRITE, "particle": CASING_SPRITE, "side": side, "4": DARK}
+        for suffix in ("", "_top", "_bottom", "_top_bottom"):
+            write_child(name + "/block" + suffix, "create:block/%s/block%s" % (create, suffix), textures)
+
+
+def write_child(path, parent, textures):
+    """A model that is Create's, with its textures swapped."""
+    full = os.path.join(OUT, path + ".json")
+    os.makedirs(os.path.dirname(full), exist_ok=True)
+    with open(full, "w", newline="\n") as fh:
+        json.dump({"parent": parent, "textures": textures}, fh, indent=2)
+        fh.write("\n")
+    print("wrote", full)
 
 
 def transmission():
@@ -903,7 +953,7 @@ def sump():
 
 def precision_cylinder():
     """A liner-bored cylinder in brass: the same four posts and rims, with a bright machined sleeve showing between."""
-    textures = {"frame": BRASS_CASING, "rim": BRASS, "sleeve": IRON_BLOCK, "particle": BRASS_CASING}
+    textures = {"frame": BRASS_CASING, "rim": BRASS, "sleeve": IRON_BLOCK, "glass": GLASS, "particle": BRASS_CASING}
     elements = []
     for x in (0, 13):
         for z in (0, 13):
@@ -915,7 +965,8 @@ def precision_cylinder():
     for y in (5, 8, 11):
         elements.append(box((2.2, y, 2.2), (2.7, y + 0.6, 13.8), "sleeve"))
         elements.append(box((13.3, y, 2.2), (13.8, y + 0.6, 13.8), "sleeve"))
-    write("precision_cylinder/block", textures, elements)
+    elements += glass_panels()
+    write("precision_cylinder/block", textures, elements, render_type="minecraft:cutout")
     write_item("precision_cylinder/item", "precision_cylinder/block")
 
 

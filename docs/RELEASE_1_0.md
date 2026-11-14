@@ -1,6 +1,6 @@
 # 1.0 release checklist
 
-1.0 is a stability promise more than a feature drop. Status as of 2026-11-13 (version set to 1.0.0).
+1.0 is a stability promise more than a feature drop. Status as of 2026-11-14 (1.0.1 prepared: version bumped, changelog in `docs/LISTING.md`; tag `v1.0.1` to publish).
 
 ## 1. Stability audit
 

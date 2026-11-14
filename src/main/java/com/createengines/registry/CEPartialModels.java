@@ -10,6 +10,11 @@ public final class CEPartialModels {
 	public static final PartialModel CRANK_THROW = block("crank_throw/block");
 	public static final PartialModel CAMSHAFT = block("camshaft/block");
 	public static final PartialModel CAM_LOBE = block("cam_lobe/block");
+	/** A lobe set's shaft, collars and spacers, and then its three lobes, each turned on its own. */
+	public static final PartialModel CAM_LOBE_SHAFT = block("cam_lobe/shaft");
+	public static final PartialModel CAM_LOBE_INTAKE = block("cam_lobe/intake");
+	public static final PartialModel CAM_LOBE_EXHAUST = block("cam_lobe/exhaust");
+	public static final PartialModel CAM_LOBE_INJECTOR = block("cam_lobe/injector");
 	public static final PartialModel ROTOR_ECCENTRIC = block("rotor_housing/eccentric");
 	public static final PartialModel ROTOR = block("rotor_housing/rotor");
 	public static final PartialModel PISTON = block("cylinder/piston");

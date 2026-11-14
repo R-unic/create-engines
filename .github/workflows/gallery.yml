@@ -1,16 +1,17 @@
-name: Modrinth gallery
+name: Modrinth page
 
-# Replaces the Modrinth gallery with the screenshots docs/LISTING.md shows (scripts/sync-modrinth-gallery.sh).
+# Replaces the Modrinth summary and description with the ones in docs/LISTING.md (scripts/sync-modrinth-description.sh),
+# and the gallery with the screenshots it shows (scripts/sync-modrinth-gallery.sh).
 # Runs on a release tag, or by hand (tick "dry run" to just list what would be uploaded).
 # Uses the MODRINTH_TOKEN secret, which needs the "Write projects" scope as well as "Create versions".
-# CurseForge has no gallery API, so its gallery is still replaced by hand on the site.
+# CurseForge has no API for its description or gallery, so those are still pasted in by hand on the site.
 on:
   push:
     tags: ['v[0-9]+.[0-9]+.[0-9]+']
   workflow_dispatch:
     inputs:
       dry_run:
-        description: List the images without changing the gallery
+        description: List what would be sent without changing the page
         type: boolean
         default: false
 
@@ -32,3 +33,9 @@ jobs:
           MODRINTH_ID: ${{ vars.MODRINTH_ID || 'create-engine-engineer' }}
           DRY_RUN: ${{ inputs.dry_run && '1' || '0' }}
         run: scripts/sync-modrinth-gallery.sh
+      - name: Sync the description
+        env:
+          MODRINTH_TOKEN: ${{ secrets.MODRINTH_TOKEN }}
+          MODRINTH_ID: ${{ vars.MODRINTH_ID || 'create-engine-engineer' }}
+          DRY_RUN: ${{ inputs.dry_run && '1' || '0' }}
+        run: scripts/sync-modrinth-description.sh

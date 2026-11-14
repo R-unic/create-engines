@@ -275,11 +275,22 @@ public class RotorHousingBlockEntity extends CrankshaftBlockEntity implements Ga
 				1.05f + random.nextFloat() * 0.16f, false);
 		if (!CEClientConfig.particles())
 			return;
-		for (int i = 0; i < 5; i++)
-			level.addParticle(i < 3 ? ParticleTypes.SMALL_FLAME : ParticleTypes.ELECTRIC_SPARK,
-				worldPosition.getX() + 0.3 + random.nextDouble() * 0.4, worldPosition.getY() + 0.3 + random.nextDouble() * 0.4,
-				worldPosition.getZ() + 0.3 + random.nextDouble() * 0.4, (random.nextDouble() - 0.5) * 0.04,
-				(random.nextDouble() - 0.5) * 0.04, (random.nextDouble() - 0.5) * 0.04);
+		for (int i = 0; i < 6; i++) {
+			double x = worldPosition.getX() + 0.3 + random.nextDouble() * 0.4;
+			double y = worldPosition.getY() + 0.3 + random.nextDouble() * 0.4;
+			double z = worldPosition.getZ() + 0.3 + random.nextDouble() * 0.4;
+			double dx = (random.nextDouble() - 0.5) * 0.04;
+			double dy = (random.nextDouble() - 0.5) * 0.04;
+			double dz = (random.nextDouble() - 0.5) * 0.04;
+			if (i < 2)
+				level.addParticle(com.createengines.content.effects.GlowParticleOptions.fire(0xFFFFFF, 0xFFB44A, 0.12f, 0.9f,
+					1.5f, 5), x, y, z, dx, dy, dz);
+			else if (i < 5)
+				level.addParticle(com.createengines.content.effects.GlowParticleOptions.fire(0xFFD680, 0xE0420A, 0.15f, 0.65f,
+					1.3f, 9), x, y, z, dx, dy, dz);
+			else
+				level.addParticle(ParticleTypes.ELECTRIC_SPARK, x, y, z, dx * 1.5, dy * 1.5, dz * 1.5);
+		}
 	}
 
 	// Goggles

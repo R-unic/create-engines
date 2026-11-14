@@ -161,16 +161,20 @@ public final class EngineEffects {
 			return;
 		RandomSource random = level.random;
 		float rev = engine == null ? 0.3f : Mth.clamp(Math.abs(engine.rpm()) / TOP_RPM, 0, 1);
-		GasParticleOptions air = new GasParticleOptions(0.9f, 0.92f, 0.95f, 0.32f, 0.45f, 0, 10);
-		int wisps = rev > 0.5f ? 3 : 2;
+		int wisps = rev > 0.5f ? 5 : 3;
 		for (int i = 0; i < wisps; i++) {
-			Vec3 at = inlet.at.add(inlet.normal.scale(0.4 + random.nextDouble() * 0.3))
-				.add(jitter(random, 0.45));
-			// Aimed at the middle of the mouth, so wisps from all round it converge as they are drawn in
-			Vec3 velocity = inlet.at.subtract(at)
-				.normalize()
-				.scale(0.07 + 0.07 * rev);
-			level.addParticle(air, at.x, at.y, at.z, velocity.x, velocity.y, velocity.z);
+			Vec3 at = inlet.at.add(inlet.normal.scale(0.3 + random.nextDouble() * 0.5))
+				.add(jitter(random, 0.6));
+			// Aimed at the middle of the mouth, so wisps from all round it converge as they are drawn in, and curling
+			// round the mouth's axis as a vortex does, tighter the nearer they get
+			Vec3 toMouth = inlet.at.subtract(at);
+			Vec3 spin = inlet.normal.cross(toMouth.subtract(inlet.normal.scale(toMouth.dot(inlet.normal))));
+			Vec3 velocity = toMouth.normalize()
+				.scale(0.06 + 0.07 * rev)
+				.add(spin.scale(0.18));
+			// Cool and pale, brightening to white as it is drawn in and shrinking as the stream tightens
+			level.addParticle(GlowParticleOptions.mist(0xCFE8FF, 0xF4FAFF, 0.1f, 0.38f, 0.35f, 11), at.x, at.y, at.z,
+				velocity.x, velocity.y, velocity.z);
 		}
 	}
 

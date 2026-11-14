@@ -985,7 +985,9 @@ public final class EngineController {
 		double scale = CEConfig.STRESS_PER_TORQUE.get() * RATING_MARGIN * Torsion.stiffness(flexLoss);
 		for (int i = 0; i < points; i++) {
 			rpm[i] = (float) Dynamometer.speed(i);
-			torque[i] = (float) (Math.max(0, torqueCurve[i]) * Roughness.smoothness(rippleCurve[i]) * scale);
+			// The curve in use may have been measured before the limit was raised, so it can be shorter than points
+			if (i < torqueCurve.length && i < rippleCurve.length)
+				torque[i] = (float) (Math.max(0, torqueCurve[i]) * Roughness.smoothness(rippleCurve[i]) * scale);
 		}
 		return new Curve(rpm, torque, (float) sim.rpm(), (float) (ratedTorque() * CEConfig.STRESS_PER_TORQUE.get()),
 			rated && rating == null);

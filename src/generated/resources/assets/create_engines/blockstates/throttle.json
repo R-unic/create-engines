@@ -2,7 +2,18 @@
   "multipart": [
     {
       "apply": {
+        "model": "create_engines:block/engine_casing/block"
+      },
+      "when": {
+        "encased": "true"
+      }
+    },
+    {
+      "apply": {
         "model": "create_engines:block/throttle/core"
+      },
+      "when": {
+        "encased": "false"
       }
     },
     {
@@ -10,7 +21,8 @@
         "model": "create_engines:block/throttle/arm_down"
       },
       "when": {
-        "down": "true"
+        "down": "true",
+        "encased": "false"
       }
     },
     {
@@ -18,6 +30,7 @@
         "model": "create_engines:block/throttle/arm_up"
       },
       "when": {
+        "encased": "false",
         "up": "true"
       }
     },
@@ -26,6 +39,7 @@
         "model": "create_engines:block/throttle/arm_north"
       },
       "when": {
+        "encased": "false",
         "north": "true"
       }
     },
@@ -34,6 +48,7 @@
         "model": "create_engines:block/throttle/arm_south"
       },
       "when": {
+        "encased": "false",
         "south": "true"
       }
     },
@@ -42,6 +57,7 @@
         "model": "create_engines:block/throttle/arm_west"
       },
       "when": {
+        "encased": "false",
         "west": "true"
       }
     },
@@ -50,7 +66,8 @@
         "model": "create_engines:block/throttle/arm_east"
       },
       "when": {
-        "east": "true"
+        "east": "true",
+        "encased": "false"
       }
     }
   ]

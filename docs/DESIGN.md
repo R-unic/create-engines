@@ -688,8 +688,17 @@ Variable-Drive Supercharger = Variable-Geometry Turbocharger.**
 - **Engine Casing.** A plain cube (riveted plate, steel top and bottom) with no block entity and no behaviour: it joins
   no pipe, belongs to no engine and costs the scanner nothing. It is there to hide the sprawl. Advancement: Under the Hood
   (`CLAD`, a running engine with four or more casing blocks against its cylinders).
-  Since the casing rework it is drawn as a framed panel (steel beams and brass corner bolts round recessed riveted
-  plate), and it **covers shaft parts**: use one on a crankshaft, crank throw, camshaft or cam lobe and the part gets an
+  It is one riveted steel plate on every face with **connected textures** (`content.CESpriteShifts`: Create's omnidirectional
+  sheet, 8 by 8 tiles, drawn by `tools/generate_textures.py` with `connected_index` copied from Create's `AllCTTypes` so
+  the tiles sit where Create looks for them), so a run of casing and everything clad in it reads as one plate. It
+  **covers more than the shaft line**: Create's own shafts, small and large cogwheels (`EngineCasedShaftBlock`,
+  `EngineCasedCogwheelBlock`: Create's encased blocks with this casing, found through `EncasingRegistry`, so the casing is
+  used on them like Create's; Create's models, retextured; their side textures are Create's recoloured by
+  `tools/derive_cog_casing.py`; they drop the shaft or cog when broken, as Create's do), and it covers cylinders and plain
+  intake and exhaust manifolds (not throttles or sensors) with the same `encased` state as the shaft parts: a clad cylinder
+  or pipe is a plain casing cube, closed to the piston and rod, and keeps its block entity and connections. Create's
+  cogwheel block entities stay Create's, so they look at neighbouring cogs while ticking and `StressGameTests` skips them in
+  the unloaded-chunk test. It **covers shaft parts**: use one on a crankshaft, crank throw, camshaft or cam lobe and the part gets an
   `encased` block state (`content.Encasing`). A cased part is the same block with the same block entity, so the engine
   scan, sim and visuals are untouched; only its render shape flips from the animated renderer to the block model
   `engine_casing/encased` (a casing with a recessed opening in each end, turned onto the axis by the blockstate), and its

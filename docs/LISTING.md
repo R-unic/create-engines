@@ -112,7 +112,7 @@ and the crank animates with them.
 - An exhaust note made up from the engine's speed and firing order, so a V-twin lopes, a six hums and a dead cylinder
   limps
 - A **Muffler** that quiets the note, the bangs and the pops without costing the engine any power, and **Engine Casing**
-  to clad a bank and hide the sprawl
+  that joins into one plate and clads cylinders, pipes, cams, and Create's own shafts and cogwheels to hide the sprawl
 
 ![Flywheel, dynamometer and turbos](https://raw.githubusercontent.com/R-unic/create-engines/master/docs/images/engine_new_parts.png)
 ![A twin-turbo V8](https://raw.githubusercontent.com/R-unic/create-engines/master/docs/images/engine_accessory_twin_turbo_v8.png)
@@ -167,6 +167,24 @@ config thins out engine sound and particles on a big engine. Fuel properties are
 - [Source and issue tracker](https://github.com/R-unic/create-engines)
 - [Design notes](https://github.com/R-unic/create-engines/blob/master/docs/DESIGN.md), how the simulation works
 ```
+
+## Changelog for 1.0.1
+
+Casing that looks like casing, a few engine-behaviour fixes and livelier fire and air. No IDs, config keys or
+advancements change, and worlds from 1.0.0 load as they are.
+- Engine Casing now uses connected textures: a run of casing, and everything clad in it, reads as one riveted plate.
+- Casing clads more. Besides crankshafts, throws, camshafts and cam lobes, it now covers cylinders, plain intake and
+  exhaust manifolds, and Create's own shafts, cogwheels and large cogwheels (use it on them as you would Create's
+  casings; they drop the shaft or cogwheel when broken). Throttles and sensors stay uncovered.
+- Wrenching a casing off: sneak with a wrench to remove the casing and keep the part inside, instead of breaking it.
+- The turbo wastegate chuffs when it swings open to hold the boost limit.
+- Fixed: a stopped engine kept firing its effects on the client, and a crank zeroed by a rotation conflict now asks to
+  turn again instead of staying still.
+- Fixed: the slowest dyno point set the roughness loss peak, so a smooth even-firing engine could read about 18% rough at
+  speed. The rating itself is unchanged, but smooth engines now read as smooth.
+- Effects: fire in rotor housings and air drawn into intakes are drawn with new glowing particles, and intakes pull in a
+  curling vortex of pale mist.
+- Docs: the Modrinth summary and description are now pushed from this file on a release tag.
 
 ## Changelog for 1.0.0
 
@@ -246,6 +264,10 @@ otherwise the commit subjects since the last tag.
 | `git tag v0.2.0 && git push origin v0.2.0` | a release |
 | `git tag v0.2.0-beta.1 && git push origin v0.2.0-beta.1` | a beta (`-alpha` makes an alpha, `-rc` a beta) |
 | push to the `prototype` branch, or run the workflow by hand | an alpha named `<mod_version>-prototype.<run number>` |
+
+On a release tag, `.github/workflows/gallery.yml` also pushes the summary and the description above to the Modrinth page
+(`scripts/sync-modrinth-description.sh`) and replaces the gallery. This needs the token's "Write projects" scope. CurseForge
+has no API for either, so its description and gallery are still pasted in by hand.
 
 The version in the jar comes from the tag, so `mod_version` in `gradle.properties` only needs bumping for the
 prototype names.

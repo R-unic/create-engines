@@ -44,6 +44,7 @@ public class CreateEnginesClient {
 		event.registerSpriteSet(CEParticles.GAS.get(), GasParticle.Provider::new);
 		event.registerSpriteSet(CEParticles.EXHAUST_FLAME.get(), ExhaustFlameParticle.Provider::new);
 		event.registerSpriteSet(CEParticles.SPARK.get(), SparkParticle.Provider::new);
+		event.registerSpriteSet(CEParticles.GLOW.get(), com.createengines.client.particle.GlowParticle.Provider::new);
 	}
 
 	/**

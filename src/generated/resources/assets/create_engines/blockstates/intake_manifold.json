@@ -2,11 +2,20 @@
   "multipart": [
     {
       "apply": {
+        "model": "create_engines:block/engine_casing/block"
+      },
+      "when": {
+        "encased": "true"
+      }
+    },
+    {
+      "apply": {
         "model": "create_engines:block/intake_manifold/core"
       },
       "when": {
         "down": "false",
         "east": "false",
+        "encased": "false",
         "north": "false",
         "south": "false",
         "up": "false",
@@ -20,6 +29,7 @@
       "when": {
         "down": "true",
         "east": "false",
+        "encased": "false",
         "north": "false",
         "south": "false",
         "up": "false",
@@ -33,6 +43,7 @@
       "when": {
         "down": "false",
         "east": "false",
+        "encased": "false",
         "north": "false",
         "south": "false",
         "up": "true",
@@ -46,6 +57,7 @@
       "when": {
         "down": "true",
         "east": "false",
+        "encased": "false",
         "north": "false",
         "south": "false",
         "up": "true",
@@ -59,6 +71,7 @@
       "when": {
         "down": "false",
         "east": "false",
+        "encased": "false",
         "north": "true",
         "south": "false",
         "up": "false",
@@ -72,6 +85,7 @@
       "when": {
         "down": "true",
         "east": "false",
+        "encased": "false",
         "north": "true",
         "south": "false",
         "up": "false",
@@ -85,6 +99,7 @@
       "when": {
         "down": "false",
         "east": "false",
+        "encased": "false",
         "north": "true",
         "south": "false",
         "up": "true",
@@ -98,6 +113,7 @@
       "when": {
         "down": "true",
         "east": "false",
+        "encased": "false",
         "north": "true",
         "south": "false",
         "up": "true",
@@ -111,6 +127,7 @@
       "when": {
         "down": "false",
         "east": "false",
+        "encased": "false",
         "north": "false",
         "south": "true",
         "up": "false",
@@ -124,6 +141,7 @@
       "when": {
         "down": "true",
         "east": "false",
+        "encased": "false",
         "north": "false",
         "south": "true",
         "up": "false",
@@ -137,6 +155,7 @@
       "when": {
         "down": "false",
         "east": "false",
+        "encased": "false",
         "north": "false",
         "south": "true",
         "up": "true",
@@ -150,6 +169,7 @@
       "when": {
         "down": "true",
         "east": "false",
+        "encased": "false",
         "north": "false",
         "south": "true",
         "up": "true",
@@ -163,6 +183,7 @@
       "when": {
         "down": "false",
         "east": "false",
+        "encased": "false",
         "north": "true",
         "south": "true",
         "up": "false",
@@ -176,6 +197,7 @@
       "when": {
         "down": "true",
         "east": "false",
+        "encased": "false",
         "north": "true",
         "south": "true",
         "up": "false",
@@ -189,6 +211,7 @@
       "when": {
         "down": "false",
         "east": "false",
+        "encased": "false",
         "north": "true",
         "south": "true",
         "up": "true",
@@ -202,6 +225,7 @@
       "when": {
         "down": "true",
         "east": "false",
+        "encased": "false",
         "north": "true",
         "south": "true",
         "up": "true",
@@ -215,6 +239,7 @@
       "when": {
         "down": "false",
         "east": "false",
+        "encased": "false",
         "north": "false",
         "south": "false",
         "up": "false",
@@ -228,6 +253,7 @@
       "when": {
         "down": "true",
         "east": "false",
+        "encased": "false",
         "north": "false",
         "south": "false",
         "up": "false",
@@ -241,6 +267,7 @@
       "when": {
         "down": "false",
         "east": "false",
+        "encased": "false",
         "north": "false",
         "south": "false",
         "up": "true",
@@ -254,6 +281,7 @@
       "when": {
         "down": "true",
         "east": "false",
+        "encased": "false",
         "north": "false",
         "south": "false",
         "up": "true",
@@ -267,6 +295,7 @@
       "when": {
         "down": "false",
         "east": "false",
+        "encased": "false",
         "north": "true",
         "south": "false",
         "up": "false",
@@ -280,6 +309,7 @@
       "when": {
         "down": "true",
         "east": "false",
+        "encased": "false",
         "north": "true",
         "south": "false",
         "up": "false",
@@ -293,6 +323,7 @@
       "when": {
         "down": "false",
         "east": "false",
+        "encased": "false",
         "north": "true",
         "south": "false",
         "up": "true",
@@ -306,6 +337,7 @@
       "when": {
         "down": "true",
         "east": "false",
+        "encased": "false",
         "north": "true",
         "south": "false",
         "up": "true",
@@ -319,6 +351,7 @@
       "when": {
         "down": "false",
         "east": "false",
+        "encased": "false",
         "north": "false",
         "south": "true",
         "up": "false",
@@ -332,6 +365,7 @@
       "when": {
         "down": "true",
         "east": "false",
+        "encased": "false",
         "north": "false",
         "south": "true",
         "up": "false",
@@ -345,6 +379,7 @@
       "when": {
         "down": "false",
         "east": "false",
+        "encased": "false",
         "north": "false",
         "south": "true",
         "up": "true",
@@ -358,6 +393,7 @@
       "when": {
         "down": "true",
         "east": "false",
+        "encased": "false",
         "north": "false",
         "south": "true",
         "up": "true",
@@ -371,6 +407,7 @@
       "when": {
         "down": "false",
         "east": "false",
+        "encased": "false",
         "north": "true",
         "south": "true",
         "up": "false",
@@ -384,6 +421,7 @@
       "when": {
         "down": "true",
         "east": "false",
+        "encased": "false",
         "north": "true",
         "south": "true",
         "up": "false",
@@ -397,6 +435,7 @@
       "when": {
         "down": "false",
         "east": "false",
+        "encased": "false",
         "north": "true",
         "south": "true",
         "up": "true",
@@ -410,6 +449,7 @@
       "when": {
         "down": "true",
         "east": "false",
+        "encased": "false",
         "north": "true",
         "south": "true",
         "up": "true",
@@ -423,6 +463,7 @@
       "when": {
         "down": "false",
         "east": "true",
+        "encased": "false",
         "north": "false",
         "south": "false",
         "up": "false",
@@ -436,6 +477,7 @@
       "when": {
         "down": "true",
         "east": "true",
+        "encased": "false",
         "north": "false",
         "south": "false",
         "up": "false",
@@ -449,6 +491,7 @@
       "when": {
         "down": "false",
         "east": "true",
+        "encased": "false",
         "north": "false",
         "south": "false",
         "up": "true",
@@ -462,6 +505,7 @@
       "when": {
         "down": "true",
         "east": "true",
+        "encased": "false",
         "north": "false",
         "south": "false",
         "up": "true",
@@ -475,6 +519,7 @@
       "when": {
         "down": "false",
         "east": "true",
+        "encased": "false",
         "north": "true",
         "south": "false",
         "up": "false",
@@ -488,6 +533,7 @@
       "when": {
         "down": "true",
         "east": "true",
+        "encased": "false",
         "north": "true",
         "south": "false",
         "up": "false",
@@ -501,6 +547,7 @@
       "when": {
         "down": "false",
         "east": "true",
+        "encased": "false",
         "north": "true",
         "south": "false",
         "up": "true",
@@ -514,6 +561,7 @@
       "when": {
         "down": "true",
         "east": "true",
+        "encased": "false",
         "north": "true",
         "south": "false",
         "up": "true",
@@ -527,6 +575,7 @@
       "when": {
         "down": "false",
         "east": "true",
+        "encased": "false",
         "north": "false",
         "south": "true",
         "up": "false",
@@ -540,6 +589,7 @@
       "when": {
         "down": "true",
         "east": "true",
+        "encased": "false",
         "north": "false",
         "south": "true",
         "up": "false",
@@ -553,6 +603,7 @@
       "when": {
         "down": "false",
         "east": "true",
+        "encased": "false",
         "north": "false",
         "south": "true",
         "up": "true",
@@ -566,6 +617,7 @@
       "when": {
         "down": "true",
         "east": "true",
+        "encased": "false",
         "north": "false",
         "south": "true",
         "up": "true",
@@ -579,6 +631,7 @@
       "when": {
         "down": "false",
         "east": "true",
+        "encased": "false",
         "north": "true",
         "south": "true",
         "up": "false",
@@ -592,6 +645,7 @@
       "when": {
         "down": "true",
         "east": "true",
+        "encased": "false",
         "north": "true",
         "south": "true",
         "up": "false",
@@ -605,6 +659,7 @@
       "when": {
         "down": "false",
         "east": "true",
+        "encased": "false",
         "north": "true",
         "south": "true",
         "up": "true",
@@ -618,6 +673,7 @@
       "when": {
         "down": "true",
         "east": "true",
+        "encased": "false",
         "north": "true",
         "south": "true",
         "up": "true",
@@ -631,6 +687,7 @@
       "when": {
         "down": "false",
         "east": "true",
+        "encased": "false",
         "north": "false",
         "south": "false",
         "up": "false",
@@ -644,6 +701,7 @@
       "when": {
         "down": "true",
         "east": "true",
+        "encased": "false",
         "north": "false",
         "south": "false",
         "up": "false",
@@ -657,6 +715,7 @@
       "when": {
         "down": "false",
         "east": "true",
+        "encased": "false",
         "north": "false",
         "south": "false",
         "up": "true",
@@ -670,6 +729,7 @@
       "when": {
         "down": "true",
         "east": "true",
+        "encased": "false",
         "north": "false",
         "south": "false",
         "up": "true",
@@ -683,6 +743,7 @@
       "when": {
         "down": "false",
         "east": "true",
+        "encased": "false",
         "north": "true",
         "south": "false",
         "up": "false",
@@ -696,6 +757,7 @@
       "when": {
         "down": "true",
         "east": "true",
+        "encased": "false",
         "north": "true",
         "south": "false",
         "up": "false",
@@ -709,6 +771,7 @@
       "when": {
         "down": "false",
         "east": "true",
+        "encased": "false",
         "north": "true",
         "south": "false",
         "up": "true",
@@ -722,6 +785,7 @@
       "when": {
         "down": "true",
         "east": "true",
+        "encased": "false",
         "north": "true",
         "south": "false",
         "up": "true",
@@ -735,6 +799,7 @@
       "when": {
         "down": "false",
         "east": "true",
+        "encased": "false",
         "north": "false",
         "south": "true",
         "up": "false",
@@ -748,6 +813,7 @@
       "when": {
         "down": "true",
         "east": "true",
+        "encased": "false",
         "north": "false",
         "south": "true",
         "up": "false",
@@ -761,6 +827,7 @@
       "when": {
         "down": "false",
         "east": "true",
+        "encased": "false",
         "north": "false",
         "south": "true",
         "up": "true",
@@ -774,6 +841,7 @@
       "when": {
         "down": "true",
         "east": "true",
+        "encased": "false",
         "north": "false",
         "south": "true",
         "up": "true",
@@ -787,6 +855,7 @@
       "when": {
         "down": "false",
         "east": "true",
+        "encased": "false",
         "north": "true",
         "south": "true",
         "up": "false",
@@ -800,6 +869,7 @@
       "when": {
         "down": "true",
         "east": "true",
+        "encased": "false",
         "north": "true",
         "south": "true",
         "up": "false",
@@ -813,6 +883,7 @@
       "when": {
         "down": "false",
         "east": "true",
+        "encased": "false",
         "north": "true",
         "south": "true",
         "up": "true",
@@ -826,6 +897,7 @@
       "when": {
         "down": "true",
         "east": "true",
+        "encased": "false",
         "north": "true",
         "south": "true",
         "up": "true",
@@ -837,7 +909,8 @@
         "model": "create_engines:block/intake_manifold/arm_down"
       },
       "when": {
-        "down": "true"
+        "down": "true",
+        "encased": "false"
       }
     },
     {
@@ -845,6 +918,7 @@
         "model": "create_engines:block/intake_manifold/arm_up"
       },
       "when": {
+        "encased": "false",
         "up": "true"
       }
     },
@@ -853,6 +927,7 @@
         "model": "create_engines:block/intake_manifold/arm_north"
       },
       "when": {
+        "encased": "false",
         "north": "true"
       }
     },
@@ -861,6 +936,7 @@
         "model": "create_engines:block/intake_manifold/arm_south"
       },
       "when": {
+        "encased": "false",
         "south": "true"
       }
     },
@@ -869,6 +945,7 @@
         "model": "create_engines:block/intake_manifold/arm_west"
       },
       "when": {
+        "encased": "false",
         "west": "true"
       }
     },
@@ -877,7 +954,8 @@
         "model": "create_engines:block/intake_manifold/arm_east"
       },
       "when": {
-        "east": "true"
+        "east": "true",
+        "encased": "false"
       }
     }
   ]

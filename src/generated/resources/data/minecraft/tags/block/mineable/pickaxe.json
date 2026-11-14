@@ -32,6 +32,9 @@
     "create_engines:intercooler",
     "create_engines:muffler",
     "create_engines:engine_casing",
+    "create_engines:engine_cased_shaft",
+    "create_engines:engine_cased_cogwheel",
+    "create_engines:engine_cased_large_cogwheel",
     "create_engines:transmission"
   ]
 }

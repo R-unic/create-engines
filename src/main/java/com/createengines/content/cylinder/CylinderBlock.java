@@ -2,6 +2,7 @@ package com.createengines.content.cylinder;
 
 import org.jetbrains.annotations.Nullable;
 
+import com.createengines.content.Encasing;
 import com.createengines.content.PartInstallation;
 import com.createengines.content.PartInstallation.Slot;
 import com.createengines.engine.topology.EngineTopology;
@@ -21,6 +22,7 @@ import net.minecraft.world.ItemInteractionResult;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.context.BlockPlaceContext;
+import net.minecraft.world.item.context.UseOnContext;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.DirectionalBlock;
@@ -61,7 +63,8 @@ public class CylinderBlock extends DirectionalBlock
 		registerDefaultState(defaultBlockState().setValue(FACING, Direction.UP)
 			.setValue(HAS_PISTON, false)
 			.setValue(FORGED_PISTON, false)
-			.setValue(HAS_ROD, false));
+			.setValue(HAS_ROD, false)
+			.setValue(Encasing.ENCASED, false));
 	}
 
 	/** Whether this is the precision cylinder. */
@@ -76,7 +79,7 @@ public class CylinderBlock extends DirectionalBlock
 
 	@Override
 	protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {
-		builder.add(FACING, HAS_PISTON, FORGED_PISTON, HAS_ROD);
+		builder.add(FACING, HAS_PISTON, FORGED_PISTON, HAS_ROD, Encasing.ENCASED);
 	}
 
 	@Override
@@ -103,13 +106,32 @@ public class CylinderBlock extends DirectionalBlock
 	@Override
 	protected ItemInteractionResult useItemOn(ItemStack stack, BlockState state, Level level, BlockPos pos,
 											  Player player, InteractionHand hand, BlockHitResult hit) {
+		ItemInteractionResult cased = Encasing.encase(stack, state, level, pos, player);
+		if (cased != ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION)
+			return cased;
+		// Nothing goes in or out of a cylinder that is clad
+		if (state.getValue(Encasing.ENCASED))
+			return ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION;
 		return PartInstallation.tryInstall(stack, state, level, pos, player, PARTS);
+	}
+
+	/** A wrench takes the casing off a clad cylinder before it does anything else. */
+	@Override
+	public InteractionResult onWrenched(BlockState state, UseOnContext context) {
+		InteractionResult result = Encasing.uncase(state, context);
+		return result != null ? result : IWrenchable.super.onWrenched(state, context);
+	}
+
+	@Override
+	public InteractionResult onSneakWrenched(BlockState state, UseOnContext context) {
+		InteractionResult result = Encasing.uncase(state, context);
+		return result != null ? result : IWrenchable.super.onSneakWrenched(state, context);
 	}
 
 	@Override
 	protected InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos, Player player,
 											   BlockHitResult hit) {
-		if (PartInstallation.tryRemove(state, level, pos, player, PARTS))
+		if (!state.getValue(Encasing.ENCASED) && PartInstallation.tryRemove(state, level, pos, player, PARTS))
 			return InteractionResult.sidedSuccess(level.isClientSide);
 		return InteractionResult.PASS;
 	}
@@ -122,6 +144,7 @@ public class CylinderBlock extends DirectionalBlock
 
 	@Override
 	protected void onRemove(BlockState state, Level level, BlockPos pos, BlockState newState, boolean movedByPiston) {
+		Encasing.dropOnRemove(state, level, pos, newState);
 		PartInstallation.dropParts(state, level, pos, newState, PARTS);
 		IBE.onRemove(state, level, pos, newState);
 		EngineTopology.markDirty(level, pos);

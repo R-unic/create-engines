@@ -692,6 +692,10 @@ public class StressGameTests {
 		List<String> problems = new ArrayList<>();
 		int blockIndex = 0;
 		for (Block block : engineBlocks()) {
+			// Create's own encased cogwheel, which looks at the cogs beside and diagonal to it whenever it ticks, as every Create
+			// cog does; only its casing is ours
+			if (block instanceof com.simibubi.create.content.kinetics.simpleRelays.encased.EncasedCogwheelBlock)
+				continue;
 			int cx = 60000 + 6 * blockIndex++;
 			int cz = 60000;
 			level.getChunk(cx, cz);

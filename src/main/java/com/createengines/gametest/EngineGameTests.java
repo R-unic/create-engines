@@ -2893,4 +2893,38 @@ public class EngineGameTests {
 			helper.succeed();
 		});
 	}
+
+	/**
+	 * Engine Casing is Create's encasing for shafts and cogs, and a state of the cranks, cams, cylinders and plain pipes:
+	 * the variants are registered, the cased blocks keep valid block entities, and a clad cylinder is still a cylinder.
+	 */
+	@GameTest(template = "empty", timeoutTicks = 100)
+	public static void casingCoversShaftsCogsCylindersAndPipes(GameTestHelper helper) {
+		net.minecraft.world.level.block.Block casing = CEBlocks.ENGINE_CASING.get();
+		for (net.minecraft.world.level.block.Block block : new net.minecraft.world.level.block.Block[] {
+			AllBlocks.SHAFT.get(), AllBlocks.COGWHEEL.get(), AllBlocks.LARGE_COGWHEEL.get()})
+			helper.assertTrue(com.simibubi.create.content.decoration.encasing.EncasingRegistry.getVariants(block)
+				.stream()
+				.anyMatch(variant -> variant instanceof com.simibubi.create.content.decoration.encasing.EncasedBlock cased
+					&& cased.getCasing() == casing), "Engine Casing should encase " + block);
+		BlockState[] cased = {CEBlocks.ENGINE_CASED_SHAFT.getDefaultState(), CEBlocks.ENGINE_CASED_COGWHEEL.getDefaultState(),
+			CEBlocks.ENGINE_CASED_LARGE_COGWHEEL.getDefaultState()};
+		for (int i = 0; i < cased.length; i++) {
+			BlockPos pos = new BlockPos(1 + i, 2, 1);
+			helper.setBlock(pos, cased[i]);
+			helper.assertTrue(helper.getBlockEntity(pos) instanceof KineticBlockEntity,
+				"A cased shaft or cog should be a kinetic block: " + cased[i]);
+		}
+		BlockPos cylinder = new BlockPos(1, 2, 3);
+		helper.setBlock(cylinder, CEBlocks.CYLINDER.getDefaultState()
+			.setValue(com.createengines.content.Encasing.ENCASED, true));
+		helper.assertTrue(helper.getBlockEntity(cylinder) instanceof CylinderBlockEntity,
+			"A clad cylinder keeps its block entity");
+		BlockPos pipe = new BlockPos(2, 2, 3);
+		helper.setBlock(pipe, CEBlocks.INTAKE_MANIFOLD.getDefaultState()
+			.setValue(com.createengines.content.Encasing.ENCASED, true));
+		helper.assertTrue(helper.getBlockState(pipe)
+			.getValue(com.createengines.content.Encasing.ENCASED), "A pipe can be clad");
+		helper.succeed();
+	}
 }

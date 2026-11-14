@@ -36,6 +36,19 @@ public final class CEParticles {
 				return GasParticleOptions.STREAM_CODEC;
 			}
 		});
+	/** A soft blob of light or haze that changes colour as it ages: flame and charge inside a cylinder, the draught. */
+	public static final DeferredHolder<ParticleType<?>, ParticleType<com.createengines.content.effects.GlowParticleOptions>> GLOW =
+		PARTICLES.register("glow", () -> new ParticleType<>(false) {
+			@Override
+			public MapCodec<com.createengines.content.effects.GlowParticleOptions> codec() {
+				return com.createengines.content.effects.GlowParticleOptions.CODEC;
+			}
+
+			@Override
+			public StreamCodec<? super RegistryFriendlyByteBuf, com.createengines.content.effects.GlowParticleOptions> streamCodec() {
+				return com.createengines.content.effects.GlowParticleOptions.STREAM_CODEC;
+			}
+		});
 	/** A tongue of flame thrown from an exhaust, gone in a few ticks. */
 	public static final DeferredHolder<ParticleType<?>, SimpleParticleType> EXHAUST_FLAME =
 		PARTICLES.register("exhaust_flame", () -> new SimpleParticleType(false));

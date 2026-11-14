@@ -17,6 +17,7 @@ import com.createengines.engine.CrankGeometry;
 import com.createengines.engine.sim.CamProfile;
 import com.createengines.engine.sim.CylinderModel;
 
+import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.Direction.Axis;
 import net.minecraft.world.level.Level;
@@ -59,6 +60,77 @@ public final class EnginePoses {
 
 	public static float camAngle(CamshaftBlockEntity cam, float renderTime) {
 		return (float) ((cam.rotation(renderTime) + cam.lobeAngle()) % 360);
+	}
+
+	/**
+	 * Angles of a lobe set's three lobes about the cam's axis, in degrees: each is turned so that its nose is at the
+	 * follower it works (the cylinder's head, or its block through pushrods) exactly when that follower's lift peaks in
+	 * the simulation's cycle, and so that a larger lobe angle means the nose gets there later. A cam turning the other
+	 * way reaches every mark in reverse order, so the offsets between lobes mirror with it.
+	 */
+	public record LobeAngles(float intake, float exhaust, float injector) {
+	}
+
+	public static LobeAngles lobeAngles(CamshaftBlockEntity cam, float renderTime) {
+		Axis axis = cam.getBlockState()
+			.getValue(BlockStateProperties.AXIS);
+		double turned = cam.rotation(renderTime);
+		// The simulation reads the cam as a distance turned, whichever way it turns
+		double sense = turned < 0 ? -1 : 1;
+		double travelled = Math.abs(turned % 360);
+
+		double toward = 0;
+		double shift = 0;
+		Level level = cam.getLevel();
+		if (level != null) {
+			Direction follower = null;
+			for (Direction face : Direction.values()) {
+				if (face.getAxis() == axis)
+					continue;
+				BlockPos at = cam.getBlockPos()
+					.relative(face);
+				BlockState state = level.getBlockState(at);
+				BlockPos cylinderPos;
+				if (state.getBlock() instanceof CylinderHeadBlock)
+					cylinderPos = at.relative(state.getValue(CylinderHeadBlock.FACING)
+						.getOpposite());
+				else if (state.getBlock() instanceof CylinderBlock)
+					cylinderPos = at;
+				else
+					continue;
+				if (!(level.getBlockEntity(cylinderPos) instanceof CylinderBlockEntity cylinder)
+					|| cylinder.status() == null || !cam.getBlockPos()
+						.equals(cylinder.status()
+							.lobe()))
+					continue;
+				// One lobe shared by cylinders is drawn for the one it times without a shift
+				double lobeShift = cylinder.status()
+					.lobeShift();
+				if (follower == null || Math.abs(lobeShift) < Math.abs(shift)) {
+					follower = face;
+					shift = lobeShift;
+				}
+			}
+			if (follower != null)
+				toward = CrankGeometry.signedAngle(axis, CrankGeometry.restDirection(axis), new Vector3f(follower.step()));
+		}
+
+		double base = travelled - cam.lobeAngle() - shift;
+		CamProfile profile = CamProfile.BASIC;
+		return new LobeAngles(lobeAngle(toward, sense, base, liftPeak(profile.intakeOpen(), profile.intakeClose())),
+			lobeAngle(toward, sense, base, liftPeak(profile.exhaustOpen(), profile.exhaustClose())),
+			lobeAngle(toward, sense, base, profile.injection()));
+	}
+
+	/** Cycle angle at the middle of a valve's lift. */
+	private static double liftPeak(double open, double close) {
+		double duration = ((close - open) % 720 + 720) % 720;
+		return open + duration / 2;
+	}
+
+	/** The cam is at cycle {@code peak} when it has turned {@code (peak - 360) / 2} past the lobe angle. */
+	private static float lobeAngle(double toward, double sense, double base, double peak) {
+		return (float) (toward + sense * (base - (peak - 360) / 2)) % 360;
 	}
 
 	/**
