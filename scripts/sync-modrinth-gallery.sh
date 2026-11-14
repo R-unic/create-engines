@@ -84,3 +84,6 @@ while IFS= read -r url; do
   echo "delete $url"
   curl -fsS -X DELETE "${auth[@]}" --get "$api/project/$project/gallery" --data-urlencode "url=$url" >/dev/null
 done <<< "$stale"
+
+echo "Gallery now:"
+gallery | jq -r 'sort_by(.ordering)[] | "  \(.ordering)\t\(if .featured then "*" else " " end) \(.title)\t\(.raw_url | split("/") | last)"'
