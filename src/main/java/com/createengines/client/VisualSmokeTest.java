@@ -50,6 +50,7 @@ import net.neoforged.neoforge.fluids.FluidStack;
 import net.neoforged.neoforge.fluids.capability.IFluidHandler;
 import net.neoforged.neoforge.client.event.ClientTickEvent;
 import net.neoforged.neoforge.client.event.RenderFrameEvent;
+import net.neoforged.neoforge.client.event.sound.PlaySoundEvent;
 import net.neoforged.neoforge.common.NeoForge;
 
 /**
@@ -95,7 +96,68 @@ public final class VisualSmokeTest {
 		CreateEngines.LOGGER.info("Visual smoke test enabled");
 		NeoForge.EVENT_BUS.addListener(VisualSmokeTest::onClientTick);
 		NeoForge.EVENT_BUS.addListener(VisualSmokeTest::onRenderFrame);
+		NeoForge.EVENT_BUS.addListener(VisualSmokeTest::onPlaySound);
 		schedule();
+	}
+
+	/** How many times each of this mod's sound events was started in this run, for {@link #soundReport}. */
+	private static final java.util.Map<net.minecraft.resources.ResourceLocation, Integer> SOUNDS_PLAYED =
+		new java.util.TreeMap<>();
+
+	private static void onPlaySound(PlaySoundEvent event) {
+		if (event.getSound() != null && CreateEngines.MOD_ID.equals(event.getSound()
+			.getLocation()
+			.getNamespace()))
+			SOUNDS_PLAYED.merge(event.getSound()
+				.getLocation(), 1, Integer::sum);
+	}
+
+	/**
+	 * The sound smoke test's client half: every sound event this mod registers must resolve through the loaded
+	 * {@code sounds.json} to a recording the resource packs actually hold. Problems are logged as errors starting
+	 * "SOUND SMOKE FAIL", so a run's log can be searched for them.
+	 */
+	private static void soundCheck() {
+		Minecraft minecraft = Minecraft.getInstance();
+		int problems = 0;
+		int checked = 0;
+		for (var id : net.minecraft.core.registries.BuiltInRegistries.SOUND_EVENT.keySet()) {
+			if (!CreateEngines.MOD_ID.equals(id.getNamespace()))
+				continue;
+			checked++;
+			var weighed = minecraft.getSoundManager()
+				.getSoundEvent(id);
+			if (weighed == null) {
+				CreateEngines.LOGGER.error("SOUND SMOKE FAIL {}: no entry in the loaded sounds.json", id);
+				problems++;
+				continue;
+			}
+			var sound = weighed.getSound(net.minecraft.util.RandomSource.create());
+			if (sound == net.minecraft.client.sounds.SoundManager.EMPTY_SOUND
+				|| sound == net.minecraft.client.sounds.SoundManager.INTENTIONALLY_EMPTY_SOUND) {
+				CreateEngines.LOGGER.error("SOUND SMOKE FAIL {}: resolves to no sound", id);
+				problems++;
+				continue;
+			}
+			var file = sound.getPath();
+			if (minecraft.getResourceManager()
+				.getResource(file)
+				.isEmpty()) {
+				CreateEngines.LOGGER.error("SOUND SMOKE FAIL {}: recording {} is not in the resource packs", id, file);
+				problems++;
+			}
+		}
+		CreateEngines.LOGGER.info("SOUND SMOKE resolved {} sound events, {} problems", checked, problems);
+	}
+
+	/** Which of this mod's sound events actually started during the run, and which never did. */
+	private static void soundReport() {
+		var never = new java.util.TreeSet<String>();
+		for (var id : net.minecraft.core.registries.BuiltInRegistries.SOUND_EVENT.keySet())
+			if (CreateEngines.MOD_ID.equals(id.getNamespace()) && !SOUNDS_PLAYED.containsKey(id))
+				never.add(id.getPath());
+		CreateEngines.LOGGER.info("SOUND SMOKE played {}", SOUNDS_PLAYED);
+		CreateEngines.LOGGER.info("SOUND SMOKE never started in this run: {}", never);
 	}
 
 	private static void schedule() {
@@ -599,6 +661,46 @@ public final class VisualSmokeTest {
 	private static final BlockPos RICH_OFFSET = new BlockPos(12, 0, 0);
 	private static final BlockPos FLOODED_OFFSET = new BlockPos(24, 0, 0);
 	private static final BlockPos DRY_OFFSET = new BlockPos(36, 0, 0);
+	/** The turbocharged diesel and the supercharged spark engine of {@link #effects}, which exist to be heard. */
+	private static final BlockPos TURBO_OFFSET = new BlockPos(48, 0, 0);
+	private static final BlockPos BLOWER_OFFSET = new BlockPos(60, 0, 0);
+	private static final List<BlockPos> EFFECT_ENGINES =
+		List.of(BlockPos.ZERO, RICH_OFFSET, FLOODED_OFFSET, DRY_OFFSET, TURBO_OFFSET, BLOWER_OFFSET);
+
+	/** The first engine's exhaust opened into a turbine, its intake drawn through the compressor (as the turbo GameTest). */
+	private static void addTurbo(net.minecraft.world.level.Level level, BlockPos origin) {
+		BlockPos turbo = origin.offset(TestEngine.EXHAUST);
+		level.setBlock(turbo, CEBlocks.TURBOCHARGER.getDefaultState()
+			.setValue(com.createengines.content.turbo.TurbochargerBlock.FACING, Direction.WEST), 3);
+		level.setBlock(turbo.above(), CEBlocks.AIR_INTAKE.getDefaultState()
+			.setValue(com.createengines.content.airflow.PortOpeningBlock.FACING, Direction.UP), 3);
+		level.setBlock(turbo.south(), CEBlocks.EXHAUST_OUTLET.getDefaultState()
+			.setValue(com.createengines.content.airflow.PortOpeningBlock.FACING, Direction.SOUTH), 3);
+		level.setBlock(origin.offset(TestEngine.AIR_INTAKE), pipe(CEBlocks.INTAKE_MANIFOLD.get(), Direction.SOUTH, Direction.WEST), 3);
+		level.setBlock(turbo.north(), pipe(CEBlocks.INTAKE_MANIFOLD.get(), Direction.SOUTH, Direction.EAST), 3);
+		// Anti-lag burns fuel in the exhaust, which cracks now and then: an afterfire
+		if (level.getBlockEntity(turbo) instanceof com.createengines.content.turbo.TurbochargerBlockEntity be)
+			be.antiLag.setValue(com.createengines.engine.sim.Turbocharger.MAX_ANTI_LAG);
+	}
+
+	/** A spark engine with a supercharger on its head, turned by its own creative motor, as the boost GameTests build it. */
+	private static void addBlower(net.minecraft.world.level.Level level, BlockPos origin) {
+		BlockPos head = origin.offset(TestEngine.HEAD);
+		BlockPos blower = head.east();
+		level.setBlock(origin.offset(TestEngine.AIR_INTAKE), Blocks.AIR.defaultBlockState(), 3);
+		level.setBlock(blower.east(), CEBlocks.AIR_INTAKE.getDefaultState()
+			.setValue(com.createengines.content.airflow.PortOpeningBlock.FACING, Direction.EAST), 3);
+		level.setBlock(blower, CEBlocks.SUPERCHARGER.getDefaultState()
+			.setValue(net.minecraft.world.level.block.state.properties.BlockStateProperties.AXIS, Direction.Axis.Y), 3);
+		level.setBlock(blower.below(), com.simibubi.create.AllBlocks.CREATIVE_MOTOR.getDefaultState()
+			.setValue(com.simibubi.create.content.kinetics.motor.CreativeMotorBlock.FACING, Direction.UP), 3);
+		if (level.getBlockEntity(blower.below()) instanceof com.simibubi.create.content.kinetics.motor.CreativeMotorBlockEntity motor)
+			motor.generatedSpeed.setValue(128);
+		if (level.getBlockEntity(blower) instanceof com.createengines.content.supercharger.SuperchargerBlockEntity charger)
+			charger.limit.setValue(com.createengines.content.supercharger.SuperchargerBlockEntity.MAX_LIMIT);
+		if (level.getBlockEntity(head) instanceof CylinderHeadBlockEntity cylinderHead)
+			cylinderHead.metering.setValue(CylinderHeadBlockEntity.MAX_METERING);
+	}
 
 	/**
 	 * What engines throw out: the first engine catching from cold and settling, one beside it with its injector wide
@@ -606,6 +708,7 @@ public final class VisualSmokeTest {
 	 * each engine's figures are logged so the pictures can be read against them.
 	 */
 	private static void effects(int start) {
+		STEPS.add(new Step(start - 10, VisualSmokeTest::soundCheck));
 		STEPS.add(new Step(start, () -> server(server -> {
 			var level = server.overworld();
 			BlockPos rich = origin.offset(RICH_OFFSET);
@@ -620,12 +723,18 @@ public final class VisualSmokeTest {
 				level.setBlock(mouth.relative(side), Blocks.GLASS.defaultBlockState(), 3);
 			level.setBlock(mouth, Blocks.WATER.defaultBlockState(), 3);
 			TestEngine.build(level, origin.offset(DRY_OFFSET), true, false);
+			BlockPos turbo = origin.offset(TURBO_OFFSET);
+			TestEngine.build(level, turbo, true);
+			addTurbo(level, turbo);
+			BlockPos blown = origin.offset(BLOWER_OFFSET);
+			TestEngine.buildSpark(level, blown, true);
+			addBlower(level, blown);
 		})));
 		// The first engine was built a second ago: these catch it cranking, catching and clearing its throat
 		for (int i = 0; i < 4; i++)
 			frames("effects_start_" + i, start + 10 + i * 40, -1.5, 4.0, -2.0, -18, 5);
 		STEPS.add(new Step(start + 200, () -> server(server -> {
-			for (BlockPos offset : List.of(BlockPos.ZERO, RICH_OFFSET, FLOODED_OFFSET, DRY_OFFSET))
+			for (BlockPos offset : EFFECT_ENGINES)
 				server.overworld()
 					.removeBlock(origin.offset(offset)
 						.offset(TestEngine.STARTER_POWER), false);
@@ -634,6 +743,17 @@ public final class VisualSmokeTest {
 		frames("effects_intake", start + 390, 5.5, 3.6, -0.5, 73, 13);
 		frames("effects_rich", start + 420, RICH_OFFSET.getX() - 1.5, 4.0, -2.0, -18, 5);
 		frames("effects_dry", start + 450, DRY_OFFSET.getX() + 2.5, 1.0, -0.4, 0, 0);
+		frames("effects_turbo", start + 480, TURBO_OFFSET.getX() - 1.5, 4.0, -2.0, -18, 5);
+		frames("effects_blower", start + 500, BLOWER_OFFSET.getX() - 1.5, 4.0, -2.0, -18, 5);
+		// Dump the turbo's boost with a redstone block beneath it: the blow-off valve. Then a signal on its camshaft shuts
+		// the fuel rack, so the engine is off the throttle and anti-lag has to crack fuel in the exhaust
+		STEPS.add(new Step(start + 400, () -> server(server -> server.overworld()
+			.setBlock(origin.offset(TURBO_OFFSET)
+				.offset(TestEngine.EXHAUST)
+				.below(), Blocks.REDSTONE_BLOCK.defaultBlockState(), 3))));
+		STEPS.add(new Step(start + 430, () -> server(server -> server.overworld()
+			.setBlock(origin.offset(TURBO_OFFSET)
+				.offset(new BlockPos(4, 5, 3)), Blocks.REDSTONE_BLOCK.defaultBlockState(), 3))));
 		// Crank the flooded one again, which nothing can light, and look at its intake and its cylinder
 		STEPS.add(new Step(start + 470, () -> server(server -> server.overworld()
 			.setBlock(origin.offset(FLOODED_OFFSET)
@@ -648,15 +768,15 @@ public final class VisualSmokeTest {
 		STEPS.add(new Step(start + 590, () -> {
 			Minecraft.getInstance().options.hideGui = true;
 			logEngines("running");
-			server(server -> {
-				server.overworld()
-					.removeBlock(origin.offset(TestEngine.AIR_INTAKE), false);
-				command(server, "weather rain");
-			});
+			server(server -> command(server, "weather rain"));
 		}));
+		// The first engine loses its air a while before the end, so it has time to run down and stall (it coasts a long way)
+		STEPS.add(new Step(start + 400, () -> server(server -> server.overworld()
+			.removeBlock(origin.offset(TestEngine.AIR_INTAKE), false))));
 		frames("effects_rain", start + 760, RICH_OFFSET.getX() + 0.5, 4.2, -0.8, -31, 12);
-		STEPS.add(new Step(start + 900, () -> {
+		STEPS.add(new Step(start + 1150, () -> {
 			logEngines("after the stall");
+			soundReport();
 			Minecraft.getInstance()
 				.stop();
 		}));
