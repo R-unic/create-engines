@@ -1,38 +1,78 @@
 package com.createengines.content.effects;
 
 /**
- * How far a rain cap's flap is lifted. Each exhaust pulse out of the pipe it sits on kicks it up, and gravity drops it
- * back: the kick fades away exponentially, so a slow engine makes the flap clack once a firing, a fast one holds it
- * fluttering part open, and a stopped engine lets it fall shut. Pure arithmetic, kept free of Minecraft so it can be
- * tested; the unit of time is the game tick.
+ * How far a rain cap's flap is lifted, as a small hinged weight. Each exhaust pulse out of the pipe it sits on gives it
+ * a shove, gravity pulls it back down more heavily the flatter it lies, a little drag keeps it from swinging for ever, and
+ * when it lands it bounces a little before it settles. So a slow engine makes the flap rise and sink once a firing, a fast
+ * one holds it up fluttering, and a stopped engine lets it sink and clack shut. Pure arithmetic, kept free of
+ * Minecraft so it can be tested; the unit of time is the game tick, and the flap is stepped forward as it is asked about.
  */
 public final class RainCapFlap {
 
-	/** The flap's most open angle, in degrees, when pulses come faster than it can fall. */
+	/** The flap's stop, in degrees. */
 	public static final double MAX_DEGREES = 70;
-	/** What one pulse adds, as a share of the full lift. */
-	public static final double KICK = 0.55;
-	/** The ticks the lift takes to fall to 1/e of itself. */
-	public static final double FALL_TICKS = 3.5;
+	private static final double MAX = Math.toRadians(MAX_DEGREES);
+	/** What one pulse adds to the flap's speed, radians per tick. */
+	public static final double SHOVE = 0.22;
+	/** Gravity's pull on a flat flap, radians per tick squared; it fades to nothing as the flap stands upright. */
+	public static final double GRAVITY = 0.025;
+	/** Share of its speed the flap loses every tick. */
+	public static final double DRAG = 0.06;
+	/** Share of its speed the flap keeps, reversed, when it lands shut or hits its stop. */
+	public static final double BOUNCE = 0.3;
+	private static final double STEP = 0.25;
 
-	private double lift;
+	private double angle;
+	private double speed;
 	private double at = Double.NEGATIVE_INFINITY;
 
 	/** An exhaust pulse at {@code now}. */
 	public void pulse(double now) {
-		lift = Math.min(1, lift(now) + KICK);
-		at = now;
+		advance(now);
+		speed += SHOVE;
+		if (at == Double.NEGATIVE_INFINITY)
+			at = now;
 	}
 
-	/** The share of full lift at {@code now}, 0 for shut and 1 for wide open. */
-	public double lift(double now) {
-		if (lift <= 0)
-			return 0;
-		return lift * Math.exp(-Math.max(0, now - at) / FALL_TICKS);
-	}
-
-	/** The angle the flap stands open at {@code now}, in degrees. */
+	/** The angle the flap stands open at {@code now}, in degrees. A time before the last one asked about gives the last. */
 	public double degrees(double now) {
-		return MAX_DEGREES * lift(now);
+		advance(now);
+		return Math.toDegrees(angle);
+	}
+
+	/** The share of its full opening the flap stands at, 0 for shut and 1 at its stop. */
+	public double lift(double now) {
+		return degrees(now) / MAX_DEGREES;
+	}
+
+	private void advance(double now) {
+		if (at == Double.NEGATIVE_INFINITY) {
+			at = now;
+			return;
+		}
+		// A long gap (a cap out of sight, a paused game) has long since settled: do not step through it
+		if (now - at > 400) {
+			angle = 0;
+			speed = 0;
+			at = now;
+			return;
+		}
+		while (at < now) {
+			double dt = Math.min(STEP, now - at);
+			speed += -GRAVITY * Math.cos(angle) * dt;
+			speed *= Math.pow(1 - DRAG, dt);
+			angle += speed * dt;
+			if (angle <= 0) {
+				angle = 0;
+				speed = speed < 0 ? -speed * BOUNCE : speed;
+				// A flap that has run out of energy lies still instead of chattering on the pipe
+				if (speed < 0.01)
+					speed = 0;
+			} else if (angle >= MAX) {
+				angle = MAX;
+				speed = speed > 0 ? -speed * BOUNCE : speed;
+			}
+			at += dt;
+		}
 	}
 }
