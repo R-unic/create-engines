@@ -24,6 +24,7 @@ import net.neoforged.fml.ModContainer;
 import net.neoforged.fml.common.Mod;
 import net.neoforged.fml.config.ModConfig;
 import net.neoforged.neoforge.common.NeoForge;
+import net.neoforged.neoforge.client.event.ClientPlayerNetworkEvent;
 import net.neoforged.neoforge.client.event.RegisterColorHandlersEvent;
 import net.neoforged.neoforge.client.event.RegisterParticleProvidersEvent;
 import net.neoforged.neoforge.client.model.DynamicFluidContainerModel;
@@ -38,9 +39,18 @@ public class CreateEnginesClient {
 		modEventBus.addListener(CreateEnginesClient::registerParticles);
 		modEventBus.addListener(CreateEnginesClient::registerCasingColours);
 		NeoForge.EVENT_BUS.addListener(FuelTooltips::onTooltip);
+		NeoForge.EVENT_BUS.addListener(CreateEnginesClient::onLoggingOut);
 		PonderIndex.addPlugin(new CEPonderPlugin());
 		VisualSmokeTest.register();
 		ShowcaseRun.register();
+	}
+
+	/** The sound engine drops every voice when the world closes; forget ours too, or they keep that world's machines alive. */
+	private static void onLoggingOut(ClientPlayerNetworkEvent.LoggingOut event) {
+		com.createengines.content.EngineNoteSound.clear();
+		com.createengines.content.MachineLoopSound.clear();
+		com.createengines.content.starter.StarterWhirSound.clear();
+		com.createengines.client.RainCaps.clear();
 	}
 
 	/** Dyed Engine Casing: the plate is grey steel and the block's paint tints it. */

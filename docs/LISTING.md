@@ -168,6 +168,17 @@ config thins out engine sound and particles on a big engine. Fuel properties are
 - [Design notes](https://github.com/R-unic/create-engines/blob/master/docs/DESIGN.md), how the simulation works
 ```
 
+## Changelog for 1.2.1
+
+Stability fix for 1.2.0. No rating, recipe, ID, config key or simulation number changes.
+- Fixed the frame rate collapsing near running engines and Minecraft's sound engine dying until the game was restarted:
+  the synthesized engine note allocated native memory ten times a second per engine and could run the JVM out of it.
+  It now reuses one buffer.
+- A bad number from an engine can no longer silence its note for good, and a failing synthesizer gives silence
+  instead of an error on the sound thread.
+- Leaving a world and joining another no longer leaves stale engine voices that block new engines from sounding, and
+  no longer keeps the old world's machines in memory.
+
 ## Changelog for 1.2.0
 
 Dress Parts: two builds no longer have to look alike. Everything here is cosmetic: no rating, recipe of an existing

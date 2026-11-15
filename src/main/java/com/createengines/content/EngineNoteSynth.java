@@ -127,7 +127,24 @@ public final class EngineNoteSynth {
 
 	/** Called by the game thread; takes effect over the next tenth of a second. */
 	public void set(Params next) {
-		params = next;
+		params = clean(next);
+	}
+
+	/**
+	 * What the synthesizer is willing to follow. A NaN or infinity from the engine would poison the filters and the phase
+	 * for good, leaving that engine mute until the world reloads, so anything unusable becomes silence or a sane limit.
+	 */
+	private static Params clean(Params p) {
+		float[] angles = p.firingAngles == null ? new float[0] : p.firingAngles;
+		for (float angle : angles)
+			if (!Float.isFinite(angle) || angle < 0 || angle >= CYCLE)
+				return Params.SILENT;
+		return new Params(finite(p.rpm, 0, 20000), angles, finite(p.firingShare, 0, 1), finite(p.load, 0, 1.3f),
+			finite(p.combustion, 0, 1));
+	}
+
+	private static float finite(float value, float min, float max) {
+		return Float.isFinite(value) ? Math.clamp(value, min, max) : 0;
 	}
 
 	/** Whether there is nothing left to hear: the engine is quiet and the pipe has stopped ringing. */
@@ -209,7 +226,27 @@ public final class EngineNoteSynth {
 		float follow = toneShare * Math.min(1f, combustion * 2);
 		float boost = Math.clamp(TARGET_POWER / (power + 1e-6f), 0.25f, MOST_BOOST * MOST_BOOST);
 		mix *= 1 + follow * ((float) Math.sqrt(boost) - 1);
-		return (float) Math.tanh(mix + mechanical);
+		float out = (float) Math.tanh(mix + mechanical);
+		if (!Float.isFinite(out)) {
+			reset();
+			return 0;
+		}
+		return out;
+	}
+
+	/** Back to a quiet, stopped engine, if the arithmetic ever goes wrong. */
+	private void reset() {
+		java.util.Arrays.fill(x1, 0);
+		java.util.Arrays.fill(x2, 0);
+		java.util.Arrays.fill(y1, 0);
+		java.util.Arrays.fill(y2, 0);
+		phase = 0;
+		nextEvent = 0;
+		rpm = load = combustion = 0;
+		impulse = pulse = 0;
+		noiseLow = thumpEnvelope = thumpSweep = rumbleEnvelope = rumbleNoise = toneA = toneB = toneDc = 0;
+		thumpPhase = 0;
+		power = TARGET_POWER;
 	}
 
 	/** Strikes every firing whose crank angle the cycle has now reached. */

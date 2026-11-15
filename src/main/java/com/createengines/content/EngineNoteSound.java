@@ -1,7 +1,6 @@
 package com.createengines.content;
 
 import java.nio.ByteBuffer;
-import java.nio.ByteOrder;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
@@ -49,11 +48,6 @@ public final class EngineNoteSound extends AbstractTickableSoundInstance {
 	private static final float FADE_IN = 0.06f;
 	private static final float FADE_OUT = 0.04f;
 	private static final float LOUDEST = 0.9f;
-	/** A tenth of a second of audio at a time: four are queued, so the note is at most about four tenths behind. */
-	private static final int CHUNK = EngineNoteSynth.SAMPLE_RATE / 10;
-
-	/** Ticks to leave a new instance alone before deciding the sound engine declined it. */
-	private static final int SETTLE_TICKS = 20;
 
 	private final CrankshaftBlockEntity crank;
 	private final EngineNoteSynth synth;
@@ -89,16 +83,21 @@ public final class EngineNoteSound extends AbstractTickableSoundInstance {
 		long now = crank.getLevel().getGameTime();
 		// A new instance gets a moment to start; one the sound engine declined (master volume at zero, no free streaming
 		// channel) is only tried again after that, not every tick
-		if (current != null && (now - current.startedAt < SETTLE_TICKS || !current.isStopped() && sounds.isActive(current)))
+		if (current != null && (!VoiceClock.settled(now, current.startedAt) || !current.isStopped() && sounds.isActive(current)))
 			return;
 		PLAYING.values()
-			.removeIf(note -> now - note.startedAt >= SETTLE_TICKS && (note.isStopped() || !sounds.isActive(note)));
+			.removeIf(note -> VoiceClock.settled(now, note.startedAt) && (note.isStopped() || !sounds.isActive(note)));
 		if (PLAYING.size() >= MAX_VOICES || !near(crank))
 			return;
 		EngineNoteSound note = new EngineNoteSound(crank);
 		PLAYING.put(at, note);
 		sounds.play(note);
 		LOGGER.debug("Engine note started at {}", at);
+	}
+
+	/** Forgets every voice, for when the player leaves a world: the sound engine has already dropped them. */
+	public static void clear() {
+		PLAYING.clear();
 	}
 
 	/** Whether the engine whose primary crankshaft is at {@code at} has its note playing, so its bangs can give way to it. */
@@ -164,12 +163,11 @@ public final class EngineNoteSound extends AbstractTickableSoundInstance {
 
 		private static final AudioFormat FORMAT = new AudioFormat(EngineNoteSynth.SAMPLE_RATE, 16, 1, true, false);
 
-		private final EngineNoteSynth synth;
-		private final short[] scratch = new short[CHUNK];
+		private final EngineNotePcm pcm;
 		private int reads;
 
 		private Stream(EngineNoteSynth synth) {
-			this.synth = synth;
+			this.pcm = new EngineNotePcm(synth);
 		}
 
 		@Override
@@ -179,16 +177,9 @@ public final class EngineNoteSound extends AbstractTickableSoundInstance {
 
 		@Override
 		public ByteBuffer read(int size) {
-			int samples = Math.min(CHUNK, size / 2);
 			if (reads++ == 0)
 				LOGGER.debug("Engine note stream first read: {} samples asked for", size / 2);
-			synth.render(scratch, 0, samples);
-			ByteBuffer data = ByteBuffer.allocateDirect(samples * 2)
-				.order(ByteOrder.LITTLE_ENDIAN);
-			for (int i = 0; i < samples; i++)
-				data.putShort(scratch[i]);
-			data.flip();
-			return data;
+			return pcm.read(size);
 		}
 
 		@Override

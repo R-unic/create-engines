@@ -32,6 +32,11 @@ public final class RainCaps {
 		return flap == null ? 0 : (float) flap.degrees(now);
 	}
 
+	/** Every flap, for when the player leaves a world. */
+	public static void clear() {
+		FLAPS.clear();
+	}
+
 	/** A cap that is gone no longer needs its flap. */
 	public static void forget(BlockPos cap) {
 		FLAPS.remove(cap.asLong());

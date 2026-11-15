@@ -67,6 +67,11 @@ public final class MachineLoopSound extends AbstractTickableSoundInstance {
 		sounds.play(loop);
 	}
 
+	/** Forgets every loop, for when the player leaves a world: the sound engine has already dropped them, and the map would keep their sources alive. */
+	public static void clear() {
+		PLAYING.clear();
+	}
+
 	/** The loop fades in from nothing, which the sound engine would otherwise skip as inaudible. */
 	@Override
 	public boolean canStartSilent() {
