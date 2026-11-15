@@ -583,3 +583,20 @@ write_schematic("engine_readouts", (6, 6, 6), [
     (2, 4, 3, ce("cylinder_head"), head("up")),
     (3, 1, 3, ce("sump"), {}),
 ])
+
+# A rain cap on the mouth of the exhaust outlet of a single
+RAIN_CAP_BLOCKS = [
+    (1, 1, 3, ce("crankshaft"), axis("x")),
+    (2, 1, 3, ce("crank_throw"), axis("x")),
+    (3, 1, 3, ce("crankshaft"), axis("x")),
+    (2, 2, 3, ce("cylinder"), cylinder("up")),
+    (2, 3, 3, ce("cylinder_head"), head("up")),
+    (2, 3, 2, ce("air_intake"), facing("north")),
+    (2, 3, 4, ce("exhaust_manifold"), pipe("north", "south")),
+    (2, 3, 5, ce("exhaust_outlet"), facing("south")),
+    (2, 3, 6, ce("rain_cap"), facing("south")),
+    (2, 4, 3, ce("cam_lobe"), axis("x")),
+    (1, 4, 3, ce("camshaft"), axis("x")),
+    (3, 4, 3, ce("camshaft"), axis("x")),
+]
+write_schematic("rain_cap", (7, 6, 7), RAIN_CAP_BLOCKS)

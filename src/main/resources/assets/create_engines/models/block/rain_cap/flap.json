@@ -1,0 +1,76 @@
+{
+  "parent": "block/block",
+  "textures": {
+    "plate": "create_engines:block/steel",
+    "lug": "create_engines:block/cast_iron",
+    "pin": "create_engines:block/brass",
+    "tip": "create_engines:block/black_oxide",
+    "particle": "create_engines:block/steel"
+  },
+  "elements": [
+    {
+      "from": [
+        3.5,
+        0,
+        3.5
+      ],
+      "to": [
+        12.5,
+        0.8,
+        12.5
+      ],
+      "faces": {
+        "north": {
+          "texture": "#plate"
+        },
+        "south": {
+          "texture": "#plate"
+        },
+        "east": {
+          "texture": "#plate"
+        },
+        "west": {
+          "texture": "#plate"
+        },
+        "up": {
+          "texture": "#plate"
+        },
+        "down": {
+          "texture": "#plate"
+        }
+      }
+    },
+    {
+      "from": [
+        3.5,
+        0.8,
+        3.5
+      ],
+      "to": [
+        12.5,
+        1.5,
+        4.5
+      ],
+      "faces": {
+        "north": {
+          "texture": "#tip"
+        },
+        "south": {
+          "texture": "#tip"
+        },
+        "east": {
+          "texture": "#tip"
+        },
+        "west": {
+          "texture": "#tip"
+        },
+        "up": {
+          "texture": "#tip"
+        },
+        "down": {
+          "texture": "#tip"
+        }
+      }
+    }
+  ]
+}

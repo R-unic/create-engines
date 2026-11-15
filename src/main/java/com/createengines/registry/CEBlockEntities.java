@@ -32,6 +32,10 @@ import com.createengines.content.supercharger.SuperchargerBlockEntity;
 import com.createengines.content.supercharger.SuperchargerVisual;
 import com.createengines.content.transmission.TransmissionBlockEntity;
 import com.createengines.content.turbo.TurbochargerBlockEntity;
+import com.createengines.content.plate.MakerPlateBlockEntity;
+import com.createengines.content.plate.MakerPlateRenderer;
+import com.createengines.content.raincap.RainCapBlockEntity;
+import com.createengines.content.raincap.RainCapRenderer;
 import com.createengines.content.turbo.TurbochargerRenderer;
 import com.simibubi.create.content.kinetics.transmission.SplitShaftRenderer;
 import com.simibubi.create.content.kinetics.transmission.SplitShaftVisual;
@@ -143,6 +147,18 @@ public final class CEBlockEntities {
 	public static final BlockEntityEntry<SumpBlockEntity> SUMP = REGISTRATE
 		.blockEntity("sump", SumpBlockEntity::new)
 		.validBlocks(CEBlocks.SUMP)
+		.register();
+
+	public static final BlockEntityEntry<RainCapBlockEntity> RAIN_CAP = REGISTRATE
+		.blockEntity("rain_cap", RainCapBlockEntity::new)
+		.validBlocks(CEBlocks.RAIN_CAP)
+		.renderer(() -> RainCapRenderer::new)
+		.register();
+
+	public static final BlockEntityEntry<MakerPlateBlockEntity> MAKER_PLATE = REGISTRATE
+		.blockEntity("maker_plate", MakerPlateBlockEntity::new)
+		.validBlocks(CEBlocks.MAKER_PLATE)
+		.renderer(() -> MakerPlateRenderer::new)
 		.register();
 
 	public static final BlockEntityEntry<TurbochargerBlockEntity> TURBOCHARGER = REGISTRATE

@@ -37,13 +37,14 @@ public class CamshaftBlock extends RotatedPillarKineticBlock implements IBE<Cams
 
 	public CamshaftBlock(Properties properties) {
 		super(properties);
-		registerDefaultState(defaultBlockState().setValue(Encasing.ENCASED, false));
+		registerDefaultState(defaultBlockState().setValue(Encasing.ENCASED, false)
+			.setValue(Encasing.WINDOWED, false));
 	}
 
 	@Override
 	protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {
 		super.createBlockStateDefinition(builder);
-		builder.add(Encasing.ENCASED);
+		builder.add(Encasing.ENCASED, Encasing.PAINT, Encasing.WINDOWED);
 	}
 
 	@Override

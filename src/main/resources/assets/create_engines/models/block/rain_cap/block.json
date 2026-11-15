@@ -1,0 +1,108 @@
+{
+  "parent": "block/block",
+  "textures": {
+    "plate": "create_engines:block/steel",
+    "lug": "create_engines:block/cast_iron",
+    "pin": "create_engines:block/brass",
+    "tip": "create_engines:block/black_oxide",
+    "particle": "create_engines:block/steel"
+  },
+  "elements": [
+    {
+      "from": [
+        3,
+        0,
+        11.5
+      ],
+      "to": [
+        4.5,
+        1.8,
+        13.5
+      ],
+      "faces": {
+        "north": {
+          "texture": "#lug"
+        },
+        "south": {
+          "texture": "#lug"
+        },
+        "east": {
+          "texture": "#lug"
+        },
+        "west": {
+          "texture": "#lug"
+        },
+        "up": {
+          "texture": "#lug"
+        },
+        "down": {
+          "texture": "#lug"
+        }
+      }
+    },
+    {
+      "from": [
+        11.5,
+        0,
+        11.5
+      ],
+      "to": [
+        13,
+        1.8,
+        13.5
+      ],
+      "faces": {
+        "north": {
+          "texture": "#lug"
+        },
+        "south": {
+          "texture": "#lug"
+        },
+        "east": {
+          "texture": "#lug"
+        },
+        "west": {
+          "texture": "#lug"
+        },
+        "up": {
+          "texture": "#lug"
+        },
+        "down": {
+          "texture": "#lug"
+        }
+      }
+    },
+    {
+      "from": [
+        3,
+        0.6,
+        12
+      ],
+      "to": [
+        13,
+        1.4,
+        13
+      ],
+      "faces": {
+        "north": {
+          "texture": "#pin"
+        },
+        "south": {
+          "texture": "#pin"
+        },
+        "east": {
+          "texture": "#pin"
+        },
+        "west": {
+          "texture": "#pin"
+        },
+        "up": {
+          "texture": "#pin"
+        },
+        "down": {
+          "texture": "#pin"
+        }
+      }
+    }
+  ]
+}

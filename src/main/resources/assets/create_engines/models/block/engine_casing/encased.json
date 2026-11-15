@@ -27,7 +27,8 @@
             16,
             16
           ],
-          "cullface": "north"
+          "cullface": "north",
+          "tintindex": 0
         },
         "south": {
           "texture": "#casing",
@@ -37,7 +38,8 @@
             16,
             16
           ],
-          "cullface": "south"
+          "cullface": "south",
+          "tintindex": 0
         },
         "east": {
           "texture": "#casing",
@@ -47,7 +49,8 @@
             16,
             16
           ],
-          "cullface": "east"
+          "cullface": "east",
+          "tintindex": 0
         },
         "west": {
           "texture": "#casing",
@@ -57,7 +60,8 @@
             16,
             16
           ],
-          "cullface": "west"
+          "cullface": "west",
+          "tintindex": 0
         }
       }
     },

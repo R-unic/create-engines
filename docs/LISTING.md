@@ -168,6 +168,24 @@ config thins out engine sound and particles on a big engine. Fuel properties are
 - [Design notes](https://github.com/R-unic/create-engines/blob/master/docs/DESIGN.md), how the simulation works
 ```
 
+## Changelog for 1.2.0
+
+Dress Parts: two builds no longer have to look alike. Everything here is cosmetic: no rating, recipe of an existing
+item, ID, config key or simulation number changes, and worlds from 1.1.x load as they are.
+- Casing plates: Riveted Engine Casing (a rivet in each corner) and Louvred Engine Casing (slatted like a vent) join
+  the plain one. Each connects to its own kind. Riveted and louvred are shapeless recipes: casing plus an iron nugget,
+  or casing plus iron bars.
+- Window Engine Casing: a glazed plate. Used on a crankshaft, crank throw, camshaft or cam lobe it clads the part and
+  you still see it turning through the glass. Shapeless: a casing plus a glass pane.
+- Dyed casing: use any dye on any casing block, or on casing clad onto a part (cylinders, cranks, cams, manifolds,
+  cased shafts and cogwheels) to tint it in Create's sixteen colours. A bucket of water washes it back to bare steel.
+  A dye is used up outside creative mode; a broken dyed block drops plain casing.
+- Rain Cap: a hinged cap that goes on the mouth of an exhaust outlet. It kicks open with each exhaust pulse and
+  drops shut when the engine stops. It never seals the mouth: the exhaust leaves from under it. Has a Ponder page.
+- Maker's Plate: a brass plate screwed to the side of an engine. Name it on an anvil before placing it and the name is
+  stamped on, with the placer as the builder. Use it with an empty hand to stamp the engine's peak torque and peak
+  power, each with its speed, taken from the same finished curve the Dynamometer shows. Goggles read the plate.
+
 ## Changelog for 1.1.0
 
 Light and Noise: a running engine is now worth standing next to, and the things that go wrong now show it. Nothing here

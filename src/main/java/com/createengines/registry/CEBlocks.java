@@ -6,6 +6,8 @@ import com.createengines.content.CESpriteShifts;
 import com.createengines.content.EngineCasedCogwheelBlock;
 import com.createengines.content.EngineCasedShaftBlock;
 import com.createengines.content.EngineCasingBlock;
+import com.createengines.content.plate.MakerPlateBlock;
+import com.createengines.content.raincap.RainCapBlock;
 import com.createengines.content.Encasing;
 import com.createengines.content.EngineGlow;
 import com.createengines.content.airflow.HeatExchangerBlock;
@@ -83,10 +85,12 @@ public final class CEBlocks {
 	private static net.neoforged.neoforge.client.model.generators.ModelFile shaftModel(
 		com.tterrag.registrate.providers.DataGenContext<net.minecraft.world.level.block.Block, ? extends net.minecraft.world.level.block.Block> c,
 		com.tterrag.registrate.providers.RegistrateBlockstateProvider p, net.minecraft.world.level.block.state.BlockState s) {
-		return s.getValue(com.createengines.content.Encasing.ENCASED)
-			? p.models()
-				.getExistingFile(p.modLoc("block/engine_casing/encased"))
-			: AssetLookup.partialBaseModel(c, p);
+		if (s.getValue(com.createengines.content.Encasing.ENCASED))
+			return p.models()
+				.getExistingFile(p.modLoc(s.hasProperty(com.createengines.content.Encasing.WINDOWED)
+					&& s.getValue(com.createengines.content.Encasing.WINDOWED) ? "block/engine_casing/window"
+						: "block/engine_casing/encased"));
+		return AssetLookup.partialBaseModel(c, p);
 	}
 
 	public static final BlockEntry<CrankshaftBlock> CRANKSHAFT = REGISTRATE.block("crankshaft", CrankshaftBlock::new)
@@ -96,7 +100,7 @@ public final class CEBlocks {
 			.mapColor(MapColor.METAL))
 		.transform(TagGen.pickaxeOnly())
 		.transform(CEBlocks::casedShaftPart)
-			.blockstate((c, p) -> BlockStateGen.axisBlock(c, p, s -> shaftModel(c, p, s)))
+			.blockstate((c, p) -> axisIgnoringPaint(c, p, s -> shaftModel(c, p, s)))
 		.item()
 		.transform(ModelGen.customItemModel())
 		.register();
@@ -108,7 +112,7 @@ public final class CEBlocks {
 			.mapColor(MapColor.METAL))
 		.transform(TagGen.pickaxeOnly())
 		.transform(CEBlocks::casedShaftPart)
-			.blockstate((c, p) -> BlockStateGen.axisBlock(c, p, s -> shaftModel(c, p, s)))
+			.blockstate((c, p) -> axisIgnoringPaint(c, p, s -> shaftModel(c, p, s)))
 		.item()
 		.transform(ModelGen.customItemModel())
 		.register();
@@ -125,14 +129,14 @@ public final class CEBlocks {
 				.mapColor(MapColor.COLOR_ORANGE)
 				.lightLevel(EngineGlow::light))
 			.transform(TagGen.pickaxeOnly())
-			.blockstate((c, p) -> BlockStateGen.axisBlock(c, p, s -> {
+			.blockstate((c, p) -> axisIgnoringPaint(c, p, s -> {
 				boolean injector = s.getValue(RotorHousingBlock.HAS_INJECTOR);
 				boolean plug = s.getValue(RotorHousingBlock.HAS_SPARK_PLUG);
 				if (injector && plug)
 					return AssetLookup.partialBaseModel(c, p, "injector", "plug");
 				return plug ? AssetLookup.partialBaseModel(c, p, "plug")
 					: AssetLookup.partialBaseModel(c, p, injector ? "injector" : "");
-			}))
+			}, Encasing.WINDOWED))
 			.item()
 			.transform(ModelGen.customItemModel())
 			.register();
@@ -143,7 +147,7 @@ public final class CEBlocks {
 		.properties(p -> part(p)
 			.mapColor(MapColor.METAL))
 		.transform(TagGen.pickaxeOnly())
-		.blockstate((c, p) -> BlockStateGen.directionalBlockIgnoresWaterlogged(c, p,
+		.blockstate((c, p) -> directionalIgnoringPaint(c, p,
 			s -> cylinderModel(c, p, s)))
 		.item()
 		.transform(ModelGen.customItemModel())
@@ -176,7 +180,7 @@ public final class CEBlocks {
 			.properties(p -> part(p)
 				.mapColor(MapColor.GOLD))
 			.transform(TagGen.pickaxeOnly())
-			.blockstate((c, p) -> BlockStateGen.directionalBlockIgnoresWaterlogged(c, p,
+			.blockstate((c, p) -> directionalIgnoringPaint(c, p,
 				s -> cylinderModel(c, p, s)))
 			.item()
 			.transform(ModelGen.customItemModel())
@@ -208,7 +212,7 @@ public final class CEBlocks {
 			.mapColor(MapColor.METAL))
 		.transform(TagGen.pickaxeOnly())
 		.transform(CEBlocks::casedShaftPart)
-			.blockstate((c, p) -> BlockStateGen.axisBlock(c, p, s -> shaftModel(c, p, s)))
+			.blockstate((c, p) -> axisIgnoringPaint(c, p, s -> shaftModel(c, p, s)))
 		.item()
 		.transform(ModelGen.customItemModel())
 		.register();
@@ -219,7 +223,7 @@ public final class CEBlocks {
 			.mapColor(MapColor.METAL))
 		.transform(TagGen.pickaxeOnly())
 		.transform(CEBlocks::casedShaftPart)
-			.blockstate((c, p) -> BlockStateGen.axisBlock(c, p, s -> shaftModel(c, p, s)))
+			.blockstate((c, p) -> axisIgnoringPaint(c, p, s -> shaftModel(c, p, s)))
 		.item()
 		.transform(ModelGen.customItemModel())
 		.register();
@@ -318,6 +322,30 @@ public final class CEBlocks {
 			.item()
 			.transform(ModelGen.customItemModel())
 			.register();
+
+	/** A hinged cap on the end of an exhaust outlet: it flaps with each pulse and drops shut when the engine stops. */
+	public static final BlockEntry<RainCapBlock> RAIN_CAP = REGISTRATE.block("rain_cap", RainCapBlock::new)
+		.initialProperties(SharedProperties::softMetal)
+		.properties(p -> part(p)
+			.mapColor(MapColor.COLOR_GRAY))
+		.transform(TagGen.pickaxeOnly())
+		.blockstate((c, p) -> BlockStateGen.directionalBlockIgnoresWaterlogged(c, p,
+			s -> AssetLookup.partialBaseModel(c, p)))
+		.item()
+		.transform(ModelGen.customItemModel())
+		.register();
+
+	/** A brass plate screwed to an engine, with its name, its builder and the figures of its last measured run. */
+	public static final BlockEntry<MakerPlateBlock> MAKER_PLATE = REGISTRATE.block("maker_plate", MakerPlateBlock::new)
+		.initialProperties(SharedProperties::softMetal)
+		.properties(p -> part(p)
+			.mapColor(MapColor.GOLD))
+		.transform(TagGen.pickaxeOnly())
+		.blockstate((c, p) -> BlockStateGen.directionalBlockIgnoresWaterlogged(c, p,
+			s -> AssetLookup.partialBaseModel(c, p)))
+		.item()
+		.transform(ModelGen.customItemModel())
+		.register();
 
 	public static final BlockEntry<StarterBlock> STARTER = REGISTRATE.block("starter", StarterBlock::new)
 		.initialProperties(SharedProperties::softMetal)
@@ -485,10 +513,62 @@ public final class CEBlocks {
 				.initialProperties(SharedProperties::softMetal)
 				.properties(p -> p.mapColor(MapColor.METAL))
 				.transform(TagGen.pickaxeOnly())
-				.blockstate((c, p) -> BlockStateGen.simpleBlock(c, p, s -> AssetLookup.partialBaseModel(c, p)))
+				.blockstate((c, p) -> simpleIgnoringPaint(c, p, s -> AssetLookup.partialBaseModel(c, p)))
 				.onRegister(CreateRegistrate.connectedTextures(() -> new EncasedCTBehaviour(CESpriteShifts.ENGINE_CASING)))
 				.onRegister(CreateRegistrate.casingConnectivity(
 					(block, cc) -> cc.makeCasing(block, CESpriteShifts.ENGINE_CASING)))
+				.item()
+				.transform(ModelGen.customItemModel())
+				.register();
+
+	/** Engine Casing with a rivet in every corner of every plate: the plain casing, dressed up. Joins its own kind. */
+	public static final BlockEntry<EngineCasingBlock> ENGINE_RIVETED_CASING =
+			REGISTRATE.block("engine_riveted_casing", EngineCasingBlock::new)
+				.lang("Riveted Engine Casing")
+				.initialProperties(SharedProperties::softMetal)
+				.properties(p -> p.mapColor(MapColor.METAL))
+				.transform(TagGen.pickaxeOnly())
+				.blockstate((c, p) -> simpleIgnoringPaint(c, p, s -> AssetLookup.partialBaseModel(c, p)))
+				.onRegister(CreateRegistrate.connectedTextures(
+					() -> new EncasedCTBehaviour(CESpriteShifts.ENGINE_RIVETED_CASING)))
+				.onRegister(CreateRegistrate.casingConnectivity(
+					(block, cc) -> cc.makeCasing(block, CESpriteShifts.ENGINE_RIVETED_CASING)))
+				.item()
+				.transform(ModelGen.customItemModel())
+				.register();
+
+	/** Engine Casing slatted like a vent, to let an engine bay look as if it breathes. Joins its own kind. */
+	public static final BlockEntry<EngineCasingBlock> ENGINE_LOUVRED_CASING =
+			REGISTRATE.block("engine_louvred_casing", EngineCasingBlock::new)
+				.lang("Louvred Engine Casing")
+				.initialProperties(SharedProperties::softMetal)
+				.properties(p -> p.mapColor(MapColor.METAL))
+				.transform(TagGen.pickaxeOnly())
+				.blockstate((c, p) -> simpleIgnoringPaint(c, p, s -> AssetLookup.partialBaseModel(c, p)))
+				.onRegister(CreateRegistrate.connectedTextures(
+					() -> new EncasedCTBehaviour(CESpriteShifts.ENGINE_LOUVRED_CASING)))
+				.onRegister(CreateRegistrate.casingConnectivity(
+					(block, cc) -> cc.makeCasing(block, CESpriteShifts.ENGINE_LOUVRED_CASING)))
+				.item()
+				.transform(ModelGen.customItemModel())
+				.register();
+
+	/**
+	 * Engine Casing with a pane of glass in each face. As a block it is a plain glazed cube; used on a crankshaft or a
+	 * camshaft part it clads it with the part still showing through the glass, turning.
+	 */
+	public static final BlockEntry<EngineCasingBlock> ENGINE_WINDOW_CASING =
+			REGISTRATE.block("engine_window_casing", EngineCasingBlock::new)
+				.lang("Window Engine Casing")
+				.initialProperties(SharedProperties::softMetal)
+				.properties(p -> part(p)
+					.mapColor(MapColor.METAL))
+				.transform(TagGen.pickaxeOnly())
+				.blockstate((c, p) -> simpleIgnoringPaint(c, p, s -> AssetLookup.partialBaseModel(c, p)))
+				.onRegister(CreateRegistrate.connectedTextures(
+					() -> new EncasedCTBehaviour(CESpriteShifts.ENGINE_WINDOW_CASING)))
+				.onRegister(CreateRegistrate.casingConnectivity(
+					(block, cc) -> cc.makeCasing(block, CESpriteShifts.ENGINE_WINDOW_CASING)))
 				.item()
 				.transform(ModelGen.customItemModel())
 				.register();
@@ -500,7 +580,7 @@ public final class CEBlocks {
 			.properties(p -> p.mapColor(MapColor.METAL)
 				.noOcclusion())
 			.transform(TagGen.pickaxeOnly())
-			.blockstate((c, p) -> BlockStateGen.axisBlock(c, p,
+			.blockstate((c, p) -> axisIgnoringPaint(c, p,
 				s -> p.models().getExistingFile(p.modLoc("block/engine_cased_shaft/block"))))
 			.onRegister(CreateRegistrate.connectedTextures(() -> new EncasedCTBehaviour(CESpriteShifts.ENGINE_CASING)))
 			.onRegister(CreateRegistrate.casingConnectivity((block, cc) -> cc.make(block, CESpriteShifts.ENGINE_CASING,
@@ -537,6 +617,53 @@ public final class CEBlocks {
 	private CEBlocks() {
 	}
 
+	/**
+	 * Create's axis blockstate, without a variant for every dye: the paint of a clad part is a tint and changes no
+	 * model, so listing it would make seventeen copies of each variant.
+	 */
+	private static <T extends Block> void axisIgnoringPaint(DataGenContext<Block, T> c, RegistrateBlockstateProvider p,
+		java.util.function.Function<BlockState, net.neoforged.neoforge.client.model.generators.ModelFile> model,
+		net.minecraft.world.level.block.state.properties.Property<?>... alsoIgnored) {
+		var ignored = new java.util.ArrayList<net.minecraft.world.level.block.state.properties.Property<?>>(
+			java.util.List.of(alsoIgnored));
+		ignored.add(Encasing.PAINT);
+		p.getVariantBuilder(c.get())
+			.forAllStatesExcept(state -> {
+				Direction.Axis axis = state.getValue(RotatedPillarKineticBlock.AXIS);
+				return net.neoforged.neoforge.client.model.generators.ConfiguredModel.builder()
+					.modelFile(model.apply(state))
+					.rotationX(axis == Direction.Axis.Y ? 0 : 90)
+					.rotationY(axis == Direction.Axis.X ? 90 : axis == Direction.Axis.Z ? 180 : 0)
+					.build();
+			}, ignored.toArray(new net.minecraft.world.level.block.state.properties.Property<?>[0]));
+	}
+
+	/** One model for every state, without a variant for every dye (see {@link #axisIgnoringPaint}). */
+	private static <T extends Block> void simpleIgnoringPaint(DataGenContext<Block, T> c,
+		RegistrateBlockstateProvider p,
+		java.util.function.Function<BlockState, net.neoforged.neoforge.client.model.generators.ModelFile> model) {
+		p.getVariantBuilder(c.get())
+			.forAllStatesExcept(state -> net.neoforged.neoforge.client.model.generators.ConfiguredModel.builder()
+				.modelFile(model.apply(state))
+				.build(), Encasing.PAINT);
+	}
+
+	/** Create's directional blockstate, without a variant for every dye (see {@link #axisIgnoringPaint}). */
+	private static <T extends Block> void directionalIgnoringPaint(DataGenContext<Block, T> c,
+		RegistrateBlockstateProvider p,
+		java.util.function.Function<BlockState, net.neoforged.neoforge.client.model.generators.ModelFile> model) {
+		p.getVariantBuilder(c.get())
+			.forAllStatesExcept(state -> {
+				Direction facing = state.getValue(net.minecraft.world.level.block.DirectionalBlock.FACING);
+				return net.neoforged.neoforge.client.model.generators.ConfiguredModel.builder()
+					.modelFile(model.apply(state))
+					.rotationX(facing == Direction.UP ? 0 : facing == Direction.DOWN ? 180 : 90)
+					.rotationY(facing.getAxis()
+						.isVertical() ? 0 : (((int) facing.toYRot()) + 180) % 360)
+					.build();
+			}, Encasing.PAINT);
+	}
+
 	/** The model a cylinder shows: its own, or a plain casing cube once clad. */
 	private static net.neoforged.neoforge.client.model.generators.ModelFile cylinderModel(
 		com.tterrag.registrate.providers.DataGenContext<Block, ? extends Block> c, RegistrateBlockstateProvider p,
@@ -571,7 +698,7 @@ public final class CEBlocks {
 			.properties(p -> p.mapColor(MapColor.METAL)
 				.noOcclusion())
 			.transform(TagGen.pickaxeOnly())
-			.blockstate((c, p) -> BlockStateGen.axisBlock(c, p, s -> {
+			.blockstate((c, p) -> axisIgnoringPaint(c, p, s -> {
 				boolean top = s.getValue(EncasedCogwheelBlock.TOP_SHAFT);
 				boolean bottom = s.getValue(EncasedCogwheelBlock.BOTTOM_SHAFT);
 				String suffix = top && bottom ? "_top_bottom" : top ? "_top" : bottom ? "_bottom" : "";

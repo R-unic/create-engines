@@ -24,6 +24,8 @@ public final class CEPartialModels {
 	/** A pushrod beside a cylinder block that a cam works from the side, and the rocker on the head it tips. */
 	public static final PartialModel PUSHROD = block("cylinder/pushrod");
 	public static final PartialModel ROCKER = block("cylinder_head/rocker");
+	/** The flap of a rain cap, which the renderer lifts about its hinge. */
+	public static final PartialModel RAIN_CAP_FLAP = block("rain_cap/flap");
 	public static final PartialModel TURBO_WHEEL = block("turbocharger/wheel");
 	public static final PartialModel SUPERCHARGER_ROTOR = block("supercharger/rotor");
 	public static final PartialModel FLYWHEEL_DISC = block("cast_flywheel/disc");

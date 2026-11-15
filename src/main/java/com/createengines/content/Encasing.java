@@ -17,6 +17,7 @@ import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.RenderShape;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.properties.BooleanProperty;
+import net.minecraft.world.level.block.state.properties.EnumProperty;
 import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
 
@@ -28,6 +29,14 @@ import net.minecraft.world.phys.shapes.VoxelShape;
 public final class Encasing {
 
 	public static final BooleanProperty ENCASED = BooleanProperty.create("encased");
+	/**
+	 * A crank or cam part clad in Window Casing instead of plain: it is clad as well (the part is hidden by the same
+	 * rules), but the casing has a pane of glass in each side, so the part turning inside shows. Only the crankshaft and
+	 * camshaft families have it.
+	 */
+	public static final BooleanProperty WINDOWED = BooleanProperty.create("windowed");
+	/** The dye on a clad part's casing, the same property Engine Casing blocks carry. */
+	public static final EnumProperty<CasingPaint> PAINT = EngineCasingBlock.PAINT;
 
 	private Encasing() {
 	}
@@ -43,10 +52,14 @@ public final class Encasing {
 
 	public static ItemInteractionResult encase(ItemStack stack, BlockState state, Level level, BlockPos pos,
 											   Player player) {
-		if (state.getValue(ENCASED) || !stack.is(CEBlocks.ENGINE_CASING.asItem()))
+		if (state.getValue(ENCASED))
+			return CasingPaint.apply(stack, state, level, pos, player);
+		boolean window = stack.is(CEBlocks.ENGINE_WINDOW_CASING.asItem()) && canHaveWindow(state);
+		if (!window && !stack.is(CEBlocks.ENGINE_CASING.asItem()))
 			return ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION;
 		if (!level.isClientSide) {
-			level.setBlock(pos, state.setValue(ENCASED, true), Block.UPDATE_ALL);
+			BlockState cased = state.setValue(ENCASED, true);
+			level.setBlock(pos, window ? cased.setValue(WINDOWED, true) : cased, Block.UPDATE_ALL);
 			level.playSound(null, pos, state.getSoundType()
 				.getPlaceSound(), net.minecraft.sounds.SoundSource.BLOCKS, 1, 0.8f);
 			if (!player.isCreative())
@@ -63,16 +76,18 @@ public final class Encasing {
 		Level level = context.getLevel();
 		BlockPos pos = context.getClickedPos();
 		if (!level.isClientSide) {
-			level.setBlock(pos, state.setValue(ENCASED, false), Block.UPDATE_ALL);
+			BlockState bare = state.setValue(ENCASED, false)
+				.setValue(PAINT, CasingPaint.NONE);
+			level.setBlock(pos, state.hasProperty(WINDOWED) ? bare.setValue(WINDOWED, false) : bare, Block.UPDATE_ALL);
 			level.playSound(null, pos, state.getSoundType()
 				.getBreakSound(), net.minecraft.sounds.SoundSource.BLOCKS, 0.8f, 1.1f);
 			Player player = context.getPlayer();
 			if (player == null || !player.isCreative())
 				if (player != null)
 					player.getInventory()
-						.placeItemBackInInventory(CEBlocks.ENGINE_CASING.asStack());
+						.placeItemBackInInventory(casingStack(state));
 				else
-					Block.popResource(level, pos, CEBlocks.ENGINE_CASING.asStack());
+					Block.popResource(level, pos, casingStack(state));
 		}
 		return InteractionResult.sidedSuccess(level.isClientSide);
 	}
@@ -80,6 +95,17 @@ public final class Encasing {
 	/** A cased part that is broken gives its casing back. */
 	public static void dropOnRemove(BlockState state, Level level, BlockPos pos, BlockState newState) {
 		if (!level.isClientSide && state.getValue(ENCASED) && !state.is(newState.getBlock()))
-			Block.popResource(level, pos, CEBlocks.ENGINE_CASING.asStack());
+			Block.popResource(level, pos, casingStack(state));
+	}
+
+	/** Only the crank and cam parts take a window; a rotor housing is a crank part that draws its own way. */
+	public static boolean canHaveWindow(BlockState state) {
+		return state.hasProperty(WINDOWED) && !(state.getBlock() instanceof com.createengines.content.rotor.RotorHousingBlock);
+	}
+
+	/** The casing a clad part gives back: the window casing if it was clad in that. */
+	public static ItemStack casingStack(BlockState state) {
+		return state.hasProperty(WINDOWED) && state.getValue(WINDOWED) ? CEBlocks.ENGINE_WINDOW_CASING.asStack()
+			: CEBlocks.ENGINE_CASING.asStack();
 	}
 }

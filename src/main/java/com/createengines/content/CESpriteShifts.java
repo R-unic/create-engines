@@ -15,6 +15,21 @@ public final class CESpriteShifts {
 	public static final CTSpriteShiftEntry ENGINE_CASING = CTSpriteShifter.getCT(AllCTTypes.OMNIDIRECTIONAL,
 		CreateEngines.asResource("block/engine_casing"), CreateEngines.asResource("block/engine_casing_connected"));
 
+	/** The riveted plate: the same sheet layout as the plain casing, with a rivet pattern on the plate. */
+	public static final CTSpriteShiftEntry ENGINE_RIVETED_CASING = CTSpriteShifter.getCT(AllCTTypes.OMNIDIRECTIONAL,
+		CreateEngines.asResource("block/engine_riveted_casing"),
+		CreateEngines.asResource("block/engine_riveted_casing_connected"));
+
+	/** The louvred plate: slats across the plate. */
+	public static final CTSpriteShiftEntry ENGINE_LOUVRED_CASING = CTSpriteShifter.getCT(AllCTTypes.OMNIDIRECTIONAL,
+		CreateEngines.asResource("block/engine_louvred_casing"),
+		CreateEngines.asResource("block/engine_louvred_casing_connected"));
+
+	/** The window plate: the plate with a pane of glass in it. */
+	public static final CTSpriteShiftEntry ENGINE_WINDOW_CASING = CTSpriteShifter.getCT(AllCTTypes.OMNIDIRECTIONAL,
+		CreateEngines.asResource("block/engine_window_casing"),
+		CreateEngines.asResource("block/engine_window_casing_connected"));
+
 	private CESpriteShifts() {
 	}
 }

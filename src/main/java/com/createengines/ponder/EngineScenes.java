@@ -9,6 +9,7 @@ import com.createengines.content.rotor.RotorHousingBlockEntity;
 import com.createengines.content.turbo.TurbochargerBlockEntity;
 import com.createengines.engine.CrankGeometry;
 import com.createengines.engine.TurboStatus;
+import com.createengines.client.RainCaps;
 import com.createengines.registry.CEBlocks;
 import com.createengines.registry.CEFluids;
 import com.createengines.registry.CEItems;
@@ -3127,6 +3128,117 @@ public final class EngineScenes {
 				.blockSurface(mufflerPos, Direction.WEST))
 			.placeNearTarget();
 		scene.idle(150);
+		scene.markAsFinished();
+	}
+
+	public static void rainCap(SceneBuilder builder, SceneBuildingUtil util) {
+		CreateSceneBuilder scene = new CreateSceneBuilder(builder);
+		scene.title("rain_cap", "Capping an Exhaust");
+		scene.configureBasePlate(0, 0, 7);
+		scene.world()
+			.showSection(util.select()
+				.layer(0), Direction.UP);
+
+		Selection crank = util.select()
+			.fromTo(1, 1, 3, 3, 1, 3);
+		Selection cam = util.select()
+			.fromTo(1, 4, 3, 3, 4, 3);
+		Selection engine = util.select()
+			.fromTo(2, 2, 3, 2, 3, 3)
+			.add(cam)
+			.add(util.select()
+				.position(2, 3, 2));
+		Selection pipe = util.select()
+			.position(2, 3, 4);
+		Selection outlet = util.select()
+			.position(2, 3, 5);
+		Selection cap = util.select()
+			.position(2, 3, 6);
+		BlockPos outletPos = util.grid()
+			.at(2, 3, 5);
+		BlockPos capPos = util.grid()
+			.at(2, 3, 6);
+
+		setThrow(scene, util.select()
+			.position(2, 1, 3), 0);
+		setLobe(scene, util.select()
+			.position(2, 4, 3), LOBE_FOR_UPRIGHT_CYLINDER);
+		scene.world()
+			.showSection(crank, Direction.DOWN);
+		scene.world()
+			.showSection(engine, Direction.DOWN);
+		scene.world()
+			.showSection(pipe, Direction.NORTH);
+		scene.world()
+			.showSection(outlet, Direction.NORTH);
+		scene.world()
+			.setKineticSpeed(crank, 64);
+		scene.world()
+			.setKineticSpeed(cam, 32);
+		scene.idle(20);
+		scene.overlay()
+			.showText(100)
+			.attachKeyFrame()
+			.text("An Exhaust Outlet is a bare pipe end, open to the weather.")
+			.pointAt(util.vector()
+				.blockSurface(outletPos, Direction.SOUTH))
+			.placeNearTarget();
+		scene.idle(110);
+
+		scene.overlay()
+			.showControls(util.vector()
+				.blockSurface(outletPos, Direction.SOUTH), Pointing.RIGHT, 40)
+			.rightClick()
+			.withItem(CEBlocks.RAIN_CAP.asStack());
+		scene.idle(10);
+		scene.world()
+			.showSection(cap, Direction.NORTH);
+		scene.idle(40);
+		scene.overlay()
+			.showText(120)
+			.attachKeyFrame()
+			.colored(PonderPalette.GREEN)
+			.text("A Rain Cap goes on the open mouth of an exhaust outlet: use it on the end the exhaust comes out of. It fits there and nowhere else.")
+			.pointAt(util.vector()
+				.topOf(capPos));
+		scene.idle(130);
+
+		scene.overlay()
+			.showText(120)
+			.attachKeyFrame()
+			.text("Its flap hops with every exhaust pulse. A slow engine clacks it once a firing; a fast one keeps it fluttering.")
+			.pointAt(util.vector()
+				.blockSurface(capPos, Direction.SOUTH));
+		// A scene has no engine controller to pulse the flap, so it is kicked here: slowly, then quickly
+		for (int i = 0; i < 4; i++) {
+			scene.idle(14);
+			scene.addInstruction(ponderScene -> RainCaps.pulse(ponderScene.getWorld(), capPos));
+		}
+		for (int i = 0; i < 12; i++) {
+			scene.idle(3);
+			scene.addInstruction(ponderScene -> RainCaps.pulse(ponderScene.getWorld(), capPos));
+		}
+		scene.idle(40);
+
+		scene.world()
+			.setKineticSpeed(crank, 0);
+		scene.world()
+			.setKineticSpeed(cam, 0);
+		scene.overlay()
+			.showText(100)
+			.text("When the engine stops, the flap drops shut.")
+			.pointAt(util.vector()
+				.blockSurface(capPos, Direction.SOUTH));
+		scene.idle(110);
+
+		scene.overlay()
+			.showText(130)
+			.attachKeyFrame()
+			.colored(PonderPalette.BLUE)
+			.text("It is only for looks. The exhaust still leaves from under it, and the engine runs exactly as it did without it.")
+			.pointAt(util.vector()
+				.blockSurface(capPos, Direction.EAST));
+		scene.idle(140);
 		scene.markAsFinished();
 	}
 

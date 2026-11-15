@@ -1,28 +1,54 @@
 {
   "variants": {
-    "axis=x,encased=false": {
+    "axis=x,encased=false,windowed=false": {
       "model": "create_engines:block/cam_lobe/block",
       "x": 90,
       "y": 90
     },
-    "axis=x,encased=true": {
+    "axis=x,encased=false,windowed=true": {
+      "model": "create_engines:block/cam_lobe/block",
+      "x": 90,
+      "y": 90
+    },
+    "axis=x,encased=true,windowed=false": {
       "model": "create_engines:block/engine_casing/encased",
       "x": 90,
       "y": 90
     },
-    "axis=y,encased=false": {
+    "axis=x,encased=true,windowed=true": {
+      "model": "create_engines:block/engine_casing/window",
+      "x": 90,
+      "y": 90
+    },
+    "axis=y,encased=false,windowed=false": {
       "model": "create_engines:block/cam_lobe/block"
     },
-    "axis=y,encased=true": {
+    "axis=y,encased=false,windowed=true": {
+      "model": "create_engines:block/cam_lobe/block"
+    },
+    "axis=y,encased=true,windowed=false": {
       "model": "create_engines:block/engine_casing/encased"
     },
-    "axis=z,encased=false": {
+    "axis=y,encased=true,windowed=true": {
+      "model": "create_engines:block/engine_casing/window"
+    },
+    "axis=z,encased=false,windowed=false": {
       "model": "create_engines:block/cam_lobe/block",
       "x": 90,
       "y": 180
     },
-    "axis=z,encased=true": {
+    "axis=z,encased=false,windowed=true": {
+      "model": "create_engines:block/cam_lobe/block",
+      "x": 90,
+      "y": 180
+    },
+    "axis=z,encased=true,windowed=false": {
       "model": "create_engines:block/engine_casing/encased",
+      "x": 90,
+      "y": 180
+    },
+    "axis=z,encased=true,windowed=true": {
+      "model": "create_engines:block/engine_casing/window",
       "x": 90,
       "y": 180
     }

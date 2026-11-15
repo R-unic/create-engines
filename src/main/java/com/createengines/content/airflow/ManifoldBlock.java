@@ -93,7 +93,7 @@ public class ManifoldBlock extends Block implements AirflowPort, IWrenchable {
 	protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {
 		CONNECTIONS.values()
 			.forEach(builder::add);
-		builder.add(Encasing.ENCASED);
+		builder.add(Encasing.ENCASED, Encasing.PAINT);
 	}
 
 	@Override

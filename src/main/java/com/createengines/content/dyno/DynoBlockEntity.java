@@ -173,22 +173,29 @@ public class DynoBlockEntity extends SmartBlockEntity implements IHaveGoggleInfo
 	/** The engine against any of this block's faces, and what its rating looks like. */
 	private @Nullable Readout measure() {
 		for (Direction face : Direction.values()) {
-			Set<BlockPos> seeds = EngineScanner.crankSeeds(level, worldPosition.relative(face));
-			if (seeds.isEmpty())
-				continue;
-			if (!(LoadedBlocks.blockEntity(level, seeds.iterator()
-				.next()) instanceof CrankshaftBlockEntity crank))
-				continue;
-			EngineController controller = crank.controller();
-			BlockPos primary = crank.primaryPos();
-			if (controller == null && primary != null && LoadedBlocks.blockEntity(level, primary) instanceof CrankshaftBlockEntity main)
-				controller = main.controller();
-			if (controller == null)
-				continue;
-			EngineController.Curve curve = controller.curve();
-			return new Readout(curve.rpm(), curve.torque(), curve.current(), curve.rated(), curve.complete());
+			Readout found = readEngineAt(level, worldPosition.relative(face));
+			if (found != null)
+				return found;
 		}
 		return null;
+	}
+
+	/** The curve of the engine that the part at {@code part} belongs to, or null if it is not part of one. */
+	public static @Nullable Readout readEngineAt(net.minecraft.world.level.Level level, BlockPos part) {
+		Set<BlockPos> seeds = EngineScanner.crankSeeds(level, part);
+		if (seeds.isEmpty())
+			return null;
+		if (!(LoadedBlocks.blockEntity(level, seeds.iterator()
+			.next()) instanceof CrankshaftBlockEntity crank))
+			return null;
+		EngineController controller = crank.controller();
+		BlockPos primary = crank.primaryPos();
+		if (controller == null && primary != null && LoadedBlocks.blockEntity(level, primary) instanceof CrankshaftBlockEntity main)
+			controller = main.controller();
+		if (controller == null)
+			return null;
+		EngineController.Curve curve = controller.curve();
+		return new Readout(curve.rpm(), curve.torque(), curve.current(), curve.rated(), curve.complete());
 	}
 
 	@Override

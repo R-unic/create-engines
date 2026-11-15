@@ -1436,7 +1436,7 @@ public final class EngineController {
 					net.minecraft.core.BlockPos beside = placed.pos()
 						.relative(side);
 					if (level.getBlockState(beside)
-						.is(com.createengines.registry.CEBlocks.ENGINE_CASING.get()) && counted.add(beside))
+						.getBlock() instanceof com.createengines.content.EngineCasingBlock && counted.add(beside))
 						casings++;
 				}
 		}

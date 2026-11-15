@@ -134,6 +134,17 @@ public final class CELang {
 		raw("goggles.dyno.powerband", "Powerband: %1$s to %2$s RPM, within a tenth of peak power");
 		raw("goggles.dyno.now", "Engine now: %1$s RPM");
 		raw("goggles.dyno.rated", "Rated now: %1$s SU per RPM, %2$s SU (%3$s hp) at this speed");
+		raw("goggles.plate", "Maker's Plate");
+		raw("goggles.plate.name", "%1$s");
+		raw("goggles.plate.unnamed", "Unnamed engine");
+		raw("goggles.plate.builder", "Built by %1$s");
+		raw("goggles.plate.blank", "Not stamped yet: use it with an empty hand against a measured engine");
+		raw("goggles.plate.torque", "Peak torque: %1$s SU per RPM at %2$s RPM");
+		raw("goggles.plate.power", "Peak power: %1$s SU (%3$s hp) at %2$s RPM");
+		raw("plate.no_engine", "The plate is not fixed to an engine");
+		raw("plate.measuring", "The engine's curve is still being measured");
+		raw("plate.no_power", "The engine has no power to stamp");
+		raw("plate.stamped", "Stamped: %1$s SU at %2$s RPM");
 		raw("goggles.recorder", "Flight Recorder");
 		raw("goggles.recorder.no_engine", "Not against an engine: set it against a crankshaft, a cylinder or a head");
 		raw("goggles.recorder.empty", "Nothing on the tape yet");

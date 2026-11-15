@@ -4,7 +4,9 @@ import java.util.List;
 
 import org.jetbrains.annotations.Nullable;
 
+import com.createengines.client.RainCaps;
 import com.createengines.config.CEClientConfig;
+import com.createengines.content.raincap.RainCapBlock;
 import com.createengines.content.airflow.PortOpeningBlock;
 import com.createengines.content.crankshaft.CrankshaftBlockEntity;
 import com.createengines.engine.CylinderStatus;
@@ -56,9 +58,14 @@ public final class EngineEffects {
 	 *              is that of a warm engine on a middling load
 	 */
 	public static void exhaust(Level level, CylinderStatus status, @Nullable CrankshaftBlockEntity crank) {
+		Opening outlet = pick(level, status.exhaustOutlets());
+		// A rain cap on the pipe's end flaps with the pulse, whether or not there is smoke to see
+		if (outlet != null && !outlet.flooded && outlet.open && !CylinderFault.exhaustShut(status.faults())
+			&& level.getBlockState(outlet.cap)
+			.getBlock() instanceof RainCapBlock)
+			RainCaps.pulse(level, outlet.cap);
 		if (!CEClientConfig.particles())
 			return;
-		Opening outlet = pick(level, status.exhaustOutlets());
 		if (outlet == null)
 			return;
 		if (outlet.flooded) {
@@ -296,7 +303,7 @@ public final class EngineEffects {
 			.add(normal.scale(MOUTH))
 			.add(jitter(random, 0.6)
 				.multiply(1 - Math.abs(normal.x), 1 - Math.abs(normal.y), 1 - Math.abs(normal.z))),
-			normal, true, false));
+			normal, true, false, block.relative(side)));
 	}
 
 	/** What an opening underwater does when the engine turns: nothing gets through but a few bubbles. */
@@ -386,11 +393,11 @@ public final class EngineEffects {
 		Vec3 normal = Vec3.atLowerCornerOf(mouth.getNormal());
 		return new Opening(Vec3.atCenterOf(pos)
 			.add(normal.scale(MOUTH)), normal, PortOpeningBlock.isFlooded(level, pos, state),
-			PortOpeningBlock.isOpen(level, pos, state));
+			PortOpeningBlock.isOpen(level, pos, state), pos.relative(mouth));
 	}
 
 	/** An opening's mouth: the point just in front of it, the way it faces, and whether anything can pass. */
-	private record Opening(Vec3 at, Vec3 normal, boolean flooded, boolean open) {
+	private record Opening(Vec3 at, Vec3 normal, boolean flooded, boolean open, BlockPos cap) {
 	}
 
 	private static Vec3 jitter(RandomSource random, double size) {

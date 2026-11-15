@@ -9,6 +9,8 @@ import com.createengines.client.particle.ExhaustFlameParticle;
 import com.createengines.client.particle.GasParticle;
 import com.createengines.client.particle.SparkParticle;
 import com.createengines.config.CEClientConfig;
+import com.createengines.content.EngineCasingBlock;
+import com.createengines.registry.CEBlocks;
 import com.createengines.ponder.CEPonderPlugin;
 import com.createengines.registry.CEFluids;
 import com.createengines.registry.CEParticles;
@@ -34,10 +36,21 @@ public class CreateEnginesClient {
 		CEPartialModels.init();
 		modEventBus.addListener(CreateEnginesClient::registerBucketColours);
 		modEventBus.addListener(CreateEnginesClient::registerParticles);
+		modEventBus.addListener(CreateEnginesClient::registerCasingColours);
 		NeoForge.EVENT_BUS.addListener(FuelTooltips::onTooltip);
 		PonderIndex.addPlugin(new CEPonderPlugin());
 		VisualSmokeTest.register();
 		ShowcaseRun.register();
+	}
+
+	/** Dyed Engine Casing: the plate is grey steel and the block's paint tints it. */
+	private static void registerCasingColours(RegisterColorHandlersEvent.Block event) {
+		// Every block that carries paint: the three casings, and the parts casing is clad onto
+		event.register((state, level, pos, tintIndex) -> state.getValue(EngineCasingBlock.PAINT)
+			.tint(), net.minecraft.core.registries.BuiltInRegistries.BLOCK.stream()
+				.filter(block -> block.defaultBlockState()
+					.hasProperty(EngineCasingBlock.PAINT))
+				.toArray(net.minecraft.world.level.block.Block[]::new));
 	}
 
 	private static void registerParticles(RegisterParticleProvidersEvent event) {

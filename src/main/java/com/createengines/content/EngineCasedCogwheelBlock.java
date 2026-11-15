@@ -35,6 +35,21 @@ public class EngineCasedCogwheelBlock extends EncasedCogwheelBlock {
 	}
 
 	@Override
+	protected void createBlockStateDefinition(net.minecraft.world.level.block.state.StateDefinition.Builder<Block, BlockState> builder) {
+		super.createBlockStateDefinition(builder);
+		builder.add(EngineCasingBlock.PAINT);
+	}
+
+	/** A dye tints the casing and a bucket of water washes it; anything else is left to Create. */
+	@Override
+	protected net.minecraft.world.ItemInteractionResult useItemOn(ItemStack stack, BlockState state, Level level,
+		BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
+		net.minecraft.world.ItemInteractionResult result = CasingPaint.apply(stack, state, level, pos, player);
+		return result == net.minecraft.world.ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION
+			? super.useItemOn(stack, state, level, pos, player, hand, hit) : result;
+	}
+
+	@Override
 	public BlockEntityType<? extends SimpleKineticBlockEntity> getBlockEntityType() {
 		return isLarge ? CEBlockEntities.ENCASED_LARGE_COGWHEEL.get() : CEBlockEntities.ENCASED_COGWHEEL.get();
 	}

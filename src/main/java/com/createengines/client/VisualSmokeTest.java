@@ -6,6 +6,8 @@ import java.util.List;
 import java.util.function.Supplier;
 
 import com.createengines.CreateEngines;
+import com.createengines.content.CasingPaint;
+import com.createengines.content.EngineCasingBlock;
 import com.createengines.content.EnginePoses;
 import com.createengines.content.airflow.ManifoldBlock;
 import com.createengines.content.airflow.PortOpeningBlock;
@@ -75,6 +77,12 @@ public final class VisualSmokeTest {
 
 	/** Run only the pushrod close-up (gradle {@code -PsmokePushrods}): one cylinder with its cam beside the block. */
 	private static final String PUSHRODS_ONLY = "create_engines.visualSmokeTest.pushrods";
+	/** Run only the casing wall (gradle {@code -PsmokeCasings}): every casing plate in a row of dyes. */
+	private static final String CASINGS_ONLY = "create_engines.visualSmokeTest.casings";
+	/** Run only the rain cap close-up (gradle {@code -PsmokeRainCap}): a cap on the first engine's exhaust outlet. */
+	private static final String RAIN_CAP_ONLY = "create_engines.visualSmokeTest.rainCap";
+	/** Run only the window casing close-up (gradle {@code -PsmokeWindow}): the first engine's crank behind glass. */
+	private static final String WINDOW_ONLY = "create_engines.visualSmokeTest.window";
 
 	private record Step(int tick, Runnable action) {
 	}
@@ -183,6 +191,21 @@ public final class VisualSmokeTest {
 
 		if (Boolean.getBoolean(PUSHRODS_ONLY)) {
 			pushrods(60);
+			return;
+		}
+
+		if (Boolean.getBoolean(CASINGS_ONLY)) {
+			casings(60);
+			return;
+		}
+
+		if (Boolean.getBoolean(RAIN_CAP_ONLY)) {
+			rainCap(60);
+			return;
+		}
+
+		if (Boolean.getBoolean(WINDOW_ONLY)) {
+			windowCasing(60);
 			return;
 		}
 
@@ -816,6 +839,117 @@ public final class VisualSmokeTest {
 			STEPS.add(new Step(start + 395 + i * 3, () -> shot("pushrods_side_" + frame)));
 		}
 		STEPS.add(new Step(start + 440, () -> Minecraft.getInstance()
+			.stop()));
+	}
+
+	/**
+	 * A wall of Engine Casing, three plates high (plain, riveted, louvred) and nine dyes wide (none and eight colours),
+	 * photographed face on; then the run ends. It shows that the plates join, that the tint reaches them and that the
+	 * rivets and slats survive it.
+	 */
+	private static void casings(int start) {
+		var paints = List.of(CasingPaint.NONE, CasingPaint.WHITE, CasingPaint.ORANGE, CasingPaint.YELLOW,
+			CasingPaint.LIME, CasingPaint.CYAN, CasingPaint.BLUE, CasingPaint.PURPLE, CasingPaint.BLACK);
+		var plates = List.of(CEBlocks.ENGINE_CASING, CEBlocks.ENGINE_RIVETED_CASING, CEBlocks.ENGINE_LOUVRED_CASING);
+		STEPS.add(new Step(start, () -> server(server -> {
+			var level = server.overworld();
+			for (int row = 0; row < plates.size(); row++)
+				for (int column = 0; column < paints.size(); column++)
+					level.setBlock(origin.offset(column, 6 + row, 0), plates.get(row)
+						.getDefaultState()
+						.setValue(EngineCasingBlock.PAINT, paints.get(column)), 3);
+			// And below them, casing clad onto a part, in a dye each (the shaft parts run along the wall)
+			var red = CasingPaint.RED;
+			var blue = CasingPaint.BLUE;
+			var clad = com.createengines.content.Encasing.ENCASED;
+			var paint = EngineCasingBlock.PAINT;
+			level.setBlock(origin.offset(0, 5, 0), CEBlocks.CYLINDER.getDefaultState()
+				.setValue(clad, true)
+				.setValue(paint, red), 3);
+			level.setBlock(origin.offset(1, 5, 0), TestEngine.axisX(CEBlocks.CRANKSHAFT.getDefaultState())
+				.setValue(clad, true)
+				.setValue(paint, blue), 3);
+			level.setBlock(origin.offset(2, 5, 0), TestEngine.axisX(CEBlocks.CAMSHAFT.getDefaultState())
+				.setValue(clad, true)
+				.setValue(paint, CasingPaint.LIME), 3);
+			level.setBlock(origin.offset(3, 5, 0), CEBlocks.INTAKE_MANIFOLD.getDefaultState()
+				.setValue(clad, true)
+				.setValue(paint, CasingPaint.YELLOW), 3);
+			level.setBlock(origin.offset(4, 5, 0), TestEngine.axisX(CEBlocks.ENGINE_CASED_SHAFT.getDefaultState())
+				.setValue(paint, CasingPaint.PURPLE), 3);
+			level.setBlock(origin.offset(5, 5, 0), TestEngine.axisX(CEBlocks.ENGINE_CASED_COGWHEEL.getDefaultState())
+				.setValue(paint, CasingPaint.ORANGE), 3);
+			level.setBlock(origin.offset(6, 5, 0), TestEngine.axisX(CEBlocks.ENGINE_CASED_LARGE_COGWHEEL.getDefaultState())
+				.setValue(paint, CasingPaint.CYAN), 3);
+		})));
+		STEPS.add(new Step(start + 60, () -> view(4.5, 6.5, 7, 180, 0)));
+		for (int i = 0; i < 3; i++) {
+			int frame = i;
+			STEPS.add(new Step(start + 90 + i * 5, () -> shot("casings_" + frame)));
+		}
+		STEPS.add(new Step(start + 120, () -> Minecraft.getInstance()
+			.stop()));
+	}
+
+	/**
+	 * A rain cap on the first engine's exhaust outlet, photographed close up from the end and from the side over a run of
+	 * ticks, so some frames catch the flap lifted by a pulse; then the run ends.
+	 */
+	private static void rainCap(int start) {
+		STEPS.add(new Step(start, () -> server(server -> server.overworld()
+			.setBlock(origin.offset(TestEngine.EXHAUST.west()), CEBlocks.RAIN_CAP.getDefaultState()
+				.setValue(com.createengines.content.raincap.RainCapBlock.FACING, Direction.WEST), 3))));
+		STEPS.add(new Step(start + 200, () -> server(server -> server.overworld()
+			.removeBlock(origin.offset(TestEngine.STARTER_POWER), false))));
+		STEPS.add(new Step(start + 330, () -> view(-1.2, 4.9, 2.5, -90, 10)));
+		for (int i = 0; i < 10; i++) {
+			int frame = i;
+			STEPS.add(new Step(start + 345 + i * 2, () -> shot("raincap_end_" + frame)));
+		}
+		STEPS.add(new Step(start + 380, () -> view(0.5, 4.7, 4.3, 180, 5)));
+		for (int i = 0; i < 10; i++) {
+			int frame = i;
+			STEPS.add(new Step(start + 395 + i * 2, () -> shot("raincap_side_" + frame)));
+		}
+		// Then its Ponder page, which should show the flap working
+		ponder("rain_cap", start + 440, CEBlocks.RAIN_CAP::asStack, 100, 250, 335, 350, 366, 372, 378, 384, 390, 396, 560, 700);
+		STEPS.add(new Step(start + 1200, () -> Minecraft.getInstance()
+			.stop()));
+	}
+
+	/**
+	 * Window casing on the running first engine's crank journals and its throw, photographed from the front over a turn of
+	 * the crank, and a loose block of it beside them; then the run ends.
+	 */
+	private static void windowCasing(int start) {
+		STEPS.add(new Step(start, () -> server(server -> {
+			var level = server.overworld();
+			for (BlockPos part : List.of(TestEngine.PRIMARY, TestEngine.THROW, new BlockPos(3, 2, 2)))
+				level.setBlock(origin.offset(part), level.getBlockState(origin.offset(part))
+					.setValue(com.createengines.content.Encasing.ENCASED, true)
+					.setValue(com.createengines.content.Encasing.WINDOWED, true), 3);
+			level.setBlock(origin.offset(4, 2, 3), CEBlocks.ENGINE_WINDOW_CASING.getDefaultState(), 3);
+			// A maker's plate on the cylinder's front, named and stamped
+			BlockPos plate = origin.offset(2, 3, 3);
+			level.setBlock(plate, CEBlocks.MAKER_PLATE.getDefaultState()
+				.setValue(com.createengines.content.plate.MakerPlateBlock.FACING, Direction.SOUTH), 3);
+			if (level.getBlockEntity(plate) instanceof com.createengines.content.plate.MakerPlateBlockEntity be) {
+				be.setNameAndBuilder("Old Faithful the Third, Mk II", "Riley");
+				be.stamp(new com.createengines.engine.sim.PlateFigures(24.5f, 96, 2400f, 128));
+			}
+		})));
+		STEPS.add(new Step(start + 200, () -> server(server -> server.overworld()
+			.removeBlock(origin.offset(TestEngine.STARTER_POWER), false))));
+		STEPS.add(new Step(start + 330, () -> view(2.5, 3.6, 5.2, 180, 22)));
+		for (int i = 0; i < 6; i++) {
+			int frame = i;
+			STEPS.add(new Step(start + 345 + i * 4, () -> shot("window_" + frame)));
+		}
+		STEPS.add(new Step(start + 360, () -> view(2.5, 3.6, 4.0, 180, 8)));
+		STEPS.add(new Step(start + 370, () -> shot("plate_0")));
+		STEPS.add(new Step(start + 380, () -> view(-1.2, 3.2, 2.5, -90, 15)));
+		STEPS.add(new Step(start + 395, () -> shot("window_end")));
+		STEPS.add(new Step(start + 430, () -> Minecraft.getInstance()
 			.stop()));
 	}
 

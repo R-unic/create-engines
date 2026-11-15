@@ -377,7 +377,7 @@ def casing_plate(x, y):
     return 7.2 + (hashed(0, y, 5) - 0.5) * 1.1 + (hashed(x // 3 + (y * 5) % 3, y, 6) - 0.5) * 0.9
 
 
-def casing_tile(up, down, left, right, top_right, top_left, bottom_right, bottom_left):
+def casing_tile(up, down, left, right, top_right, top_left, bottom_right, bottom_left, kind="plain"):
     """One tile of the engine casing's connected sheet. A side that joins another casing carries the plate on across;
     a side that does not gets Create's frame (dark outer rim, bright inner rim) and, where the plate bends back round a
     missing diagonal, a small notch in the frame. Rivets sit only in the corners where two frames meet."""
@@ -423,7 +423,23 @@ def casing_tile(up, down, left, right, top_right, top_left, bottom_right, bottom
                             index = 11
                         elif (x, y) == (corner_x + 1, corner_y + 1):
                             index = 3
-            row.append(pick(STEEL, index))
+                if kind == "riveted":
+                    # A rivet every four pixels each way, so the pattern runs on from tile to tile
+                    if x % 4 == 3 and y % 4 == 3:
+                        index = 12
+                    elif x % 4 == 0 and y % 4 == 0 and x > 0 and y > 0:
+                        index = 2
+                elif kind == "louvred":
+                    # Slats every four rows: a dark slot, then the lit lip of the slat below it
+                    if y % 4 == 1:
+                        index = 1
+                    elif y % 4 == 2:
+                        index = size - 2
+            if kind == "window" and type(index) is float and 4 <= x <= 11 and 4 <= y <= 11:
+                # A pane of glass in the middle of the plate: pale, mostly clear, with a glint along one diagonal
+                row.append((235, 245, 250, 150) if (x + y) % 6 == 0 else (176, 214, 226, 96))
+            else:
+                row.append(pick(STEEL, index))
         rows.append(row)
     return rows
 
@@ -469,25 +485,27 @@ def connected_index(up, down, left, right, top_right, top_left, bottom_right, bo
     return a + 8 * b
 
 
-def engine_casing():
+def engine_casing(name="engine_casing", kind="plain"):
     """The engine casing and its connected-texture sheet: the plain tile, and one tile for every way a face can join
-    its neighbours, placed where Create's connected-texture code looks for them."""
+    its neighbours, placed where Create's connected-texture code looks for them. The riveted and louvred plates are the
+    same sheet with another pattern on the plate; the window plate has a pane of glass (some transparent pixels) in
+    the middle of it."""
     tiles = {}
     for context in range(256):
         c = tuple(bool(context >> bit & 1) for bit in range(8))
         index = connected_index(*c)
-        tile = casing_tile(*c)
+        tile = casing_tile(*c, kind=kind)
         # Contexts that share a tile must draw it the same, or the sheet cannot show both
         assert tiles.setdefault(index, tile) == tile, (index, c)
-    write_png("block/engine_casing", casing_tile(False, False, False, False, False, False, False, False))
-    blank = casing_tile(True, True, True, True, True, True, True, True)
+    write_png("block/" + name, casing_tile(False, False, False, False, False, False, False, False, kind=kind))
+    blank = casing_tile(True, True, True, True, True, True, True, True, kind=kind)
     sheet = [[None] * 128 for _ in range(128)]
     for index in range(64):
         tile = tiles.get(index, blank)
         for y in range(SIZE):
             for x in range(SIZE):
                 sheet[index // 8 * SIZE + y][index % 8 * SIZE + x] = tile[y][x]
-    write_png("block/engine_casing_connected", sheet)
+    write_png("block/" + name + "_connected", sheet)
 
 
 def main():
@@ -506,6 +524,9 @@ def main():
     heat("seething", SEETHING, 41)
     tread_plate()
     engine_casing()
+    engine_casing("engine_riveted_casing", "riveted")
+    engine_casing("engine_louvred_casing", "louvred")
+    engine_casing("engine_window_casing", "window")
     for index in range(PUFFS):
         write_png("particle/puff_%d" % index, puff(61 + 7 * index))
     # A spark is one solid square, sized and coloured by the particle that draws it

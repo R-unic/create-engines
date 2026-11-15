@@ -313,6 +313,43 @@ def exhaust_outlet():
     write("exhaust_outlet/block", textures, elements)
 
 
+def rain_cap():
+    """A rain cap, modelled facing up and hinged along its +Z edge (the renderer draws the flap, lifted about that hinge,
+    as a partial of its own; the block model is the bracket and the stationary flap, and the item model shows both). It
+    sits on the rim of an exhaust outlet, whose rim is 9 by 9 pixels at the middle of the block."""
+    textures = {"plate": IRON_BLOCK, "lug": IRON, "pin": BRASS, "tip": DARK, "particle": IRON_BLOCK}
+    bracket = [
+        box((3, 0, 11.5), (4.5, 1.8, 13.5), "lug"),
+        box((11.5, 0, 11.5), (13, 1.8, 13.5), "lug"),
+        box((3, 0.6, 12), (13, 1.4, 13), "pin"),
+    ]
+    flap = [
+        box((3.5, 0, 3.5), (12.5, 0.8, 12.5), "plate"),
+        box((3.5, 0.8, 3.5), (12.5, 1.5, 4.5), "tip"),
+    ]
+    write("rain_cap/block", textures, bracket)
+    write("rain_cap/flap", textures, flap)
+    write("rain_cap/item", textures, bracket + flap)
+
+
+def maker_plate():
+    """A maker's plate, modelled facing up: a brass plate with a raised rim and a bolt in each corner. The renderer
+    draws the name and the figures on its face (the face is 1.5 pixels up, see MakerPlateRenderer)."""
+    textures = {"plate": BRASS, "rim": BRASS_CASING, "bolt": IRON, "particle": BRASS}
+    elements = [
+        box((2, 0, 3.5), (14, 1.2, 12.5), "plate"),
+        box((2, 1.2, 3.5), (14, 1.5, 4.2), "rim"),
+        box((2, 1.2, 11.8), (14, 1.5, 12.5), "rim"),
+        box((2, 1.2, 4.2), (2.7, 1.5, 11.8), "rim"),
+        box((13.3, 1.2, 4.2), (14, 1.5, 11.8), "rim"),
+    ]
+    for x in (3.1, 12.1):
+        for z in (4.6, 10.6):
+            elements.append(box((x, 1.2, z), (x + 0.8, 1.7, z + 0.8), "bolt"))
+    write("maker_plate/block", textures, elements)
+    write("maker_plate/item", textures, elements)
+
+
 def to_frame(point, direction):
     """Maps a point from the 'arm runs out of the north face' frame to the frame where it runs out of direction."""
     x, y, z = point
@@ -854,9 +891,12 @@ CASING_SPRITE = "create_engines:block/engine_casing"
 CASING_TEXTURES = {"casing": CASING_SPRITE, "cap": IRON_BLOCK, "dark": DARK, "particle": CASING_SPRITE}
 
 
-def casing_faces(faces, texture="casing", cull=True):
-    """Full-tile faces of a cube, for the sides named; CULLED against the neighbour so a clad run draws only its skin."""
-    return {f: dict({"texture": "#" + texture, "uv": [0, 0, 16, 16]}, **({"cullface": f} if cull else {})) for f in faces}
+def casing_faces(faces, texture="casing", cull=True, tint=False):
+    """Full-tile faces of a cube, for the sides named; CULLED against the neighbour so a clad run draws only its skin.
+    A tinted face takes the paint of the casing block it belongs to (tint index 0)."""
+    extra = {"tintindex": 0} if tint else {}
+    return {f: dict({"texture": "#" + texture, "uv": [0, 0, 16, 16]}, **({"cullface": f} if cull else {}), **extra)
+            for f in faces}
 
 
 def engine_casing():
@@ -865,10 +905,22 @@ def engine_casing():
     for the part inside (a shaft, a crank, a cam), drawn standing on the Y axis and turned onto the part's axis by the
     blockstate. The sides use the casing sprite exactly, so they join the casing beside them too; the ends do not."""
     write("engine_casing/block", CASING_TEXTURES,
-          [{"from": [0, 0, 0], "to": [16, 16, 16], "faces": casing_faces(FACES)}])
+          [{"from": [0, 0, 0], "to": [16, 16, 16], "faces": casing_faces(FACES, tint=True)}])
     write_item("engine_casing/item", "engine_casing/block")
+    # The riveted and louvred plates: the same cube on their own sheet. They are never clad onto a part.
+    for kind in ("riveted", "louvred"):
+        sprite = "create_engines:block/engine_%s_casing" % kind
+        write("engine_%s_casing/block" % kind, {"casing": sprite, "particle": sprite},
+              [{"from": [0, 0, 0], "to": [16, 16, 16], "faces": casing_faces(FACES, tint=True)}])
+        write_item("engine_%s_casing/item" % kind, "engine_%s_casing/block" % kind)
+    # The window plate has a pane of glass in it, which is made of see-through pixels, so it draws in the translucent layer
+    window = "create_engines:block/engine_window_casing"
+    write("engine_window_casing/block", {"casing": window, "particle": window},
+          [{"from": [0, 0, 0], "to": [16, 16, 16], "faces": casing_faces(FACES, tint=True)}],
+          render_type="minecraft:translucent")
+    write_item("engine_window_casing/item", "engine_window_casing/block")
     elements = [{"from": [0, 0, 0], "to": [16, 16, 16],
-                 "faces": casing_faces(("north", "south", "east", "west"))}]
+                 "faces": casing_faces(("north", "south", "east", "west"), tint=True)}]
     for y0, y1, end in ((14, 16, "up"), (0, 2, "down")):
         # A square plate round an 8 by 8 opening: four strips, each showing its end and the wall of the opening
         for a, b, wall in (((0, y0, 0), (16, y1, 4), "south"), ((0, y0, 12), (16, y1, 16), "north"),
@@ -879,17 +931,17 @@ def engine_casing():
     elements.append({"from": [4, 14, 4], "to": [12, 14, 12], "faces": {"up": {"texture": "#dark"}}})
     elements.append({"from": [4, 2, 4], "to": [12, 2, 12], "faces": {"down": {"texture": "#dark"}}})
     write("engine_casing/encased", CASING_TEXTURES, elements)
+    # The same for a part behind a window: the four sides are the window plate, so the part inside shows through the glass
+    window_elements = [dict(e) for e in elements]
+    window_elements[0] = {"from": [0, 0, 0], "to": [16, 16, 16],
+                          "faces": casing_faces(("north", "south", "east", "west"), texture="window", tint=True)}
+    write("engine_casing/window", dict(CASING_TEXTURES, window="create_engines:block/engine_window_casing"),
+          window_elements, render_type="minecraft:translucent")
 
-    # Create's own encased shaft and cogwheel models, dressed in the engine casing
+    # Create's own encased shaft and cogwheel models, dressed in the engine casing. The block models are copies of
+    # Create's with the casing faces tinted (tools/derive_cased_models.py); only the items are children of Create's.
     opening = {"casing": CASING_SPRITE, "opening": DARK, "particle": CASING_SPRITE}
-    write_child("engine_cased_shaft/block", "create:block/encased_shaft/block", opening)
     write_child("engine_cased_shaft/item", "create:block/encased_shaft/item", opening)
-    for name, side in (("engine_cased_cogwheel", "create_engines:block/engine_cased_cogwheel_side"),
-                       ("engine_cased_large_cogwheel", "create_engines:block/engine_cased_cogwheel_side_connected")):
-        create = "encased_cogwheel" if name == "engine_cased_cogwheel" else "encased_large_cogwheel"
-        textures = {"casing": CASING_SPRITE, "particle": CASING_SPRITE, "side": side, "4": DARK}
-        for suffix in ("", "_top", "_bottom", "_top_bottom"):
-            write_child(name + "/block" + suffix, "create:block/%s/block%s" % (create, suffix), textures)
 
 
 def write_child(path, parent, textures):
@@ -1189,6 +1241,8 @@ def main():
     rocker()
     air_intake()
     exhaust_outlet()
+    rain_cap()
+    maker_plate()
     pipes()
     starter()
     battery()

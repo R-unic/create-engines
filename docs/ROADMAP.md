@@ -122,10 +122,20 @@ that it leaves the tab and the ones below it stay attached, before the rest foll
 Two players' engines should not look alike. Every part here is cosmetic.
 
 - **Rain cap:** a hinged cap on an exhaust end that flaps with each exhaust pulse and drops shut when the engine stops.
-- **Casing variants:** dyed casing in Create's palette, riveted and louvred plates, and a **window casing** that shows
-  the crank turning behind glass. All join the existing connected-texture rules.
+  Built on 2026-11-15 as its own block that goes on the mouth of an exhaust outlet (and only there), with a flap
+  drawn by a renderer. It is only for looks: it never seals the mouth and the exhaust leaves from under it.
+- **Casing variants:** dyed casing in Create's palette, riveted and louvred plates, and a **window casing** that
+  shows the crank turning behind glass. All join the existing connected-texture rules. Built on 2026-11-15: riveted
+  and louvred plates (each its own block, joining its own kind), and a dye applied in place to any of the three (a
+  dye tints it, a bucket of water washes it). It also works on casing clad onto a part (cylinders, cranks, cams,
+  pipes, cased shafts and cogs). The window casing is built too (it was dropped and brought back by the author on
+  2026-11-15): a glazed plate that is a block of its own, and that clads a crankshaft or camshaft part with the part
+  still turning in view behind the glass.
 - **Maker's Plate.** A brass plate fixed to an engine with a name, the builder and the figures from its last
   Dynamometer run stamped in. A blueprint (1.4) takes its dyno curve from the plate.
+  **Built 2026-11-15:** named from the item's anvil name, the placer as builder, stamped by hand from the engine's
+  finished curve. It keeps four figures (peak torque and peak power, each with its speed), not the whole curve, so a
+  blueprint that wants the curve reads it from the engine or a Dynamometer.
 
 ## 1.3 Refinery
 
