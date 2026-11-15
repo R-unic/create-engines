@@ -136,6 +136,8 @@ public class CrankshaftBlockEntity extends GeneratingKineticBlockEntity implemen
 			.add((level.random.nextDouble() - 0.5) * 0.5, (level.random.nextDouble() - 0.5) * 0.5,
 				(level.random.nextDouble() - 0.5) * 0.5);
 		EngineEffects.sparks(level, at, Vec3.ZERO, 2 + level.random.nextInt(2), 0.16);
+		if (level.random.nextFloat() < MechanicalNoise.crankcaseSmoke(engine.rpm(), engine.lubrication()))
+			EngineEffects.crankcaseSmoke(level, at);
 	}
 
 	/**

@@ -50,6 +50,20 @@ public final class MechanicalNoise {
 		return dryness * Math.min(1, speed / SQUEAL_FULL_RPM);
 	}
 
+	/** Squeal level past which dry bearings are running hot enough to smoke out of the crankcase. */
+	public static final float SMOKES_FROM = 0.35f;
+
+	/**
+	 * Chance, per check, that a dry engine's crankcase breathes out a puff of oil smoke, 0 to 0.6: none until the bearings
+	 * squeal hard, then more the drier and faster it runs.
+	 */
+	public static float crankcaseSmoke(float rpm, float lubrication) {
+		float squeal = squealLevel(rpm, lubrication);
+		if (squeal < SMOKES_FROM)
+			return 0;
+		return 0.6f * (squeal - SMOKES_FROM) / (1 - SMOKES_FROM);
+	}
+
 	/** The squeal's pitch, which rises a little with speed. */
 	public static float squealPitch(float rpm) {
 		return 0.85f + 0.3f * Math.min(1, Math.abs(rpm) / TOP_RPM);

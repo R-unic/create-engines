@@ -1,6 +1,7 @@
 package com.createengines.content.effects;
 
 import com.createengines.engine.sim.CycleResult;
+import com.createengines.engine.sim.FuelSpec;
 import com.createengines.engine.sim.Mixture;
 import com.createengines.engine.sim.Thermal;
 
@@ -34,6 +35,8 @@ public record ExhaustLook(int puffs, float red, float green, float blue, float a
 	private static final float FLAME_WORK = 0.55f;
 	/** Chance that fuel nothing lit goes off in the pipe of an engine that is otherwise firing and warm. */
 	private static final float AFTERFIRE = 0.3f;
+	/** Chance that a too-lean cylinder spits flame back through its intake on one intake stroke. */
+	private static final float SPIT = 0.35f;
 
 	/**
 	 * @param result      how the cylinder's last cycle went
@@ -83,7 +86,7 @@ public record ExhaustLook(int puffs, float red, float green, float blue, float a
 			scale = 1.1f + 0.5f * soot;
 			puffs = soot > 0.6f ? 4 : 3;
 			if (work >= FLAME_WORK && e.temperature() >= Thermal.COLD_BELOW) {
-				flame = 0.1f + 0.2f * soot;
+				flame = clamp(0.1f + 0.2f * soot + 0.55f * soot * clamp((work - FLAME_WORK) / (1 - FLAME_WORK), 0, 1), 0, 0.95f);
 				pop = 0.05f * soot;
 			}
 		} else {
@@ -134,7 +137,36 @@ public record ExhaustLook(int puffs, float red, float green, float blue, float a
 	private static ExhaustLook unburned(Engine e, float rev) {
 		boolean hotPipe = e.othersFiring() && e.temperature() >= Thermal.COLD_BELOW;
 		float pop = hotPipe ? AFTERFIRE : 0;
+		// A plug caked with soot misses with a black puff: the soot it carries is what comes out with the fuel
+		if (e.result() == CycleResult.FOULED)
+			return new ExhaustLook(2, 0.07f, 0.07f, 0.07f, 0.85f, 1.2f, 0.05f + 0.05f * rev, 0.2f, 40, 0, pop);
 		return new ExhaustLook(2, 0.86f, 0.86f, 0.76f, 0.4f, 1, 0.04f + 0.05f * rev, 0.08f, 36, 0, pop);
+	}
+
+	/**
+	 * Chance that a cylinder's intake stroke spits a lick of flame back out of its intake mouth. Only a charge too lean
+	 * to light does it: it burns slowly and is still alight when the intake valve opens again. Only in a warm engine
+	 * with others firing, since it takes a flame to carry back.
+	 */
+	public static float intakeSpit(CycleResult result, boolean othersFiring, float temperature) {
+		if (result != CycleResult.TOO_LEAN || !othersFiring || temperature < Thermal.COLD_BELOW)
+			return 0;
+		return SPIT;
+	}
+
+	/** Whether a cylinder whose exhaust cannot get out pushes its burned gas back out of an intake that is open. */
+	public static boolean chuffsBack(boolean exhaustShut, boolean intakeShut) {
+		return exhaustShut && !intakeShut;
+	}
+
+	/**
+	 * Chance, 0 to 0.85, that a firing of a cylinder whose charge boost lit early comes with a rattle and an orange flash
+	 * in the exhaust. {@code preignition} is the share of the burn lost to it (see CylinderStatus), 0 when nothing is.
+	 */
+	public static float preignitionRattle(float preignition) {
+		if (preignition < 0.01f)
+			return 0;
+		return 0.25f + 0.6f * clamp(preignition / (float) FuelSpec.PREIGNITION_MAX_LOSS, 0, 1);
 	}
 
 	private static float clamp(float value, float low, float high) {

@@ -77,6 +77,11 @@ public final class EngineEffects {
 			look.lift(), look.lifetime());
 		// A big engine fires so often that its puffs run together: each firing throws fewer, so sixteen cylinders make
 		// a thicker plume than four without making four times the particles
+		if (engine != null && SmokeRing.rings(engine.cylinders(), engine.rpm(), status.rich(),
+			engine.availableTorque() > 0 ? engine.loadTorque() / engine.availableTorque() : 0)) {
+			ring(level, outlet, look);
+			return;
+		}
 		int puffs = look.puffs();
 		if (engine != null && engine.cylinders() > SPARING_FROM)
 			puffs = Math.max(1, Math.round(puffs * (float) SPARING_FROM / engine.cylinders()));
@@ -88,11 +93,30 @@ public final class EngineEffects {
 			level.addParticle(gas, at.x, at.y, at.z, velocity.x, velocity.y, velocity.z);
 		}
 
+		// Boost lit the charge early: a rattle in the pipe and orange flashes
+		if (random.nextFloat() < ExhaustLook.preignitionRattle(status.preignition())) {
+			flames(level, outlet.at, outlet.normal, 2, 0.18);
+			float volume = CEClientConfig.mechanicalVolume();
+			if (volume > 0)
+				level.playLocalSound(outlet.at.x, outlet.at.y, outlet.at.z, CESounds.METAL_TICK.get(), SoundSource.BLOCKS,
+					0.7f * volume, 1.3f + random.nextFloat() * 0.5f, false);
+		}
+
 		float roll = random.nextFloat();
 		if (roll < look.pop())
 			afterfire(level, outlet.at, outlet.normal, 0.7f * Muffling.volume(engine == null ? 0 : engine.muffling()), 1);
 		else if (roll < look.pop() + look.flame())
-			flames(level, outlet.at, outlet.normal, 2, 0.14);
+			flames(level, outlet.at, outlet.normal, look.flame() > 0.4f ? 3 : 2, 0.14);
+	}
+
+	/** A slow single's firing, as a ring of puffs that travels out of the pipe and widens as it goes. */
+	private static void ring(Level level, Opening outlet, ExhaustLook look) {
+		double[][] ring = SmokeRing.velocities(new double[] {outlet.normal.x, outlet.normal.y, outlet.normal.z}, 0.06, 0.018);
+		// Small, dense puffs, so the ring reads as a ring and not a cloud, and hanging on for longer than the usual smoke
+		GasParticleOptions gas = new GasParticleOptions(look.red(), look.green(), look.blue(), 0.45f,
+			Math.min(0.9f, look.alpha() + 0.15f), look.lift() * 0.4f, look.lifetime() + 14);
+		for (double[] v : ring)
+			level.addParticle(gas, outlet.at.x, outlet.at.y, outlet.at.z, v[0], v[1], v[2]);
 	}
 
 	private static ExhaustLook.Engine describe(CylinderStatus status, @Nullable EngineSummary engine, boolean catching) {
@@ -121,6 +145,34 @@ public final class EngineEffects {
 			return;
 		flames(level, at, normal, 4, 0.24);
 		sparks(level, at, normal.scale(0.22), 3, 0.1);
+	}
+
+	/** An engine drowning: a burst of white steam from the block at {@code at} and a hard clunk as it seizes up on water. */
+	public static void floodedStall(Level level, BlockPos at) {
+		RandomSource random = level.random;
+		float volume = CEClientConfig.mechanicalVolume();
+		if (volume > 0) {
+			level.playLocalSound(at, SoundEvents.BUBBLE_COLUMN_WHIRLPOOL_INSIDE, SoundSource.BLOCKS, 0.8f * volume, 0.6f, false);
+			level.playLocalSound(at, SoundEvents.FIRE_EXTINGUISH, SoundSource.BLOCKS, 0.7f * volume, 0.8f, false);
+			level.playLocalSound(at, SoundEvents.ANVIL_LAND, SoundSource.BLOCKS, 0.3f * volume, 0.5f, false);
+		}
+		if (!CEClientConfig.particles())
+			return;
+		for (int i = 0; i < 14; i++) {
+			Vec3 from = Vec3.atCenterOf(at)
+				.add(jitter(random, 1.6));
+			level.addParticle(new GasParticleOptions(0.95f, 0.95f, 0.96f, 1.2f, 0.7f, 0.4f, 30), from.x, from.y, from.z,
+				(random.nextDouble() - 0.5) * 0.08, 0.05 + random.nextDouble() * 0.05, (random.nextDouble() - 0.5) * 0.08);
+		}
+	}
+
+	/** Oil smoke breathing out of the crankcase of an engine whose bearings are running dry, around the crank at {@code at}. */
+	public static void crankcaseSmoke(Level level, Vec3 at) {
+		if (!CEClientConfig.particles())
+			return;
+		RandomSource random = level.random;
+		Vec3 from = at.add(jitter(random, 0.9));
+		level.addParticle(new GasParticleOptions(0.35f, 0.36f, 0.4f, 0.8f, 0.5f, 0.3f, 30), from.x, from.y, from.z, 0, 0.04, 0);
 	}
 
 	/** Tongues of flame out along {@code normal}. */
@@ -161,6 +213,24 @@ public final class EngineEffects {
 			return;
 		RandomSource random = level.random;
 		float rev = engine == null ? 0.3f : Mth.clamp(Math.abs(engine.rpm()) / TOP_RPM, 0, 1);
+		// A charge too lean to light is still burning when the valve opens, and a lick of it spits back out of the mouth
+		float spit = ExhaustLook.intakeSpit(status.result(), engine != null && engine.firing() > 0,
+			engine == null ? 0 : engine.temperature());
+		if (spit > 0 && random.nextFloat() < spit) {
+			flames(level, inlet.at, inlet.normal, 2, 0.1);
+			sparks(level, inlet.at, inlet.normal.scale(0.12), 2, 0.08);
+		}
+		// Burned gas with nowhere to go comes back out the way the air went in
+		if (ExhaustLook.chuffsBack(CylinderFault.exhaustShut(status.faults()), false) && random.nextFloat() < 0.7f) {
+			for (int i = 0; i < 2; i++) {
+				Vec3 velocity = inlet.normal.scale(0.05 + random.nextDouble() * 0.03)
+					.add(jitter(random, 0.02));
+				Vec3 at = inlet.at.add(jitter(random, 0.2));
+				level.addParticle(new GasParticleOptions(0.3f, 0.3f, 0.3f, 0.9f, 0.55f, 0.15f, 28), at.x, at.y, at.z, velocity.x,
+					velocity.y, velocity.z);
+			}
+			return;
+		}
 		int wisps = rev > 0.5f ? 5 : 3;
 		for (int i = 0; i < wisps; i++) {
 			Vec3 at = inlet.at.add(inlet.normal.scale(0.3 + random.nextDouble() * 0.5))

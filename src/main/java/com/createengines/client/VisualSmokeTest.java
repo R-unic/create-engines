@@ -72,6 +72,9 @@ public final class VisualSmokeTest {
 	/** Run only the engines' smoke, steam, sparks and bubbles (gradle {@code -PsmokeEffects}). */
 	private static final String EFFECTS_ONLY = "create_engines.visualSmokeTest.effects";
 
+	/** Run only the pushrod close-up (gradle {@code -PsmokePushrods}): one cylinder with its cam beside the block. */
+	private static final String PUSHRODS_ONLY = "create_engines.visualSmokeTest.pushrods";
+
 	private record Step(int tick, Runnable action) {
 	}
 
@@ -113,6 +116,11 @@ public final class VisualSmokeTest {
 
 		if (Boolean.getBoolean(ROTARY_ONLY)) {
 			rotaryBench(100);
+			return;
+		}
+
+		if (Boolean.getBoolean(PUSHRODS_ONLY)) {
+			pushrods(60);
 			return;
 		}
 
@@ -652,6 +660,43 @@ public final class VisualSmokeTest {
 			Minecraft.getInstance()
 				.stop();
 		}));
+	}
+
+	/**
+	 * The first engine with its camshaft moved down a layer to sit against the cylinder block (as the pushrod GameTest
+	 * does), so its valves are worked through pushrods and rockers. Photographed along the cam's axis, where the rods and
+	 * rockers are in profile, and from the cam's side, over a whole turn of the cam; then the run ends.
+	 */
+	private static void pushrods(int start) {
+		STEPS.add(new Step(start, () -> server(server -> {
+			var level = server.overworld();
+			for (int x = 2; x <= 5; x++)
+				level.setBlock(origin.offset(x, 4, 3), Blocks.AIR.defaultBlockState(), 3);
+			level.setBlock(origin.offset(6, 3, 3), Blocks.AIR.defaultBlockState(), 3);
+			level.setBlock(origin.offset(6, 4, 3), Blocks.AIR.defaultBlockState(), 3);
+			BlockPos lobe = origin.offset(2, 3, 3);
+			level.setBlock(lobe, TestEngine.axisX(CEBlocks.CAM_LOBE.getDefaultState()), 3);
+			for (int x = 3; x <= 4; x++)
+				level.setBlock(origin.offset(x, 3, 3), TestEngine.axisX(CEBlocks.CAMSHAFT.getDefaultState()), 3);
+			double tdc = CrankGeometry.topDeadCentreAngle(net.minecraft.core.Direction.Axis.X, 0, Direction.UP);
+			if (level.getBlockEntity(lobe) instanceof com.createengines.content.camshaft.CamshaftBlockEntity cam)
+				cam.lobeAngle.setValue((int) Math.round(((tdc / 2) % 180 + 180) % 180
+					/ com.createengines.content.camshaft.CamshaftBlockEntity.LOBE_ANGLE_STEP));
+		})));
+		STEPS.add(new Step(start + 200, () -> server(server -> server.overworld()
+			.removeBlock(origin.offset(TestEngine.STARTER_POWER), false))));
+		STEPS.add(new Step(start + 330, () -> view(-0.8, 3.9, 3.3, -90, 0)));
+		for (int i = 0; i < 8; i++) {
+			int frame = i;
+			STEPS.add(new Step(start + 345 + i * 3, () -> shot("pushrods_axis_" + frame)));
+		}
+		STEPS.add(new Step(start + 380, () -> view(2.5, 4.6, 5.6, 180, 15)));
+		for (int i = 0; i < 8; i++) {
+			int frame = i;
+			STEPS.add(new Step(start + 395 + i * 3, () -> shot("pushrods_side_" + frame)));
+		}
+		STEPS.add(new Step(start + 440, () -> Minecraft.getInstance()
+			.stop()));
 	}
 
 	/** Writes each of the {@link #effects} engines' figures, as this client has them, to the log. */

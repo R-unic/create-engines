@@ -1,0 +1,74 @@
+{
+  "parent": "block/block",
+  "textures": {
+    "arm": "create_engines:block/brass",
+    "cap": "create_engines:block/steel",
+    "particle": "create_engines:block/brass"
+  },
+  "elements": [
+    {
+      "from": [
+        6.75,
+        3.25,
+        14
+      ],
+      "to": [
+        9.25,
+        4.75,
+        20.5
+      ],
+      "faces": {
+        "north": {
+          "texture": "#arm"
+        },
+        "south": {
+          "texture": "#arm"
+        },
+        "east": {
+          "texture": "#arm"
+        },
+        "west": {
+          "texture": "#arm"
+        },
+        "up": {
+          "texture": "#arm"
+        },
+        "down": {
+          "texture": "#arm"
+        }
+      }
+    },
+    {
+      "from": [
+        6.25,
+        3,
+        18.5
+      ],
+      "to": [
+        9.75,
+        5,
+        20.5
+      ],
+      "faces": {
+        "north": {
+          "texture": "#cap"
+        },
+        "south": {
+          "texture": "#cap"
+        },
+        "east": {
+          "texture": "#cap"
+        },
+        "west": {
+          "texture": "#cap"
+        },
+        "up": {
+          "texture": "#cap"
+        },
+        "down": {
+          "texture": "#cap"
+        }
+      }
+    }
+  ]
+}

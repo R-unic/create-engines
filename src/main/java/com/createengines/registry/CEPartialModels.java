@@ -21,6 +21,9 @@ public final class CEPartialModels {
 	public static final PartialModel FORGED_PISTON = block("cylinder/forged_piston");
 	public static final PartialModel CONNECTING_ROD = block("cylinder/rod");
 	public static final PartialModel VALVE_STEM = block("cylinder_head/valve");
+	/** A pushrod beside a cylinder block that a cam works from the side, and the rocker on the head it tips. */
+	public static final PartialModel PUSHROD = block("cylinder/pushrod");
+	public static final PartialModel ROCKER = block("cylinder_head/rocker");
 	public static final PartialModel TURBO_WHEEL = block("turbocharger/wheel");
 	public static final PartialModel SUPERCHARGER_ROTOR = block("supercharger/rotor");
 	public static final PartialModel FLYWHEEL_DISC = block("cast_flywheel/disc");

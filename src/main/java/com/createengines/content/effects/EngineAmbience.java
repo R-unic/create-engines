@@ -65,7 +65,7 @@ public final class EngineAmbience {
 		long time = level.getGameTime();
 		RandomSource random = level.random;
 
-		EngineCues cue = EngineCues.forChange(last, now);
+		EngineCues cue = EngineCues.forChange(last, now, summary.cause());
 		if (cue != EngineCues.NONE) {
 			if (cue == EngineCues.CATCH) {
 				if (time - caughtAt >= REPEAT_TICKS)
@@ -76,7 +76,12 @@ public final class EngineAmbience {
 			} else {
 				if (time - stalledAt >= REPEAT_TICKS)
 					play(level, CESounds.ENGINE_STALL.get(), 0.7f, 0.95f + random.nextFloat() * 0.1f);
-				stalledAt = time;
+				if (cue == EngineCues.FLOOD && time - stalledAt >= REPEAT_TICKS)
+						EngineEffects.floodedStall(level, at());
+					// The load beat it: what was left in the cylinders and the pipe comes out in one dark belch
+					if (cue == EngineCues.OVERLOAD)
+						caughtAt = time;
+					stalledAt = time;
 			}
 		}
 		last = now;
@@ -108,6 +113,10 @@ public final class EngineAmbience {
 			return;
 		level.playLocalSound(x, y, z, CESounds.METAL_TICK.get(), SoundSource.BLOCKS, (0.2f + random.nextFloat() * 0.3f) * volume,
 			0.75f + random.nextFloat() * 0.6f, false);
+	}
+
+	private BlockPos at() {
+		return crank.getBlockPos();
 	}
 
 	private void play(Level level, SoundEvent sound, float loudness, float pitch) {

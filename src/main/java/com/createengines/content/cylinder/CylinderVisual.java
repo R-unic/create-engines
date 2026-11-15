@@ -25,6 +25,8 @@ public class CylinderVisual extends AbstractBlockEntityVisual<CylinderBlockEntit
 	private final TransformedInstance piston;
 	private final TransformedInstance forgedPiston;
 	private final TransformedInstance rod;
+	/** Intake and exhaust pushrods, then their rockers on the head, for a cylinder whose cam is beside its block. */
+	private final TransformedInstance[] pushrods;
 
 	public CylinderVisual(VisualizationContext context, CylinderBlockEntity blockEntity, float partialTick) {
 		super(context, blockEntity, partialTick);
@@ -34,7 +36,14 @@ public class CylinderVisual extends AbstractBlockEntityVisual<CylinderBlockEntit
 			Models.partial(CEPartialModels.FORGED_PISTON)).createInstance();
 		rod = instancerProvider().instancer(InstanceTypes.TRANSFORMED, Models.partial(CEPartialModels.CONNECTING_ROD))
 			.createInstance();
+		pushrods = new TransformedInstance[] {instance(CEPartialModels.PUSHROD), instance(CEPartialModels.PUSHROD),
+			instance(CEPartialModels.ROCKER), instance(CEPartialModels.ROCKER)};
 		animate();
+	}
+
+	private TransformedInstance instance(dev.engine_room.flywheel.lib.model.baked.PartialModel model) {
+		return instancerProvider().instancer(InstanceTypes.TRANSFORMED, Models.partial(model))
+			.createInstance();
 	}
 
 	@Override
@@ -51,6 +60,11 @@ public class CylinderVisual extends AbstractBlockEntityVisual<CylinderBlockEntit
 		unused.setVisible(false);
 		unused.setChanged();
 		pose(rod, pose.showRod(), origin, pose.rod());
+		EnginePoses.PushrodPose pushrodPose = EnginePoses.pushrods(blockEntity, AnimationTickHolder.getRenderTime(level));
+		Matrix4f[] each = pushrodPose == null ? null : new Matrix4f[] {pushrodPose.intakeRod(), pushrodPose.exhaustRod(),
+			pushrodPose.intakeRocker(), pushrodPose.exhaustRocker()};
+		for (int i = 0; i < pushrods.length; i++)
+			pose(pushrods[i], each != null, origin, each == null ? new Matrix4f() : each[i]);
 	}
 
 	private static void pose(TransformedInstance instance, boolean visible, BlockPos origin, Matrix4f pose) {
@@ -64,6 +78,7 @@ public class CylinderVisual extends AbstractBlockEntityVisual<CylinderBlockEntit
 	@Override
 	public void updateLight(float partialTick) {
 		relight(piston, forgedPiston, rod);
+		relight(pushrods);
 	}
 
 	@Override
@@ -71,6 +86,8 @@ public class CylinderVisual extends AbstractBlockEntityVisual<CylinderBlockEntit
 		piston.delete();
 		forgedPiston.delete();
 		rod.delete();
+		for (TransformedInstance instance : pushrods)
+			instance.delete();
 	}
 
 	@Override
@@ -78,5 +95,7 @@ public class CylinderVisual extends AbstractBlockEntityVisual<CylinderBlockEntit
 		consumer.accept(piston);
 		consumer.accept(forgedPiston);
 		consumer.accept(rod);
+		for (TransformedInstance instance : pushrods)
+			consumer.accept(instance);
 	}
 }

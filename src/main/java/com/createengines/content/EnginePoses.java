@@ -1,6 +1,7 @@
 package com.createengines.content;
 
 import org.jetbrains.annotations.Nullable;
+import org.joml.Matrix3f;
 import org.joml.Matrix4f;
 import org.joml.Quaternionf;
 import org.joml.Vector3f;
@@ -224,6 +225,69 @@ public final class EnginePoses {
 				stem(normal, camAxis, -STEM_SPACING, (float) CamProfile.BASIC.exhaustLift(cycle)));
 		}
 		return null;
+	}
+
+	/** The pushrods and rockers of a cylinder whose cam works its valves from beside its block, each pair posed for the lift. */
+	public record PushrodPose(Matrix4f intakeRod, Matrix4f intakeRocker, Matrix4f exhaustRod, Matrix4f exhaustRocker) {
+	}
+
+	/**
+	 * A pushrod from each lobe of a cam beside the cylinder block, up past the block to a rocker on the head, rising and
+	 * falling with the valve it works: by the same cam profile and timing the simulation and {@link #valves} use. Null
+	 * when the cylinder's cam is not beside its block (a cam at the head works the valves directly), when the cam runs
+	 * along the bore, or when something stands in the space beside the head that the rods and rockers need.
+	 */
+	public static @Nullable PushrodPose pushrods(CylinderBlockEntity cylinder, float renderTime) {
+		Level level = cylinder.getLevel();
+		var status = cylinder.status();
+		if (level == null || status == null || status.lobe() == null)
+			return null;
+		Direction bore = cylinder.getBlockState()
+			.getValue(CylinderBlock.FACING);
+		BlockPos lobePos = status.lobe();
+		BlockPos away = lobePos.subtract(cylinder.getBlockPos());
+		Direction side = Direction.fromDelta(away.getX(), away.getY(), away.getZ());
+		if (side == null || side.getAxis() == bore.getAxis())
+			return null;
+		BlockState lobeState = level.getBlockState(lobePos);
+		if (!(lobeState.getBlock() instanceof CamLobeBlock) || !(level.getBlockEntity(lobePos) instanceof CamshaftBlockEntity lobe))
+			return null;
+		Axis camAxis = lobeState.getValue(BlockStateProperties.AXIS);
+		if (camAxis == bore.getAxis() || !level.getBlockState(cylinder.getBlockPos()
+			.relative(bore)
+			.relative(side))
+			.isAir())
+			return null;
+
+		float travelled = (float) Math.abs(lobe.rotation(renderTime) % 360);
+		double cycle = CylinderModel.camCycleAngle(travelled, lobe.lobeAngle() + status.lobeShift());
+
+		// The models are drawn with +Y along the bore and +Z towards the cam, so +X is bore cross side
+		Vector3f y = new Vector3f(bore.step());
+		Vector3f z = new Vector3f(side.step());
+		Vector3f x = new Vector3f(y).cross(z);
+		int alignment = x.dot(CrankGeometry.axisVector(camAxis)) >= 0 ? 1 : -1;
+		Matrix4f frame = new Matrix4f().translate(0.5f, 0.5f, 0.5f)
+			.mul(new Matrix4f().set(new Matrix3f(x, y, z)))
+			.translate(-0.5f, -0.5f, -0.5f);
+		double intake = CamProfile.BASIC.intakeLift(cycle);
+		double exhaust = CamProfile.BASIC.exhaustLift(cycle);
+		return new PushrodPose(rod(frame, PushrodGeometry.INTAKE_AT, alignment, intake),
+			rocker(frame, PushrodGeometry.INTAKE_AT, alignment, intake),
+			rod(frame, PushrodGeometry.EXHAUST_AT, alignment, exhaust),
+			rocker(frame, PushrodGeometry.EXHAUST_AT, alignment, exhaust));
+	}
+
+	private static Matrix4f rod(Matrix4f frame, double lobeAt, int alignment, double lift) {
+		return new Matrix4f(frame).translate(PushrodGeometry.across(lobeAt, alignment), PushrodGeometry.rise(lift), 0);
+	}
+
+	/** The rocker sits on the head, a block along the bore, and tips about its pin inside the head (y 4, z 14 pixels). */
+	private static Matrix4f rocker(Matrix4f frame, double lobeAt, int alignment, double lift) {
+		return new Matrix4f(frame).translate(PushrodGeometry.across(lobeAt, alignment), 1, 0)
+			.translate(0, 4 / 16f, 14 / 16f)
+			.rotateX((float) Math.toRadians(PushrodGeometry.rockerAngle(lift)))
+			.translate(0, -4 / 16f, -14 / 16f);
 	}
 
 	private static Matrix4f stem(Vector3f normal, Vector3f camAxis, float offset, float lift) {

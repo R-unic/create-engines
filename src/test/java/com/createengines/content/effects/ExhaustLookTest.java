@@ -1,6 +1,7 @@
 package com.createengines.content.effects;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.junit.jupiter.api.Test;
@@ -95,6 +96,56 @@ class ExhaustLookTest {
 		ExhaustLook flaming = ExhaustLook.of(fired(true, false, 1.8f, 1, WARM));
 		assertTrue(flaming.flame() > 0.1f && flaming.pop() > 0 && flaming.pop() < flaming.flame(),
 			"rich and flat out: flame often, a crack now and then");
+	}
+
+	@Test
+	void aRichEngineFlatOutLicksFlameFromTheStackAlmostEveryFiring() {
+		ExhaustLook easy = ExhaustLook.of(fired(true, false, 1.8f, 0.6f, WARM));
+		ExhaustLook flatOut = ExhaustLook.of(fired(true, false, 1.8f, 1.1f, WARM));
+		assertTrue(flatOut.flame() > easy.flame() && flatOut.flame() >= 0.5f, "a steady lick under full load");
+		assertTrue(flatOut.pop() < 0.1f, "the crack stays occasional");
+	}
+
+	@Test
+	void aFouledPlugMissesWithABlackPuff() {
+		Engine fouled = new Engine(CycleResult.FOULED, false, false, 1, 0.5f, 0.5f, WARM, 0, true, false);
+		Engine drowned = new Engine(CycleResult.TOO_RICH, false, false, 1, 0.5f, 0.5f, WARM, 0, true, false);
+		assertTrue(brightness(ExhaustLook.of(fouled)) < 0.15f && ExhaustLook.of(fouled).alpha() > 0.7f, "black and solid");
+		assertTrue(brightness(ExhaustLook.of(drowned)) > 0.7f, "other misses stay a pale mist");
+	}
+
+	@Test
+	void onlyALeanChargeSpitsBackThroughTheIntakeAndOnlyInAWarmFiringEngine() {
+		assertTrue(ExhaustLook.intakeSpit(CycleResult.TOO_LEAN, true, WARM) > 0, "too lean to light");
+		for (CycleResult result : CycleResult.values())
+			if (result != CycleResult.TOO_LEAN)
+				assertEquals(0, ExhaustLook.intakeSpit(result, true, WARM), result + " does not spit");
+		assertEquals(0, ExhaustLook.intakeSpit(CycleResult.TOO_LEAN, false, WARM), "nothing alight to carry back");
+		assertEquals(0, ExhaustLook.intakeSpit(CycleResult.TOO_LEAN, true, 0.1f), "a cold block has no flame");
+	}
+
+	@Test
+	void aBlockedExhaustChuffsBackOutOfAnOpenIntake() {
+		assertTrue(ExhaustLook.chuffsBack(true, false));
+		assertFalse(ExhaustLook.chuffsBack(false, false), "a free exhaust needs no other way out");
+		assertFalse(ExhaustLook.chuffsBack(true, true), "and a shut intake lets nothing out");
+	}
+
+	@Test
+	void boostThatLightsTheChargeEarlyRattlesMoreTheWorseItIs() {
+		assertEquals(0, ExhaustLook.preignitionRattle(0));
+		float mild = ExhaustLook.preignitionRattle(0.05f);
+		float bad = ExhaustLook.preignitionRattle((float) com.createengines.engine.sim.FuelSpec.PREIGNITION_MAX_LOSS);
+		assertTrue(mild > 0 && bad > mild && bad <= 1, "mild " + mild + ", bad " + bad);
+	}
+
+	@Test
+	void dryBearingsSmokeOnlyOnceTheySquealHard() {
+		assertEquals(0, MechanicalNoise.crankcaseSmoke(100, 1));
+		assertEquals(0, MechanicalNoise.crankcaseSmoke(100, MechanicalNoise.DRY_BELOW - 0.01f), "barely dry: no smoke");
+		float dry = MechanicalNoise.crankcaseSmoke(100, 0);
+		assertTrue(dry > 0.3f && dry <= 0.6f, "bone dry at speed smokes often: " + dry);
+		assertTrue(MechanicalNoise.crankcaseSmoke(20, 0) < dry, "slower smokes less");
 	}
 
 	@Test

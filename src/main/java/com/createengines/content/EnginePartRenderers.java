@@ -147,6 +147,13 @@ public final class EnginePartRenderers {
 					: CEPartialModels.PISTON, be.getBlockState(), pose.piston(), ms, buffer, light);
 			if (pose.showRod())
 				draw(CEPartialModels.CONNECTING_ROD, be.getBlockState(), pose.rod(), ms, buffer, light);
+			EnginePoses.PushrodPose pushrods = EnginePoses.pushrods(be, renderTime);
+			if (pushrods != null) {
+				draw(CEPartialModels.PUSHROD, be.getBlockState(), pushrods.intakeRod(), ms, buffer, light);
+				draw(CEPartialModels.PUSHROD, be.getBlockState(), pushrods.exhaustRod(), ms, buffer, light);
+				draw(CEPartialModels.ROCKER, be.getBlockState(), pushrods.intakeRocker(), ms, buffer, light);
+				draw(CEPartialModels.ROCKER, be.getBlockState(), pushrods.exhaustRocker(), ms, buffer, light);
+			}
 		}
 	}
 

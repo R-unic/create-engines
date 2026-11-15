@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import org.junit.jupiter.api.Test;
 
+import com.createengines.engine.Diagnosis;
 import com.createengines.engine.EngineState;
 
 class EngineCuesTest {
@@ -23,6 +24,16 @@ class EngineCuesTest {
 	void anEngineThatNeverRanDoesNotStallLoudly() {
 		assertEquals(EngineCues.NONE, EngineCues.forChange(EngineState.CRANKING, EngineState.STALLED));
 		assertEquals(EngineCues.NONE, EngineCues.forChange(EngineState.INCOMPLETE, EngineState.STALLED));
+	}
+
+	@Test
+	void aStallIsToldApartByWhatKilledTheEngine() {
+		assertEquals(EngineCues.FLOOD, EngineCues.forChange(EngineState.RUNNING, EngineState.STALLED, Diagnosis.Cause.WATER));
+		assertEquals(EngineCues.OVERLOAD, EngineCues.forChange(EngineState.OVERLOADED, EngineState.STALLED, Diagnosis.Cause.NONE));
+		assertEquals(EngineCues.STALL, EngineCues.forChange(EngineState.RUNNING, EngineState.STALLED, Diagnosis.Cause.NO_FUEL));
+		assertEquals(EngineCues.NONE, EngineCues.forChange(EngineState.CRANKING, EngineState.STALLED, Diagnosis.Cause.WATER),
+			"an engine that never ran has nothing to drown");
+		assertEquals(EngineCues.CATCH, EngineCues.forChange(EngineState.CRANKING, EngineState.RUNNING, Diagnosis.Cause.WATER));
 	}
 
 	@Test
