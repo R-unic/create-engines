@@ -33,17 +33,17 @@ public record EngineSummary(EngineState state, float rpm, float availableTorque,
 							float fuelPerMinute, float ripple, int firing, int cylinders, float inertia, float lubrication,
 							boolean starterEngaged, float[] firingAngles, int lines, float thinning, float roughness,
 							float condition, float temperature, float coolantRate, boolean pilot, boolean filtered,
-							float flex, int longestLine, Diagnosis.Health health, Diagnosis.Cause cause, float muffling) {
+							float flex, int longestLine, Diagnosis.Health health, Diagnosis.Cause cause, float muffling, float boost) {
 
 	public static final EngineSummary EMPTY =
 		new EngineSummary(EngineState.STALLED, 0, 0, 0, 0, 0, 0, 0, 0, 0, false, new float[0], 1, 0, 0, 1, 0, 0,
-			false, false, 0, 0, Diagnosis.Health.HEALTHY, Diagnosis.Cause.NONE, 0);
+			false, false, 0, 0, Diagnosis.Health.HEALTHY, Diagnosis.Cause.NONE, 0, 0);
 
 	public EngineSummary(EngineState state, float rpm, float availableTorque, float loadTorque, float fuelPerMinute,
 						 float ripple, int firing, int cylinders, float inertia, float lubrication,
 						 boolean starterEngaged, float[] firingAngles) {
 		this(state, rpm, availableTorque, loadTorque, fuelPerMinute, ripple, firing, cylinders, inertia, lubrication,
-			starterEngaged, firingAngles, 1, 0, 0, 1, 0, 0, false, false, 0, 0, Diagnosis.Health.HEALTHY, Diagnosis.Cause.NONE, 0);
+			starterEngaged, firingAngles, 1, 0, 0, 1, 0, 0, false, false, 0, 0, Diagnosis.Health.HEALTHY, Diagnosis.Cause.NONE, 0, 0);
 	}
 
 	/** Whether the block is still giving up its heat with the crank stopped. */
@@ -77,6 +77,7 @@ public record EngineSummary(EngineState state, float rpm, float availableTorque,
 		tag.putInt("Health", health.ordinal());
 		tag.putInt("Cause", cause.ordinal());
 		tag.putFloat("Muffling", muffling);
+		tag.putFloat("Boost", boost);
 		tag.putInt("Lines", lines);
 		tag.putBoolean("Starter", starterEngaged);
 		int[] angles = new int[firingAngles.length];
@@ -102,7 +103,7 @@ public record EngineSummary(EngineState state, float rpm, float availableTorque,
 			tag.contains("Condition") ? tag.getFloat("Condition") : 1, tag.getFloat("Temperature"),
 			tag.getFloat("Coolant"), tag.getBoolean("Pilot"), tag.getBoolean("Filtered"), tag.getFloat("Flex"),
 			tag.getInt("LongestLine"), healths[Math.clamp(tag.getInt("Health"), 0, healths.length - 1)],
-			causes[Math.clamp(tag.getInt("Cause"), 0, causes.length - 1)], tag.getFloat("Muffling"));
+			causes[Math.clamp(tag.getInt("Cause"), 0, causes.length - 1)], tag.getFloat("Muffling"), tag.getFloat("Boost"));
 	}
 
 	/** Gaps between consecutive firings around the 720° cycle. */

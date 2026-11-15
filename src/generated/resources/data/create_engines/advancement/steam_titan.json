@@ -1,5 +1,5 @@
 {
-  "parent": "create_engines:steam_herd",
+  "parent": "create_engines:steam_beater",
   "criteria": {
     "steam_titan": {
       "conditions": {

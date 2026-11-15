@@ -64,6 +64,42 @@ public final class MechanicalNoise {
 		return 0.6f * (squeal - SMOKES_FROM) / (1 - SMOKES_FROM);
 	}
 
+	/** Speed, RPM, at which the intake is as loud as it gets with the throttle wide. */
+	public static final float ROAR_FULL_RPM = 160;
+	/** Boost, as the engine's boost reading, at which a blower has added all the roar it will. */
+	public static final float ROAR_FULL_BOOST = 1.5f;
+
+	/**
+	 * How loud the air rushing into the intake is, 0 to 1. Never constant: nothing at a standstill, a murmur at idle, and
+	 * more with speed, with how hard the engine is working (a hard pull against a light one) and with boost. A
+	 * coasting engine only pumps air, so it is quiet.
+	 *
+	 * @param load  share of the engine's available torque it is working against, 0 to 1.3 or so
+	 * @param boost how hard a turbo or blower is pushing, 0 for none
+	 */
+	public static float intakeRoarLevel(float rpm, float load, float boost) {
+		float speed = Math.abs(rpm);
+		if (speed < 1)
+			return 0;
+		float revs = Math.min(1, speed / ROAR_FULL_RPM);
+		float work = Math.min(1, Math.max(0, load));
+		float pull = Math.min(1, Math.max(0, boost) / ROAR_FULL_BOOST);
+		float level = revs * (0.12f + 0.55f * work + 0.33f * pull);
+		return Math.min(1, level);
+	}
+
+	/**
+	 * The intake's pitch, which sets how fast its gulps come: the loop has eight a second, so it runs at the pace the
+	 * cylinders take air, one gulp a cylinder for every two turns of the crank.
+	 */
+	public static float intakeRoarPitch(float rpm, int cylinders) {
+		float gulpsPerSecond = Math.abs(rpm) / 60f * Math.max(1, cylinders) / 2f;
+		return Math.min(2f, Math.max(0.5f, gulpsPerSecond / INTAKE_LOOP_PULSES));
+	}
+
+	/** Gulps in one second of the recording. */
+	private static final float INTAKE_LOOP_PULSES = 8f;
+
 	/** The squeal's pitch, which rises a little with speed. */
 	public static float squealPitch(float rpm) {
 		return 0.85f + 0.3f * Math.min(1, Math.abs(rpm) / TOP_RPM);

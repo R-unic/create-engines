@@ -1,24 +1,11 @@
 {
-  "parent": "create_engines:coolant_used",
+  "parent": "create_engines:warmed_up",
   "criteria": {
     "cool_running": {
       "conditions": {
         "event": "cool_running"
       },
       "trigger": "create_engines:event"
-    }
-  },
-  "display": {
-    "description": {
-      "translate": "advancement.create_engines.cool_running.desc"
-    },
-    "frame": "goal",
-    "icon": {
-      "count": 1,
-      "id": "create_engines:coolant_bucket"
-    },
-    "title": {
-      "translate": "advancement.create_engines.cool_running"
     }
   },
   "requirements": [

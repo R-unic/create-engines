@@ -168,6 +168,24 @@ config thins out engine sound and particles on a big engine. Fuel properties are
 - [Design notes](https://github.com/R-unic/create-engines/blob/master/docs/DESIGN.md), how the simulation works
 ```
 
+## Changelog for 1.1.0
+
+Light and Noise: a running engine is now worth standing next to, and the things that go wrong now show it. Nothing here
+changes a rating or adds a failure; the simulation's numbers do not move. Worlds from 1.0.x load as they are.
+- Pushrods: a cam beside the block, or in the valley of a V, shows a pushrod from each lobe up to a brass rocker on the
+  head, rising and falling with the valve.
+- Engines rock: pistons and rods slap about in their bores by the roughness rating, with a pinch of dust shaken off.
+  A flywheel calms both. The block itself does not shake.
+- Intake roar: a gulping sound at the open intake mouth that swells with throttle and boost. One voice per engine,
+  silent at rest, untouched by the Muffler.
+- Smoke rings: a slow single puffs rings from its stack at idle.
+- Louder consequences: a rich engine at full load holds a steady stack flame; a fouled plug puffs black smoke on each
+  miss; a too-lean charge spits flame back through the intake; a dry engine smokes from the crankcase; a blocked
+  exhaust chuffs back out of the intake; gasoline lighting early under boost rattles and flashes orange; a flooded
+  engine gulps, steams and clunks; an overloaded engine gives one last belch as it stalls.
+- Advancement declutter: the tab shows 54 advancements instead of 110. The rest keep their IDs and criteria, so
+  nothing that refers to them breaks, but no longer appear.
+
 ## Changelog for 1.0.1
 
 Casing that looks like casing, a few engine-behaviour fixes and livelier fire and air. No IDs, config keys or

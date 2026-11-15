@@ -7,6 +7,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.function.Supplier;
 
 import org.jetbrains.annotations.Nullable;
@@ -53,6 +54,20 @@ public final class CEAdvancements {
 	}
 
 	private static final List<Row> ROWS = new ArrayList<>();
+
+	/**
+	 * The advancements that stay in the tab: the ones that mark something a player would be proud of. Every other row keeps
+	 * its ID and its criteria, so nothing that refers to it breaks and a player's progress is kept, but it has no display,
+	 * so it never shows in the tab or as a toast. They are deleted for good in 2.0.
+	 */
+	private static final Set<String> SHOWN = Set.of("engineer", "crankshaft", "cylinder", "camshaft", "pipework", "starter",
+		"alive", "spark_plug", "alternator", "diesel", "gasoline", "ethanol", "ethanol_boost", "dual_fuel", "sump",
+		"four_cylinders", "eight_cylinders", "twelve_cylinders", "sixteen_cylinders", "vee_engine", "flat_engine",
+		"coupled_cranks", "valley_cam", "rotary_engine", "bank_builder", "flywheel", "warmed_up", "heat_exchanger",
+		"combined_cycle", "engine_display", "stampede", "stalled", "flooded", "redline", "heavy_duty", "steam_beater",
+		"steam_titan", "dyno_run", "turbocharger", "big_boost", "twin_turbo", "supercharger", "twincharged", "anti_lag",
+		"precision_engine", "dialed_in", "governed", "master_builder", "power_plant", "fine_tuner", "full_driveline",
+		"closed_loop", "service_record", "chief_engineer");
 
 	static {
 		// The root: everyone gets it, and it names the tab
@@ -410,10 +425,11 @@ public final class CEAdvancements {
 			boolean root = row.parent() == null;
 			Advancement.Builder builder = Advancement.Builder.advancement();
 			if (!root)
-				builder.parent(built.get(row.parent()));
-			builder.display(row.icon()
-				.get(), Component.translatable(titleKey(row.id())), Component.translatable(titleKey(row.id()) + ".desc"),
-				root ? BACKGROUND : null, row.type(), !root, !root, false);
+				builder.parent(built.get(shownParent(row)));
+			if (isShown(row.id()))
+				builder.display(row.icon()
+					.get(), Component.translatable(titleKey(row.id())), Component.translatable(titleKey(row.id()) + ".desc"),
+					root ? BACKGROUND : null, row.type(), !root, !root, false);
 			if (row.requires()
 				.isEmpty())
 				builder.addCriterion(row.id(), row.criterion()
@@ -424,6 +440,44 @@ public final class CEAdvancements {
 						.waitingFor(needed));
 			built.put(row.id(), builder.save(provider, CreateEngines.MOD_ID + ":" + row.id()));
 		}
+	}
+
+	/** Whether the advancement {@code id} is in the tab, or only kept under its ID. */
+	public static boolean isShown(String id) {
+		return SHOWN.contains(id);
+	}
+
+	/**
+	 * The advancement a row hangs from: its own parent if that is in the tab, else the nearest ancestor that is, so the
+	 * tab stays one connected tree however many rows are left out of it.
+	 */
+	private static @Nullable String shownParent(Row row) {
+		String parent = row.parent();
+		while (parent != null && !isShown(parent))
+			parent = parentOf(parent);
+		return parent;
+	}
+
+	private static @Nullable String parentOf(String id) {
+		for (Row row : ROWS)
+			if (row.id().equals(id))
+				return row.parent();
+		throw new IllegalStateException("No advancement " + id);
+	}
+
+	/** The IDs of every advancement the mod defines, in the tab or not, for tests. */
+	public static List<String> ids() {
+		return ROWS.stream()
+			.map(Row::id)
+			.toList();
+	}
+
+	/** The ID an advancement hangs from in the tab, or null for the root, for tests. */
+	public static @Nullable String tabParent(String id) {
+		for (Row row : ROWS)
+			if (row.id().equals(id))
+				return shownParent(row);
+		throw new IllegalStateException("No advancement " + id);
 	}
 
 	/** How many advancements the mod defines, for tests. */

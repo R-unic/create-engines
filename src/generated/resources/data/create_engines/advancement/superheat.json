@@ -8,19 +8,6 @@
       "trigger": "create_engines:event"
     }
   },
-  "display": {
-    "description": {
-      "translate": "advancement.create_engines.superheat.desc"
-    },
-    "frame": "goal",
-    "icon": {
-      "count": 1,
-      "id": "create_engines:heat_exchanger"
-    },
-    "title": {
-      "translate": "advancement.create_engines.superheat"
-    }
-  },
   "requirements": [
     [
       "superheat"

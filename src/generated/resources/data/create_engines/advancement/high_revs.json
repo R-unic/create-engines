@@ -8,18 +8,6 @@
       "trigger": "create_engines:event"
     }
   },
-  "display": {
-    "description": {
-      "translate": "advancement.create_engines.high_revs.desc"
-    },
-    "icon": {
-      "count": 1,
-      "id": "create_engines:camshaft"
-    },
-    "title": {
-      "translate": "advancement.create_engines.high_revs"
-    }
-  },
   "requirements": [
     [
       "high_revs"

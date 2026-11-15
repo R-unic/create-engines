@@ -131,6 +131,11 @@ public class CylinderBlockEntity extends SmartBlockEntity implements IHaveGoggle
 			CrankshaftBlockEntity crank = crankThrow();
 			EngineEffects.heat(level, worldPosition.relative(getBlockState().getValue(CylinderBlock.FACING)),
 				crank == null ? null : crank.engineSummary());
+			EngineEffects.rockDust(level, worldPosition, crank == null ? null : crank.engineSummary());
+			Vec3 mouth = crank == null || current.intakeInlets()
+				.isEmpty() ? null : EngineEffects.openMouth(level, current);
+			if (mouth != null)
+				crank.offerIntake(mouth);
 		}
 		if (current == null || current.lobe() == null
 			|| !(LoadedBlocks.blockEntity(level, current.lobe()) instanceof CamshaftBlockEntity lobe)) {

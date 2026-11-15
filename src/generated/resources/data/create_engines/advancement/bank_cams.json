@@ -8,18 +8,6 @@
       "trigger": "create_engines:event"
     }
   },
-  "display": {
-    "description": {
-      "translate": "advancement.create_engines.bank_cams.desc"
-    },
-    "icon": {
-      "count": 1,
-      "id": "create_engines:cam_lobe"
-    },
-    "title": {
-      "translate": "advancement.create_engines.bank_cams"
-    }
-  },
   "requirements": [
     [
       "bank_cams"

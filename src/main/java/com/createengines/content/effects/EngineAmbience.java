@@ -19,6 +19,7 @@ import net.minecraft.sounds.SoundSource;
 import net.minecraft.util.Mth;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.phys.Vec3;
 
 /**
  * What a whole engine sounds like besides its exhaust note, kept by its primary crankshaft on the client: the cough as it
@@ -37,16 +38,32 @@ public final class EngineAmbience {
 	private static final double TICKING_RANGE = 16;
 	private static final float CLATTER_LOUDEST = 0.2f;
 	private static final float SQUEAL_LOUDEST = 0.12f;
+	private static final float ROAR_LOUDEST = 0.35f;
+	/** Ticks after a cylinder last reported an open intake mouth before the roar is taken to have lost it. */
+	private static final int MOUTH_TICKS = 40;
 
 	private final CrankshaftBlockEntity crank;
 	private final Loop clatter = new Loop(false);
 	private final Loop squeal = new Loop(true);
+	private final Roar roar = new Roar();
 	private @Nullable EngineState last;
 	private long caughtAt = Long.MIN_VALUE / 2;
 	private long stalledAt = Long.MIN_VALUE / 2;
 
 	public EngineAmbience(CrankshaftBlockEntity crank) {
 		this.crank = crank;
+	}
+
+	/**
+	 * A cylinder of this engine reports an intake mouth open to the air at {@code mouth}. The roar is heard from the most
+	 * recent one, and goes quiet once none has been reported for a moment.
+	 */
+	public void offerIntake(Vec3 mouth) {
+		Level level = crank.getLevel();
+		if (level == null)
+			return;
+		roar.mouth = mouth;
+		roar.seenAt = level.getGameTime();
 	}
 
 	/** Whether the engine caught a moment ago, so its cylinders cough out what pooled in them while it cranked. */
@@ -92,6 +109,9 @@ public final class EngineAmbience {
 				MachineLoopSound.ensurePlaying(clatter, at, CESounds.ENGINE_CLATTER.get(), CLATTER_LOUDEST, clatter);
 			if (squeal.loopLevel() > 0.02f)
 				MachineLoopSound.ensurePlaying(squeal, at, CESounds.BEARING_SQUEAL.get(), SQUEAL_LOUDEST, squeal);
+			if (roar.mouth != null && roar.loopLevel() > 0.02f)
+				MachineLoopSound.ensurePlaying(roar, BlockPos.containing(roar.mouth), CESounds.INTAKE_ROAR.get(), ROAR_LOUDEST,
+					roar);
 		} else if (summary.cooling())
 			cool(level, at, random, summary.temperature());
 	}
@@ -126,6 +146,61 @@ public final class EngineAmbience {
 			return;
 		level.playLocalSound(at, sound, SoundSource.BLOCKS, loudness * volume, pitch, false);
 		LOGGER.debug("Engine at {} plays {}", at, sound.getLocation());
+	}
+
+	/**
+	 * The gulp of air at the intake mouth: one voice for the engine, swelling with speed, load and boost, and quickening
+	 * with the pulses of its cylinders. Heard from the mouth, not the block, and unaffected by a muffler.
+	 */
+	private final class Roar implements LoopSource {
+
+		private @Nullable Vec3 mouth;
+		private long seenAt = Long.MIN_VALUE / 2;
+
+		@Override
+		public boolean isRemoved() {
+			return crank.isRemoved();
+		}
+
+		@Override
+		public float loopLevel() {
+			EngineSummary summary = crank.summary();
+			Level level = crank.getLevel();
+			if (summary == null || level == null || mouth == null || level.getGameTime() - seenAt > MOUTH_TICKS
+				|| summary.state() == EngineState.STALLED || summary.state() == EngineState.INCOMPLETE
+				|| summary.state() == EngineState.BROKEN)
+				return 0;
+			float load = summary.availableTorque() > 0 ? Mth.clamp(summary.loadTorque() / summary.availableTorque(), 0, 1.3f) : 0;
+			float roar = MechanicalNoise.intakeRoarLevel(summary.rpm(), load, summary.boost());
+			// An engine that is only turned over, or coasts, pumps air without a pull on it
+			return summary.state() == EngineState.COASTING || summary.state() == EngineState.CRANKING ? roar * 0.4f : roar;
+		}
+
+		@Override
+		public float loopPitch() {
+			EngineSummary summary = crank.summary();
+			return summary == null ? 1 : MechanicalNoise.intakeRoarPitch(summary.rpm(), summary.cylinders());
+		}
+
+		@Override
+		public @Nullable Vec3 loopAt() {
+			return mouth;
+		}
+
+		@Override
+		public float loopSpinUp() {
+			return 0.15f;
+		}
+
+		@Override
+		public float loopSpinDown() {
+			return 0.15f;
+		}
+
+		@Override
+		public float loopVolume() {
+			return CEClientConfig.mechanicalVolume();
+		}
 	}
 
 	/** The valve gear's tick or the bearings' squeal, as loud and as high as the engine's figures say right now. */

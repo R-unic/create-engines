@@ -140,6 +140,15 @@ public class CrankshaftBlockEntity extends GeneratingKineticBlockEntity implemen
 			EngineEffects.crankcaseSmoke(level, at);
 	}
 
+	/** Client only: a cylinder of this engine has an intake mouth open to the air at {@code mouth}, where the roar is heard from. */
+	public void offerIntake(Vec3 mouth) {
+		if (ambience != null)
+			ambience.offerIntake(mouth);
+		else if (primaryPos != null && !primaryPos.equals(worldPosition) && level != null
+			&& LoadedBlocks.blockEntity(level, primaryPos) instanceof CrankshaftBlockEntity primary && primary.ambience != null)
+			primary.ambience.offerIntake(mouth);
+	}
+
 	/**
 	 * Client only: whether this crank's engine caught a moment ago, so its cylinders cough out what pooled in them
 	 * while it cranked.

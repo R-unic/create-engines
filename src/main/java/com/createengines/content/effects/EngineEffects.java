@@ -249,6 +249,25 @@ public final class EngineEffects {
 	}
 
 	/**
+	 * Where the air of the cylinder with {@code status} is drawn in: the front of one of its intake mouths that is open to
+	 * the air, or null if none is (every one capped, covered or underwater), in which case there is nothing to roar.
+	 */
+	public static @Nullable Vec3 openMouth(Level level, CylinderStatus status) {
+		if (CylinderFault.intakeShut(status.faults()))
+			return null;
+		for (BlockPos pos : status.intakeInlets()) {
+			BlockState state = level.getBlockState(pos);
+			if (state.getBlock() instanceof PortOpeningBlock && !PortOpeningBlock.isFlooded(level, pos, state)
+				&& PortOpeningBlock.isOpen(level, pos, state))
+				return Vec3.atCenterOf(pos)
+					.add(Vec3.atLowerCornerOf(state.getValue(PortOpeningBlock.FACING)
+						.getNormal())
+						.scale(MOUTH));
+		}
+		return null;
+	}
+
+	/**
 	 * An engine turning with an intake or an exhaust underwater: a stream of bubbles from one of the drowned mouths.
 	 * Meant to be called a few times a second for as long as the crank turns.
 	 */
@@ -292,6 +311,34 @@ public final class EngineEffects {
 		if (random.nextInt(6) == 0)
 			level.playLocalSound(from.x, from.y, from.z, SoundEvents.BUBBLE_COLUMN_BUBBLE_POP, SoundSource.BLOCKS,
 				0.3f * CEClientConfig.mechanicalVolume(), 0.8f + random.nextFloat() * 0.4f, false);
+	}
+
+	/**
+	 * A pinch of dust shaken loose from the top of a rough engine's block at {@code block}, falling off its edge. Meant to be
+	 * called a few times a second; a smooth engine sheds none.
+	 */
+	public static void rockDust(Level level, BlockPos block, @Nullable EngineSummary engine) {
+		if (engine == null || !CEClientConfig.particles() || !(engine.state() == EngineState.RUNNING
+			|| engine.state() == EngineState.OVERLOADED) || level.random.nextFloat() >= EngineRock.dustChance(engine.roughness()))
+			return;
+		RandomSource random = level.random;
+		// Off a face with air against it, picked from a random start: dust inside or behind other blocks is never seen
+		int start = random.nextInt(6);
+		for (int i = 0; i < 6; i++) {
+			Direction face = Direction.values()[(start + i) % 6];
+			if (!level.getBlockState(block.relative(face))
+				.isAir())
+				continue;
+			Vec3 normal = Vec3.atLowerCornerOf(face.getNormal());
+			Vec3 at = Vec3.atCenterOf(block)
+				.add(normal.scale(0.52))
+				.add(jitter(random, 0.8)
+					.multiply(1 - Math.abs(normal.x), 1 - Math.abs(normal.y), 1 - Math.abs(normal.z)));
+			// Grey-brown flecks that fall away from the block and thin out
+			level.addParticle(new GasParticleOptions(0.5f, 0.45f, 0.38f, 0.4f, 0.75f, -0.03f, 26), at.x, at.y, at.z,
+				normal.x * 0.015, normal.y * 0.015 - 0.01, normal.z * 0.015);
+			return;
+		}
 	}
 
 	/**

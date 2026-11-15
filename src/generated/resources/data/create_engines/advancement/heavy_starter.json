@@ -8,18 +8,6 @@
       "trigger": "create_engines:event"
     }
   },
-  "display": {
-    "description": {
-      "translate": "advancement.create_engines.heavy_starter.desc"
-    },
-    "icon": {
-      "count": 1,
-      "id": "create_engines:heavy_starter"
-    },
-    "title": {
-      "translate": "advancement.create_engines.heavy_starter"
-    }
-  },
   "requirements": [
     [
       "heavy_starter"

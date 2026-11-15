@@ -12,18 +12,6 @@
       "trigger": "minecraft:inventory_changed"
     }
   },
-  "display": {
-    "description": {
-      "translate": "advancement.create_engines.cylinder_head.desc"
-    },
-    "icon": {
-      "count": 1,
-      "id": "create_engines:cylinder_head"
-    },
-    "title": {
-      "translate": "advancement.create_engines.cylinder_head"
-    }
-  },
   "requirements": [
     [
       "cylinder_head"

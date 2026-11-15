@@ -1,5 +1,5 @@
 {
-  "parent": "create_engines:oil_exchange",
+  "parent": "create_engines:sump",
   "criteria": {
     "used_oil": {
       "conditions": {
@@ -10,18 +10,6 @@
         ]
       },
       "trigger": "minecraft:inventory_changed"
-    }
-  },
-  "display": {
-    "description": {
-      "translate": "advancement.create_engines.used_oil.desc"
-    },
-    "icon": {
-      "count": 1,
-      "id": "create_engines:used_oil_bucket"
-    },
-    "title": {
-      "translate": "advancement.create_engines.used_oil"
     }
   },
   "requirements": [

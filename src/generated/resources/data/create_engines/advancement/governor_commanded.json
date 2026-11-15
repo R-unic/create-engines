@@ -1,23 +1,11 @@
 {
-  "parent": "create_engines:governor",
+  "parent": "create_engines:crankshaft",
   "criteria": {
     "governor_commanded": {
       "conditions": {
         "event": "governor_commanded"
       },
       "trigger": "create_engines:event"
-    }
-  },
-  "display": {
-    "description": {
-      "translate": "advancement.create_engines.governor_commanded.desc"
-    },
-    "icon": {
-      "count": 1,
-      "id": "create_engines:governor"
-    },
-    "title": {
-      "translate": "advancement.create_engines.governor_commanded"
     }
   },
   "requirements": [

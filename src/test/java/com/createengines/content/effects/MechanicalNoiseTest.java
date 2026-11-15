@@ -90,4 +90,31 @@ class MechanicalNoiseTest {
 			}
 		}
 	}
+
+	@Test
+	void theIntakeIsSilentWhenStoppedAndNeverConstantOtherwise() {
+		assertEquals(0, MechanicalNoise.intakeRoarLevel(0, 1, 2), 0);
+		float idle = MechanicalNoise.intakeRoarLevel(10, 0, 0);
+		float cruise = MechanicalNoise.intakeRoarLevel(MechanicalNoise.ROAR_FULL_RPM, 0.3f, 0);
+		float pull = MechanicalNoise.intakeRoarLevel(MechanicalNoise.ROAR_FULL_RPM, 1, 0);
+		assertTrue(idle > 0 && idle < 0.05f, "a murmur at idle");
+		assertTrue(idle < cruise && cruise < pull, "swells with speed and with how hard the engine pulls");
+	}
+
+	@Test
+	void boostMakesTheIntakeLouderAndNothingMakesItLouderThanFull() {
+		float rpm = MechanicalNoise.ROAR_FULL_RPM;
+		assertTrue(MechanicalNoise.intakeRoarLevel(rpm, 0.8f, 1) > MechanicalNoise.intakeRoarLevel(rpm, 0.8f, 0));
+		assertEquals(1, MechanicalNoise.intakeRoarLevel(1000, 5, 9), 1e-6);
+		assertEquals(MechanicalNoise.intakeRoarLevel(80, 0.5f, 0.5f), MechanicalNoise.intakeRoarLevel(-80, 0.5f, 0.5f), 1e-6);
+	}
+
+	@Test
+	void theGulpsComeAtTheRateTheCylindersTakeAir() {
+		// One gulp per cylinder per two turns: 4 cylinders at 120 rpm is 4 gulps a second
+		assertEquals(0.5f, MechanicalNoise.intakeRoarPitch(120, 4), 1e-6);
+		assertEquals(1f, MechanicalNoise.intakeRoarPitch(240, 4), 1e-6);
+		assertTrue(MechanicalNoise.intakeRoarPitch(240, 8) > MechanicalNoise.intakeRoarPitch(240, 4));
+		assertEquals(2f, MechanicalNoise.intakeRoarPitch(256, 16), 0, "kept within what the sound allows");
+	}
 }

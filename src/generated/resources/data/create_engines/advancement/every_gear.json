@@ -1,24 +1,11 @@
 {
-  "parent": "create_engines:transmission",
+  "parent": "create_engines:crankshaft",
   "criteria": {
     "every_gear": {
       "conditions": {
         "event": "every_gear"
       },
       "trigger": "create_engines:event"
-    }
-  },
-  "display": {
-    "description": {
-      "translate": "advancement.create_engines.every_gear.desc"
-    },
-    "frame": "goal",
-    "icon": {
-      "count": 1,
-      "id": "create_engines:transmission"
-    },
-    "title": {
-      "translate": "advancement.create_engines.every_gear"
     }
   },
   "requirements": [

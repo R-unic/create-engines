@@ -14,6 +14,7 @@ import com.createengines.content.cylinder.CylinderBlockEntity;
 import com.createengines.content.head.CylinderHeadBlock;
 import com.createengines.content.head.CylinderHeadBlockEntity;
 import com.createengines.content.rotor.RotorHousingBlockEntity;
+import com.createengines.content.effects.EngineRock;
 import com.createengines.engine.CrankGeometry;
 import com.createengines.engine.sim.CamProfile;
 import com.createengines.engine.sim.CylinderModel;
@@ -189,6 +190,23 @@ public final class EnginePoses {
 		Matrix4f rod = new Matrix4f().translate(pinPos)
 			.rotate(new Quaternionf().rotationTo(UP, rodDirection))
 			.translate(-0.5f, 0, -0.5f);
+		// A rough engine's pistons slap about across the bore, by how rough its rating says it is
+		if (connected && crank.engineSummary() != null) {
+			float[] stray = EngineRock.stray(crank.engineSummary()
+				.roughness(), crankAngle(crank, renderTime), (int) cylinder.getBlockPos()
+					.asLong());
+			if (stray[0] != 0 || stray[1] != 0) {
+				Vector3f first = new Vector3f(bore).cross(Math.abs(bore.y) > 0.5f ? new Vector3f(1, 0, 0) : UP)
+					.normalize();
+				Vector3f second = new Vector3f(bore).cross(first);
+				Vector3f aside = first.mul(stray[0])
+					.add(second.mul(stray[1]));
+				piston = new Matrix4f().translate(aside)
+					.mul(piston);
+				rod = new Matrix4f().translate(aside)
+					.mul(rod);
+			}
+		}
 		return new CylinderPose(piston, rod, state.getValue(CylinderBlock.HAS_PISTON), connected);
 	}
 

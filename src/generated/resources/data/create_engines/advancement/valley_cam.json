@@ -1,5 +1,5 @@
 {
-  "parent": "create_engines:pushrod_cam",
+  "parent": "create_engines:camshaft",
   "criteria": {
     "valley_cam": {
       "conditions": {

@@ -1,23 +1,11 @@
 {
-  "parent": "create_engines:used_oil",
+  "parent": "create_engines:sump",
   "criteria": {
     "waste_oil": {
       "conditions": {
         "event": "waste_oil_burned"
       },
       "trigger": "create_engines:event"
-    }
-  },
-  "display": {
-    "description": {
-      "translate": "advancement.create_engines.waste_oil.desc"
-    },
-    "icon": {
-      "count": 1,
-      "id": "create_engines:used_oil_bucket"
-    },
-    "title": {
-      "translate": "advancement.create_engines.waste_oil"
     }
   },
   "requirements": [

@@ -1,5 +1,5 @@
 {
-  "parent": "create_engines:high_revs",
+  "parent": "create_engines:alive",
   "criteria": {
     "redline": {
       "conditions": {

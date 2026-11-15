@@ -8,18 +8,6 @@
       "trigger": "create_engines:event"
     }
   },
-  "display": {
-    "description": {
-      "translate": "advancement.create_engines.variable_drive.desc"
-    },
-    "icon": {
-      "count": 1,
-      "id": "create_engines:variable_supercharger"
-    },
-    "title": {
-      "translate": "advancement.create_engines.variable_drive"
-    }
-  },
   "requirements": [
     [
       "variable_drive"

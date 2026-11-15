@@ -1,5 +1,5 @@
 {
-  "parent": "create_engines:timing_tool",
+  "parent": "create_engines:camshaft",
   "criteria": {
     "dialed_in": {
       "conditions": {

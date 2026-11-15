@@ -23,6 +23,7 @@ Sounds:
   metal_tick1..3     hot metal ticking as it cools: a small bright tink
   engine_clatter     a seamless loop of valve gear: tappets ticking over the hum of the gears; pitch follows the crank
   bearing_squeal     a seamless loop of bearings running dry: a wavering shriek over a stick-slip rasp
+  intake_roar        a seamless loop of air gulped through an intake: a hollow rush swelling in eight pulses a second
 """
 import ctypes
 import glob
@@ -386,6 +387,28 @@ def squeal_loop():
     return finish(np.tanh(1.2 * mix), 0.8)
 
 
+def intake_roar_loop():
+    """One second of air being drawn into an intake that repeats seamlessly: a hollow rush with a low body, swelling
+    eight times a second as the cylinders each take a gulp, no two gulps quite alike. The game bends the pitch with the
+    engine, which speeds the pulses up with it. Every part is a whole number of cycles long."""
+    rng = np.random.default_rng(41)
+    n = SR
+    t = np.arange(n) / SR
+    pulses = 8
+    index = np.floor(t * pulses).astype(int) % pulses
+    levels = rng.uniform(0.8, 1.0, pulses)
+    swell = (0.5 - 0.5 * np.cos(2 * np.pi * pulses * t)) ** 1.4
+    gulp = (0.3 + 0.7 * swell) * levels[index]
+    rush = periodic_noise(rng, n, lambda f: np.where((f > 160) & (f < 1700), 1 / np.sqrt(np.maximum(f, 1)), 0))
+    rush = rush / np.max(np.abs(rush)) * gulp
+    body = periodic_noise(rng, n, lambda f: np.where((f > 55) & (f < 230), 1.0, 0.0))
+    body = body / np.max(np.abs(body)) * (0.6 + 0.4 * swell)
+    hiss = periodic_noise(rng, n, lambda f: np.where((f > 2200) & (f < 5500), 1 / np.maximum(f, 1), 0))
+    hiss = hiss / np.max(np.abs(hiss)) * swell ** 2
+    mix = 0.7 * rush + 0.4 * body + 0.12 * hiss
+    return finish(np.tanh(1.2 * mix), 0.8)
+
+
 SOUNDS = {
     "cylinder_fire1": lambda: bang(11, 1.0),
     "cylinder_fire2": lambda: bang(23, 0.93),
@@ -404,6 +427,7 @@ SOUNDS = {
     "metal_tick3": lambda: metal_tick(73, 1810),
     "engine_clatter": clatter_loop,
     "bearing_squeal": squeal_loop,
+    "intake_roar": intake_roar_loop,
 }
 
 

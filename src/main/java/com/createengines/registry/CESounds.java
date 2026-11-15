@@ -43,6 +43,8 @@ public final class CESounds {
 	public static final DeferredHolder<SoundEvent, SoundEvent> ENGINE_CLATTER = register("engine_clatter");
 	/** Bearings running dry: a seamless loop, as loud as the engine is short of oil. */
 	public static final DeferredHolder<SoundEvent, SoundEvent> BEARING_SQUEAL = register("bearing_squeal");
+	/** Air gulped through an intake mouth: a seamless loop that swells with each intake pulse, heard from the mouth. */
+	public static final DeferredHolder<SoundEvent, SoundEvent> INTAKE_ROAR = register("intake_roar");
 
 	private CESounds() {
 	}

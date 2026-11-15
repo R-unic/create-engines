@@ -1,23 +1,11 @@
 {
-  "parent": "create_engines:transmission",
+  "parent": "create_engines:crankshaft",
   "criteria": {
     "reverse": {
       "conditions": {
         "event": "reverse"
       },
       "trigger": "create_engines:event"
-    }
-  },
-  "display": {
-    "description": {
-      "translate": "advancement.create_engines.reverse.desc"
-    },
-    "icon": {
-      "count": 1,
-      "id": "create_engines:transmission"
-    },
-    "title": {
-      "translate": "advancement.create_engines.reverse"
     }
   },
   "requirements": [

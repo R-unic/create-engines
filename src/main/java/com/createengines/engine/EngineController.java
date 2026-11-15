@@ -1097,7 +1097,18 @@ public final class EngineController {
 				.temperature(),
 			(float) sim.thermal()
 				.coolantRate(),
-			pilotLit(), filtered, (float) Torsion.scaled(flexLoss), longestLine, report.health(), report.cause(), muffling());
+			pilotLit(), filtered, (float) Torsion.scaled(flexLoss), longestLine, report.health(), report.cause(), muffling(),
+				inductionBoost());
+	}
+
+	/** The hardest any turbo or blower is pushing, for the roar at the intake. */
+	private float inductionBoost() {
+		double boost = 0;
+		for (Turbocharger turbo : turbos)
+			boost = Math.max(boost, turbo.boost());
+		for (Supercharger blower : blowers)
+			boost = Math.max(boost, blower.boost());
+		return (float) boost;
 	}
 
 	/**

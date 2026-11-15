@@ -74,14 +74,15 @@ The release that makes a running engine worth standing next to. Nothing here cha
 every item is sound, particles or motion on screen, and the simulation's numbers do not move.
 
 **Spectacle**
-- **Engines that rock.** The roughness rating already exists as a number. Show it: a V-twin shudders on its mounts, a
-  straight six sits still, a dead cylinder gives the block a limp. Fitting a flywheel visibly calms it.
+- **Engines that rock (built, lighter than first written).** The roughness rating already exists as a number. Show it on
+  the parts that already move: pistons and rods slap about in their bores by the rating, a pinch of dust shakes off the
+  block, a flywheel calms both. The block itself does not shake.
 - **Stack flame.** The crack of flame a rich engine already makes grows into a steady lick from an open exhaust at
   full load.
 - **Pushrods.** A cam that sits beside the block, or in the valley of a V, shows its pushrods: one from each lobe up
   to a rocker on the head, rising and falling with the valve. A valley cam visibly works both banks from one shaft.
 - **Smoke rings.** A slow single puffs rings from its stack at idle.
-- **Intake roar.** A sound at the intake mouths: the gulp of air being drawn in. It is a sound only, so no rating
+- **Intake roar (built, not yet heard in a client).** A sound at the intake mouths: the gulp of air being drawn in. It is a sound only, so no rating
   or airflow changes. It is **never constant**. It swells with throttle and boost and follows the engine's own
   pulses, so it is loudest in a hard pull and under a turbo or blower. It fades at idle and is silent when the
   engine is stopped or has no open intake mouth. It is positional, heard from the mouth and not from the block, and it

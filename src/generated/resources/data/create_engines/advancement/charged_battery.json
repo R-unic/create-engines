@@ -8,18 +8,6 @@
       "trigger": "create_engines:event"
     }
   },
-  "display": {
-    "description": {
-      "translate": "advancement.create_engines.charged_battery.desc"
-    },
-    "icon": {
-      "count": 1,
-      "id": "create_engines:battery"
-    },
-    "title": {
-      "translate": "advancement.create_engines.charged_battery"
-    }
-  },
   "requirements": [
     [
       "charged_battery"

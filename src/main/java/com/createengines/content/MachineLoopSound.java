@@ -11,6 +11,7 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.util.Mth;
+import net.minecraft.world.phys.Vec3;
 
 /**
  * A seamless loop that follows a machine: one instance per source, faded in when the machine starts working, bent in
@@ -90,6 +91,12 @@ public final class MachineLoopSound extends AbstractTickableSoundInstance {
 		level += (wanted - level) * (wanted > level ? source.loopSpinUp() : source.loopSpinDown());
 		float wantedPitch = source.loopPitch();
 		currentPitch += (wantedPitch - currentPitch) * (wantedPitch > currentPitch ? source.loopSpinUp() : source.loopSpinDown());
+		Vec3 at = source.loopAt();
+		if (at != null) {
+			x = at.x;
+			y = at.y;
+			z = at.z;
+		}
 		volume = loudest * source.loopVolume() * level * fade;
 		pitch = Mth.clamp(currentPitch, 0.5f, 2f);
 	}

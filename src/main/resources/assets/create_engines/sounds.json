@@ -112,6 +112,14 @@
       }
     ]
   },
+  "intake_roar": {
+    "sounds": [
+      {
+        "name": "create_engines:intake_roar",
+        "attenuation_distance": 16
+      }
+    ]
+  },
   "bearing_squeal": {
     "sounds": [
       {

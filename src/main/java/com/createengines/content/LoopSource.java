@@ -1,6 +1,10 @@
 package com.createengines.content;
 
+import org.jetbrains.annotations.Nullable;
+
 import com.createengines.config.CEClientConfig;
+
+import net.minecraft.world.phys.Vec3;
 
 /**
  * Something that hums while it works, for {@link MachineLoopSound}: a block entity that says how loud and how high its
@@ -37,6 +41,14 @@ public interface LoopSource {
 	 */
 	default boolean loopCoasts() {
 		return false;
+	}
+
+	/**
+	 * Where the loop is heard from, when that is not where the machine sits (an engine's intake mouth, not its crank), or
+	 * null to keep it where it started. Read every tick.
+	 */
+	default @Nullable Vec3 loopAt() {
+		return null;
 	}
 
 	/** The player's volume setting for this kind of sound, read as the loop plays; at 0 the loop is not started. */

@@ -1,5 +1,5 @@
 {
-  "parent": "create_engines:precision_injector",
+  "parent": "create_engines:cylinder",
   "criteria": {
     "precision_engine": {
       "conditions": {

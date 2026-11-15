@@ -1,23 +1,11 @@
 {
-  "parent": "create_engines:precision_cylinder",
+  "parent": "create_engines:cylinder",
   "criteria": {
     "forged_piston": {
       "conditions": {
         "event": "precision_piston"
       },
       "trigger": "create_engines:event"
-    }
-  },
-  "display": {
-    "description": {
-      "translate": "advancement.create_engines.forged_piston.desc"
-    },
-    "icon": {
-      "count": 1,
-      "id": "create_engines:forged_piston"
-    },
-    "title": {
-      "translate": "advancement.create_engines.forged_piston"
     }
   },
   "requirements": [

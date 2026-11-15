@@ -8,18 +8,6 @@
       "trigger": "create_engines:event"
     }
   },
-  "display": {
-    "description": {
-      "translate": "advancement.create_engines.stall_recorded.desc"
-    },
-    "icon": {
-      "count": 1,
-      "id": "create_engines:black_box"
-    },
-    "title": {
-      "translate": "advancement.create_engines.stall_recorded"
-    }
-  },
   "requirements": [
     [
       "stall_recorded"

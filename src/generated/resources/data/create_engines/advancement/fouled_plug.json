@@ -8,18 +8,6 @@
       "trigger": "create_engines:event"
     }
   },
-  "display": {
-    "description": {
-      "translate": "advancement.create_engines.fouled_plug.desc"
-    },
-    "icon": {
-      "count": 1,
-      "id": "create_engines:spark_plug"
-    },
-    "title": {
-      "translate": "advancement.create_engines.fouled_plug"
-    }
-  },
   "requirements": [
     [
       "fouled_plug"

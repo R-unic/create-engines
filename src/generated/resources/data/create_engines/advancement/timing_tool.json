@@ -8,18 +8,6 @@
       "trigger": "create_engines:event"
     }
   },
-  "display": {
-    "description": {
-      "translate": "advancement.create_engines.timing_tool.desc"
-    },
-    "icon": {
-      "count": 1,
-      "id": "create_engines:timing_tool"
-    },
-    "title": {
-      "translate": "advancement.create_engines.timing_tool"
-    }
-  },
   "requirements": [
     [
       "timing_tool"

@@ -41,6 +41,7 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.util.RandomSource;
+import net.minecraft.world.phys.Vec3;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
 import net.neoforged.neoforge.fluids.capability.IFluidHandler;
@@ -241,6 +242,12 @@ public class RotorHousingBlockEntity extends CrankshaftBlockEntity implements Ga
 			if (chamber == 0 && CylinderFault.underwater(current.faults()) && (level.getGameTime() & 3) == 0) {
 				EngineEffects.flooded(level, current);
 				EngineEffects.submerged(level, worldPosition);
+			}
+			if (chamber == 0 && (level.getGameTime() & 3) == 0 && !current.intakeInlets()
+				.isEmpty()) {
+				Vec3 mouth = EngineEffects.openMouth(level, current);
+				if (mouth != null)
+					offerIntake(mouth);
 			}
 			if (current.result() == CycleResult.FIRED && crosses(previous, travelled, FIRING_CYCLE_ANGLE))
 				ignite(chamber);
