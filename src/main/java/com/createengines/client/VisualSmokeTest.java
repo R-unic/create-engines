@@ -414,14 +414,12 @@ public final class VisualSmokeTest {
 		goggles("muffled_crank", start + 205, 1.5, 2.0, 0.4, 0, 28);
 		goggles("sump", start + 235, 3.5, 2.0, 0.4, 0, 28);
 		// The pages that are new, and those that gained steps
-		ponder("muffler", start + 300, CEBlocks.MUFFLER::asStack, 100, 250, 400, 560);
-		ponder("engine_casing", start + 1000, CEBlocks.ENGINE_CASING::asStack, 100, 260, 400);
-		// The rotor housing's second page; its first is the rotary engine
-		ponderScene("engine_readouts", start + 1500, CEBlocks.ROTOR_HOUSING::asStack, 1, 100, 250, 400, 560);
-		ponder("heat_exchanger", start + 2300, CEBlocks.HEAT_EXCHANGER::asStack, 100, 600, 800, 880);
-		ponder("sump", start + 3500, CEBlocks.SUMP::asStack, 1300, 1450);
-		ponder("bank_builder", start + 5200, CEItems.BANK_BUILDER::asStack, 200, 520);
-		STEPS.add(new Step(start + 6000, () -> Minecraft.getInstance()
+		ponder("refinery", start + 300, CEBlocks.REBOILER::asStack, 80, 200, 380, 560, 700, 860);
+		// The reboiler's second page; its first is the column itself
+		ponderScene("refinery_lean", start + 1300, CEBlocks.REBOILER::asStack, 1, 100, 250, 400, 560);
+		ponder("soot_trap", start + 2100, CEBlocks.SOOT_TRAP::asStack, 100, 250, 400, 580);
+		ponder("jerry_can", start + 2900, CEItems.JERRY_CAN::asStack, 100, 250, 400);
+		STEPS.add(new Step(start + 3700, () -> Minecraft.getInstance()
 			.stop()));
 	}
 

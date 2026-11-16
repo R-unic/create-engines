@@ -32,6 +32,10 @@ import net.minecraft.world.level.block.state.properties.EnumProperty;
 public class ColumnSectionBlock extends Block implements IWrenchable {
 
 	public static final BooleanProperty ACTIVE = BooleanProperty.create("active");
+	/** Which {@link com.createengines.engine.sim.WindowTint} the lit windows glow, by ordinal. */
+	public static final net.minecraft.world.level.block.state.properties.IntegerProperty TINT =
+		net.minecraft.world.level.block.state.properties.IntegerProperty.create("tint", 0,
+			com.createengines.engine.sim.WindowTint.values().length - 1);
 	public static final EnumProperty<Lean> LEAN_UP = EnumProperty.create("lean_up", Lean.class);
 	public static final EnumProperty<Lean> LEAN_DOWN = EnumProperty.create("lean_down", Lean.class);
 
@@ -65,13 +69,14 @@ public class ColumnSectionBlock extends Block implements IWrenchable {
 	public ColumnSectionBlock(Properties properties) {
 		super(properties);
 		registerDefaultState(defaultBlockState().setValue(ACTIVE, false)
+			.setValue(TINT, 0)
 			.setValue(LEAN_UP, Lean.NONE)
 			.setValue(LEAN_DOWN, Lean.NONE));
 	}
 
 	@Override
 	protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {
-		builder.add(ACTIVE, LEAN_UP, LEAN_DOWN);
+		builder.add(ACTIVE, TINT, LEAN_UP, LEAN_DOWN);
 	}
 
 	private static boolean isSection(LevelAccessor level, BlockPos pos) {

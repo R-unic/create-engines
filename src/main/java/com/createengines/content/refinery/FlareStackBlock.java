@@ -78,6 +78,10 @@ public class FlareStackBlock extends Block implements IWrenchable {
 		if (random.nextInt(2) == 0)
 			level.addParticle(ParticleTypes.SMALL_FLAME, pos.getX() + 0.5 + (random.nextDouble() - 0.5) * 0.15,
 				pos.getY() + 1.0, pos.getZ() + 0.5 + (random.nextDouble() - 0.5) * 0.15, 0, 0.03, 0);
+		if (random.nextInt(20) == 0)
+			level.playLocalSound(pos.getX() + 0.5, pos.getY() + 1.0, pos.getZ() + 0.5,
+				com.createengines.registry.CESounds.FLARE_WHOOSH.get(), net.minecraft.sounds.SoundSource.BLOCKS,
+				0.3f + random.nextFloat() * 0.15f, 0.9f + random.nextFloat() * 0.2f, false);
 		if (random.nextInt(6) == 0)
 			level.addParticle(ParticleTypes.SMOKE, pos.getX() + 0.5, pos.getY() + 1.2, pos.getZ() + 0.5, 0, 0.05, 0);
 	}

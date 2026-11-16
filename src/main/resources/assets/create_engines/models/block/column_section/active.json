@@ -3,7 +3,7 @@
   "textures": {
     "plate": "create_engines:block/rivet_plate",
     "band": "create_engines:block/steel",
-    "glass": "create_engines:block/heat_seething",
+    "glass": "create_engines:block/column_glow",
     "particle": "create_engines:block/rivet_plate"
   },
   "elements": [
@@ -116,10 +116,12 @@
       ],
       "faces": {
         "north": {
-          "texture": "#glass"
+          "texture": "#glass",
+          "tintindex": 0
         },
         "south": {
-          "texture": "#glass"
+          "texture": "#glass",
+          "tintindex": 0
         },
         "east": {
           "texture": "#glass",
@@ -128,7 +130,8 @@
             5,
             0.4,
             11
-          ]
+          ],
+          "tintindex": 0
         },
         "west": {
           "texture": "#glass",
@@ -137,7 +140,8 @@
             5,
             16.0,
             11
-          ]
+          ],
+          "tintindex": 0
         },
         "up": {
           "texture": "#glass",
@@ -146,7 +150,8 @@
             15.6,
             12,
             16.0
-          ]
+          ],
+          "tintindex": 0
         },
         "down": {
           "texture": "#glass",
@@ -155,7 +160,8 @@
             0,
             12,
             0.4
-          ]
+          ],
+          "tintindex": 0
         }
       }
     },
@@ -172,10 +178,12 @@
       ],
       "faces": {
         "north": {
-          "texture": "#glass"
+          "texture": "#glass",
+          "tintindex": 0
         },
         "south": {
-          "texture": "#glass"
+          "texture": "#glass",
+          "tintindex": 0
         },
         "east": {
           "texture": "#glass",
@@ -184,7 +192,8 @@
             5,
             16.0,
             11
-          ]
+          ],
+          "tintindex": 0
         },
         "west": {
           "texture": "#glass",
@@ -193,7 +202,8 @@
             5,
             0.4,
             11
-          ]
+          ],
+          "tintindex": 0
         },
         "up": {
           "texture": "#glass",
@@ -202,7 +212,8 @@
             0,
             12,
             0.4
-          ]
+          ],
+          "tintindex": 0
         },
         "down": {
           "texture": "#glass",
@@ -211,7 +222,8 @@
             15.6,
             12,
             16.0
-          ]
+          ],
+          "tintindex": 0
         }
       }
     },
@@ -234,7 +246,8 @@
             5,
             0.4,
             11
-          ]
+          ],
+          "tintindex": 0
         },
         "south": {
           "texture": "#glass",
@@ -243,13 +256,16 @@
             5,
             16.0,
             11
-          ]
+          ],
+          "tintindex": 0
         },
         "east": {
-          "texture": "#glass"
+          "texture": "#glass",
+          "tintindex": 0
         },
         "west": {
-          "texture": "#glass"
+          "texture": "#glass",
+          "tintindex": 0
         },
         "up": {
           "texture": "#glass",
@@ -258,7 +274,8 @@
             4,
             16.0,
             12
-          ]
+          ],
+          "tintindex": 0
         },
         "down": {
           "texture": "#glass",
@@ -267,7 +284,8 @@
             4,
             16.0,
             12
-          ]
+          ],
+          "tintindex": 0
         }
       }
     },
@@ -290,7 +308,8 @@
             5,
             16.0,
             11
-          ]
+          ],
+          "tintindex": 0
         },
         "south": {
           "texture": "#glass",
@@ -299,13 +318,16 @@
             5,
             0.4,
             11
-          ]
+          ],
+          "tintindex": 0
         },
         "east": {
-          "texture": "#glass"
+          "texture": "#glass",
+          "tintindex": 0
         },
         "west": {
-          "texture": "#glass"
+          "texture": "#glass",
+          "tintindex": 0
         },
         "up": {
           "texture": "#glass",
@@ -314,7 +336,8 @@
             4,
             0.4,
             12
-          ]
+          ],
+          "tintindex": 0
         },
         "down": {
           "texture": "#glass",
@@ -323,7 +346,8 @@
             4,
             0.4,
             12
-          ]
+          ],
+          "tintindex": 0
         }
       }
     },

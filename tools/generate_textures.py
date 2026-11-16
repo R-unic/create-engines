@@ -212,6 +212,18 @@ def screen():
     return rimmed(SCREEN, inside, outer=(1, 0, 0), inner=(-3, -3, -4, -4))
 
 
+GLOW_GLASS = ramp("9a9a9a", "b0b0b0", "c4c4c4", "d6d6d6", "e6e6e6", "f4f4f4", "ffffff")
+
+
+def column_glow():
+    """Sight-window glass that glows: pale and nearly white, because the game tints it to the colour of the fluid inside."""
+
+    def inside(x, y):
+        return 4.5 + 1.2 * math.sin((x - y) * 0.9) + (hashed(x, y, 3) - 0.5) * 0.8 - (x + y) * 0.04
+
+    return rimmed(GLOW_GLASS, inside, outer=(1, 0, 0), inner=(-2, -2, -3, -3))
+
+
 def heat_wrap():
     """Fibreglass exhaust wrap: broad overlapping turns running across the tile, each dark along one edge."""
     rows = []
@@ -513,7 +525,7 @@ def main():
         write_png("particle/glow_%d" % index, glow(17 + 11 * index))
     for name, painter in (("brass", brass), ("copper", copper), ("copper_panel", copper_panel), ("steel", steel),
                           ("cast_iron", cast_iron), ("black_oxide", black_oxide), ("rivet_plate", rivet_plate),
-                          ("enamel_red", enamel_red), ("ceramic", ceramic), ("screen", screen), ("heat_wrap", heat_wrap),
+                          ("enamel_red", enamel_red), ("ceramic", ceramic), ("screen", screen), ("column_glow", column_glow), ("heat_wrap", heat_wrap),
                           ("grille", grille)):
         write_png("block/" + name, painter())
     fluid("thin_still", thin_still, 16, 32, 2, THIN_LEVELS)

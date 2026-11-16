@@ -99,6 +99,14 @@ public class CEPonderPlugin implements PonderPlugin {
 			.addStoryBoard("heat_exchanger", EngineScenes::heatExchanger);
 		scenes.forComponents(CEBlocks.HEAT_EXCHANGER)
 			.addStoryBoard("fuels", EngineScenes::fuels);
+		scenes.forComponents(CEBlocks.REBOILER, CEBlocks.COLUMN_SECTION, CEBlocks.CONDENSER, CEBlocks.FLARE_STACK)
+			.addStoryBoard("refinery", RefineryScenes::refinery);
+		scenes.forComponents(CEBlocks.REBOILER, CEBlocks.COLUMN_SECTION, CEBlocks.CONDENSER)
+			.addStoryBoard("refinery_lean", RefineryScenes::refineryLean);
+		scenes.forComponents(CEBlocks.SOOT_TRAP, CEItems.SOOT)
+			.addStoryBoard("soot_trap", RefineryScenes::sootTrap);
+		scenes.forComponents(CEItems.JERRY_CAN)
+			.addStoryBoard("jerry_can", RefineryScenes::jerryCan);
 		for (String fuel : new String[] {"plant_oil", "diesel", "gasoline", "sugar_mash", "ethanol", "glycerin", "used_oil", "coolant"})
 			helper.forComponents(CreateEngines.asResource(fuel + "_bucket"))
 				.addStoryBoard("fuels", EngineScenes::fuels);

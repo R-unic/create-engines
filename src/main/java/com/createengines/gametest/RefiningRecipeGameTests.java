@@ -60,6 +60,20 @@ public class RefiningRecipeGameTests {
 	}
 
 	@GameTest(template = "empty")
+	public static void makesTellsWhichFluidsAColumnProduces(GameTestHelper helper) {
+		for (Object made : new Object[] {CEFluids.DIESEL.getSource(), CEFluids.GASOLINE.getSource(),
+			CEFluids.ETHANOL.getSource()})
+			if (!RefiningRecipe.makes(helper.getLevel(), of(made, 1)))
+				helper.fail("a column should make " + made);
+		for (Object not : new Object[] {CEFluids.PLANT_OIL.getSource(), CEFluids.ENGINE_OIL.getSource()})
+			if (RefiningRecipe.makes(helper.getLevel(), of(not, 1)))
+				helper.fail("no column route makes " + not);
+		if (RefiningRecipe.makes(helper.getLevel(), FluidStack.EMPTY))
+			helper.fail("nothing is not made by a column");
+		helper.succeed();
+	}
+
+	@GameTest(template = "empty")
 	public static void theRecipeFilesGiveTheSameNumbersTheSimulationRuns(GameTestHelper helper) {
 		RefiningRoute diesel = pick(helper, CEFluids.PLANT_OIL.getSource(), Heat.HEATED).value().route();
 		if (diesel.feedMb() != 1000 || diesel.productMb() != 1100 || diesel.catalystFeedMb() != 1000

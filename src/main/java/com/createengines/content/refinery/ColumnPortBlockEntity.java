@@ -11,6 +11,7 @@ import com.createengines.engine.sim.ColumnShape;
 import com.createengines.engine.sim.ColumnShape.Fault;
 import com.createengines.engine.sim.ColumnShape.Part;
 import com.createengines.engine.sim.Heat;
+import com.createengines.engine.sim.WindowTint;
 import com.createengines.engine.sim.RefiningColumn;
 import com.createengines.engine.sim.RefiningColumn.Limit;
 import com.createengines.engine.sim.RefiningRoute;
@@ -143,6 +144,28 @@ public class ColumnPortBlockEntity extends SmartBlockEntity implements IHaveGogg
 			? other : null;
 	}
 
+	/** What a comparator reads here: the column's feed level on a Reboiler, its product level on a Condenser, 0 outside a column. */
+	public int comparatorSignal() {
+		ColumnPortBlockEntity controller = controller();
+		if (controller == null)
+			return 0;
+		SmartFluidTank tank = part() == Part.REBOILER ? controller.feedTank() : controller.productTank();
+		return com.createengines.engine.sim.TankSignal.of(tank.getFluidAmount(), tank.getCapacity());
+	}
+
+	/** Tells comparators beside the column's Reboilers and Condensers that a level moved. */
+	private void notifyComparators() {
+		for (int layer : new int[] {0, shape.height() + 1}) {
+			int y = shape.y() + layer;
+			for (int x = shape.layerX(layer); x < shape.layerX(layer) + shape.width(); x++)
+				for (int z = shape.layerZ(layer); z < shape.layerZ(layer) + shape.width(); z++) {
+					BlockPos at = new BlockPos(x, y, z);
+					if (level.isLoaded(at))
+						level.updateNeighbourForOutputSignal(at, getBlockState().getBlock());
+				}
+		}
+	}
+
 	public Limit limit() {
 		return limit;
 	}
@@ -258,10 +281,22 @@ public class ColumnPortBlockEntity extends SmartBlockEntity implements IHaveGogg
 			limit = now;
 			dirty = true;
 		}
+		int signal = com.createengines.engine.sim.TankSignal.of(feedTank().getFluidAmount(), feedTank().getCapacity()) * 16
+			+ com.createengines.engine.sim.TankSignal.of(productTank().getFluidAmount(), productTank().getCapacity());
+		if (signal != lastSignal) {
+			lastSignal = signal;
+			notifyComparators();
+		}
 		boolean working = limit == Limit.NONE && rate > 0;
-		if (working != lit) {
+		WindowTint feedTint = working ? RefiningColumns.tintOf(feedFluid.getFluid()) : WindowTint.AMBER;
+		WindowTint productTint = working && route != null ? RefiningColumns.tintOf(route.value()
+			.product()
+			.getFluid()) : WindowTint.AMBER;
+		if (working != lit || feedTint != litFeed || productTint != litProduct) {
 			lit = working;
-			RefiningColumns.showWork(level, shape, working);
+			litFeed = feedTint;
+			litProduct = productTint;
+			RefiningColumns.showWork(level, shape, working, feedTint, productTint);
 		}
 		if (Math.abs(rate - lastSentRate) > 0.5f) {
 			lastSentRate = rate;
@@ -272,6 +307,9 @@ public class ColumnPortBlockEntity extends SmartBlockEntity implements IHaveGogg
 	private float lastSentRate;
 	/** Whether the body windows are lit. */
 	private boolean lit;
+	private int lastSignal = -1;
+	private WindowTint litFeed = WindowTint.AMBER;
+	private WindowTint litProduct = WindowTint.AMBER;
 	private boolean litSynced;
 
 	/** Puts a catalyst item in the Reboiler's slot, wherever in the column it is asked; what did not fit comes back. */

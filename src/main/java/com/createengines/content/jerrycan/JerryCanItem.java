@@ -24,6 +24,7 @@ public class JerryCanItem extends Item {
 	/** What a can holds, mB: four buckets. */
 	public static final int CAPACITY = 4000;
 	private static final int BAR = 13;
+	private static final int BUCKET = 1000;
 
 	public JerryCanItem(Properties properties) {
 		super(properties.stacksTo(1));
@@ -57,7 +58,38 @@ public class JerryCanItem extends Item {
 
 	@Override
 	public int getBarColor(ItemStack stack) {
-		return 0xE0A030;
+		FluidStack held = contents(stack);
+		return held.isEmpty() ? com.createengines.engine.sim.WindowTint.AMBER.colour() & 0xFFFFFF
+			: com.createengines.content.refinery.RefiningColumns.tintOf(held.getFluid())
+				.colour() & 0xFFFFFF;
+	}
+
+	/**
+	 * Sneak-use pours one bucket onto the ground as a source block, the way a bucket does. It is the one way a can
+	 * loses fuel on purpose, so it needs the sneak: an ordinary click never spills.
+	 */
+	@Override
+	public net.minecraft.world.InteractionResultHolder<ItemStack> use(net.minecraft.world.level.Level level,
+		net.minecraft.world.entity.player.Player player, net.minecraft.world.InteractionHand hand) {
+		ItemStack stack = player.getItemInHand(hand);
+		FluidStack held = contents(stack);
+		if (!player.isShiftKeyDown() || held.getAmount() < BUCKET || held.isEmpty())
+			return net.minecraft.world.InteractionResultHolder.pass(stack);
+		net.minecraft.world.phys.BlockHitResult hit = getPlayerPOVHitResult(level, player,
+			net.minecraft.world.level.ClipContext.Fluid.NONE);
+		if (hit.getType() != net.minecraft.world.phys.HitResult.Type.BLOCK)
+			return net.minecraft.world.InteractionResultHolder.pass(stack);
+		net.minecraft.core.BlockPos at = hit.getBlockPos()
+			.relative(hit.getDirection());
+		if (!level.mayInteract(player, at))
+			return net.minecraft.world.InteractionResultHolder.fail(stack);
+		FluidStack bucket = held.copyWithAmount(BUCKET);
+		var handler = net.neoforged.neoforge.fluids.FluidUtil.getFluidHandler(stack);
+		if (handler.isEmpty())
+			return net.minecraft.world.InteractionResultHolder.fail(stack);
+		if (!net.neoforged.neoforge.fluids.FluidUtil.tryPlaceFluid(player, level, hand, at, handler.get(), bucket))
+			return net.minecraft.world.InteractionResultHolder.fail(stack);
+		return net.minecraft.world.InteractionResultHolder.sidedSuccess(stack, level.isClientSide);
 	}
 
 	@Override
@@ -67,10 +99,15 @@ public class JerryCanItem extends Item {
 			tooltip.add(CELang.translate("tooltip.jerry_can.empty", CAPACITY)
 				.style(ChatFormatting.GRAY)
 				.component());
-		else
+		else {
 			tooltip.add(CELang.translate("tooltip.jerry_can.holds", held.getAmount(), CAPACITY, held.getHoverName()
 				.getString())
 				.style(ChatFormatting.GOLD)
 				.component());
+			if (held.getAmount() >= BUCKET)
+				tooltip.add(CELang.translate("tooltip.jerry_can.pour")
+					.style(ChatFormatting.DARK_GRAY)
+					.component());
+		}
 	}
 }

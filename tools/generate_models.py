@@ -1075,7 +1075,7 @@ def refinery():
            box((6, 4, 16), (10, 8, 17.5), "port"), box((6, 4, -1.5), (10, 8, 0), "port")])
     write_item("reboiler/item", "reboiler/block")
     # Column section: banded plate with a sight window on every side, dark while idle and glowing while it works
-    for name, glass in (("block", BLACK), ("active", LAVA)):
+    for name, glass in (("block", BLACK), ("active", "create_engines:block/column_glow")):
         elements = [box((0, 2, 0), (16, 14, 16), "plate"), box((0, 0, 0), (16, 2, 16), "band"),
                     box((0, 14, 0), (16, 16, 16), "band")]
         for lo, hi in (((4, 5, -0.4), (12, 11, 0)), ((4, 5, 16), (12, 11, 16.4)),
@@ -1086,6 +1086,12 @@ def refinery():
                        ((-0.6, 4, 3), (0, 5, 13)), ((-0.6, 11, 3), (0, 12, 13)),
                        ((16, 4, 3), (16.6, 5, 13)), ((16, 11, 3), (16.6, 12, 13))):
             elements.append(box(lo, hi, "band"))
+        if name == "active":
+            # The lit glass is pale and takes the colour of the fluid in it (tint index 0, set by the block's tint)
+            for element in elements:
+                for face in element["faces"].values():
+                    if face["texture"] == "#glass":
+                        face["tintindex"] = 0
         write("column_section/" + name, {"plate": RIVETED, "band": IRON_BLOCK, "glass": glass, "particle": RIVETED},
               elements)
     write_item("column_section/item", "column_section/block")

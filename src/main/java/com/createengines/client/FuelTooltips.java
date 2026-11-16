@@ -5,6 +5,7 @@ import java.util.Locale;
 
 import org.jetbrains.annotations.Nullable;
 
+import com.createengines.content.refinery.RefiningRecipe;
 import com.createengines.engine.sim.FuelSpec;
 import com.createengines.registry.CEDataMaps;
 import com.createengines.registry.CELang;
@@ -37,9 +38,24 @@ public final class FuelTooltips {
 		if (contained.isEmpty())
 			return;
 		FuelSpec fuel = CEDataMaps.fuel(contained.getFluid());
-		if (fuel != null)
+		if (fuel == null)
+			return;
+		event.getToolTip()
+			.addAll(lines(fuel));
+		if (refinedInColumn(contained))
 			event.getToolTip()
-				.addAll(lines(fuel));
+				.add(grey(CELang.translate("tooltip.fuel.column")
+					.component()));
+	}
+
+	/** Whether a refining column makes this fluid. Fails soft: no level or an odd recipe set gives no line. */
+	private static boolean refinedInColumn(FluidStack fluid) {
+		try {
+			net.minecraft.world.level.Level level = net.minecraft.client.Minecraft.getInstance().level;
+			return level != null && RefiningRecipe.makes(level, fluid);
+		} catch (RuntimeException e) {
+			return false;
+		}
 	}
 
 	/** The lines that describe {@code fuel}: a title, its energy, how it is lit, and how it takes a cold start. */

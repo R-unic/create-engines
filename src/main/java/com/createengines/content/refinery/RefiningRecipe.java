@@ -145,6 +145,12 @@ public final class RefiningRecipe implements Recipe<RefiningRecipe.NoInput> {
 			.anyMatch(r -> r.value().feed.ingredient().test(feed));
 	}
 
+	/** Whether any route makes this fluid as its product. */
+	public static boolean makes(Level level, FluidStack product) {
+		return !product.isEmpty() && level.getRecipeManager().getAllRecipesFor(CERecipes.REFINING.get()).stream()
+			.anyMatch(r -> FluidStack.isSameFluid(r.value().product, product));
+	}
+
 	/** Whether any route uses this item as its catalyst. */
 	public static boolean takesCatalyst(Level level, ItemStack stack) {
 		return !stack.isEmpty() && level.getRecipeManager().getAllRecipesFor(CERecipes.REFINING.get()).stream()

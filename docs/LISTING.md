@@ -168,6 +168,34 @@ config thins out engine sound and particles on a big engine. Fuel properties are
 - [Design notes](https://github.com/R-unic/create-engines/blob/master/docs/DESIGN.md), how the simulation works
 ```
 
+## Changelog for 1.3.0
+
+The Refinery: a column that turns feed into fuel more efficiently than a basin. Existing engines, ratings, IDs and
+config keys are unchanged, and diesel and gasoline from a basin make exactly what they did. The one exception is
+basin ethanol, which gets weaker (see below).
+- Refining column: a square of Reboilers (1 to 3 wide) on a heat source, layers of Column Sections, and a layer of
+  Condensers on top. Pipe feed into any Reboiler and take product from any Condenser. The heat under the base
+  picks the route, and a wider or taller column runs faster. Plant oil to diesel and diesel to gasoline use about a
+  tenth less feed than a basin and a quarter of the catalyst (coal, blaze powder); ethanol from sugar mash takes
+  Nether Wart. A funnel or hopper can feed catalyst. Sight windows glow while it works and goggles name what is
+  stopping it.
+- Routes are a data recipe type, `create_engines:refining`, so packs can add their own.
+- Leaning columns: a layer may sit one block to the side of the one below. Sections join like Create chutes, with no
+  joint block.
+- The sight windows glow the colour of the fluid in the column: the lower layers show the feed, the upper layers the
+  product. A comparator on a Reboiler reads the feed level and on a Condenser the product level.
+- Flare Stack: burns on a working Condenser, with a soft whoosh now and then.
+- Soot Trap: catches the soot a rich engine would send out of the exhaust (50 mB of unburned fuel is one Soot, up to 64).
+  Empty it by hand, hopper or funnel. Soot grinds to black dye. A caught lump makes a small clink.
+- Jerry Can: four buckets of one fluid in an item, for fuel that has to go where there is no pipe. Its bar takes the
+  colour of the fluid, and sneak-use on a block pours one bucket onto the ground as a source block.
+- Basin ethanol is weaker: 35 mB per 250 (heated) and 70 mB per 250 (superheated), and biodiesel asks for 17 mB of
+  ethanol instead of 25, so Glycerin and what is made from it cost what they did. A column is the better way to
+  make ethanol.
+- Goggles on a Create Basin say when a column would make more of a fuel from what it holds, and fuel buckets say
+  when a column makes them.
+- Ponder pages for the refining column, leaning columns, the Soot Trap and the Jerry Can.
+
 ## Changelog for 1.2.1
 
 Stability fix for 1.2.0. No rating, recipe, ID, config key or simulation number changes.

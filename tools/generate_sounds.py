@@ -409,7 +409,42 @@ def intake_roar_loop():
     return finish(np.tanh(1.2 * mix), 0.8)
 
 
+def soot_catch(seed, pitch):
+    """A pinch of soot dropping into a steel canister: a dull knock and a little dry grit pattering after it."""
+    rng = np.random.default_rng(seed)
+    n = int(0.28 * SR)
+    t = np.arange(n) / SR
+    knock = np.sin(2 * np.pi * np.cumsum((190 + 120 * np.exp(-t / 0.015)) * pitch) / SR) * np.minimum(t / 0.0006, 1) * np.exp(-t / 0.03)
+    grit = band(rng.standard_normal(n), 1800 * pitch, 6500, 2)
+    # Three or four grains landing at uneven times
+    patter = np.zeros(n)
+    for at, level in ((0.012, 1.0), (0.05, 0.55), (0.085, 0.35), (0.13, 0.2)):
+        i = int(at * SR)
+        patter[i:] += level * np.exp(-(t[: n - i]) / 0.006)
+    mix = knock + 0.35 * grit / np.max(np.abs(grit)) * patter
+    mix *= np.clip((n - np.arange(n)) / (0.05 * SR), 0, 1)
+    return finish(mix, 0.7)
+
+
+def flare_whoosh(seed):
+    """A gas flame catching and settling: a soft rising rush of air, with a low roar under it, fading out."""
+    rng = np.random.default_rng(seed)
+    n = int(0.9 * SR)
+    t = np.arange(n) / SR
+    swell = np.minimum(t / 0.18, 1) ** 2 * np.exp(-np.maximum(t - 0.25, 0) / 0.35)
+    rush = band(rng.standard_normal(n), 500, 3200, 2) * swell
+    roar = lowpass(rng.standard_normal(n), 260, 2) * swell
+    mix = 0.6 * rush / np.max(np.abs(rush)) + 0.9 * roar / np.max(np.abs(roar))
+    mix *= np.clip((n - np.arange(n)) / (0.2 * SR), 0, 1)
+    return finish(np.tanh(1.1 * mix), 0.6)
+
+
 SOUNDS = {
+    "soot_catch1": lambda: soot_catch(79, 1.0),
+    "soot_catch2": lambda: soot_catch(83, 0.9),
+    "soot_catch3": lambda: soot_catch(89, 1.12),
+    "flare_whoosh1": lambda: flare_whoosh(97),
+    "flare_whoosh2": lambda: flare_whoosh(101),
     "cylinder_fire1": lambda: bang(11, 1.0),
     "cylinder_fire2": lambda: bang(23, 0.93),
     "cylinder_fire3": lambda: bang(37, 1.07),

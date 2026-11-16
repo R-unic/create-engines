@@ -88,6 +88,34 @@
       }
     ]
   },
+  "soot_catch": {
+    "sounds": [
+      {
+        "name": "create_engines:soot_catch1",
+        "attenuation_distance": 8
+      },
+      {
+        "name": "create_engines:soot_catch2",
+        "attenuation_distance": 8
+      },
+      {
+        "name": "create_engines:soot_catch3",
+        "attenuation_distance": 8
+      }
+    ]
+  },
+  "flare_whoosh": {
+    "sounds": [
+      {
+        "name": "create_engines:flare_whoosh1",
+        "attenuation_distance": 14
+      },
+      {
+        "name": "create_engines:flare_whoosh2",
+        "attenuation_distance": 14
+      }
+    ]
+  },
   "metal_tick": {
     "sounds": [
       {

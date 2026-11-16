@@ -600,3 +600,65 @@ RAIN_CAP_BLOCKS = [
     (3, 4, 3, ce("camshaft"), axis("x")),
 ]
 write_schematic("rain_cap", (7, 6, 7), RAIN_CAP_BLOCKS)
+
+# --- Refinery (1.3) ---------------------------------------------------------------------------------------------------
+# A 2x2 refining column: a blaze burner under the Reboilers, two layers of sections, a Condenser layer and a flare stack
+def _column_base(x0, z0):
+    return [(x0, 1, z0, "create:blaze_burner", {"blaze": "kindled"})] + [
+        (x0 + dx, 1, z0 + dz, "create:andesite_casing", {})
+        for dx in (0, 1) for dz in (0, 1) if (dx, dz) != (0, 0)]
+
+
+REFINERY_BLOCKS = _column_base(2, 2)
+for _dx in (0, 1):
+    for _dz in (0, 1):
+        REFINERY_BLOCKS += [
+            (2 + _dx, 2, 2 + _dz, ce("reboiler"), {}),
+            (2 + _dx, 3, 2 + _dz, ce("column_section"), {}),
+            (2 + _dx, 4, 2 + _dz, ce("column_section"), {}),
+            (2 + _dx, 5, 2 + _dz, ce("condenser"), {}),
+        ]
+REFINERY_BLOCKS.append((2, 6, 2, ce("flare_stack"), {}))
+# Pumped feed in at the Reboilers and product out of the Condensers, each with a tank and a pump
+REFINERY_BLOCKS += [
+    (1, 1, 3, "create:andesite_casing", {}),
+    (0, 1, 3, "create:andesite_casing", {}),
+    (0, 2, 3, "create:fluid_tank", {}),
+    (1, 2, 3, "create:mechanical_pump", {"facing": "east", "waterlogged": "false"}),
+    (0, 5, 2, "create:fluid_tank", {}),
+    (1, 5, 2, "create:mechanical_pump", {"facing": "west", "waterlogged": "false"}),
+]
+write_schematic("refinery", (7, 8, 7), REFINERY_BLOCKS)
+
+# A one-wide column that leans east twice
+write_schematic("refinery_lean", (8, 8, 7), [
+    (2, 1, 3, "create:blaze_burner", {"blaze": "kindled"}),
+    (2, 2, 3, ce("reboiler"), {}),
+    (2, 3, 3, ce("column_section"), {"lean_up": "east"}),
+    (3, 4, 3, ce("column_section"), {"lean_down": "west", "lean_up": "east"}),
+    (4, 5, 3, ce("column_section"), {"lean_down": "west"}),
+    (4, 6, 3, ce("condenser"), {}),
+])
+
+# The muffler page's engine with a soot trap in the exhaust run and a hopper under it
+write_schematic("soot_trap", (7, 6, 7), [
+    (1, 1, 3, ce("crankshaft"), axis("x")),
+    (2, 1, 3, ce("crank_throw"), axis("x")),
+    (3, 1, 3, ce("crankshaft"), axis("x")),
+    (2, 2, 3, ce("cylinder"), cylinder("up")),
+    (2, 3, 3, ce("cylinder_head"), head("up")),
+    (2, 3, 2, ce("air_intake"), facing("north")),
+    (2, 3, 4, ce("exhaust_manifold"), pipe("north", "south")),
+    (2, 3, 5, ce("soot_trap"), axis("z")),
+    (2, 2, 5, "minecraft:hopper", {"facing": "down"}),
+    (2, 3, 6, ce("exhaust_outlet"), facing("south")),
+    (2, 4, 3, ce("cam_lobe"), axis("x")),
+    (1, 4, 3, ce("camshaft"), axis("x")),
+    (3, 4, 3, ce("camshaft"), axis("x")),
+])
+
+# Two tanks, for filling a jerry can from one and emptying it into the other
+write_schematic("jerry_can", (6, 5, 5), [
+    (1, 1, 2, "create:fluid_tank", {}),
+    (4, 1, 2, "create:fluid_tank", {}),
+])

@@ -209,13 +209,13 @@ public final class CELang {
 		raw("goggles.engine", "Engine");
 		raw("goggles.state.stalled", "Stalled");
 		raw("goggles.state.cranking", "Cranking");
-		raw("goggles.state.coasting", "Coasting: turning, but nothing is firing");
+		raw("goggles.state.coasting", "Coasting: nothing is firing");
 		raw("goggles.state.running", "Running");
 		raw("goggles.lubrication", "Lubrication: %1$s%%");
 		raw("goggles.lubrication.dry", "Dry parts drag: pipe Engine Oil into a cylinder head");
 		raw("goggles.lubrication.thinned", "Oil thinned by unburned fuel: %1$s%%");
 		raw("goggles.lubrication.thinned.hint", "Fuel the air can't burn washes into the oil, however much is supplied. It drags the engine until the mixture burns clean");
-		raw("goggles.state.overloaded", "Overloaded: load is more than its rated torque");
+		raw("goggles.state.overloaded", "Overloaded");
 		raw("goggles.state.incomplete", "Not fully loaded");
 		raw("goggles.state.broken", "Broken: a plain Shaft splits the crankshaft");
 		raw("goggles.broken.hint", "A crankshaft has to be one unbroken line of Crankshaft and Crank Throw blocks. Replace the Shaft between them with Crankshaft blocks");
@@ -224,13 +224,13 @@ public final class CELang {
 		raw("goggles.available_torque", "Rated torque:");
 		raw("goggles.load", "Load:");
 		raw("goggles.su_per_rpm", "%1$s SU/RPM");
-		raw("goggles.horsepower", "Power");
+		raw("goggles.horsepower", "Power:");
 		raw("goggles.hp", "%1$s hp of %2$s hp");
 		raw("goggles.fuel_use", "Fuel use:");
 		raw("goggles.mb_per_minute", "%1$s mB/min");
 		raw("goggles.ripple", "Speed ripple: %1$s%%");
 		raw("goggles.ripple.rough", "Running rough");
-		raw("goggles.roughness", "Rough running costs %1$s%% of its rating: a flywheel, more cylinders or an even firing order would smooth it");
+		raw("goggles.roughness", "Rough running costs %1$s%% of its rating");
 		raw("goggles.coupled", "%1$s crankshafts geared together");
 		raw("goggles.firing", "Firing cylinders: %1$s of %2$s");
 		raw("goggles.firing_intervals", "Firing intervals: %1$s");
@@ -315,6 +315,7 @@ public final class CELang {
 
 		raw("goggles.sump", "Oil Sump");
 		raw("tooltip.jerry_can.empty", "Empty: holds %1$s mB of one fluid");
+		raw("tooltip.jerry_can.pour", "Sneak and use on a block to pour a bucket of it onto the ground");
 		raw("tooltip.jerry_can.holds", "%1$s / %2$s mB of %3$s");
 		raw("goggles.soot_trap", "Soot Trap");
 		raw("goggles.soot_trap.stored", "Soot caught: %1$s of %2$s");
@@ -351,7 +352,7 @@ public final class CELang {
 		raw("goggles.sump.exchange.hint",
 			"Spent oil leaves as Used Oil from any face, by pipe or bucket, and fresh oil piped in takes its place. Burn the used oil, refine it, coke it or let it go");
 		raw("goggles.sump.used_full", "Used Oil tank full: pipe it away or the exchange stops");
-		raw("goggles.muffled", "Exhaust muffled: %1$s%% of it runs through a muffler, which only quiets it");
+		raw("goggles.muffled", "Muffled: %1$s%%");
 		raw("tooltip.fuel", "Engine fuel");
 		raw("tooltip.fuel.energy", "Energy: %1$s per mB");
 		raw("tooltip.fuel.compression", "Lights by compression: no spark plug needed, and it can pilot a dual-fuel engine");
@@ -359,6 +360,7 @@ public final class CELang {
 		raw("tooltip.fuel.cold.good", "Starts well in a cold engine");
 		raw("tooltip.fuel.cold.poor", "Burns poorly in a cold block: warm the engine first");
 		raw("tooltip.fuel.cooling", "Boils off enough heat to cool the charge: denser air, and it will not light early under boost");
+		raw("tooltip.fuel.column", "A refining column makes it from less feed than a basin does");
 		raw("tooltip.fuel.clean", "Burns clean: no soot on a spark plug, however rich");
 		raw("tooltip.fuel.thin","Thin: the injectors need %1$s times the usual shot");
 		raw("value.sump_signal", "Comparator Reads");
@@ -377,7 +379,7 @@ public final class CELang {
 		raw("display.engine.none", "No engine");
 		raw("display.engine.state.stalled", "Stalled");
 		raw("display.engine.state.cranking", "Cranking");
-		raw("display.engine.state.coasting", "Coasting");
+		raw("display.engine.state.coasting", "Coasting: nothing is firing");
 		raw("display.engine.state.running", "Running");
 		raw("display.engine.state.overloaded", "Overloaded");
 		raw("display.engine.speed", "%1$s RPM");
@@ -398,10 +400,10 @@ public final class CELang {
 		raw("goggles.oil_condition.hint",
 			"Spent oil drags the engine a little. Set an oil pan's Oil Exchange to change it as the engine turns");
 		raw("goggles.oil_filtered", "Oil filter fitted");
-		raw("goggles.temperature.cold", "Engine cold: it drags until it has warmed through");
-		raw("goggles.temperature.cool", "Engine cool: it breathes better");
-		raw("goggles.temperature.warm", "Engine warm");
-		raw("goggles.temperature.cooling", "Cooling down: the metal ticks as it gives up its heat");
+		raw("goggles.temperature.cold", "Cold: drags until warm");
+		raw("goggles.temperature.cool", "Cool: breathes better");
+		raw("goggles.temperature.warm", "Warm");
+		raw("goggles.temperature.cooling", "Cooling down");
 		raw("goggles.temperature.cooling.hint", "Running a cold engine drags and burns fuel poorly, and pressed oil and ethanol are the worst at it. Gasoline copes best");
 		raw("goggles.temperature.preheated", "Warmed by a heat source against the exchanger");
 		raw("goggles.health.healthy", "Healthy");
@@ -435,7 +437,7 @@ public final class CELang {
 			"Coolant, or water, piped into an oil pan would cool it, and a cool engine earns a power bonus. A hot engine is never harmed");
 		raw("goggles.coolant_use", "Coolant spent: %1$s mB a second");
 		raw("goggles.pilot_lit", "A pilot shot is lighting the charge");
-		raw("goggles.flex", "Torsional flex: %1$s%% of the rating lost, %2$s throws on one crankshaft");
+		raw("goggles.flex", "Torsional flex: -%1$s%% of rating (%2$s throws)");
 		raw("goggles.flex.hint",
 			"A long crank twists under load. Past %1$s throws on one unbroken crankshaft it costs rating. A vee or a flat puts two cylinders on a throw, and cranks geared together one to one are separate lines");
 

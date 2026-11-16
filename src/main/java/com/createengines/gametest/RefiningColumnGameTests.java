@@ -111,6 +111,61 @@ public class RefiningColumnGameTests {
 		});
 	}
 
+	@GameTest(template = "empty_large", timeoutTicks = 400)
+	public static void theWindowsGlowTheColourOfTheFluidInThem(GameTestHelper helper) {
+		build(helper, 1, BlazeBurnerBlock.HeatLevel.KINDLED);
+		BlockPos reboiler = new BlockPos(1, BASE_Y, 1);
+		BlockPos lower = new BlockPos(1, BASE_Y + 1, 1);
+		BlockPos upper = new BlockPos(1, BASE_Y + 2, 1);
+		helper.runAfterDelay(15, () -> {
+			fluids(helper, reboiler).fill(of(CEFluids.PLANT_OIL.getSource(), 300), IFluidHandler.FluidAction.EXECUTE);
+			helper.getLevel()
+				.getCapability(Capabilities.ItemHandler.BLOCK, helper.absolutePos(reboiler), Direction.UP)
+				.insertItem(0, new ItemStack(Items.COAL, 4), false);
+		});
+		helper.runAfterDelay(60, () -> {
+			helper.assertBlockProperty(lower, com.createengines.content.refinery.ColumnSectionBlock.TINT,
+				com.createengines.engine.sim.WindowTint.PLANT_OIL.ordinal());
+			helper.assertBlockProperty(upper, com.createengines.content.refinery.ColumnSectionBlock.TINT,
+				com.createengines.engine.sim.WindowTint.DIESEL.ordinal());
+			// Break the Condenser: the column stops existing and the windows go back to the plain tint
+			helper.destroyBlock(new BlockPos(1, BASE_Y + 3, 1));
+		});
+		helper.runAfterDelay(120, () -> {
+			helper.assertBlockProperty(lower, com.createengines.content.refinery.ColumnSectionBlock.TINT, 0);
+			helper.assertBlockProperty(upper, com.createengines.content.refinery.ColumnSectionBlock.TINT, 0);
+			helper.succeed();
+		});
+	}
+
+	@GameTest(template = "empty", timeoutTicks = 400)
+	public static void comparatorsReadTheFeedOffReboilersAndTheProductOffCondensers(GameTestHelper helper) {
+		build(helper, 1, BlazeBurnerBlock.HeatLevel.NONE);
+		BlockPos reboiler = new BlockPos(1, BASE_Y, 1);
+		BlockPos condenser = new BlockPos(1, BASE_Y + 3, 1);
+		helper.runAfterDelay(15, () -> {
+			int empty = helper.getLevel()
+				.getBlockState(helper.absolutePos(reboiler))
+				.getAnalogOutputSignal(helper.getLevel(), helper.absolutePos(reboiler));
+			if (empty != 0)
+				helper.fail("an empty Reboiler should read 0, reads " + empty);
+			fluids(helper, reboiler).fill(of(CEFluids.PLANT_OIL.getSource(), 500), IFluidHandler.FluidAction.EXECUTE);
+		});
+		helper.runAfterDelay(30, () -> {
+			int feed = helper.getLevel()
+				.getBlockState(helper.absolutePos(reboiler))
+				.getAnalogOutputSignal(helper.getLevel(), helper.absolutePos(reboiler));
+			int product = helper.getLevel()
+				.getBlockState(helper.absolutePos(condenser))
+				.getAnalogOutputSignal(helper.getLevel(), helper.absolutePos(condenser));
+			if (feed < 7 || feed > 9)
+				helper.fail("a Reboiler half full should read about 8, reads " + feed);
+			if (product != 0)
+				helper.fail("the Condenser holds nothing, so it should read 0, reads " + product);
+			helper.succeed();
+		});
+	}
+
 	@GameTest(template = "empty", timeoutTicks = 200)
 	public static void aColumnWithTheWrongPartsGoggleItsFault(GameTestHelper helper) {
 		build(helper, 1, BlazeBurnerBlock.HeatLevel.KINDLED);

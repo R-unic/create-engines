@@ -46,6 +46,11 @@ public final class CESounds {
 	/** Air gulped through an intake mouth: a seamless loop that swells with each intake pulse, heard from the mouth. */
 	public static final DeferredHolder<SoundEvent, SoundEvent> INTAKE_ROAR = register("intake_roar");
 
+	/** A pinch of soot dropping into a Soot Trap. */
+	public static final DeferredHolder<SoundEvent, SoundEvent> SOOT_CATCH = register("soot_catch");
+	/** A Flare Stack's flame catching and settling, as it burns off a working column's gas. */
+	public static final DeferredHolder<SoundEvent, SoundEvent> FLARE_WHOOSH = register("flare_whoosh");
+
 	private CESounds() {
 	}
 

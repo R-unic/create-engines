@@ -28,6 +28,7 @@ import com.simibubi.create.foundation.blockEntity.behaviour.BlockEntityBehaviour
 import com.simibubi.create.foundation.blockEntity.behaviour.ValueBoxTransform;
 import com.simibubi.create.foundation.blockEntity.behaviour.scrollValue.ScrollValueBehaviour;
 
+import net.createmod.catnip.lang.LangBuilder;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.HolderLookup;
@@ -414,36 +415,20 @@ public class CrankshaftBlockEntity extends GeneratingKineticBlockEntity implemen
 			return;
 		}
 		if (engine.state() != EngineState.STALLED) {
-			GoggleLines.add(CELang.translate("goggles.speed")
-				.style(ChatFormatting.GRAY), tooltip, 1);
-			GoggleLines.add(CELang.translate("goggles.rpm", Math.round(engine.rpm()))
-				.style(ChatFormatting.AQUA), tooltip, 2);
-			GoggleLines.add(CELang.translate("goggles.available_torque")
-				.style(ChatFormatting.GRAY), tooltip, 1);
-			GoggleLines.add(CELang.translate("goggles.su_per_rpm", format(engine.availableTorque()))
-				.style(ChatFormatting.AQUA), tooltip, 2);
-			GoggleLines.add(CELang.translate("goggles.load")
-				.style(ChatFormatting.GRAY), tooltip, 1);
-			GoggleLines.add(CELang.translate("goggles.su_per_rpm", format(engine.loadTorque()))
-				.style(engine.loadTorque() > engine.availableTorque() ? ChatFormatting.GOLD : ChatFormatting.AQUA), tooltip, 2);
-			GoggleLines.add(CELang.translate("goggles.horsepower")
-					.style(ChatFormatting.GRAY), tooltip, 1);
-				GoggleLines.add(CELang.translate("goggles.hp", EngineReadout.hp(EngineReadout.output(engine)),
-						EngineReadout.hp(EngineReadout.capacity(engine)))
-					.style(engine.loadTorque() > engine.availableTorque() ? ChatFormatting.GOLD : ChatFormatting.AQUA), tooltip, 2);
-				GoggleLines.add(CELang.translate("goggles.fuel_use")
-				.style(ChatFormatting.GRAY), tooltip, 1);
-			GoggleLines.add(CELang.translate("goggles.mb_per_minute", format(engine.fuelPerMinute()))
-				.style(ChatFormatting.AQUA), tooltip, 2);
+			pair(tooltip, "goggles.speed", ChatFormatting.AQUA, CELang.translate("goggles.rpm", Math.round(engine.rpm())));
+			pair(tooltip, "goggles.available_torque", ChatFormatting.AQUA, CELang.translate("goggles.su_per_rpm", format(engine.availableTorque())));
+			pair(tooltip, "goggles.load", engine.loadTorque() > engine.availableTorque() ? ChatFormatting.GOLD : ChatFormatting.AQUA,
+				CELang.translate("goggles.su_per_rpm", format(engine.loadTorque())));
+			pair(tooltip, "goggles.horsepower", engine.loadTorque() > engine.availableTorque() ? ChatFormatting.GOLD : ChatFormatting.AQUA,
+				CELang.translate("goggles.hp", EngineReadout.hp(EngineReadout.output(engine)), EngineReadout.hp(EngineReadout.capacity(engine))));
+			pair(tooltip, "goggles.fuel_use", ChatFormatting.AQUA, CELang.translate("goggles.mb_per_minute", format(engine.fuelPerMinute())));
 		}
 		GoggleLines.add(CELang.translate("goggles.firing", engine.firing(), engine.cylinders())
 			.style(engine.firing() == engine.cylinders() ? ChatFormatting.GREEN : ChatFormatting.GOLD), tooltip, 1);
 		float[] intervals = engine.firingIntervals();
 		if (intervals.length > 0) {
 			StringBuilder text = new StringBuilder();
-			boolean even = true;
-			for (float interval : intervals)
-				even &= Math.abs(interval - intervals[0]) < 1;
+			boolean even = evenIntervals(intervals);
 			if (even && intervals.length > 2)
 				text.append(Math.round(intervals[0]))
 					.append("° apart, all even");
@@ -479,6 +464,22 @@ public class CrankshaftBlockEntity extends GeneratingKineticBlockEntity implemen
 		if (engine.starterEngaged())
 			GoggleLines.add(CELang.translate("goggles.starter_engaged")
 				.style(ChatFormatting.YELLOW), tooltip, 1);
+	}
+
+	private static boolean evenIntervals(float[] intervals) {
+		for (float interval : intervals)
+			if (Math.abs(interval - intervals[0]) >= 1)
+				return false;
+		return true;
+	}
+
+	/** A grey label and its coloured value on one line, so the readout stays short. */
+	private static void pair(List<Component> tooltip, String labelKey, ChatFormatting valueColour, LangBuilder value) {
+		GoggleLines.add(CELang.builder()
+			.add(CELang.translate(labelKey)
+				.style(ChatFormatting.GRAY))
+			.space()
+			.add(value.style(valueColour)), tooltip, 1);
 	}
 
 	/** One line saying how the engine is running, and under it, when something is wrong, the one thing to look at. */

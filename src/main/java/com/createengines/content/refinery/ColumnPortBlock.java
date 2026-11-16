@@ -57,6 +57,17 @@ public class ColumnPortBlock extends Block implements IWrenchable, IBE<ColumnPor
 		return ItemInteractionResult.sidedSuccess(level.isClientSide);
 	}
 
+	/** A comparator reads the column's feed tank off a Reboiler and its product tank off a Condenser. */
+	@Override
+	protected boolean hasAnalogOutputSignal(BlockState state) {
+		return true;
+	}
+
+	@Override
+	protected int getAnalogOutputSignal(BlockState state, Level level, BlockPos pos) {
+		return level.getBlockEntity(pos) instanceof ColumnPortBlockEntity port ? port.comparatorSignal() : 0;
+	}
+
 	@Override
 	protected void onRemove(BlockState state, Level level, BlockPos pos, BlockState newState, boolean movedByPiston) {
 		if (!level.isClientSide && !state.is(newState.getBlock())

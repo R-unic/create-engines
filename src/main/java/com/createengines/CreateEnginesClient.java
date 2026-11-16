@@ -38,6 +38,7 @@ public class CreateEnginesClient {
 		modEventBus.addListener(CreateEnginesClient::registerBucketColours);
 		modEventBus.addListener(CreateEnginesClient::registerParticles);
 		modEventBus.addListener(CreateEnginesClient::registerCasingColours);
+		modEventBus.addListener(CreateEnginesClient::registerColumnColours);
 		NeoForge.EVENT_BUS.addListener(FuelTooltips::onTooltip);
 		NeoForge.EVENT_BUS.addListener(CreateEnginesClient::onLoggingOut);
 		PonderIndex.addPlugin(new CEPonderPlugin());
@@ -61,6 +62,18 @@ public class CreateEnginesClient {
 				.filter(block -> block.defaultBlockState()
 					.hasProperty(EngineCasingBlock.PAINT))
 				.toArray(net.minecraft.world.level.block.Block[]::new));
+	}
+
+	/** The lit sight windows of a refining column glow the colour of the fluid in them. */
+	private static void registerColumnColours(RegisterColorHandlersEvent.Block event) {
+		event.register((state, level, pos, tintIndex) -> {
+			int colour = com.createengines.engine.sim.WindowTint
+				.byOrdinal(state.getValue(com.createengines.content.refinery.ColumnSectionBlock.TINT))
+				.colour();
+			// Bright enough to read as lit even for a dark oil
+			int r = (colour >> 16 & 0xFF), g = (colour >> 8 & 0xFF), b = (colour & 0xFF);
+			return (r + (255 - r) / 4) << 16 | (g + (255 - g) / 4) << 8 | (b + (255 - b) / 4);
+		}, com.createengines.registry.CEBlocks.COLUMN_SECTION.get());
 	}
 
 	private static void registerParticles(RegisterParticleProvidersEvent event) {

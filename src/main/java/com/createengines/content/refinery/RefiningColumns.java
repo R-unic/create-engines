@@ -3,6 +3,7 @@ package com.createengines.content.refinery;
 import com.createengines.engine.sim.ColumnShape;
 import com.createengines.engine.sim.ColumnShape.Part;
 import com.createengines.engine.sim.Heat;
+import com.createengines.engine.sim.WindowTint;
 import com.createengines.registry.CEBlocks;
 import com.simibubi.create.content.processing.burner.BlazeBurnerBlock;
 
@@ -65,6 +66,21 @@ public final class RefiningColumns {
 
 	/** Lights or darkens the sight windows of a column body. */
 	public static void showWork(Level level, ColumnShape.Result shape, boolean working) {
+		showWork(level, shape, working, WindowTint.AMBER, WindowTint.AMBER);
+	}
+
+	/** The tint of a fluid's windows: our own fluids by name, anything else amber. */
+	public static WindowTint tintOf(net.minecraft.world.level.material.Fluid fluid) {
+		var key = net.minecraft.core.registries.BuiltInRegistries.FLUID.getKey(fluid);
+		return com.createengines.CreateEngines.MOD_ID.equals(key.getNamespace()) ? WindowTint.ofPath(key.getPath()
+			.replace("flowing_", "")) : WindowTint.AMBER;
+	}
+
+	/**
+	 * Lights or darkens the sight windows. A lit column shows its fluid: the lower half of the layers glow the feed's
+	 * colour and the upper half the product's, as in a real column.
+	 */
+	public static void showWork(Level level, ColumnShape.Result shape, boolean working, WindowTint feed, WindowTint product) {
 		if (!shape.formed())
 			return;
 		for (int layer = 1; layer <= shape.height(); layer++)
@@ -74,8 +90,13 @@ public final class RefiningColumns {
 					if (!level.isLoaded(at))
 						continue;
 					BlockState state = level.getBlockState(at);
-					if (state.getBlock() instanceof ColumnSectionBlock && state.getValue(ColumnSectionBlock.ACTIVE) != working)
-						level.setBlock(at, state.setValue(ColumnSectionBlock.ACTIVE, working), 2);
+					if (!(state.getBlock() instanceof ColumnSectionBlock))
+						continue;
+					WindowTint tint = !working ? WindowTint.AMBER : layer <= (shape.height() + 1) / 2 ? feed : product;
+					BlockState want = state.setValue(ColumnSectionBlock.ACTIVE, working)
+						.setValue(ColumnSectionBlock.TINT, tint.ordinal());
+					if (want != state)
+						level.setBlock(at, want, 2);
 				}
 	}
 

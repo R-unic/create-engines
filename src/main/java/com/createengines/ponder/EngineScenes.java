@@ -37,19 +37,19 @@ import net.neoforged.neoforge.fluids.capability.IFluidHandler.FluidAction;
 public final class EngineScenes {
 
 	/** Lobe angle step that times a cylinder bored straight up from a throw at 0° on an X-axis crank. */
-	private static final int LOBE_FOR_UPRIGHT_CYLINDER = 18;
+	static final int LOBE_FOR_UPRIGHT_CYLINDER = 18;
 	private static final int THROW_HALF_TURN = 180 / CrankshaftBlockEntity.THROW_ANGLE_STEP;
 	private static final int LOBE_HALF_TURN = (int) (180 / CamshaftBlockEntity.LOBE_ANGLE_STEP);
 
 	private EngineScenes() {
 	}
 
-	private static void setThrow(CreateSceneBuilder scene, Selection selection, int value) {
+	static void setThrow(CreateSceneBuilder scene, Selection selection, int value) {
 		scene.world()
 			.modifyBlockEntityNBT(selection, CrankshaftBlockEntity.class, nbt -> nbt.putInt("ScrollValue", value));
 	}
 
-	private static void setLobe(CreateSceneBuilder scene, Selection selection, int value) {
+	static void setLobe(CreateSceneBuilder scene, Selection selection, int value) {
 		scene.world()
 			.modifyBlockEntityNBT(selection, CamshaftBlockEntity.class, nbt -> nbt.putInt("ScrollValue", value));
 	}
