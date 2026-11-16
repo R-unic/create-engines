@@ -32,6 +32,9 @@ import com.createengines.content.intercooler.IntercoolerBlock;
 import com.createengines.content.muffler.MufflerBlock;
 import com.createengines.content.rotor.RotorHousingBlock;
 import com.createengines.content.starter.StarterBlock;
+import com.createengines.content.refinery.ColumnPortBlock;
+import com.createengines.content.refinery.ColumnSectionBlock;
+import com.createengines.content.refinery.FlareStackBlock;
 import com.createengines.content.sump.SumpBlock;
 import com.createengines.content.supercharger.VariableSuperchargerBlock;
 import com.createengines.content.supercharger.SuperchargerBlock;
@@ -434,6 +437,65 @@ public final class CEBlocks {
 		.item()
 		.transform(ModelGen.customItemModel())
 		.register();
+
+	/** The base of a refining column: takes the feed and the catalyst, and sits on a Blaze Burner or an Exhaust Heat Exchanger. */
+	public static final BlockEntry<ColumnPortBlock> REBOILER =
+		REGISTRATE.block("reboiler", p -> new ColumnPortBlock(p, com.createengines.engine.sim.ColumnShape.Part.REBOILER))
+			.initialProperties(SharedProperties::softMetal)
+			.properties(p -> p.mapColor(MapColor.METAL)
+				.noOcclusion())
+			.transform(TagGen.pickaxeOnly())
+			.blockstate((c, p) -> BlockStateGen.simpleBlock(c, p, s -> AssetLookup.partialBaseModel(c, p)))
+			.item()
+			.transform(ModelGen.customItemModel())
+			.register();
+
+	/** The body of a refining column, stacked on a Reboiler under a Condenser. */
+	public static final BlockEntry<ColumnSectionBlock> COLUMN_SECTION =
+		REGISTRATE.block("column_section", ColumnSectionBlock::new)
+			.initialProperties(SharedProperties::softMetal)
+			.properties(p -> p.mapColor(MapColor.METAL)
+				.noOcclusion())
+			.transform(TagGen.pickaxeOnly())
+			.blockstate((c, p) -> p.getVariantBuilder(c.get())
+				.forAllStates(s -> net.neoforged.neoforge.client.model.generators.ConfiguredModel.builder()
+					.modelFile(p.models()
+						.getExistingFile(p.modLoc(s.getValue(ColumnSectionBlock.ACTIVE) ? "block/column_section/active"
+							: "block/column_section/block")))
+					.build()))
+			.item()
+			.transform(ModelGen.customItemModel())
+			.register();
+
+	/** The top of a refining column: the product is piped off here. */
+	public static final BlockEntry<ColumnPortBlock> CONDENSER =
+		REGISTRATE.block("condenser", p -> new ColumnPortBlock(p, com.createengines.engine.sim.ColumnShape.Part.CONDENSER))
+			.initialProperties(SharedProperties::copperMetal)
+			.properties(p -> p.mapColor(MapColor.COLOR_ORANGE)
+				.noOcclusion())
+			.transform(TagGen.pickaxeOnly())
+			.blockstate((c, p) -> BlockStateGen.simpleBlock(c, p, s -> AssetLookup.partialBaseModel(c, p)))
+			.item()
+			.transform(ModelGen.customItemModel())
+			.register();
+
+	/** A chimney with a flame that burns while the column under it is working. Cosmetic. */
+	public static final BlockEntry<FlareStackBlock> FLARE_STACK =
+		REGISTRATE.block("flare_stack", FlareStackBlock::new)
+			.initialProperties(SharedProperties::softMetal)
+			.properties(p -> p.mapColor(MapColor.COLOR_GRAY)
+				.noOcclusion()
+				.lightLevel(s -> s.getValue(FlareStackBlock.LIT) ? 12 : 0))
+			.transform(TagGen.pickaxeOnly())
+			.blockstate((c, p) -> p.getVariantBuilder(c.get())
+				.forAllStates(s -> net.neoforged.neoforge.client.model.generators.ConfiguredModel.builder()
+					.modelFile(p.models()
+						.getExistingFile(p.modLoc(s.getValue(FlareStackBlock.LIT) ? "block/flare_stack/lit"
+							: "block/flare_stack/block")))
+					.build()))
+			.item()
+			.transform(ModelGen.customItemModel())
+			.register();
 
 	public static final BlockEntry<TurbochargerBlock> TURBOCHARGER =
 		REGISTRATE.block("turbocharger", TurbochargerBlock::new)

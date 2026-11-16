@@ -1,0 +1,27 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "key": {
+    "I": {
+      "item": "minecraft:iron_ingot"
+    },
+    "S": {
+      "item": "create:iron_sheet"
+    },
+    "P": {
+      "item": "create:fluid_pipe"
+    },
+    "B": {
+      "item": "create:basin"
+    }
+  },
+  "pattern": [
+    "IPI",
+    "SBS",
+    "III"
+  ],
+  "result": {
+    "count": 1,
+    "id": "create_engines:reboiler"
+  }
+}

@@ -974,6 +974,53 @@ def transmission():
     write("transmission/block", textures, elements)
 
 
+def refinery():
+    """The three parts of a refining column. Each fills its block to the edge, so a wide column is a solid tower."""
+    # Reboiler: a squat firebox with a riveted drum on it and a feed boss on the side
+    write("reboiler/block", {"plate": RIVETED, "band": IRON_BLOCK, "foot": DARK, "boss": BRASS, "port": COPPER,
+                             "particle": RIVETED},
+          [box((0, 0, 0), (16, 4, 16), "foot"), box((0, 4, 0), (16, 13, 16), "plate"),
+           box((0, 13, 0), (16, 16, 16), "band"), box((0, 7, 0), (16, 8.5, 16), "band"),
+           box((16, 4, 5), (18, 9, 11), "boss"), box((-2, 4, 5), (0, 9, 11), "boss"),
+           box((6, 4, 16), (10, 8, 17.5), "port"), box((6, 4, -1.5), (10, 8, 0), "port")])
+    write_item("reboiler/item", "reboiler/block")
+    # Column section: banded plate with a sight window on every side, dark while idle and glowing while it works
+    for name, glass in (("block", BLACK), ("active", LAVA)):
+        elements = [box((0, 0, 0), (16, 16, 16), "plate"), box((0, 0, 0), (16, 2, 16), "band"),
+                    box((0, 14, 0), (16, 16, 16), "band")]
+        for lo, hi in (((4, 5, -0.4), (12, 11, 0)), ((4, 5, 16), (12, 11, 16.4)),
+                       ((-0.4, 5, 4), (0, 11, 12)), ((16, 5, 4), (16.4, 11, 12))):
+            elements.append(box(lo, hi, "glass"))
+        for lo, hi in (((3, 4, -0.6), (13, 5, 0)), ((3, 11, -0.6), (13, 12, 0)),
+                       ((3, 4, 16), (13, 5, 16.6)), ((3, 11, 16), (13, 12, 16.6)),
+                       ((-0.6, 4, 3), (0, 5, 13)), ((-0.6, 11, 3), (0, 12, 13)),
+                       ((16, 4, 3), (16.6, 5, 13)), ((16, 11, 3), (16.6, 12, 13))):
+            elements.append(box(lo, hi, "band"))
+        write("column_section/" + name, {"plate": RIVETED, "band": IRON_BLOCK, "glass": glass, "particle": RIVETED},
+              elements)
+    write_item("column_section/item", "column_section/block")
+    # Condenser: finned cap with a draw-off spout
+    elements = [box((0, 0, 0), (16, 3, 16), "band"), box((0, 3, 0), (16, 11, 16), "plate"),
+                box((1, 11, 1), (15, 13, 15), "fin"), box((2, 13, 2), (14, 14.5, 14), "fin"),
+                box((3, 14.5, 3), (13, 16, 13), "fin"),
+                box((16, 5, 5), (18, 10, 11), "boss"), box((-2, 5, 5), (0, 10, 11), "boss"),
+                box((6, 5, 16), (10, 9, 17.5), "port"), box((6, 5, -1.5), (10, 9, 0), "port")]
+    write("condenser/block", {"plate": RIVETED, "band": IRON_BLOCK, "fin": COPPER, "boss": BRASS, "port": COPPER,
+                              "particle": RIVETED}, elements)
+    write_item("condenser/item", "condenser/block")
+
+
+def flare_stack():
+    """A thin chimney on a flange, with a burner cup on top; the lit model adds the flame."""
+    textures = {"pipe": IRON_BLOCK, "flange": DARK, "cup": IRON, "flame": MAGMA, "particle": IRON_BLOCK}
+    base = [box((3, 0, 3), (13, 2, 13), "flange"), box((6, 2, 6), (10, 13, 10), "pipe"),
+            box((5, 13, 5), (11, 15, 11), "cup"), box((5.5, 7, 5.5), (10.5, 8, 10.5), "flange")]
+    write("flare_stack/block", textures, base)
+    write("flare_stack/lit", textures, base + [box((6.5, 15, 6.5), (9.5, 18, 9.5), "flame"),
+                                               box((7.2, 18, 7.2), (8.8, 19.5, 8.8), "flame")])
+    write_item("flare_stack/item", "flare_stack/lit")
+
+
 def sump():
     """An oil pan: a shallow sheet-metal tub under a bolted flange, with a drain plug, dipstick and filler."""
     textures = {"pan": DARK, "flange": IRON, "rib": IRON_BLOCK, "bolt": BRASS, "cap": COPPER, "particle": DARK}
@@ -1259,6 +1306,8 @@ def main():
     muffler()
     engine_casing()
     sump()
+    refinery()
+    flare_stack()
 
 
 main()

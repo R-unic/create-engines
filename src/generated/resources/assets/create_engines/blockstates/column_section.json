@@ -1,0 +1,10 @@
+{
+  "variants": {
+    "active=false": {
+      "model": "create_engines:block/column_section/block"
+    },
+    "active=true": {
+      "model": "create_engines:block/column_section/active"
+    }
+  }
+}

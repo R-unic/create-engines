@@ -171,6 +171,12 @@ engine. What changes is how they are made: by refining in a column, as a continu
   | Diesel | Gasoline | Heated | Middling, with a little blaze powder as catalyst |
   | Sugar Mash | Ethanol | Heated, and twice as much superheated, as today | The dear one: the most feed for each bucket and the slowest to come over, with nether wart as catalyst |
 
+  Stage 2 built the structure: blocks `reboiler`, `column_section` and `condenser`. A column is a square of Reboilers
+  1 to 3 blocks wide, one or more layers of sections of the same square on it (32 at most), and a layer of
+  Condensers on top. The Reboiler at the lowest corner runs it. Feed goes into any Reboiler, product comes out of any
+  Condenser, and catalyst goes into any Reboiler by hand, funnel or hopper. Tanks hold 1000 mB for each block of the
+  base. Height in the balance table is the number of section layers.
+
   Stage 1 set the numbers (see [REFINING_BALANCE.md](REFINING_BALANCE.md)): diesel and gasoline give 1100 mB from
   1000 mB of feed and use a catalyst item per 1000 mB of feed; ethanol gives 170 mB heated and 340 mB superheated from
   1000 mB of mash.

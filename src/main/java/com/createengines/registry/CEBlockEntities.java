@@ -27,6 +27,7 @@ import com.createengines.content.rotor.RotorHousingVisual;
 import com.createengines.content.starter.StarterBlockEntity;
 import com.createengines.content.starter.StarterRenderer;
 import com.createengines.content.starter.StarterVisual;
+import com.createengines.content.refinery.ColumnPortBlockEntity;
 import com.createengines.content.sump.SumpBlockEntity;
 import com.createengines.content.supercharger.SuperchargerBlockEntity;
 import com.createengines.content.supercharger.SuperchargerVisual;
@@ -149,6 +150,12 @@ public final class CEBlockEntities {
 		.validBlocks(CEBlocks.SUMP)
 		.register();
 
+	/** Reboilers and Condensers: the parts of a refining column that hold tanks and take pipes. */
+	public static final BlockEntityEntry<ColumnPortBlockEntity> COLUMN_PORT = REGISTRATE
+		.blockEntity("column_port", ColumnPortBlockEntity::new)
+		.validBlocks(CEBlocks.REBOILER, CEBlocks.CONDENSER)
+		.register();
+
 	public static final BlockEntityEntry<RainCapBlockEntity> RAIN_CAP = REGISTRATE
 		.blockEntity("rain_cap", RainCapBlockEntity::new)
 		.validBlocks(CEBlocks.RAIN_CAP)
@@ -215,6 +222,8 @@ public final class CEBlockEntities {
 		event.registerBlockEntity(Capabilities.FluidHandler.BLOCK, ROTOR_HOUSING.get(),
 			(be, side) -> be.fluidCapability());
 		event.registerBlockEntity(Capabilities.FluidHandler.BLOCK, SUMP.get(), (be, side) -> be.fluidCapability());
+		event.registerBlockEntity(Capabilities.FluidHandler.BLOCK, COLUMN_PORT.get(), (be, side) -> be.fluidCapability());
+		event.registerBlockEntity(Capabilities.ItemHandler.BLOCK, COLUMN_PORT.get(), (be, side) -> be.itemCapability());
 		event.registerBlockEntity(Capabilities.EnergyStorage.BLOCK, ALTERNATOR.get(), (be, side) -> be.energyOutput());
 	}
 }

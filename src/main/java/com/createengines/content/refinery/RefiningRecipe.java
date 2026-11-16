@@ -128,15 +128,27 @@ public final class RefiningRecipe implements Recipe<RefiningRecipe.NoInput> {
 	}
 
 	/**
-	 * The route a base of this heat runs for this feed: among the recipes that take it and ask no more heat than the base
+	 * The route a base of this heat runs for this feed (whatever the amount, which is a tank's content and not a batch): among the recipes that take it and ask no more heat than the base
 	 * has, the one that asks for the most, since a hotter base is what that recipe is for.
 	 */
 	public static Optional<RecipeHolder<RefiningRecipe>> find(Level level, FluidStack feed, Heat baseHeat) {
 		List<RecipeHolder<RefiningRecipe>> all = level.getRecipeManager().getAllRecipesFor(CERecipes.REFINING.get());
 		return all.stream()
-			.filter(r -> r.value().feed.test(feed) && baseHeat.satisfies(r.value().heat))
+			.filter(r -> r.value().feed.ingredient().test(feed) && baseHeat.satisfies(r.value().heat))
 			.max(Comparator.<RecipeHolder<RefiningRecipe>>comparingInt(r -> r.value().heat.ordinal())
 				.thenComparingDouble(r -> r.value().route().yield()));
+	}
+
+	/** Whether any route takes this fluid as feed, at any heat. */
+	public static boolean takesFeed(Level level, FluidStack feed) {
+		return !feed.isEmpty() && level.getRecipeManager().getAllRecipesFor(CERecipes.REFINING.get()).stream()
+			.anyMatch(r -> r.value().feed.ingredient().test(feed));
+	}
+
+	/** Whether any route uses this item as its catalyst. */
+	public static boolean takesCatalyst(Level level, ItemStack stack) {
+		return !stack.isEmpty() && level.getRecipeManager().getAllRecipesFor(CERecipes.REFINING.get()).stream()
+			.anyMatch(r -> r.value().catalyst != null && r.value().catalyst.ingredient().test(stack));
 	}
 
 	@Override

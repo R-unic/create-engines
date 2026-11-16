@@ -1,0 +1,10 @@
+{
+  "variants": {
+    "lit=false": {
+      "model": "create_engines:block/flare_stack/block"
+    },
+    "lit=true": {
+      "model": "create_engines:block/flare_stack/lit"
+    }
+  }
+}

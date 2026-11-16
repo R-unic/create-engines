@@ -314,6 +314,27 @@ public final class CELang {
 		raw("goggles.head.no_spark_plug", "Right-click with a Spark Plug to light fuel by spark instead of compression");
 
 		raw("goggles.sump", "Oil Sump");
+		raw("goggles.column.reboiler", "Reboiler");
+		raw("goggles.column.condenser", "Condenser");
+		raw("goggles.column.size", "Refining column, %1$s by %2$s blocks, %3$s sections tall");
+		raw("goggles.column.heat.none", "Cold base");
+		raw("goggles.column.heat.heated", "Heated base");
+		raw("goggles.column.heat.superheated", "Superheated base");
+		raw("goggles.column.rate", "Making %1$s mB of product a second");
+		raw("goggles.column.limit.none", "Running");
+		raw("goggles.column.limit.no_feed", "Idle: no feed");
+		raw("goggles.column.limit.cold", "Held back: the base is too cold for this feed");
+		raw("goggles.column.limit.no_catalyst", "Held back: out of catalyst");
+		raw("goggles.column.limit.product_full", "Held back: the product tank is full");
+		raw("goggles.column.catalyst", "Catalyst: %1$s x %2$s");
+		raw("goggles.column.catalyst.none", "No catalyst loaded");
+		raw("goggles.column.hint", "A column is a square of Reboilers (1 to 3 blocks wide), Column Sections of the same square on them, and Condensers of that square on top");
+		raw("goggles.column.fault.none", "Formed");
+		raw("goggles.column.fault.base", "The Reboilers are not one square 1 to 3 blocks wide");
+		raw("goggles.column.fault.no_section", "No Column Section between the Reboilers and the Condenser");
+		raw("goggles.column.fault.ragged", "A layer is missing a block, or has the wrong part in it");
+		raw("goggles.column.fault.no_condenser", "No Condenser on top");
+		raw("goggles.column.fault.too_tall", "Too tall: 32 sections is the most");
 		raw("goggles.sump.no_engine", "Not touching an engine's crankshaft or cylinder head");
 		raw("goggles.sump.empty", "Empty: fill it with Engine Oil by bucket or pipe");
 		raw("goggles.sump.filter", "Oil filter fitted: the oil ages more slowly and fuel is cleaned out of it faster");
