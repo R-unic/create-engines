@@ -1098,7 +1098,22 @@ def refinery():
     write("condenser/block", {"plate": RIVETED, "band": IRON_BLOCK, "fin": COPPER, "boss": BRASS, "port": COPPER,
                               "particle": RIVETED}, elements)
     write_item("condenser/item", "condenser/block")
+    column_joints()
     WRAP_UV = False
+
+
+def column_joints():
+    """The slanted pieces between two leaning layers of a refining column, built for a lean to the south (the block
+    state turns them). Both are a triangle in the z-y plane under the line y = z: the lower joint (a brace under the
+    upper layer's overhang) is above that line, the upper joint (a wedge beside the upper layer) below it. A stepped fill
+    of 2-pixel slices sits just inside the slope and a 45-degree plate lies along it, so the slope reads as one slab."""
+    textures = {"fill": RIVETED, "slab": IRON_BLOCK, "particle": RIVETED}
+    slab = box((0, 8 - 9.5, 8 - 1.5), (16, 8 + 9.5, 8 + 1.5), "slab")
+    slab["rotation"] = {"angle": 45, "axis": "x", "origin": [8, 8, 8]}
+    lower = [box((0, 2 * k + 2, 2 * k), (16, 16, 2 * k + 2), "fill") for k in range(8)] + [slab]
+    upper = [box((0, 0, 2 * k), (16, 2 * k, 2 * k + 2), "fill") for k in range(1, 8)] + [slab]
+    write("column_joint/lower", textures, lower)
+    write("column_joint/upper", textures, upper)
 
 
 def flare_stack():

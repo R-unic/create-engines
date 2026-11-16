@@ -342,6 +342,7 @@ public final class CELang {
 		raw("goggles.column.fault.ragged", "A layer is missing a block, or has the wrong part in it");
 		raw("goggles.column.fault.no_condenser", "No Condenser on top");
 		raw("goggles.column.fault.too_tall", "Too tall: 32 sections is the most");
+		raw("goggles.column.fault.lean_blocked", "The column leans here and needs room for its joints: %1$s at %2$s is in the way");
 		raw("goggles.sump.no_engine", "Not touching an engine's crankshaft or cylinder head");
 		raw("goggles.sump.empty", "Empty: fill it with Engine Oil by bucket or pipe");
 		raw("goggles.sump.filter", "Oil filter fitted: the oil ages more slowly and fuel is cleaned out of it faster");

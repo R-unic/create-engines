@@ -30,6 +30,7 @@
     "create_engines:reboiler",
     "create_engines:column_section",
     "create_engines:condenser",
+    "create_engines:column_joint",
     "create_engines:flare_stack",
     "create_engines:turbocharger",
     "create_engines:variable_turbocharger",

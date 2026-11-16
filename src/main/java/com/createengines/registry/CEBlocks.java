@@ -33,6 +33,7 @@ import com.createengines.content.muffler.MufflerBlock;
 import com.createengines.content.muffler.SootTrapBlock;
 import com.createengines.content.rotor.RotorHousingBlock;
 import com.createengines.content.starter.StarterBlock;
+import com.createengines.content.refinery.ColumnJointBlock;
 import com.createengines.content.refinery.ColumnPortBlock;
 import com.createengines.content.refinery.ColumnSectionBlock;
 import com.createengines.content.refinery.FlareStackBlock;
@@ -478,6 +479,31 @@ public final class CEBlocks {
 			.blockstate((c, p) -> BlockStateGen.simpleBlock(c, p, s -> AssetLookup.partialBaseModel(c, p)))
 			.item()
 			.transform(ModelGen.customItemModel())
+			.register();
+
+	/**
+	 * A slanted joint between two leaning layers of a refining column. The column places and removes it; it has no item,
+	 * drops nothing and costs nothing in a schematic.
+	 */
+	public static final BlockEntry<ColumnJointBlock> COLUMN_JOINT =
+		REGISTRATE.block("column_joint", ColumnJointBlock::new)
+			.initialProperties(SharedProperties::softMetal)
+			.properties(p -> p.mapColor(MapColor.METAL)
+				.noOcclusion())
+			.transform(TagGen.pickaxeOnly())
+			.loot((tables, block) -> tables.add(block, net.minecraft.world.level.storage.loot.LootTable.lootTable()))
+			.blockstate((c, p) -> p.getVariantBuilder(c.get())
+				.forAllStates(s -> net.neoforged.neoforge.client.model.generators.ConfiguredModel.builder()
+					.modelFile(p.models()
+						.getExistingFile(p.modLoc(s.getValue(ColumnJointBlock.UPPER) ? "block/column_joint/upper"
+							: "block/column_joint/lower")))
+					.rotationY(switch (s.getValue(ColumnJointBlock.FACING)) {
+						case WEST -> 90;
+						case NORTH -> 180;
+						case EAST -> 270;
+						default -> 0;
+					})
+					.build()))
 			.register();
 
 	/** A chimney with a flame that burns while the column under it is working. Cosmetic. */

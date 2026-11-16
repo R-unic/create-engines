@@ -177,6 +177,14 @@ engine. What changes is how they are made: by refining in a column, as a continu
   Condenser, and catalyst goes into any Reboiler by hand, funnel or hopper. Tanks hold 1000 mB for each block of the
   base. Height in the balance table is the number of section layers.
 
+  Stage 4 built the lean. After the first layer of sections (which sits straight on the Reboilers), a layer may sit one
+  block to the side of the one below, along x or z, at any width, so a column climbs at 45 degrees and is still one
+  structure. Block `column_joint` is the slanted piece: the column places two rows of them at each lean (a brace under
+  the overhang and a wedge above the lower layer), they have no item, cost nothing in a schematic, turn and mirror with
+  one, and go when the column breaks. The blocks they need must be empty; if not, goggles name the block. A layer may not
+  lean back the way the one below leaned, because both leans want the same block. The Condenser sits straight on the last
+  section. Corner-to-corner diagonal leans (both x and z at once) are not in 1.3.
+
   Stage 1 set the numbers (see [REFINING_BALANCE.md](REFINING_BALANCE.md)): diesel and gasoline give 1100 mB from
   1000 mB of feed and use a catalyst item per 1000 mB of feed; ethanol gives 170 mB heated and 340 mB superheated from
   1000 mB of mash.

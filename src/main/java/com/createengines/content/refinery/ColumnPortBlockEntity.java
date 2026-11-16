@@ -180,9 +180,14 @@ public class ColumnPortBlockEntity extends SmartBlockEntity implements IHaveGogg
 
 	private void rescan() {
 		ColumnShape.Result next = RefiningColumns.scan(level, worldPosition);
-		if (next.equals(shape))
+		if (next.equals(shape)) {
+			// A leaning column keeps its joints whole: one knocked out or turned is put right
+			if (isController() && shape.leans())
+				RefiningColumns.placeJoints(level, shape);
 			return;
+		}
 		boolean wasController = isController();
+		ColumnShape.Result before = shape;
 		if (wasController && lit)
 			RefiningColumns.showWork(level, shape, false);
 		lit = false;
@@ -190,6 +195,10 @@ public class ColumnPortBlockEntity extends SmartBlockEntity implements IHaveGogg
 		shape = next;
 		if (wasController && !isController())
 			column.reset();
+		if (wasController && before.leans())
+			RefiningColumns.removeJoints(level, before);
+		if (isController() && shape.leans())
+			RefiningColumns.placeJoints(level, shape);
 		if (isController()) {
 			int cap = TANK_PER_BLOCK * shape.width() * shape.width();
 			feedTank().setCapacity(cap);
@@ -322,6 +331,10 @@ public class ColumnPortBlockEntity extends SmartBlockEntity implements IHaveGogg
 		tag.putInt("BaseZ", shape.z());
 		tag.putInt("Width", shape.width());
 		tag.putInt("Height", shape.height());
+		tag.putIntArray("Lean", shape.lean());
+		tag.putInt("BlockedX", shape.blockedX());
+		tag.putInt("BlockedY", shape.blockedY());
+		tag.putInt("BlockedZ", shape.blockedZ());
 		tag.putInt("Heat", heat.ordinal());
 		tag.putInt("Limit", limit.ordinal());
 		tag.putFloat("Rate", rate);
@@ -335,8 +348,14 @@ public class ColumnPortBlockEntity extends SmartBlockEntity implements IHaveGogg
 		// A saved size is only a first guess until the next scan, and must never be one that a loop could not finish
 		int width = Math.clamp(tag.getInt("Width"), 0, RefiningColumn.MAX_WIDTH);
 		int height = Math.clamp(tag.getInt("Height"), 0, ColumnShape.MAX_HEIGHT);
+		// A saved lean is a first guess like the size: no longer than the layers it can have, no step further than they could
+		int[] savedLean = tag.getIntArray("Lean");
+		int[] lean = new int[Math.min(savedLean.length, 2 * (ColumnShape.MAX_HEIGHT + 2)) / 2 * 2];
+		for (int i = 0; i < lean.length; i++)
+			lean[i] = Math.clamp(savedLean[i], -ColumnShape.MAX_HEIGHT, ColumnShape.MAX_HEIGHT);
 		shape = new ColumnShape.Result(faults[Math.clamp(tag.getInt("Fault"), 0, faults.length - 1)], tag.getInt("BaseX"),
-			tag.getInt("BaseY"), tag.getInt("BaseZ"), width, height);
+			tag.getInt("BaseY"), tag.getInt("BaseZ"), width, height, lean, tag.getInt("BlockedX"), tag.getInt("BlockedY"),
+			tag.getInt("BlockedZ"));
 		heat = Heat.values()[Math.clamp(tag.getInt("Heat"), 0, Heat.values().length - 1)];
 		limit = Limit.values()[Math.clamp(tag.getInt("Limit"), 0, Limit.values().length - 1)];
 		rate = tag.getFloat("Rate");
@@ -353,6 +372,15 @@ public class ColumnPortBlockEntity extends SmartBlockEntity implements IHaveGogg
 	public boolean addToGoggleTooltip(List<Component> tooltip, boolean isPlayerSneaking) {
 		CELang.translate(part() == Part.REBOILER ? "goggles.column.reboiler" : "goggles.column.condenser")
 			.forGoggles(tooltip);
+		if (shape.fault() == Fault.LEAN_BLOCKED && level != null) {
+			BlockPos blocked = new BlockPos(shape.blockedX(), shape.blockedY(), shape.blockedZ());
+			GoggleLines.add(CELang.translate("goggles.column.fault.lean_blocked", level.getBlockState(blocked)
+				.getBlock()
+				.getName()
+				.getString(), blocked.toShortString())
+				.style(ChatFormatting.RED), tooltip, 1);
+			return true;
+		}
 		if (!shape.formed()) {
 			GoggleLines.add(CELang.translate("goggles.column.fault." + shape.fault()
 				.name()

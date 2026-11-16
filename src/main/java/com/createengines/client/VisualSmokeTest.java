@@ -446,6 +446,14 @@ public final class VisualSmokeTest {
 					level.setBlock(base.offset(x, 4, z), CEBlocks.CONDENSER.getDefaultState(), 3);
 				}
 			level.setBlock(base.offset(0, 5, 0), CEBlocks.FLARE_STACK.getDefaultState(), 3);
+			// A leaning column of its own, west of the first: straight for two layers, then a step east and up
+			BlockPos lean = base.offset(-6, 0, 0);
+			level.setBlock(lean, CEBlocks.HEAT_EXCHANGER.getDefaultState(), 3);
+			level.setBlock(lean.above(), CEBlocks.REBOILER.getDefaultState(), 3);
+			int[] layerX = {0, 0, 1, 1, 2};
+			for (int i = 0; i < layerX.length; i++)
+				level.setBlock(lean.offset(layerX[i], 2 + i, 0), CEBlocks.COLUMN_SECTION.getDefaultState(), 3);
+			level.setBlock(lean.offset(2, 2 + layerX.length, 0), CEBlocks.CONDENSER.getDefaultState(), 3);
 			BlockPos basin = base.offset(5, 1, 0);
 			level.setBlock(basin.below(), com.simibubi.create.AllBlocks.BLAZE_BURNER.getDefaultState()
 				.setValue(com.simibubi.create.content.processing.burner.BlazeBurnerBlock.HEAT_LEVEL,
@@ -516,8 +524,10 @@ public final class VisualSmokeTest {
 				+ (spot.getZ() - 1) + " {Facing:2b,Invulnerable:1b,Item:{id:\"create_engines:jerry_can\",count:1}}");
 		})));
 		frames("refinery_trap_and_items", start + 440, 11.5, 3.2, 10.5, 0, 12);
-		frames("refinery_below", start + 480, 4.0, 0.6, 12.0, 25, -25);
-		STEPS.add(new Step(start + 560, () -> Minecraft.getInstance()
+		frames("refinery_lean_side", start + 470, -5.0, 5.0, 8.5, 0, 6);
+		frames("refinery_lean_close", start + 500, -5.0, 4.5, 11.0, 0, 8);
+		frames("refinery_below", start + 540, 4.0, 0.6, 12.0, 25, -25);
+		STEPS.add(new Step(start + 620, () -> Minecraft.getInstance()
 			.stop()));
 	}
 
