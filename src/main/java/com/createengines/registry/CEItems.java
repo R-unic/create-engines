@@ -2,6 +2,7 @@ package com.createengines.registry;
 
 import static com.createengines.CreateEngines.REGISTRATE;
 
+import com.createengines.content.jerrycan.JerryCanItem;
 import com.createengines.content.tool.BankBuilderItem;
 import com.createengines.content.tool.TimingToolItem;
 import com.tterrag.registrate.util.entry.ItemEntry;
@@ -61,6 +62,16 @@ public final class CEItems {
 			.properties(p -> p.stacksTo(1))
 			.model((c, p) -> p.withExistingParent(c.getName(), p.modLoc("block/bank_builder/item")))
 			.register();
+
+	/** Soot caught from a rich engine's exhaust: it is ground into black dye. */
+	public static final ItemEntry<Item> SOOT = REGISTRATE.item("soot", Item::new)
+		.model((c, p) -> p.withExistingParent(c.getName(), p.modLoc("block/soot/item")))
+		.register();
+
+	/** Four buckets of one fluid in one item, for carrying fuel where there is no pipe. */
+	public static final ItemEntry<JerryCanItem> JERRY_CAN = REGISTRATE.item("jerry_can", JerryCanItem::new)
+		.model((c, p) -> p.withExistingParent(c.getName(), p.modLoc("block/jerry_can/item")))
+		.register();
 
 	private CEItems() {
 	}

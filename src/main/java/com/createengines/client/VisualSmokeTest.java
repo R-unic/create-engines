@@ -500,7 +500,24 @@ public final class VisualSmokeTest {
 		frames("refinery_column", start + 160, 3.0, 6.0, 9.0, 0, 18);
 		frames("refinery_top", start + 200, 6.0, 8.0, 10.0, 45, 30);
 		frames("refinery_basin", start + 240, 8.5, 4.0, 12.0, 20, 25);
-		STEPS.add(new Step(start + 300, () -> Minecraft.getInstance()
+		frames("refinery_seam_top", start + 280, 1.0, 5.0, 11.0, 0, 15);
+		frames("refinery_seam_low", start + 320, 1.0, 2.0, 11.0, 0, 10);
+		frames("refinery_overhead", start + 360, 1.0, 9.0, 14.6, 0, 85);
+		STEPS.add(new Step(start + 410, () -> server(server -> {
+			var level = server.overworld();
+			BlockPos spot = origin.offset(REFINERY_OFFSET)
+				.offset(9, 1, 0);
+			level.setBlock(spot, CEBlocks.SOOT_TRAP.getDefaultState(), 3);
+			level.setBlock(spot.offset(3, 0, 0), Blocks.STONE.defaultBlockState(), 3);
+			level.setBlock(spot.offset(5, 0, 0), Blocks.STONE.defaultBlockState(), 3);
+			command(server, "summon minecraft:item_frame " + (spot.getX() + 3) + " " + spot.getY() + " "
+				+ (spot.getZ() - 1) + " {Facing:2b,Invulnerable:1b,Item:{id:\"create_engines:soot\",count:1}}");
+			command(server, "summon minecraft:item_frame " + (spot.getX() + 5) + " " + spot.getY() + " "
+				+ (spot.getZ() - 1) + " {Facing:2b,Invulnerable:1b,Item:{id:\"create_engines:jerry_can\",count:1}}");
+		})));
+		frames("refinery_trap_and_items", start + 440, 11.5, 3.2, 10.5, 0, 12);
+		frames("refinery_below", start + 480, 4.0, 0.6, 12.0, 25, -25);
+		STEPS.add(new Step(start + 560, () -> Minecraft.getInstance()
 			.stop()));
 	}
 

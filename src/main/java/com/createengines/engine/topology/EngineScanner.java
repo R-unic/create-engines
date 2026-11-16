@@ -38,6 +38,7 @@ import com.createengines.content.sump.SumpBlock;
 import com.createengines.content.airflow.InlineDuct;
 import com.createengines.content.intercooler.IntercoolerBlock;
 import com.createengines.content.muffler.MufflerBlock;
+import com.createengines.content.muffler.SootTrapBlock;
 import com.createengines.content.supercharger.SuperchargerBlock;
 import com.createengines.content.turbo.TurbochargerBlock;
 import com.createengines.engine.CrankGeometry;
@@ -654,6 +655,7 @@ public final class EngineScanner {
 		List<BlockPos> superchargers = new ArrayList<>();
 		List<BlockPos> intercoolers = new ArrayList<>();
 		List<BlockPos> mufflers = new ArrayList<>();
+		List<BlockPos> traps = new ArrayList<>();
 		for (BlockPos pos : visited) {
 			Block block = state(pos).getBlock();
 			if (block instanceof ThrottleBlock)
@@ -668,12 +670,14 @@ public final class EngineScanner {
 				intercoolers.add(pos);
 			else if (block instanceof MufflerBlock)
 				mufflers.add(pos);
+			else if (block instanceof SootTrapBlock)
+				traps.add(pos);
 		}
 
 		// A compressor, turbine or muffler that the air can go round (another branch of the run reaches an opening without
 		// it) shares the flow with whatever is on that branch; one that every path goes through takes all of it
 		Set<BlockPos> parallel = new HashSet<>();
-		for (List<BlockPos> stages : List.of(turbos, superchargers, mufflers))
+		for (List<BlockPos> stages : List.of(turbos, superchargers, mufflers, traps))
 			for (BlockPos stage : stages)
 				if (!trace(start, kind, stage).openings.isEmpty())
 					parallel.add(stage);
@@ -681,7 +685,7 @@ public final class EngineScanner {
 		int number = ports.size();
 		ports.add(new PortNetwork(kind, open, flooded, Math.max(1, heads.size()), List.copyOf(openings), List.copyOf(throttles), List.copyOf(sensors),
 			List.copyOf(turbos), List.copyOf(superchargers), List.copyOf(intercoolers), Set.copyOf(parallel),
-			List.copyOf(mufflers)));
+			List.copyOf(mufflers), List.copyOf(traps)));
 		for (BlockPos pos : visited) {
 			index.put(pos, number);
 			members.add(pos);

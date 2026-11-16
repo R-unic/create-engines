@@ -30,6 +30,7 @@ import com.createengines.content.governor.GovernorBlock;
 import com.createengines.content.head.CylinderHeadBlock;
 import com.createengines.content.intercooler.IntercoolerBlock;
 import com.createengines.content.muffler.MufflerBlock;
+import com.createengines.content.muffler.SootTrapBlock;
 import com.createengines.content.rotor.RotorHousingBlock;
 import com.createengines.content.starter.StarterBlock;
 import com.createengines.content.refinery.ColumnPortBlock;
@@ -563,6 +564,18 @@ public final class CEBlocks {
 			.initialProperties(SharedProperties::softMetal)
 			.properties(p -> part(p)
 				.mapColor(MapColor.COLOR_GRAY))
+			.transform(TagGen.pickaxeOnly())
+			.blockstate((c, p) -> BlockStateGen.axisBlock(c, p, s -> AssetLookup.partialBaseModel(c, p)))
+			.item()
+			.transform(ModelGen.customItemModel())
+			.register();
+
+	/** A filter canister in an exhaust run that catches the soot a rich engine would send out of the pipe. */
+	public static final BlockEntry<SootTrapBlock> SOOT_TRAP =
+		REGISTRATE.block("soot_trap", SootTrapBlock::new)
+			.initialProperties(SharedProperties::softMetal)
+			.properties(p -> part(p)
+				.mapColor(MapColor.COLOR_BLACK))
 			.transform(TagGen.pickaxeOnly())
 			.blockstate((c, p) -> BlockStateGen.axisBlock(c, p, s -> AssetLookup.partialBaseModel(c, p)))
 			.item()

@@ -1,0 +1,76 @@
+package com.createengines.content.jerrycan;
+
+import java.util.List;
+
+import com.createengines.registry.CEComponents;
+import com.createengines.registry.CELang;
+
+import net.minecraft.ChatFormatting;
+import net.minecraft.network.chat.Component;
+import net.minecraft.world.item.Item;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.TooltipFlag;
+import net.neoforged.neoforge.fluids.FluidStack;
+import net.neoforged.neoforge.fluids.SimpleFluidContent;
+import net.neoforged.neoforge.fluids.capability.templates.FluidHandlerItemStack;
+
+/**
+ * A jerry can: a few buckets of one fluid in one item, for carrying fuel to where there is no pipe. It takes and gives
+ * fluid the way a bucket does for every tank, Create Spouts and Item Drains included, because it is an ordinary fluid
+ * container item. It stacks to one.
+ */
+public class JerryCanItem extends Item {
+
+	/** What a can holds, mB: four buckets. */
+	public static final int CAPACITY = 4000;
+	private static final int BAR = 13;
+
+	public JerryCanItem(Properties properties) {
+		super(properties.stacksTo(1));
+	}
+
+	/** The fluid handler for a can; registered as the item's fluid capability. */
+	public static FluidHandlerItemStack handler(ItemStack stack) {
+		return new FluidHandlerItemStack(CEComponents.CAN_FLUID, stack, CAPACITY);
+	}
+
+	/** What a can holds, capped at its capacity so a damaged or commanded stack cannot show or move more than that. */
+	public static FluidStack contents(ItemStack stack) {
+		SimpleFluidContent content = stack.get(CEComponents.CAN_FLUID);
+		if (content == null || content.isEmpty())
+			return FluidStack.EMPTY;
+		FluidStack held = content.copy();
+		if (held.getAmount() > CAPACITY)
+			held.setAmount(CAPACITY);
+		return held;
+	}
+
+	@Override
+	public boolean isBarVisible(ItemStack stack) {
+		return !contents(stack).isEmpty();
+	}
+
+	@Override
+	public int getBarWidth(ItemStack stack) {
+		return Math.clamp(Math.round((float) BAR * contents(stack).getAmount() / CAPACITY), 0, BAR);
+	}
+
+	@Override
+	public int getBarColor(ItemStack stack) {
+		return 0xE0A030;
+	}
+
+	@Override
+	public void appendHoverText(ItemStack stack, TooltipContext context, List<Component> tooltip, TooltipFlag flag) {
+		FluidStack held = contents(stack);
+		if (held.isEmpty())
+			tooltip.add(CELang.translate("tooltip.jerry_can.empty", CAPACITY)
+				.style(ChatFormatting.GRAY)
+				.component());
+		else
+			tooltip.add(CELang.translate("tooltip.jerry_can.holds", held.getAmount(), CAPACITY, held.getHoverName()
+				.getString())
+				.style(ChatFormatting.GOLD)
+				.component());
+	}
+}

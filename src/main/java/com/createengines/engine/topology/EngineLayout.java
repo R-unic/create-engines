@@ -107,11 +107,12 @@ public record EngineLayout(BlockPos primary, Axis axis, List<Segment> segments, 
 	 * @param parallel      turbochargers, superchargers and mufflers the run can go round, which share its flow with the
 	 *                      other branches; any other is in series, and all of the flow goes through it
 	 * @param mufflers      mufflers in an exhaust line, which quiet what the engine sounds like
+	 * @param traps         soot traps in an exhaust line, which catch the soot of a rich engine
 	 */
 	public record PortNetwork(PortKind kind, int openings, int flooded, int heads, List<BlockPos> outlets,
 							  List<BlockPos> throttles, List<BlockPos> sensors, List<BlockPos> turbos,
 							  List<BlockPos> superchargers, List<BlockPos> intercoolers, Set<BlockPos> parallel,
-							  List<BlockPos> mufflers) {
+							  List<BlockPos> mufflers, List<BlockPos> traps) {
 		/** Share of full breathing each head gets: an opening comfortably serves two cylinders. */
 		public double flowFactor() {
 			if (openings == 0 || heads == 0)

@@ -169,6 +169,14 @@ public final class CylinderModel {
 	private FuelSpec burningFuel;
 	/** Soot on the spark plug, 0 (clean) to 1: rich running builds it, a mixture that burns clean cleans it off. */
 	private double fouling;
+	/**
+	 * Fuel, in mB, that left the exhaust as soot since a soot trap last asked: what rich cycles failed to burn, scaled by
+	 * how sooty the fuel is. Whoever owns the model drains it with {@link #takeSoot()}; it is capped so that nobody
+	 * listening never lets it grow without limit.
+	 */
+	private double sootPending;
+	/** Most soot a model holds before it is drained, mB. */
+	static final double SOOT_CAP = 1000;
 	private double travelSinceCycle;
 
 	/** How the exhaust port's gas decays over the last step length, which is the same for every step but a tick's last. */
@@ -395,6 +403,7 @@ public final class CylinderModel {
 		evaporativeCooling = other.evaporativeCooling;
 		preignitionLoss = other.preignitionLoss;
 		fouling = other.fouling;
+		sootPending = other.sootPending;
 		burningFuel = other.burningFuel;
 		travelSinceCycle = other.travelSinceCycle;
 		current.copyFrom(other.current);
@@ -403,6 +412,13 @@ public final class CylinderModel {
 
 	public CycleStats lastCycle() {
 		return last;
+	}
+
+	/** Soot the exhaust carried out since the last call, in mB of unburned fuel; empties the count. */
+	public double takeSoot() {
+		double soot = sootPending;
+		sootPending = 0;
+		return soot;
 	}
 
 	/** Soot on the spark plug from 0 to 1. A fouled plug can't light a rich mixture it otherwise could. */
@@ -687,6 +703,13 @@ public final class CylinderModel {
 			current.result = CycleResult.TOO_RICH;
 		else
 			current.result = CycleResult.NO_IGNITION;
+
+		if (current.result.fired() && current.fuelInjected > 0) {
+			double unburnedShare = current.unburnedFraction();
+			if (unburnedShare > Mixture.RICH_UNBURNED)
+				sootPending = Math.min(SOOT_CAP, sootPending + SootCollector.sootFrom(current.fuelInjected,
+					unburnedShare, burningFuel == null ? 1 : burningFuel.sootFactor()));
+		}
 
 		if (ignition.installed() && current.fuelInjected > 0) {
 			double unburned = current.unburnedFraction();

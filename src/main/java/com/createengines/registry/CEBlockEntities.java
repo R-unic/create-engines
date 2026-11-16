@@ -36,6 +36,8 @@ import com.createengines.content.turbo.TurbochargerBlockEntity;
 import com.createengines.content.plate.MakerPlateBlockEntity;
 import com.createengines.content.plate.MakerPlateRenderer;
 import com.createengines.content.raincap.RainCapBlockEntity;
+import com.createengines.content.muffler.SootTrapBlockEntity;
+import com.createengines.content.jerrycan.JerryCanItem;
 import com.createengines.content.raincap.RainCapRenderer;
 import com.createengines.content.turbo.TurbochargerRenderer;
 import com.simibubi.create.content.kinetics.transmission.SplitShaftRenderer;
@@ -156,6 +158,12 @@ public final class CEBlockEntities {
 		.validBlocks(CEBlocks.REBOILER, CEBlocks.CONDENSER)
 		.register();
 
+	/** The soot a Soot Trap has caught. */
+	public static final BlockEntityEntry<SootTrapBlockEntity> SOOT_TRAP = REGISTRATE
+		.blockEntity("soot_trap", SootTrapBlockEntity::new)
+		.validBlocks(CEBlocks.SOOT_TRAP)
+		.register();
+
 	public static final BlockEntityEntry<RainCapBlockEntity> RAIN_CAP = REGISTRATE
 		.blockEntity("rain_cap", RainCapBlockEntity::new)
 		.validBlocks(CEBlocks.RAIN_CAP)
@@ -224,6 +232,9 @@ public final class CEBlockEntities {
 		event.registerBlockEntity(Capabilities.FluidHandler.BLOCK, SUMP.get(), (be, side) -> be.fluidCapability());
 		event.registerBlockEntity(Capabilities.FluidHandler.BLOCK, COLUMN_PORT.get(), (be, side) -> be.fluidCapability());
 		event.registerBlockEntity(Capabilities.ItemHandler.BLOCK, COLUMN_PORT.get(), (be, side) -> be.itemCapability());
+		event.registerItem(Capabilities.FluidHandler.ITEM, (stack, context) -> JerryCanItem.handler(stack),
+			CEItems.JERRY_CAN.get());
+		event.registerBlockEntity(Capabilities.ItemHandler.BLOCK, SOOT_TRAP.get(), (be, side) -> be.itemCapability());
 		event.registerBlockEntity(Capabilities.EnergyStorage.BLOCK, ALTERNATOR.get(), (be, side) -> be.energyOutput());
 	}
 }

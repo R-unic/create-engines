@@ -252,4 +252,32 @@ class AirFuelRatioTest {
 		assertEquals(0, rig.engine.lubrication()
 			.dilution(), 1e-9);
 	}
+
+	@Test
+	void aRichDieselMakesSootForATrapAndATunedOneMakesNone() {
+		Rig rich = new Rig(DIESEL, IgnitionSource.NONE, 128).mixture(1.8);
+		rich.run(20);
+		double soot = rich.cylinder.takeSoot();
+		assertTrue(soot > 0, "a rich diesel smokes: " + soot);
+		assertEquals(0, rich.cylinder.takeSoot(), 0, "taking empties the count");
+
+		Rig tuned = new Rig(DIESEL, IgnitionSource.NONE, 128).mixture(TUNED);
+		tuned.run(20);
+		assertEquals(0, tuned.cylinder.takeSoot(), 1e-9, "a clean burn leaves nothing for a trap");
+	}
+
+	@Test
+	void ethanolBurnsCleanEvenWhenRich() {
+		Rig rig = new Rig(unlimited(FuelSpec.ETHANOL), IgnitionSource.UNLIMITED, 128).mixture(1.5);
+		rig.run(20);
+		assertEquals(0, rig.cylinder.takeSoot(), 0);
+	}
+
+	@Test
+	void theSootAnEngineHoldsIsCappedSoNobodyListeningCannotLeakMemoryOrNumbers() {
+		Rig rig = new Rig(DIESEL, IgnitionSource.NONE, 400).mixture(2.2);
+		rig.run(400);
+		double soot = rig.cylinder.takeSoot();
+		assertTrue(soot > 0 && soot <= 1000, "soot " + soot);
+	}
 }

@@ -1,0 +1,27 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "key": {
+    "S": {
+      "item": "create:iron_sheet"
+    },
+    "I": {
+      "item": "minecraft:iron_ingot"
+    },
+    "C": {
+      "item": "minecraft:charcoal"
+    },
+    "M": {
+      "item": "create_engines:exhaust_manifold"
+    }
+  },
+  "pattern": [
+    "ISI",
+    "CMC",
+    "ISI"
+  ],
+  "result": {
+    "count": 1,
+    "id": "create_engines:soot_trap"
+  }
+}

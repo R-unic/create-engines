@@ -37,6 +37,7 @@
     "create_engines:variable_supercharger",
     "create_engines:intercooler",
     "create_engines:muffler",
+    "create_engines:soot_trap",
     "create_engines:engine_casing",
     "create_engines:engine_riveted_casing",
     "create_engines:engine_louvred_casing",

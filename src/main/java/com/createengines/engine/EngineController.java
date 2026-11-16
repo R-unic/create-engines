@@ -56,6 +56,8 @@ import com.createengines.engine.sim.Throttle;
 import com.createengines.engine.sim.Torsion;
 import com.createengines.engine.sim.Intercooler;
 import com.createengines.engine.sim.Muffling;
+import com.createengines.engine.sim.SootCollector;
+import com.createengines.content.muffler.SootTrapBlockEntity;
 import com.createengines.engine.sim.Supercharger;
 import com.createengines.engine.sim.Turbocharger;
 import com.createengines.engine.sim.OilSupply;
@@ -1136,6 +1138,47 @@ public final class EngineController {
 	}
 
 	/**
+	 * Hands the soot the cylinders made since the last round to the soot traps in the exhaust runs. A run catches all of
+	 * it behind a trap the exhaust cannot go round, half behind one it can; what no trap catches goes out of the pipe.
+	 * The cylinders are drained whether or not there is a trap, so their counts never pile up.
+	 */
+	private void catchSoot(Level level) {
+		double soot = 0;
+		for (CylinderModel model : models)
+			if (model != null)
+				soot += model.takeSoot();
+		if (!(soot > 0))
+			return;
+		java.util.List<EngineLayout.PortNetwork> runs = layout.ports()
+			.stream()
+			.filter(network -> network.kind() == com.createengines.content.airflow.PortKind.EXHAUST
+				&& !network.traps()
+					.isEmpty())
+			.toList();
+		if (runs.isEmpty())
+			return;
+		int totalHeads = layout.ports()
+			.stream()
+			.filter(network -> network.kind() == com.createengines.content.airflow.PortKind.EXHAUST)
+			.mapToInt(EngineLayout.PortNetwork::heads)
+			.sum();
+		for (EngineLayout.PortNetwork run : runs) {
+			boolean series = run.traps()
+				.stream()
+				.anyMatch(trap -> !run.parallel()
+					.contains(trap));
+			double each = SootCollector.share(soot, run.heads(), totalHeads, SootCollector.catchShare(series, !series),
+				run.traps()
+					.size());
+			if (each <= 0)
+				continue;
+			for (BlockPos pos : run.traps())
+				if (LoadedBlocks.blockEntity(level, pos) instanceof SootTrapBlockEntity trap)
+					trap.catchSoot(each);
+		}
+	}
+
+	/**
 	 * Rates the engine for goggles: one health and the one thing most responsible. A cylinder left out of the simulation
 	 * for a missing part counts as one that is not firing, so the engine still shows it is short of a cylinder.
 	 */
@@ -1173,6 +1216,7 @@ public final class EngineController {
 		reportMilestones(level, state);
 		syncTurbos(level);
 		syncSuperchargers(level);
+		catchSoot(level);
 
 		for (EngineLayout.Segment segment : layout.segments())
 			if (LoadedBlocks.blockEntity(level, segment.pos()) instanceof CrankshaftBlockEntity crank)

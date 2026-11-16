@@ -314,6 +314,12 @@ public final class CELang {
 		raw("goggles.head.no_spark_plug", "Right-click with a Spark Plug to light fuel by spark instead of compression");
 
 		raw("goggles.sump", "Oil Sump");
+		raw("tooltip.jerry_can.empty", "Empty: holds %1$s mB of one fluid");
+		raw("tooltip.jerry_can.holds", "%1$s / %2$s mB of %3$s");
+		raw("goggles.soot_trap", "Soot Trap");
+		raw("goggles.soot_trap.stored", "Soot caught: %1$s of %2$s");
+		raw("goggles.soot_trap.full", "Full: it lets soot through until it is emptied");
+		raw("goggles.soot_trap.hint", "Catches the soot a rich engine would send out of the pipe. Empty it by hand, or with a hopper or funnel");
 		raw("goggles.basin.column", "A refining column would make %1$s%% more %2$s from this");
 		raw("goggles.column.reboiler", "Reboiler");
 		raw("goggles.column.condenser", "Condenser");

@@ -14,6 +14,38 @@ OUT = "src/main/resources/assets/create_engines/models/block"
 FACES = ("north", "south", "east", "west", "up", "down")
 
 
+# Only the refinery models use this: older models were made and approved with the default patches, so they stay as
+# they are. Set by the functions that want it.
+WRAP_UV = False
+
+
+def _wrapped_default_uv(a, b, face):
+    """The patch a face would show by default, moved back inside the texture when the element pokes out of the block
+    (a boss or port outside 0..16): outside the sprite the default patch samples the neighbouring sprites in the atlas
+    and shows as stray colours. Returns None when the default is already inside and needs no uv."""
+    if not WRAP_UV:
+        return None
+    x1, y1, z1 = a
+    x2, y2, z2 = b
+    u0, v0, u1, v1 = {
+        "down": (x1, 16 - z2, x2, 16 - z1),
+        "up": (x1, z1, x2, z2),
+        "north": (16 - x2, 16 - y2, 16 - x1, 16 - y1),
+        "south": (x1, 16 - y2, x2, 16 - y1),
+        "west": (z1, 16 - y2, z2, 16 - y1),
+        "east": (16 - z2, 16 - y2, 16 - z1, 16 - y1),
+    }[face]
+    if min(u0, v0) >= 0 and max(u1, v1) <= 16:
+        return None
+    du = -(u0 // 16) * 16
+    dv = -(v0 // 16) * 16
+    patch = [u0 + du, v0 + dv, u1 + du, v1 + dv]
+    # A piece wider than the texture would still overrun: show the whole texture instead
+    if max(patch) > 16 or min(patch) < 0:
+        return [0, 0, 16, 16]
+    return [round(v, 4) for v in patch]
+
+
 def box(a, b, tex, uv=None, **overrides):
     """One element from corner a to corner b. tex is the texture for every face; overrides retexture single faces; uv
     maps a face name to the [u0, v0, u1, v1] patch of its texture to show, instead of the one under it."""
@@ -22,6 +54,10 @@ def box(a, b, tex, uv=None, **overrides):
         faces[face] = {"texture": "#" + overrides.get(face, tex)}
         if uv and face in uv:
             faces[face]["uv"] = uv[face]
+        else:
+            patch = _wrapped_default_uv(a, b, face)
+            if patch:
+                faces[face]["uv"] = patch
     return {"from": [round(v, 4) for v in a], "to": [round(v, 4) for v in b], "faces": faces}
 
 
@@ -887,6 +923,58 @@ def muffler():
     write_item("muffler/item", "muffler/block")
 
 
+def soot_trap():
+    """A soot trap along the Y axis (the block state turns it): a dark filter canister with a grille window and two
+    brass bands between steel caps, and an exhaust stub on each end."""
+    textures = {"shell": DARK, "cap": IRON_BLOCK, "band": BRASS, "mesh": "create_engines:block/grille",
+                "stub": IRON, "particle": DARK}
+    elements = [
+        box((2, 0, 2), (14, 2, 14), "cap"),
+        box((2, 14, 2), (14, 16, 14), "cap"),
+        box((3, 2, 3), (13, 14, 13), "shell"),
+        box((2.5, 3.5, 2.5), (13.5, 4.5, 13.5), "band"),
+        box((2.5, 11.5, 2.5), (13.5, 12.5, 13.5), "band"),
+        box((2.6, 5.5, 2.6), (13.4, 10.5, 13.4), "mesh"),
+        box((6, 0, 6), (10, 1, 10), "stub"),
+        box((6, 15, 6), (10, 16, 10), "stub"),
+    ]
+    write("soot_trap/block", textures, elements)
+    write_item("soot_trap/item", "soot_trap/block")
+
+
+def soot():
+    """A heap of soot lumps, for the item."""
+    textures = {"soot": DARK, "dust": BLACK, "particle": DARK}
+    elements = [
+        box((3, 0, 4), (9, 4, 10), "soot"),
+        box((8, 0, 7), (13, 3, 12), "soot"),
+        box((5, 4, 5), (8, 6, 8), "soot"),
+        box((6, 0, 1), (10, 2, 4), "soot"),
+        box((2, 0, 10), (6, 1.5, 14), "dust"),
+    ]
+    write("soot/item", textures, elements)
+
+
+def jerry_can():
+    """A jerry can: a red slab with a handle across the top, a spout and a cap, and pressed ribs on its faces."""
+    textures = {"body": RED, "rib": IRON_BLOCK, "handle": DARK, "cap": BRASS, "particle": RED}
+    elements = [
+        box((3, 0, 5.5), (13, 11, 10.5), "body"),
+        box((4.5, 11, 6.5), (11.5, 12, 9.5), "body"),
+        box((5, 12, 7), (6.5, 15, 9), "handle"),
+        box((9.5, 12, 7), (11, 15, 9), "handle"),
+        box((5, 15, 7), (11, 16, 9), "handle"),
+        box((11.5, 9.5, 7.2), (14.5, 12.5, 8.8), "cap"),
+        box((12.5, 12.5, 6.8), (15, 13.5, 9.2), "cap"),
+    ]
+    # Pressed ribs: a pair of bands and a cross on each broad face
+    for z0, z1 in ((5.2, 5.5), (10.5, 10.8)):
+        elements.append(box((4, 2, z0), (12, 3, z1), "rib"))
+        elements.append(box((4, 8, z0), (12, 9, z1), "rib"))
+        elements.append(box((7.5, 3, z0), (8.5, 8, z1), "rib"))
+    write("jerry_can/item", textures, elements)
+
+
 CASING_SPRITE = "create_engines:block/engine_casing"
 CASING_TEXTURES = {"casing": CASING_SPRITE, "cap": IRON_BLOCK, "dark": DARK, "particle": CASING_SPRITE}
 
@@ -976,17 +1064,19 @@ def transmission():
 
 def refinery():
     """The three parts of a refining column. Each fills its block to the edge, so a wide column is a solid tower."""
+    global WRAP_UV
+    WRAP_UV = True
     # Reboiler: a squat firebox with a riveted drum on it and a feed boss on the side
     write("reboiler/block", {"plate": RIVETED, "band": IRON_BLOCK, "foot": DARK, "boss": BRASS, "port": COPPER,
                              "particle": RIVETED},
           [box((0, 0, 0), (16, 4, 16), "foot"), box((0, 4, 0), (16, 13, 16), "plate"),
-           box((0, 13, 0), (16, 16, 16), "band"), box((0, 7, 0), (16, 8.5, 16), "band"),
+           box((0, 13, 0), (16, 16, 16), "band"), box((-0.2, 7, -0.2), (16.2, 8.5, 16.2), "band"),
            box((16, 4, 5), (18, 9, 11), "boss"), box((-2, 4, 5), (0, 9, 11), "boss"),
            box((6, 4, 16), (10, 8, 17.5), "port"), box((6, 4, -1.5), (10, 8, 0), "port")])
     write_item("reboiler/item", "reboiler/block")
     # Column section: banded plate with a sight window on every side, dark while idle and glowing while it works
     for name, glass in (("block", BLACK), ("active", LAVA)):
-        elements = [box((0, 0, 0), (16, 16, 16), "plate"), box((0, 0, 0), (16, 2, 16), "band"),
+        elements = [box((0, 2, 0), (16, 14, 16), "plate"), box((0, 0, 0), (16, 2, 16), "band"),
                     box((0, 14, 0), (16, 16, 16), "band")]
         for lo, hi in (((4, 5, -0.4), (12, 11, 0)), ((4, 5, 16), (12, 11, 16.4)),
                        ((-0.4, 5, 4), (0, 11, 12)), ((16, 5, 4), (16.4, 11, 12))):
@@ -1008,10 +1098,13 @@ def refinery():
     write("condenser/block", {"plate": RIVETED, "band": IRON_BLOCK, "fin": COPPER, "boss": BRASS, "port": COPPER,
                               "particle": RIVETED}, elements)
     write_item("condenser/item", "condenser/block")
+    WRAP_UV = False
 
 
 def flare_stack():
     """A thin chimney on a flange, with a burner cup on top; the lit model adds the flame."""
+    global WRAP_UV
+    WRAP_UV = True
     textures = {"pipe": IRON_BLOCK, "flange": DARK, "cup": IRON, "flame": MAGMA, "particle": IRON_BLOCK}
     base = [box((3, 0, 3), (13, 2, 13), "flange"), box((6, 2, 6), (10, 13, 10), "pipe"),
             box((5, 13, 5), (11, 15, 11), "cup"), box((5.5, 7, 5.5), (10.5, 8, 10.5), "flange")]
@@ -1019,6 +1112,7 @@ def flare_stack():
     write("flare_stack/lit", textures, base + [box((6.5, 15, 6.5), (9.5, 18, 9.5), "flame"),
                                                box((7.2, 18, 7.2), (8.8, 19.5, 8.8), "flame")])
     write_item("flare_stack/item", "flare_stack/lit")
+    WRAP_UV = False
 
 
 def sump():
@@ -1308,6 +1402,9 @@ def main():
     sump()
     refinery()
     flare_stack()
+    soot_trap()
+    soot()
+    jerry_can()
 
 
 main()
