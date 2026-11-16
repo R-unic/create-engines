@@ -5,7 +5,7 @@ package com.createengines.engine.sim;
  * the same square on it, and a layer of Condensers of that square straight on the last of them. The first layer of
  * sections sits straight on the Reboilers. After that a layer may lean: it may sit one block to the side (along x or z)
  * of the layer below, which joins the two with a slanted piece. A lean fills the blocks beside the two layers with joint
- * pieces ({@link Part#JOINT}), so those blocks must be empty; if one is not, the column does not form and the fault names
+ * pieces (the sections draw the arms themselves, so those blocks must be empty; if one is not, the column does not form and the fault names
  * the block. Nothing here knows about blocks: the caller says what part sits at a position, so the rules are tested
  * as plain Java.
  */
@@ -13,9 +13,7 @@ public final class ColumnShape {
 
 	/** What a block is, as far as a column cares. */
 	public enum Part {
-		OTHER, REBOILER, SECTION, CONDENSER,
-		/** A slanted joint piece the column placed between two layers that lean. */
-		JOINT
+		OTHER, REBOILER, SECTION, CONDENSER
 	}
 
 	/** Why a column did not form, in the order goggles look for it. */
@@ -44,17 +42,9 @@ public final class ColumnShape {
 	public interface World {
 		Part at(int x, int y, int z);
 
-		/** Whether a joint piece may be placed here: nothing but air or something a block can replace. */
+		/** Whether the slanted brace of a lean may take this block: nothing but air or something a block can replace. */
 		default boolean clear(int x, int y, int z) {
 			return at(x, y, z) == Part.OTHER;
-		}
-
-		/**
-		 * Which way a joint piece hangs, for a scan that starts on a layer that leans: -1 for no joint here, 0 if it hangs
-		 * from the block below, or 1 to 4 for the block beside it at +x, -x, +z or -z.
-		 */
-		default int jointLink(int x, int y, int z) {
-			return -1;
 		}
 	}
 
@@ -62,10 +52,11 @@ public final class ColumnShape {
 	public static final int[][] STEPS = {{1, 0}, {-1, 0}, {0, 1}, {0, -1}};
 
 	/**
-	 * A joint piece that a lean needs.
+	 * A block space that a lean fills with the slanted arm of a section next to it. The sections draw the arms
+	 * themselves (there is no block there), so the space must stay empty.
 	 *
 	 * @param dir   the way the column leans there, an index into {@link #STEPS}
-	 * @param upper false for the piece under the upper layer overhang, true for the one above the lower layer
+	 * @param upper false for the space under the upper layer overhang, true for the one above the lower layer
 	 */
 	public record Joint(int x, int y, int z, int dir, boolean upper) {
 	}
@@ -195,27 +186,30 @@ public final class ColumnShape {
 	public static Result scan(World world, int x, int y, int z) {
 		if (world.at(x, y, z) == Part.OTHER)
 			return NOTHING;
-		// Down the column from here to the Reboilers, sideways along a joint where a layer leans
+		// Down the column from here to the Reboilers; a section with nothing under it is the top of a lean, and is
+		// held by the section one block to the side and one down
 		int baseY = y;
-		int guard = 3 * (MAX_HEIGHT + 3);
+		int guard = 2 * (MAX_HEIGHT + 3);
 		while (world.at(x, baseY, z) != Part.REBOILER) {
 			if (--guard < 0)
 				return NOTHING;
-			if (world.at(x, baseY, z) == Part.JOINT) {
-				int link = world.jointLink(x, baseY, z);
-				if (link < 0)
-					return NOTHING;
-				if (link > 0) {
-					x += STEPS[link - 1][0];
-					z += STEPS[link - 1][1];
-					if (world.at(x, baseY, z) == Part.OTHER)
-						return NOTHING;
-					continue;
-				}
+			if (world.at(x, baseY - 1, z) != Part.OTHER) {
+				baseY--;
+				continue;
 			}
-			if (world.at(x, baseY - 1, z) == Part.OTHER)
+			if (world.at(x, baseY, z) != Part.SECTION)
 				return NOTHING;
-			baseY--;
+			boolean found = false;
+			for (int[] step : STEPS)
+				if (world.at(x + step[0], baseY - 1, z + step[1]) == Part.SECTION) {
+					x += step[0];
+					z += step[1];
+					baseY--;
+					found = true;
+					break;
+				}
+			if (!found)
+				return NOTHING;
 		}
 		// The square of Reboilers that touch this one on its layer
 		int minX = x, maxX = x, minZ = z, maxZ = z;
@@ -282,8 +276,7 @@ public final class ColumnShape {
 			boolean any = false;
 			for (int px = minX + ox; px < minX + ox + width; px++)
 				for (int pz = minZ + oz; pz < minZ + oz + width; pz++) {
-					Part there = world.at(px, py, pz);
-					any |= there != Part.OTHER && there != Part.JOINT;
+					any |= world.at(px, py, pz) != Part.OTHER;
 				}
 			if (any)
 				return new Result(Fault.RAGGED, minX, baseY, minZ, width, height);
@@ -302,7 +295,7 @@ public final class ColumnShape {
 		java.util.Set<Long> used = new java.util.HashSet<>();
 		for (Joint joint : formed.joints()) {
 			boolean taken = !used.add(key(joint.x(), joint.y(), joint.z()));
-			if (taken || !(world.at(joint.x(), joint.y(), joint.z()) == Part.JOINT || world.clear(joint.x(), joint.y(), joint.z())))
+			if (taken || !world.clear(joint.x(), joint.y(), joint.z()))
 				return new Result(Fault.LEAN_BLOCKED, minX, baseY, minZ, width, height, new int[0], joint.x(), joint.y(), joint.z());
 		}
 		return formed;

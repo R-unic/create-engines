@@ -179,11 +179,13 @@ engine. What changes is how they are made: by refining in a column, as a continu
 
   Stage 4 built the lean. After the first layer of sections (which sits straight on the Reboilers), a layer may sit one
   block to the side of the one below, along x or z, at any width, so a column climbs at 45 degrees and is still one
-  structure. Block `column_joint` is the slanted piece: the column places two rows of them at each lean (a brace under
-  the overhang and a wedge above the lower layer), they have no item, cost nothing in a schematic, turn and mirror with
-  one, and go when the column breaks. The blocks they need must be empty; if not, goggles name the block. A layer may not
-  lean back the way the one below leaned, because both leans want the same block. The Condenser sits straight on the last
-  section. Corner-to-corner diagonal leans (both x and z at once) are not in 1.3.
+  structure. There is no joint block: the sections join by themselves, the way Create chutes do. A section with nothing
+  straight above it and a section above and to one side grows a slanted wedge arm towards it, and the section that leans
+  grows a brace back towards the one below. The arms are part of each section own model, follow the neighbours as they
+  are placed and broken, and are drawn into the empty block above or below, so that block must be empty; if not, goggles
+  name it. The arms are looks only (they have no collision of their own). A layer may not lean back the way the one below
+  leaned, because both leans want the same space. The Condenser sits straight on the last section. Leans that move in x
+  and z at once are not in 1.3.
 
   Stage 1 set the numbers (see [REFINING_BALANCE.md](REFINING_BALANCE.md)): diesel and gasoline give 1100 mB from
   1000 mB of feed and use a catalyst item per 1000 mB of feed; ethanol gives 170 mB heated and 340 mB superheated from

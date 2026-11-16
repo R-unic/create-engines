@@ -43,14 +43,6 @@ class ColumnLeanTest {
 		solid.add(key(x, y, z));
 	}
 
-	/** Puts down the joints a result asks for, the way the world adapter does. */
-	private void place(Result result) {
-		for (Joint joint : result.joints())
-			put(Part.JOINT, joint.x(), joint.y(), joint.z());
-	}
-
-	private final Map<String, Integer> links = new HashMap<>();
-
 	private Result scan(int x, int y, int z) {
 		ColumnShape.World world = new ColumnShape.World() {
 			@Override
@@ -62,11 +54,6 @@ class ColumnLeanTest {
 			public boolean clear(int px, int py, int pz) {
 				return at(px, py, pz) == Part.OTHER && !solid.contains(key(px, py, pz));
 			}
-
-			@Override
-			public int jointLink(int px, int py, int pz) {
-				return links.getOrDefault(key(px, py, pz), -1);
-			}
 		};
 		return ColumnShape.scan(world, x, y, z);
 	}
@@ -77,18 +64,6 @@ class ColumnLeanTest {
 		for (int i = 0; i < layerX.length; i++)
 			layer(Part.SECTION, layerX[i], i + 1, 0, width);
 		layer(Part.CONDENSER, layerX[layerX.length - 1], layerX.length + 1, 0, width);
-	}
-
-	/** Registers the link of every joint the way the block does: lower hangs from the column, upper from below. */
-	private void link(Result result) {
-		for (Joint joint : result.joints()) {
-			int link = 0;
-			if (!joint.upper()) {
-				int[] step = ColumnShape.STEPS[joint.dir()];
-				link = ColumnShape.dirOf(-step[0], -step[1]) + 1;
-			}
-			links.put(key(joint.x(), joint.y(), joint.z()), link);
-		}
 	}
 
 	@Test
@@ -156,17 +131,6 @@ class ColumnLeanTest {
 	}
 
 	@Test
-	void jointsAlreadyPlacedDoNotBlockTheColumn() {
-		build(1, 0, 0, 1, 1);
-		Result r = scan(0, 0, 0);
-		place(r);
-		link(r);
-		Result again = scan(0, 0, 0);
-		assertTrue(again.formed());
-		assertEquals(r, again);
-	}
-
-	@Test
 	void leaningBackTheWayItCameCrossesItsOwnJointsAndIsRefused() {
 		build(1, 0, 0, 1, 0);
 		Result r = scan(0, 0, 0);
@@ -178,8 +142,6 @@ class ColumnLeanTest {
 		build(2, 0, 0, 1, 1, 2, 2);
 		Result r = scan(0, 0, 0);
 		assertTrue(r.formed(), "fault " + r.fault());
-		place(r);
-		link(r);
 		for (int y = 0; y <= r.topY(); y++)
 			for (int x = -1; x < 6; x++)
 				for (int z = -1; z < 3; z++)
@@ -188,13 +150,15 @@ class ColumnLeanTest {
 	}
 
 	@Test
-	void aSectionWithNothingBelowItIsInNoColumnUntilTheJointsAreThere() {
+	void aSectionWithNothingStraightBelowItIsHeldByTheOneDiagonallyBelow() {
 		build(1, 0, 0, 1, 1);
-		// The overhanging section at x 1: below it is air until the Reboiler's scan places the joints
+		Result r = scan(0, 0, 0);
+		// The overhanging sections at x 1 have air under them, and still belong to the column
+		assertEquals(r, scan(1, 3, 0));
+		assertEquals(r, scan(1, 5, 0));
+		// Take the section it hangs from away and it is on its own
+		parts.remove(key(0, 2, 0));
 		assertFalse(scan(1, 3, 0).formed());
-		place(scan(0, 0, 0));
-		link(scan(0, 0, 0));
-		assertTrue(scan(1, 3, 0).formed());
 	}
 
 	@Test
@@ -219,7 +183,6 @@ class ColumnLeanTest {
 		for (int round = 0; round < 200; round++) {
 			parts.clear();
 			solid.clear();
-			links.clear();
 			int width = 1 + random.nextInt(3);
 			int sections = 2 + random.nextInt(12);
 			layer(Part.REBOILER, 0, 0, 0, width);
@@ -238,8 +201,6 @@ class ColumnLeanTest {
 				assertEquals(sections, r.height());
 				assertEquals(width, r.width());
 				assertTrue(r.contains(x, sections + 1, z));
-				place(r);
-				link(r);
 				assertEquals(r, scan(x, sections + 1, z));
 			} else {
 				assertEquals(Fault.LEAN_BLOCKED, r.fault(), "the only reason a built column fails here is leaning back");

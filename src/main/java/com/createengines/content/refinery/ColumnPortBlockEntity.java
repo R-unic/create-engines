@@ -180,14 +180,9 @@ public class ColumnPortBlockEntity extends SmartBlockEntity implements IHaveGogg
 
 	private void rescan() {
 		ColumnShape.Result next = RefiningColumns.scan(level, worldPosition);
-		if (next.equals(shape)) {
-			// A leaning column keeps its joints whole: one knocked out or turned is put right
-			if (isController() && shape.leans())
-				RefiningColumns.placeJoints(level, shape);
+		if (next.equals(shape))
 			return;
-		}
 		boolean wasController = isController();
-		ColumnShape.Result before = shape;
 		if (wasController && lit)
 			RefiningColumns.showWork(level, shape, false);
 		lit = false;
@@ -195,10 +190,6 @@ public class ColumnPortBlockEntity extends SmartBlockEntity implements IHaveGogg
 		shape = next;
 		if (wasController && !isController())
 			column.reset();
-		if (wasController && before.leans())
-			RefiningColumns.removeJoints(level, before);
-		if (isController() && shape.leans())
-			RefiningColumns.placeJoints(level, shape);
 		if (isController()) {
 			int cap = TANK_PER_BLOCK * shape.width() * shape.width();
 			feedTank().setCapacity(cap);

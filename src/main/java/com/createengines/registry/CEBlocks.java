@@ -33,7 +33,6 @@ import com.createengines.content.muffler.MufflerBlock;
 import com.createengines.content.muffler.SootTrapBlock;
 import com.createengines.content.rotor.RotorHousingBlock;
 import com.createengines.content.starter.StarterBlock;
-import com.createengines.content.refinery.ColumnJointBlock;
 import com.createengines.content.refinery.ColumnPortBlock;
 import com.createengines.content.refinery.ColumnSectionBlock;
 import com.createengines.content.refinery.FlareStackBlock;
@@ -459,12 +458,37 @@ public final class CEBlocks {
 			.properties(p -> p.mapColor(MapColor.METAL)
 				.noOcclusion())
 			.transform(TagGen.pickaxeOnly())
-			.blockstate((c, p) -> p.getVariantBuilder(c.get())
-				.forAllStates(s -> net.neoforged.neoforge.client.model.generators.ConfiguredModel.builder()
-					.modelFile(p.models()
-						.getExistingFile(p.modLoc(s.getValue(ColumnSectionBlock.ACTIVE) ? "block/column_section/active"
-							: "block/column_section/block")))
-					.build()))
+			.blockstate((c, p) -> {
+				// The body, lit or dark, and an arm on top or underneath for each side a diagonal neighbour is on
+				var parts = p.getMultipartBuilder(c.get());
+				for (boolean active : new boolean[] {false, true})
+					parts.part()
+						.modelFile(p.models()
+							.getExistingFile(p.modLoc(active ? "block/column_section/active" : "block/column_section/block")))
+						.addModel()
+						.condition(ColumnSectionBlock.ACTIVE, active)
+						.end();
+				for (ColumnSectionBlock.Lean lean : ColumnSectionBlock.Lean.values()) {
+					if (lean.direction() == null)
+						continue;
+					parts.part()
+						.modelFile(p.models()
+							.getExistingFile(p.modLoc("block/column_section/wedge")))
+						.rotationY(southTurn(lean.direction()))
+						.addModel()
+						.condition(ColumnSectionBlock.LEAN_UP, lean)
+						.end();
+					// The brace is built for a lean to the south, which is away from the section it hangs from
+					parts.part()
+						.modelFile(p.models()
+							.getExistingFile(p.modLoc("block/column_section/brace")))
+						.rotationY(southTurn(lean.direction()
+							.getOpposite()))
+						.addModel()
+						.condition(ColumnSectionBlock.LEAN_DOWN, lean)
+						.end();
+				}
+			})
 			.item()
 			.transform(ModelGen.customItemModel())
 			.register();
@@ -481,30 +505,15 @@ public final class CEBlocks {
 			.transform(ModelGen.customItemModel())
 			.register();
 
-	/**
-	 * A slanted joint between two leaning layers of a refining column. The column places and removes it; it has no item,
-	 * drops nothing and costs nothing in a schematic.
-	 */
-	public static final BlockEntry<ColumnJointBlock> COLUMN_JOINT =
-		REGISTRATE.block("column_joint", ColumnJointBlock::new)
-			.initialProperties(SharedProperties::softMetal)
-			.properties(p -> p.mapColor(MapColor.METAL)
-				.noOcclusion())
-			.transform(TagGen.pickaxeOnly())
-			.loot((tables, block) -> tables.add(block, net.minecraft.world.level.storage.loot.LootTable.lootTable()))
-			.blockstate((c, p) -> p.getVariantBuilder(c.get())
-				.forAllStates(s -> net.neoforged.neoforge.client.model.generators.ConfiguredModel.builder()
-					.modelFile(p.models()
-						.getExistingFile(p.modLoc(s.getValue(ColumnJointBlock.UPPER) ? "block/column_joint/upper"
-							: "block/column_joint/lower")))
-					.rotationY(switch (s.getValue(ColumnJointBlock.FACING)) {
-						case WEST -> 90;
-						case NORTH -> 180;
-						case EAST -> 270;
-						default -> 0;
-					})
-					.build()))
-			.register();
+	/** Degrees a model built facing south is turned to face another way. */
+	private static int southTurn(Direction facing) {
+		return switch (facing) {
+			case WEST -> 90;
+			case NORTH -> 180;
+			case EAST -> 270;
+			default -> 0;
+		};
+	}
 
 	/** A chimney with a flame that burns while the column under it is working. Cosmetic. */
 	public static final BlockEntry<FlareStackBlock> FLARE_STACK =

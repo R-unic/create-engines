@@ -1,14 +1,13 @@
 package com.createengines.gametest;
 
 import com.createengines.CreateEngines;
-import com.createengines.content.refinery.ColumnJointBlock;
 import com.createengines.content.refinery.ColumnPortBlockEntity;
 import com.createengines.content.refinery.ColumnSectionBlock;
+import com.createengines.content.refinery.ColumnSectionBlock.Lean;
 import com.createengines.engine.sim.ColumnShape;
 import com.createengines.registry.CEBlocks;
 import com.createengines.registry.CEFluids;
 import com.simibubi.create.content.processing.burner.BlazeBurnerBlock;
-import com.simibubi.create.content.schematics.requirement.ItemRequirement;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -26,8 +25,8 @@ import net.neoforged.neoforge.gametest.GameTestHolder;
 import net.neoforged.neoforge.gametest.PrefixGameTestTemplate;
 
 /**
- * A refining column that leans: a layer one block to the side of the one below, joined by slanted joint pieces the
- * column places when it forms and takes away when it breaks.
+ * A refining column that leans: a layer one block to the side of the one below. The sections join by themselves, the
+ * way Create's chutes do: there is no joint block, each section grows its own arm towards its diagonal neighbour.
  */
 @GameTestHolder(CreateEngines.MOD_ID)
 @PrefixGameTestTemplate(false)
@@ -35,6 +34,9 @@ public class LeaningColumnGameTests {
 
 	private static final int Y = 2;
 	private static final BlockPos REBOILER = new BlockPos(1, Y, 1);
+	/** The section that stands under the lean, and the one that leans, in a column built with layers x 1, 1, 2, 2. */
+	private static final BlockPos LOWER = new BlockPos(1, Y + 2, 1);
+	private static final BlockPos UPPER = new BlockPos(2, Y + 3, 1);
 
 	private static FluidStack of(Object fluid, int amount) {
 		return new FluidStack((Fluid) fluid, amount);
@@ -42,7 +44,7 @@ public class LeaningColumnGameTests {
 
 	/**
 	 * A 1-wide column: heater, Reboiler, then sections with the x of each layer in {@code xs}, then the Condenser over the
-	 * last. The layer i sits at height Y + 1 + i.
+	 * last. Layer i sits at height Y + 1 + i.
 	 */
 	private static void build(GameTestHelper helper, int... xs) {
 		helper.setBlock(new BlockPos(1, 1, 1), CEBlocks.HEAT_EXCHANGER.getDefaultState()
@@ -57,17 +59,21 @@ public class LeaningColumnGameTests {
 		return (ColumnPortBlockEntity) helper.getBlockEntity(pos);
 	}
 
-	private static void assertJoint(GameTestHelper helper, BlockPos pos, boolean upper, Direction facing) {
+	/** The state a player would place at {@code pos}: the arms its neighbours call for (what getStateForPlacement gives). */
+	private static net.minecraft.world.level.block.state.BlockState placed(GameTestHelper helper, BlockPos pos) {
+		return ColumnSectionBlock.withArms(helper.getLevel(), helper.absolutePos(pos), CEBlocks.COLUMN_SECTION.getDefaultState());
+	}
+
+	private static void assertArms(GameTestHelper helper, BlockPos pos, Lean up, Lean down) {
 		var state = helper.getBlockState(pos);
-		if (!state.is(CEBlocks.COLUMN_JOINT.get()))
-			helper.fail("expected a joint at " + pos + ", found " + state, pos);
-		if (state.getValue(ColumnJointBlock.UPPER) != upper || state.getValue(ColumnJointBlock.FACING) != facing)
-			helper.fail("joint at " + pos + " should be " + (upper ? "upper" : "lower") + " facing " + facing + ", is " + state, pos);
+		if (!state.is(CEBlocks.COLUMN_SECTION.get()))
+			helper.fail("expected a section at " + pos + ", found " + state, pos);
+		if (state.getValue(ColumnSectionBlock.LEAN_UP) != up || state.getValue(ColumnSectionBlock.LEAN_DOWN) != down)
+			helper.fail("section at " + pos + " should have arms up " + up + " and down " + down + ", has " + state, pos);
 	}
 
 	@GameTest(template = "empty_large", timeoutTicks = 200)
-	public static void aLeaningColumnFormsAndPlacesItsJoints(GameTestHelper helper) {
-		// Layers x: 1, 1, 2, 2 (so it leans east between the second and third)
+	public static void aLeaningColumnFormsAndItsSectionsJoinThemselves(GameTestHelper helper) {
 		build(helper, 1, 1, 2, 2);
 		helper.runAfterDelay(40, () -> {
 			var shape = port(helper, REBOILER).shape();
@@ -75,18 +81,40 @@ public class LeaningColumnGameTests {
 				helper.fail("the leaning column should form, fault " + shape.fault());
 			if (shape.height() != 4 || !shape.leans())
 				helper.fail("expected 4 layers and a lean, got " + shape);
-			// Lower joint beside the second section at its level, upper joint above it and beside the third
-			assertJoint(helper, new BlockPos(2, Y + 2, 1), false, Direction.EAST);
-			assertJoint(helper, new BlockPos(1, Y + 3, 1), true, Direction.EAST);
+			assertArms(helper, LOWER, Lean.EAST, Lean.NONE);
+			assertArms(helper, UPPER, Lean.NONE, Lean.WEST);
+			// The straight sections have no arms, and no block was put in the spaces the arms are drawn into
+			assertArms(helper, new BlockPos(1, Y + 1, 1), Lean.NONE, Lean.NONE);
+			assertArms(helper, new BlockPos(2, Y + 4, 1), Lean.NONE, Lean.NONE);
+			helper.assertBlockNotPresent(CEBlocks.COLUMN_SECTION.get(), new BlockPos(1, Y + 3, 1));
+			helper.assertBlockNotPresent(CEBlocks.COLUMN_SECTION.get(), new BlockPos(2, Y + 2, 1));
 			helper.succeed();
 		});
+	}
+
+	@GameTest(template = "empty_large", timeoutTicks = 200)
+	public static void theArmsAppearAndGoWithTheNeighbourAtAnyPlacingOrder(GameTestHelper helper) {
+		// Place the leaning layer first and the lower one after: the lower one must still grow its arm
+		helper.setBlock(UPPER, placed(helper, UPPER));
+		assertArms(helper, UPPER, Lean.NONE, Lean.NONE);
+		helper.setBlock(LOWER, placed(helper, LOWER));
+		assertArms(helper, LOWER, Lean.EAST, Lean.NONE);
+		assertArms(helper, UPPER, Lean.NONE, Lean.WEST);
+		// Take the lower one away: the upper loses its arm
+		helper.setBlock(LOWER, Blocks.AIR);
+		assertArms(helper, UPPER, Lean.NONE, Lean.NONE);
+		// A section straight above takes the arm away from the diagonal one
+		helper.setBlock(LOWER, placed(helper, LOWER));
+		helper.setBlock(LOWER.above(), placed(helper, LOWER.above()));
+		assertArms(helper, LOWER, Lean.NONE, Lean.NONE);
+		helper.succeed();
 	}
 
 	@GameTest(template = "empty_large", timeoutTicks = 200)
 	public static void everyPartOfALeaningColumnFindsTheController(GameTestHelper helper) {
 		build(helper, 1, 1, 2, 2);
 		helper.runAfterDelay(60, () -> {
-			// The Condenser sits over the last, overhanging layer: it must find the Reboiler through the joint
+			// The Condenser sits over the last, overhanging layer: it must find the Reboiler across the lean
 			var condenser = port(helper, new BlockPos(2, Y + 5, 1));
 			if (condenser.controller() == null)
 				helper.fail("the Condenser of a leaning column should find its controller, fault " + condenser.shape()
@@ -101,7 +129,6 @@ public class LeaningColumnGameTests {
 	@GameTest(template = "empty_large", timeoutTicks = 500)
 	public static void aLeaningColumnRefinesAndLightsItsWindowsOnTheLeanedLayers(GameTestHelper helper) {
 		build(helper, 1, 1, 2, 2);
-		BlockPos leaned = new BlockPos(2, Y + 3, 1);
 		BlockPos condenser = new BlockPos(2, Y + 5, 1);
 		helper.runAfterDelay(30, () -> {
 			helper.getLevel()
@@ -117,122 +144,63 @@ public class LeaningColumnGameTests {
 				.getFluidInTank(0);
 			helper.assertTrue(made.getFluid() == CEFluids.DIESEL.getSource() && made.getAmount() >= 20,
 				"the Condenser of a leaning column should hold diesel, holds " + made);
-			helper.assertBlockProperty(leaned, ColumnSectionBlock.ACTIVE, true);
+			helper.assertBlockProperty(UPPER, ColumnSectionBlock.ACTIVE, true);
+			helper.assertBlockProperty(UPPER, ColumnSectionBlock.LEAN_DOWN, Lean.WEST);
 		});
 	}
 
 	@GameTest(template = "empty_large", timeoutTicks = 300)
-	public static void breakingASectionRemovesTheJointsAndTheColumn(GameTestHelper helper) {
+	public static void breakingASectionUnformsTheColumnAndTheArmsGo(GameTestHelper helper) {
 		build(helper, 1, 1, 2, 2);
 		helper.runAfterDelay(40, () -> helper.destroyBlock(new BlockPos(2, Y + 4, 1)));
 		helper.runAfterDelay(120, () -> {
-			helper.assertBlockNotPresent(CEBlocks.COLUMN_JOINT.get(), new BlockPos(2, Y + 2, 1));
-			helper.assertBlockNotPresent(CEBlocks.COLUMN_JOINT.get(), new BlockPos(1, Y + 3, 1));
 			if (port(helper, REBOILER).shape()
 				.formed())
 				helper.fail("a column with a section gone is not formed");
-			helper.succeed();
+			helper.destroyBlock(UPPER);
 		});
-	}
-
-	@GameTest(template = "empty_large", timeoutTicks = 300)
-	public static void breakingTheReboilerRemovesTheJoints(GameTestHelper helper) {
-		build(helper, 1, 1, 2, 2);
-		helper.runAfterDelay(40, () -> helper.destroyBlock(REBOILER));
-		helper.runAfterDelay(80, () -> {
-			helper.assertBlockNotPresent(CEBlocks.COLUMN_JOINT.get(), new BlockPos(2, Y + 2, 1));
-			helper.assertBlockNotPresent(CEBlocks.COLUMN_JOINT.get(), new BlockPos(1, Y + 3, 1));
+		helper.runAfterDelay(140, () -> {
+			assertArms(helper, LOWER, Lean.NONE, Lean.NONE);
 			helper.succeed();
 		});
 	}
 
 	@GameTest(template = "empty_large", timeoutTicks = 300)
 	public static void aBlockInTheWayStopsTheColumnAndGogglesNameIt(GameTestHelper helper) {
-		helper.setBlock(new BlockPos(2, Y + 2, 1), Blocks.STONE.defaultBlockState());
+		// The brace under the leaning layer is drawn into this block
+		BlockPos brace = new BlockPos(2, Y + 2, 1);
+		helper.setBlock(brace, Blocks.STONE.defaultBlockState());
 		build(helper, 1, 1, 2, 2);
 		helper.runAfterDelay(40, () -> {
 			var shape = port(helper, REBOILER).shape();
 			if (shape.fault() != ColumnShape.Fault.LEAN_BLOCKED)
 				helper.fail("a block in the way should block the lean, fault is " + shape.fault());
 			BlockPos blocked = new BlockPos(shape.blockedX(), shape.blockedY(), shape.blockedZ());
-			if (!blocked.equals(helper.absolutePos(new BlockPos(2, Y + 2, 1))))
-				helper.fail("the fault should name the stone at (2, " + (Y + 2) + ", 1), names " + blocked);
-			helper.setBlock(new BlockPos(2, Y + 2, 1), Blocks.AIR);
+			if (!blocked.equals(helper.absolutePos(brace)))
+				helper.fail("the fault should name the stone at " + brace + ", names " + blocked);
+			helper.setBlock(brace, Blocks.AIR);
 		});
 		helper.runAfterDelay(100, () -> {
 			if (!port(helper, REBOILER).shape()
 				.formed())
 				helper.fail("clearing the block should let the column form, fault " + port(helper, REBOILER).shape()
 					.fault());
-			assertJoint(helper, new BlockPos(2, Y + 2, 1), false, Direction.EAST);
 			helper.succeed();
 		});
 	}
 
-	@GameTest(template = "empty_large", timeoutTicks = 300)
-	public static void aJointKnockedOutIsPutBack(GameTestHelper helper) {
-		build(helper, 1, 1, 2, 2);
-		helper.runAfterDelay(40, () -> helper.setBlock(new BlockPos(2, Y + 2, 1), Blocks.AIR));
-		helper.runAfterDelay(100, () -> {
-			assertJoint(helper, new BlockPos(2, Y + 2, 1), false, Direction.EAST);
-			helper.succeed();
-		});
-	}
-
-	@GameTest(template = "empty_large", timeoutTicks = 200)
-	public static void aJointIsFreeInASchematicDropsNothingAndPicksAsASection(GameTestHelper helper) {
-		build(helper, 1, 1, 2, 2);
-		helper.runAfterDelay(40, () -> {
-			BlockPos joint = new BlockPos(2, Y + 2, 1);
-			var state = helper.getBlockState(joint);
-			if (!ItemRequirement.of(state, null)
-				.getRequiredItems()
-				.isEmpty())
-				helper.fail("a joint should cost nothing in a schematic");
-			var drops = net.minecraft.world.level.block.Block.getDrops(state, helper.getLevel(), helper.absolutePos(joint), null);
-			if (!drops.isEmpty())
-				helper.fail("a joint drops nothing, drops " + drops);
-			ItemStack picked = state.getBlock()
-				.getCloneItemStack(helper.getLevel(), helper.absolutePos(joint), state);
-			if (!picked.is(CEBlocks.COLUMN_SECTION.asItem()))
-				helper.fail("middle-clicking a joint should give a Column Section, gives " + picked);
-			helper.succeed();
-		});
-	}
-
-	@GameTest(template = "empty_large", timeoutTicks = 200)
-	public static void jointsTurnAndMirrorWithASchematic(GameTestHelper helper) {
-		var state = CEBlocks.COLUMN_JOINT.getDefaultState()
-			.setValue(ColumnJointBlock.FACING, Direction.EAST);
+	@GameTest(template = "empty_large", timeoutTicks = 100)
+	public static void armsTurnAndMirrorWithASchematic(GameTestHelper helper) {
+		var state = CEBlocks.COLUMN_SECTION.getDefaultState()
+			.setValue(ColumnSectionBlock.LEAN_UP, Lean.EAST)
+			.setValue(ColumnSectionBlock.LEAN_DOWN, Lean.NORTH);
 		var turned = state.rotate(net.minecraft.world.level.block.Rotation.CLOCKWISE_90);
-		if (turned.getValue(ColumnJointBlock.FACING) != Direction.SOUTH)
-			helper.fail("rotating east by 90 clockwise should face south, faces " + turned.getValue(ColumnJointBlock.FACING));
+		if (turned.getValue(ColumnSectionBlock.LEAN_UP) != Lean.SOUTH || turned.getValue(ColumnSectionBlock.LEAN_DOWN) != Lean.EAST)
+			helper.fail("a 90 degree turn should take east to south and north to east, gives " + turned);
 		var mirrored = state.mirror(net.minecraft.world.level.block.Mirror.LEFT_RIGHT);
-		if (mirrored.getValue(ColumnJointBlock.FACING) != Direction.EAST)
-			helper.fail("mirroring left to right keeps an east joint east (it flips north and south)");
-		var north = state.setValue(ColumnJointBlock.FACING, Direction.NORTH)
-			.mirror(net.minecraft.world.level.block.Mirror.LEFT_RIGHT);
-		if (north.getValue(ColumnJointBlock.FACING) != Direction.SOUTH)
-			helper.fail("mirroring a north joint should face it south");
+		if (mirrored.getValue(ColumnSectionBlock.LEAN_UP) != Lean.EAST || mirrored.getValue(ColumnSectionBlock.LEAN_DOWN) != Lean.SOUTH)
+			helper.fail("a left-right mirror keeps east and flips north to south, gives " + mirrored);
 		helper.succeed();
-	}
-
-	@GameTest(template = "empty_large", timeoutTicks = 200)
-	public static void aJointWhoseSectionsAreGoneLetsGoOnItsNextTick(GameTestHelper helper) {
-		BlockPos at = new BlockPos(3, 3, 3);
-		// A lone lower joint with nothing to hang from
-		helper.setBlock(at, CEBlocks.COLUMN_JOINT.getDefaultState()
-			.setValue(ColumnJointBlock.FACING, Direction.EAST));
-		helper.runAfterDelay(2, () -> {
-			var state = helper.getBlockState(at);
-			if (state.is(CEBlocks.COLUMN_JOINT.get()) && ColumnJointBlock.supported(helper.getLevel(), helper.absolutePos(at), state))
-				helper.fail("a lone joint cannot be supported");
-			var level = helper.getLevel();
-			if (state.is(CEBlocks.COLUMN_JOINT.get()))
-				state.randomTick(level, helper.absolutePos(at), level.random);
-			helper.assertBlockNotPresent(CEBlocks.COLUMN_JOINT.get(), at);
-			helper.succeed();
-		});
 	}
 
 	@GameTest(template = "empty_large", timeoutTicks = 200)
@@ -242,9 +210,11 @@ public class LeaningColumnGameTests {
 			var reboiler = port(helper, REBOILER);
 			CompoundTag tag = reboiler.saveWithFullMetadata(helper.getLevel()
 				.registryAccess());
-			tag.putIntArray("Lean", new int[] {Integer.MAX_VALUE, Integer.MIN_VALUE, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5,
-				5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5,
-				5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5});
+			int[] wild = new int[200];
+			java.util.Arrays.fill(wild, 5);
+			wild[0] = Integer.MAX_VALUE;
+			wild[1] = Integer.MIN_VALUE;
+			tag.putIntArray("Lean", wild);
 			tag.putInt("Width", 99);
 			tag.putInt("Height", 99);
 			reboiler.loadWithComponents(tag, helper.getLevel()

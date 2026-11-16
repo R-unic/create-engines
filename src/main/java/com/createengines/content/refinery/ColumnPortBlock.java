@@ -60,13 +60,8 @@ public class ColumnPortBlock extends Block implements IWrenchable, IBE<ColumnPor
 	@Override
 	protected void onRemove(BlockState state, Level level, BlockPos pos, BlockState newState, boolean movedByPiston) {
 		if (!level.isClientSide && !state.is(newState.getBlock())
-			&& level.getBlockEntity(pos) instanceof ColumnPortBlockEntity port) {
+			&& level.getBlockEntity(pos) instanceof ColumnPortBlockEntity port)
 			port.dropCatalyst();
-			// The controller is the one that places the joints of a leaning column, so it takes them away too
-			if (port.isController() && port.shape()
-				.leans())
-				RefiningColumns.removeJoints(level, port.shape());
-		}
 		IBE.onRemove(state, level, pos, newState);
 	}
 

@@ -226,7 +226,6 @@
   "block.create_engines.cam_lobe": "Cam Lobe",
   "block.create_engines.camshaft": "Camshaft",
   "block.create_engines.cast_flywheel": "Cast Flywheel",
-  "block.create_engines.column_joint": "Column Joint",
   "block.create_engines.column_section": "Column Section",
   "block.create_engines.condenser": "Condenser",
   "block.create_engines.coolant": "Engine Coolant",

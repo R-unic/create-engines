@@ -1,10 +1,90 @@
 {
-  "variants": {
-    "active=false": {
-      "model": "create_engines:block/column_section/block"
+  "multipart": [
+    {
+      "apply": {
+        "model": "create_engines:block/column_section/block"
+      },
+      "when": {
+        "active": "false"
+      }
     },
-    "active=true": {
-      "model": "create_engines:block/column_section/active"
+    {
+      "apply": {
+        "model": "create_engines:block/column_section/active"
+      },
+      "when": {
+        "active": "true"
+      }
+    },
+    {
+      "apply": {
+        "model": "create_engines:block/column_section/wedge",
+        "y": 180
+      },
+      "when": {
+        "lean_up": "north"
+      }
+    },
+    {
+      "apply": {
+        "model": "create_engines:block/column_section/brace"
+      },
+      "when": {
+        "lean_down": "north"
+      }
+    },
+    {
+      "apply": {
+        "model": "create_engines:block/column_section/wedge",
+        "y": 270
+      },
+      "when": {
+        "lean_up": "east"
+      }
+    },
+    {
+      "apply": {
+        "model": "create_engines:block/column_section/brace",
+        "y": 90
+      },
+      "when": {
+        "lean_down": "east"
+      }
+    },
+    {
+      "apply": {
+        "model": "create_engines:block/column_section/wedge"
+      },
+      "when": {
+        "lean_up": "south"
+      }
+    },
+    {
+      "apply": {
+        "model": "create_engines:block/column_section/brace",
+        "y": 180
+      },
+      "when": {
+        "lean_down": "south"
+      }
+    },
+    {
+      "apply": {
+        "model": "create_engines:block/column_section/wedge",
+        "y": 90
+      },
+      "when": {
+        "lean_up": "west"
+      }
+    },
+    {
+      "apply": {
+        "model": "create_engines:block/column_section/brace",
+        "y": 270
+      },
+      "when": {
+        "lean_down": "west"
+      }
     }
-  }
+  ]
 }
