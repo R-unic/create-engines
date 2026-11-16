@@ -169,7 +169,11 @@ engine. What changes is how they are made: by refining in a column, as a continu
   |---|---|---|---|
   | Plant Oil | Diesel | Heated | Cheapest and quickest, with a little coal as catalyst |
   | Diesel | Gasoline | Heated | Middling, with a little blaze powder as catalyst |
-  | Sugar Mash | Ethanol | Heated, and twice as much superheated, as today | The dear one: the most feed for each bucket and the slowest to come over |
+  | Sugar Mash | Ethanol | Heated, and twice as much superheated, as today | The dear one: the most feed for each bucket and the slowest to come over, with nether wart as catalyst |
+
+  Stage 1 set the numbers (see [REFINING_BALANCE.md](REFINING_BALANCE.md)): diesel and gasoline give 1100 mB from
+  1000 mB of feed and use a catalyst item per 1000 mB of feed; ethanol gives 170 mB heated and 340 mB superheated from
+  1000 mB of mash.
 
 - **Ethanol is the premium fuel.** It is the one that takes boost, so it costs more than diesel or gasoline, and
   from 1.3 more than it costs today. The basin's two ethanol recipes get weaker (today 250 mB of Sugar Mash gives
@@ -194,15 +198,21 @@ engine. What changes is how they are made: by refining in a column, as a continu
   pass on column fuel, and adjust the column's rates until the tiers sit where they were pinned. The same check
   sets the weakened basin ethanol figures. The numbers go in the changelog.
 
+**Decided 2026-11-16:** no basin recipe is nerfed except ethanol, so a factory built before 1.3 makes the same amounts
+of diesel and gasoline it makes today. The column is simply more efficient. **Leaning columns stay in 1.3 unless the
+release slips; if it does, they move to 1.3.1** (they only add IDs, so nothing breaks). The catalyst goes in a slot on
+the Reboiler that a funnel or hopper can feed. The catalyst for Sugar Mash is Nether Wart (chosen 2026-11-16), so ethanol asks for a Nether trip on top of being the dear fuel.
+
 **The basin recipes stay, and are the worse way.** A basin still makes every fuel, so no existing factory stops, but
 the column gives clearly more fuel from the same feed and heat, and gives it continuously. Diesel and gasoline in a
 basin stay as they are; only the ethanol recipes are cut (above). Moving over is easy by design:
 
 - The column's base goes on the Blaze Burner or heat exchanger the basin was sitting on, and takes the same pipes.
 - It is built from the materials a player already has when they first make diesel.
-- The player is told without touching Create's basin, since adding goggle lines to it would take a mixin. An
-  Exhaust Heat Exchanger with a basin making fuel on it says in its own goggles that a column would do better, and
-  by how much. The fuel tooltips name the column as the better route.
+- The player is told on Create's own Basin. Decided 2026-11-16: a small mixin adds a goggle line to a basin that is
+  making one of these fuels, saying a column would do better and by how much. The Exhaust Heat Exchanger's goggles say
+  nothing about refining. The mixin is one narrow injection that must fail soft: if a Create version changes the
+  method, the line goes missing and nothing crashes (rule 7). The fuel tooltips name the column as the better route.
 - A Ponder page shows the swap.
 
 ## 1.4 Drawing Office

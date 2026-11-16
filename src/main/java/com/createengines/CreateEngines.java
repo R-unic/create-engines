@@ -17,6 +17,7 @@ import com.createengines.registry.CEFluids;
 import com.createengines.registry.CEItems;
 import com.createengines.registry.CELang;
 import com.createengines.registry.CEParticles;
+import com.createengines.registry.CERecipes;
 import com.createengines.registry.CESounds;
 import com.mojang.logging.LogUtils;
 import com.simibubi.create.foundation.data.CreateRegistrate;
@@ -50,6 +51,7 @@ public class CreateEngines {
 		CEItems.register();
 		CEFluids.register();
 		CEBlockEntities.register();
+		CERecipes.register(modEventBus);
 		CESounds.register(modEventBus);
 		CEParticles.register(modEventBus);
 		CELang.register();

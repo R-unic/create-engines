@@ -1,0 +1,8 @@
+{
+  "type": "create_engines:refining",
+  "feed": { "fluid": "create_engines:plant_oil", "amount": 1000 },
+  "product": { "id": "create_engines:diesel", "amount": 1100 },
+  "heat": "heated",
+  "speed": 1.0,
+  "catalyst": { "ingredient": { "tag": "minecraft:coals" }, "feed_per_item": 1000 }
+}

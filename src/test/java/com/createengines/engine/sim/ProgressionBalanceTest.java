@@ -189,6 +189,46 @@ class ProgressionBalanceTest {
 		assertTrue(twelve.thirst() < 2, "mB per second for each steam engine's worth: " + twelve.thirst());
 	}
 
+	// ---- Refining columns keep up with the engines they feed ----------------------------------------------------
+
+	/** Product a column of this size makes in a second on a route, mB. */
+	private static double columnPerSecond(String route, int width, int height) throws java.io.IOException {
+		RefiningRoute r = RefiningBalanceTest.column(route);
+		return RefiningColumn.ratePerTick(width, height) * r.speed() * r.yield() * 20;
+	}
+
+	@Test
+	void theNarrowestColumnFeedsAnEarlyEngineOnDieselAndGasoline() throws java.io.IOException {
+		Run diesel = new Build().cylinders(12).fuel(FuelSpec.DIESEL, false).run();
+		Run gasoline = new Build().cylinders(12).run();
+		assertTrue(columnPerSecond("diesel", 1, 3) > 2 * diesel.fuel(),
+			"1x3 diesel column " + columnPerSecond("diesel", 1, 3) + " against a 12-cylinder's " + diesel.fuel());
+		assertTrue(columnPerSecond("gasoline", 1, 3) > 2 * gasoline.fuel(),
+			"1x3 gasoline column " + columnPerSecond("gasoline", 1, 3) + " against a 12-cylinder's " + gasoline.fuel());
+	}
+
+	@Test
+	void aBoostedPrecisionEngineNeedsAProperColumnOnGasoline() throws java.io.IOException {
+		Run boosted = new Build().cylinders(12).precise().turbos(2).intercooler().run();
+		assertTrue(columnPerSecond("gasoline", 1, 3) < boosted.fuel(),
+			"the smallest column should not feed a boosted V12: " + columnPerSecond("gasoline", 1, 3) + " against " + boosted.fuel());
+		assertTrue(columnPerSecond("gasoline", 2, 3) > boosted.fuel(),
+			"a 2-wide column should: " + columnPerSecond("gasoline", 2, 3) + " against " + boosted.fuel());
+	}
+
+	@Test
+	void ethanolNeedsASuperheatedBaseOrABigColumnToFeedABoostedEngine() throws java.io.IOException {
+		Run plain = new Build().cylinders(12).fuel(ETHANOL, true).run();
+		Run boosted = new Build().cylinders(12).precise().fuel(ETHANOL, true).turbos(2).intercooler().run();
+		assertTrue(columnPerSecond("ethanol_superheated", 2, 3) > plain.fuel(),
+			"a 2x3 superheated column " + columnPerSecond("ethanol_superheated", 2, 3) + " against an unboosted 12's " + plain.fuel());
+		assertTrue(columnPerSecond("ethanol", 2, 3) < 2 * plain.fuel(), "heated ethanol is slow: " + columnPerSecond("ethanol", 2, 3));
+		assertTrue(columnPerSecond("ethanol_superheated", 3, 6) > boosted.fuel(),
+			"a 3x6 superheated column " + columnPerSecond("ethanol_superheated", 3, 6) + " against a boosted 12's " + boosted.fuel());
+		assertTrue(columnPerSecond("ethanol", 3, 6) < boosted.fuel(),
+			"the same column heated only cannot: " + columnPerSecond("ethanol", 3, 6) + " against " + boosted.fuel());
+	}
+
 	// ---- Refining -----------------------------------------------------------------------------------------------
 
 	@Test

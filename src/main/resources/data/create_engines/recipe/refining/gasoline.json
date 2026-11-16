@@ -1,0 +1,8 @@
+{
+  "type": "create_engines:refining",
+  "feed": { "fluid": "create_engines:diesel", "amount": 1000 },
+  "product": { "id": "create_engines:gasoline", "amount": 1100 },
+  "heat": "heated",
+  "speed": 0.75,
+  "catalyst": { "ingredient": { "item": "minecraft:blaze_powder" }, "feed_per_item": 1000 }
+}

@@ -1,0 +1,8 @@
+{
+  "type": "create_engines:refining",
+  "feed": { "fluid": "create_engines:sugar_mash", "amount": 1000 },
+  "product": { "id": "create_engines:ethanol", "amount": 170 },
+  "heat": "heated",
+  "speed": 0.5,
+  "catalyst": { "ingredient": { "item": "minecraft:nether_wart" }, "feed_per_item": 1000 }
+}
