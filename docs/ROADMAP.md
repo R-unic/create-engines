@@ -36,6 +36,8 @@ Set by the author on 2026-11-14:
    side by side with the old one, the next release moves to the new one and its changelog says so.
 8. **Old worlds keep loading.** Before each release a world saved on 1.0 is opened in the new build. A test holds
    the list of every ID and config key that 1.0 shipped, and fails the build if one goes missing.
+9. **The stability contract.** No release is tagged until the checklist in [STABILITY.md](STABILITY.md) is signed off:
+   tests with every change, the machine gate, and the author's hands-on pass (build an engine, soak, old world).
 
 ## At a glance
 

@@ -8,8 +8,11 @@ ends in a check that can fail the build.
 ./gradlew smoke --offline          # everything below, in order; fails if any layer found a problem
 ```
 
-Run it in a private copy of the checkout (see "Running it" below): other Gradle runs and a development client share
-`run/` and `build/` and will corrupt each other's results.
+The smoke run is Part 2 of the release checklist in [STABILITY.md](STABILITY.md), which also covers what a person must
+check by hand.
+
+Run it in a private copy of the checkout (see "Running it"): other Gradle runs and a development client share `run/` and
+`build/` and corrupt each other's results.
 
 ## What each layer catches
 
