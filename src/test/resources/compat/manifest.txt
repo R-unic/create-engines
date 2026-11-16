@@ -1,0 +1,455 @@
+# Names and data a saved world or a built factory depends on. See CompatManifestTest.
+# Append only. Removing or editing a line breaks old worlds: major releases only.
+data:data/c/tags/fluid/diesel.json
+data:data/c/tags/fluid/ethanol.json
+data:data/c/tags/fluid/gasoline.json
+data:data/c/tags/fluid/plantoil.json
+data:data/create_engines/data_maps/fluid/fuel.json	5aed70caff2b2d224164d090eceb2278d5b8a14f
+data:data/create_engines/loot_table/blocks/air_intake.json	c67253912979b22a0381f88427a063466c73394f
+data:data/create_engines/loot_table/blocks/alternator.json	5c204e3f1c9bf84130e2f70ec7275d04352e3741
+data:data/create_engines/loot_table/blocks/battery.json	24fcef6b47719a1c548ca36b8bfbbd56663463a5
+data:data/create_engines/loot_table/blocks/black_box.json	b8eacbf2315f3b5d94408a94c888d18e03382600
+data:data/create_engines/loot_table/blocks/cam_lobe.json	a0eca0540c90bd7c82c9b97958727e49ba48c38d
+data:data/create_engines/loot_table/blocks/camshaft.json	0a79f51aa0546d69eff349a3032bdd735119d717
+data:data/create_engines/loot_table/blocks/cast_flywheel.json	ccce2b517b9fb7756614fdd89c501bb95d8b8e55
+data:data/create_engines/loot_table/blocks/column_section.json	c739b559bfe6f3d98102dca1a31cd5ab9f35e9a3
+data:data/create_engines/loot_table/blocks/condenser.json	27e7d6fb0a7eb139a7871a075d564752d3eef40a
+data:data/create_engines/loot_table/blocks/crank_throw.json	afbb397028cc69ded3b7e2aa067b455a83a5525b
+data:data/create_engines/loot_table/blocks/crankshaft.json	7113e84eaceec514032b21086eb941bf38ecdea0
+data:data/create_engines/loot_table/blocks/cylinder.json	18880fcc5082fb4f1108a7c51397164c1102e94d
+data:data/create_engines/loot_table/blocks/cylinder_head.json	d753781ba40e8dfced4b13b75d2f402adffd2451
+data:data/create_engines/loot_table/blocks/dyno.json	90d6bd48b115bd5aab5f04229b2571f38a639cc8
+data:data/create_engines/loot_table/blocks/engine_cased_cogwheel.json	33514fcbecf2ae2d36955d3c981c59ebb28dca61
+data:data/create_engines/loot_table/blocks/engine_cased_large_cogwheel.json	9dec2988095dc37c8eb96e3e7bd55f085f16c75f
+data:data/create_engines/loot_table/blocks/engine_cased_shaft.json	ccad8dabb7a47d1ec3124b4f480c5ca794d48cfe
+data:data/create_engines/loot_table/blocks/engine_casing.json	a12093de3837ec19148c98d804ba4b3fd1396ef2
+data:data/create_engines/loot_table/blocks/engine_louvred_casing.json	6e51cbee8e28793dc55fd400e03f3592098860ec
+data:data/create_engines/loot_table/blocks/engine_riveted_casing.json	afbe266bb9c29649d9cbe2f725f32766902bbd9c
+data:data/create_engines/loot_table/blocks/engine_window_casing.json	bf745d0a101f8dd609036468b681808e924a73db
+data:data/create_engines/loot_table/blocks/exhaust_manifold.json	d18d2f821c6c674637f6dcfa793c3c846d84d3ef
+data:data/create_engines/loot_table/blocks/exhaust_outlet.json	c97cf6eafc27d6912fe43a51cc13751fc1e4a78c
+data:data/create_engines/loot_table/blocks/flare_stack.json	51ef82edad0f2b6fdbd0daa450a9d104eef04a63
+data:data/create_engines/loot_table/blocks/governor.json	51f870f396385db054fde9b8931c37d91a261623
+data:data/create_engines/loot_table/blocks/heat_exchanger.json	5bd16a70b9f44bf37a0fe63b7b0d76b80a7a2940
+data:data/create_engines/loot_table/blocks/heavy_starter.json	205c33942a04e8e1b6779f98a210a8d1bddc3906
+data:data/create_engines/loot_table/blocks/intake_manifold.json	ca901293ed17f24b76bd7bd164614a94ff21aef2
+data:data/create_engines/loot_table/blocks/intercooler.json	eb140f399ac429e74c4cbcc583cbe763f2f19229
+data:data/create_engines/loot_table/blocks/maf_sensor.json	a987ca9024d0a1d4b8b78f4fe2017a5e160e6746
+data:data/create_engines/loot_table/blocks/maker_plate.json	e9f250566c609adbba83e7eac8716e2a45262eb9
+data:data/create_engines/loot_table/blocks/muffler.json	200c1c89d2c4aa040e8749b66a3dad5759bc4d64
+data:data/create_engines/loot_table/blocks/precision_cylinder.json	0ca5b9126dbfb36b8a5d78615b025e12492a34e1
+data:data/create_engines/loot_table/blocks/precision_cylinder_head.json	8ca861870ed73ac27189d2571e077e4c3084a2ac
+data:data/create_engines/loot_table/blocks/rain_cap.json	71f865046bcf88af39e234e50c188c1bd2d7a6f4
+data:data/create_engines/loot_table/blocks/reboiler.json	805be9dbc0a8b9226bdcefeae4e59e4f8858ffb1
+data:data/create_engines/loot_table/blocks/rotor_housing.json	3281644a78b1ab608e560dba1cc508d50a960452
+data:data/create_engines/loot_table/blocks/soot_trap.json	31b1af67c1806bc2b255e53544cf4c5e28d9ed32
+data:data/create_engines/loot_table/blocks/starter.json	aac3c9cf95e6c78dc04080928cefdded766ce31a
+data:data/create_engines/loot_table/blocks/sump.json	ccf66570cf2db58e474fac90301787fe0d03a1df
+data:data/create_engines/loot_table/blocks/supercharger.json	6630755f1d9d68e4fcdfcb4b69de0e9684d75f6e
+data:data/create_engines/loot_table/blocks/throttle.json	e7a2fb093ffc311a228010c43c7ecc703014db3f
+data:data/create_engines/loot_table/blocks/transmission.json	ed74f9d95ae4903430c1c2bc17e6f9d20911655e
+data:data/create_engines/loot_table/blocks/turbocharger.json	17e307d1ddfdeee12b6b43a833ebc1c23126f91a
+data:data/create_engines/loot_table/blocks/variable_supercharger.json	de4319833874cad7a1903bd2d06b524ab9909d5d
+data:data/create_engines/loot_table/blocks/variable_turbocharger.json	136e64340400d49de5cb88653fa440bbc56d66f1
+data:data/create_engines/recipe/air_intake.json	19ab61e99b3bb986b49df3f07421a9a2ee7ac3af
+data:data/create_engines/recipe/alternator.json	f402191911b985ae9a61b72de1c64d911fbb8814
+data:data/create_engines/recipe/bank_builder.json	c0c262184ff1344edf3bd5984eb8a196dcfdaeb4
+data:data/create_engines/recipe/battery.json	ab6c5fa8ada875e62424f2d3e2fa1a19ecb2b379
+data:data/create_engines/recipe/black_box.json	6717900f2417a4598709110a4198fd06a3b7dada
+data:data/create_engines/recipe/black_dye_from_soot.json	4ba80ea31d6b360979f7909261119b451f826fc9
+data:data/create_engines/recipe/cam_lobe.json	e72c7abebe2e0936ba530ad40b407d4132b99919
+data:data/create_engines/recipe/camshaft.json	4940d592647424d85913bb57af49f7b22b29869d
+data:data/create_engines/recipe/cast_flywheel.json	f49f07bfa9672c97930bfeab844a183426144b10
+data:data/create_engines/recipe/column_section.json	c3112054ef74f1d4a6bda7338ffa5404a69d9552
+data:data/create_engines/recipe/compacting/plant_oil.json	785e55877eab02fc0a7afec351d3e59a816ff8f5
+data:data/create_engines/recipe/compacting/plant_oil_saplings.json	ef4921634291d813c708223f20ecaad3b25f97c3
+data:data/create_engines/recipe/compacting/sugar_mash_beetroot.json	1a6d8ad8f1f67c642c5a8e37b5fd9354ec812433
+data:data/create_engines/recipe/compacting/sugar_mash_cane.json	562e80900c6051d18cfb964749bccd7b30bda6ee
+data:data/create_engines/recipe/compacting/sugar_mash_potato.json	7c2a4b50347b50b16371f10b658ef06ce9aa2c09
+data:data/create_engines/recipe/condenser.json	04fa6f737060eb8dfd32290aa0404b615f62af91
+data:data/create_engines/recipe/connecting_rod.json	70877361c899d8110f3a79337af5a0c244e37954
+data:data/create_engines/recipe/crank_throw.json	5f6597aeba82b34293b2fae5aac820a150f260c8
+data:data/create_engines/recipe/crankshaft.json	14988c9b3e974c984cd4654b742dc6876e494a2b
+data:data/create_engines/recipe/cylinder.json	c718b97df68b2e599ed14be956e1d88852193208
+data:data/create_engines/recipe/cylinder_head.json	5fd1937693bf1fb5de787505c019605d8f105fa0
+data:data/create_engines/recipe/dyno.json	8823e350300928b89d5d8617385fc8c0d276f713
+data:data/create_engines/recipe/engine_casing.json	4bf77b6431038e430a96dd23a5730c47da0efdbb
+data:data/create_engines/recipe/engine_louvred_casing.json	710a9a6f844cfd5535814c61edb0ed3f822a125c
+data:data/create_engines/recipe/engine_riveted_casing.json	8cd5796595d8555c3b9d12b9fa46ebb6f51b0b47
+data:data/create_engines/recipe/engine_window_casing.json	3c4b463f314f845ca241159c30b73d0bd69132d2
+data:data/create_engines/recipe/exhaust_manifold.json	31cf412c551515f9485a094a8f2ad235933524af
+data:data/create_engines/recipe/exhaust_outlet.json	7a40e5a0d017e12aef4307f4a353336f835d757f
+data:data/create_engines/recipe/flare_stack.json	5894db84be718d0487925cca15e1eee21abc223f
+data:data/create_engines/recipe/forged_piston.json	bfef1495d4ed5cf59c14709d96ab465a92be550a
+data:data/create_engines/recipe/fuel_injector.json	5d631f71a80570577c85f37e906de2711fbbf65c
+data:data/create_engines/recipe/governor.json	6ed1870bc03bcccd8dd961d899c6868cb4260b4c
+data:data/create_engines/recipe/heat_exchanger.json	804cf6ffb809adb2c0a29a0fd01164bf529daa98
+data:data/create_engines/recipe/heavy_starter.json	ccc4d22ab03e041add5c8e9e2f78ffdb677af937
+data:data/create_engines/recipe/intake_manifold.json	3b9dbab62da90b2f6cc0494c3831d64e2c538e9d
+data:data/create_engines/recipe/intercooler.json	aa47c3b438eb83b21bb4ce13390d718612568a88
+data:data/create_engines/recipe/jerry_can.json	18375f370fffe6e3d27a729549ce274650ed451f
+data:data/create_engines/recipe/maf_sensor.json	8eae49b79a9f798037a0079678e818863569641a
+data:data/create_engines/recipe/maker_plate.json	78527074be9b6971f2d1f17d2dfcdbe167fcb6ff
+data:data/create_engines/recipe/mixing/biodiesel.json	c82cf8bed2a888b6c2502bb532606d1363ed2028
+data:data/create_engines/recipe/mixing/coolant.json	66b2bd7199c573cbacbca5b957905eafd23a49be
+data:data/create_engines/recipe/mixing/diesel.json	ffa061c416ca73af16fac2a0ad903eba277266f6
+data:data/create_engines/recipe/mixing/engine_oil.json	86e9f64988ec630f0eff53ade07f3b0af9321bac
+data:data/create_engines/recipe/mixing/engine_oil_glycerin.json	7812ea609ab4b79433cd604e90ca21dd3bdedaf6
+data:data/create_engines/recipe/mixing/engine_oil_recycled.json	e2fe54fc35092823d38b3cea825ac6d6f834850d
+data:data/create_engines/recipe/mixing/engine_oil_recycled_superheated.json	973f7912f77b46b506540883afcbfe3186d10572
+data:data/create_engines/recipe/mixing/ethanol.json	a2f0c2380215c112b227eb1d67edfda972ba6eff
+data:data/create_engines/recipe/mixing/ethanol_superheated.json	494d31372e4334c8074ba350928b4156cc682db6
+data:data/create_engines/recipe/mixing/gasoline.json	bce6670745b16a7fe3d489cc012aafef263cb5f8
+data:data/create_engines/recipe/mixing/used_oil_coking.json	99828c0102226fcafe8b7600386e421d4b0b77a7
+data:data/create_engines/recipe/muffler.json	864a395480f07c166f4a706285ed9600367c2c09
+data:data/create_engines/recipe/oil_filter.json	62c44a4d17bea6ba52f6a9c9a42859641b9e487f
+data:data/create_engines/recipe/piston.json	61ec10f0ff3fc780f65c89e50d6993d5120d3631
+data:data/create_engines/recipe/precision_cylinder.json	88b245ca140f843b71bc8c20d7135269582075f9
+data:data/create_engines/recipe/precision_cylinder_head.json	a1b87ea035deaa6e1ae80fe92d128cc1c37f3192
+data:data/create_engines/recipe/precision_injector.json	0a9bcad7700759f4fe70c3f441f0843f1aa7599f
+data:data/create_engines/recipe/rain_cap.json	54ea71a03612b41c88607626218c8298b24e5f84
+data:data/create_engines/recipe/reboiler.json	09f9f117a491ccef7428868560bb1f5f0a98d594
+data:data/create_engines/recipe/refining/diesel.json	56e5b079cb3a1d317647579bd29b4932e1a78020
+data:data/create_engines/recipe/refining/ethanol.json	40004314b73890eeb46cc24fb205e5e25c023a50
+data:data/create_engines/recipe/refining/ethanol_superheated.json	a68d901592ac4e29f8e33a46b439c25238aa9209
+data:data/create_engines/recipe/refining/gasoline.json	511ec16d5d59c66c585d83576ef276dacf472daa
+data:data/create_engines/recipe/rotor.json	bee80aa4d15f8ca51240133b1027badac7a49988
+data:data/create_engines/recipe/rotor_housing.json	732d9f6aa816024908b517c83ebd642a341ef764
+data:data/create_engines/recipe/soot_trap.json	67b41c2da2baf9b530e6f9167b5fb2e3596b94d2
+data:data/create_engines/recipe/spark_plug.json	7094217cda0ec6985913935375ca6614ed445b75
+data:data/create_engines/recipe/starter.json	01c323ef686cfdeebfb4578d55d86c643872cd37
+data:data/create_engines/recipe/sump.json	778a923465949b69a5c44140f23f96d5765d9cb9
+data:data/create_engines/recipe/supercharger.json	0c5321784f7d3ba6a940965e4b14f481a7a73768
+data:data/create_engines/recipe/throttle.json	3e7d878b761ce2f7db1f8f2df47ce9642a2604fa
+data:data/create_engines/recipe/timing_tool.json	9a38a6f273181e624966d20eb045c469d39efec6
+data:data/create_engines/recipe/transmission.json	70740f27dc53ed3dfb41e02b9aa224b494408515
+data:data/create_engines/recipe/turbocharger.json	a3afd0032c177ee755e99fc91d07ec6f06e6faca
+data:data/create_engines/recipe/variable_supercharger.json	c6cb4cef88276cb23e7ad2d328b15891aaa97f8c
+data:data/create_engines/recipe/variable_turbocharger.json	0ffd4f113d7be04dfd7658a53434b44ff724d077
+data:data/create_engines/tags/item/ferments_mash.json
+enumvalue:CasingPaint:black
+enumvalue:CasingPaint:blue
+enumvalue:CasingPaint:brown
+enumvalue:CasingPaint:cyan
+enumvalue:CasingPaint:gray
+enumvalue:CasingPaint:green
+enumvalue:CasingPaint:light_blue
+enumvalue:CasingPaint:light_gray
+enumvalue:CasingPaint:lime
+enumvalue:CasingPaint:magenta
+enumvalue:CasingPaint:none
+enumvalue:CasingPaint:orange
+enumvalue:CasingPaint:pink
+enumvalue:CasingPaint:purple
+enumvalue:CasingPaint:red
+enumvalue:CasingPaint:white
+enumvalue:CasingPaint:yellow
+enumvalue:ColumnSectionBlock:active
+enumvalue:ColumnSectionBlock:lean_down
+enumvalue:ColumnSectionBlock:lean_up
+enumvalue:ColumnSectionBlock:tint
+nbt:AlternatorBlockEntity:Batteries
+nbt:AlternatorBlockEntity:Charging
+nbt:AlternatorBlockEntity:Supplying
+nbt:BatteryBlockEntity:Charge
+nbt:BatteryBlockEntity:Primary
+nbt:BlackBoxBlockEntity:Awarded
+nbt:BlackBoxBlockEntity:Changes
+nbt:BlackBoxBlockEntity:Engine
+nbt:BlackBoxBlockEntity:Events
+nbt:BlackBoxBlockEntity:Load
+nbt:BlackBoxBlockEntity:Readout
+nbt:BlackBoxBlockEntity:Rpm
+nbt:BlackBoxBlockEntity:Span
+nbt:BlackBoxBlockEntity:States
+nbt:BlackBoxBlockEntity:Tape
+nbt:BlackBoxBlockEntity:Warmth
+nbt:CamshaftBlockEntity:Actuated
+nbt:CamshaftBlockEntity:Locked
+nbt:CamshaftBlockEntity:Primary
+nbt:CamshaftBlockEntity:Rack
+nbt:CamshaftBlockEntity:Ratio
+nbt:CamshaftBlockEntity:Timing
+nbt:ColumnPortBlockEntity:BaseX
+nbt:ColumnPortBlockEntity:BaseY
+nbt:ColumnPortBlockEntity:BaseZ
+nbt:ColumnPortBlockEntity:BlockedX
+nbt:ColumnPortBlockEntity:BlockedY
+nbt:ColumnPortBlockEntity:BlockedZ
+nbt:ColumnPortBlockEntity:Catalyst
+nbt:ColumnPortBlockEntity:Fault
+nbt:ColumnPortBlockEntity:Heat
+nbt:ColumnPortBlockEntity:Height
+nbt:ColumnPortBlockEntity:Lean
+nbt:ColumnPortBlockEntity:Limit
+nbt:ColumnPortBlockEntity:Rate
+nbt:ColumnPortBlockEntity:Size
+nbt:ColumnPortBlockEntity:Width
+nbt:CrankshaftBlockEntity:Angle
+nbt:CrankshaftBlockEntity:Condition
+nbt:CrankshaftBlockEntity:Dilution
+nbt:CrankshaftBlockEntity:Direction
+nbt:CrankshaftBlockEntity:EngineCapacity
+nbt:CrankshaftBlockEntity:EngineSpeed
+nbt:CrankshaftBlockEntity:Film
+nbt:CrankshaftBlockEntity:Motion
+nbt:CrankshaftBlockEntity:Omega
+nbt:CrankshaftBlockEntity:Primary
+nbt:CrankshaftBlockEntity:Sense
+nbt:CrankshaftBlockEntity:Summary
+nbt:CrankshaftBlockEntity:Temperature
+nbt:CylinderBlockEntity:Status
+nbt:CylinderStatus:Charge
+nbt:CylinderStatus:Faults
+nbt:CylinderStatus:Fouling
+nbt:CylinderStatus:Ignition
+nbt:CylinderStatus:Inlets
+nbt:CylinderStatus:Lean
+nbt:CylinderStatus:Lobe
+nbt:CylinderStatus:LobeShift
+nbt:CylinderStatus:Mixture
+nbt:CylinderStatus:Outlets
+nbt:CylinderStatus:Plug
+nbt:CylinderStatus:Preignition
+nbt:CylinderStatus:Primary
+nbt:CylinderStatus:Result
+nbt:CylinderStatus:Rich
+nbt:CylinderStatus:Tdc
+nbt:CylinderStatus:Timing
+nbt:DynoBlockEntity:Complete
+nbt:DynoBlockEntity:Current
+nbt:DynoBlockEntity:Previous
+nbt:DynoBlockEntity:Rated
+nbt:DynoBlockEntity:Readout
+nbt:DynoBlockEntity:Rpm
+nbt:DynoBlockEntity:Torque
+nbt:EngineSummary:Boost
+nbt:EngineSummary:Cause
+nbt:EngineSummary:Condition
+nbt:EngineSummary:Coolant
+nbt:EngineSummary:Cylinders
+nbt:EngineSummary:Filtered
+nbt:EngineSummary:Firing
+nbt:EngineSummary:Firings
+nbt:EngineSummary:Flex
+nbt:EngineSummary:Fuel
+nbt:EngineSummary:Health
+nbt:EngineSummary:Inertia
+nbt:EngineSummary:Lines
+nbt:EngineSummary:Load
+nbt:EngineSummary:LongestLine
+nbt:EngineSummary:Lubrication
+nbt:EngineSummary:Muffling
+nbt:EngineSummary:Pilot
+nbt:EngineSummary:Ripple
+nbt:EngineSummary:Roughness
+nbt:EngineSummary:Rpm
+nbt:EngineSummary:Starter
+nbt:EngineSummary:State
+nbt:EngineSummary:Temperature
+nbt:EngineSummary:Thinning
+nbt:EngineSummary:Torque
+nbt:GovernorBlockEntity:Held
+nbt:GovernorBlockEntity:OnEngine
+nbt:GovernorBlockEntity:Position
+nbt:GovernorBlockEntity:Rpm
+nbt:GovernorBlockEntity:ScrollValue
+nbt:GovernorBlockEntity:Signal
+nbt:GovernorSettingGameTests:ExactRpm
+nbt:GovernorSettingGameTests:ScrollValue
+nbt:HeatExchangerBlockEntity:Heat
+nbt:HeatExchangerBlockEntity:HeatLevel
+nbt:HeatExchangerBlockEntity:OnEngine
+nbt:LeaningColumnGameTests:Height
+nbt:LeaningColumnGameTests:Lean
+nbt:LeaningColumnGameTests:Width
+nbt:MafSensorBlockEntity:Added
+nbt:MafSensorBlockEntity:Charge
+nbt:MafSensorBlockEntity:Cut
+nbt:MafSensorBlockEntity:OnEngine
+nbt:MakerPlateBlockEntity:Builder
+nbt:MakerPlateBlockEntity:Figures
+nbt:MakerPlateBlockEntity:Name
+nbt:Operators:Entries
+nbt:Operators:Player
+nbt:Operators:Pos
+nbt:Operators:Time
+nbt:RotorHousingBlockEntity:Chamber
+nbt:RotorHousingBlockEntity:ScrollValue
+nbt:SensorBlockEntity:Signal
+nbt:ServerAudit:Items
+nbt:ServerAudit:x
+nbt:SootAndCanGameTests:Gathered
+nbt:SootAndCanGameTests:Stored
+nbt:SootTrapBlockEntity:Gathered
+nbt:SootTrapBlockEntity:Stored
+nbt:StarterBlockEntity:Cranking
+nbt:StarterBlockEntity:Drag
+nbt:StarterBlockEntity:Primary
+nbt:StarterBlockEntity:Turning
+nbt:StressGameTests:Force
+nbt:SumpBlockEntity:Filtered
+nbt:SumpBlockEntity:Primary
+nbt:SuperchargerBlockEntity:Boost
+nbt:SuperchargerBlockEntity:Bypass
+nbt:SuperchargerBlockEntity:Drag
+nbt:SuperchargerBlockEntity:Primary
+nbt:SuperchargerBlockEntity:Served
+nbt:TransmissionBlockEntity:AutoGear
+nbt:TransmissionBlockEntity:Gear
+nbt:TransmissionBlockEntity:GearsUsed
+nbt:TransmissionBlockEntity:InputFace
+nbt:TransmissionBlockEntity:ThirteenGears
+nbt:TurboStatus:AntiLag
+nbt:TurboStatus:BackPressure
+nbt:TurboStatus:Boost
+nbt:TurboStatus:Charge
+nbt:TurboStatus:Compressor
+nbt:TurboStatus:Heat
+nbt:TurboStatus:OffThrottle
+nbt:TurboStatus:Spool
+nbt:TurboStatus:Turbine
+nbt:TurboStatus:Vanes
+nbt:TurboStatus:Wastegate
+nbt:TurbochargerBlockEntity:ScrollValue
+nbt:TurbochargerBlockEntity:Status
+prop:ColumnSectionBlock:active
+prop:ColumnSectionBlock:lean_down
+prop:ColumnSectionBlock:lean_up
+prop:ColumnSectionBlock:tint
+prop:CylinderBlock:connecting_rod
+prop:CylinderBlock:forged_piston
+prop:CylinderBlock:piston
+prop:CylinderHeadBlock:fine_injector
+prop:CylinderHeadBlock:injector
+prop:CylinderHeadBlock:spark_plug
+prop:Encasing:encased
+prop:Encasing:windowed
+prop:EngineCasingBlock:paint
+prop:FlareStackBlock:lit
+prop:RotorHousingBlock:fine_injector
+prop:RotorHousingBlock:injector
+prop:RotorHousingBlock:rotor
+prop:RotorHousingBlock:spark_plug
+reg:CEComponents:can_fluid
+reg:CECreativeTabs:main
+reg:CEParticles:exhaust_flame
+reg:CEParticles:gas
+reg:CEParticles:glow
+reg:CEParticles:spark
+reg:CERecipes:refining
+reg:CESounds:bearing_squeal
+reg:CESounds:cylinder_fire
+reg:CESounds:engine_catch
+reg:CESounds:engine_clatter
+reg:CESounds:engine_note
+reg:CESounds:engine_stall
+reg:CESounds:exhaust_pop
+reg:CESounds:flare_whoosh
+reg:CESounds:intake_roar
+reg:CESounds:metal_tick
+reg:CESounds:soot_catch
+reg:CESounds:starter_whir
+reg:CESounds:supercharger_whine
+reg:CESounds:turbo_blowoff
+reg:CESounds:turbo_whistle
+reg:block:air_intake
+reg:block:alternator
+reg:block:battery
+reg:block:black_box
+reg:block:cam_lobe
+reg:block:camshaft
+reg:block:cast_flywheel
+reg:block:column_section
+reg:block:condenser
+reg:block:crank_throw
+reg:block:crankshaft
+reg:block:cylinder
+reg:block:cylinder_head
+reg:block:dyno
+reg:block:engine_cased_cogwheel
+reg:block:engine_cased_large_cogwheel
+reg:block:engine_cased_shaft
+reg:block:engine_casing
+reg:block:engine_louvred_casing
+reg:block:engine_riveted_casing
+reg:block:engine_window_casing
+reg:block:exhaust_manifold
+reg:block:exhaust_outlet
+reg:block:flare_stack
+reg:block:governor
+reg:block:heat_exchanger
+reg:block:heavy_starter
+reg:block:intake_manifold
+reg:block:intercooler
+reg:block:maf_sensor
+reg:block:maker_plate
+reg:block:muffler
+reg:block:precision_cylinder
+reg:block:precision_cylinder_head
+reg:block:rain_cap
+reg:block:reboiler
+reg:block:rotor_housing
+reg:block:soot_trap
+reg:block:starter
+reg:block:sump
+reg:block:supercharger
+reg:block:throttle
+reg:block:transmission
+reg:block:turbocharger
+reg:block:variable_supercharger
+reg:block:variable_turbocharger
+reg:blockEntity:alternator
+reg:blockEntity:battery
+reg:blockEntity:black_box
+reg:blockEntity:camshaft
+reg:blockEntity:cast_flywheel
+reg:blockEntity:column_port
+reg:blockEntity:crankshaft
+reg:blockEntity:cylinder
+reg:blockEntity:cylinder_head
+reg:blockEntity:dyno
+reg:blockEntity:engine_cased_cogwheel
+reg:blockEntity:engine_cased_large_cogwheel
+reg:blockEntity:engine_cased_shaft
+reg:blockEntity:governor
+reg:blockEntity:heat_exchanger
+reg:blockEntity:maf_sensor
+reg:blockEntity:maker_plate
+reg:blockEntity:rain_cap
+reg:blockEntity:rotor_housing
+reg:blockEntity:soot_trap
+reg:blockEntity:starter
+reg:blockEntity:sump
+reg:blockEntity:supercharger
+reg:blockEntity:throttle
+reg:blockEntity:transmission
+reg:blockEntity:turbocharger
+reg:displaySource:engine_load
+reg:displaySource:engine_oil
+reg:displaySource:engine_power
+reg:displaySource:engine_speed
+reg:displaySource:engine_status
+reg:displaySource:engine_temperature
+reg:displaySource:sump_levels
+reg:fluid:coolant
+reg:fluid:diesel
+reg:fluid:engine_oil
+reg:fluid:ethanol
+reg:fluid:gasoline
+reg:fluid:glycerin
+reg:fluid:plant_oil
+reg:fluid:sugar_mash
+reg:fluid:used_oil
+reg:item:bank_builder
+reg:item:connecting_rod
+reg:item:forged_piston
+reg:item:fuel_injector
+reg:item:jerry_can
+reg:item:oil_filter
+reg:item:piston
+reg:item:precision_injector
+reg:item:rotor
+reg:item:soot
+reg:item:spark_plug
+reg:item:timing_tool
