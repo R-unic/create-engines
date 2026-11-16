@@ -304,9 +304,74 @@ registry aliases so existing worlds load. Each item needs the author's decision:
 - The basin fuel recipes: kept through 1.x as the worse route, and reviewed here.
 - Config keys regrouped once, after two rounds of growth. On first start 2.0 reads the old config file, carries
   each value over to its new key and logs what moved, so nobody's settings reset.
-- The advancements hidden by the 1.1 declutter are deleted, and the tracks regrouped around what is left.
+- **Advancement redesign, step 2 (2.0 owns this).** Step 1 shipped in 1.x (see docs/ADVANCEMENTS.md). 2.0 does the rest:
+  rename the IDs and regroup the tab tree by track, delete the hidden advancements, and write the migration table (every 1.x ID,
+  shown or hidden, maps to its new ID or IDs; old progress is credited silently, with no toast and no sting; a test checks
+  every 1.x ID has an entry). Nothing of step 2 is started, and no 1.x release should rename or delete an advancement.
 - Legacy manifold handling and other old-save code paths.
 - Support for older Create versions carried through 1.x under rule 7 is dropped, if a newer one is out.
+
+### Intake and exhaust port model redesign
+
+Queued 2026-11-16. Redraw the models of the intake and exhaust ports (the mouths on the head, and the muffler) so they read
+better and match the finished look of the rest of the engine.
+
+- **Models and textures only.** Same block IDs, same block states, same behaviour, same ports and connections, so
+  existing worlds load unchanged and nothing in the simulation moves. If a redesign needs a new state or a different
+  collision shape, it is raised as a decision first.
+- **Art direction holds:** chunky, reads as Create, textures built from Create's own pieces (see the art direction
+  rule). No 3D pixel art.
+- **This is a redraw, not new parts.** It does not reopen the declined list: no intake dress parts and no exhaust tips
+  other than the rain cap. The intake roar and the exhaust note keep coming from the same positions, so the redesign
+  must not move the mouths.
+- **In scope: the head ports and the muffler.** Manifolds are not part of this redesign and keep their current models.
+- **Still to decide before work starts:** whether the casing connected-texture clad still wraps the redrawn parts.
+- Checked with the showcase screenshot harness, the Ponder sweep and the smoke audit's client checks.
+
+### Optimization pass
+
+Queued 2026-11-16. Make the mod cheaper to run on both sides, so large engine banks and busy servers cost less.
+Behaviour does not change: the same engine produces the same torque, fuel use, heat and readouts before and after.
+
+- **Culling (client).** Skip rendering and animation for engines out of view, behind walls or far away, and skip
+  particle, sound and flame work nobody can see or hear.
+- **Animation level of detail.** Pistons, cams, valves, crank throws and flywheels animate in full up close and with
+  fewer moving parts, or none, at distance. Fast spinning parts stop being drawn per frame where the motion can no
+  longer be told apart.
+- **Eliminate redundant work.** Recompute only when something changed: cache the engine scan until a block in it
+  changes, keep derived stats and goggle text until their inputs move, and stop re-sending data the client already
+  has (sync only on change, not every tick).
+- **Eliminate inefficiency.** Profile first, then fix what the profile shows: allocation in tick and render paths,
+  repeated lookups, work done for engines that are stopped or idle, and anything that grows with engine count faster
+  than it should.
+- **More ideas, each to be proven by a profile before it is built:**
+  - *Server tick.* Engines already publish and sync on intervals; check that stopped, idle and fully loaded engines all
+    skip the per-tick sim work they do not need, that a steady-state engine (same speed, load and fuel) sleeps its
+    publish and capacity checks, and that a bank of many engines does not rescan or resync as one.
+  - *Scanner.* Rescan only when a block in the engine changed, and only the part that changed; avoid the full
+    `EngineScanner` walk on chunk load, on neighbour updates that change nothing, and on Timing Tool use where the
+    cached layout is still good. Chunk-aware lookups instead of repeated `getBlockState` and `getBlockEntity` walks.
+  - *Simulation.* Keep the high-RPM step cap, lookup tables and incremental dyno as the model; look for per-cylinder
+    allocation, boxing, repeated trig or curve evaluation that a table or a cached value covers, and cylinders that
+    are identical and could share one calculation.
+  - *Network.* Send deltas, not whole state; round and skip values that did not move enough to show; batch per
+    engine instead of per block; keep goggle and readout data off the wire until someone looks.
+  - *Sound.* Cap concurrent engine note voices and drop the farthest, pause synthesis for engines out of earshot,
+    reuse buffers, and keep the streamed note off the render thread (the 1.2.0 out-of-memory fix is the standard to
+    hold).
+  - *Particles and effects.* Cap particles per engine and per frame, thin them with distance, skip exhaust, smoke
+    and flame for engines out of view, and skip them for engines that are stopped.
+  - *Renderers.* Batch the moving parts of one engine into as few draw calls as possible, cache baked models for
+    parts that only rotate, avoid per-frame transform maths for parts that are out of sight, and make sure connected
+    casing does not rebuild its model on every neighbour change.
+  - *Chunk and memory cost.* Smaller block entity save data, no per-engine caches that outlive the engine, and no
+    growth in the smoke harness's fleet leak trends.
+  - *Startup and loading.* Texture and model count, data load time, and Ponder scene setup that runs before it is
+    opened.
+- **Measure, don't guess.** Each change comes with a before and after number from the smoke harness's fleet trends
+  or a profiler run, and anything on a tick or sound path keeps its soak and hostile-input tests.
+- **Rule:** the behaviour baseline and the legacy-world GameTests must pass unchanged. An optimization that needs a
+  behaviour change is raised as a decision, not folded in.
 
 ### Getting there safely
 
