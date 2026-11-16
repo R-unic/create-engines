@@ -22,15 +22,24 @@ import com.tterrag.registrate.providers.RegistrateAdvancementProvider;
 
 import net.minecraft.advancements.Advancement;
 import net.minecraft.advancements.AdvancementHolder;
+import net.minecraft.advancements.AdvancementRewards;
 import net.minecraft.advancements.AdvancementType;
 import net.minecraft.advancements.Criterion;
 import net.minecraft.advancements.CriteriaTriggers;
 import net.minecraft.advancements.critereon.InventoryChangeTrigger;
 import net.minecraft.advancements.critereon.PlayerTrigger;
+import net.minecraft.core.registries.Registries;
 import net.minecraft.network.chat.Component;
+import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.ItemLike;
+import net.minecraft.world.level.storage.loot.LootPool;
+import net.minecraft.world.level.storage.loot.LootTable;
+import net.minecraft.world.level.storage.loot.entries.LootItem;
+import net.minecraft.world.level.storage.loot.functions.SetNameFunction;
+import net.minecraft.world.level.storage.loot.parameters.LootContextParamSets;
+import net.minecraft.world.level.storage.loot.providers.number.ConstantValue;
 
 /**
  * The advancement tree, written once as a table: datagen turns each row into an advancement and its lang entries.
@@ -67,7 +76,22 @@ public final class CEAdvancements {
 		"combined_cycle", "engine_display", "stampede", "stalled", "flooded", "redline", "heavy_duty", "steam_beater",
 		"steam_titan", "dyno_run", "turbocharger", "big_boost", "twin_turbo", "supercharger", "twincharged", "anti_lag",
 		"precision_engine", "dialed_in", "governed", "master_builder", "power_plant", "fine_tuner", "full_driveline",
-		"closed_loop", "service_record", "chief_engineer");
+		"closed_loop", "service_record", "chief_engineer",
+		// Mistakes are part of the fun, and so are a few moments that were hidden before the redesign
+		"smoke_signals", "fouled_plug", "thinned_oil", "overloaded", "engine_casing", "blow_off", "transmission",
+		"oil_kept_fresh", "cool_running", "preheated");
+
+	/**
+	 * Shown rows that are toast only: small stepping stones and minor discoveries, which would fill chat in a new player's
+	 * first ten minutes. Every other shown row also announces in chat.
+	 */
+	private static final Set<String> QUIET = Set.of("crankshaft", "cylinder", "starter", "warmed_up", "sump", "camshaft",
+		"pipework", "bank_builder", "engine_casing", "blow_off", "thinned_oil", "fouled_plug", "engine_display",
+		"alternator", "flywheel", "preheated", "spark_plug", "transmission");
+
+	/** What the Chief Engineer capstone hands over: an engraved Maker's Plate. */
+	public static final ResourceKey<LootTable> CHIEF_ENGINEER_REWARD =
+		ResourceKey.create(Registries.LOOT_TABLE, CreateEngines.asResource("advancement/chief_engineer"));
 
 	static {
 		// The root: everyone gets it, and it names the tab
@@ -416,6 +440,12 @@ public final class CEAdvancements {
 			REGISTRATE.addRawLang(titleKey(row.id()), row.title());
 			REGISTRATE.addRawLang(titleKey(row.id()) + ".desc", row.description());
 		}
+		REGISTRATE.addDataGenerator(ProviderType.LOOT, provider -> provider.addLootAction(LootContextParamSets.ADVANCEMENT_REWARD,
+			tables -> tables.accept(CHIEF_ENGINEER_REWARD, LootTable.lootTable()
+				.withPool(LootPool.lootPool()
+					.setRolls(ConstantValue.exactly(1))
+					.add(LootItem.lootTableItem(CEBlocks.MAKER_PLATE.get())
+						.apply(SetNameFunction.setName(Component.literal("Chief Engineer"), SetNameFunction.Target.CUSTOM_NAME))))));
 		REGISTRATE.addDataGenerator(ProviderType.ADVANCEMENT, CEAdvancements::generate);
 	}
 
@@ -429,7 +459,9 @@ public final class CEAdvancements {
 			if (isShown(row.id()))
 				builder.display(row.icon()
 					.get(), Component.translatable(titleKey(row.id())), Component.translatable(titleKey(row.id()) + ".desc"),
-					root ? BACKGROUND : null, row.type(), !root, !root, false);
+					root ? BACKGROUND : null, row.type(), !root, !root && !isQuiet(row.id()), false);
+				if (row.id().equals("chief_engineer"))
+					builder.rewards(AdvancementRewards.Builder.loot(CHIEF_ENGINEER_REWARD));
 			if (row.requires()
 				.isEmpty())
 				builder.addCriterion(row.id(), row.criterion()
@@ -440,6 +472,16 @@ public final class CEAdvancements {
 						.waitingFor(needed));
 			built.put(row.id(), builder.save(provider, CreateEngines.MOD_ID + ":" + row.id()));
 		}
+	}
+
+	/** Whether the advancement {@code id} shows its toast without a line in chat. */
+	public static boolean isQuiet(String id) {
+		return QUIET.contains(id);
+	}
+
+	/** The IDs of the rows in the tab, for tests. */
+	public static Set<String> shownIds() {
+		return SHOWN;
 	}
 
 	/** Whether the advancement {@code id} is in the tab, or only kept under its ID. */

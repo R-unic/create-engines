@@ -59,6 +59,15 @@ neoForge {
             systemProperty 'create_engines.visualSmokeTest.window', project.hasProperty('smokeWindow') ? 'true' : 'false'
         }
 
+        // The unattended client audit (see docs/SMOKE.md): content, models, Ponder, a running fleet, leaks, pictures.
+        // Runs in a game folder of its own, so it starts from default settings and never touches a development client's.
+        smokeAudit {
+            client()
+            gameDirectory = file('run/smoke-client')
+            systemProperty 'neoforge.enabledGameTestNamespaces', project.mod_id
+            systemProperty 'create_engines.smokeAudit', 'true'
+        }
+
         // Builds a handful of engines on stone pads and photographs them at 1920x1080 for the mod page, in a game
         // folder of its own so it neither shares nor disturbs the settings of a development client.
         showcase {
@@ -78,6 +87,8 @@ neoForge {
 
         gameTestServer {
             type = 'gameTestServer'
+            // Its own folder: shipped default settings, and a log no other run overwrites
+            gameDirectory = file('run/gametest')
             systemProperty 'neoforge.enabledGameTestNamespaces', project.mod_id
         }
 
@@ -153,6 +164,49 @@ neoForge.ideSyncTask generateModMetadata
 tasks.withType(JavaCompile).configureEach {
     options.encoding = 'UTF-8'
 }
+
+// Smoke verification. The game cannot judge its own run: it does not see errors printed while it shuts down, a crash
+// leaves no report, and the GameTest server exits 0 whether its tests passed or not. These tasks read what a run left
+// behind and fail the build. SmokeVerify is plain Java, so it runs on the main classes alone with no game.
+def verifyOutput = sourceSets.main.output
+def smokeAllowlist = file('src/smoke/log-allowlist.txt')
+
+tasks.register('verifyClientSmoke', JavaExec) {
+    group = 'verification'
+    description = 'Fails unless the last smokeAudit run completed with no failed checks and a clean log.'
+    classpath = verifyOutput
+    mainClass = 'com.createengines.smoke.SmokeVerify'
+    args '--run', 'client', '--dir', file('run/smoke-client/smoke/client').path,
+            '--log', file('run/smoke-client/logs/latest.log').path, '--allow', smokeAllowlist.path
+    dependsOn 'classes'
+}
+
+tasks.register('verifyGameTests', JavaExec) {
+    group = 'verification'
+    description = 'Fails unless the last runGameTestServer passed every test and logged no errors.'
+    classpath = verifyOutput
+    mainClass = 'com.createengines.smoke.SmokeVerify'
+    args '--run', 'gametest', '--gametest', '--log', file('run/gametest/logs/latest.log').path, '--allow', smokeAllowlist.path
+    dependsOn 'classes'
+}
+
+tasks.matching { it.name == 'runSmokeAudit' }.configureEach {
+    timeout = java.time.Duration.ofMinutes(30)
+    finalizedBy 'verifyClientSmoke'
+}
+tasks.matching { it.name == 'runGameTestServer' }.configureEach {
+    timeout = java.time.Duration.ofMinutes(20)
+    finalizedBy 'verifyGameTests'
+}
+
+// One command for everything unattended: unit tests, the GameTests with their log check, and the client audit.
+tasks.register('smoke') {
+    group = 'verification'
+    description = 'Runs unit tests, GameTests and the client audit, each verified; fails if any of them found a problem.'
+    dependsOn 'test', 'runGameTestServer', 'runSmokeAudit'
+}
+tasks.matching { it.name == 'runGameTestServer' }.configureEach { mustRunAfter 'test' }
+tasks.matching { it.name == 'runSmokeAudit' }.configureEach { mustRunAfter 'runGameTestServer' }
 
 idea {
     module {

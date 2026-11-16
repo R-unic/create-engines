@@ -43,6 +43,7 @@ public class CreateEnginesClient {
 		NeoForge.EVENT_BUS.addListener(CreateEnginesClient::onLoggingOut);
 		PonderIndex.addPlugin(new CEPonderPlugin());
 		VisualSmokeTest.register();
+		com.createengines.client.smoke.SmokeAudit.register();
 		ShowcaseRun.register();
 	}
 

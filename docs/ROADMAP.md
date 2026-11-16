@@ -300,7 +300,7 @@ throttle and rack) lets players write their own engine management in Lua, withou
 registry aliases so existing worlds load. Each item needs the author's decision:
 
 - The throttle body: keep, fold into the intake, or remove.
-- The Transmission, now that it sits beside Create's Rotation Speed Controller.
+- ~~The Transmission~~: kept (2026-11-16), as the car-like gearbox beside Create's Rotation Speed Controller.
 - The basin fuel recipes: kept through 1.x as the worse route, and reviewed here.
 - Config keys regrouped once, after two rounds of growth. On first start 2.0 reads the old config file, carries
   each value over to its new key and logs what moved, so nobody's settings reset.

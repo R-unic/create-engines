@@ -803,7 +803,7 @@ public final class VisualSmokeTest {
 		List.of(BlockPos.ZERO, RICH_OFFSET, FLOODED_OFFSET, DRY_OFFSET, TURBO_OFFSET, BLOWER_OFFSET);
 
 	/** The first engine's exhaust opened into a turbine, its intake drawn through the compressor (as the turbo GameTest). */
-	private static void addTurbo(net.minecraft.world.level.Level level, BlockPos origin) {
+	public static void addTurbo(net.minecraft.world.level.Level level, BlockPos origin) {
 		BlockPos turbo = origin.offset(TestEngine.EXHAUST);
 		level.setBlock(turbo, CEBlocks.TURBOCHARGER.getDefaultState()
 			.setValue(com.createengines.content.turbo.TurbochargerBlock.FACING, Direction.WEST), 3);
@@ -819,7 +819,7 @@ public final class VisualSmokeTest {
 	}
 
 	/** A spark engine with a supercharger on its head, turned by its own creative motor, as the boost GameTests build it. */
-	private static void addBlower(net.minecraft.world.level.Level level, BlockPos origin) {
+	public static void addBlower(net.minecraft.world.level.Level level, BlockPos origin) {
 		BlockPos head = origin.offset(TestEngine.HEAD);
 		BlockPos blower = head.east();
 		level.setBlock(origin.offset(TestEngine.AIR_INTAKE), Blocks.AIR.defaultBlockState(), 3);
@@ -1187,7 +1187,7 @@ public final class VisualSmokeTest {
 					.run();
 	}
 
-	private static void createWorld(Minecraft minecraft) {
+	public static void createWorld(Minecraft minecraft) {
 		LevelSettings settings = new LevelSettings("engine_smoke_" + System.currentTimeMillis(), GameType.CREATIVE,
 			false, Difficulty.PEACEFUL, true, new GameRules(), WorldDataConfiguration.DEFAULT);
 		WorldOptions options = new WorldOptions(0, false, false);
@@ -1218,14 +1218,14 @@ public final class VisualSmokeTest {
 			message -> CreateEngines.LOGGER.info("Smoke test screenshot: {}", message.getString()));
 	}
 
-	private static void server(java.util.function.Consumer<MinecraftServer> action) {
+	public static void server(java.util.function.Consumer<MinecraftServer> action) {
 		MinecraftServer server = Minecraft.getInstance()
 			.getSingleplayerServer();
 		if (server != null)
 			server.execute(() -> action.accept(server));
 	}
 
-	private static void command(MinecraftServer server, String command) {
+	public static void command(MinecraftServer server, String command) {
 		server.getCommands()
 			.performPrefixedCommand(server.createCommandSourceStack(), command);
 	}

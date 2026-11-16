@@ -1,0 +1,4 @@
+# Log lines the smoke verification ignores, as regular expressions matched anywhere in the line.
+# Every entry needs a comment saying WHY it is harmless. If you cannot say why, it is a bug, not noise.
+# When the environment changes (a new Create or NeoForge version) re-check each entry and delete the ones
+# whose reason no longer holds, so a real problem cannot hide behind a stale excuse.
