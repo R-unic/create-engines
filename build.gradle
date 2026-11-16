@@ -55,6 +55,7 @@ neoForge {
             systemProperty 'create_engines.visualSmokeTest.pushrods', project.hasProperty('smokePushrods') ? 'true' : 'false'
             systemProperty 'create_engines.visualSmokeTest.casings', project.hasProperty('smokeCasings') ? 'true' : 'false'
             systemProperty 'create_engines.visualSmokeTest.rainCap', project.hasProperty('smokeRainCap') ? 'true' : 'false'
+            systemProperty 'create_engines.visualSmokeTest.refinery', project.hasProperty('smokeRefinery') ? 'true' : 'false'
             systemProperty 'create_engines.visualSmokeTest.window', project.hasProperty('smokeWindow') ? 'true' : 'false'
         }
 

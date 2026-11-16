@@ -113,13 +113,24 @@ class RefiningBalanceTest {
 
 	@Test
 	void ethanolIsTheOneFuelTheColumnMakesDearerThanTodaysBasin() throws IOException {
-		double todayHeated = basin("ethanol", "ethanol").feedMb();
-		double todaySuper = basin("ethanol_superheated", "ethanol").feedMb();
-		assertEquals(5000, todayHeated, 1e-9);
-		assertEquals(2500, todaySuper, 1e-9);
+		// Before 1.3 the basin gave 50 and 100 mB per 250 mB of mash: 5000 and 2500 mB of mash a bucket.
+		double todayHeated = 250.0 / 50 * 1000;
+		double todaySuper = 250.0 / 100 * 1000;
 		assertTrue(of(column("ethanol")).feedMb() > todayHeated, "heated column feed " + of(column("ethanol")).feedMb());
 		assertTrue(of(column("ethanol_superheated")).feedMb() > todaySuper,
 			"superheated column feed " + of(column("ethanol_superheated")).feedMb());
+	}
+
+	@Test
+	void theShippedBasinEthanolRecipesAreTheWeakenedOnes() throws IOException {
+		assertEquals(250.0 / WEAKENED_BASIN_HEATED * 1000, basin("ethanol", "ethanol").feedMb(), 1e-6);
+		assertEquals(250.0 / WEAKENED_BASIN_SUPERHEATED * 1000, basin("ethanol_superheated", "ethanol").feedMb(), 1e-6);
+	}
+
+	@Test
+	void theOtherBasinFuelsAreNotTouched() throws IOException {
+		assertEquals(1000, basin("diesel", "diesel").feedMb(), 1e-9);
+		assertEquals(1000, basin("gasoline", "gasoline").feedMb(), 1e-9);
 	}
 
 	@Test

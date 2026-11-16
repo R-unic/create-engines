@@ -96,4 +96,50 @@ public class RefiningRecipeGameTests {
 			helper.fail("gasoline is a product, not a feed");
 		helper.succeed();
 	}
+
+	private static int hintFor(GameTestHelper helper, Object feed, Object product) {
+		for (var hint : com.createengines.content.refinery.BasinHints.hintsFor(helper.getLevel(),
+			java.util.List.of(of(feed, 1000))))
+			if (hint.product().getFluid() == product)
+				return hint.percent();
+		return 0;
+	}
+
+	@GameTest(template = "empty")
+	public static void aBasinHoldingFeedIsToldWhatAColumnWouldGive(GameTestHelper helper) {
+		int diesel = hintFor(helper, CEFluids.PLANT_OIL.getSource(), CEFluids.DIESEL.getSource());
+		int gasoline = hintFor(helper, CEFluids.DIESEL.getSource(), CEFluids.GASOLINE.getSource());
+		int ethanol = hintFor(helper, CEFluids.SUGAR_MASH.getSource(), CEFluids.ETHANOL.getSource());
+		if (diesel != 10 || gasoline != 10)
+			helper.fail("diesel and gasoline should be told 10% more, got " + diesel + " and " + gasoline);
+		if (ethanol != 21)
+			helper.fail("ethanol should be told 21% more, got " + ethanol);
+		helper.succeed();
+	}
+
+	@GameTest(template = "empty")
+	public static void aBasinHintNeverFiresForNothingOrForAProduct(GameTestHelper helper) {
+		if (!com.createengines.content.refinery.BasinHints.hintsFor(helper.getLevel(), java.util.List.of()).isEmpty())
+			helper.fail("an empty basin has no hint");
+		if (!com.createengines.content.refinery.BasinHints.hintsFor(helper.getLevel(),
+			java.util.List.of(FluidStack.EMPTY, of(CEFluids.GASOLINE.getSource(), 1000))).isEmpty())
+			helper.fail("empty and product fluids have no hint");
+		helper.succeed();
+	}
+
+	@GameTest(template = "empty")
+	public static void theShippedBasinEthanolIsWeakenedAndBiodieselAsksLess(GameTestHelper helper) {
+		var manager = helper.getLevel().getRecipeManager();
+		int heated = ethanolPer250(manager, "mixing/ethanol");
+		int superheated = ethanolPer250(manager, "mixing/ethanol_superheated");
+		if (heated != 35 || superheated != 70)
+			helper.fail("basin ethanol should be 35 and 70 per 250 mB of mash, got " + heated + " and " + superheated);
+		helper.succeed();
+	}
+
+	private static int ethanolPer250(net.minecraft.world.item.crafting.RecipeManager manager, String path) {
+		var holder = manager.byKey(CreateEngines.asResource(path)).orElseThrow();
+		var recipe = (com.simibubi.create.content.processing.recipe.ProcessingRecipe<?, ?>) holder.value();
+		return recipe.getFluidResults().get(0).getAmount();
+	}
 }

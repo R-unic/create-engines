@@ -302,6 +302,7 @@
   "create_engines.goggles.alternator.no_battery": "No battery touching it or its engine to charge",
   "create_engines.goggles.alternator.supplying": "Supplying Forge Energy from its shaft",
   "create_engines.goggles.available_torque": "Rated torque:",
+  "create_engines.goggles.basin.column": "A refining column would make %1$s%% more %2$s from this",
   "create_engines.goggles.battery": "Battery",
   "create_engines.goggles.battery.charge": "Charge: %1$s%%",
   "create_engines.goggles.battery.flat": "Flat: an alternator has to charge it",

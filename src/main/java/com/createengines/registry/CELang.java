@@ -314,6 +314,7 @@ public final class CELang {
 		raw("goggles.head.no_spark_plug", "Right-click with a Spark Plug to light fuel by spark instead of compression");
 
 		raw("goggles.sump", "Oil Sump");
+		raw("goggles.basin.column", "A refining column would make %1$s%% more %2$s from this");
 		raw("goggles.column.reboiler", "Reboiler");
 		raw("goggles.column.condenser", "Condenser");
 		raw("goggles.column.size", "Refining column, %1$s by %2$s blocks, %3$s sections tall");

@@ -84,6 +84,9 @@ public final class VisualSmokeTest {
 	/** Run only the window casing close-up (gradle {@code -PsmokeWindow}): the first engine's crank behind glass. */
 	private static final String WINDOW_ONLY = "create_engines.visualSmokeTest.window";
 
+	/** Run only the refinery (gradle {@code -PsmokeRefinery}): a working column with a flare stack and a basin's goggle line. */
+	private static final String REFINERY_ONLY = "create_engines.visualSmokeTest.refinery";
+
 	private record Step(int tick, Runnable action) {
 	}
 
@@ -196,6 +199,11 @@ public final class VisualSmokeTest {
 
 		if (Boolean.getBoolean(CASINGS_ONLY)) {
 			casings(60);
+			return;
+		}
+
+		if (Boolean.getBoolean(REFINERY_ONLY)) {
+			refinery(60);
 			return;
 		}
 
@@ -414,6 +422,85 @@ public final class VisualSmokeTest {
 		ponder("sump", start + 3500, CEBlocks.SUMP::asStack, 1300, 1450);
 		ponder("bank_builder", start + 5200, CEItems.BANK_BUILDER::asStack, 200, 520);
 		STEPS.add(new Step(start + 6000, () -> Minecraft.getInstance()
+			.stop()));
+	}
+
+	private static final BlockPos REFINERY_OFFSET = new BlockPos(0, 0, 14);
+
+	/**
+	 * A 2x2 column over a seething burner fed plant oil, a flare stack on its condenser, and a basin of plant oil on
+	 * a burner beside it; logs the basin's goggle lines ("REFINERY SMOKE") then takes pictures. Then the run ends.
+	 */
+	private static void refinery(int start) {
+		STEPS.add(new Step(start, () -> server(server -> {
+			var level = server.overworld();
+			BlockPos base = origin.offset(REFINERY_OFFSET);
+			for (int x = 0; x < 2; x++)
+				for (int z = 0; z < 2; z++) {
+					level.setBlock(base.offset(x, 0, z), CEBlocks.HEAT_EXCHANGER.getDefaultState()
+						.setValue(com.simibubi.create.content.processing.burner.BlazeBurnerBlock.HEAT_LEVEL,
+							com.simibubi.create.content.processing.burner.BlazeBurnerBlock.HeatLevel.KINDLED), 3);
+					level.setBlock(base.offset(x, 1, z), CEBlocks.REBOILER.getDefaultState(), 3);
+					level.setBlock(base.offset(x, 2, z), CEBlocks.COLUMN_SECTION.getDefaultState(), 3);
+					level.setBlock(base.offset(x, 3, z), CEBlocks.COLUMN_SECTION.getDefaultState(), 3);
+					level.setBlock(base.offset(x, 4, z), CEBlocks.CONDENSER.getDefaultState(), 3);
+				}
+			level.setBlock(base.offset(0, 5, 0), CEBlocks.FLARE_STACK.getDefaultState(), 3);
+			BlockPos basin = base.offset(5, 1, 0);
+			level.setBlock(basin.below(), com.simibubi.create.AllBlocks.BLAZE_BURNER.getDefaultState()
+				.setValue(com.simibubi.create.content.processing.burner.BlazeBurnerBlock.HEAT_LEVEL,
+					com.simibubi.create.content.processing.burner.BlazeBurnerBlock.HeatLevel.KINDLED), 3);
+			level.setBlock(basin, com.simibubi.create.AllBlocks.BASIN.getDefaultState(), 3);
+		})));
+		STEPS.add(new Step(start + 40, () -> server(server -> {
+			var level = server.overworld();
+			BlockPos base = origin.offset(REFINERY_OFFSET);
+			var feed = level.getCapability(net.neoforged.neoforge.capabilities.Capabilities.FluidHandler.BLOCK,
+				base.above(), Direction.UP);
+			if (feed != null)
+				feed.fill(new FluidStack(CEFluids.PLANT_OIL.get()
+					.getSource(), 1000), IFluidHandler.FluidAction.EXECUTE);
+			var coal = level.getBlockEntity(base.above());
+			if (coal instanceof com.createengines.content.refinery.ColumnPortBlockEntity port)
+				port.insertCatalyst(new ItemStack(net.minecraft.world.item.Items.COAL, 16));
+			if (level.getBlockEntity(base.offset(5, 1, 0)) instanceof com.simibubi.create.content.processing.basin.BasinBlockEntity basin)
+				basin.getTanks()
+					.getFirst()
+					.getPrimaryHandler()
+					.fill(new FluidStack(CEFluids.PLANT_OIL.get()
+						.getSource(), 500), IFluidHandler.FluidAction.EXECUTE);
+		})));
+		STEPS.add(new Step(start + 110, () -> server(server -> {
+			if (server.overworld()
+				.getBlockEntity(origin.offset(REFINERY_OFFSET)
+					.above()) instanceof com.createengines.content.refinery.ColumnPortBlockEntity port)
+				CreateEngines.LOGGER.info("REFINERY SMOKE column {} heat {} rate {} catalyst {}", port.limit(), port.heat(),
+					port.rate(), port.catalystStack());
+		})));
+		// The client's own goggle text for the basin, which is where the mixin must have applied
+		STEPS.add(new Step(start + 120, () -> {
+			var level = Minecraft.getInstance().level;
+			BlockPos basin = origin.offset(REFINERY_OFFSET)
+				.offset(5, 1, 0);
+			if (level != null && level.getBlockEntity(basin) instanceof com.simibubi.create.api.equipment.goggles.IHaveGoggleInformation goggles) {
+				List<net.minecraft.network.chat.Component> lines = new ArrayList<>();
+				goggles.addToGoggleTooltip(lines, false);
+				boolean hinted = lines.stream()
+					.anyMatch(l -> l.getString()
+						.contains("refining column would make"));
+				CreateEngines.LOGGER.info("REFINERY SMOKE basin goggles {} lines, hint {}: {}", lines.size(),
+					hinted ? "PRESENT" : "MISSING", lines.stream()
+						.map(net.minecraft.network.chat.Component::getString)
+						.toList());
+				if (!hinted)
+					CreateEngines.LOGGER.error("REFINERY SMOKE FAIL: the basin goggles carry no column hint");
+			} else
+				CreateEngines.LOGGER.error("REFINERY SMOKE FAIL: no basin on the client at {}", basin);
+		}));
+		frames("refinery_column", start + 160, 3.0, 6.0, 9.0, 0, 18);
+		frames("refinery_top", start + 200, 6.0, 8.0, 10.0, 45, 30);
+		frames("refinery_basin", start + 240, 8.5, 4.0, 12.0, 20, 25);
+		STEPS.add(new Step(start + 300, () -> Minecraft.getInstance()
 			.stop()));
 	}
 
