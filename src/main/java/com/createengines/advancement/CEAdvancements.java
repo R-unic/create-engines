@@ -445,7 +445,7 @@ public final class CEAdvancements {
 				.withPool(LootPool.lootPool()
 					.setRolls(ConstantValue.exactly(1))
 					.add(LootItem.lootTableItem(CEBlocks.MAKER_PLATE.get())
-						.apply(SetNameFunction.setName(Component.literal("Chief Engineer"), SetNameFunction.Target.CUSTOM_NAME))))));
+						.apply(SetNameFunction.setName(Component.literal("Chief Engineer"), SetNameFunction.Target.CUSTOM_NAME)))))));
 		REGISTRATE.addDataGenerator(ProviderType.ADVANCEMENT, CEAdvancements::generate);
 	}
 

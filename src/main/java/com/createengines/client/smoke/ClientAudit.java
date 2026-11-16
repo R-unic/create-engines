@@ -93,6 +93,9 @@ public final class ClientAudit {
 		var dispatcher = minecraft.getBlockRenderer();
 		int invisible = 0;
 		for (Block block : ServerAudit.blocks()) {
+			// Fluids are drawn by the fluid renderer from their FluidType, not from a baked model
+			if (block instanceof net.minecraft.world.level.block.LiquidBlock)
+				continue;
 			String name = BuiltInRegistries.BLOCK.getKey(block)
 				.getPath();
 			List<BlockState> states = block.getStateDefinition()

@@ -350,5 +350,10 @@
       "hard_start"
     ]
   ],
+  "rewards": {
+    "loot": [
+      "create_engines:advancement/chief_engineer"
+    ]
+  },
   "sends_telemetry_event": true
 }

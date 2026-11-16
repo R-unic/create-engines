@@ -11,10 +11,13 @@ import com.tterrag.registrate.providers.RegistrateItemModelProvider;
 import com.tterrag.registrate.util.entry.FluidEntry;
 
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.tags.TagKey;
 import net.minecraft.world.item.BucketItem;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.level.BlockAndTintGetter;
+import net.minecraft.world.level.material.Fluid;
 import net.minecraft.world.level.material.FluidState;
 import net.minecraft.world.level.material.Fluids;
 import net.minecraft.world.level.material.MapColor;
@@ -228,6 +231,30 @@ public final class CEFluids {
 		return !stack.isEmpty() && stack.getFluid()
 			.isSame(ENGINE_OIL.get());
 	}
+
+	/** How well plant oil lubricates next to engine oil: a poor man's oil that thins and breaks down quickly. */
+	public static final double PLANT_OIL_LUBRICITY = 0.6;
+
+	/** Anything an engine's oil tank will take: proper engine oil, or plant oil in a pinch. */
+	public static boolean isLubricant(FluidStack stack) {
+		return lubricity(stack) > 0;
+	}
+
+	/** How well a fluid lubricates, as a share of engine oil: 0 if it will not oil an engine at all. */
+	public static double lubricity(FluidStack stack) {
+		if (stack.isEmpty())
+			return 0;
+		if (stack.getFluid()
+			.isSame(ENGINE_OIL.get()))
+			return 1;
+		Fluid fluid = stack.getFluid();
+		return fluid.isSame(PLANT_OIL.get()) || fluid.builtInRegistryHolder()
+			.is(POOR_LUBRICANTS) ? PLANT_OIL_LUBRICITY : 0;
+	}
+
+	/** Plant oils from any mod ({@code c:plantoil}, {@code c:vegetable_oil}, {@code c:seed_oil}...): oil enough for an engine in a pinch. */
+	public static final TagKey<Fluid> POOR_LUBRICANTS =
+		TagKey.create(Registries.FLUID, ResourceLocation.fromNamespaceAndPath(CreateEngines.MOD_ID, "poor_lubricants"));
 
 	public static boolean isUsedOil(FluidStack stack) {
 		return !stack.isEmpty() && stack.getFluid()

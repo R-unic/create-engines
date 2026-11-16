@@ -94,9 +94,8 @@ cd <copy>
       no crash report, nothing not on the allowlist.
 - [ ] `./scripts/smoke-mutations.ps1` re-run if any audit or checker changed since the last release. Every `EXPECT` line
       must still turn red.
-- [ ] Every WARN in the reports is read. Each is fixed, or is already a documented exception. The `OPEN FINDING` (the
-      supercharged spark engine after a 3000-block walk) is either still the known one, with the same symptom, or fixed
-      and made a hard check.
+- [ ] Every WARN in the reports is read. Each is fixed, or is already a documented exception. (The supercharged spark
+      engine after a 3000-block walk was fixed 2026-11-16 and is a hard check in the fleet.)
 - [ ] **Metrics compared.** The `METRICS` block (frame time p50 and p99, heap after GC, direct memory, particles, cost of
       16 engines) is compared to the last release's. A worse number is explained or fixed. The numbers are copied into
       the sign-off record so the next release has something to compare to.

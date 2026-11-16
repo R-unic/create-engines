@@ -101,7 +101,59 @@ public class LegacyWorldGameTests {
 
 	@GameTest(template = "empty_large", timeoutTicks = 400)
 	public static void anEngineSavedByThe13ReleaseLoadsAndKeepsItsData(GameTestHelper helper) {
-		Path file = fixtureDir().resolve(FIXTURE);
+		loadAndCheck(helper, FIXTURE, "1.3");
+	}
+
+	// The world corpus (verification track item 4): engines saved by the real releases, recorded by scripts/record-corpus.ps1
+	// from each release's own source and never regenerated. Each must load, keep every saved key, and keep running.
+
+	@GameTest(template = "empty_large", timeoutTicks = 400)
+	public static void aDieselEngineSavedBy100Loads(GameTestHelper helper) {
+		loadAndCheck(helper, "engine_v1_0_0_diesel.snbt", "1.0.0");
+	}
+
+	@GameTest(template = "empty_large", timeoutTicks = 400)
+	public static void aSparkEngineSavedBy100Loads(GameTestHelper helper) {
+		loadAndCheck(helper, "engine_v1_0_0_spark.snbt", "1.0.0");
+	}
+
+	@GameTest(template = "empty_large", timeoutTicks = 400)
+	public static void aRotaryEngineSavedBy100Loads(GameTestHelper helper) {
+		loadAndCheck(helper, "engine_v1_0_0_rotary.snbt", "1.0.0");
+	}
+
+	@GameTest(template = "empty_large", timeoutTicks = 400)
+	public static void aDieselEngineSavedBy110Loads(GameTestHelper helper) {
+		loadAndCheck(helper, "engine_v1_1_0_diesel.snbt", "1.1.0");
+	}
+
+	@GameTest(template = "empty_large", timeoutTicks = 400)
+	public static void aSparkEngineSavedBy110Loads(GameTestHelper helper) {
+		loadAndCheck(helper, "engine_v1_1_0_spark.snbt", "1.1.0");
+	}
+
+	@GameTest(template = "empty_large", timeoutTicks = 400)
+	public static void aRotaryEngineSavedBy110Loads(GameTestHelper helper) {
+		loadAndCheck(helper, "engine_v1_1_0_rotary.snbt", "1.1.0");
+	}
+
+	@GameTest(template = "empty_large", timeoutTicks = 400)
+	public static void aDieselEngineSavedBy120Loads(GameTestHelper helper) {
+		loadAndCheck(helper, "engine_v1_2_0_diesel.snbt", "1.2.0");
+	}
+
+	@GameTest(template = "empty_large", timeoutTicks = 400)
+	public static void aSparkEngineSavedBy120Loads(GameTestHelper helper) {
+		loadAndCheck(helper, "engine_v1_2_0_spark.snbt", "1.2.0");
+	}
+
+	@GameTest(template = "empty_large", timeoutTicks = 400)
+	public static void aRotaryEngineSavedBy120Loads(GameTestHelper helper) {
+		loadAndCheck(helper, "engine_v1_2_0_rotary.snbt", "1.2.0");
+	}
+
+	private static void loadAndCheck(GameTestHelper helper, String fixture, String saver) {
+		Path file = fixtureDir().resolve(fixture);
 		if (!Files.exists(file)) {
 			if (System.getenv("COMPAT_REGEN") != null) {
 				helper.succeed();
@@ -148,7 +200,7 @@ public class LegacyWorldGameTests {
 				.saveWithFullMetadata(registries);
 			for (String key : old.getAllKeys())
 				helper.assertTrue(KINETIC_ONLY.contains(key) || now.contains(key),
-					"Key \"" + key + "\" saved by 1.3 was lost after loading at " + pos + " ("
+					"Key \"" + key + "\" saved by " + saver + " was lost after loading at " + pos + " ("
 						+ old.getString("id") + ")");
 		}
 

@@ -36,7 +36,7 @@ public final class EngineAmbience {
 	/** How far away the one-off sounds are worth playing. */
 	private static final double HEARING_RANGE = 48;
 	private static final double TICKING_RANGE = 16;
-	private static final float CLATTER_LOUDEST = 0.2f;
+	private static final float CLATTER_LOUDEST = 0.13f;
 	private static final float SQUEAL_LOUDEST = 0.12f;
 	private static final float ROAR_LOUDEST = 0.35f;
 	/** Ticks after a cylinder last reported an open intake mouth before the roar is taken to have lost it. */

@@ -70,6 +70,35 @@ public final class LogScanner {
 		Pattern.compile("^\\[[^\\]]*/DEBUG\\]"));
 
 	private final List<Pattern> allowed = new ArrayList<>(BASELINE_NOISE);
+	/** Lines known to appear sometimes and for no reason found yet: still reported, but as a warning rather than a failure. */
+	private final List<Pattern> intermittent = new ArrayList<>();
+
+	/**
+	 * Reads an allowlist file. A plain line is ignored entirely; a line starting {@code warn:} is a known intermittent
+	 * message, reported as a warning instead of a failure so it stays visible without turning the build flaky.
+	 */
+	public LogScanner configure(String allowlistText) {
+		for (String line : allowlistText.split("\\R")) {
+			String trimmed = line.strip();
+			if (trimmed.isEmpty() || trimmed.startsWith("#"))
+				continue;
+			if (trimmed.startsWith("warn:"))
+				intermittent.add(Pattern.compile(trimmed.substring(5)
+					.strip()));
+			else
+				allowed.add(Pattern.compile(trimmed));
+		}
+		return this;
+	}
+
+	private Severity severityFor(String line, Severity severity) {
+		if (severity == Severity.FAIL)
+			for (Pattern pattern : intermittent)
+				if (pattern.matcher(line)
+					.find())
+					return Severity.WARN;
+		return severity;
+	}
 
 	/** Adds a pattern of lines to ignore (matched with {@code find}). */
 	public LogScanner allow(String regex) {
@@ -132,7 +161,7 @@ public final class LogScanner {
 			if (traceLine && inTrace) {
 				// A stack trace belongs to the line that began it; an allowed line's trace is allowed too
 				if (!traceAllowed && line.startsWith("Caused by:"))
-					note(counts, meta, Severity.FAIL, "caused by", line);
+					note(counts, meta, severityFor(line, Severity.FAIL), "caused by", line);
 				continue;
 			}
 			inTrace = false;
@@ -152,11 +181,11 @@ public final class LogScanner {
 					break;
 				}
 			if (fatalRule != null) {
-				note(counts, meta, Severity.FAIL, fatalRule, line);
+				note(counts, meta, severityFor(line, Severity.FAIL), fatalRule, line);
 				inTrace = true;
 				traceAllowed = false;
 			} else if (error) {
-				note(counts, meta, Severity.FAIL, "error logged", line);
+				note(counts, meta, severityFor(line, Severity.FAIL), "error logged", line);
 				inTrace = true;
 				traceAllowed = false;
 			} else if (warn) {

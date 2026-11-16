@@ -197,10 +197,14 @@ public final class ServerAudit {
 			if (recipe instanceof ShapedRecipe shaped)
 				// A shaped recipe's blank cells are empty ingredients on purpose; vanilla knows whether a keyed one is
 				empty = shaped.isIncomplete();
-			else
-				for (Ingredient ingredient : recipe.getIngredients())
-					if (ingredient.isEmpty() && !recipe.isSpecial())
-						empty = true;
+			for (Ingredient ingredient : recipe.getIngredients()) {
+				// A tag with no members does not look empty: vanilla fills it with a barrier named "Empty Tag: ..." so that
+				// recipe viewers show something, which is also what hides it from isEmpty and hasNoItems
+				if (emptyTag(ingredient))
+					empty = true;
+				if (!(recipe instanceof ShapedRecipe) && ingredient.hasNoItems() && !recipe.isSpecial())
+					empty = true;
+			}
 			report.check("data", "recipe " + name + " has no empty ingredient", !empty,
 				"an ingredient matches nothing (a tag with no members, or a removed item), so it can never be crafted");
 			var type = recipe.getType();
@@ -210,6 +214,15 @@ public final class ServerAudit {
 					.isEmpty(), "its result is empty");
 		}
 		report.check("data", "this mod's recipes loaded", ours > 0, "no recipe in namespace " + NS + " loaded at all");
+	}
+
+	private static boolean emptyTag(Ingredient ingredient) {
+		for (ItemStack stack : ingredient.getItems())
+			if (stack.is(net.minecraft.world.item.Items.BARRIER) && stack.getHoverName()
+				.getString()
+				.startsWith("Empty Tag"))
+				return true;
+		return false;
 	}
 
 	private static void advancementsSound(MinecraftServer server, SmokeReport report) {
@@ -236,7 +249,7 @@ public final class ServerAudit {
 	// Lifecycle sweep
 
 	/** The states of {@code block} to try: its default, then an even spread across the rest, up to {@link #STATES_PER_BLOCK}. */
-	static List<BlockState> sampleStates(Block block) {
+	public static List<BlockState> sampleStates(Block block) {
 		List<BlockState> all = block.getStateDefinition()
 			.getPossibleStates();
 		if (all.size() <= STATES_PER_BLOCK)

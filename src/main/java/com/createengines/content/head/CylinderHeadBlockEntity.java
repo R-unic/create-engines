@@ -59,7 +59,7 @@ public class CylinderHeadBlockEntity extends SmartBlockEntity implements IHaveGo
 
 		oil = new SmartFluidTankBehaviour(OIL_TYPE, this, 1, CAPACITY, false);
 		oil.getPrimaryHandler()
-			.setValidator(CEFluids::isEngineOil);
+			.setValidator(CEFluids::isLubricant);
 		behaviours.add(oil);
 
 		metering = new ScrollValueBehaviour(CELang.translate("value.fuel_metering")

@@ -8,6 +8,19 @@
       "trigger": "create_engines:event"
     }
   },
+  "display": {
+    "announce_to_chat": false,
+    "description": {
+      "translate": "advancement.create_engines.preheated.desc"
+    },
+    "icon": {
+      "count": 1,
+      "id": "minecraft:blaze_powder"
+    },
+    "title": {
+      "translate": "advancement.create_engines.preheated"
+    }
+  },
   "requirements": [
     [
       "preheated"

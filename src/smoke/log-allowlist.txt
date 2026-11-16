@@ -2,3 +2,12 @@
 # Every entry needs a comment saying WHY it is harmless. If you cannot say why, it is a bug, not noise.
 # When the environment changes (a new Create or NeoForge version) re-check each entry and delete the ones
 # whose reason no longer holds, so a real problem cannot hide behind a stale excuse.
+
+# KNOWN INTERMITTENT (reported as a warning, not a failure). Lines starting "warn:" are matched like the others but
+# only downgrade the finding, so it stays in every report.
+#
+# OpenAL says it was asked to stop a source it had already freed, from the sound thread, within milliseconds of
+# "Stopping!". Seen in 1 of 3 smokeAudit runs on 2026-11-16 (never in 415 earlier logs, never mid-run) and not
+# reproduced since; a race between the sound engine's shutdown and a streaming voice finishing is the likely cause.
+# Promote it to a real investigation if it shows up outside shutdown or in most runs.
+warn: Sound engine/ERROR\].*OpenAlUtil.*Stop: Invalid name parameter

@@ -1,5 +1,5 @@
 {
-  "parent": "create_engines:crankshaft",
+  "parent": "create_engines:transmission",
   "criteria": {
     "charged_battery": {
       "conditions": {

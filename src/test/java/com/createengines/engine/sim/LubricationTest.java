@@ -9,6 +9,47 @@ class LubricationTest {
 
 	private static final OilSupply PLENTY = mb -> mb;
 
+	private static OilSupply plentyOf(double lubricity) {
+		return new OilSupply() {
+			@Override
+			public double draw(double mb) {
+				return mb;
+			}
+
+			@Override
+			public double lubricity() {
+				return lubricity;
+			}
+		};
+	}
+
+	@Test
+	void aPoorOilNeverBuildsAFullFilm() {
+		Lubrication oil = new Lubrication(0);
+		OilSupply poor = plentyOf(0.6);
+		for (int i = 0; i < 20; i++)
+			oil.update(1, 1, 4, poor);
+		assertEquals(0.6, oil.film(), 1e-12);
+		assertEquals(0.6, oil.grade(), 1e-12);
+		assertTrue(Lubrication.viscousFactor(oil.film()) > Lubrication.viscousFactor(1));
+	}
+
+	@Test
+	void aPoorOilWearsOutFasterAndProperOilRestoresTheFilm() {
+		Lubrication good = new Lubrication(1);
+		Lubrication poor = new Lubrication(1);
+		good.update(1, 1, 4, PLENTY);
+		poor.update(1, 1, 4, plentyOf(0.6));
+		assertTrue(poor.stress(1, false) > good.stress(1, false));
+		assertEquals(good.stress(1, false) / 0.6, poor.stress(1, false), 1e-12);
+
+		poor.update(1, 1, 4, PLENTY);
+		for (int i = 0; i < 20; i++)
+			poor.update(1, 1, 4, PLENTY);
+		assertEquals(1, poor.film(), 1e-12);
+		assertEquals(1, poor.grade(), 0);
+	}
+
 	@Test
 	void theFilmAndDilutionAreClampedToTheirRanges() {
 		assertEquals(1, new Lubrication(5).film(), 0);

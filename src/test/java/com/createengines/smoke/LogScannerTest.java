@@ -93,6 +93,18 @@ class LogScannerTest {
 	}
 
 	@Test
+	void aWarnPrefixedAllowlistEntryDowngradesInsteadOfHiding() {
+		var scanner = new LogScanner().configure("# why\nwarn: OpenAlUtil.*Invalid name\nignored line here\n");
+		var findings = scanner.scan(List.of("[1] [Sound engine/ERROR] [OpenAlUtil/]: Stop: Invalid name parameter.",
+			"[2] [Sound engine/INFO] [x/]: ignored line here is quiet", "[3] [Render thread/ERROR] [x/]: a different problem"));
+		assertEquals(2, findings.size());
+		assertEquals(Severity.WARN, findings.get(0)
+			.severity());
+		assertEquals(Severity.FAIL, findings.get(1)
+			.severity());
+	}
+
+	@Test
 	void aCausedByUnderAnErrorIsItsOwnFinding() {
 		var findings = scan("[1] [Render thread/ERROR] [x/]: Failed to render", "\tat net.foo.Bar.baz(Bar.java:1)",
 			"Caused by: java.lang.NullPointerException: engine was null");

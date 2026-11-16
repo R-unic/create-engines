@@ -28,8 +28,10 @@ public final class SmokeVerify {
 		Path allow = null;
 		boolean lenientLog = false;
 		boolean gameTest = false;
+		boolean logOnly = false;
 		for (int i = 0; i < args.length; i++) {
 			switch (args[i]) {
+				case "--log-only" -> logOnly = true;
 				case "--run" -> run = args[++i];
 				case "--dir" -> dir = Path.of(args[++i]);
 				case "--log" -> log = Path.of(args[++i]);
@@ -45,8 +47,8 @@ public final class SmokeVerify {
 				throw new IllegalArgumentException("--log is required with --gametest");
 			report = verifyGameTests(run, log, allow);
 		} else {
-			if (dir == null)
-				throw new IllegalArgumentException("--dir is required");
+			if (dir == null && !logOnly)
+				throw new IllegalArgumentException("--dir is required (or --log-only)");
 			report = verify(run, dir, log, allow, lenientLog);
 		}
 		System.out.println(report.render());
@@ -96,7 +98,7 @@ public final class SmokeVerify {
 				"no 'All N required tests passed' line: it crashed, or another server held the world lock");
 		LogScanner scanner = new LogScanner();
 		if (allow != null && Files.exists(allow))
-			scanner.allowAll(LogScanner.parseAllowlist(Files.readString(allow, StandardCharsets.UTF_8)));
+			scanner.configure(Files.readString(allow, StandardCharsets.UTF_8));
 		LogScanner.report(scanner.scan(lines), report);
 		report.markCompleted();
 		return report;
@@ -105,8 +107,11 @@ public final class SmokeVerify {
 	/** Builds the final report for a run: the game's own report merged with the log scan. */
 	public static SmokeReport verify(String run, Path dir, Path log, Path allow, boolean lenientLog) throws IOException {
 		SmokeReport report = new SmokeReport(run);
-		Path result = dir.resolve("result.properties");
-		if (!Files.exists(result)) {
+		// With no report directory the run is judged by its log alone (the older screenshot runs write no report)
+		Path result = dir == null ? null : dir.resolve("result.properties");
+		if (result == null) {
+			report.pass("run", "no report expected");
+		} else if (!Files.exists(result)) {
 			report.fail("run", "the game wrote no result", "expected " + result + "; it crashed before the audit ended or never started");
 		} else {
 			Properties properties = new Properties();
@@ -127,7 +132,7 @@ public final class SmokeVerify {
 			} else {
 				LogScanner scanner = new LogScanner();
 				if (allow != null && Files.exists(allow))
-					scanner.allowAll(LogScanner.parseAllowlist(Files.readString(allow, StandardCharsets.UTF_8)));
+					scanner.configure(Files.readString(allow, StandardCharsets.UTF_8));
 				List<String> lines = Files.readAllLines(log, StandardCharsets.ISO_8859_1);
 				List<LogScanner.Finding> findings = scanner.scan(lines);
 				if (lenientLog)

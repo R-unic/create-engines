@@ -295,6 +295,29 @@ throttle and rack) lets players write their own engine management in Lua, withou
 - **Fuels stay data.** Fuel data maps and column recipes written for 1.x keep loading. Any field 2.0 adds is
   optional.
 - **A frozen public API** under its own semver: read-only engine views, events, registries.
+- **Pollution compatibility: Pollution of the Realms** (mod id `adpother`, queued 2026-11-16, nothing built). Engines
+  put carbon and sulfur into the world through their exhaust outlets when that mod is installed.
+  - *What was found.* The mod has no public API and no datapack hooks, but its classes can be compiled against.
+    `Pollutants.BuiltIn.CARBON.get().pump(level, pos, steps)` puts gas density into one cell and returns how many steps
+    went in; `canStateBePumped` says whether a cell takes any. It needs the ForgeEndertech library. The version
+    checked is 9.1.14.0 for 1.21.1 NeoForge, from Modrinth's maven (`maven.modrinth:pollution-of-the-realms:<version id>`).
+    Its other emitters (Create's steam boiler, blaze burners) are fixed by the mod itself, so nothing in it learns about
+    our engines without code on our side.
+  - *How it is built.* Same rule as Aeronautics: compile against it without requiring it, optional `adpother`
+    dependency in the mod metadata, and one bridge class that is the only one to name its types, never loaded
+    without the mod. The normal build and test run go without it; a second GameTest run puts both mods in.
+  - *What an engine releases.* Carbon in proportion to fuel burned, sulfur in proportion to how dirty the fuel is
+    (its soot factor, so crude is sulfurous and ethanol is not), and more carbon for rich-running soot that no Soot
+    Trap caught. The gas goes into the cell in front of an open, unflooded exhaust outlet, a few cells further if a rain
+    cap is in the way. Held fractions carry over so a slow engine still releases a step now and then. Nothing is read
+    back into the simulation, so engine behaviour does not change.
+  - *Settings.* An on/off switch and a rate multiplier under a new `compat` config group.
+  - *Still to decide.* Whether a fuel gets its own optional `sulfur` field in the fuel data map, instead of
+    borrowing the soot factor. The release rates are untuned, because the mod's units were not worked out; they are
+    set with the second GameTest run, against how fast gas builds up around a running engine. Whether the Soot Trap's
+    caught soot should count for anything on the mod's side.
+  - *Tests.* Unit tests for the emission numbers, and a GameTest that runs only with the mod and checks gas appears
+    at a running engine's outlet and not at a stopped one or a shut outlet.
 
 ### The one breaking cleanup
 
@@ -380,6 +403,96 @@ Behaviour does not change: the same engine produces the same torque, fuel use, h
 - The last 1.x release logs a warning for everything 2.0 removes or renames.
 - Before 2.0 ships, a world saved on 1.0 and one saved on the last 1.x are both opened in it.
 - The preview formats from 1.4 (the `api` package, KubeJS bindings, part stats) are frozen here.
+
+## Verification track (no release of its own)
+
+Queued 2026-11-16. The goal is to trust a release with as little manual testing as possible. Each item lands as its own
+piece of work, in whichever release has room, and none changes behaviour. What stays manual is taste: how it sounds,
+looks and feels. Tests only guard against those changing by accident.
+
+**Done 2026-11-16 (unit-test level, in `./gradlew check`, CI in `.github/workflows/verify.yml`):**
+- Item 2, in part: `SimPropertyTest` (replay on another thread, no fuel means no power, fuel conserved, identical twins).
+  `SimStressTest` already held the finite and bounded invariants. Not done: step-size independence, which needs the
+  step size to be a parameter of the sim.
+- Item 5, the architecture rules, as `ArchitectureRulesTest` (reads imports, no ArchUnit): the sim and the smoke core
+  import nothing from the game, and the 14 common classes that touch client code are a fixed list that may only shrink.
+  Not done: the dedicated-server and packaged-jar boot.
+- Item 7, the sim's share: `PerfBudgetTest`, baseline 0.075 ms per tick for 16 turbo cylinders, 0.019 ms for 4, zero
+  bytes allocated; budgets are about 7x that. Not done: the fleet numbers from the smoke harness as build limits.
+- Item 9, the sim's share: `ConfigMatrixTest` runs every `Tuning` setting at its config minimum and maximum, alone and
+  in six combined patterns, and fails if the ranges in `CEConfig` or the set of settings drift from the matrix. Not
+  done: the matrix through the GameTests and the smoke audit.
+- Item 11: the `datagen-idempotence` job in `verify.yml`. Not yet run on GitHub, and `runData` has not been run in CI.
+- Item 12, in part: JaCoCo on the unit tests, floor in `src/smoke/coverage-floor.txt` (15%, measured 15.4%). Merging the
+  GameTest and smoke audit coverage is not done.
+- Item 1: `./gradlew pitest` (about 6 minutes, not part of `check`) runs PIT through its command line, because the Gradle
+  plugin does not work with Gradle 9. First report: 1854 mutants in `engine/sim`, 1521 killed, 294 survived, 23 reached
+  by no test. The ratchet `src/smoke/mutation-ratchet.txt` is 317 and may only go down. Survivors cluster in
+  `EngineSimulation` (81), `CylinderModel` (59), `ColumnShape` (33), `Thermal` (24) and `Governor` (20); killing them is
+  the follow-up work. The slow fuzz tests are excluded from the mutant runs.
+- Item 6: `EngineNoteConcurrencyTest`: 12 voices read while a game thread feeds them hostile state; a read allocates
+  almost nothing; direct memory returns to its start after 9000 voices of churn; a voice replaced mid-read finishes.
+  Put the 1.2.0 per-read `allocateDirect` back and two of the four fail. Not covered: the sim itself under threads
+  (it is single-threaded by design), and the real sound engine.
+
+**Not started:** 3 (monkey GameTest), 4 (world corpus), 8 (codec fuzz), 10 (compatibility
+matrix, still needs the addon list), 13 (goldens). Each needs a game run, a real saved world or an addon list not
+yet chosen.
+
+1. **Mutation testing (PIT) on `engine/sim`.** Small changes to the code (a flipped comparison, a dropped term) must make
+   a test fail. Survivors show assertions that never bite. The sim is pure Java, so it is cheap to set up. Report first,
+   then ratchet: the surviving-mutant count may go down, never up.
+2. **Property and fuzz tests on the sim** (seeded, so every failure replays). Random engines, fuels, boost and tuning
+   must keep these invariants: no NaN or infinity, torque and RPM stay in range, the same seed gives the same run, and
+   results do not depend on step size beyond a tolerance.
+3. **Monkey GameTest.** A seeded random run of place, break, right-click with random items, wrench, redstone and chunk
+   unload against engine blocks. It asserts no exception, no stuck state and no leaked block entities.
+4. **A world corpus for upgrades.** Real saves from 1.0, 1.1 and 1.2 (and each release after) are checked in and loaded
+   in a dedicated-server GameTest. It backs up rule 8 with saves that were written by real builds, not synthesised
+   ones.
+5. **Dedicated-server and packaged-jar run, plus architecture rules.** Boot a dedicated server from the built jar, not
+   the dev classpath, to catch client-only class loading and missing resources. ArchUnit rules: the sim imports nothing
+   from `net.minecraft`, and common code never touches client classes.
+6. **Concurrency tests.** Hammer the sound thread against the server tick and chunk unload with random timing, in the
+   area of the 1.2.0 out-of-memory fix. Checks: no exception, no deadlock, bounded memory.
+7. **Performance budgets.** The smoke harness's fleet numbers become limits that fail the build: milliseconds per tick
+   per engine, allocated bytes per tick on the hot path, and the existing leak trends. Budgets are set from a measured
+   baseline, and the optimization pass in 2.0 tightens them.
+8. **Network and codec fuzz.** Every packet and block entity codec round-trips, then takes truncated and garbage
+   payloads. A malformed packet is rejected and never crashes or stalls the server.
+9. **Config matrix.** Every config value at its minimum, maximum and default runs through the smoke audit and the
+   GameTests, alone and in a few combined extremes.
+10. **Compatibility matrix.** The smoke client and server run against each combination below. The rows are the support
+    promise: a mod is listed as supported only once its row is green.
+    - **Create:** the oldest and the newest supported version (rule 7).
+    - **Rendering:** Flywheel on and off, and **Sodium** (with Embeddium-compatible forks only if added to the list).
+    - **Addons:** **Create Aeronautics** (the 1.4 work), plus the other Create addons the author picks, each in a
+      world with engines running and the Ponder sweep. The list of addons is still to be chosen.
+    - Checks per row: no log errors beyond the allow-list, models and Ponder pages render, engines run and power
+      their networks, and a world saved without the mod opens with it and the other way round.
+11. **Datagen idempotence.** Run `runData` in CI and fail if `git diff` on `src/generated` is not empty. Generated
+    files can then never drift from the code that makes them or be committed half-updated.
+12. **Coverage with a ratchet (JaCoCo).** Coverage is merged across the unit tests, GameTests and smoke audit. It is a
+    map of code that no layer runs, to aim the other items at, not a goal in itself. The build fails only if the total
+    drops below the last recorded number, which is raised by hand when it improves.
+13. **Golden checks (visual and audio).** Stored reference images and measurements, compared with a tolerance, so a
+    change nobody meant fails the build and a change somebody meant costs one command.
+    - **Updating.** `./gradlew updateGoldens` rewrites the references. The git diff of the images and numbers is the
+      review, and the commit is the approval. A failing run writes a side-by-side image or a numeric diff.
+    - **Visual.** Fixed-camera shots of the casing and part models and a few Ponder frames, taken by the showcase
+      harness. Compared per region with a tolerance, so anti-aliasing and driver noise pass and a change of shape or
+      colour fails. Particles, animation frames and the surrounding world are left out.
+    - **Audio, from the game as well as the synthesizer.** Two levels. The synth level renders scenarios directly
+      (idle, load, boost, lean, fouled, limiter-free redline) and records loudness, peak, clipping and a coarse
+      spectrum, never raw sample hashes, so a deliberate retune moves the numbers inside a band and a bug that clips or
+      goes silent fails. The in-game level runs the smoke client with real engines and captures the PCM the sound
+      engine is actually handed, which covers what the synth test cannot see: the streaming path, pitch and volume
+      from live engine state, voice limits, and the click-free note. It is measured with the same figures.
+    - **To settle when building it:** whether the capture point can be the final mix (an OpenAL loopback device in the
+      smoke client) or has to be the stream hand-off before the mixer. The hand-off is the fallback and still catches
+      the streaming and engine-state bugs. Determinism matters, so scenarios run on fixed engine states and a fixed
+      tick count, and a flaky capture is fixed or dropped, never given a looser tolerance to make it pass.
+    - The planned port-model redraw and other deliberate art changes update their goldens as part of the change.
 
 ## Not on this roadmap
 

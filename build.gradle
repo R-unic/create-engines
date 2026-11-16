@@ -1,6 +1,7 @@
 plugins {
     id 'java-library'
     id 'idea'
+    id 'jacoco'
     id 'net.neoforged.moddev' version '2.0.148'
 }
 
@@ -27,7 +28,15 @@ sourceSets.main.resources {
 repositories {
     maven { url = 'https://maven.createmod.net' } // Create, Ponder, Flywheel
     maven { url = 'https://maven.ithundxr.dev/snapshots' } // Registrate
+    maven { // Sodium, for the compatibility matrix only
+        name = 'CaffeineMC'
+        url = 'https://maven.caffeinemc.net/releases'
+        content { includeGroup 'net.caffeinemc' }
+    }
 }
+
+// Only the compatibility-matrix Sodium run loads this; the mod itself does not depend on Sodium. Declared before the runs that use it.
+configurations.create('sodiumRuntime')
 
 neoForge {
     version = project.neo_version
@@ -66,6 +75,24 @@ neoForge {
             gameDirectory = file('run/smoke-client')
             systemProperty 'neoforge.enabledGameTestNamespaces', project.mod_id
             systemProperty 'create_engines.smokeAudit', 'true'
+        }
+
+        // Compatibility matrix rows (docs/COMPAT.md): the same client audit with Flywheel switched off, and with Sodium
+        // loaded. Each has a game folder of its own so a row's settings and log never leak into another's.
+        smokeAuditFlywheelOff {
+            client()
+            gameDirectory = file('run/smoke-client-flywheel-off')
+            systemProperty 'neoforge.enabledGameTestNamespaces', project.mod_id
+            systemProperty 'create_engines.smokeAudit', 'true'
+        }
+
+        smokeAuditSodium {
+            client()
+            gameDirectory = file('run/smoke-client-sodium')
+            systemProperty 'neoforge.enabledGameTestNamespaces', project.mod_id
+            systemProperty 'create_engines.smokeAudit', 'true'
+            // Sodium's jar is an early service jar: FML must see it before mod discovery, so it goes on the boot classpath
+            additionalRuntimeClasspathConfiguration.extendsFrom(configurations.sodiumRuntime)
         }
 
         // Builds a handful of engines on stone pads and photographs them at 1920x1080 for the mod page, in a game
@@ -124,6 +151,7 @@ dependencies {
     implementation("net.createmod.ponder:ponder-neoforge:${ponder_version}+mc${minecraft_version}")
     compileOnly("dev.engine-room.flywheel:flywheel-neoforge-api-${minecraft_version}:${flywheel_version}")
     localRuntime("dev.engine-room.flywheel:flywheel-neoforge-${minecraft_version}:${flywheel_version}")
+    sodiumRuntime("net.caffeinemc:sodium-neoforge:${sodium_version}") { transitive = false }
 
     // The simulation core has no Minecraft dependencies and is tested as plain Java.
     testImplementation(platform('org.junit:junit-bom:5.11.4'))
@@ -133,6 +161,9 @@ dependencies {
 }
 
 tasks.named('test', Test) {
+    // PackagedJarTest reads the jar a player would get, so it is built first and its path handed over
+    dependsOn 'jar'
+    systemProperty 'ce.jar', tasks.named('jar', Jar).get().archiveFile.get().asFile.path
     useJUnitPlatform()
     testLogging {
         events 'failed'
@@ -190,14 +221,82 @@ tasks.register('verifyGameTests', JavaExec) {
     dependsOn 'classes'
 }
 
+// A run that dies before it writes anything must not be judged by what the run before it left behind, so each starts by
+// deleting the last one's report, log and crash reports. (Plain java.io here: the configuration cache forbids
+// project access at execution time.)
+def smokeClientDir = file('run/smoke-client')
+def gameTestDir = file('run/gametest')
+
 tasks.matching { it.name == 'runSmokeAudit' }.configureEach {
     timeout = java.time.Duration.ofMinutes(30)
     finalizedBy 'verifyClientSmoke'
+    doFirst {
+        new File(smokeClientDir, 'smoke').deleteDir()
+        new File(smokeClientDir, 'crash-reports').deleteDir()
+        new File(smokeClientDir, 'logs/latest.log').delete()
+    }
 }
 tasks.matching { it.name == 'runGameTestServer' }.configureEach {
     timeout = java.time.Duration.ofMinutes(20)
     finalizedBy 'verifyGameTests'
+    doFirst {
+        new File(gameTestDir, 'smoke').deleteDir()
+        new File(gameTestDir, 'crash-reports').deleteDir()
+        new File(gameTestDir, 'logs/latest.log').delete()
+    }
 }
+
+// The older screenshot runs write no report and share run/ with a development client, so their log is only advice: problems
+// show as warnings and never fail the build.
+tasks.register('verifyVisualSmoke', JavaExec) {
+    group = 'verification'
+    description = 'Scans the log of the last runVisualSmokeTest for errors, as warnings only.'
+    classpath = verifyOutput
+    mainClass = 'com.createengines.smoke.SmokeVerify'
+    args '--run', 'visual', '--log-only', '--lenient-log', '--log', file('run/logs/latest.log').path, '--allow', smokeAllowlist.path
+    dependsOn 'classes'
+}
+tasks.matching { it.name == 'runVisualSmokeTest' }.configureEach { finalizedBy 'verifyVisualSmoke' }
+
+// Compatibility-matrix rows (docs/COMPAT.md, verification track item 10): the client audit again with Flywheel off and with
+// Sodium loaded, each judged by the same verifier and allow-list as the main run. A row is green only when its verify
+// task passes. ./gradlew compatMatrix runs every row.
+[[name: 'FlywheelOff', dir: 'run/smoke-client-flywheel-off', flywheel: 'OFF'],
+ [name: 'Sodium', dir: 'run/smoke-client-sodium', flywheel: null]].each { row ->
+    def rowDir = file(row.dir)
+    def verifyName = "verifyClientSmoke${row.name}"
+    tasks.register(verifyName, JavaExec) {
+        group = 'verification'
+        description = "Fails unless the last runSmokeAudit${row.name} completed with no failed checks and a clean log."
+        classpath = verifyOutput
+        mainClass = 'com.createengines.smoke.SmokeVerify'
+        args '--run', "client-${row.name}", '--dir', new File(rowDir, 'smoke/client').path,
+                '--log', new File(rowDir, 'logs/latest.log').path, '--allow', smokeAllowlist.path
+        dependsOn 'classes'
+    }
+    tasks.matching { it.name == "runSmokeAudit${row.name}" }.configureEach {
+        timeout = java.time.Duration.ofMinutes(30)
+        finalizedBy verifyName
+        doFirst {
+            new File(rowDir, 'smoke').deleteDir()
+            new File(rowDir, 'crash-reports').deleteDir()
+            new File(rowDir, 'logs/latest.log').delete()
+            if (row.flywheel != null) {
+                // Flywheel reads its backend from its own config file; seed it so this row starts with the backend off
+                def config = new File(rowDir, 'config')
+                config.mkdirs()
+                new File(config, 'flywheel-client.toml').text = "backend = \"${row.flywheel}\"\n"
+            }
+        }
+    }
+}
+
+tasks.register('compatMatrix') {
+    group = 'verification'
+    description = 'Runs the client audit in every compatibility-matrix row (Flywheel off, Sodium); each is verified.'
+    dependsOn 'runSmokeAuditFlywheelOff', 'runSmokeAuditSodium'
+}
+tasks.matching { it.name == 'runSmokeAuditSodium' }.configureEach { mustRunAfter 'runSmokeAuditFlywheelOff' }
 
 // One command for everything unattended: unit tests, the GameTests with their log check, and the client audit.
 tasks.register('smoke') {
@@ -212,5 +311,103 @@ idea {
     module {
         downloadSources = true
         downloadJavadoc = true
+    }
+}
+
+// Verification track item 12: coverage with a ratchet. The report is a map of code no test runs; the check fails only if
+// the total drops below the number recorded in src/smoke/coverage-floor.txt, which is raised by hand when it improves.
+// Today it measures the unit tests; the GameTests and the smoke audit run in other JVMs and are merged in later.
+jacoco {
+    toolVersion = '0.8.12'
+}
+
+tasks.named('test', Test) {
+    finalizedBy 'jacocoTestReport'
+}
+
+tasks.named('jacocoTestReport', JacocoReport) {
+    reports {
+        xml.required = true
+        html.required = true
+    }
+}
+
+def coverageFloorFile = file('src/smoke/coverage-floor.txt')
+
+tasks.register('coverageRatchet', JacocoCoverageVerification) {
+    group = 'verification'
+    description = 'Fails if instruction coverage of the unit tests falls below src/smoke/coverage-floor.txt.'
+    dependsOn 'test'
+    executionData.from(tasks.named('test').map { it.extensions.getByType(JacocoTaskExtension).destinationFile })
+    classDirectories.from(sourceSets.main.output.classesDirs)
+    sourceDirectories.from(sourceSets.main.allJava.srcDirs)
+    violationRules {
+        rule {
+            limit {
+                counter = 'INSTRUCTION'
+                value = 'COVEREDRATIO'
+                minimum = new BigDecimal(coverageFloorFile.text.trim())
+            }
+        }
+    }
+}
+
+tasks.named('check') { dependsOn 'coverageRatchet' }
+
+// Verification track item 1: mutation testing of the simulation. PIT changes the code in small ways (a flipped
+// comparison, a dropped term) and reruns the tests; a mutant no test kills is an assertion that never bites.
+// ./gradlew pitest writes build/reports/pitest/mutations.xml and index.html, and fails if more mutants live than
+// src/smoke/mutation-ratchet.txt allows. The ratchet is lowered by hand as survivors are killed, never raised.
+// Run through PIT's command line, not its Gradle plugin, which does not work with Gradle 9. The slow fuzz and timing
+// tests are left out of the mutant runs (each mutant would repeat their whole length); the fast tests that name exact
+// values are what a mutant has to get past.
+configurations {
+    pitest
+}
+
+dependencies {
+    pitest platform('org.junit:junit-bom:5.11.4')
+    pitest 'org.junit.platform:junit-platform-launcher'
+    pitest 'org.pitest:pitest-command-line:1.17.4'
+    pitest 'org.pitest:pitest-junit5-plugin:1.2.1'
+}
+
+def pitestReports = layout.buildDirectory.dir('reports/pitest')
+def survivorLimitFile = file('src/smoke/mutation-ratchet.txt')
+
+tasks.register('pitest', JavaExec) {
+    group = 'verification'
+    description = 'Mutation-tests com.createengines.engine.sim and fails if more mutants live than the ratchet allows.'
+    dependsOn 'testClasses'
+    classpath = configurations.pitest
+    mainClass = 'org.pitest.mutationtest.commandline.MutationCoverageReport'
+    def testClasspath = sourceSets.test.runtimeClasspath
+    def sourceDirs = sourceSets.main.allJava.srcDirs
+    doFirst {
+        args '--reportDir', pitestReports.get().asFile.path,
+                '--targetClasses', 'com.createengines.engine.sim.*',
+                '--targetTests', 'com.createengines.engine.sim.*',
+                '--excludedClasses', 'com.createengines.engine.sim.*Test,com.createengines.engine.sim.*Test$*',
+                '--excludedTestClasses', 'com.createengines.engine.sim.SimStressTest,com.createengines.engine.sim.PerfBudgetTest,com.createengines.engine.sim.ConfigMatrixTest,com.createengines.engine.sim.SimPropertyTest',
+                '--sourceDirs', sourceDirs.collect { it.path }.join(','),
+                '--classPath', testClasspath.files.collect { it.path }.join(','),
+                '--outputFormats', 'XML,HTML',
+                '--threads', '4',
+                '--timeoutConst', '10000',
+                '--timestampedReports=false',
+                '--failWhenNoMutations=false'
+    }
+    doLast {
+        def xml = pitestReports.get().file('mutations.xml').asFile
+        if (!xml.exists())
+            throw new GradleException('PIT wrote no ' + xml)
+        def text = xml.getText('UTF-8')
+        def survived = (text =~ /status='SURVIVED'/).count
+        def noCoverage = (text =~ /status='NO_COVERAGE'/).count
+        def killed = (text =~ /status='KILLED'/).count
+        def limit = survivorLimitFile.text.trim() as int
+        println "PIT: killed ${killed}, survived ${survived}, no test reaches ${noCoverage} (limit ${limit})"
+        if (survived + noCoverage > limit)
+            throw new GradleException("PIT: ${survived + noCoverage} mutants live, more than the ${limit} allowed by ${survivorLimitFile.name}")
     }
 }

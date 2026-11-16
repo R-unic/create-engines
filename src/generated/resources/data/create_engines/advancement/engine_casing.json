@@ -8,6 +8,19 @@
       "trigger": "create_engines:event"
     }
   },
+  "display": {
+    "announce_to_chat": false,
+    "description": {
+      "translate": "advancement.create_engines.engine_casing.desc"
+    },
+    "icon": {
+      "count": 1,
+      "id": "create_engines:engine_casing"
+    },
+    "title": {
+      "translate": "advancement.create_engines.engine_casing"
+    }
+  },
   "requirements": [
     [
       "engine_casing"

@@ -7,4 +7,9 @@ public interface OilSupply {
 
 	/** Removes up to {@code mb} of oil and returns how much was actually delivered. */
 	double draw(double mb);
+
+	/** How well the oil last delivered lubricates, from 0 to 1: 1 for proper engine oil, less for a makeshift one. */
+	default double lubricity() {
+		return 1;
+	}
 }

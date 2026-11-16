@@ -87,7 +87,7 @@ public class SumpBlockEntity extends SmartBlockEntity implements IHaveGoggleInfo
 	public void addBehaviours(List<BlockEntityBehaviour> behaviours) {
 		tank = SmartFluidTankBehaviour.single(this, CAPACITY);
 		tank.getPrimaryHandler()
-			.setValidator(CEFluids::isEngineOil);
+			.setValidator(CEFluids::isLubricant);
 		behaviours.add(tank);
 
 		used = new SmartFluidTankBehaviour(USED_TYPE, this, 1, USED_CAPACITY, false);

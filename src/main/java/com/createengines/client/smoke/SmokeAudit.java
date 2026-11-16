@@ -153,6 +153,7 @@ public final class SmokeAudit {
 			};
 			if (done) {
 				phase++;
+				checkpoint();
 				phaseStart = ticksInWorld + 1;
 				if (phase > 4)
 					finish(true);
@@ -161,6 +162,7 @@ public final class SmokeAudit {
 			REPORT.fail("run", "phase '" + phaseName + "' threw", throwable.toString());
 			CreateEngines.LOGGER.error("SMOKE AUDIT FAIL in phase {}", phaseName, throwable);
 			phase++;
+			checkpoint();
 			phaseStart = ticksInWorld + 1;
 			if (phase > 4)
 				finish(true);
@@ -287,9 +289,58 @@ public final class SmokeAudit {
 				BlockPos blown = origin.offset(FLEET.get(5));
 				TestEngine.buildSpark(level, blown, true);
 				VisualSmokeTest.addBlower(level, blown);
+				buildRefinery(level);
 			});
 			measuring = true;
 		}
+		if (t == 40)
+			VisualSmokeTest.server(server -> feedRefinery(server.overworld()));
+		// What the effects run does to hear the turbo: dump its boost, then shut the fuel rack so anti-lag has to crack
+		if (t == 400)
+			VisualSmokeTest.server(server -> server.overworld()
+				.setBlock(origin.offset(FLEET.get(4))
+					.offset(TestEngine.EXHAUST)
+					.below(), Blocks.REDSTONE_BLOCK.defaultBlockState(), 3));
+		if (t == 430)
+			VisualSmokeTest.server(server -> server.overworld()
+				.setBlock(origin.offset(FLEET.get(4))
+					.offset(new BlockPos(4, 5, 3)), Blocks.REDSTONE_BLOCK.defaultBlockState(), 3));
+		// ...then open the rack again, so the turbo engine is judged running like the rest, not left coasting by the trigger
+		if (t == 480)
+			VisualSmokeTest.server(server -> server.overworld()
+				.removeBlock(origin.offset(FLEET.get(4))
+					.offset(new BlockPos(4, 5, 3)), false));
+		// A soot trap catching soot makes its own sound; poke it as the game tests do rather than tune an engine to foul
+		if (t == 300)
+			VisualSmokeTest.server(server -> server.overworld()
+				.setBlock(origin.offset(-2, 0, -4), com.createengines.registry.CEBlocks.SOOT_TRAP.getDefaultState(), 3));
+		if (t == 320)
+			VisualSmokeTest.server(server -> {
+				if (server.overworld()
+					.getBlockEntity(origin.offset(-2, 0, -4)) instanceof com.createengines.content.muffler.SootTrapBlockEntity trap)
+					trap.catchSoot(com.createengines.engine.sim.SootCollector.MB_PER_SOOT * 3);
+			});
+		// Engines burn fuel (the supercharged one a tank in about 600 ticks) and a stalled engine does not restart by itself, so top them
+		// all up on a schedule: what is judged afterwards is the reload, not an empty tank
+		if (t >= 300 && t < 1100 && t % 150 == 0)
+			VisualSmokeTest.server(server -> {
+				var level = server.overworld();
+				for (int i = 0; i < FLEET.size(); i++)
+					if (level.getBlockEntity(origin.offset(FLEET.get(i))
+						.offset(TestEngine.HEAD)) instanceof com.createengines.content.head.CylinderHeadBlockEntity head) {
+						// The spark engine burns gasoline, the rest diesel; the dry engine (3) is dry on purpose and stays so
+						var fuel = i == 5 ? com.createengines.registry.CEFluids.GASOLINE.get() : com.createengines.registry.CEFluids.DIESEL.get();
+						head.tank()
+							.fill(new net.neoforged.neoforge.fluids.FluidStack(fuel.getSource(), 250),
+								net.neoforged.neoforge.fluids.capability.IFluidHandler.FluidAction.EXECUTE);
+						if (i != 3)
+							head.oilTank()
+								.fill(new net.neoforged.neoforge.fluids.FluidStack(com.createengines.registry.CEFluids.ENGINE_OIL.get()
+									.getSource(), 250), net.neoforged.neoforge.fluids.capability.IFluidHandler.FluidAction.EXECUTE);
+					}
+			});
+		if (t > 0 && t % 300 == 0)
+			checkpoint();
 		if (t == 5)
 			view(-1.5, 4.0, -2.0, -18, 5);
 		if (t == 200)
@@ -326,8 +377,10 @@ public final class SmokeAudit {
 		if (t == 960) {
 			awaySounds = soundCounts();
 			int chunkX = origin.getX() >> 4, chunkZ = origin.getZ() >> 4;
-			REPORT.check("lifecycle", "the fleet's chunks unload on the client when the player is far away",
-				!minecraft.level.hasChunk(chunkX, chunkZ), "the client still holds the chunk 3000 blocks from the player");
+			REPORT.check("lifecycle", "the fleet's block entities leave the client when the player is far away",
+				minecraft.level.getBlockEntity(origin.offset(TestEngine.PRIMARY)) == null,
+					"the client still has the crankshaft block entity with the player at " + minecraft.player.blockPosition()
+						.toShortString() + " (" + chunkX + "," + chunkZ + ")");
 			REPORT.check("lifecycle", "no engine voices are left playing with the fleet unloaded", awaySounds[2] <= baselineSounds[2] + 1,
 				"streaming voices: " + awaySounds[2] + " away, " + baselineSounds[2] + " before the engines existed");
 			REPORT.expect("lifecycle", "no machine sounds are left playing with the fleet unloaded", awaySounds[0] <= baselineSounds[0] + 2,
@@ -341,6 +394,9 @@ public final class SmokeAudit {
 		}
 		if (t > 960 && t < 1200 && t % 50 == 0)
 			sample(false);
+		// The toast sting plays when an advancement is earned; earn them all, last, so no toast is in a picture
+		if (t == 1160)
+			VisualSmokeTest.server(server -> VisualSmokeTest.command(server, "advancement grant @a everything"));
 		if (t == 1200) {
 			sample(true);
 			measuring = false;
@@ -348,6 +404,39 @@ public final class SmokeAudit {
 			return true;
 		}
 		return false;
+	}
+
+	/** The refinery of the refinery smoke run: a 2x2 column over a seething burner, with a flare stack on its condenser. */
+	private static void buildRefinery(net.minecraft.world.level.Level level) {
+		var burner = com.simibubi.create.content.processing.burner.BlazeBurnerBlock.HEAT_LEVEL;
+		BlockPos base = origin.offset(-8, 0, 2);
+		for (int x = 0; x < 2; x++)
+			for (int z = 0; z < 2; z++) {
+				level.setBlock(base.offset(x, 0, z), com.createengines.registry.CEBlocks.HEAT_EXCHANGER.getDefaultState()
+					.setValue(burner, com.simibubi.create.content.processing.burner.BlazeBurnerBlock.HeatLevel.KINDLED), 3);
+				level.setBlock(base.offset(x, 1, z), com.createengines.registry.CEBlocks.REBOILER.getDefaultState(), 3);
+				level.setBlock(base.offset(x, 2, z), com.createengines.registry.CEBlocks.COLUMN_SECTION.getDefaultState(), 3);
+				level.setBlock(base.offset(x, 3, z), com.createengines.registry.CEBlocks.COLUMN_SECTION.getDefaultState(), 3);
+				level.setBlock(base.offset(x, 4, z), com.createengines.registry.CEBlocks.CONDENSER.getDefaultState(), 3);
+			}
+		level.setBlock(base.offset(0, 5, 0), com.createengines.registry.CEBlocks.FLARE_STACK.getDefaultState(), 3);
+	}
+
+	private static void feedRefinery(net.minecraft.server.level.ServerLevel level) {
+		BlockPos base = origin.offset(-8, 0, 2);
+		var feed = level.getCapability(net.neoforged.neoforge.capabilities.Capabilities.FluidHandler.BLOCK, base.above(),
+			net.minecraft.core.Direction.UP);
+		if (feed != null)
+			feed.fill(new net.neoforged.neoforge.fluids.FluidStack(com.createengines.registry.CEFluids.PLANT_OIL.get()
+				.getSource(), 1000), net.neoforged.neoforge.fluids.capability.IFluidHandler.FluidAction.EXECUTE);
+		if (level.getBlockEntity(base.above()) instanceof com.createengines.content.refinery.ColumnPortBlockEntity port)
+			port.insertCatalyst(new net.minecraft.world.item.ItemStack(net.minecraft.world.item.Items.COAL, 16));
+	}
+
+	/** What an engine says about itself, with the diagnosis the goggles would give, for a failure message. */
+	private static String describe(EngineSummary summary) {
+		return "state " + summary.state() + ", " + summary.rpm() + " rpm, " + summary.health() + " (" + summary.cause() + "), fuel "
+			+ summary.fuelPerMinute() + "/min, lubrication " + summary.lubrication() + ", firing " + summary.firing() + "/" + summary.cylinders();
 	}
 
 	private static void checkEngines(String when) {
@@ -368,9 +457,9 @@ public final class SmokeAudit {
 			boolean running = summary.state() == EngineState.RUNNING;
 			switch (i) {
 				case 2 -> REPORT.check("fleet", name + " stays dead (its intake is under water)", !running,
-					"state " + summary.state() + ", " + summary.rpm() + " rpm");
+					describe(summary));
 				case 3 -> REPORT.pass("fleet", name);
-				default -> REPORT.check("fleet", name + " is running", running, "state " + summary.state() + ", " + summary.rpm() + " rpm");
+				default -> REPORT.check("fleet", name + " is running", running, describe(summary));
 			}
 			REPORT.check("fleet", name + " has finite figures", Float.isFinite(summary.rpm()) && Float.isFinite(summary.temperature()),
 				summary.toString());
@@ -512,6 +601,18 @@ public final class SmokeAudit {
 	// The end
 
 	private static boolean finished;
+
+	/**
+	 * Saves what has been found so far, not yet marked complete. A crash (a missing particle sprite crashes the game the
+	 * moment one spawns) would otherwise throw away every finding made before it, leaving "it crashed" and nothing about why.
+	 */
+	private static void checkpoint() {
+		try {
+			REPORT.write(DIRECTORY);
+		} catch (RuntimeException e) {
+			CreateEngines.LOGGER.warn("Could not save the interim smoke report: {}", e.getMessage());
+		}
+	}
 
 	private static synchronized void finish(boolean stopGame) {
 		if (finished)

@@ -21,7 +21,7 @@ Sounds:
   engine_stall       an engine dying: its last firings slowing and weakening, a clunk and a sigh from the exhaust
   exhaust_pop1..3    unburned fuel lighting in a hot exhaust: a crack, a short thump and the ring of the pipe
   metal_tick1..3     hot metal ticking as it cools: a small bright tink
-  engine_clatter     a seamless loop of valve gear: tappets ticking over the hum of the gears; pitch follows the crank
+  engine_clatter     a seamless loop of valve gear: soft tappet knocks over the hum of the gears; pitch follows the crank
   bearing_squeal     a seamless loop of bearings running dry: a wavering shriek over a stick-slip rasp
   intake_roar        a seamless loop of air gulped through an intake: a hollow rush swelling in eight pulses a second
 """
@@ -342,29 +342,30 @@ def metal_tick(seed, f0):
 
 
 def clatter_loop():
-    """One second of valve gear that repeats seamlessly: twenty-four tappet ticks, no two quite alike but the pattern of
-    four coming round again as the cam does, over the hum of gears and a low churn. Every part is a whole number of
-    cycles long."""
+    """One second of valve gear that repeats seamlessly: sixteen soft tappet knocks, no two quite alike but the pattern
+    of four coming round again as the cam does, over a low hum of gears and a slow churn. Deliberately dull: the knocks
+    are low and rounded with nothing above a few kilohertz and no ringing, so a running engine reads as machinery and not
+    as a buzz. Every part is a whole number of cycles long."""
     rng = np.random.default_rng(13)
     n = SR
     t = np.arange(n) / SR
-    ticks = 24
+    ticks = 16
     phase = (t * ticks) % 1 / ticks
     index = np.floor(t * ticks).astype(int) % ticks
-    levels = np.tile([1.0, 0.55, 0.8, 0.45], ticks // 4) * rng.uniform(0.85, 1.0, ticks)
-    strike = np.minimum(phase / 0.0005, 1) * np.exp(-phase / 0.0045) * levels[index]
-    grit = periodic_noise(rng, n, lambda f: np.where((f > 1400) & (f < 6500), 1 / np.sqrt(np.maximum(f, 1)), 0))
-    tick = grit / np.max(np.abs(grit)) * strike
-    # Each tick also rings its rocker for a moment
-    ring = (np.sin(2 * np.pi * 1680 * phase) + 0.5 * np.sin(2 * np.pi * 2930 * phase)) * np.exp(-phase / 0.006) * levels[index]
+    levels = np.tile([1.0, 0.6, 0.85, 0.5], ticks // 4) * rng.uniform(0.8, 1.0, ticks)
+    strike = np.minimum(phase / 0.0018, 1) * np.exp(-phase / 0.011) * levels[index]
+    knock = periodic_noise(rng, n, lambda f: np.where((f > 220) & (f < 2600), 1 / np.maximum(f, 1) ** 0.6, 0))
+    tick = knock / np.max(np.abs(knock)) * strike
+    # A dull body to each knock, a low thud rather than a ring
+    thud = np.sin(2 * np.pi * 240 * phase) * np.exp(-phase / 0.01) * levels[index]
 
-    hum = np.sin(2 * np.pi * 96 * t) + 0.5 * np.sin(2 * np.pi * 192 * t + 0.8) + 0.25 * np.sin(2 * np.pi * 288 * t + 1.7)
-    hum *= 0.8 + 0.2 * np.cos(2 * np.pi * 12 * t)
-    churn = periodic_noise(rng, n, lambda f: np.where((f > 50) & (f < 420), 1.0, 0.0))
-    churn = churn / np.max(np.abs(churn)) * (0.7 + 0.3 * np.cos(2 * np.pi * 6 * t))
+    hum = np.sin(2 * np.pi * 80 * t) + 0.4 * np.sin(2 * np.pi * 160 * t + 0.8)
+    hum *= 0.85 + 0.15 * np.cos(2 * np.pi * 8 * t)
+    churn = periodic_noise(rng, n, lambda f: np.where((f > 50) & (f < 300), 1.0, 0.0))
+    churn = churn / np.max(np.abs(churn)) * (0.75 + 0.25 * np.cos(2 * np.pi * 4 * t))
 
-    mix = 0.7 * tick + 0.25 * ring + 0.2 * hum / np.max(np.abs(hum)) + 0.3 * churn
-    return finish(np.tanh(1.3 * mix), 0.8)
+    mix = 0.75 * tick + 0.3 * thud + 0.15 * hum / np.max(np.abs(hum)) + 0.2 * churn
+    return finish(np.tanh(1.1 * mix), 0.7)
 
 
 def squeal_loop():

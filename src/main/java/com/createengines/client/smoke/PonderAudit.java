@@ -25,6 +25,15 @@ final class PonderAudit {
 	/** A page that has not ended after this many ticks is stuck in a wait that never completes. */
 	private static final int TICK_LIMIT = 30000;
 
+	/**
+	 * Blocks that are variants of a block that has a page, or are cased onto one, and so need none of their own: the
+	 * three casing plates and the encased shaft and cogwheels are explained by the Engine Casing page's casing, and the
+	 * heavy starter is the starter's upgrade. Anything else without a page is reported, so adding a block without one
+	 * is a decision rather than an oversight.
+	 */
+	private static final java.util.Set<String> NO_PAGE_NEEDED = java.util.Set.of("engine_cased_shaft", "engine_cased_cogwheel",
+		"engine_cased_large_cogwheel", "engine_riveted_casing", "engine_louvred_casing", "engine_window_casing", "heavy_starter");
+
 	private final List<Map.Entry<ResourceLocation, StoryBoardEntry>> entries = new ArrayList<>();
 	private int next;
 	private int scenes;
@@ -90,8 +99,7 @@ final class PonderAudit {
 		var access = PonderIndex.getSceneAccess();
 		for (var block : ServerAudit.blocks()) {
 			ResourceLocation id = BuiltInRegistries.BLOCK.getKey(block);
-			if (block instanceof net.minecraft.world.level.block.LiquidBlock || id.getPath()
-				.startsWith("engine_cased_"))
+			if (block instanceof net.minecraft.world.level.block.LiquidBlock || NO_PAGE_NEEDED.contains(id.getPath()))
 				continue;
 			report.expect("ponder", "block " + id.getPath() + " has a Ponder page", access.doScenesExistForId(id),
 				"no storyboard is registered for it, so holding W over it in the inventory shows nothing");

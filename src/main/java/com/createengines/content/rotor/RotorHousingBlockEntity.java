@@ -98,7 +98,7 @@ public class RotorHousingBlockEntity extends CrankshaftBlockEntity implements Ga
 
 		oil = new SmartFluidTankBehaviour(OIL_TYPE, this, 1, CylinderHeadBlockEntity.CAPACITY, false);
 		oil.getPrimaryHandler()
-			.setValidator(CEFluids::isEngineOil);
+			.setValidator(CEFluids::isLubricant);
 		behaviours.add(oil);
 
 		metering = new ScrollValueBehaviour(CELang.translate("value.fuel_metering")

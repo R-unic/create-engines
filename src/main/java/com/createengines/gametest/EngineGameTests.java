@@ -319,6 +319,31 @@ public class EngineGameTests {
 		helper.succeed();
 	}
 
+	/** Plant oil is a poor man's engine oil: the oil tanks take it, rate it below engine oil, and still refuse fuel. */
+	@GameTest(template = "empty")
+	public static void plantOilIsAPoorMansEngineOil(GameTestHelper helper) {
+		BlockPos sump = new BlockPos(3, 1, 2);
+		helper.setBlock(sump, CEBlocks.SUMP.getDefaultState());
+		SumpBlockEntity pan = helper.getBlockEntity(sump);
+		FluidStack plant = new FluidStack(CEFluids.PLANT_OIL.get()
+			.getSource(), 200);
+		FluidStack engine = new FluidStack(CEFluids.ENGINE_OIL.get()
+			.getSource(), 200);
+		FluidStack diesel = new FluidStack(CEFluids.DIESEL.get()
+			.getSource(), 200);
+
+		helper.assertTrue(CEFluids.lubricity(engine) == 1, "Engine oil lubricates in full");
+		helper.assertTrue(CEFluids.lubricity(plant) > 0 && CEFluids.lubricity(plant) < 1,
+			"Plant oil lubricates, but worse");
+		helper.assertTrue(CEFluids.lubricity(diesel) == 0, "Fuel does not lubricate");
+
+		helper.assertTrue(pan.tank()
+			.fill(diesel, FluidAction.SIMULATE) == 0, "An oil tank refuses fuel");
+		helper.assertTrue(pan.tank()
+			.fill(plant, FluidAction.EXECUTE) == 200, "An oil tank takes plant oil");
+		helper.succeed();
+	}
+
 	/** A comparator against an oil pan reads the tank its dial names: nothing when empty, 15 only when full. */
 	@GameTest(template = "empty")
 	public static void aSumpComparatorReadsTheTankItIsSetTo(GameTestHelper helper) {

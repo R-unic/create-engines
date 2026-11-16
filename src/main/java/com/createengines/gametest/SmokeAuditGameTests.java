@@ -19,7 +19,6 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.gametest.framework.GameTest;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.server.level.ServerLevel;
-import net.minecraft.world.level.ChunkPos;
 import net.neoforged.neoforge.gametest.GameTestHolder;
 import net.neoforged.neoforge.gametest.PrefixGameTestTemplate;
 
@@ -132,8 +131,8 @@ public class SmokeAuditGameTests {
 			double msPerTick = (System.nanoTime() - startedAt[0]) / 400.0 / 1_000_000.0;
 			report.metric("crowd of " + engines.size() + " engines, wall time per server tick", msPerTick, "ms");
 			// A fair budget: the GameTest server runs flat out, so this is the real cost with no sleeping in it
-			// Measured at about 0.4 ms for sixteen (2026-11-16); the limit leaves room for noise but not for a real regression
-			report.check("perf", "16 engines cost under 5 ms a tick", msPerTick < 5,
+			// Measured at about 0.4 ms for sixteen (2026-11-16); the limit is five times that: room for noise, not for a regression
+			report.check("perf", "16 engines cost under 2 ms a tick", msPerTick < 2,
 				String.format("%.1f ms per tick for %d engines", msPerTick, engines.size()));
 			int running = 0;
 			for (BlockPos at : engines) {
@@ -161,15 +160,148 @@ public class SmokeAuditGameTests {
 	 * wedged. The chunk is far from the player-free test area so it really unloads.
 	 */
 	@GameTest(template = "empty", batch = "smoke-chunks", timeoutTicks = 2400)
-	public static void anEngineSurvivesItsChunkUnloadingAndLoadingAgain(GameTestHelper helper) {
-		SmokeReport report = new SmokeReport("chunks");
+	public static void aDieselEngineSurvivesItsChunkUnloadingAndLoadingAgain(GameTestHelper helper) {
+		chunkRoundTrip(helper, "diesel", 400, false);
+	}
+
+	/** The same walk away and back for a spark engine, whose battery and alternator are more state to lose. */
+	@GameTest(template = "empty", batch = "smoke-chunks", timeoutTicks = 2400)
+	public static void aSparkEngineSurvivesItsChunkUnloadingAndLoadingAgain(GameTestHelper helper) {
+		chunkRoundTrip(helper, "spark", 420, true);
+	}
+
+	/** And for a spark engine with a supercharger on its head, turned by its own motor: more blocks, more state, more to forget. */
+	@GameTest(template = "empty", batch = "smoke-chunks", timeoutTicks = 2400)
+	public static void aSuperchargedEngineSurvivesItsChunkUnloadingAndLoadingAgain(GameTestHelper helper) {
+		chunkRoundTrip(helper, "blower", 440, true);
+	}
+
+	/** A supercharger on the head of {@link TestEngine#buildSpark}'s engine, turned by a creative motor beneath it. */
+	private static void addBlower(ServerLevel level, BlockPos origin) {
+		BlockPos head = origin.offset(TestEngine.HEAD);
+		BlockPos blower = head.east();
+		level.setBlock(origin.offset(TestEngine.AIR_INTAKE), net.minecraft.world.level.block.Blocks.AIR.defaultBlockState(), 3);
+		level.setBlock(blower.east(), com.createengines.registry.CEBlocks.AIR_INTAKE.getDefaultState()
+			.setValue(com.createengines.content.airflow.PortOpeningBlock.FACING, net.minecraft.core.Direction.EAST), 3);
+		level.setBlock(blower, com.createengines.registry.CEBlocks.SUPERCHARGER.getDefaultState()
+			.setValue(net.minecraft.world.level.block.state.properties.BlockStateProperties.AXIS, net.minecraft.core.Direction.Axis.Y), 3);
+		level.setBlock(blower.below(), com.simibubi.create.AllBlocks.CREATIVE_MOTOR.getDefaultState()
+			.setValue(com.simibubi.create.content.kinetics.motor.CreativeMotorBlock.FACING, net.minecraft.core.Direction.UP), 3);
+		if (level.getBlockEntity(blower.below()) instanceof com.simibubi.create.content.kinetics.motor.CreativeMotorBlockEntity motor)
+			motor.generatedSpeed.setValue(128);
+		if (level.getBlockEntity(blower) instanceof com.createengines.content.supercharger.SuperchargerBlockEntity charger)
+			charger.limit.setValue(com.createengines.content.supercharger.SuperchargerBlockEntity.MAX_LIMIT);
+		if (level.getBlockEntity(head) instanceof com.createengines.content.head.CylinderHeadBlockEntity cylinderHead)
+			cylinderHead.metering.setValue(com.createengines.content.head.CylinderHeadBlockEntity.MAX_METERING);
+	}
+
+	/**
+	 * The supercharged engine placed across a chunk border, as most player builds are: half its blocks in one chunk and
+	 * half in the next, which load and unload separately.
+	 */
+	@GameTest(template = "empty", batch = "smoke-chunks", timeoutTicks = 2400)
+	public static void anEngineAcrossAChunkBorderSurvivesItsChunksUnloadingAndLoadingAgain(GameTestHelper helper) {
+		chunkRoundTrip(helper, "blower-border", 460, true);
+	}
+
+	/**
+	 * A chunk can stay loaded without ticking, which is how the edge of a player's simulation distance behaves: blocks are
+	 * there, nothing runs. An engine caught in that and then ticked again must carry on, not wake up dead.
+	 */
+	@GameTest(template = "empty", batch = "smoke-chunks", timeoutTicks = 2400)
+	public static void anEngineInAChunkThatStopsTickingRunsAgainWhenItTicksAgain(GameTestHelper helper) {
+		SmokeReport report = new SmokeReport("chunks-limbo");
 		ServerLevel level = helper.getLevel();
-		int chunkX = 400, chunkZ = 400;
+		int chunkX = 560, chunkZ = 560;
 		BlockPos at = new BlockPos(chunkX * 16 + 4, helper.absolutePos(BlockPos.ZERO)
 			.getY(), chunkZ * 16 + 4);
-		ChunkPos chunk = new ChunkPos(chunkX, chunkZ);
+		net.minecraft.world.level.ChunkPos chunk = new net.minecraft.world.level.ChunkPos(chunkX, chunkZ);
+		// A ticket that keeps the chunk loaded at the lowest level, where nothing ticks, and never expires on its own
+		net.minecraft.server.level.TicketType<net.minecraft.world.level.ChunkPos> limbo = net.minecraft.server.level.TicketType
+			.create("smoke_limbo", java.util.Comparator.comparingLong(net.minecraft.world.level.ChunkPos::toLong), 0);
 		level.setChunkForced(chunkX, chunkZ, true);
 		TestEngine.build(level, at, true);
+		helper.runAtTickTime(300, () -> level.removeBlock(at.offset(STARTER_POWER), false));
+		helper.runAtTickTime(700, () -> {
+			EngineSummary before = summaryAt(level, at);
+			report.check("chunks", "the engine runs before its chunk stops ticking", before != null && before.state() == EngineState.RUNNING,
+				"state " + (before == null ? "none" : before.state()));
+			level.getChunkSource()
+				.addRegionTicket(limbo, chunk, 0, chunk);
+			level.setChunkForced(chunkX, chunkZ, false);
+		});
+		helper.runAtTickTime(900, () -> {
+			report.check("chunks", "the chunk is loaded but not ticking", level.hasChunk(chunkX, chunkZ)
+				&& !level.getChunkSource()
+					.isPositionTicking(chunk.toLong()),
+				"loaded " + level.hasChunk(chunkX, chunkZ) + ", ticking " + level.getChunkSource()
+					.isPositionTicking(chunk.toLong()));
+			level.setChunkForced(chunkX, chunkZ, true);
+			level.getChunkSource()
+				.removeRegionTicket(limbo, chunk, 0, chunk);
+		});
+		helper.runAtTickTime(1200, () -> {
+			EngineSummary after = summaryAt(level, at);
+			report.check("chunks", "the engine runs again once its chunk ticks again", after != null && after.state() == EngineState.RUNNING,
+				after == null ? "no engine" : "state " + after.state() + ", " + after.rpm() + " rpm");
+			conclude(helper, report);
+		});
+	}
+
+	/**
+	 * As a player walks back: the engine's chunks load one at a time, a moment apart, rather than together. The
+	 * engine must find its other half once it arrives.
+	 */
+	@GameTest(template = "empty", batch = "smoke-chunks", timeoutTicks = 2400)
+	public static void anEngineWhoseChunksLoadOneAfterAnotherStillRuns(GameTestHelper helper) {
+		chunkRoundTrip(helper, "diesel-border-staggered", 500, false);
+	}
+
+	/** The same, for the supercharged spark engine that showed the problem in the client audit. */
+	@GameTest(template = "empty", batch = "smoke-chunks", timeoutTicks = 2400)
+	public static void aSuperchargedEngineWhoseChunksLoadOneAfterAnotherStillRuns(GameTestHelper helper) {
+		chunkRoundTrip(helper, "blower-border-staggered", 520, true);
+	}
+
+	/** The same, for a plain diesel engine, to tell a supercharger's problem from a border's. */
+	@GameTest(template = "empty", batch = "smoke-chunks", timeoutTicks = 2400)
+	public static void aDieselEngineAcrossAChunkBorderSurvivesItsChunksUnloadingAndLoadingAgain(GameTestHelper helper) {
+		chunkRoundTrip(helper, "diesel-border", 480, false);
+	}
+
+	private static void force(ServerLevel level, int chunkX, int chunkZ, int span, boolean forced) {
+		for (int i = 0; i < span; i++)
+			level.setChunkForced(chunkX + i, chunkZ, forced);
+	}
+
+	private static boolean anyLoaded(ServerLevel level, int chunkX, int chunkZ, int span) {
+		for (int i = 0; i < span; i++)
+			if (level.hasChunk(chunkX + i, chunkZ))
+				return true;
+		return false;
+	}
+
+	private static boolean allLoaded(ServerLevel level, int chunkX, int chunkZ, int span) {
+		for (int i = 0; i < span; i++)
+			if (!level.hasChunk(chunkX + i, chunkZ))
+				return false;
+		return true;
+	}
+
+	private static void chunkRoundTrip(GameTestHelper helper, String kind, int chunkCoordinate, boolean spark) {
+		SmokeReport report = new SmokeReport("chunks-" + kind);
+		ServerLevel level = helper.getLevel();
+		int chunkX = chunkCoordinate, chunkZ = chunkCoordinate;
+		int span = kind.contains("border") ? 2 : 1;
+		BlockPos at = new BlockPos(chunkX * 16 + (span == 2 ? 12 : 4), helper.absolutePos(BlockPos.ZERO)
+			.getY(), chunkZ * 16 + 4);
+		force(level, chunkX, chunkZ, span, true);
+		if (spark)
+			TestEngine.buildSpark(level, at, true);
+		else
+			TestEngine.build(level, at, true);
+		if (kind.startsWith("blower"))
+			addBlower(level, at);
 		helper.runAtTickTime(300, () -> level.removeBlock(at.offset(STARTER_POWER), false));
 		int[] stage = {0};
 		long[] stageStart = {0};
@@ -180,7 +312,7 @@ public class SmokeAuditGameTests {
 				conclude(helper, report);
 				return;
 			}
-			level.setChunkForced(chunkX, chunkZ, false);
+			force(level, chunkX, chunkZ, span, false);
 			stage[0] = 1;
 			stageStart[0] = helper.getTick();
 		});
@@ -188,10 +320,16 @@ public class SmokeAuditGameTests {
 			long elapsed = helper.getTick() - stageStart[0];
 			switch (stage[0]) {
 				case 1 -> {
-					if (!level.hasChunk(chunkX, chunkZ)) {
+					if (!anyLoaded(level, chunkX, chunkZ, span)) {
 						report.pass("chunks", "the chunk unloaded");
-						level.setChunkForced(chunkX, chunkZ, true);
-						stage[0] = 2;
+						// A player walking back loads the chunks of a build one after another, not in the same tick
+						if (kind.contains("staggered")) {
+							force(level, chunkX, chunkZ, 1, true);
+							stage[0] = 4;
+						} else {
+							force(level, chunkX, chunkZ, span, true);
+							stage[0] = 2;
+						}
 						stageStart[0] = helper.getTick();
 					} else if (elapsed > 600) {
 						report.skip("chunks", "engine unload test", "the chunk would not unload in 600 ticks, so nothing was tested");
@@ -199,8 +337,16 @@ public class SmokeAuditGameTests {
 						conclude(helper, report);
 					}
 				}
+				case 4 -> {
+					// The first chunk has had its moment alone; now the rest arrive
+					if (elapsed >= 60) {
+						force(level, chunkX, chunkZ, span, true);
+						stage[0] = 2;
+						stageStart[0] = helper.getTick();
+					}
+				}
 				case 2 -> {
-					if (level.hasChunk(chunkX, chunkZ)) {
+					if (allLoaded(level, chunkX, chunkZ, span)) {
 						stage[0] = 3;
 						stageStart[0] = helper.getTick();
 					} else if (elapsed > 600) {
@@ -269,6 +415,23 @@ public class SmokeAuditGameTests {
 							.accept(value);
 					});
 				}
+		// Combined extremes: everything at its minimum, everything at its maximum, and two seeded mixes, since a setting that is
+		// harmless alone can stack with another
+		for (int pattern = 0; pattern < 4; pattern++) {
+			final int p = pattern;
+			names.add("combined pattern " + p);
+			variants.add(() -> {
+				Tuning.reset();
+				java.util.Random mix = new java.util.Random(p);
+				for (List<Knob> group : List.of(knobs, switches))
+					for (Knob knob : group)
+						knob.set().accept(switch (p) {
+							case 0 -> knob.min();
+							case 1 -> knob.max();
+							default -> mix.nextBoolean() ? knob.min() : knob.max();
+						});
+			});
+		}
 		BlockPos at = helper.absolutePos(new BlockPos(0, 1, 0));
 		int perVariant = 500;
 		int[] variant = {-1};

@@ -6,6 +6,7 @@ import org.jetbrains.annotations.Nullable;
 
 import com.createengines.content.head.GalleryMember;
 import com.createengines.engine.sim.OilSupply;
+import com.createengines.registry.CEFluids;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.Level;
@@ -23,6 +24,12 @@ public final class GalleryOilSupply implements OilSupply {
 	private final Level level;
 	private final List<BlockPos> heads;
 	private double credit;
+	private double lubricity = 1;
+
+	@Override
+	public double lubricity() {
+		return lubricity;
+	}
 
 	public GalleryOilSupply(Level level, List<BlockPos> heads) {
 		this.level = level;
@@ -46,6 +53,8 @@ public final class GalleryOilSupply implements OilSupply {
 			FluidStack drained = tank.drain(needed, FluidAction.EXECUTE);
 			credit += drained.getAmount();
 			needed -= drained.getAmount();
+			if (!drained.isEmpty())
+				lubricity = CEFluids.lubricity(drained);
 		}
 		double delivered = Math.min(mb, credit);
 		credit -= delivered;

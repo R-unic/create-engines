@@ -9,6 +9,7 @@
     }
   },
   "display": {
+    "announce_to_chat": false,
     "description": {
       "translate": "advancement.create_engines.flywheel.desc"
     },

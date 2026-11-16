@@ -180,7 +180,7 @@ class SimStressTest {
 		assertTrue(Double.isFinite(value), what + " is " + value + " (" + context + ")");
 	}
 
-	private static void check(Rig rig, double maxOmega, boolean driven, int tick) {
+	static void check(Rig rig, double maxOmega, boolean driven, int tick) {
 		EngineSimulation e = rig.engine;
 		String ctx = rig.description + ", tick " + tick;
 		finite("omega", e.omega(), ctx);

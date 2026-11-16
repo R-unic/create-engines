@@ -51,6 +51,9 @@ public final class CESounds {
 	/** A Flare Stack's flame catching and settling, as it burns off a working column's gas. */
 	public static final DeferredHolder<SoundEvent, SoundEvent> FLARE_WHOOSH = register("flare_whoosh");
 
+	/** The rev-up that plays for a goal or a challenge: made up as it plays, so the recording named in sounds.json is never read. */
+	public static final DeferredHolder<SoundEvent, SoundEvent> ADVANCEMENT_STING = register("advancement_sting");
+
 	private CESounds() {
 	}
 

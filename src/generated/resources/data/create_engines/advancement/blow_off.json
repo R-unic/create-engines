@@ -8,6 +8,19 @@
       "trigger": "create_engines:event"
     }
   },
+  "display": {
+    "announce_to_chat": false,
+    "description": {
+      "translate": "advancement.create_engines.blow_off.desc"
+    },
+    "icon": {
+      "count": 1,
+      "id": "create_engines:turbocharger"
+    },
+    "title": {
+      "translate": "advancement.create_engines.blow_off"
+    }
+  },
   "requirements": [
     [
       "blow_off"

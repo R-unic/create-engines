@@ -149,6 +149,8 @@ public final class EngineController {
 	private final int longestLine;
 
 	private int ticks;
+	/** The crank speed an engine had when part of it left the loaded world, kept so it can carry on when that part returns. */
+	private double heldOmega;
 	/** The tick a dynamometer block last read this engine's curve. */
 	private int dynoReadTick = -1000;
 	private int ticksSincePublish = PUBLISH_INTERVAL;
@@ -208,9 +210,23 @@ public final class EngineController {
 		OilSupply oilGallery = new GalleryOilSupply(level, layout.heads());
 		// The pans are the engine's reserve and are drawn on first; the head tanks top up what they cannot give
 		OilSupply pans = new SumpOilSupply(level, layout.sumps());
-		oilSupply = mb -> {
-			double delivered = pans.draw(mb);
-			return delivered < mb ? delivered + oilGallery.draw(mb - delivered) : delivered;
+		oilSupply = new OilSupply() {
+			private double lubricity = 1;
+
+			@Override
+			public double draw(double mb) {
+				double fromPans = pans.draw(mb);
+				double fromGallery = fromPans < mb ? oilGallery.draw(mb - fromPans) : 0;
+				double total = fromPans + fromGallery;
+				if (total > 0)
+					lubricity = (fromPans * pans.lubricity() + fromGallery * oilGallery.lubricity()) / total;
+				return total;
+			}
+
+			@Override
+			public double lubricity() {
+				return lubricity;
+			}
 		};
 
 		IgnitionSource plugs = new BatteryIgnition(level, layout.batteries());
@@ -326,6 +342,7 @@ public final class EngineController {
 		sim.setThermalLive(true);
 		if (motion != null) {
 			sim.restore(motion.angle(), motion.omega(), motion.direction());
+			heldOmega = motion.omega();
 			// Rotor chambers repeat every three turns, so carrying only the angle could swap their gas between them
 			if (motion.source() != null)
 				sim.restoreRotary(motion.source().sim.rotaryAngle());
@@ -409,7 +426,7 @@ public final class EngineController {
 	}
 
 	public Motion motion() {
-		return new Motion(sim.angle(), sim.omega(), sim.direction(), sim.lubrication()
+		return new Motion(sim.angle(), layout.incomplete() ? heldOmega : sim.omega(), sim.direction(), sim.lubrication()
 			.film(), sim.lubrication()
 				.dilution(),
 			sim.lubrication()
@@ -427,6 +444,12 @@ public final class EngineController {
 		double torqueScale = CEConfig.STRESS_PER_TORQUE.get();
 
 		if (layout.incomplete() || layout.broken()) {
+			// An engine split by an unloaded chunk stops while it is split, but remembers how fast it was turning, as an engine
+			// wholly unloaded does, so it picks up again when the chunk returns instead of coming back dead
+			if (layout.incomplete() && sim.omega() != 0)
+				heldOmega = sim.omega();
+			else if (layout.broken())
+				heldOmega = 0;
 			sim.restore(sim.angle(), 0, sim.direction());
 			publishSpeed();
 			publishCapacity(torqueScale);

@@ -4,6 +4,7 @@ import java.util.List;
 
 import com.createengines.content.sump.SumpBlockEntity;
 import com.createengines.engine.sim.OilSupply;
+import com.createengines.registry.CEFluids;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.Level;
@@ -19,6 +20,12 @@ public final class SumpOilSupply implements OilSupply {
 	private final Level level;
 	private final List<BlockPos> sumps;
 	private double credit;
+	private double lubricity = 1;
+
+	@Override
+	public double lubricity() {
+		return lubricity;
+	}
 
 	public SumpOilSupply(Level level, List<BlockPos> sumps) {
 		this.level = level;
@@ -37,6 +44,8 @@ public final class SumpOilSupply implements OilSupply {
 				.drain(needed, FluidAction.EXECUTE);
 			credit += drained.getAmount();
 			needed -= drained.getAmount();
+			if (!drained.isEmpty())
+				lubricity = CEFluids.lubricity(drained);
 		}
 		double delivered = Math.min(mb, credit);
 		credit -= delivered;

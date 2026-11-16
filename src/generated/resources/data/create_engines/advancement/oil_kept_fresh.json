@@ -8,6 +8,19 @@
       "trigger": "create_engines:event"
     }
   },
+  "display": {
+    "description": {
+      "translate": "advancement.create_engines.oil_kept_fresh.desc"
+    },
+    "frame": "goal",
+    "icon": {
+      "count": 1,
+      "id": "create_engines:engine_oil_bucket"
+    },
+    "title": {
+      "translate": "advancement.create_engines.oil_kept_fresh"
+    }
+  },
   "requirements": [
     [
       "oil_kept_fresh"

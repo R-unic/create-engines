@@ -1,6 +1,6 @@
 # Advancement redesign (draft, before 2.0)
 
-Status: **proposal, waiting for the author's approval.** Nothing here is built.
+Status: **approved 2026-11-16. Step 1 (the 1.x half) is built. Step 2 (renamed IDs, the migration table, deleting the hidden rows, regrouping the tab tree) is 2.0's responsibility, listed in docs/ROADMAP.md under 2.0, and is not started.**
 
 Where things stand: the 1.1 declutter is done. `CEAdvancements.SHOWN` lists 56 advancements in the tab. The other 54 keep their IDs and
 criteria but have no display, so the stability promise holds. The redesign starts from that and decides what the tab is *for*.
@@ -33,7 +33,7 @@ a checklist, not a tutorial, and never a telling-off.
 
 ## Tracks and keep list (draft for approval)
 
-64 rows shown, up from 56: none of today's shown rows leave, and eight are added. 46 stay hidden (and are
+66 rows shown, up from 56: none of the earlier shown rows left, and ten were added. 44 stay hidden (and are
 migrated, then deleted, in 2.0). ● announces in chat, ○ is toast-only (an insignificant stepping stone or minor discovery).
 **NEW** is a row that is hidden today. 😬 marks a mistake row. ✦ marks a goal or challenge that gets the sting.
 IDs below are today's; 2.0 may rename them.
@@ -42,11 +42,11 @@ IDs below are today's; 2.0 may rename them.
 |---|---|
 | **First Light** (root `engineer`) | crankshaft ○, cylinder ○, starter ○, alive ● ✦, warmed_up ○, sump ○, stalled ● 😬, flooded ● 😬 |
 | **Builder** | camshaft ○, pipework ○, four_cylinders ●, eight_cylinders ● ✦, twelve_cylinders ● ✦, sixteen_cylinders ● ✦, vee_engine ● ✦, flat_engine ● ✦, coupled_cranks ● ✦, valley_cam ● ✦, rotary_engine ● ✦, bank_builder ○, engine_casing ○ **NEW**, **master_builder** ● ✦ |
-| **Fuel** | diesel ●, gasoline ●, ethanol ●, ethanol_boost ● ✦, dual_fuel ● ✦, heat_exchanger ●, combined_cycle ● ✦, smoke_signals ● 😬 **NEW**, fouled_plug ○ 😬 **NEW**, thinned_oil ○ 😬 **NEW**, **closed_loop** ● ✦ |
+| **Fuel** | diesel ●, spark_plug ○, gasoline ●, ethanol ●, ethanol_boost ● ✦, dual_fuel ● ✦, heat_exchanger ●, combined_cycle ● ✦, smoke_signals ● 😬 **NEW**, fouled_plug ○ 😬 **NEW**, thinned_oil ○ 😬 **NEW**, **closed_loop** ● ✦ |
 | **Power** | heavy_duty ● ✦, redline ● ✦, steam_beater ● ✦, steam_titan ● ✦, overloaded ● 😬 **NEW**, turbocharger ●, big_boost ● ✦, blow_off ○ **NEW**, twin_turbo ● ✦, supercharger ●, twincharged ● ✦, anti_lag ● ✦, precision_engine ● ✦, **power_plant** ● ✦ |
 | **Tuning** | dialed_in ● ✦, governed ● ✦, engine_display ○, stampede ● ✦, dyno_run ●, **fine_tuner** ● ✦ |
 | **Driveline** | transmission ○ **NEW**, alternator ○, flywheel ○, every_gear ● ✦, **full_driveline** ● ✦ |
-| **Service** | oil_kept_fresh ● ✦, cool_running ● ✦, preheated ○ **NEW**, **service_record** ● ✦ |
+| **Service** | oil_kept_fresh ● ✦ **NEW**, cool_running ● ✦ **NEW**, preheated ○ **NEW**, **service_record** ● ✦ |
 | **Top** | **chief_engineer** ● ✦ + keepsake |
 
 Notes on the choices:
@@ -83,3 +83,18 @@ row when any of its old rows was earned; capstones credit per milestone, as they
 
 - Approve the principles, the track list and the keep list (the 56 shown rows, plus or minus any you name), and mark which are
   chat-quiet.
+
+## Built in step 1 (1.x)
+
+- `CEAdvancements.SHOWN` holds the 66 rows, and `QUIET` the 18 that are toast only (crankshaft, cylinder, starter, warmed_up,
+  sump, camshaft, pipework, bank_builder, engine_casing, blow_off, thinned_oil, fouled_plug, engine_display, alternator,
+  flywheel, preheated, spark_plug, transmission). Every other shown row announces in chat.
+- The sting: `StingSynth` (an engine winding up, from the same note synthesizer the engines use), `StingSound` (client voice),
+  `AdvancementSting` (server: an earn event on a goal or challenge that shows a toast sends one small packet) and `StingGate`
+  (one a minute, a challenge may follow a goal). It follows the engine note volume setting, so zero mutes it.
+- The keepsake: Chief Engineer's reward is a loot table that gives a Maker's Plate named "Chief Engineer"; whoever places it is
+  stamped as the builder.
+- Tests: `AdvancementTabTest` (quiet and loud rows, mistakes shown, the keepsake only on Chief Engineer), `StingSynthTest`
+  (bounded, fades, deterministic whatever the read size, one reused buffer, hostile read sizes) and `StingGateTest`.
+- Not done: the tab layout still hangs from today's parents; regrouping the tree by track is part of the 2.0 renaming, and the
+  sting has not been heard in a running client.

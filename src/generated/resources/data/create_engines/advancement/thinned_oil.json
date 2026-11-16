@@ -1,11 +1,24 @@
 {
-  "parent": "create_engines:alive",
+  "parent": "create_engines:smoke_signals",
   "criteria": {
     "thinned_oil": {
       "conditions": {
         "event": "thinned_oil"
       },
       "trigger": "create_engines:event"
+    }
+  },
+  "display": {
+    "announce_to_chat": false,
+    "description": {
+      "translate": "advancement.create_engines.thinned_oil.desc"
+    },
+    "icon": {
+      "count": 1,
+      "id": "create_engines:engine_oil_bucket"
+    },
+    "title": {
+      "translate": "advancement.create_engines.thinned_oil"
     }
   },
   "requirements": [

@@ -44,6 +44,16 @@ public final class Lubrication {
 	private double film;
 	private double dilution;
 	private double condition = 1;
+	private double grade = 1;
+
+	/** How well the oil in use lubricates, 1 for engine oil: a poorer oil never films as well and wears out sooner. */
+	public double grade() {
+		return grade;
+	}
+
+	public void setGrade(double grade) {
+		this.grade = Math.clamp(grade, 0.1, 1);
+	}
 
 	public Lubrication(double film) {
 		this.film = Math.clamp(film, 0, 1);
@@ -107,6 +117,7 @@ public final class Lubrication {
 	/** How hard the oil is being worked at this temperature (0 ambient, 1 normal running): hot oil and thinned oil age faster. */
 	public double stress(double temperature, boolean filtered) {
 		double stress = 1 + 1.5 * Math.max(0, temperature - Thermal.NORMAL) + 2 * dilution;
+		stress /= grade;
 		return filtered ? stress * FILTER_AGEING : stress;
 	}
 
@@ -154,6 +165,10 @@ public final class Lubrication {
 		if (demand <= 0)
 			return;
 		double satisfied = Math.min(1, supply.draw(demand) / demand);
+		// A makeshift oil never builds a full film, however freely it flows
+		if (satisfied > 0)
+			setGrade(supply.lubricity());
+		satisfied *= grade;
 		// Oil going into a dry engine is a fresh charge, whatever the condition of what ran out before
 		if (satisfied > 0 && film <= DRY_FILM) {
 			condition = 1;

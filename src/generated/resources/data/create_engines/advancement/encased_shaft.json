@@ -1,5 +1,5 @@
 {
-  "parent": "create_engines:alive",
+  "parent": "create_engines:engine_casing",
   "criteria": {
     "encased_shaft": {
       "conditions": {

@@ -166,6 +166,19 @@ class SmokeReportAndVerifyTest {
 	}
 
 	@Test
+	void aLogOnlyRunNeedsNoReportButStillFailsOnAnError() throws IOException {
+		Path log = dir.resolve("visual.log");
+		Files.write(log, List.of("[1] [Render thread/INFO] [x/]: fine"));
+		assertTrue(SmokeVerify.verify("visual", null, log, null, false)
+			.passed());
+		Files.write(log, List.of("[1] [Render thread/ERROR] [x/]: boom"));
+		assertFalse(SmokeVerify.verify("visual", null, log, null, false)
+			.passed());
+		assertTrue(SmokeVerify.verify("visual", null, log, null, true)
+			.passed());
+	}
+
+	@Test
 	void aMissingLogFileIsAFailure() throws IOException {
 		SmokeReport report = new SmokeReport("t");
 		report.markCompleted();

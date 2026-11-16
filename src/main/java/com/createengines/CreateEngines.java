@@ -2,6 +2,7 @@ package com.createengines;
 
 import org.slf4j.Logger;
 
+import com.createengines.advancement.AdvancementSting;
 import com.createengines.advancement.CEAdvancements;
 import com.createengines.advancement.CETriggers;
 import com.createengines.advancement.Operators;
@@ -63,12 +64,14 @@ public class CreateEngines {
 		modEventBus.addListener(CEDataMaps::register);
 		modEventBus.addListener(CEBlockEntities::registerCapabilities);
 		modEventBus.addListener(CEConfig::onConfig);
+		modEventBus.addListener(AdvancementSting::register);
 		modContainer.registerConfig(ModConfig.Type.SERVER, CEConfig.SPEC);
 
 		NeoForge.EVENT_BUS.addListener(EngineTopology::onLevelTick);
 		NeoForge.EVENT_BUS.addListener(EngineTopology::onLevelUnload);
 		NeoForge.EVENT_BUS.addListener(EngineTopology::onBlockPlaced);
 		NeoForge.EVENT_BUS.addListener(EngineTopology::onBlockBroken);
+		NeoForge.EVENT_BUS.addListener(AdvancementSting::onEarned);
 		NeoForge.EVENT_BUS.addListener(Operators::onBlockPlaced);
 		NeoForge.EVENT_BUS.addListener(Operators::onBlockUsed);
 		NeoForge.EVENT_BUS.addListener(Operators::onBlockBroken);

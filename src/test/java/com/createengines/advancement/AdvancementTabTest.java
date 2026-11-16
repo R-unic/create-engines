@@ -60,7 +60,7 @@ class AdvancementTabTest {
 			.stream()
 			.filter(AdvancementTabTest::shown)
 			.count();
-		assertTrue(shown > 30 && shown < 70, "a tab, not a checklist: " + shown);
+		assertTrue(shown > 30 && shown < 80, "a tab, not a checklist: " + shown);
 		assertTrue(shown("engineer") && shown("alive") && shown("chief_engineer"));
 		assertFalse(shown("cylinder_head"));
 	}
@@ -79,6 +79,55 @@ class AdvancementTabTest {
 				at = parent;
 			}
 		}
+	}
+
+	private static boolean announces(String id) {
+		return !Pattern.compile("\"announce_to_chat\"\s*:\s*false")
+			.matcher(FILES.get(id))
+			.find();
+	}
+
+	@Test
+	void mostRowsAnnounceInChatAndOnlyTheInsignificantOnesDoNot() {
+		long quiet = FILES.keySet()
+			.stream()
+			.filter(AdvancementTabTest::shown)
+			.filter(id -> !id.equals("engineer"))
+			.filter(id -> !announces(id))
+			.count();
+		long loud = FILES.keySet()
+			.stream()
+			.filter(AdvancementTabTest::shown)
+			.filter(id -> !id.equals("engineer"))
+			.filter(AdvancementTabTest::announces)
+			.count();
+		assertTrue(loud > quiet * 2, "most announce: " + loud + " loud, " + quiet + " quiet");
+		for (String milestone : new String[] { "alive", "twelve_cylinders", "big_boost", "master_builder", "chief_engineer",
+			"stalled", "smoke_signals", "overloaded" })
+			assertTrue(announces(milestone), milestone + " is worth a line in chat");
+		for (String stone : new String[] { "crankshaft", "cylinder", "starter", "warmed_up", "pipework", "fouled_plug" })
+			assertFalse(announces(stone), stone + " is a stepping stone");
+	}
+
+	@Test
+	void mistakesAreWorthAnAdvancementToo() {
+		for (String id : new String[] { "stalled", "flooded", "smoke_signals", "fouled_plug", "thinned_oil", "overloaded" })
+			assertTrue(shown(id), id + " is a discovery worth a toast");
+	}
+
+	@Test
+	void theTransmissionIsInTheDrivelineTrack() {
+		assertTrue(shown("transmission") && shown("full_driveline"));
+	}
+
+	@Test
+	void onlyChiefEngineerHandsOutAKeepsake() {
+		for (var entry : FILES.entrySet())
+			assertEquals(entry.getKey()
+				.equals("chief_engineer"), entry.getValue()
+					.contains("\"rewards\""), entry.getKey());
+		assertTrue(FILES.get("chief_engineer")
+			.contains("advancement/chief_engineer"));
 	}
 
 	@Test
