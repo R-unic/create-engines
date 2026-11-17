@@ -54,6 +54,9 @@ public final class EngineNoteSound extends AbstractTickableSoundInstance {
 	private final EngineNoteSynth synth;
 	private final long startedAt;
 	private float fade;
+	private int ticks;
+	/** The cam's place in the cycle as a cylinder last reported it this tick, or NaN. */
+	private double reportedPhase = Double.NaN;
 
 	private EngineNoteSound(CrankshaftBlockEntity crank) {
 		super(CESounds.ENGINE_NOTE.get(), SoundSource.BLOCKS, SoundInstance.createUnseededRandom());
@@ -89,8 +92,11 @@ public final class EngineNoteSound extends AbstractTickableSoundInstance {
 		PLAYING.values()
 			.removeIf(note -> {
 				boolean dropped = VoiceClock.settled(now, note.startedAt) && (note.isStopped() || !sounds.isActive(note));
-				if (dropped)
+				if (dropped) {
+					LOGGER.debug("Engine note at {} dropped by the sound engine (stopped {}), {} ticks after it started",
+						note.crank.getBlockPos(), note.isStopped(), now - note.startedAt);
 					BUDGET.finished(note.crank.getBlockPos(), now);
+				}
 				return dropped;
 			});
 		BUDGET.prune(now);
@@ -112,6 +118,13 @@ public final class EngineNoteSound extends AbstractTickableSoundInstance {
 			return;
 		}
 		LOGGER.debug("Engine note started at {}", at);
+	}
+
+	/** Where the engine whose primary crankshaft is at {@code at} is in its 720 degree cycle now, from its cam. */
+	public static void reportPhase(BlockPos at, double cycleDegrees) {
+		EngineNoteSound note = PLAYING.get(at);
+		if (note != null)
+			note.reportedPhase = cycleDegrees;
 	}
 
 	/** Forgets every voice, for when the player leaves a world: the sound engine has already dropped them. */
@@ -151,6 +164,11 @@ public final class EngineNoteSound extends AbstractTickableSoundInstance {
 		EngineSummary summary = crank.isRemoved() ? null : crank.summary();
 		EngineNoteSynth.Params wanted = summary == null ? EngineNoteSynth.Params.SILENT : params(summary);
 		synth.set(wanted);
+		if (summary != null && !Double.isNaN(reportedPhase)) {
+			// What is rendered now is heard a few tenths of a second on, so aim at where the cam will be then
+			synth.lockTo(reportedPhase + wanted.rpm() * 6.0 * EngineNoteSynth.OUTPUT_LATENCY);
+			reportedPhase = Double.NaN;
+		}
 		boolean audible = wanted.combustion() > 0 && wanted.rpm() > 1 && near(crank);
 		fade = Mth.clamp(fade + (audible ? FADE_IN : -FADE_OUT), 0, 1);
 		if (fade <= 0 && !audible) {
@@ -164,6 +182,11 @@ public final class EngineNoteSound extends AbstractTickableSoundInstance {
 		}
 		volume = LOUDEST * CEClientConfig.engineNoteVolume() * fade
 			* Muffling.volume(summary == null ? 0 : summary.muffling());
+		// Once a second, so cheap: shows a note that is alive but silent
+		if (++ticks % 20 == 0 && volume < 0.02f)
+			LOGGER.debug("Engine note at {} is quiet: volume {}, fade {}, state {}, rpm {}, combustion {}, angles {}",
+				crank.getBlockPos(), volume, fade, summary == null ? "none" : summary.state(), wanted.rpm(), wanted.combustion(),
+				wanted.firingAngles().length);
 	}
 
 	/** How much of the note is burning in each state: a coasting or cranking engine only pumps air. */

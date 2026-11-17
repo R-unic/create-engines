@@ -147,6 +147,7 @@ public class CylinderBlockEntity extends SmartBlockEntity implements IHaveGoggle
 		double cycle = CylinderModel.camCycleAngle(camAngle, lobe.lobeAngle() + current.lobeShift());
 		double previous = lastCamCycle;
 		lastCamCycle = cycle;
+		reportPhaseToNote(lobe, camAngle);
 		if (Double.isNaN(previous) || lobe.getTheoreticalSpeed() == 0)
 			return;
 		double travelled = (cycle - previous + 720) % 720;
@@ -172,6 +173,22 @@ public class CylinderBlockEntity extends SmartBlockEntity implements IHaveGoggle
 		if (!current.exhaustOutlets()
 			.isEmpty() && crosses(previous, travelled, CamProfile.BASIC.exhaustOpen()) && puffs.allow(level))
 			EngineEffects.exhaust(level, current, crankThrow());
+	}
+
+	/**
+	 * Tells the engine's exhaust note where the cam is, so the note's firings land with the flashes and puffs drawn from
+	 * the same cam instead of drifting against them. The engine's 720 degree cycle is twice the cam's angle, which is
+	 * how the firing angles in the engine summary are measured. A cam that is not geared 1:2 to the crank has no fixed
+	 * place in the cycle and is left out, as it is from those firing angles.
+	 */
+	private void reportPhaseToNote(CamshaftBlockEntity lobe, float camAngle) {
+		CrankshaftBlockEntity crank = crankThrow();
+		if (crank == null || crank.primaryPos() == null)
+			return;
+		float crankSpeed = Math.abs(crank.getTheoreticalSpeed());
+		if (crankSpeed == 0 || Math.abs(2 * Math.abs(lobe.getTheoreticalSpeed()) - crankSpeed) > 0.01f * crankSpeed)
+			return;
+		EngineNoteSound.reportPhase(crank.primaryPos(), 2.0 * camAngle);
 	}
 
 	/**

@@ -63,6 +63,55 @@ class EngineNoteSynthTest {
 		return top / bottom;
 	}
 
+	/**
+	 * The note's own clock starts at any angle and follows speed a moment late, so unlocked its firings were heard off
+	 * from the flames and puffs that follow the cam. Locked to the cam's reported place in the cycle, each firing lands
+	 * where the cam says, and the correction is a glide: no sample jumps.
+	 */
+	@Test
+	void lockedToTheCamEachFiringLandsWhereTheCamSaysItDoes() {
+		double rpm = 600;
+		double degreesPerSample = rpm * 6 / RATE;
+		double offset = 300;
+		EngineNoteSynth synth = new EngineNoteSynth(7);
+		synth.set(new Params((float) rpm, new float[] {0}, 1, 1, 1));
+		int samples = 3 * RATE;
+		float[] out = new float[samples];
+		for (int i = 0; i < samples; i++) {
+			if (i % (RATE / 20) == 0)
+				synth.lockTo(offset + i * degreesPerSample);
+			out[i] = synth.next();
+		}
+		// A firing is the first loud sample after a quiet stretch
+		int quiet = RATE / 100;
+		int lastLoud = -quiet;
+		double maxError = 0;
+		int found = 0;
+		for (int i = RATE; i < samples; i++) {
+			if (Math.abs(out[i]) <= 0.25f)
+				continue;
+			if (i - lastLoud >= quiet * 5) {
+				double phaseThen = (offset + i * degreesPerSample) % 720;
+				double error = Math.min(phaseThen, 720 - phaseThen) / (rpm * 6) * 1000;
+				maxError = Math.max(maxError, error);
+				found++;
+			}
+			lastLoud = i;
+		}
+		assertTrue(found >= 8, "firings were found: " + found);
+		assertTrue(maxError < 40, "every firing lands with the cam's (unlocked it is 117 ms off here; the rest is the thump taking time to rise): " + maxError + " ms");
+	}
+
+	@Test
+	void anAimThatIsNotANumberLeavesTheClockAlone() {
+		EngineNoteSynth synth = new EngineNoteSynth(7);
+		synth.set(new Params(600, even(4), 1, 1, 1));
+		synth.lockTo(Double.NaN);
+		synth.lockTo(Double.POSITIVE_INFINITY);
+		for (int i = 0; i < RATE; i++)
+			assertFalse(Float.isNaN(synth.next()));
+	}
+
 	@Test
 	void everySampleIsInRangeAtEverySpeed() {
 		for (float rpm : new float[] {0, 20, 60, 300, 1200, 4000, 12000}) {

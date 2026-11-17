@@ -156,6 +156,50 @@ public final class EngineNoteSynth {
 		}
 	}
 
+	/**
+	 * About how long after a sample is rendered it is heard: four tenth-of-a-second chunks are queued with the sound
+	 * engine. The game thread aims the cycle this far ahead of the engine, so a firing is heard as the engine fires.
+	 */
+	public static final double OUTPUT_LATENCY = 0.35;
+	/** Per-sample share of a phase error closed: about a fifth of a second, so the correction is a glide and never a click. */
+	private static final double LOCK_FOLLOW = 1 / (0.2 * SAMPLE_RATE);
+	/** The most the cycle may be sped up or slowed by catching up, as a share of its own speed; it never runs backwards. */
+	private static final double LOCK_SLEW = 0.35;
+	/** An error this large is a different place in the cycle, not drift, and the cycle jumps there. */
+	private static final double LOCK_SNAP = 180;
+
+	private volatile double lockTarget = Double.NaN;
+	private boolean locked;
+	private double correction;
+
+	/**
+	 * Called by the game thread with where the engine's cycle will be, in degrees, at the moment the sound now being
+	 * rendered is heard. The synthesizer keeps its own clock, which would otherwise wander against the engine's real
+	 * crank (a speed it follows a tenth of a second late, the stream's own delay, a start at any angle) so firings were
+	 * heard off from the flames and puffs that follow the cam. It closes the gap smoothly and snaps only on the first
+	 * call or a large error.
+	 */
+	public void lockTo(double cycleDegrees) {
+		if (Double.isFinite(cycleDegrees))
+			lockTarget = ((cycleDegrees % CYCLE) + CYCLE) % CYCLE;
+	}
+
+	/** Takes up a new aim from the game thread; on the audio thread, once per block of samples. */
+	private void applyLock() {
+		double target = lockTarget;
+		if (Double.isNaN(target))
+			return;
+		lockTarget = Double.NaN;
+		double error = ((target - phase) % CYCLE + CYCLE * 1.5) % CYCLE - CYCLE / 2;
+		if (!locked || Math.abs(error) > LOCK_SNAP) {
+			locked = true;
+			phase = target;
+			correction = 0;
+			nextEvent = firstAfter(angles, phase);
+		} else
+			correction = error;
+	}
+
 	/** Called by the game thread; takes effect over the next tenth of a second. */
 	public void set(Params next) {
 		params = clean(next);
@@ -186,6 +230,7 @@ public final class EngineNoteSynth {
 
 	/** Fills {@code out[offset, offset + count)} with 16-bit samples. */
 	public void render(short[] out, int offset, int count) {
+		applyLock();
 		for (int i = 0; i < count; i++)
 			out[offset + i] = (short) Math.round(Math.clamp(next(), -1f, 1f) * 30000);
 	}
@@ -201,7 +246,10 @@ public final class EngineNoteSynth {
 			nextEvent = firstAfter(angles, phase);
 		}
 
-		phase += rpm * 6.0 / SAMPLE_RATE;
+		double advance = rpm * 6.0 / SAMPLE_RATE;
+		double trim = Math.clamp(correction * LOCK_FOLLOW, -LOCK_SLEW * advance, LOCK_SLEW * advance);
+		correction -= trim;
+		phase += advance + trim;
 		fireDue(p);
 		if (phase >= CYCLE) {
 			phase %= CYCLE;
@@ -283,6 +331,8 @@ public final class EngineNoteSynth {
 		java.util.Arrays.fill(y2, 0);
 		phase = 0;
 		nextEvent = 0;
+		locked = false;
+		correction = 0;
 		rpm = load = combustion = 0;
 		impulse = pulse = 0;
 		noiseLow = thumpEnvelope = thumpSweep = rumbleEnvelope = rumbleNoise = toneA = toneB = toneDc = 0;
