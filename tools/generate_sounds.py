@@ -12,7 +12,8 @@ leaves the others' recordings alone (a different encoder gives a different file 
 With --wav DIR the named sounds are written as WAV files into DIR instead, to listen to before encoding them.
 
 Sounds:
-  cylinder_fire1..3  the bang of a charge igniting: a pressure thump, a sharp crack and a ring down the exhaust
+  cylinder_fire1..3  the bang of a charge igniting, three cylinders' worth: a hard crack, a mid slap, a gritty thump, an
+                     echo off the pipe's end and the pipe ringing after
   starter_whir       a seamless loop of a starter motor turning over; the game bends its pitch with the motor's speed
   turbo_whistle      a seamless loop of a spooling turbine: a thin whistle over air rush; pitch follows the wheel speed
   turbo_blowoff      the blow-off valve dumping boost: a thump, a hiss and a flutter of the compressor surging
@@ -115,27 +116,41 @@ def finish(mix, peak=0.9):
     return mix / np.max(np.abs(mix)) * peak
 
 
-def bang(seed, pitch):
-    """A diesel charge going off: the pressure thump arrives first, the crack rides on top, the exhaust rings after."""
+def bang(seed, pitch, bright=1.0):
+    """A charge going off, built to be heard on its own at a few firings a second (a slow engine's 256 to 512 rpm):
+    a hard, near-instant crack of the flame front, a mid-range slap of the pressure wave, the low thump of the gas
+    punching the pipe, an echo as the wave comes back off the pipe's end, and the pipe ringing after. `bright` moves the
+    crack and slap up (a small, tight cylinder) or down (a big, heavy one), so the three variants are three cylinders."""
     rng = np.random.default_rng(seed)
-    n = int(0.5 * SR)
+    n = int(0.55 * SR)
     t = np.arange(n) / SR
-    rise = np.minimum(t / 0.0015, 1)
+    rise = np.minimum(t / 0.0004, 1)
 
-    sweep = (46 + 110 * np.exp(-t / 0.03)) * pitch
-    thump = np.sin(2 * np.pi * np.cumsum(sweep) / SR) * rise * np.exp(-t / 0.075)
+    # The crack: broadband and over in a few milliseconds, with a second, lower hit as the wave leaves the bore
+    crack = band(rng.standard_normal(n), 1400 * bright * pitch, 9000, 2) * rise * np.exp(-t / 0.005)
+    late = np.maximum(t - 0.006, 0)
+    crack += 0.5 * band(rng.standard_normal(n), 900 * bright, 4200, 2) * (t >= 0.006) * np.exp(-late / 0.01)
+    # The slap: the mid-range of the pressure wave, which is what makes a bang read as a bang and not a puff
+    slap = band(rng.standard_normal(n), 300 * pitch, 2200 * bright, 2) * rise * np.exp(-t / 0.022)
 
-    crack = band(rng.standard_normal(n), 700 * pitch, 6500, 2) * rise * np.exp(-t / 0.014)
-    body = lowpass(rng.standard_normal(n), 700 * pitch) * rise * np.exp(-t / 0.07)
+    # The thump drops in pitch as the pressure falls, and is driven into a soft clip so it has a bite and a grunt
+    sweep = (44 + 150 * np.exp(-t / 0.022)) * pitch
+    thump = np.sin(2 * np.pi * np.cumsum(sweep) / SR) * np.minimum(t / 0.001, 1) * np.exp(-t / 0.085)
+    thump = np.tanh(1.8 * thump)
+    body = lowpass(rng.standard_normal(n), 500 * pitch) * rise * np.exp(-t / 0.06)
 
     ring_noise = lowpass(rng.standard_normal(n), 400)
     ring = (np.sin(2 * np.pi * 88 * pitch * t) + 0.6 * np.sin(2 * np.pi * 176 * pitch * t + 1.1)
             + 0.35 * np.sin(2 * np.pi * 265 * pitch * t + 2.3))
-    ring = ring * (0.75 + 0.25 * ring_noise / np.max(np.abs(ring_noise))) * np.minimum(t / 0.008, 1) * np.exp(-t / 0.11)
+    ring = ring * (0.75 + 0.25 * ring_noise / np.max(np.abs(ring_noise))) * np.minimum(t / 0.008, 1) * np.exp(-t / 0.12)
 
-    mix = 1.0 * thump + 0.5 * crack + 0.7 * body + 0.28 * ring
-    mix = np.tanh(1.7 * mix)
-    mix *= np.clip((n - np.arange(n)) / (0.04 * SR), 0, 1)
+    mix = 0.9 * crack + 0.75 * slap + 1.0 * thump + 0.45 * body + 0.3 * ring
+    # The wave coming back off the end of the pipe, a short way behind and a little duller
+    delay = int(0.0115 * SR)
+    echo = np.zeros(n)
+    echo[delay:] = lowpass(mix, 2500, 1)[:n - delay]
+    mix = np.tanh(1.5 * (mix + 0.3 * echo))
+    mix *= np.clip((n - np.arange(n)) / (0.05 * SR), 0, 1)
     return finish(mix)
 
 
@@ -446,9 +461,9 @@ SOUNDS = {
     "soot_catch3": lambda: soot_catch(89, 1.12),
     "flare_whoosh1": lambda: flare_whoosh(97),
     "flare_whoosh2": lambda: flare_whoosh(101),
-    "cylinder_fire1": lambda: bang(11, 1.0),
-    "cylinder_fire2": lambda: bang(23, 0.93),
-    "cylinder_fire3": lambda: bang(37, 1.07),
+    "cylinder_fire1": lambda: bang(11, 1.0, 1.0),
+    "cylinder_fire2": lambda: bang(23, 0.9, 0.78),
+    "cylinder_fire3": lambda: bang(37, 1.1, 1.3),
     "starter_whir": starter_loop,
     "turbo_whistle": turbo_loop,
     "turbo_blowoff": turbo_blowoff,

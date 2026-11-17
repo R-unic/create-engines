@@ -155,7 +155,18 @@ public final class EngineNoteSound extends AbstractTickableSoundInstance {
 		boolean burning = state == EngineState.RUNNING || state == EngineState.OVERLOADED;
 		float share = burning && summary.cylinders() > 0 ? Mth.clamp(summary.firing() / (float) summary.cylinders(), 0, 1) : 1;
 		float load = summary.availableTorque() > 0 ? Mth.clamp(summary.loadTorque() / summary.availableTorque(), 0, 1.3f) : 0;
-		return new EngineNoteSynth.Params(Math.abs(summary.rpm()), summary.firingAngles(), share, load, combustion);
+		return new EngineNoteSynth.Params(Math.abs(summary.rpm()), summary.firingAngles(), share, load, combustion,
+			size(summary.cylinders()), sharpness(load, summary.boost()));
+	}
+
+	/** One cylinder is a big slow thumper at 1, sixteen are a tight small-bore buzz at 0, halving the size at each doubling. */
+	static float size(int cylinders) {
+		return Mth.clamp(1 - (float) (Math.log(Math.max(1, cylinders)) / Math.log(2)) / 4f, 0, 1);
+	}
+
+	/** An idling, naturally aspirated engine cracks softly; load and boost make each firing hit harder. */
+	static float sharpness(float load, float boost) {
+		return Mth.clamp(0.3f + 0.35f * Math.min(load, 1f) + 0.5f * Mth.clamp(boost, 0, 1), 0, 1);
 	}
 
 	/** The synthesizer as the sound engine reads it: mono, 16 bit, a tenth of a second at a time. */

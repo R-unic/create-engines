@@ -107,8 +107,9 @@ class EngineNoteSynthTest {
 		// A click is a jump from one sample to the next far bigger than the sound around it, and a spike far above its level
 		for (float[] angles : new float[][] {even(1), {0, 315}, even(4), even(8), even(16)}) {
 			for (float rpm : new float[] {80, 256, 900}) {
-				// Only a firing every few hundredths of a second blends into a note; slower ones are separate thumps
-				if (angles.length * rpm / 120 < 8)
+				// Only a firing every few hundredths of a second blends into a note; slower ones are separate bangs, each with a
+					// deliberately sharp crack (see eachFiringOfASlowEngineCracks), so a step the size of the crack is theirs by design
+				if (angles.length * rpm / 120 < 12)
 					continue;
 				float[] samples = render(rpm, angles, 1, 0.8f, 2);
 				double level = rms(samples);
@@ -147,6 +148,68 @@ class EngineNoteSynthTest {
 			double share = lowRms(samples, 60) / rms(samples);
 			assertTrue(share > 0.18, "No low end under the note with " + angles.length + " firings a cycle: " + share);
 		}
+	}
+
+	private static float[] renderEngine(float rpm, float[] angles, float load, float size, float sharpness, float seconds) {
+		EngineNoteSynth synth = new EngineNoteSynth(7);
+		synth.set(new Params(rpm, angles, 1, load, 1, size, sharpness));
+		for (int i = 0; i < RATE; i++)
+			synth.next();
+		float[] out = new float[(int) (seconds * RATE)];
+		for (int i = 0; i < out.length; i++)
+			out[i] = synth.next();
+		return out;
+	}
+
+	/** How spiky what is above {@code cutoff} Hz is: its peak over its level. A crack is a spike; a hiss is not. */
+	private static double highCrest(float[] samples, double cutoff) {
+		double pole = Math.exp(-2 * Math.PI * cutoff / RATE);
+		double first = 0;
+		double second = 0;
+		double sum = 0;
+		double peak = 0;
+		for (float sample : samples) {
+			first = pole * first + (1 - pole) * sample;
+			second = pole * second + (1 - pole) * first;
+			double high = sample - second;
+			sum += high * high;
+			peak = Math.max(peak, Math.abs(high));
+		}
+		return peak / Math.sqrt(sum / samples.length + 1e-12);
+	}
+
+	@Test
+	void eachFiringOfASlowEngineCracks() {
+		// At the 256 to 512 RPM most engines run at, every firing is heard alone, so it needs the sharp crack of a bang
+		for (float[] angles : new float[][] {even(1), even(2), even(4)}) {
+			for (float rpm : new float[] {256, 384, 512}) {
+				float[] cracking = renderEngine(rpm, angles, 0.8f, 0.5f, 0.8f, 3);
+				float[] dull = renderEngine(rpm, angles, 0.8f, 0.5f, 0, 3);
+				double crack = highCrest(cracking, 1500);
+				double without = highCrest(dull, 1500);
+				assertTrue(crack > 5, "Not enough crack at " + rpm + " RPM with " + angles.length + " firings a cycle: " + crack);
+				assertTrue(crack > without * 1.1, "Sharpness changes nothing at " + rpm + " RPM: " + crack + " against " + without);
+			}
+		}
+	}
+
+	@Test
+	void theCrackFadesWhereFiringsRunTogetherIntoANote() {
+		// A crack on each of a hundred firings a second would only buzz
+		float[] slow = renderEngine(300, even(2), 0.8f, 0.5f, 1, 2);
+		float[] fast = renderEngine(4000, even(8), 0.8f, 0.5f, 1, 2);
+		assertTrue(highCrest(fast, 1500) < highCrest(slow, 1500) * 0.7,
+			"The note stays as cracky as a slow engine: " + highCrest(fast, 1500));
+	}
+
+	@Test
+	void aBiggerCylinderThumpsLowerAndACylinderIsNotJustAsLoudAsItIsBright() {
+		float[] big = renderEngine(300, even(1), 0.8f, 1, 0.5f, 3);
+		float[] small = renderEngine(300, even(1), 0.8f, 0, 0.5f, 3);
+		assertTrue(lowRms(big, 90) / rms(big) > lowRms(small, 90) / rms(small),
+			"A big cylinder should have more of its sound low down: " + lowRms(big, 90) / rms(big) + " against "
+				+ lowRms(small, 90) / rms(small));
+		assertTrue(rms(big) < 0.6 && rms(small) < 0.6);
 	}
 
 	@Test
@@ -224,6 +287,22 @@ class EngineNoteSynthTest {
 		demo(folder, "parallel_twin_steady_300", new float[] {0, 360}, 1, steady(2, 300));
 		demo(folder, "v12_pull_to_4000", even(12), 1, sweep(12, 120, 4000));
 		demo(folder, "rotary_twin_steady_1500", new float[] {0, 180, 360, 540}, 1, steady(4, 1500));
+		// The speeds most engines run at: every firing is heard alone
+		demoEngine(folder, "single_big_256", even(1), 256, 1, 0.5f);
+		demoEngine(folder, "single_big_512_boosted", even(1), 512, 1, 0.9f);
+		demoEngine(folder, "twin_small_384", even(2), 384, 0.6f, 0.4f);
+		demoEngine(folder, "inline4_256", even(4), 256, 0.5f, 0.5f);
+		demoEngine(folder, "inline4_512_boosted", even(4), 512, 0.5f, 0.95f);
+		demoEngine(folder, "v8_384", even(8), 384, 0.25f, 0.6f);
+	}
+
+	private static void demoEngine(Path folder, String name, float[] angles, float rpm, float size, float sharpness)
+		throws IOException {
+		float[] samples = renderEngine(rpm, angles, 0.8f, size, sharpness, 5);
+		short[] pcm = new short[samples.length];
+		for (int i = 0; i < pcm.length; i++)
+			pcm[i] = (short) Math.round(Math.clamp(samples[i], -1f, 1f) * 30000);
+		Files.write(folder.resolve(name + ".wav"), wav(pcm));
 	}
 
 	private static float[] steady(int ignored, float rpm) {

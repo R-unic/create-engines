@@ -26,8 +26,17 @@ public final class EngineNoteSynth {
 	 * @param load         how hard it is working against what it could do, 0 to about 1.3
 	 * @param combustion   how much of the note is burning: 1 for a running engine, a quarter for a coasting or cranking one
 	 *                     (only air being pumped), 0 for silence
+		 * @param size         how big each cylinder sounds, 0 to 1: a big one thumps lower and its crack hangs on longer
+		 * @param sharpness    how hard each firing cracks, 0 to 1: boost, a hot engine and a hard-worked one crack harder
 	 */
-	public record Params(float rpm, float[] firingAngles, float firingShare, float load, float combustion) {
+	public record Params(float rpm, float[] firingAngles, float firingShare, float load, float combustion, float size,
+							 float sharpness) {
+
+			/** An engine of middling size and sharpness. */
+			public Params(float rpm, float[] firingAngles, float firingShare, float load, float combustion) {
+				this(rpm, firingAngles, firingShare, load, combustion, 0.5f, 0.5f);
+			}
+
 
 		public static final Params SILENT = new Params(0, new float[0], 1, 0, 0);
 	}
@@ -56,6 +65,20 @@ public final class EngineNoteSynth {
 	private static final float THUMP_FALL = (float) Math.exp(-1 / (0.05 * SAMPLE_RATE));
 	private static final float RUMBLE_FALL = (float) Math.exp(-1 / (0.045 * SAMPLE_RATE));
 	private static final float RUMBLE_POLE = (float) Math.exp(-2 * Math.PI * 700 / SAMPLE_RATE);
+	/**
+	 * The crack of the flame front, the part of a firing that makes it a bang and not a thud: a burst of noise around a few
+	 * kilohertz that rises in about a fifth of a millisecond (never a single-sample edge) and is gone in a few
+	 * milliseconds. Each cylinder cracks at its own pitch. Every firing is heard on its own at the few a second a slow
+	 * engine makes, so it is strongest there and fades out as firings run together into a note, where a crack on each would
+	 * only buzz.
+	 */
+	private static final float CRACK_RISE = (float) Math.exp(-1 / (0.0003 * SAMPLE_RATE));
+	private static final double CRACK_PULSE_GAIN = 1 / (1 - CRACK_RISE);
+	private static final float CRACK_WEIGHT = 2f;
+	private static final double CRACK_FALL_SMALL = 0.0035;
+	private static final double CRACK_FALL_BIG = 0.0085;
+	/** Firings a second at which the crack has faded to half. */
+	private static final float CRACK_FADE_AT = 20;
 	private static final float THUMP_WEIGHT = 0.45f;
 	private static final float RUMBLE_WEIGHT = 0.8f;
 	/** Firings a second at which one thump has not quite died before the next starts. */
@@ -105,6 +128,14 @@ public final class EngineNoteSynth {
 	private double thumpPhase;
 	private float rumbleEnvelope;
 	private float rumbleNoise;
+	private double crackImpulse;
+	private double crackPulse;
+	private float crackEnvelope;
+	private float crackFall = (float) Math.exp(-1 / (CRACK_FALL_SMALL * SAMPLE_RATE));
+	private float crackStrength;
+	private float crackTune = 0.3f;
+	private float crackLow;
+	private float crackBand;
 	private float toneA;
 	private float toneB;
 	private float toneDc;
@@ -140,7 +171,7 @@ public final class EngineNoteSynth {
 			if (!Float.isFinite(angle) || angle < 0 || angle >= CYCLE)
 				return Params.SILENT;
 		return new Params(finite(p.rpm, 0, 20000), angles, finite(p.firingShare, 0, 1), finite(p.load, 0, 1.3f),
-			finite(p.combustion, 0, 1));
+			finite(p.combustion, 0, 1), finite(p.size, 0, 1), finite(p.sharpness, 0, 1));
 	}
 
 	private static float finite(float value, float min, float max) {
@@ -213,6 +244,16 @@ public final class EngineNoteSynth {
 		rumbleNoise = RUMBLE_POLE * rumbleNoise + (1 - RUMBLE_POLE) * noise();
 		float rumble = rumbleNoise * rumbleEnvelope * RUMBLE_WEIGHT * pileUp;
 
+		// The crack: noise through a resonance tuned to the firing cylinder, struck by a fast pulse and gone in milliseconds
+		crackPulse = CRACK_RISE * crackPulse + (1 - CRACK_RISE) * crackImpulse;
+		crackImpulse = 0;
+		crackEnvelope = crackEnvelope * crackFall + (float) (crackPulse * CRACK_PULSE_GAIN);
+		float crackHigh = noise() - crackLow - 0.8f * crackBand;
+		crackBand += crackTune * crackHigh;
+		crackLow += crackTune * crackBand;
+		float crackShare = 1 / (1 + (eventsPerSecond / CRACK_FADE_AT) * (eventsPerSecond / CRACK_FADE_AT));
+		float crack = crackBand * crackEnvelope * CRACK_WEIGHT * crackShare;
+
 		toneA = TONE_POLE * toneA + (1 - TONE_POLE) * (float) (pulse * PULSE_GAIN);
 		toneB = TONE_POLE * toneB + (1 - TONE_POLE) * toneA;
 		toneDc = TONE_DC_POLE * toneDc + (1 - TONE_DC_POLE) * toneB;
@@ -220,7 +261,7 @@ public final class EngineNoteSynth {
 		float tone = (toneB - toneDc) * TONE_WEIGHT * toneShare;
 
 		float scale = LEVEL / (float) Math.pow(1 + 0.03f * eventsPerSecond, 0.7);
-		float mix = (float) (body * 0.5 + chuff + thump + rumble + tone) * scale * 2;
+		float mix = (float) (body * 0.5 + chuff + thump + rumble + crack + tone) * scale * 2;
 		power += (mix * mix - power) * LEVEL_FOLLOW;
 		// Only a fast engine is levelled, so the lope of a slow one is left alone, and a stopping engine is not turned up, and a resonance the firing rate happens to hit is turned down
 		float follow = toneShare * Math.min(1f, combustion * 2);
@@ -245,6 +286,8 @@ public final class EngineNoteSynth {
 		rpm = load = combustion = 0;
 		impulse = pulse = 0;
 		noiseLow = thumpEnvelope = thumpSweep = rumbleEnvelope = rumbleNoise = toneA = toneB = toneDc = 0;
+		crackImpulse = crackPulse = 0;
+		crackEnvelope = crackLow = crackBand = 0;
 		thumpPhase = 0;
 		power = TARGET_POWER;
 	}
@@ -266,8 +309,25 @@ public final class EngineNoteSynth {
 		impulse += strength * burn;
 		if (lit) {
 			thumpSweep = 1;
-			thumpPitch = 0.92f + 0.16f * (cylinderGain(index) - 0.88f) / 0.24f;
+			// A bigger cylinder thumps lower, and each has its own pitch within that
+			thumpPitch = (0.92f + 0.16f * (cylinderGain(index) - 0.88f) / 0.24f) * (1.22f - 0.44f * p.size);
+			// Its crack is tuned to it too: a small, hot cylinder cracks higher and harder than a big, cool one
+			float voice = cylinderVoice(index);
+			float hz = (1700 + 1500 * voice) * (1.25f - 0.5f * p.size) * (0.9f + 0.25f * p.sharpness);
+			crackTune = (float) (2 * Math.sin(Math.PI * Math.min(hz, 3600) / SAMPLE_RATE));
+			crackFall = (float) Math.exp(-1 / ((CRACK_FALL_SMALL + (CRACK_FALL_BIG - CRACK_FALL_SMALL) * p.size) * SAMPLE_RATE));
+			crackStrength = (0.45f + 0.55f * p.sharpness) * (0.7f + 0.3f * Math.min(1f, p.load)) * burn;
+			crackImpulse += strength * crackStrength;
 		}
+	}
+
+	/** Which of a few tones a cylinder cracks at, 0 to 1, the same each time for the same one. */
+	private static float cylinderVoice(int index) {
+		int hash = (index + 5) * 0x85EBCA6B;
+		hash ^= hash >>> 13;
+		hash *= 0xC2B2AE35;
+		hash ^= hash >>> 16;
+		return (hash & 0xFFFF) / 65535f;
 	}
 
 	/** A little difference between cylinders, the same each time for the same one. */
