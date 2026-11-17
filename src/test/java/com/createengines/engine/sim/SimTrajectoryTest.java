@@ -47,8 +47,32 @@ class SimTrajectoryTest {
 		Tuning.reset();
 		SimStressTest.Rig rig = new SimStressTest.Rig(seed);
 		EngineSimulation e = rig.engine;
+		e.trackSwing();
 		StringBuilder out = new StringBuilder();
 		for (int tick = 0; tick < TICKS; tick++) {
+			// Things that happen to a running engine: it is turned round, rebuilt from saved motion, and its oil is changed
+			switch (seed % 4) {
+				case 1 -> {
+					if (tick == 100)
+						e.setDirection(-1);
+				}
+				case 2 -> {
+					if (tick == 150)
+						e.restore(123.4, 20, 1);
+					if (tick == 200)
+						e.setDirection(-1);
+				}
+				case 3 -> {
+					if (tick == 80)
+						e.ageOil(true);
+					if (tick == 180)
+						e.lubrication().refresh(300);
+					if (tick == 230)
+						e.restore(-77.7, 5, -1);
+				}
+				default -> {
+				}
+			}
 			if (tick < 120)
 				e.tickCranked(0.5, MAX_OMEGA, EngineSimulation.rpmToOmega(tick < 60 ? 32 : 0), 1);
 			else if (tick < 240)
@@ -70,7 +94,8 @@ class SimTrajectoryTest {
 				blower += b.boost();
 			for (double v : new double[] {e.omega(), e.netTorque(), e.indicatedTorque(), e.fuelRate(), e.availableTorque(),
 				e.frictionTorque(), e.ripple(), e.thermal().temperature(), e.lubrication().film(), e.lubrication().dilution(),
-				e.lubrication().condition(), work, burned, peak, boost, blower})
+				e.lubrication().condition(), work, burned, peak, boost, blower, e.angle(), e.rotaryAngle(), e.predictedRipple(),
+				e.crankingTorque(), e.inertia(), e.direction(), e.isSustaining() ? 1 : 0, e.isStopped() ? 1 : 0})
 				out.append(String.format(Locale.ROOT, "%.9e ", v));
 		}
 		return out.toString().trim();
@@ -103,7 +128,8 @@ class SimTrajectoryTest {
 		if (a.length != b.length)
 			return "lengths differ: " + a.length + " against " + b.length;
 		String[] names = {"omega", "netTorque", "indicatedTorque", "fuelRate", "availableTorque", "frictionTorque", "ripple",
-			"temperature", "film", "dilution", "condition", "work", "burned", "peakPressure", "boost", "blower"};
+			"temperature", "film", "dilution", "condition", "work", "burned", "peakPressure", "boost", "blower", "angle", "rotaryAngle",
+			"predictedRipple", "crankingTorque", "inertia", "direction", "sustaining", "stopped"};
 		for (int i = 0; i < a.length; i++) {
 			double x = Double.parseDouble(a[i]);
 			double y = Double.parseDouble(b[i]);
