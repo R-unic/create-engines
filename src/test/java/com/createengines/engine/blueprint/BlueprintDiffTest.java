@@ -121,4 +121,28 @@ class BlueprintDiffTest {
 		assertEquals(4, BlueprintDiff.compare(engine(10, 0), nothing, 10).size());
 		assertEquals(4, BlueprintDiff.compare(nothing, engine(10, 0), 10).size());
 	}
+
+	@Test
+	void dialChangesComeOutLowestFirstThenBySouthThenEastThenByName() {
+		Blueprint want = new Blueprint("w", "", List.of(
+			part(2, 1, 0, "create_engines:cylinder_head", Map.of(), Map.of("fuel_metering", 5)),
+			part(0, 0, 1, "create_engines:crank_throw", Map.of(), Map.of("throw_angle", 90)),
+			part(1, 0, 1, "create_engines:crank_throw", Map.of(), Map.of("throw_angle", 180, "lobe_angle", 30)),
+			part(1, 0, 0, "create_engines:crank_throw", Map.of(), Map.of("throw_angle", 45)),
+			part(0, 0, 0, "create_engines:throttle", Map.of(), Map.of("idle", 7))));
+		Blueprint have = new Blueprint("h", "", List.of(
+			part(2, 1, 0, "create_engines:cylinder_head", Map.of(), Map.of("fuel_metering", 9)),
+			part(0, 0, 1, "create_engines:crank_throw", Map.of(), Map.of("throw_angle", 0)),
+			part(1, 0, 1, "create_engines:crank_throw", Map.of(), Map.of("throw_angle", 0, "lobe_angle", 0)),
+			part(1, 0, 0, "create_engines:crank_throw", Map.of(), Map.of("throw_angle", 0)),
+			part(0, 0, 0, "create_engines:throttle", Map.of(), Map.of("idle", 7))));
+		List<DialChange> changes = BlueprintDiff.dialChanges(want, have);
+		List<String> order = changes.stream()
+			.map(c -> c.x() + "," + c.y() + "," + c.z() + ":" + c.dial())
+			.toList();
+		assertEquals(List.of("1,0,0:throw_angle", "0,0,1:throw_angle", "1,0,1:lobe_angle", "1,0,1:throw_angle", "2,1,0:fuel_metering"),
+			order);
+		assertEquals(9, changes.get(4).from());
+		assertEquals(5, changes.get(4).to());
+	}
 }
