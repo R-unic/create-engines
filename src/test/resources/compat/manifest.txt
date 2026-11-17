@@ -5,6 +5,7 @@ data:data/c/tags/fluid/ethanol.json
 data:data/c/tags/fluid/gasoline.json
 data:data/c/tags/fluid/plantoil.json
 data:data/create_engines/data_maps/fluid/fuel.json	5aed70caff2b2d224164d090eceb2278d5b8a14f
+data:data/create_engines/loot_table/advancement/chief_engineer.json	28b298041108ca73ffe6fa38b375092b40c92113
 data:data/create_engines/loot_table/blocks/air_intake.json	c67253912979b22a0381f88427a063466c73394f
 data:data/create_engines/loot_table/blocks/alternator.json	5c204e3f1c9bf84130e2f70ec7275d04352e3741
 data:data/create_engines/loot_table/blocks/battery.json	24fcef6b47719a1c548ca36b8bfbbd56663463a5
@@ -126,6 +127,7 @@ data:data/create_engines/recipe/transmission.json	70740f27dc53ed3dfb41e02b9aa224
 data:data/create_engines/recipe/turbocharger.json	a3afd0032c177ee755e99fc91d07ec6f06e6faca
 data:data/create_engines/recipe/variable_supercharger.json	c6cb4cef88276cb23e7ad2d328b15891aaa97f8c
 data:data/create_engines/recipe/variable_turbocharger.json	0ffd4f113d7be04dfd7658a53434b44ff724d077
+data:data/create_engines/tags/fluid/poor_lubricants.json
 data:data/create_engines/tags/item/ferments_mash.json
 enumvalue:CasingPaint:black
 enumvalue:CasingPaint:blue
@@ -338,6 +340,7 @@ reg:CEParticles:gas
 reg:CEParticles:glow
 reg:CEParticles:spark
 reg:CERecipes:refining
+reg:CESounds:advancement_sting
 reg:CESounds:bearing_squeal
 reg:CESounds:cylinder_fire
 reg:CESounds:engine_catch

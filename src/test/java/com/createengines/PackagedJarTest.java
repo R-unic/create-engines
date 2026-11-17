@@ -43,7 +43,6 @@ class PackagedJarTest {
 		jar = Path.of(path);
 	}
 
-	/** The common classes that are allowed to name client classes; see ArchitectureRulesTest, which keeps this in step. */
 	/**
 	 * Registrate's {@code .renderer(() -> Factory::new)} compiles to a lambda whose descriptor names the client
 	 * {@code BlockEntityRendererProvider.Context}. The lambda is only ever run by the client; a server loads the class and
@@ -51,6 +50,7 @@ class PackagedJarTest {
 	 */
 	private static final Set<String> REGISTRATE_RENDERER_LAMBDAS = Set.of("com/createengines/registry/CEBlockEntities");
 
+	/** The common classes that are allowed to name client classes; see ArchitectureRulesTest, which keeps this in step. */
 	private static final Set<String> CLIENT_TOUCHING = Set.of(
 		"com/createengines/CreateEnginesClient",
 		"com/createengines/content/EngineNoteSound",

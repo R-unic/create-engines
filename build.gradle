@@ -261,7 +261,7 @@ tasks.matching { it.name == 'runVisualSmokeTest' }.configureEach { finalizedBy '
 // Compatibility-matrix rows (docs/COMPAT.md, verification track item 10): the client audit again with Flywheel off and with
 // Sodium loaded, each judged by the same verifier and allow-list as the main run. A row is green only when its verify
 // task passes. ./gradlew compatMatrix runs every row.
-[[name: 'FlywheelOff', dir: 'run/smoke-client-flywheel-off', flywheel: 'OFF'],
+[[name: 'FlywheelOff', dir: 'run/smoke-client-flywheel-off', flywheel: 'flywheel:off'],
  [name: 'Sodium', dir: 'run/smoke-client-sodium', flywheel: null]].each { row ->
     def rowDir = file(row.dir)
     def verifyName = "verifyClientSmoke${row.name}"

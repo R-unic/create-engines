@@ -11,3 +11,8 @@
 # reproduced since; a race between the sound engine's shutdown and a streaming voice finishing is the likely cause.
 # Promote it to a real investigation if it shows up outside shutdown or in most runs.
 warn: Sound engine/ERROR\].*OpenAlUtil.*Stop: Invalid name parameter
+
+# The dedicated server (the GameTest server) logs an ERROR with a NoSuchFileException when run/gametest/server.properties does
+# not exist yet, which is every first run in a fresh checkout or private copy; it writes the file itself and never logs it again.
+# Without this entry the release gate fails on its first run for a reason that is not a defect. Matches only that file.
+Failed to load properties from file: server\.properties

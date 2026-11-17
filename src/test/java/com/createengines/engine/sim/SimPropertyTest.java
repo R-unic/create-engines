@@ -42,11 +42,11 @@ class SimPropertyTest {
 		return out;
 	}
 
-	/** Replaying a seed on other threads, at the same time, gives the same run: the sim shares no hidden state. */
+	/** Replaying a seed on another thread gives the same run: the sim keeps no hidden per-thread or leftover state. */
 	@Test
-	void aSeedReplaysIdenticallyOnOtherThreadsAtTheSameTime() throws Exception {
-		// Tuning is global and the run resets it first, so the replays go one after another per thread count, but the
-		// engines themselves must not share anything mutable. Run sequential replays on a pool thread, not the test's.
+	void aSeedReplaysIdenticallyOnAnotherThread() throws Exception {
+		// Tuning is global (and reset by every run), so replays cannot overlap; each waits for the one before. What this
+		// does check is that nothing carries over from one run to the next or depends on the thread it ran on.
 		ExecutorService pool = Executors.newFixedThreadPool(1);
 		try {
 			for (int seed = 0; seed < 20; seed++) {

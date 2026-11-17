@@ -434,10 +434,33 @@ looks and feels. Tests only guard against those changing by accident.
   almost nothing; direct memory returns to its start after 9000 voices of churn; a voice replaced mid-read finishes.
   Put the 1.2.0 per-read `allocateDirect` back and two of the four fail. Not covered: the sim itself under threads
   (it is single-threaded by design), and the real sound engine.
+- Item 3: `MonkeyGameTests`, three seeds (plus `CE_MONKEY_SEED`), about 1,185 random actions each around two running
+  engines (place, break, right-click with random items including the wrench, sneak, redstone, neighbour updates, random
+  ticks, save and load round trips), then clear the area, assert no block entity is left and that a fresh engine still
+  runs. A planted exception in the crankshaft's click handler failed all three seeds. Not covered: chunk unload (the
+  eight chunk GameTests do that) and real players' packets.
+- Item 8: `CodecFuzzGameTests`: the sting packet, both particle codecs, the jerry can fluid and the refining recipe
+  round-trip to the same bytes, then take every truncation, 400 mutations and 400 garbage inputs each, and their JSON
+  forms take 1,500 malformed documents each. A planted write/read mismatch produced 80 failures. Only this mod's own
+  codecs are covered; Create's and NeoForge's are theirs.
+- Item 4: nine fixtures from the real releases (diesel, spark and rotary engines from 1.0.0, 1.1.0 and 1.2.0) in
+  `src/test/resources/compat/world`, recorded by `scripts/record-corpus.ps1` from each tag's own source, and loaded by
+  `LegacyWorldGameTests`. Each must load, keep every saved key and keep running. They are block and block-entity saves,
+  not whole world folders, so region files, chunk and player data are not exercised. v1.0.0 fails one of its own
+  GameTests (a transmission ticking loads an unloaded chunk), which the current tree does not.
+- Item 5, the jar half: `PackagedJarTest` reads the built jar's bytecode for client references from common classes and
+  checks the mixin config, filled-in metadata and resources. It found nothing beyond Registrate's renderer lambdas in
+  `CEBlockEntities`, which are listed with the reason. A dedicated server booted from the jar is not done (the build
+  makes no NeoForge server install); the GameTest server is the server-only run.
+- Item 7: the GameTest fleet budget is 2 ms for 16 engines (measured 0.4 ms), five times the baseline.
+- Item 9: the GameTest matrix also runs four combined patterns (all minimum, all maximum, two seeded mixes).
+- Item 10, in part: `./gradlew compatMatrix` runs the client audit with Flywheel off and with Sodium 0.8.13; both
+  green (see `docs/COMPAT.md`). Open: Create Aeronautics and other addons, which need the author's list and the 1.4
+  work; there is one supported Create version today.
 
-**Not started:** 3 (monkey GameTest), 4 (world corpus), 8 (codec fuzz), 10 (compatibility
-matrix, still needs the addon list), 13 (goldens). Each needs a game run, a real saved world or an addon list not
-yet chosen.
+**Not started:** 13 (goldens, set aside by request). Still open inside done items: step-size independence (item 2),
+fleet leak and allocation limits as build failures (item 7), merged GameTest and audit coverage (item 12), a server
+booted from the jar (item 5), and killing PIT survivors (item 1).
 
 1. **Mutation testing (PIT) on `engine/sim`.** Small changes to the code (a flipped comparison, a dropped term) must make
    a test fail. Survivors show assertions that never bite. The sim is pure Java, so it is cheap to set up. Report first,

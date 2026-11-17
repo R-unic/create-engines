@@ -114,7 +114,9 @@ class CompatManifestTest {
 					while (m.find())
 						out.put("enumvalue:" + name + ":" + m.group(1), "");
 				}
-				if (text.contains("CompoundTag")) {
+				// LegacyWorldGameTests only reads fixtures and mentions keys of its own (an environment variable, the snbt
+				// layout); none of them is saved data, and recording them would pin names no world has
+				if (text.contains("CompoundTag") && !name.equals("LegacyWorldGameTests")) {
 					m = NBT_KEY.matcher(text);
 					while (m.find())
 						out.put("nbt:" + name + ":" + m.group(1), "");
