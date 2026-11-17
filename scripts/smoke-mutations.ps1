@@ -1,12 +1,12 @@
 <#
 .SYNOPSIS
-  Proves the smoke harness can fail: breaks a PRIVATE COPY of the mod in ten known ways and checks each break is caught.
+  Proves the smoke harness can fail: breaks a PRIVATE COPY of the mod in eleven known ways and checks each break is caught.
 
 .DESCRIPTION
   A harness that has only ever passed has proved nothing. This breaks things on purpose (a deleted loot table, a missing
   translation, a missing texture, a Ponder page that throws, a block entity that chokes on hostile data, a recipe whose
   ingredient matches nothing, a sound missing from sounds.json, a direct-memory leak like the 1.2.0 bug, a slow engine tick,
-  a missing particle description) and runs the smoke layers, which must go red with the right check named for each.
+  a missing particle description, the multipart models no longer shared) and runs the smoke layers, which must go red with the right check named for each.
 
   It edits files in -Copy, never in a real checkout, and refuses to run where a .git folder exists.
 
@@ -65,6 +65,8 @@ switch ($Set) {
         $expect += 'EXPECT [ponder] sump (sump) plays'
         Edit-File "$d\src\main\resources\assets\create_engines\sounds.json" '"exhaust_pop": {' '"exhaust_pop_renamed": {'
         $expect += 'EXPECT [sound] event exhaust_pop is in sounds.json'
+        Edit-File "$d\src\main\java\com\createengines\client\SharedCasingModels.java" 'if (own != canonical) {' 'if (false) {'
+        $expect += "EXPECT [models] every multipart state of the mod shares its block's one baked model"
         Edit-File "$d\src\main\java\com\createengines\content\EngineNotePcm.java" 'ByteBuffer read(int size) {' "static final java.util.List<ByteBuffer> LEAK = new java.util.ArrayList<>();`n`tByteBuffer read(int size) {`n`t`tLEAK.add(ByteBuffer.allocateDirect(256 * 1024));"
         $expect += 'EXPECT [perf] direct memory does not climb while engines run'
         $task = 'runSmokeAudit'
