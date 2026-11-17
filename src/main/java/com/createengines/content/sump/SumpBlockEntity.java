@@ -63,7 +63,7 @@ public class SumpBlockEntity extends SmartBlockEntity implements IHaveGoggleInfo
 
 	/** How often, in ticks, the comparator signal is worked out again. */
 	private static final int SIGNAL_INTERVAL = 10;
-	private static final int SIGNAL_TANKS = 4;
+	public static final int SIGNAL_TANKS = 4;
 
 	protected SmartFluidTankBehaviour tank;
 	protected SmartFluidTankBehaviour used;
@@ -218,7 +218,11 @@ public class SumpBlockEntity extends SmartBlockEntity implements IHaveGoggleInfo
 			return 0;
 		SmartFluidTank oil = tank();
 		SmartFluidTank spent = usedTank();
-		int movable = Math.min(whole, Math.min(oil.getFluidAmount(), spent.getSpace()));
+		// Only proper engine oil wears into used oil, which can be recycled into engine oil. A poor lubricant such as plant
+		// oil is burned off instead, so it can never be laundered into a better oil, and it does not need room in the used tank
+		boolean wears = CEFluids.isEngineOil(oil.getFluid());
+		int room = wears ? spent.getSpace() : Integer.MAX_VALUE;
+		int movable = Math.min(whole, Math.min(oil.getFluidAmount(), room));
 		if (movable <= 0) {
 			// Nothing to swap with, so nothing builds up while the pan is empty or the used oil has nowhere to go
 			exchangeCredit = Math.min(exchangeCredit, 1);
@@ -228,8 +232,9 @@ public class SumpBlockEntity extends SmartBlockEntity implements IHaveGoggleInfo
 		int moved = taken.getAmount();
 		if (moved <= 0)
 			return 0;
-		spent.fill(new FluidStack(CEFluids.USED_OIL.get()
-			.getSource(), moved), IFluidHandler.FluidAction.EXECUTE);
+		if (wears)
+			spent.fill(new FluidStack(CEFluids.USED_OIL.get()
+				.getSource(), moved), IFluidHandler.FluidAction.EXECUTE);
 		exchangeCredit -= moved;
 		return moved;
 	}

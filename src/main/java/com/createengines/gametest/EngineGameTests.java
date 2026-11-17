@@ -409,6 +409,64 @@ public class EngineGameTests {
 
 	/**
 	 * A vanilla comparator beside an oil pan reads the tank its dial names, so a lamp it feeds lights once the pan holds oil.
+	/** Engine oil swapped out of the pan becomes used oil, which is what the recycling recipes take. */
+	@GameTest(template = "empty")
+	public static void anExchangeTurnsEngineOilIntoUsedOil(GameTestHelper helper) {
+		BlockPos sump = new BlockPos(3, 1, 2);
+		helper.setBlock(sump, CEBlocks.SUMP.getDefaultState());
+		SumpBlockEntity pan = helper.getBlockEntity(sump);
+		pan.exchange.setValue(2);
+		pan.tank()
+			.fill(new FluidStack(CEFluids.ENGINE_OIL.get()
+				.getSource(), 400), FluidAction.EXECUTE);
+		double moved = pan.exchange(1000);
+		helper.assertTrue(moved > 0, "Engine oil should be swapped out");
+		helper.assertTrue(CEFluids.isUsedOil(pan.usedTank()
+			.getFluid()) && pan.usedTank()
+				.getFluidAmount() == (int) moved,
+			"What was swapped out should be in the used tank, got " + pan.usedTank()
+				.getFluid());
+		helper.succeed();
+	}
+
+	/**
+	 * Plant oil swapped out of the pan is burned off, not turned into used oil: used oil recycles into engine oil, which
+	 * would let a poor lubricant skip the slime and glycerin that engine oil costs. It still counts as swapped, and it
+	 * does not wait for room in the used tank.
+	 */
+	@GameTest(template = "empty")
+	public static void anExchangeNeverTurnsPlantOilIntoUsedOil(GameTestHelper helper) {
+		BlockPos sump = new BlockPos(3, 1, 2);
+		helper.setBlock(sump, CEBlocks.SUMP.getDefaultState());
+		SumpBlockEntity pan = helper.getBlockEntity(sump);
+		pan.exchange.setValue(2);
+		pan.tank()
+			.fill(new FluidStack(CEFluids.PLANT_OIL.get()
+				.getSource(), 400), FluidAction.EXECUTE);
+		pan.usedTank()
+			.fill(new FluidStack(CEFluids.USED_OIL.get()
+				.getSource(), pan.usedTank()
+					.getCapacity()),
+				FluidAction.EXECUTE);
+		int before = pan.usedTank()
+			.getFluidAmount();
+		double moved = pan.exchange(1000);
+		helper.assertTrue(moved > 0, "Plant oil should still be swapped out, even with the used tank full");
+		helper.assertTrue(pan.usedTank()
+			.getFluidAmount() == before, "Plant oil must not add anything to the used tank");
+		helper.assertTrue(pan.tank()
+			.getFluidAmount() == 400 - (int) moved, "The swapped plant oil should leave the pan");
+		pan.usedTank()
+			.drain(before, FluidAction.EXECUTE);
+		pan.tank()
+			.fill(new FluidStack(CEFluids.PLANT_OIL.get()
+				.getSource(), 400), FluidAction.EXECUTE);
+		pan.exchange(1000);
+		helper.assertTrue(pan.usedTank()
+			.isEmpty(), "An empty used tank stays empty when plant oil is swapped");
+		helper.succeed();
+	}
+
 	 * A comparator's facing is its input side, so it faces the pan and the lamp sits behind it.
 	 */
 	@GameTest(template = "empty", timeoutTicks = 200)

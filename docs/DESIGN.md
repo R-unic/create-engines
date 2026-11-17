@@ -673,6 +673,14 @@ Variable-Drive Supercharger = Variable-Geometry Turbocharger.**
   Engine Oil, Used Oil, Coolant or Pilot Fuel. The signal is 0 for an empty tank and 1 to 15 as it fills, 15 only when
   full (`SumpBlockEntity.comparatorSignal`), refreshed every ten ticks, so a pump can top the oil up or an alarm can
   sound when it runs low. Advancement: Dipstick (`SUMP_METERED`, a comparator reading the pan of a running engine).
+- **Only engine oil wears into used oil (2026-11-17).** The oil exchange used to turn anything the oil tank accepted, plant
+  oil and the `c:plantoil`-style tags included, into Used Oil, and the recycling recipes turn Used Oil into Engine Oil. That
+  let a poor lubricant skip the slime or glycerin that engine oil costs (about 0.6 engine oil per plant oil, 0.75
+  superheated, so a gate bypass and not a free-oil loop). `SumpBlockEntity.exchange` now burns a poor lubricant off: it
+  still leaves the pan and still counts as swapped, it adds nothing to the used tank, and it does not wait for room there.
+  Engine oil is unchanged. A behaviour change for any build that piped used oil out of a plant-oil pan, approved by the
+  author as an exploit fix: list it under Exceptions in the next release record. GameTests:
+  `anExchangeTurnsEngineOilIntoUsedOil`, `anExchangeNeverTurnsPlantOilIntoUsedOil`.
 - **Schematic pricing.** Fitted parts are block state flags (see `PartInstallation`), and Create prices a block by its
   item alone, so a Schematicannon used to build a finished cylinder, head or rotor housing with its pistons, rods,
   injectors, plugs and rotor for free. Those three blocks now implement Create's `SpecialBlockItemRequirement`
