@@ -126,6 +126,10 @@ public final class EngineController {
 
 	private final CrankshaftBlockEntity primary;
 	private final EngineLayout layout;
+	/** Layout-derived values, worked out on first use: the layout is fixed for the life of a controller. */
+	private float muffling = Float.NaN;
+	private @Nullable List<EngineLayout.PortNetwork> trapRuns;
+	private int exhaustHeads;
 	private final EngineSimulation sim;
 	/** Parallel to {@link EngineLayout#cylinders()}; null where the cylinder can't work at all. */
 	private final List<@Nullable CylinderModel> models;
@@ -1141,6 +1145,13 @@ public final class EngineController {
 	 * fully muffled if every path through it goes through a muffler and half if a muffler can be gone round.
 	 */
 	private float muffling() {
+		// Depends only on the layout, which never changes for a controller
+		if (Float.isNaN(muffling))
+			muffling = computeMuffling();
+		return muffling;
+	}
+
+	private float computeMuffling() {
 		java.util.List<EngineLayout.PortNetwork> runs = layout.ports()
 			.stream()
 			.filter(network -> network.kind() == com.createengines.content.airflow.PortKind.EXHAUST)
@@ -1172,19 +1183,24 @@ public final class EngineController {
 				soot += model.takeSoot();
 		if (!(soot > 0))
 			return;
-		java.util.List<EngineLayout.PortNetwork> runs = layout.ports()
-			.stream()
-			.filter(network -> network.kind() == com.createengines.content.airflow.PortKind.EXHAUST
-				&& !network.traps()
-					.isEmpty())
-			.toList();
+		if (trapRuns == null) {
+			// Layout-only, so worked out once
+			trapRuns = layout.ports()
+				.stream()
+				.filter(network -> network.kind() == com.createengines.content.airflow.PortKind.EXHAUST
+					&& !network.traps()
+						.isEmpty())
+				.toList();
+			exhaustHeads = layout.ports()
+				.stream()
+				.filter(network -> network.kind() == com.createengines.content.airflow.PortKind.EXHAUST)
+				.mapToInt(EngineLayout.PortNetwork::heads)
+				.sum();
+		}
+		java.util.List<EngineLayout.PortNetwork> runs = trapRuns;
 		if (runs.isEmpty())
 			return;
-		int totalHeads = layout.ports()
-			.stream()
-			.filter(network -> network.kind() == com.createengines.content.airflow.PortKind.EXHAUST)
-			.mapToInt(EngineLayout.PortNetwork::heads)
-			.sum();
+		int totalHeads = exhaustHeads;
 		for (EngineLayout.PortNetwork run : runs) {
 			boolean series = run.traps()
 				.stream()
