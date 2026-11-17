@@ -59,7 +59,7 @@ switch ($Set) {
         [System.IO.File]::WriteAllLines($lang, ([System.IO.File]::ReadAllLines($lang) | Where-Object { $_ -notmatch '"block.create_engines.sump":' }))
         $expect += 'EXPECT [lang] block sump has a translation'
         Edit-File "$d\src\main\resources\assets\create_engines\models\block\sump\block.json" '"pan": "create_engines:block/black_oxide"' '"pan": "create_engines:block/does_not_exist"'
-        $expect += 'EXPECT [models] block sump - has a face with the missing texture'
+        $expect += 'EXPECT [models] block sump - state Block{create_engines:sump} has a face with the missing texture (unculled)'
         $expect += 'EXPECT [render] gallery_0 has no missing-texture pink'
         Edit-File "$d\src\main\java\com\createengines\ponder\EngineScenes.java" "CreateSceneBuilder scene = new CreateSceneBuilder(builder);`n`t`tscene.title(`"sump`", `"An Oil Sump`");" "CreateSceneBuilder scene = new CreateSceneBuilder(builder);`n`t`tif (builder != null) throw new IllegalStateException(`"mutation: broken storyboard`");`n`t`tscene.title(`"sump`", `"An Oil Sump`");"
         $expect += 'EXPECT [ponder] sump (sump) plays'

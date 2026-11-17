@@ -210,7 +210,10 @@ power at the top of the curve), and two engines on one kinetic network no longer
   refuse such an angle by going silent; the angles are now wrapped into the cycle and kept in firing order before they
   are sent and when they are read.
 - Sound: the cylinder firing sound is redesigned (a sharp crack per firing that fades as firings merge into a tone, with
-  engine size and sharpness, load and boost, shaping it), and the engine clatter sample is regenerated. Machine and
+  engine size and sharpness, load and boost, shaping it), and the engine clatter sample is regenerated. The note is now
+  locked to the cam's place in the 720 degree cycle (it used to keep its own clock, a tenth of a second behind), so its
+  firings land with the exhaust flames and puffs instead of drifting against them; an engine whose cam is not geared 1:2
+  to its crank, and rotary engines, have no such place and are unchanged. Machine and
   starter loops wait out the sound engine's settle delay, fade out beyond 48 blocks, ignore bad pitch and volume values,
   and drop finished instances instead of keeping them until you leave the world.
 - Advancements: each one earned plays a short synthesised sting. Eighteen minor ones (such as Bottom End, Bore Ambition, Turn the Key and Oil Pan) show a toast without a line in chat; every other shown one still announces. Ten that were hidden before are now shown (Smoke Signals, Fouled Up, Gas in the Oil, Overworked, Under the Hood, Psssht, Gear Up, Always Fresh, Cool Running, Block Heater). Six keep their IDs and criteria but sit under a new parent in the tab (Let It Shift, Gearhead, Full Driveline and Reverse Engineering under Gear Up, Tucked In under Under the Hood, Gas in the Oil under Smoke Signals). Chief Engineer now also hands over an engraved Maker's Plate named Chief Engineer, from the new loot table `create_engines:advancement/chief_engineer`.
@@ -223,6 +226,14 @@ power at the top of the curve), and two engines on one kinetic network no longer
 - Fix: two engines on one kinetic network no longer keep each other turning with no fuel. An engine holds its crank to
   the network's speed only when something other than an engine (a motor, a wheel, a hand crank) is driving it. An engine
   split by a missing chunk also stops its starter cranking while it is split.
+- Fix: a network of coupled engines could go on turning for good with nothing driving it. When two crank lines are
+  geared into a ring (shafts or chain drives at both ends), Create can leave every block following its neighbour with no
+  generator left in the ring: the engines read stalled while the whole network kept turning, and a saved world brought it
+  back after a restart. Every second, a crank or alternator now looks at its network; if it is turning and no generator in
+  it publishes a speed, on two looks in a row, the whole network is brought to rest. It does nothing if any generator is
+  running, if a source that is not a Create generator is present, or if a neighbouring chunk of any block is not loaded.
+  A crank that is not its engine's primary also stops publishing a speed and stress capacity, so a stale value saved on a
+  coupled line cannot keep driving the network.
 - Fix: the two dials on an Oil Sump (oil exchange and comparator signal) shared one save key and overwrote each other, so
   the screen could show the other dial's value. Each has its own key now; a sump saved before this still loads, and both
   dials read the old shared key when they have none of their own.
