@@ -4,7 +4,7 @@ data:data/c/tags/fluid/diesel.json
 data:data/c/tags/fluid/ethanol.json
 data:data/c/tags/fluid/gasoline.json
 data:data/c/tags/fluid/plantoil.json
-data:data/create_engines/data_maps/fluid/fuel.json	5aed70caff2b2d224164d090eceb2278d5b8a14f
+data:data/create_engines/data_maps/fluid/fuel.json	5c568a10d7a15e48c70fcc368b664b93859e8b3c
 data:data/create_engines/loot_table/advancement/chief_engineer.json	28b298041108ca73ffe6fa38b375092b40c92113
 data:data/create_engines/loot_table/blocks/air_intake.json	c67253912979b22a0381f88427a063466c73394f
 data:data/create_engines/loot_table/blocks/alternator.json	5c204e3f1c9bf84130e2f70ec7275d04352e3741
@@ -24,8 +24,17 @@ data:data/create_engines/loot_table/blocks/engine_cased_cogwheel.json	33514fcbec
 data:data/create_engines/loot_table/blocks/engine_cased_large_cogwheel.json	9dec2988095dc37c8eb96e3e7bd55f085f16c75f
 data:data/create_engines/loot_table/blocks/engine_cased_shaft.json	ccad8dabb7a47d1ec3124b4f480c5ca794d48cfe
 data:data/create_engines/loot_table/blocks/engine_casing.json	a12093de3837ec19148c98d804ba4b3fd1396ef2
+data:data/create_engines/loot_table/blocks/engine_louvred_cased_cogwheel.json	9820b012ea67664890f4f7f3e4a70d6ad0a78fcc
+data:data/create_engines/loot_table/blocks/engine_louvred_cased_large_cogwheel.json	34876392dc460987983b2c9b2422d943772a37af
+data:data/create_engines/loot_table/blocks/engine_louvred_cased_shaft.json	7b959904048a30e85d440efe2946c895cec4a22b
 data:data/create_engines/loot_table/blocks/engine_louvred_casing.json	6e51cbee8e28793dc55fd400e03f3592098860ec
+data:data/create_engines/loot_table/blocks/engine_riveted_cased_cogwheel.json	1e16d07bcd67560b87625d1c936cdf9a6b7492d6
+data:data/create_engines/loot_table/blocks/engine_riveted_cased_large_cogwheel.json	6b8088572a895f0a87f9efc5192070f7fa5fbc69
+data:data/create_engines/loot_table/blocks/engine_riveted_cased_shaft.json	a7c6c1624a9d371aeb08fd5bb21f5bd34549803e
 data:data/create_engines/loot_table/blocks/engine_riveted_casing.json	afbe266bb9c29649d9cbe2f725f32766902bbd9c
+data:data/create_engines/loot_table/blocks/engine_window_cased_cogwheel.json	d782907780d06a378d29e448c30488dd3c9e6a79
+data:data/create_engines/loot_table/blocks/engine_window_cased_large_cogwheel.json	5d1222d908dd07b28a812de01b051efa22354e5b
+data:data/create_engines/loot_table/blocks/engine_window_cased_shaft.json	46fbcf03e5c58f432e7d4b7fe09ee979655d0e1b
 data:data/create_engines/loot_table/blocks/engine_window_casing.json	bf745d0a101f8dd609036468b681808e924a73db
 data:data/create_engines/loot_table/blocks/exhaust_manifold.json	d18d2f821c6c674637f6dcfa793c3c846d84d3ef
 data:data/create_engines/loot_table/blocks/exhaust_outlet.json	c97cf6eafc27d6912fe43a51cc13751fc1e4a78c
@@ -146,6 +155,10 @@ enumvalue:CasingPaint:purple
 enumvalue:CasingPaint:red
 enumvalue:CasingPaint:white
 enumvalue:CasingPaint:yellow
+enumvalue:CasingStyle:louvred
+enumvalue:CasingStyle:plain
+enumvalue:CasingStyle:riveted
+enumvalue:CasingStyle:window
 enumvalue:ColumnSectionBlock:active
 enumvalue:ColumnSectionBlock:lean_down
 enumvalue:ColumnSectionBlock:lean_up
@@ -225,6 +238,9 @@ nbt:DynoBlockEntity:Rated
 nbt:DynoBlockEntity:Readout
 nbt:DynoBlockEntity:Rpm
 nbt:DynoBlockEntity:Torque
+nbt:EngineGameTests:OilExchange
+nbt:EngineGameTests:ScrollValue
+nbt:EngineGameTests:SumpSignal
 nbt:EngineSummary:Boost
 nbt:EngineSummary:Cause
 nbt:EngineSummary:Condition
@@ -325,6 +341,7 @@ prop:CylinderBlock:piston
 prop:CylinderHeadBlock:fine_injector
 prop:CylinderHeadBlock:injector
 prop:CylinderHeadBlock:spark_plug
+prop:Encasing:casing_style
 prop:Encasing:encased
 prop:Encasing:windowed
 prop:EngineCasingBlock:paint
@@ -351,6 +368,7 @@ reg:CESounds:exhaust_pop
 reg:CESounds:flare_whoosh
 reg:CESounds:intake_roar
 reg:CESounds:metal_tick
+reg:CESounds:preignition_knock
 reg:CESounds:soot_catch
 reg:CESounds:starter_whir
 reg:CESounds:supercharger_whine

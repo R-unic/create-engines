@@ -53,7 +53,12 @@ public final class ServerAudit {
 	 * Blocks that are meant to have no item: the encased shaft and cogwheels are made by clicking engine casing onto a
 	 * Create shaft or cogwheel, as Create's own encased parts are, and are never held.
 	 */
-	private static final Set<String> NO_ITEM = Set.of("engine_cased_shaft", "engine_cased_cogwheel", "engine_cased_large_cogwheel");
+	private static final Set<String> NO_ITEM = java.util.stream.Stream
+		.of("engine_cased_shaft", "engine_cased_cogwheel", "engine_cased_large_cogwheel")
+		.flatMap(name -> java.util.stream.Stream.concat(java.util.stream.Stream.of(name),
+			java.util.stream.Stream.of("riveted", "louvred", "window")
+				.map(plate -> name.replace("engine_", "engine_" + plate + "_"))))
+		.collect(java.util.stream.Collectors.toUnmodifiableSet());
 
 	/** Block entity save keys that legitimately differ after a load: Create sets this one flag when it loads a kinetic block. */
 	private static final Set<String> VOLATILE_KEYS = Set.of("NeedsSpeedUpdate");

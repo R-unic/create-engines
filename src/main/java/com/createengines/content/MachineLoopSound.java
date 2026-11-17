@@ -29,6 +29,9 @@ public final class MachineLoopSound extends AbstractTickableSoundInstance {
 	private static final float AUDIBLE = 0.02f;
 	/** How often, in ticks, loops the sound engine dropped are forgotten. */
 	private static final int PRUNE_TICKS = 200;
+	/** Most loops alive at once: a field of dry engines gets the nearest few voices, not hundreds of sources. */
+	private static final int MAX_LOOPS = 16;
+	private static final VoiceBudget BUDGET = new VoiceBudget(MAX_LOOPS);
 	private static long lastPrune;
 	private final Object owner;
 	private final long startedAt;
@@ -72,15 +75,32 @@ public final class MachineLoopSound extends AbstractTickableSoundInstance {
 			lastPrune = now;
 			// Loops the sound engine dropped without ticking would otherwise keep their sources alive until the world is left
 			PLAYING.values()
-				.removeIf(loop -> VoiceClock.settled(now, loop.startedAt) && (loop.isStopped() || !sounds.isActive(loop)));
+				.removeIf(loop -> {
+					boolean dropped = VoiceClock.settled(now, loop.startedAt) && (loop.isStopped() || !sounds.isActive(loop));
+					if (dropped)
+						BUDGET.finished(loop.owner, now);
+					return dropped;
+				});
+			BUDGET.prune(now);
 		}
 		MachineLoopSound current = PLAYING.get(owner);
 		// A new instance gets a moment to start; one the sound engine declined is only tried again after that, not every tick
 		if (current != null && (!VoiceClock.settled(now, current.startedAt) || !current.isStopped() && sounds.isActive(current)))
 			return;
+		// A replaced instance the sound engine dropped counts as finished, so a flapping source rests between starts
+		if (current != null)
+			BUDGET.finished(owner, now);
+		if (!BUDGET.tryStart(owner, now, PLAYING.size() - (PLAYING.containsKey(owner) ? 1 : 0)))
+			return;
 		MachineLoopSound loop = new MachineLoopSound(owner, at, sound, loudest, source, now);
 		PLAYING.put(owner, loop);
-		sounds.play(loop);
+		try {
+			sounds.play(loop);
+		} catch (RuntimeException e) {
+			// Sound trouble must never take the game tick down with it
+			PLAYING.remove(owner, loop);
+			BUDGET.finished(owner, now);
+		}
 	}
 
 	private static boolean near(BlockPos at) {
@@ -96,6 +116,7 @@ public final class MachineLoopSound extends AbstractTickableSoundInstance {
 	/** Forgets every loop, for when the player leaves a world: the sound engine has already dropped them, and the map would keep their sources alive. */
 	public static void clear() {
 		PLAYING.clear();
+		BUDGET.clear();
 	}
 
 	/** The loop fades in from nothing, which the sound engine would otherwise skip as inaudible. */
@@ -133,7 +154,11 @@ public final class MachineLoopSound extends AbstractTickableSoundInstance {
 	}
 
 	private void finish() {
-		PLAYING.remove(owner, this);
+		if (PLAYING.remove(owner, this)) {
+			Minecraft minecraft = Minecraft.getInstance();
+			if (minecraft.level != null)
+				BUDGET.finished(owner, minecraft.level.getGameTime());
+		}
 		stop();
 	}
 }

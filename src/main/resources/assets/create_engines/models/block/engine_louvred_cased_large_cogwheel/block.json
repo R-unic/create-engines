@@ -1,0 +1,157 @@
+{
+  "textures": {
+    "casing": "create_engines:block/engine_louvred_casing",
+    "particle": "create_engines:block/engine_louvred_casing",
+    "side": "create_engines:block/engine_cased_cogwheel_side_connected",
+    "4": "create_engines:block/black_oxide",
+    "1": "block/stripped_spruce_log_top"
+  },
+  "elements": [
+    {
+      "from": [
+        0,
+        0,
+        0
+      ],
+      "to": [
+        16,
+        6,
+        16
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            8,
+            13,
+            16,
+            16
+          ],
+          "texture": "#side",
+          "tintindex": 0
+        },
+        "east": {
+          "uv": [
+            8,
+            13,
+            16,
+            16
+          ],
+          "texture": "#side",
+          "tintindex": 0
+        },
+        "south": {
+          "uv": [
+            8,
+            13,
+            16,
+            16
+          ],
+          "texture": "#side",
+          "tintindex": 0
+        },
+        "west": {
+          "uv": [
+            8,
+            13,
+            16,
+            16
+          ],
+          "texture": "#side",
+          "tintindex": 0
+        },
+        "up": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#1"
+        },
+        "down": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#casing",
+          "tintindex": 0
+        }
+      }
+    },
+    {
+      "from": [
+        0,
+        10,
+        0
+      ],
+      "to": [
+        16,
+        16,
+        16
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            8,
+            8,
+            16,
+            11
+          ],
+          "texture": "#side",
+          "tintindex": 0
+        },
+        "east": {
+          "uv": [
+            8,
+            8,
+            16,
+            11
+          ],
+          "texture": "#side",
+          "tintindex": 0
+        },
+        "south": {
+          "uv": [
+            8,
+            8,
+            16,
+            11
+          ],
+          "texture": "#side",
+          "tintindex": 0
+        },
+        "west": {
+          "uv": [
+            8,
+            8,
+            16,
+            11
+          ],
+          "texture": "#side",
+          "tintindex": 0
+        },
+        "up": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#casing",
+          "tintindex": 0
+        },
+        "down": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#1"
+        }
+      }
+    }
+  ]
+}

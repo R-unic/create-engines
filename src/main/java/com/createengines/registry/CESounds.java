@@ -39,6 +39,8 @@ public final class CESounds {
 	public static final DeferredHolder<SoundEvent, SoundEvent> EXHAUST_POP = register("exhaust_pop");
 	/** Hot metal ticking as it cools, for a while after an engine stops. */
 	public static final DeferredHolder<SoundEvent, SoundEvent> METAL_TICK = register("metal_tick");
+	/** A charge lighting itself early under boost: a quick run of hard metallic knocks out of the exhaust. */
+	public static final DeferredHolder<SoundEvent, SoundEvent> PREIGNITION_KNOCK = register("preignition_knock");
 	/** Valve gear ticking over the hum of the gears: a seamless loop, pitched with the crank. */
 	public static final DeferredHolder<SoundEvent, SoundEvent> ENGINE_CLATTER = register("engine_clatter");
 	/** Bearings running dry: a seamless loop, as loud as the engine is short of oil. */

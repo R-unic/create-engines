@@ -200,21 +200,24 @@ public final class CEBlockEntities {
 	public static final BlockEntityEntry<KineticBlockEntity> ENCASED_SHAFT = REGISTRATE
 		.blockEntity("engine_cased_shaft", KineticBlockEntity::new)
 		.visual(() -> ShaftVisual::new, false)
-		.validBlocks(CEBlocks.ENGINE_CASED_SHAFT)
+		.validBlocks(CEBlocks.ENGINE_CASED_SHAFT, CEBlocks.ENGINE_RIVETED_CASED_SHAFT, CEBlocks.ENGINE_LOUVRED_CASED_SHAFT,
+			CEBlocks.ENGINE_WINDOW_CASED_SHAFT)
 		.renderer(() -> ShaftRenderer::new)
 		.register();
 
 	public static final BlockEntityEntry<SimpleKineticBlockEntity> ENCASED_COGWHEEL = REGISTRATE
 		.blockEntity("engine_cased_cogwheel", SimpleKineticBlockEntity::new)
 		.visual(() -> EncasedCogVisual::small, false)
-		.validBlocks(CEBlocks.ENGINE_CASED_COGWHEEL)
+		.validBlocks(CEBlocks.ENGINE_CASED_COGWHEEL, CEBlocks.ENGINE_RIVETED_CASED_COGWHEEL,
+			CEBlocks.ENGINE_LOUVRED_CASED_COGWHEEL, CEBlocks.ENGINE_WINDOW_CASED_COGWHEEL)
 		.renderer(() -> EncasedCogRenderer::small)
 		.register();
 
 	public static final BlockEntityEntry<SimpleKineticBlockEntity> ENCASED_LARGE_COGWHEEL = REGISTRATE
 		.blockEntity("engine_cased_large_cogwheel", SimpleKineticBlockEntity::new)
 		.visual(() -> EncasedCogVisual::large, false)
-		.validBlocks(CEBlocks.ENGINE_CASED_LARGE_COGWHEEL)
+		.validBlocks(CEBlocks.ENGINE_CASED_LARGE_COGWHEEL, CEBlocks.ENGINE_RIVETED_CASED_LARGE_COGWHEEL,
+			CEBlocks.ENGINE_LOUVRED_CASED_LARGE_COGWHEEL, CEBlocks.ENGINE_WINDOW_CASED_LARGE_COGWHEEL)
 		.renderer(() -> EncasedCogRenderer::large)
 		.register();
 

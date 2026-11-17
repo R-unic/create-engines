@@ -995,7 +995,7 @@ def engine_casing():
     write("engine_casing/block", CASING_TEXTURES,
           [{"from": [0, 0, 0], "to": [16, 16, 16], "faces": casing_faces(FACES, tint=True)}])
     write_item("engine_casing/item", "engine_casing/block")
-    # The riveted and louvred plates: the same cube on their own sheet. They are never clad onto a part.
+    # The riveted and louvred plates: the same cube on their own sheet. Clad parts use the encased models further down.
     for kind in ("riveted", "louvred"):
         sprite = "create_engines:block/engine_%s_casing" % kind
         write("engine_%s_casing/block" % kind, {"casing": sprite, "particle": sprite},
@@ -1019,6 +1019,10 @@ def engine_casing():
     elements.append({"from": [4, 14, 4], "to": [12, 14, 12], "faces": {"up": {"texture": "#dark"}}})
     elements.append({"from": [4, 2, 4], "to": [12, 2, 12], "faces": {"down": {"texture": "#dark"}}})
     write("engine_casing/encased", CASING_TEXTURES, elements)
+    # A part clad in the riveted or louvred plate: the same cap and opening, with that plate on the four sides
+    for kind in ("riveted", "louvred"):
+        sprite = "create_engines:block/engine_%s_casing" % kind
+        write("engine_%s_casing/encased" % kind, dict(CASING_TEXTURES, casing=sprite, particle=sprite), elements)
     # The same for a part behind a window: the four sides are the window plate, so the part inside shows through the glass
     window_elements = [dict(e) for e in elements]
     window_elements[0] = {"from": [0, 0, 0], "to": [16, 16, 16],
@@ -1030,6 +1034,27 @@ def engine_casing():
     # Create's with the casing faces tinted (tools/derive_cased_models.py); only the items are children of Create's.
     opening = {"casing": CASING_SPRITE, "opening": DARK, "particle": CASING_SPRITE}
     write_child("engine_cased_shaft/item", "create:block/encased_shaft/item", opening)
+
+    # The shaft and cogwheels clad in the other three plates: copies of the plain cased models (derived from Create's, see
+    # tools/derive_cased_models.py) with the plate swapped in for the casing faces. The window ones show the part through
+    # their glass, so they draw in the translucent layer. The cog sides keep the plain steel ones.
+    for kind in ("riveted", "louvred", "window"):
+        sprite = "create_engines:block/engine_%s_casing" % kind
+        for part, suffixes in (("shaft", ("",)), ("cogwheel", ("", "_top", "_bottom", "_top_bottom")),
+                               ("large_cogwheel", ("", "_top", "_bottom", "_top_bottom"))):
+            for suffix in suffixes:
+                with open(os.path.join(OUT, "engine_cased_%s/block%s.json" % (part, suffix))) as fh:
+                    model = json.load(fh)
+                model["textures"]["casing"] = sprite
+                model["textures"]["particle"] = sprite
+                if kind == "window":
+                    model["render_type"] = "minecraft:translucent"
+                target = os.path.join(OUT, "engine_%s_cased_%s/block%s.json" % (kind, part, suffix))
+                os.makedirs(os.path.dirname(target), exist_ok=True)
+                with open(target, "w", newline="\n") as fh:
+                    json.dump(model, fh, indent=2)
+                    fh.write("\n")
+                print("wrote", target)
 
 
 def write_child(path, parent, textures):

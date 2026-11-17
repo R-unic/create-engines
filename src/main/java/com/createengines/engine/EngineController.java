@@ -68,6 +68,7 @@ import com.createengines.engine.topology.EngineLayout.Cylinder;
 import com.createengines.engine.topology.EngineLayout.Turbo;
 import com.createengines.engine.topology.PrecisionParts;
 import com.createengines.registry.CEFluids;
+import com.simibubi.create.content.kinetics.base.KineticBlockEntity;
 import com.simibubi.create.foundation.blockEntity.behaviour.scrollValue.ScrollValueBehaviour;
 import com.simibubi.create.infrastructure.config.AllConfigs;
 
@@ -455,6 +456,13 @@ public final class EngineController {
 			else if (layout.broken())
 				heldOmega = 0;
 			sim.restore(sim.angle(), 0, sim.direction());
+			// Nothing is turning over, so no starter is pushing: left alone its last cranking stress would stay on its input
+			// network (and its goggles would still say cranking) for as long as the engine stays split
+			activeStarter = null;
+			cranking = false;
+			for (BlockPos pos : layout.starters())
+				if (LoadedBlocks.blockEntity(level, pos) instanceof StarterBlockEntity starter)
+					starter.updateCranking(layout.primary(), 0, false);
 			publishSpeed();
 			publishCapacity(torqueScale);
 			if (ticks % SYNC_INTERVAL == 0)
@@ -485,7 +493,7 @@ public final class EngineController {
 		// Anything turning the crank harder than the engine itself: another kinetic source, or a starter
 		double floor = 0;
 		int floorDirection = sim.direction();
-		if (primary.hasSource() && crankSpeed != 0) {
+		if (primary.hasSource() && crankSpeed != 0 && drivenFromOutside()) {
 			floor = EngineSimulation.rpmToOmega(Math.abs(crankSpeed));
 			floorDirection = (int) Math.signum(crankSpeed);
 		}
@@ -902,6 +910,20 @@ public final class EngineController {
 				.refresh(swapped);
 			exchanging = true;
 		}
+	}
+
+	/**
+	 * Whether anything but engines is driving this crank's network. Two engines on one network each see the other's output
+	 * as a drive, and if each held the crank at that speed they would keep one another turning with no fuel at all, and
+	 * never stop. Only a source that is not a crankshaft (a motor, a wheel, a hand crank) is a drive.
+	 */
+	private boolean drivenFromOutside() {
+		if (!primary.hasNetwork())
+			return false;
+		for (KineticBlockEntity source : primary.getOrCreateNetwork().sources.keySet())
+			if (!(source instanceof CrankshaftBlockEntity))
+				return true;
+		return false;
 	}
 
 	private void publishSpeed() {

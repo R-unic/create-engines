@@ -31,8 +31,13 @@ final class PonderAudit {
 	 * heavy starter is the starter's upgrade. Anything else without a page is reported, so adding a block without one
 	 * is a decision rather than an oversight.
 	 */
-	private static final java.util.Set<String> NO_PAGE_NEEDED = java.util.Set.of("engine_cased_shaft", "engine_cased_cogwheel",
-		"engine_cased_large_cogwheel", "engine_riveted_casing", "engine_louvred_casing", "engine_window_casing", "heavy_starter");
+	private static final java.util.Set<String> NO_PAGE_NEEDED = java.util.stream.Stream
+		.of("engine_cased_shaft", "engine_cased_cogwheel", "engine_cased_large_cogwheel", "engine_riveted_casing",
+			"engine_louvred_casing", "engine_window_casing", "heavy_starter")
+		.flatMap(name -> name.contains("_cased_") ? java.util.stream.Stream.concat(java.util.stream.Stream.of(name),
+			java.util.stream.Stream.of("riveted", "louvred", "window")
+				.map(plate -> name.replace("engine_", "engine_" + plate + "_"))) : java.util.stream.Stream.of(name))
+		.collect(java.util.stream.Collectors.toUnmodifiableSet());
 
 	private final List<Map.Entry<ResourceLocation, StoryBoardEntry>> entries = new ArrayList<>();
 	private int next;

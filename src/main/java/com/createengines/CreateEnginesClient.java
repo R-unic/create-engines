@@ -34,6 +34,7 @@ public class CreateEnginesClient {
 
 	public CreateEnginesClient(IEventBus modEventBus, ModContainer modContainer) {
 		modContainer.registerConfig(ModConfig.Type.CLIENT, CEClientConfig.SPEC);
+		com.createengines.content.CESpriteShifts.STYLED_CASING_BEHAVIOUR = com.createengines.client.StyledCasingCTBehaviour::new;
 		CEPartialModels.init();
 		modEventBus.addListener(CreateEnginesClient::registerBucketColours);
 		modEventBus.addListener(CreateEnginesClient::registerParticles);

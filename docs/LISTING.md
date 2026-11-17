@@ -196,6 +196,19 @@ basin ethanol, which gets weaker (see below).
 - Goggles on a Create Basin say when a column would make more of a fuel from what it holds, and fuel buckets say
   when a column makes them.
 - Ponder pages for the refining column, leaning columns, the Soot Trap and the Jerry Can.
+- Plant oil, and any fluid in the new `create_engines:poor_lubricants` tag, now lubricates an engine at 0.6 of engine
+  oil's strength. Engine oil is unchanged.
+- Fix: an engine split by an unloaded chunk (crankshaft chunk loaded, far half not) used to have its crank speed zeroed
+  every tick and came back stalled for good. It now keeps its speed and carries on when the chunk loads again, as an
+  engine unloaded whole already did.
+- Sound: the cylinder firing sound is redesigned (a sharp crack per firing that fades as firings merge into a tone, with
+  engine size and sharpness, load and boost, shaping it), and the engine clatter sample is regenerated. Machine and
+  starter loops wait out the sound engine's settle delay, fade out beyond 48 blocks, ignore bad pitch and volume values,
+  and drop finished instances instead of keeping them until you leave the world.
+- Advancements play a short synthesised sting and no longer announce themselves in chat.
+- Under the hood: `EngineSimulation` and `CylinderModel` are split into smaller parts with no change in behaviour, and
+  the layout-derived muffling and soot-trap runs are cached. New tests cover compatibility with every earlier release's
+  saved engines, exact simulation values, fuzzed network and save data, and engines run with Sodium and without Flywheel.
 
 ## Changelog for 1.2.1
 

@@ -5,6 +5,25 @@
         "model": "create_engines:block/engine_casing/block"
       },
       "when": {
+        "casing_style": "plain",
+        "encased": "true"
+      }
+    },
+    {
+      "apply": {
+        "model": "create_engines:block/engine_riveted_casing/block"
+      },
+      "when": {
+        "casing_style": "riveted",
+        "encased": "true"
+      }
+    },
+    {
+      "apply": {
+        "model": "create_engines:block/engine_louvred_casing/block"
+      },
+      "when": {
+        "casing_style": "louvred",
         "encased": "true"
       }
     },

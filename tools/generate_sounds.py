@@ -22,6 +22,7 @@ Sounds:
   engine_stall       an engine dying: its last firings slowing and weakening, a clunk and a sigh from the exhaust
   exhaust_pop1..3    unburned fuel lighting in a hot exhaust: a crack, a short thump and the ring of the pipe
   metal_tick1..3     hot metal ticking as it cools: a small bright tink
+  preignition_knock1..3  a charge lighting itself early under boost: a quick run of hard metallic knocks
   engine_clatter     a seamless loop of valve gear: soft tappet knocks over the hum of the gears; pitch follows the crank
   bearing_squeal     a seamless loop of bearings running dry: a wavering shriek over a stick-slip rasp
   intake_roar        a seamless loop of air gulped through an intake: a hollow rush swelling in eight pulses a second
@@ -356,6 +357,31 @@ def metal_tick(seed, f0):
     return finish(mix, 0.7)
 
 
+def preignition_knock(seed, f0):
+    """A charge lighting itself early: pinking, a quick run of three or four hard metallic cracks, each a struck
+    cylinder wall ringing (lower and longer than the cooling tick) over a flat crack of noise, getting softer."""
+    rng = np.random.default_rng(seed)
+    n = int(0.3 * SR)
+    t = np.arange(n) / SR
+    mix = np.zeros(n)
+    hits = 3 + int(rng.integers(0, 2))
+    at = 0.0
+    for i in range(hits):
+        k = int(at * SR)
+        m = n - k
+        u = np.arange(m) / SR
+        level = 1.0 - 0.18 * i
+        ring = sum(lv * np.sin(2 * np.pi * f0 * ratio * u + rng.uniform(0, 2 * np.pi)) * np.exp(-u / dec)
+                   for ratio, lv, dec in ((1.0, 1.0, 0.022), (1.9, 0.7, 0.014), (3.1, 0.4, 0.008)))
+        crack = band(rng.standard_normal(m), 1500, 6500, 2) * np.exp(-u / 0.004)
+        hit = (ring + 1.2 * crack / np.max(np.abs(crack))) * np.minimum(u / 0.0003, 1)
+        mix[k:] += level * hit
+        at += 0.028 + rng.uniform(0, 0.012)
+    mix = np.tanh(1.3 * mix / np.max(np.abs(mix)))
+    mix *= np.clip((n - np.arange(n)) / (0.05 * SR), 0, 1)
+    return finish(mix, 0.8)
+
+
 def clatter_loop():
     """One second of valve gear that repeats seamlessly: sixteen soft tappet knocks, no two quite alike but the pattern
     of four coming round again as the cam does, over a low hum of gears and a slow churn. Deliberately dull: the knocks
@@ -476,6 +502,9 @@ SOUNDS = {
     "metal_tick1": lambda: metal_tick(67, 2150),
     "metal_tick2": lambda: metal_tick(71, 2620),
     "metal_tick3": lambda: metal_tick(73, 1810),
+    "preignition_knock1": lambda: preignition_knock(103, 1150),
+    "preignition_knock2": lambda: preignition_knock(107, 1380),
+    "preignition_knock3": lambda: preignition_knock(109, 980),
     "engine_clatter": clatter_loop,
     "bearing_squeal": squeal_loop,
     "intake_roar": intake_roar_loop,

@@ -265,6 +265,16 @@ What the dyno shows now, 12 precision cylinders, best speed up to 256 RPM:
 | Two turbos and an intercooler | 330.7k | 312.4k | gasoline |
 | Two turbos, supercharger, intercooler | 256.9k | 246.5k | gasoline (ethanol is injector-bound) |
 
+**Ethanol's pre-ignition point (2026-11-17).** The 3.4 above was too close to what a fast engine reaches without any
+boost (a precision cylinder compresses to 3.2 at 512 RPM), so a precision V16 on twin turbos and an intercooler lost up
+to 35 percent of its burn on ethanol, which is the build the fuel is for. Ethanol now has its own pre-ignition point,
+`FuelSpec.preignitionTemp` (`ETHANOL_PREIGNITION`, 5.0; fuel data map `preignition_temperature`, optional and defaulting
+to the autoignition point, so every other fuel is unchanged). Its autoignition point stays 3.4: that still decides
+compression and pilot ignition and what the fuel tooltip says. Measured on one precision cylinder with twin turbos and an
+intercooler (`EthanolBoostTest`): worst charge 3.9 at 512 RPM and 4.8 at 640 RPM, no loss on ethanol at either, against
+35 percent lost on gasoline. A crude, unprecise engine pushed to 512 RPM still reaches 4.9 or more and can still lose
+some on ethanol.
+
 Gasoline stays the usual fuel: it is about 1.6 times cheaper by volume everywhere and wins wherever the charge stays
 cool, which an intercooler does. Ethanol is the fuel for a hot boosted build, or one that cannot fit an intercooler.
 The fuel data map gained optional `cold_sensitivity`, `charge_cooling` and `soot_factor`; before this change it dropped

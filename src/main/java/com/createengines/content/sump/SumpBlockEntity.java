@@ -13,6 +13,7 @@ import com.simibubi.create.api.equipment.goggles.IHaveGoggleInformation;
 import com.simibubi.create.foundation.blockEntity.SmartBlockEntity;
 import com.simibubi.create.foundation.blockEntity.behaviour.BehaviourType;
 import com.simibubi.create.foundation.blockEntity.behaviour.BlockEntityBehaviour;
+import com.simibubi.create.foundation.blockEntity.behaviour.ValueBoxTransform;
 import com.simibubi.create.foundation.blockEntity.behaviour.fluid.SmartFluidTankBehaviour;
 import com.simibubi.create.foundation.blockEntity.behaviour.scrollValue.ScrollValueBehaviour;
 import com.simibubi.create.foundation.fluid.SmartFluidTank;
@@ -105,26 +106,16 @@ public class SumpBlockEntity extends SmartBlockEntity implements IHaveGoggleInfo
 			.setValidator(CEDataMaps::isPilotFuel);
 		behaviours.add(pilot);
 
-		exchange = new ScrollValueBehaviour(CELang.translate("value.oil_exchange")
-			.component(), this, new SumpValueBox()) {
-			@Override
-			public BehaviourType<?> getType() {
-				return EXCHANGE_TYPE;
-			}
-		};
+		exchange = new Dial(CELang.translate("value.oil_exchange")
+			.component(), this, new SumpValueBox(), EXCHANGE_TYPE, "OilExchange");
 		exchange.between(0, EXCHANGE_RATES.length - 1);
 		exchange.value = 0;
 		exchange.withFormatter(v -> CELang.translate("value.oil_exchange." + v)
 			.string());
 		behaviours.add(exchange);
 
-		signalTank = new ScrollValueBehaviour(CELang.translate("value.sump_signal")
-			.component(), this, new SumpSignalBox()) {
-			@Override
-			public BehaviourType<?> getType() {
-				return SIGNAL_TYPE;
-			}
-		};
+		signalTank = new Dial(CELang.translate("value.sump_signal")
+			.component(), this, new SumpSignalBox(), SIGNAL_TYPE, "SumpSignal");
 		signalTank.between(0, SIGNAL_TANKS - 1);
 		signalTank.value = 0;
 		signalTank.withFormatter(v -> CELang.translate("value.sump_signal." + v)
@@ -308,6 +299,41 @@ public class SumpBlockEntity extends SmartBlockEntity implements IHaveGoggleInfo
 				.style(ChatFormatting.DARK_GRAY), tooltip, 2);
 		containedFluidTooltip(tooltip, isPlayerSneaking, fluidCapability());
 		return true;
+	}
+
+	/**
+	 * A dial with its own save key. Create saves every scroll value under the one key "ScrollValue", and a pan has two
+	 * dials, so they overwrote each other: the screen showed the other dial's value and a change seemed to do nothing. A
+	 * pan saved before this has only the shared key, which both dials still read when they have no key of their own.
+	 */
+	private static final class Dial extends ScrollValueBehaviour {
+
+		private final BehaviourType<?> type;
+		private final String key;
+
+		Dial(Component label, SmartBlockEntity be, ValueBoxTransform slot, BehaviourType<?> type, String key) {
+			super(label, be, slot);
+			this.type = type;
+			this.key = key;
+		}
+
+		@Override
+		public BehaviourType<?> getType() {
+			return type;
+		}
+
+		@Override
+		public void write(CompoundTag tag, HolderLookup.Provider registries, boolean clientPacket) {
+			super.write(tag, registries, clientPacket);
+			tag.putInt(key, value);
+		}
+
+		@Override
+		public void read(CompoundTag tag, HolderLookup.Provider registries, boolean clientPacket) {
+			super.read(tag, registries, clientPacket);
+			if (tag.contains(key))
+				value = tag.getInt(key);
+		}
 	}
 
 	/**

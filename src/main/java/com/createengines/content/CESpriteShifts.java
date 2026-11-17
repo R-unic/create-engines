@@ -30,6 +30,24 @@ public final class CESpriteShifts {
 		CreateEngines.asResource("block/engine_window_casing"),
 		CreateEngines.asResource("block/engine_window_casing_connected"));
 
+	/**
+	 * Makes the connected-texture behaviour of a part that can be clad in any plate. It is client code, so the client entry
+	 * point puts it here before blocks register; the registration reads it only on the client.
+	 */
+	public static java.util.function.Supplier<com.simibubi.create.foundation.block.connected.ConnectedTextureBehaviour> STYLED_CASING_BEHAVIOUR = () -> {
+		throw new IllegalStateException("The styled casing behaviour is only made on the client");
+	};
+
+	/** The sheet a part clad in a plate draws: the window plate is drawn by its own models, so it keeps the plain one. */
+	public static CTSpriteShiftEntry forStyle(CasingStyle style) {
+		return switch (style) {
+			case RIVETED -> ENGINE_RIVETED_CASING;
+			case LOUVRED -> ENGINE_LOUVRED_CASING;
+			case WINDOW -> ENGINE_WINDOW_CASING;
+			case PLAIN -> ENGINE_CASING;
+		};
+	}
+
 	private CESpriteShifts() {
 	}
 }

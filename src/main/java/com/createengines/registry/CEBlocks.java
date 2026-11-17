@@ -3,6 +3,7 @@ package com.createengines.registry;
 import static com.createengines.CreateEngines.REGISTRATE;
 
 import com.createengines.content.CESpriteShifts;
+import com.createengines.content.CasingStyle;
 import com.createengines.content.EngineCasedCogwheelBlock;
 import com.createengines.content.EngineCasedShaftBlock;
 import com.createengines.content.EngineCasingBlock;
@@ -93,7 +94,7 @@ public final class CEBlocks {
 			return p.models()
 				.getExistingFile(p.modLoc(s.hasProperty(com.createengines.content.Encasing.WINDOWED)
 					&& s.getValue(com.createengines.content.Encasing.WINDOWED) ? "block/engine_casing/window"
-						: "block/engine_casing/encased"));
+						: "block/" + casingModelFolder(s.getValue(Encasing.STYLE)) + "/encased"));
 		return AssetLookup.partialBaseModel(c, p);
 	}
 
@@ -140,7 +141,7 @@ public final class CEBlocks {
 					return AssetLookup.partialBaseModel(c, p, "injector", "plug");
 				return plug ? AssetLookup.partialBaseModel(c, p, "plug")
 					: AssetLookup.partialBaseModel(c, p, injector ? "injector" : "");
-			}, Encasing.WINDOWED))
+			}, Encasing.WINDOWED, Encasing.STYLE))
 			.item()
 			.transform(ModelGen.customItemModel())
 			.register();
@@ -713,6 +714,37 @@ public final class CEBlocks {
 			.loot((p, b) -> p.dropOther(b, AllBlocks.LARGE_COGWHEEL.get()))
 			.register();
 
+	/*
+	 * Every other casing encases shafts and cogs too: one block per casing and part, so Create's encasing (use the casing
+	 * on the part, wrench it off) finds the right one by the casing in hand. They share the cased shaft's and cogs' block
+	 * entities. The riveted and louvred ones use the plate on the casing faces; the window one shows the part through
+	 * its glass.
+	 */
+	public static final BlockEntry<EngineCasedShaftBlock> ENGINE_RIVETED_CASED_SHAFT =
+		casedShaft("engine_riveted_cased_shaft", CasingStyle.RIVETED, ENGINE_RIVETED_CASING);
+	public static final BlockEntry<EngineCasedCogwheelBlock> ENGINE_RIVETED_CASED_COGWHEEL =
+		casedCogwheelBlock("engine_riveted_cased_cogwheel", CasingStyle.RIVETED, ENGINE_RIVETED_CASING, false,
+			AllBlocks.COGWHEEL);
+	public static final BlockEntry<EngineCasedCogwheelBlock> ENGINE_RIVETED_CASED_LARGE_COGWHEEL =
+		casedCogwheelBlock("engine_riveted_cased_large_cogwheel", CasingStyle.RIVETED, ENGINE_RIVETED_CASING, true,
+			AllBlocks.LARGE_COGWHEEL);
+	public static final BlockEntry<EngineCasedShaftBlock> ENGINE_LOUVRED_CASED_SHAFT =
+		casedShaft("engine_louvred_cased_shaft", CasingStyle.LOUVRED, ENGINE_LOUVRED_CASING);
+	public static final BlockEntry<EngineCasedCogwheelBlock> ENGINE_LOUVRED_CASED_COGWHEEL =
+		casedCogwheelBlock("engine_louvred_cased_cogwheel", CasingStyle.LOUVRED, ENGINE_LOUVRED_CASING, false,
+			AllBlocks.COGWHEEL);
+	public static final BlockEntry<EngineCasedCogwheelBlock> ENGINE_LOUVRED_CASED_LARGE_COGWHEEL =
+		casedCogwheelBlock("engine_louvred_cased_large_cogwheel", CasingStyle.LOUVRED, ENGINE_LOUVRED_CASING, true,
+			AllBlocks.LARGE_COGWHEEL);
+	public static final BlockEntry<EngineCasedShaftBlock> ENGINE_WINDOW_CASED_SHAFT =
+		casedShaft("engine_window_cased_shaft", CasingStyle.WINDOW, ENGINE_WINDOW_CASING);
+	public static final BlockEntry<EngineCasedCogwheelBlock> ENGINE_WINDOW_CASED_COGWHEEL =
+		casedCogwheelBlock("engine_window_cased_cogwheel", CasingStyle.WINDOW, ENGINE_WINDOW_CASING, false,
+			AllBlocks.COGWHEEL);
+	public static final BlockEntry<EngineCasedCogwheelBlock> ENGINE_WINDOW_CASED_LARGE_COGWHEEL =
+		casedCogwheelBlock("engine_window_cased_large_cogwheel", CasingStyle.WINDOW, ENGINE_WINDOW_CASING, true,
+			AllBlocks.LARGE_COGWHEEL);
+
 	public static final BlockEntry<TransmissionBlock> TRANSMISSION =
 		REGISTRATE.block("transmission", TransmissionBlock::new)
 			.initialProperties(SharedProperties::softMetal)
@@ -779,7 +811,13 @@ public final class CEBlocks {
 		com.tterrag.registrate.providers.DataGenContext<Block, ? extends Block> c, RegistrateBlockstateProvider p,
 		BlockState s) {
 		return s.getValue(Encasing.ENCASED) ? p.models()
-			.getExistingFile(p.modLoc("block/engine_casing/block")) : AssetLookup.partialBaseModel(c, p);
+			.getExistingFile(p.modLoc("block/" + casingModelFolder(s.getValue(Encasing.STYLE)) + "/block"))
+			: AssetLookup.partialBaseModel(c, p);
+	}
+
+	/** The model folder of the casing block a plate is made of (plain casing keeps its original folder). */
+	private static String casingModelFolder(CasingStyle style) {
+		return style == CasingStyle.PLAIN ? "engine_casing" : "engine_" + style.getSerializedName() + "_casing";
 	}
 
 	/** A part that Engine Casing covers whole: every face of it joins the casing beside it once clad. */
@@ -796,14 +834,48 @@ public final class CEBlocks {
 	private static <B extends Block, P> BlockBuilder<B, P> casedFaces(BlockBuilder<B, P> builder,
 																	 BiPredicate<BlockState, Direction> faces) {
 		return builder
-			.onRegister(CreateRegistrate.connectedTextures(() -> new EncasedCTBehaviour(CESpriteShifts.ENGINE_CASING)))
+			.onRegister(CreateRegistrate.connectedTextures(() -> CESpriteShifts.STYLED_CASING_BEHAVIOUR.get()))
 			.onRegister(CreateRegistrate.casingConnectivity(
 				(block, cc) -> cc.make(block, CESpriteShifts.ENGINE_CASING, faces)));
 	}
 
-	/** An encased cogwheel: Create's models, drawn with Engine Casing, and the casing's ends joining the casing beside. */
+	/** A Create shaft clad in one of the other casings: the same block as the plain cased shaft with its own plate. */
+	private static BlockEntry<EngineCasedShaftBlock> casedShaft(String name, CasingStyle style,
+		BlockEntry<EngineCasingBlock> casing) {
+		return REGISTRATE.block(name, p -> new EngineCasedShaftBlock(p, casing::get))
+			.initialProperties(SharedProperties::softMetal)
+			.properties(p -> p.mapColor(MapColor.METAL)
+				.noOcclusion())
+			.transform(TagGen.pickaxeOnly())
+			.blockstate((c, p) -> axisIgnoringPaint(c, p,
+				s -> p.models().getExistingFile(p.modLoc("block/" + name + "/block"))))
+			.onRegister(CreateRegistrate.connectedTextures(
+				() -> new EncasedCTBehaviour(CESpriteShifts.forStyle(style))))
+			.onRegister(CreateRegistrate.casingConnectivity((block, cc) -> cc.make(block, CESpriteShifts.forStyle(style),
+				(s, f) -> f.getAxis() != s.getValue(RotatedPillarKineticBlock.AXIS))))
+			.transform(EncasingRegistry.addVariantTo(AllBlocks.SHAFT))
+			.loot((p, b) -> p.dropOther(b, AllBlocks.SHAFT.get()))
+			.register();
+	}
+
+	/** A Create cogwheel clad in one of the other casings (see {@link #casedShaft}). */
+	private static <E extends Block & com.simibubi.create.content.decoration.encasing.EncasableBlock> BlockEntry<EngineCasedCogwheelBlock> casedCogwheelBlock(String name, CasingStyle style,
+		BlockEntry<EngineCasingBlock> casing, boolean large, BlockEntry<E> cog) {
+		return REGISTRATE.block(name, p -> new EngineCasedCogwheelBlock(p, large, casing::get))
+			.transform(CEBlocks.casedCogwheel(name, style))
+			.transform(EncasingRegistry.addVariantTo(cog))
+			.loot((p, b) -> p.dropOther(b, cog.get()))
+			.register();
+	}
+
 	private static <B extends EncasedCogwheelBlock, P> com.tterrag.registrate.util.nullness.NonNullUnaryOperator<BlockBuilder<B, P>> casedCogwheel(
 		String name) {
+		return casedCogwheel(name, CasingStyle.PLAIN);
+	}
+
+	/** An encased cogwheel: Create's models, drawn with Engine Casing, and the casing's ends joining the casing beside. */
+	private static <B extends EncasedCogwheelBlock, P> com.tterrag.registrate.util.nullness.NonNullUnaryOperator<BlockBuilder<B, P>> casedCogwheel(
+		String name, CasingStyle style) {
 		return builder -> builder.initialProperties(SharedProperties::softMetal)
 			.properties(p -> p.mapColor(MapColor.METAL)
 				.noOcclusion())
@@ -817,8 +889,8 @@ public final class CEBlocks {
 			}))
 			.onRegister(CreateRegistrate.connectedTextures(
 				() -> new com.simibubi.create.content.kinetics.simpleRelays.encased.EncasedCogCTBehaviour(
-					CESpriteShifts.ENGINE_CASING)))
-			.onRegister(CreateRegistrate.casingConnectivity((block, cc) -> cc.make(block, CESpriteShifts.ENGINE_CASING,
+					CESpriteShifts.forStyle(style))))
+			.onRegister(CreateRegistrate.casingConnectivity((block, cc) -> cc.make(block, CESpriteShifts.forStyle(style),
 				(s, f) -> f.getAxis() == s.getValue(RotatedPillarKineticBlock.AXIS)
 					&& !s.getValue(f.getAxisDirection() == Direction.AxisDirection.POSITIVE
 						? EncasedCogwheelBlock.TOP_SHAFT : EncasedCogwheelBlock.BOTTOM_SHAFT))));
@@ -839,12 +911,14 @@ public final class CEBlocks {
 																 RegistrateBlockstateProvider provider) {
 		String name = context.getName();
 		var builder = provider.getMultipartBuilder(context.get());
-		builder.part()
-			.modelFile(provider.models()
-				.getExistingFile(provider.modLoc("block/engine_casing/block")))
-			.addModel()
-			.condition(Encasing.ENCASED, true)
-			.end();
+		for (CasingStyle style : new CasingStyle[] {CasingStyle.PLAIN, CasingStyle.RIVETED, CasingStyle.LOUVRED})
+			builder.part()
+				.modelFile(provider.models()
+					.getExistingFile(provider.modLoc("block/" + casingModelFolder(style) + "/block")))
+				.addModel()
+				.condition(Encasing.ENCASED, true)
+				.condition(Encasing.STYLE, style)
+				.end();
 		if (name.endsWith("_manifold"))
 			// The pipes have a fitting of their own for a straight run, a bend and a tee, picked by which sides are open
 			for (int mask = 0; mask < 1 << Direction.values().length; mask++) {

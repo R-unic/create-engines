@@ -43,6 +43,7 @@ public final class EngineNoteSound extends AbstractTickableSoundInstance {
 	private static final Map<BlockPos, EngineNoteSound> PLAYING = new HashMap<>();
 	/** Streamed voices are scarce (the sound engine has only a handful besides music), so only the first few engines get one. */
 	private static final int MAX_VOICES = 3;
+	private static final VoiceBudget BUDGET = new VoiceBudget(MAX_VOICES);
 	/** Beyond this the note is inaudible anyway. */
 	private static final double HEARING_RANGE = 40;
 	private static final float FADE_IN = 0.06f;
@@ -86,18 +87,37 @@ public final class EngineNoteSound extends AbstractTickableSoundInstance {
 		if (current != null && (!VoiceClock.settled(now, current.startedAt) || !current.isStopped() && sounds.isActive(current)))
 			return;
 		PLAYING.values()
-			.removeIf(note -> VoiceClock.settled(now, note.startedAt) && (note.isStopped() || !sounds.isActive(note)));
+			.removeIf(note -> {
+				boolean dropped = VoiceClock.settled(now, note.startedAt) && (note.isStopped() || !sounds.isActive(note));
+				if (dropped)
+					BUDGET.finished(note.crank.getBlockPos(), now);
+				return dropped;
+			});
+		BUDGET.prune(now);
 		if (PLAYING.size() >= MAX_VOICES || !near(crank))
+			return;
+		// An engine whose state flaps must not start and drop a streamed voice every few ticks
+		if (current != null)
+			BUDGET.finished(at, now);
+		if (!BUDGET.tryStart(at, now, PLAYING.size() - (PLAYING.containsKey(at) ? 1 : 0)))
 			return;
 		EngineNoteSound note = new EngineNoteSound(crank);
 		PLAYING.put(at, note);
-		sounds.play(note);
+		try {
+			sounds.play(note);
+		} catch (RuntimeException e) {
+			PLAYING.remove(at, note);
+			BUDGET.finished(at, now);
+			LOGGER.warn("Engine note at {} could not start", at, e);
+			return;
+		}
 		LOGGER.debug("Engine note started at {}", at);
 	}
 
 	/** Forgets every voice, for when the player leaves a world: the sound engine has already dropped them. */
 	public static void clear() {
 		PLAYING.clear();
+		BUDGET.clear();
 	}
 
 	/** Whether the engine whose primary crankshaft is at {@code at} has its note playing, so its bangs can give way to it. */
@@ -134,7 +154,8 @@ public final class EngineNoteSound extends AbstractTickableSoundInstance {
 		boolean audible = wanted.combustion() > 0 && wanted.rpm() > 1 && near(crank);
 		fade = Mth.clamp(fade + (audible ? FADE_IN : -FADE_OUT), 0, 1);
 		if (fade <= 0 && !audible) {
-			PLAYING.remove(crank.getBlockPos(), this);
+			if (PLAYING.remove(crank.getBlockPos(), this))
+				BUDGET.finished(crank.getBlockPos(), crank.getLevel() == null ? 0 : crank.getLevel().getGameTime());
 			stop();
 			return;
 		}

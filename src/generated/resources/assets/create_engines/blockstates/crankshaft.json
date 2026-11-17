@@ -1,53 +1,157 @@
 {
   "variants": {
-    "axis=x,encased=false,windowed=false": {
+    "axis=x,casing_style=louvred,encased=false,windowed=false": {
       "model": "create_engines:block/crankshaft/block",
       "x": 90,
       "y": 90
     },
-    "axis=x,encased=false,windowed=true": {
+    "axis=x,casing_style=louvred,encased=false,windowed=true": {
       "model": "create_engines:block/crankshaft/block",
       "x": 90,
       "y": 90
     },
-    "axis=x,encased=true,windowed=false": {
-      "model": "create_engines:block/engine_casing/encased",
+    "axis=x,casing_style=louvred,encased=true,windowed=false": {
+      "model": "create_engines:block/engine_louvred_casing/encased",
       "x": 90,
       "y": 90
     },
-    "axis=x,encased=true,windowed=true": {
+    "axis=x,casing_style=louvred,encased=true,windowed=true": {
       "model": "create_engines:block/engine_casing/window",
       "x": 90,
       "y": 90
     },
-    "axis=y,encased=false,windowed=false": {
+    "axis=x,casing_style=plain,encased=false,windowed=false": {
+      "model": "create_engines:block/crankshaft/block",
+      "x": 90,
+      "y": 90
+    },
+    "axis=x,casing_style=plain,encased=false,windowed=true": {
+      "model": "create_engines:block/crankshaft/block",
+      "x": 90,
+      "y": 90
+    },
+    "axis=x,casing_style=plain,encased=true,windowed=false": {
+      "model": "create_engines:block/engine_casing/encased",
+      "x": 90,
+      "y": 90
+    },
+    "axis=x,casing_style=plain,encased=true,windowed=true": {
+      "model": "create_engines:block/engine_casing/window",
+      "x": 90,
+      "y": 90
+    },
+    "axis=x,casing_style=riveted,encased=false,windowed=false": {
+      "model": "create_engines:block/crankshaft/block",
+      "x": 90,
+      "y": 90
+    },
+    "axis=x,casing_style=riveted,encased=false,windowed=true": {
+      "model": "create_engines:block/crankshaft/block",
+      "x": 90,
+      "y": 90
+    },
+    "axis=x,casing_style=riveted,encased=true,windowed=false": {
+      "model": "create_engines:block/engine_riveted_casing/encased",
+      "x": 90,
+      "y": 90
+    },
+    "axis=x,casing_style=riveted,encased=true,windowed=true": {
+      "model": "create_engines:block/engine_casing/window",
+      "x": 90,
+      "y": 90
+    },
+    "axis=y,casing_style=louvred,encased=false,windowed=false": {
       "model": "create_engines:block/crankshaft/block"
     },
-    "axis=y,encased=false,windowed=true": {
+    "axis=y,casing_style=louvred,encased=false,windowed=true": {
       "model": "create_engines:block/crankshaft/block"
     },
-    "axis=y,encased=true,windowed=false": {
-      "model": "create_engines:block/engine_casing/encased"
+    "axis=y,casing_style=louvred,encased=true,windowed=false": {
+      "model": "create_engines:block/engine_louvred_casing/encased"
     },
-    "axis=y,encased=true,windowed=true": {
+    "axis=y,casing_style=louvred,encased=true,windowed=true": {
       "model": "create_engines:block/engine_casing/window"
     },
-    "axis=z,encased=false,windowed=false": {
+    "axis=y,casing_style=plain,encased=false,windowed=false": {
+      "model": "create_engines:block/crankshaft/block"
+    },
+    "axis=y,casing_style=plain,encased=false,windowed=true": {
+      "model": "create_engines:block/crankshaft/block"
+    },
+    "axis=y,casing_style=plain,encased=true,windowed=false": {
+      "model": "create_engines:block/engine_casing/encased"
+    },
+    "axis=y,casing_style=plain,encased=true,windowed=true": {
+      "model": "create_engines:block/engine_casing/window"
+    },
+    "axis=y,casing_style=riveted,encased=false,windowed=false": {
+      "model": "create_engines:block/crankshaft/block"
+    },
+    "axis=y,casing_style=riveted,encased=false,windowed=true": {
+      "model": "create_engines:block/crankshaft/block"
+    },
+    "axis=y,casing_style=riveted,encased=true,windowed=false": {
+      "model": "create_engines:block/engine_riveted_casing/encased"
+    },
+    "axis=y,casing_style=riveted,encased=true,windowed=true": {
+      "model": "create_engines:block/engine_casing/window"
+    },
+    "axis=z,casing_style=louvred,encased=false,windowed=false": {
       "model": "create_engines:block/crankshaft/block",
       "x": 90,
       "y": 180
     },
-    "axis=z,encased=false,windowed=true": {
+    "axis=z,casing_style=louvred,encased=false,windowed=true": {
       "model": "create_engines:block/crankshaft/block",
       "x": 90,
       "y": 180
     },
-    "axis=z,encased=true,windowed=false": {
+    "axis=z,casing_style=louvred,encased=true,windowed=false": {
+      "model": "create_engines:block/engine_louvred_casing/encased",
+      "x": 90,
+      "y": 180
+    },
+    "axis=z,casing_style=louvred,encased=true,windowed=true": {
+      "model": "create_engines:block/engine_casing/window",
+      "x": 90,
+      "y": 180
+    },
+    "axis=z,casing_style=plain,encased=false,windowed=false": {
+      "model": "create_engines:block/crankshaft/block",
+      "x": 90,
+      "y": 180
+    },
+    "axis=z,casing_style=plain,encased=false,windowed=true": {
+      "model": "create_engines:block/crankshaft/block",
+      "x": 90,
+      "y": 180
+    },
+    "axis=z,casing_style=plain,encased=true,windowed=false": {
       "model": "create_engines:block/engine_casing/encased",
       "x": 90,
       "y": 180
     },
-    "axis=z,encased=true,windowed=true": {
+    "axis=z,casing_style=plain,encased=true,windowed=true": {
+      "model": "create_engines:block/engine_casing/window",
+      "x": 90,
+      "y": 180
+    },
+    "axis=z,casing_style=riveted,encased=false,windowed=false": {
+      "model": "create_engines:block/crankshaft/block",
+      "x": 90,
+      "y": 180
+    },
+    "axis=z,casing_style=riveted,encased=false,windowed=true": {
+      "model": "create_engines:block/crankshaft/block",
+      "x": 90,
+      "y": 180
+    },
+    "axis=z,casing_style=riveted,encased=true,windowed=false": {
+      "model": "create_engines:block/engine_riveted_casing/encased",
+      "x": 90,
+      "y": 180
+    },
+    "axis=z,casing_style=riveted,encased=true,windowed=true": {
       "model": "create_engines:block/engine_casing/window",
       "x": 90,
       "y": 180

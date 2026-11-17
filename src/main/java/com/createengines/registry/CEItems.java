@@ -65,7 +65,7 @@ public final class CEItems {
 
 	/** Soot caught from a rich engine's exhaust: it is ground into black dye. */
 	public static final ItemEntry<Item> SOOT = REGISTRATE.item("soot", Item::new)
-		.model((c, p) -> p.withExistingParent(c.getName(), p.modLoc("block/soot/item")))
+		.model((c, p) -> p.generated(c, p.modLoc("item/soot")))
 		.register();
 
 	/** Four buckets of one fluid in one item, for carrying fuel where there is no pipe. */

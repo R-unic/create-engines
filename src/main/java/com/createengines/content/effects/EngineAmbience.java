@@ -36,6 +36,7 @@ public final class EngineAmbience {
 	/** How far away the one-off sounds are worth playing. */
 	private static final double HEARING_RANGE = 48;
 	private static final double TICKING_RANGE = 16;
+	private static final float START_LEVEL = 0.05f;
 	private static final float CLATTER_LOUDEST = 0.13f;
 	private static final float SQUEAL_LOUDEST = 0.12f;
 	private static final float ROAR_LOUDEST = 0.35f;
@@ -105,11 +106,11 @@ public final class EngineAmbience {
 
 		BlockPos at = crank.getBlockPos();
 		if (turning) {
-			if (clatter.loopLevel() > 0.02f)
+			if (clatter.loopLevel() > START_LEVEL)
 				MachineLoopSound.ensurePlaying(clatter, at, CESounds.ENGINE_CLATTER.get(), CLATTER_LOUDEST, clatter);
-			if (squeal.loopLevel() > 0.02f)
+			if (squeal.loopLevel() > START_LEVEL)
 				MachineLoopSound.ensurePlaying(squeal, at, CESounds.BEARING_SQUEAL.get(), SQUEAL_LOUDEST, squeal);
-			if (roar.mouth != null && roar.loopLevel() > 0.02f)
+			if (roar.mouth != null && roar.loopLevel() > START_LEVEL)
 				MachineLoopSound.ensurePlaying(roar, BlockPos.containing(roar.mouth), CESounds.INTAKE_ROAR.get(), ROAR_LOUDEST,
 					roar);
 		} else if (summary.cooling())

@@ -1,3 +1,6 @@
 {
-  "parent": "create_engines:block/soot/item"
+  "parent": "minecraft:item/generated",
+  "textures": {
+    "layer0": "create_engines:item/soot"
+  }
 }

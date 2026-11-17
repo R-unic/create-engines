@@ -376,6 +376,36 @@ public class EngineGameTests {
 		helper.succeed();
 	}
 
+	/** The pan's two dials keep their own values through a save and through the packet that shows them to a player. */
+	@GameTest(template = "empty")
+	public static void aSumpKeepsBothDialsApartWhenSaved(GameTestHelper helper) {
+		BlockPos sump = new BlockPos(3, 1, 2);
+		helper.setBlock(sump, CEBlocks.SUMP.getDefaultState());
+		SumpBlockEntity pan = helper.getBlockEntity(sump);
+		var registries = helper.getLevel()
+			.registryAccess();
+		pan.exchange.setValue(2);
+		pan.signalTank.setValue(3);
+		for (boolean packet : new boolean[] {false, true}) {
+			CompoundTag saved = packet ? pan.getUpdateTag(registries) : pan.saveWithFullMetadata(registries);
+			pan.exchange.value = 0;
+			pan.signalTank.value = 0;
+			pan.loadWithComponents(saved, registries);
+			helper.assertTrue(pan.exchange.getValue() == 2 && pan.signalTank.getValue() == 3,
+				"Both dials should come back as set (packet=" + packet + "), got " + pan.exchange.getValue() + " and "
+					+ pan.signalTank.getValue());
+		}
+		// A pan saved before the dials had keys of their own holds one shared value
+		CompoundTag legacy = pan.saveWithFullMetadata(registries);
+		legacy.remove("OilExchange");
+		legacy.remove("SumpSignal");
+		legacy.putInt("ScrollValue", 1);
+		pan.loadWithComponents(legacy, registries);
+		helper.assertTrue(pan.exchange.getValue() == 1 && pan.signalTank.getValue() == 1,
+			"An old save still loads its shared value");
+		helper.succeed();
+	}
+
 	/**
 	 * A vanilla comparator beside an oil pan reads the tank its dial names, so a lamp it feeds lights once the pan holds oil.
 	 * A comparator's facing is its input side, so it faces the pan and the lamp sits behind it.
@@ -2071,6 +2101,27 @@ public class EngineGameTests {
 		});
 	}
 
+	/** A split engine turns over nothing, so a starter that was cranking it must let go of its input network. */
+	@GameTest(template = "empty", timeoutTicks = 500)
+	public static void starterLetsGoWhenTheCrankIsBroken(GameTestHelper helper) {
+		buildSingleCylinder(helper, false);
+		helper.runAtTickTime(200, () -> {
+			StarterBlockEntity starter = helper.getBlockEntity(STARTER);
+			helper.assertTrue(starter.calculateStressApplied() > 0, "Cranking should load the starter first");
+			// A crank block past the shaft at 4 splits the line, with the starter still powered
+			helper.setBlock(new BlockPos(5, 2, 2), alongX(CEBlocks.CRANKSHAFT.getDefaultState()));
+		});
+		helper.runAtTickTime(400, () -> {
+			EngineLayout layout = EngineScanner.scan(helper.getLevel(), helper.absolutePos(PRIMARY));
+			helper.assertTrue(layout != null && layout.broken(), "The line should be broken");
+			StarterBlockEntity starter = helper.getBlockEntity(STARTER);
+			helper.assertTrue(starter.calculateStressApplied() == 0,
+				"A starter on a broken engine should put no stress on its input: " + starter.calculateStressApplied());
+			helper.assertFalse(starter.isTurning(), "A starter on a broken engine is not turning anything over");
+			helper.succeed();
+		});
+	}
+
 	/** A camshaft is one unbroken line too: a plain Shaft in it leaves the lobe cut off, and its cylinder with no cam. */
 	@GameTest(template = "empty", timeoutTicks = 200)
 	public static void aShaftInTheCamshaftLeavesTheLobeWithNoCam(GameTestHelper helper) {
@@ -2113,6 +2164,36 @@ public class EngineGameTests {
 	 * (which turns it the same way), is part of the same engine. It carries a cylinder of its own, worked by a lobe on the
 	 * first line's camshaft, and the engine times both cylinders half a cycle apart and runs on them.
 	 */
+	/**
+	 * Two engines on one kinetic network (here two crank lines the coupling is told to leave apart) each see the other's
+	 * output as something driving them. They must not hold each other up: with no fuel and no outside drive, once the
+	 * starter lets go both must run down and stop, and a restart must not bring the pair back to a steady speed.
+	 */
+	@GameTest(template = "empty", timeoutTicks = 1500)
+	public static void twoEnginesOnOneNetworkDoNotHoldEachOtherUp(GameTestHelper helper) {
+		int coupledLines = CEConfig.MAX_COUPLED_LINES.get();
+		CEConfig.MAX_COUPLED_LINES.set(1);
+		buildSingleCylinder(helper, false);
+		TestEngine.addCoupledLine(helper.getLevel(), helper.absolutePos(BlockPos.ZERO));
+		BlockPos secondCrank = new BlockPos(1, 2, 4);
+
+		helper.runAtTickTime(250, () -> {
+			CrankshaftBlockEntity second = helper.getBlockEntity(secondCrank);
+			helper.assertTrue(second.getTheoreticalSpeed() != 0, "The starter should be turning the geared line too");
+		});
+		helper.runAtTickTime(300, () -> helper.setBlock(STARTER_POWER, Blocks.AIR));
+		helper.runAtTickTime(1100, () -> {
+			CEConfig.MAX_COUPLED_LINES.set(coupledLines);
+			CrankshaftBlockEntity first = helper.getBlockEntity(PRIMARY);
+			CrankshaftBlockEntity second = helper.getBlockEntity(secondCrank);
+			helper.assertTrue(first.getGeneratedSpeed() == 0 && second.getGeneratedSpeed() == 0,
+				"Neither engine should still be publishing a speed: " + first.getGeneratedSpeed() + ", " + second.getGeneratedSpeed());
+			helper.assertTrue(first.getTheoreticalSpeed() == 0 && second.getTheoreticalSpeed() == 0,
+				"The pair should have run down: " + first.getTheoreticalSpeed() + ", " + second.getTheoreticalSpeed());
+			helper.succeed();
+		});
+	}
+
 	@GameTest(template = "empty", timeoutTicks = 1200)
 	public static void crankshaftsGearedTogetherAreOneEngine(GameTestHelper helper) {
 		buildSingleCylinder(helper, true);
@@ -2649,6 +2730,13 @@ public class EngineGameTests {
 		var diesel = com.createengines.registry.CEDataMaps.fuel(CEFluids.DIESEL.get());
 		helper.assertTrue(diesel != null && diesel.energyPerMb() == 36 && diesel.autoignitionTemp() == 1.55,
 			"A data map entry still wins over the tag: " + diesel);
+		var ethanol = com.createengines.registry.CEDataMaps.fuel(CEFluids.ETHANOL.get());
+		helper.assertTrue(ethanol != null && ethanol.autoignitionTemp() == 3.4
+			&& ethanol.preignitionTemp() == com.createengines.engine.sim.FuelSpec.ETHANOL_PREIGNITION,
+			"Ethanol's data entry names its own pre-ignition point: " + ethanol);
+		var gasoline = com.createengines.registry.CEDataMaps.fuel(CEFluids.GASOLINE.get());
+		helper.assertTrue(gasoline != null && gasoline.preignitionTemp() == gasoline.autoignitionTemp(),
+			"A fuel that names none pre-ignites at its autoignition point: " + gasoline);
 		helper.succeed();
 	}
 
@@ -3196,6 +3284,79 @@ public class EngineGameTests {
 		dye(helper, player, rotor, CEBlocks.ENGINE_WINDOW_CASING.asStack(1));
 		helper.assertFalse(helper.getBlockState(rotor)
 			.getValue(encased), "A rotor housing takes no window casing");
+		helper.succeed();
+	}
+
+	/**
+	 * Every casing clads every part it can: the riveted and louvred plates clad cranks, cams, cylinders and pipes and are
+	 * remembered (and given back) as that plate, the window casing clads cranks and cams, and each of them makes Create's
+	 * encased shaft and cogwheels of its own, with valid block entities.
+	 */
+	@GameTest(template = "empty_large", timeoutTicks = 100)
+	public static void everyCasingCladsEveryPartItCan(GameTestHelper helper) {
+		net.minecraft.world.entity.player.Player player = helper.makeMockPlayer(net.minecraft.world.level.GameType.SURVIVAL);
+		var style = com.createengines.content.Encasing.STYLE;
+		var encased = com.createengines.content.Encasing.ENCASED;
+		var plates = java.util.Map.of(com.createengines.content.CasingStyle.RIVETED, CEBlocks.ENGINE_RIVETED_CASING,
+			com.createengines.content.CasingStyle.LOUVRED, CEBlocks.ENGINE_LOUVRED_CASING);
+		int row = 0;
+		for (var plate : plates.entrySet()) {
+			BlockState[] parts = {CEBlocks.CRANKSHAFT.getDefaultState(), CEBlocks.CRANK_THROW.getDefaultState(),
+				CEBlocks.CAMSHAFT.getDefaultState(), CEBlocks.CAM_LOBE.getDefaultState(), CEBlocks.CYLINDER.getDefaultState(),
+				CEBlocks.INTAKE_MANIFOLD.getDefaultState()};
+			for (int i = 0; i < parts.length; i++) {
+				BlockPos pos = new BlockPos(2 + i * 2, 2, 2 + row * 4);
+				helper.setBlock(pos, parts[i]);
+				net.minecraft.world.item.ItemStack casing = plate.getValue()
+					.asStack(2);
+				dye(helper, player, pos, casing);
+				BlockState state = helper.getBlockState(pos);
+				helper.assertTrue(state.getValue(encased) && state.getValue(style) == plate.getKey(),
+					plate.getKey() + " casing should clad " + parts[i] + ", got " + state);
+				helper.assertTrue(casing.getCount() == 1, "One casing is used up on " + parts[i]);
+				helper.assertTrue(com.createengines.content.Encasing.casingStack(state)
+					.is(plate.getValue()
+						.asItem()), "It gives its own casing back, not the plain one");
+				helper.assertTrue(com.createengines.content.Encasing.styleOf(state) == plate.getKey(), "styleOf reads it back");
+				dye(helper, player, pos, new net.minecraft.world.item.ItemStack(net.minecraft.world.item.Items.GREEN_DYE));
+				helper.assertTrue(helper.getBlockState(pos)
+					.getValue(com.createengines.content.EngineCasingBlock.PAINT) == com.createengines.content.CasingPaint.GREEN
+					&& helper.getBlockState(pos)
+						.getValue(style) == plate.getKey(), "Painting a clad part keeps its plate");
+			}
+			row++;
+		}
+		// A part clad before plates existed (no style recorded) is plain
+		helper.assertTrue(com.createengines.content.Encasing.styleOf(CEBlocks.CRANKSHAFT.getDefaultState()
+			.setValue(encased, true)) == com.createengines.content.CasingStyle.PLAIN, "A part with no plate is plain");
+		// Each casing makes Create's shaft and cogwheels of its own kind, and each is a working kinetic block
+		var variants = java.util.Map.of(CEBlocks.ENGINE_RIVETED_CASING.get(),
+			java.util.List.of(CEBlocks.ENGINE_RIVETED_CASED_SHAFT, CEBlocks.ENGINE_RIVETED_CASED_COGWHEEL,
+				CEBlocks.ENGINE_RIVETED_CASED_LARGE_COGWHEEL),
+			CEBlocks.ENGINE_LOUVRED_CASING.get(),
+			java.util.List.of(CEBlocks.ENGINE_LOUVRED_CASED_SHAFT, CEBlocks.ENGINE_LOUVRED_CASED_COGWHEEL,
+				CEBlocks.ENGINE_LOUVRED_CASED_LARGE_COGWHEEL),
+			CEBlocks.ENGINE_WINDOW_CASING.get(),
+			java.util.List.of(CEBlocks.ENGINE_WINDOW_CASED_SHAFT, CEBlocks.ENGINE_WINDOW_CASED_COGWHEEL,
+				CEBlocks.ENGINE_WINDOW_CASED_LARGE_COGWHEEL));
+		net.minecraft.world.level.block.Block[] bases = {AllBlocks.SHAFT.get(), AllBlocks.COGWHEEL.get(),
+			AllBlocks.LARGE_COGWHEEL.get()};
+		int x = 1;
+		for (var entry : variants.entrySet())
+			for (int i = 0; i < bases.length; i++) {
+				var block = entry.getValue()
+					.get(i)
+					.get();
+				helper.assertTrue(com.simibubi.create.content.decoration.encasing.EncasingRegistry.getVariants(bases[i])
+					.stream()
+					.anyMatch(variant -> variant == block
+						&& variant instanceof com.simibubi.create.content.decoration.encasing.EncasedBlock cased
+						&& cased.getCasing() == entry.getKey()), entry.getKey() + " should encase " + bases[i]);
+				BlockPos pos = new BlockPos(x++, 2, 14);
+				helper.setBlock(pos, block.defaultBlockState());
+				helper.assertTrue(helper.getBlockEntity(pos) instanceof KineticBlockEntity,
+					"A cased shaft or cog is a kinetic block: " + block);
+			}
 		helper.succeed();
 	}
 

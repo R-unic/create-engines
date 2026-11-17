@@ -149,6 +149,9 @@ public final class EngineSimulation {
 	private void runCranked(double loadTorque, double maxOmega, double floorOmega, int floorDirection) {
 		crankingWork = 0;
 		crankingAngle = 0;
+		// Every stall test is a comparison, which NaN fails: a corrupt speed would otherwise never stop
+		if (!Double.isFinite(omega))
+			omega = 0;
 		measureFriction();
 		if (floorOmega > STALL_OMEGA) {
 			if (omega <= STALL_OMEGA)
@@ -172,7 +175,7 @@ public final class EngineSimulation {
 			}
 			crankingAngle += radians;
 			remaining -= dt;
-			if (energy <= 0) {
+			if (!(energy > 0)) {
 				stall();
 				return;
 			}
@@ -483,7 +486,7 @@ public final class EngineSimulation {
 		setDirection(direction);
 		this.angle = SimMath.wrap(angle);
 		this.rotaryAngle = SimMath.wrap(angle, CylinderModel.ROTARY_CYCLE);
-		this.omega = Math.max(0, omega);
+		this.omega = Double.isFinite(omega) ? Math.max(0, omega) : 0;
 		for (Camshaft camshaft : camshafts)
 			camshaft.angle = this.angle / 2;
 	}

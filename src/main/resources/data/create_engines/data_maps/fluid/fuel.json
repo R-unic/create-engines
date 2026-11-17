@@ -28,7 +28,8 @@
       "air_per_mb": 1.0,
       "cold_sensitivity": 1.8,
       "charge_cooling": 0.08,
-      "soot_factor": 0.0
+      "soot_factor": 0.0,
+      "preignition_temperature": 5.0
     }
   }
 }

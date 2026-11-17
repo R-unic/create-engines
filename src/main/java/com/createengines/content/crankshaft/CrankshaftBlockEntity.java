@@ -317,6 +317,10 @@ public class CrankshaftBlockEntity extends GeneratingKineticBlockEntity implemen
 		super.write(tag, registries, clientPacket);
 	}
 
+	private static double finite(double value, double fallback) {
+		return Double.isFinite(value) ? value : fallback;
+	}
+
 	@Override
 	protected void read(CompoundTag tag, HolderLookup.Provider registries, boolean clientPacket) {
 		publishedSpeed = tag.getFloat("EngineSpeed");
@@ -326,11 +330,12 @@ public class CrankshaftBlockEntity extends GeneratingKineticBlockEntity implemen
 		sense = tag.contains("Sense") && tag.getInt("Sense") < 0 ? -1 : 1;
 		if (tag.contains("Motion")) {
 			CompoundTag motion = tag.getCompound("Motion");
-			savedMotion = new EngineController.Motion(motion.getDouble("Angle"), motion.getDouble("Omega"),
-				motion.getInt("Direction"), motion.getDouble("Film"), motion.getDouble("Dilution"),
+			// A damaged save must not hand the simulation NaN or infinity: it would never stall or settle
+			savedMotion = new EngineController.Motion(finite(motion.getDouble("Angle"), 0), finite(motion.getDouble("Omega"), 0),
+				motion.getInt("Direction"), finite(motion.getDouble("Film"), 0), finite(motion.getDouble("Dilution"), 0),
 				// An engine saved before oil went off has new oil, and a block that has had time to settle
-				motion.contains("Condition") ? motion.getDouble("Condition") : 1,
-				motion.contains("Temperature") ? motion.getDouble("Temperature") : Thermal.NORMAL, null);
+				motion.contains("Condition") ? finite(motion.getDouble("Condition"), 1) : 1,
+				motion.contains("Temperature") ? finite(motion.getDouble("Temperature"), Thermal.NORMAL) : Thermal.NORMAL, null);
 		}
 		if (clientPacket)
 			summary = tag.contains("Summary") ? EngineSummary.read(tag.getCompound("Summary")) : null;

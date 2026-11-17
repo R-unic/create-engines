@@ -1,418 +1,1250 @@
 {
   "variants": {
-    "connecting_rod=false,encased=false,facing=down,forged_piston=false,piston=false": {
+    "casing_style=louvred,connecting_rod=false,encased=false,facing=down,forged_piston=false,piston=false": {
       "model": "create_engines:block/precision_cylinder/block",
       "x": 180
     },
-    "connecting_rod=false,encased=false,facing=down,forged_piston=false,piston=true": {
+    "casing_style=louvred,connecting_rod=false,encased=false,facing=down,forged_piston=false,piston=true": {
       "model": "create_engines:block/precision_cylinder/block",
       "x": 180
     },
-    "connecting_rod=false,encased=false,facing=down,forged_piston=true,piston=false": {
+    "casing_style=louvred,connecting_rod=false,encased=false,facing=down,forged_piston=true,piston=false": {
       "model": "create_engines:block/precision_cylinder/block",
       "x": 180
     },
-    "connecting_rod=false,encased=false,facing=down,forged_piston=true,piston=true": {
+    "casing_style=louvred,connecting_rod=false,encased=false,facing=down,forged_piston=true,piston=true": {
       "model": "create_engines:block/precision_cylinder/block",
       "x": 180
     },
-    "connecting_rod=false,encased=false,facing=east,forged_piston=false,piston=false": {
+    "casing_style=louvred,connecting_rod=false,encased=false,facing=east,forged_piston=false,piston=false": {
       "model": "create_engines:block/precision_cylinder/block",
       "x": 90,
       "y": 90
     },
-    "connecting_rod=false,encased=false,facing=east,forged_piston=false,piston=true": {
+    "casing_style=louvred,connecting_rod=false,encased=false,facing=east,forged_piston=false,piston=true": {
       "model": "create_engines:block/precision_cylinder/block",
       "x": 90,
       "y": 90
     },
-    "connecting_rod=false,encased=false,facing=east,forged_piston=true,piston=false": {
+    "casing_style=louvred,connecting_rod=false,encased=false,facing=east,forged_piston=true,piston=false": {
       "model": "create_engines:block/precision_cylinder/block",
       "x": 90,
       "y": 90
     },
-    "connecting_rod=false,encased=false,facing=east,forged_piston=true,piston=true": {
+    "casing_style=louvred,connecting_rod=false,encased=false,facing=east,forged_piston=true,piston=true": {
       "model": "create_engines:block/precision_cylinder/block",
       "x": 90,
       "y": 90
     },
-    "connecting_rod=false,encased=false,facing=north,forged_piston=false,piston=false": {
+    "casing_style=louvred,connecting_rod=false,encased=false,facing=north,forged_piston=false,piston=false": {
       "model": "create_engines:block/precision_cylinder/block",
       "x": 90
     },
-    "connecting_rod=false,encased=false,facing=north,forged_piston=false,piston=true": {
+    "casing_style=louvred,connecting_rod=false,encased=false,facing=north,forged_piston=false,piston=true": {
       "model": "create_engines:block/precision_cylinder/block",
       "x": 90
     },
-    "connecting_rod=false,encased=false,facing=north,forged_piston=true,piston=false": {
+    "casing_style=louvred,connecting_rod=false,encased=false,facing=north,forged_piston=true,piston=false": {
       "model": "create_engines:block/precision_cylinder/block",
       "x": 90
     },
-    "connecting_rod=false,encased=false,facing=north,forged_piston=true,piston=true": {
+    "casing_style=louvred,connecting_rod=false,encased=false,facing=north,forged_piston=true,piston=true": {
       "model": "create_engines:block/precision_cylinder/block",
       "x": 90
     },
-    "connecting_rod=false,encased=false,facing=south,forged_piston=false,piston=false": {
+    "casing_style=louvred,connecting_rod=false,encased=false,facing=south,forged_piston=false,piston=false": {
       "model": "create_engines:block/precision_cylinder/block",
       "x": 90,
       "y": 180
     },
-    "connecting_rod=false,encased=false,facing=south,forged_piston=false,piston=true": {
+    "casing_style=louvred,connecting_rod=false,encased=false,facing=south,forged_piston=false,piston=true": {
       "model": "create_engines:block/precision_cylinder/block",
       "x": 90,
       "y": 180
     },
-    "connecting_rod=false,encased=false,facing=south,forged_piston=true,piston=false": {
+    "casing_style=louvred,connecting_rod=false,encased=false,facing=south,forged_piston=true,piston=false": {
       "model": "create_engines:block/precision_cylinder/block",
       "x": 90,
       "y": 180
     },
-    "connecting_rod=false,encased=false,facing=south,forged_piston=true,piston=true": {
+    "casing_style=louvred,connecting_rod=false,encased=false,facing=south,forged_piston=true,piston=true": {
       "model": "create_engines:block/precision_cylinder/block",
       "x": 90,
       "y": 180
     },
-    "connecting_rod=false,encased=false,facing=up,forged_piston=false,piston=false": {
+    "casing_style=louvred,connecting_rod=false,encased=false,facing=up,forged_piston=false,piston=false": {
       "model": "create_engines:block/precision_cylinder/block"
     },
-    "connecting_rod=false,encased=false,facing=up,forged_piston=false,piston=true": {
+    "casing_style=louvred,connecting_rod=false,encased=false,facing=up,forged_piston=false,piston=true": {
       "model": "create_engines:block/precision_cylinder/block"
     },
-    "connecting_rod=false,encased=false,facing=up,forged_piston=true,piston=false": {
+    "casing_style=louvred,connecting_rod=false,encased=false,facing=up,forged_piston=true,piston=false": {
       "model": "create_engines:block/precision_cylinder/block"
     },
-    "connecting_rod=false,encased=false,facing=up,forged_piston=true,piston=true": {
+    "casing_style=louvred,connecting_rod=false,encased=false,facing=up,forged_piston=true,piston=true": {
       "model": "create_engines:block/precision_cylinder/block"
     },
-    "connecting_rod=false,encased=false,facing=west,forged_piston=false,piston=false": {
+    "casing_style=louvred,connecting_rod=false,encased=false,facing=west,forged_piston=false,piston=false": {
       "model": "create_engines:block/precision_cylinder/block",
       "x": 90,
       "y": 270
     },
-    "connecting_rod=false,encased=false,facing=west,forged_piston=false,piston=true": {
+    "casing_style=louvred,connecting_rod=false,encased=false,facing=west,forged_piston=false,piston=true": {
       "model": "create_engines:block/precision_cylinder/block",
       "x": 90,
       "y": 270
     },
-    "connecting_rod=false,encased=false,facing=west,forged_piston=true,piston=false": {
+    "casing_style=louvred,connecting_rod=false,encased=false,facing=west,forged_piston=true,piston=false": {
       "model": "create_engines:block/precision_cylinder/block",
       "x": 90,
       "y": 270
     },
-    "connecting_rod=false,encased=false,facing=west,forged_piston=true,piston=true": {
+    "casing_style=louvred,connecting_rod=false,encased=false,facing=west,forged_piston=true,piston=true": {
       "model": "create_engines:block/precision_cylinder/block",
       "x": 90,
       "y": 270
     },
-    "connecting_rod=false,encased=true,facing=down,forged_piston=false,piston=false": {
-      "model": "create_engines:block/engine_casing/block",
+    "casing_style=louvred,connecting_rod=false,encased=true,facing=down,forged_piston=false,piston=false": {
+      "model": "create_engines:block/engine_louvred_casing/block",
       "x": 180
     },
-    "connecting_rod=false,encased=true,facing=down,forged_piston=false,piston=true": {
-      "model": "create_engines:block/engine_casing/block",
+    "casing_style=louvred,connecting_rod=false,encased=true,facing=down,forged_piston=false,piston=true": {
+      "model": "create_engines:block/engine_louvred_casing/block",
       "x": 180
     },
-    "connecting_rod=false,encased=true,facing=down,forged_piston=true,piston=false": {
-      "model": "create_engines:block/engine_casing/block",
+    "casing_style=louvred,connecting_rod=false,encased=true,facing=down,forged_piston=true,piston=false": {
+      "model": "create_engines:block/engine_louvred_casing/block",
       "x": 180
     },
-    "connecting_rod=false,encased=true,facing=down,forged_piston=true,piston=true": {
-      "model": "create_engines:block/engine_casing/block",
+    "casing_style=louvred,connecting_rod=false,encased=true,facing=down,forged_piston=true,piston=true": {
+      "model": "create_engines:block/engine_louvred_casing/block",
       "x": 180
     },
-    "connecting_rod=false,encased=true,facing=east,forged_piston=false,piston=false": {
-      "model": "create_engines:block/engine_casing/block",
+    "casing_style=louvred,connecting_rod=false,encased=true,facing=east,forged_piston=false,piston=false": {
+      "model": "create_engines:block/engine_louvred_casing/block",
       "x": 90,
       "y": 90
     },
-    "connecting_rod=false,encased=true,facing=east,forged_piston=false,piston=true": {
-      "model": "create_engines:block/engine_casing/block",
+    "casing_style=louvred,connecting_rod=false,encased=true,facing=east,forged_piston=false,piston=true": {
+      "model": "create_engines:block/engine_louvred_casing/block",
       "x": 90,
       "y": 90
     },
-    "connecting_rod=false,encased=true,facing=east,forged_piston=true,piston=false": {
-      "model": "create_engines:block/engine_casing/block",
+    "casing_style=louvred,connecting_rod=false,encased=true,facing=east,forged_piston=true,piston=false": {
+      "model": "create_engines:block/engine_louvred_casing/block",
       "x": 90,
       "y": 90
     },
-    "connecting_rod=false,encased=true,facing=east,forged_piston=true,piston=true": {
-      "model": "create_engines:block/engine_casing/block",
+    "casing_style=louvred,connecting_rod=false,encased=true,facing=east,forged_piston=true,piston=true": {
+      "model": "create_engines:block/engine_louvred_casing/block",
       "x": 90,
       "y": 90
     },
-    "connecting_rod=false,encased=true,facing=north,forged_piston=false,piston=false": {
-      "model": "create_engines:block/engine_casing/block",
+    "casing_style=louvred,connecting_rod=false,encased=true,facing=north,forged_piston=false,piston=false": {
+      "model": "create_engines:block/engine_louvred_casing/block",
       "x": 90
     },
-    "connecting_rod=false,encased=true,facing=north,forged_piston=false,piston=true": {
-      "model": "create_engines:block/engine_casing/block",
+    "casing_style=louvred,connecting_rod=false,encased=true,facing=north,forged_piston=false,piston=true": {
+      "model": "create_engines:block/engine_louvred_casing/block",
       "x": 90
     },
-    "connecting_rod=false,encased=true,facing=north,forged_piston=true,piston=false": {
-      "model": "create_engines:block/engine_casing/block",
+    "casing_style=louvred,connecting_rod=false,encased=true,facing=north,forged_piston=true,piston=false": {
+      "model": "create_engines:block/engine_louvred_casing/block",
       "x": 90
     },
-    "connecting_rod=false,encased=true,facing=north,forged_piston=true,piston=true": {
-      "model": "create_engines:block/engine_casing/block",
+    "casing_style=louvred,connecting_rod=false,encased=true,facing=north,forged_piston=true,piston=true": {
+      "model": "create_engines:block/engine_louvred_casing/block",
       "x": 90
     },
-    "connecting_rod=false,encased=true,facing=south,forged_piston=false,piston=false": {
-      "model": "create_engines:block/engine_casing/block",
+    "casing_style=louvred,connecting_rod=false,encased=true,facing=south,forged_piston=false,piston=false": {
+      "model": "create_engines:block/engine_louvred_casing/block",
       "x": 90,
       "y": 180
     },
-    "connecting_rod=false,encased=true,facing=south,forged_piston=false,piston=true": {
-      "model": "create_engines:block/engine_casing/block",
+    "casing_style=louvred,connecting_rod=false,encased=true,facing=south,forged_piston=false,piston=true": {
+      "model": "create_engines:block/engine_louvred_casing/block",
       "x": 90,
       "y": 180
     },
-    "connecting_rod=false,encased=true,facing=south,forged_piston=true,piston=false": {
-      "model": "create_engines:block/engine_casing/block",
+    "casing_style=louvred,connecting_rod=false,encased=true,facing=south,forged_piston=true,piston=false": {
+      "model": "create_engines:block/engine_louvred_casing/block",
       "x": 90,
       "y": 180
     },
-    "connecting_rod=false,encased=true,facing=south,forged_piston=true,piston=true": {
-      "model": "create_engines:block/engine_casing/block",
+    "casing_style=louvred,connecting_rod=false,encased=true,facing=south,forged_piston=true,piston=true": {
+      "model": "create_engines:block/engine_louvred_casing/block",
       "x": 90,
       "y": 180
     },
-    "connecting_rod=false,encased=true,facing=up,forged_piston=false,piston=false": {
-      "model": "create_engines:block/engine_casing/block"
+    "casing_style=louvred,connecting_rod=false,encased=true,facing=up,forged_piston=false,piston=false": {
+      "model": "create_engines:block/engine_louvred_casing/block"
     },
-    "connecting_rod=false,encased=true,facing=up,forged_piston=false,piston=true": {
-      "model": "create_engines:block/engine_casing/block"
+    "casing_style=louvred,connecting_rod=false,encased=true,facing=up,forged_piston=false,piston=true": {
+      "model": "create_engines:block/engine_louvred_casing/block"
     },
-    "connecting_rod=false,encased=true,facing=up,forged_piston=true,piston=false": {
-      "model": "create_engines:block/engine_casing/block"
+    "casing_style=louvred,connecting_rod=false,encased=true,facing=up,forged_piston=true,piston=false": {
+      "model": "create_engines:block/engine_louvred_casing/block"
     },
-    "connecting_rod=false,encased=true,facing=up,forged_piston=true,piston=true": {
-      "model": "create_engines:block/engine_casing/block"
+    "casing_style=louvred,connecting_rod=false,encased=true,facing=up,forged_piston=true,piston=true": {
+      "model": "create_engines:block/engine_louvred_casing/block"
     },
-    "connecting_rod=false,encased=true,facing=west,forged_piston=false,piston=false": {
-      "model": "create_engines:block/engine_casing/block",
+    "casing_style=louvred,connecting_rod=false,encased=true,facing=west,forged_piston=false,piston=false": {
+      "model": "create_engines:block/engine_louvred_casing/block",
       "x": 90,
       "y": 270
     },
-    "connecting_rod=false,encased=true,facing=west,forged_piston=false,piston=true": {
-      "model": "create_engines:block/engine_casing/block",
+    "casing_style=louvred,connecting_rod=false,encased=true,facing=west,forged_piston=false,piston=true": {
+      "model": "create_engines:block/engine_louvred_casing/block",
       "x": 90,
       "y": 270
     },
-    "connecting_rod=false,encased=true,facing=west,forged_piston=true,piston=false": {
-      "model": "create_engines:block/engine_casing/block",
+    "casing_style=louvred,connecting_rod=false,encased=true,facing=west,forged_piston=true,piston=false": {
+      "model": "create_engines:block/engine_louvred_casing/block",
       "x": 90,
       "y": 270
     },
-    "connecting_rod=false,encased=true,facing=west,forged_piston=true,piston=true": {
-      "model": "create_engines:block/engine_casing/block",
+    "casing_style=louvred,connecting_rod=false,encased=true,facing=west,forged_piston=true,piston=true": {
+      "model": "create_engines:block/engine_louvred_casing/block",
       "x": 90,
       "y": 270
     },
-    "connecting_rod=true,encased=false,facing=down,forged_piston=false,piston=false": {
+    "casing_style=louvred,connecting_rod=true,encased=false,facing=down,forged_piston=false,piston=false": {
       "model": "create_engines:block/precision_cylinder/block",
       "x": 180
     },
-    "connecting_rod=true,encased=false,facing=down,forged_piston=false,piston=true": {
+    "casing_style=louvred,connecting_rod=true,encased=false,facing=down,forged_piston=false,piston=true": {
       "model": "create_engines:block/precision_cylinder/block",
       "x": 180
     },
-    "connecting_rod=true,encased=false,facing=down,forged_piston=true,piston=false": {
+    "casing_style=louvred,connecting_rod=true,encased=false,facing=down,forged_piston=true,piston=false": {
       "model": "create_engines:block/precision_cylinder/block",
       "x": 180
     },
-    "connecting_rod=true,encased=false,facing=down,forged_piston=true,piston=true": {
+    "casing_style=louvred,connecting_rod=true,encased=false,facing=down,forged_piston=true,piston=true": {
       "model": "create_engines:block/precision_cylinder/block",
       "x": 180
     },
-    "connecting_rod=true,encased=false,facing=east,forged_piston=false,piston=false": {
+    "casing_style=louvred,connecting_rod=true,encased=false,facing=east,forged_piston=false,piston=false": {
       "model": "create_engines:block/precision_cylinder/block",
       "x": 90,
       "y": 90
     },
-    "connecting_rod=true,encased=false,facing=east,forged_piston=false,piston=true": {
+    "casing_style=louvred,connecting_rod=true,encased=false,facing=east,forged_piston=false,piston=true": {
       "model": "create_engines:block/precision_cylinder/block",
       "x": 90,
       "y": 90
     },
-    "connecting_rod=true,encased=false,facing=east,forged_piston=true,piston=false": {
+    "casing_style=louvred,connecting_rod=true,encased=false,facing=east,forged_piston=true,piston=false": {
       "model": "create_engines:block/precision_cylinder/block",
       "x": 90,
       "y": 90
     },
-    "connecting_rod=true,encased=false,facing=east,forged_piston=true,piston=true": {
+    "casing_style=louvred,connecting_rod=true,encased=false,facing=east,forged_piston=true,piston=true": {
       "model": "create_engines:block/precision_cylinder/block",
       "x": 90,
       "y": 90
     },
-    "connecting_rod=true,encased=false,facing=north,forged_piston=false,piston=false": {
+    "casing_style=louvred,connecting_rod=true,encased=false,facing=north,forged_piston=false,piston=false": {
       "model": "create_engines:block/precision_cylinder/block",
       "x": 90
     },
-    "connecting_rod=true,encased=false,facing=north,forged_piston=false,piston=true": {
+    "casing_style=louvred,connecting_rod=true,encased=false,facing=north,forged_piston=false,piston=true": {
       "model": "create_engines:block/precision_cylinder/block",
       "x": 90
     },
-    "connecting_rod=true,encased=false,facing=north,forged_piston=true,piston=false": {
+    "casing_style=louvred,connecting_rod=true,encased=false,facing=north,forged_piston=true,piston=false": {
       "model": "create_engines:block/precision_cylinder/block",
       "x": 90
     },
-    "connecting_rod=true,encased=false,facing=north,forged_piston=true,piston=true": {
+    "casing_style=louvred,connecting_rod=true,encased=false,facing=north,forged_piston=true,piston=true": {
       "model": "create_engines:block/precision_cylinder/block",
       "x": 90
     },
-    "connecting_rod=true,encased=false,facing=south,forged_piston=false,piston=false": {
+    "casing_style=louvred,connecting_rod=true,encased=false,facing=south,forged_piston=false,piston=false": {
       "model": "create_engines:block/precision_cylinder/block",
       "x": 90,
       "y": 180
     },
-    "connecting_rod=true,encased=false,facing=south,forged_piston=false,piston=true": {
+    "casing_style=louvred,connecting_rod=true,encased=false,facing=south,forged_piston=false,piston=true": {
       "model": "create_engines:block/precision_cylinder/block",
       "x": 90,
       "y": 180
     },
-    "connecting_rod=true,encased=false,facing=south,forged_piston=true,piston=false": {
+    "casing_style=louvred,connecting_rod=true,encased=false,facing=south,forged_piston=true,piston=false": {
       "model": "create_engines:block/precision_cylinder/block",
       "x": 90,
       "y": 180
     },
-    "connecting_rod=true,encased=false,facing=south,forged_piston=true,piston=true": {
+    "casing_style=louvred,connecting_rod=true,encased=false,facing=south,forged_piston=true,piston=true": {
       "model": "create_engines:block/precision_cylinder/block",
       "x": 90,
       "y": 180
     },
-    "connecting_rod=true,encased=false,facing=up,forged_piston=false,piston=false": {
+    "casing_style=louvred,connecting_rod=true,encased=false,facing=up,forged_piston=false,piston=false": {
       "model": "create_engines:block/precision_cylinder/block"
     },
-    "connecting_rod=true,encased=false,facing=up,forged_piston=false,piston=true": {
+    "casing_style=louvred,connecting_rod=true,encased=false,facing=up,forged_piston=false,piston=true": {
       "model": "create_engines:block/precision_cylinder/block"
     },
-    "connecting_rod=true,encased=false,facing=up,forged_piston=true,piston=false": {
+    "casing_style=louvred,connecting_rod=true,encased=false,facing=up,forged_piston=true,piston=false": {
       "model": "create_engines:block/precision_cylinder/block"
     },
-    "connecting_rod=true,encased=false,facing=up,forged_piston=true,piston=true": {
+    "casing_style=louvred,connecting_rod=true,encased=false,facing=up,forged_piston=true,piston=true": {
       "model": "create_engines:block/precision_cylinder/block"
     },
-    "connecting_rod=true,encased=false,facing=west,forged_piston=false,piston=false": {
+    "casing_style=louvred,connecting_rod=true,encased=false,facing=west,forged_piston=false,piston=false": {
       "model": "create_engines:block/precision_cylinder/block",
       "x": 90,
       "y": 270
     },
-    "connecting_rod=true,encased=false,facing=west,forged_piston=false,piston=true": {
+    "casing_style=louvred,connecting_rod=true,encased=false,facing=west,forged_piston=false,piston=true": {
       "model": "create_engines:block/precision_cylinder/block",
       "x": 90,
       "y": 270
     },
-    "connecting_rod=true,encased=false,facing=west,forged_piston=true,piston=false": {
+    "casing_style=louvred,connecting_rod=true,encased=false,facing=west,forged_piston=true,piston=false": {
       "model": "create_engines:block/precision_cylinder/block",
       "x": 90,
       "y": 270
     },
-    "connecting_rod=true,encased=false,facing=west,forged_piston=true,piston=true": {
+    "casing_style=louvred,connecting_rod=true,encased=false,facing=west,forged_piston=true,piston=true": {
       "model": "create_engines:block/precision_cylinder/block",
       "x": 90,
       "y": 270
     },
-    "connecting_rod=true,encased=true,facing=down,forged_piston=false,piston=false": {
+    "casing_style=louvred,connecting_rod=true,encased=true,facing=down,forged_piston=false,piston=false": {
+      "model": "create_engines:block/engine_louvred_casing/block",
+      "x": 180
+    },
+    "casing_style=louvred,connecting_rod=true,encased=true,facing=down,forged_piston=false,piston=true": {
+      "model": "create_engines:block/engine_louvred_casing/block",
+      "x": 180
+    },
+    "casing_style=louvred,connecting_rod=true,encased=true,facing=down,forged_piston=true,piston=false": {
+      "model": "create_engines:block/engine_louvred_casing/block",
+      "x": 180
+    },
+    "casing_style=louvred,connecting_rod=true,encased=true,facing=down,forged_piston=true,piston=true": {
+      "model": "create_engines:block/engine_louvred_casing/block",
+      "x": 180
+    },
+    "casing_style=louvred,connecting_rod=true,encased=true,facing=east,forged_piston=false,piston=false": {
+      "model": "create_engines:block/engine_louvred_casing/block",
+      "x": 90,
+      "y": 90
+    },
+    "casing_style=louvred,connecting_rod=true,encased=true,facing=east,forged_piston=false,piston=true": {
+      "model": "create_engines:block/engine_louvred_casing/block",
+      "x": 90,
+      "y": 90
+    },
+    "casing_style=louvred,connecting_rod=true,encased=true,facing=east,forged_piston=true,piston=false": {
+      "model": "create_engines:block/engine_louvred_casing/block",
+      "x": 90,
+      "y": 90
+    },
+    "casing_style=louvred,connecting_rod=true,encased=true,facing=east,forged_piston=true,piston=true": {
+      "model": "create_engines:block/engine_louvred_casing/block",
+      "x": 90,
+      "y": 90
+    },
+    "casing_style=louvred,connecting_rod=true,encased=true,facing=north,forged_piston=false,piston=false": {
+      "model": "create_engines:block/engine_louvred_casing/block",
+      "x": 90
+    },
+    "casing_style=louvred,connecting_rod=true,encased=true,facing=north,forged_piston=false,piston=true": {
+      "model": "create_engines:block/engine_louvred_casing/block",
+      "x": 90
+    },
+    "casing_style=louvred,connecting_rod=true,encased=true,facing=north,forged_piston=true,piston=false": {
+      "model": "create_engines:block/engine_louvred_casing/block",
+      "x": 90
+    },
+    "casing_style=louvred,connecting_rod=true,encased=true,facing=north,forged_piston=true,piston=true": {
+      "model": "create_engines:block/engine_louvred_casing/block",
+      "x": 90
+    },
+    "casing_style=louvred,connecting_rod=true,encased=true,facing=south,forged_piston=false,piston=false": {
+      "model": "create_engines:block/engine_louvred_casing/block",
+      "x": 90,
+      "y": 180
+    },
+    "casing_style=louvred,connecting_rod=true,encased=true,facing=south,forged_piston=false,piston=true": {
+      "model": "create_engines:block/engine_louvred_casing/block",
+      "x": 90,
+      "y": 180
+    },
+    "casing_style=louvred,connecting_rod=true,encased=true,facing=south,forged_piston=true,piston=false": {
+      "model": "create_engines:block/engine_louvred_casing/block",
+      "x": 90,
+      "y": 180
+    },
+    "casing_style=louvred,connecting_rod=true,encased=true,facing=south,forged_piston=true,piston=true": {
+      "model": "create_engines:block/engine_louvred_casing/block",
+      "x": 90,
+      "y": 180
+    },
+    "casing_style=louvred,connecting_rod=true,encased=true,facing=up,forged_piston=false,piston=false": {
+      "model": "create_engines:block/engine_louvred_casing/block"
+    },
+    "casing_style=louvred,connecting_rod=true,encased=true,facing=up,forged_piston=false,piston=true": {
+      "model": "create_engines:block/engine_louvred_casing/block"
+    },
+    "casing_style=louvred,connecting_rod=true,encased=true,facing=up,forged_piston=true,piston=false": {
+      "model": "create_engines:block/engine_louvred_casing/block"
+    },
+    "casing_style=louvred,connecting_rod=true,encased=true,facing=up,forged_piston=true,piston=true": {
+      "model": "create_engines:block/engine_louvred_casing/block"
+    },
+    "casing_style=louvred,connecting_rod=true,encased=true,facing=west,forged_piston=false,piston=false": {
+      "model": "create_engines:block/engine_louvred_casing/block",
+      "x": 90,
+      "y": 270
+    },
+    "casing_style=louvred,connecting_rod=true,encased=true,facing=west,forged_piston=false,piston=true": {
+      "model": "create_engines:block/engine_louvred_casing/block",
+      "x": 90,
+      "y": 270
+    },
+    "casing_style=louvred,connecting_rod=true,encased=true,facing=west,forged_piston=true,piston=false": {
+      "model": "create_engines:block/engine_louvred_casing/block",
+      "x": 90,
+      "y": 270
+    },
+    "casing_style=louvred,connecting_rod=true,encased=true,facing=west,forged_piston=true,piston=true": {
+      "model": "create_engines:block/engine_louvred_casing/block",
+      "x": 90,
+      "y": 270
+    },
+    "casing_style=plain,connecting_rod=false,encased=false,facing=down,forged_piston=false,piston=false": {
+      "model": "create_engines:block/precision_cylinder/block",
+      "x": 180
+    },
+    "casing_style=plain,connecting_rod=false,encased=false,facing=down,forged_piston=false,piston=true": {
+      "model": "create_engines:block/precision_cylinder/block",
+      "x": 180
+    },
+    "casing_style=plain,connecting_rod=false,encased=false,facing=down,forged_piston=true,piston=false": {
+      "model": "create_engines:block/precision_cylinder/block",
+      "x": 180
+    },
+    "casing_style=plain,connecting_rod=false,encased=false,facing=down,forged_piston=true,piston=true": {
+      "model": "create_engines:block/precision_cylinder/block",
+      "x": 180
+    },
+    "casing_style=plain,connecting_rod=false,encased=false,facing=east,forged_piston=false,piston=false": {
+      "model": "create_engines:block/precision_cylinder/block",
+      "x": 90,
+      "y": 90
+    },
+    "casing_style=plain,connecting_rod=false,encased=false,facing=east,forged_piston=false,piston=true": {
+      "model": "create_engines:block/precision_cylinder/block",
+      "x": 90,
+      "y": 90
+    },
+    "casing_style=plain,connecting_rod=false,encased=false,facing=east,forged_piston=true,piston=false": {
+      "model": "create_engines:block/precision_cylinder/block",
+      "x": 90,
+      "y": 90
+    },
+    "casing_style=plain,connecting_rod=false,encased=false,facing=east,forged_piston=true,piston=true": {
+      "model": "create_engines:block/precision_cylinder/block",
+      "x": 90,
+      "y": 90
+    },
+    "casing_style=plain,connecting_rod=false,encased=false,facing=north,forged_piston=false,piston=false": {
+      "model": "create_engines:block/precision_cylinder/block",
+      "x": 90
+    },
+    "casing_style=plain,connecting_rod=false,encased=false,facing=north,forged_piston=false,piston=true": {
+      "model": "create_engines:block/precision_cylinder/block",
+      "x": 90
+    },
+    "casing_style=plain,connecting_rod=false,encased=false,facing=north,forged_piston=true,piston=false": {
+      "model": "create_engines:block/precision_cylinder/block",
+      "x": 90
+    },
+    "casing_style=plain,connecting_rod=false,encased=false,facing=north,forged_piston=true,piston=true": {
+      "model": "create_engines:block/precision_cylinder/block",
+      "x": 90
+    },
+    "casing_style=plain,connecting_rod=false,encased=false,facing=south,forged_piston=false,piston=false": {
+      "model": "create_engines:block/precision_cylinder/block",
+      "x": 90,
+      "y": 180
+    },
+    "casing_style=plain,connecting_rod=false,encased=false,facing=south,forged_piston=false,piston=true": {
+      "model": "create_engines:block/precision_cylinder/block",
+      "x": 90,
+      "y": 180
+    },
+    "casing_style=plain,connecting_rod=false,encased=false,facing=south,forged_piston=true,piston=false": {
+      "model": "create_engines:block/precision_cylinder/block",
+      "x": 90,
+      "y": 180
+    },
+    "casing_style=plain,connecting_rod=false,encased=false,facing=south,forged_piston=true,piston=true": {
+      "model": "create_engines:block/precision_cylinder/block",
+      "x": 90,
+      "y": 180
+    },
+    "casing_style=plain,connecting_rod=false,encased=false,facing=up,forged_piston=false,piston=false": {
+      "model": "create_engines:block/precision_cylinder/block"
+    },
+    "casing_style=plain,connecting_rod=false,encased=false,facing=up,forged_piston=false,piston=true": {
+      "model": "create_engines:block/precision_cylinder/block"
+    },
+    "casing_style=plain,connecting_rod=false,encased=false,facing=up,forged_piston=true,piston=false": {
+      "model": "create_engines:block/precision_cylinder/block"
+    },
+    "casing_style=plain,connecting_rod=false,encased=false,facing=up,forged_piston=true,piston=true": {
+      "model": "create_engines:block/precision_cylinder/block"
+    },
+    "casing_style=plain,connecting_rod=false,encased=false,facing=west,forged_piston=false,piston=false": {
+      "model": "create_engines:block/precision_cylinder/block",
+      "x": 90,
+      "y": 270
+    },
+    "casing_style=plain,connecting_rod=false,encased=false,facing=west,forged_piston=false,piston=true": {
+      "model": "create_engines:block/precision_cylinder/block",
+      "x": 90,
+      "y": 270
+    },
+    "casing_style=plain,connecting_rod=false,encased=false,facing=west,forged_piston=true,piston=false": {
+      "model": "create_engines:block/precision_cylinder/block",
+      "x": 90,
+      "y": 270
+    },
+    "casing_style=plain,connecting_rod=false,encased=false,facing=west,forged_piston=true,piston=true": {
+      "model": "create_engines:block/precision_cylinder/block",
+      "x": 90,
+      "y": 270
+    },
+    "casing_style=plain,connecting_rod=false,encased=true,facing=down,forged_piston=false,piston=false": {
       "model": "create_engines:block/engine_casing/block",
       "x": 180
     },
-    "connecting_rod=true,encased=true,facing=down,forged_piston=false,piston=true": {
+    "casing_style=plain,connecting_rod=false,encased=true,facing=down,forged_piston=false,piston=true": {
       "model": "create_engines:block/engine_casing/block",
       "x": 180
     },
-    "connecting_rod=true,encased=true,facing=down,forged_piston=true,piston=false": {
+    "casing_style=plain,connecting_rod=false,encased=true,facing=down,forged_piston=true,piston=false": {
       "model": "create_engines:block/engine_casing/block",
       "x": 180
     },
-    "connecting_rod=true,encased=true,facing=down,forged_piston=true,piston=true": {
+    "casing_style=plain,connecting_rod=false,encased=true,facing=down,forged_piston=true,piston=true": {
       "model": "create_engines:block/engine_casing/block",
       "x": 180
     },
-    "connecting_rod=true,encased=true,facing=east,forged_piston=false,piston=false": {
+    "casing_style=plain,connecting_rod=false,encased=true,facing=east,forged_piston=false,piston=false": {
       "model": "create_engines:block/engine_casing/block",
       "x": 90,
       "y": 90
     },
-    "connecting_rod=true,encased=true,facing=east,forged_piston=false,piston=true": {
+    "casing_style=plain,connecting_rod=false,encased=true,facing=east,forged_piston=false,piston=true": {
       "model": "create_engines:block/engine_casing/block",
       "x": 90,
       "y": 90
     },
-    "connecting_rod=true,encased=true,facing=east,forged_piston=true,piston=false": {
+    "casing_style=plain,connecting_rod=false,encased=true,facing=east,forged_piston=true,piston=false": {
       "model": "create_engines:block/engine_casing/block",
       "x": 90,
       "y": 90
     },
-    "connecting_rod=true,encased=true,facing=east,forged_piston=true,piston=true": {
+    "casing_style=plain,connecting_rod=false,encased=true,facing=east,forged_piston=true,piston=true": {
       "model": "create_engines:block/engine_casing/block",
       "x": 90,
       "y": 90
     },
-    "connecting_rod=true,encased=true,facing=north,forged_piston=false,piston=false": {
+    "casing_style=plain,connecting_rod=false,encased=true,facing=north,forged_piston=false,piston=false": {
       "model": "create_engines:block/engine_casing/block",
       "x": 90
     },
-    "connecting_rod=true,encased=true,facing=north,forged_piston=false,piston=true": {
+    "casing_style=plain,connecting_rod=false,encased=true,facing=north,forged_piston=false,piston=true": {
       "model": "create_engines:block/engine_casing/block",
       "x": 90
     },
-    "connecting_rod=true,encased=true,facing=north,forged_piston=true,piston=false": {
+    "casing_style=plain,connecting_rod=false,encased=true,facing=north,forged_piston=true,piston=false": {
       "model": "create_engines:block/engine_casing/block",
       "x": 90
     },
-    "connecting_rod=true,encased=true,facing=north,forged_piston=true,piston=true": {
+    "casing_style=plain,connecting_rod=false,encased=true,facing=north,forged_piston=true,piston=true": {
       "model": "create_engines:block/engine_casing/block",
       "x": 90
     },
-    "connecting_rod=true,encased=true,facing=south,forged_piston=false,piston=false": {
+    "casing_style=plain,connecting_rod=false,encased=true,facing=south,forged_piston=false,piston=false": {
       "model": "create_engines:block/engine_casing/block",
       "x": 90,
       "y": 180
     },
-    "connecting_rod=true,encased=true,facing=south,forged_piston=false,piston=true": {
+    "casing_style=plain,connecting_rod=false,encased=true,facing=south,forged_piston=false,piston=true": {
       "model": "create_engines:block/engine_casing/block",
       "x": 90,
       "y": 180
     },
-    "connecting_rod=true,encased=true,facing=south,forged_piston=true,piston=false": {
+    "casing_style=plain,connecting_rod=false,encased=true,facing=south,forged_piston=true,piston=false": {
       "model": "create_engines:block/engine_casing/block",
       "x": 90,
       "y": 180
     },
-    "connecting_rod=true,encased=true,facing=south,forged_piston=true,piston=true": {
+    "casing_style=plain,connecting_rod=false,encased=true,facing=south,forged_piston=true,piston=true": {
       "model": "create_engines:block/engine_casing/block",
       "x": 90,
       "y": 180
     },
-    "connecting_rod=true,encased=true,facing=up,forged_piston=false,piston=false": {
+    "casing_style=plain,connecting_rod=false,encased=true,facing=up,forged_piston=false,piston=false": {
       "model": "create_engines:block/engine_casing/block"
     },
-    "connecting_rod=true,encased=true,facing=up,forged_piston=false,piston=true": {
+    "casing_style=plain,connecting_rod=false,encased=true,facing=up,forged_piston=false,piston=true": {
       "model": "create_engines:block/engine_casing/block"
     },
-    "connecting_rod=true,encased=true,facing=up,forged_piston=true,piston=false": {
+    "casing_style=plain,connecting_rod=false,encased=true,facing=up,forged_piston=true,piston=false": {
       "model": "create_engines:block/engine_casing/block"
     },
-    "connecting_rod=true,encased=true,facing=up,forged_piston=true,piston=true": {
+    "casing_style=plain,connecting_rod=false,encased=true,facing=up,forged_piston=true,piston=true": {
       "model": "create_engines:block/engine_casing/block"
     },
-    "connecting_rod=true,encased=true,facing=west,forged_piston=false,piston=false": {
+    "casing_style=plain,connecting_rod=false,encased=true,facing=west,forged_piston=false,piston=false": {
       "model": "create_engines:block/engine_casing/block",
       "x": 90,
       "y": 270
     },
-    "connecting_rod=true,encased=true,facing=west,forged_piston=false,piston=true": {
+    "casing_style=plain,connecting_rod=false,encased=true,facing=west,forged_piston=false,piston=true": {
       "model": "create_engines:block/engine_casing/block",
       "x": 90,
       "y": 270
     },
-    "connecting_rod=true,encased=true,facing=west,forged_piston=true,piston=false": {
+    "casing_style=plain,connecting_rod=false,encased=true,facing=west,forged_piston=true,piston=false": {
       "model": "create_engines:block/engine_casing/block",
       "x": 90,
       "y": 270
     },
-    "connecting_rod=true,encased=true,facing=west,forged_piston=true,piston=true": {
+    "casing_style=plain,connecting_rod=false,encased=true,facing=west,forged_piston=true,piston=true": {
       "model": "create_engines:block/engine_casing/block",
+      "x": 90,
+      "y": 270
+    },
+    "casing_style=plain,connecting_rod=true,encased=false,facing=down,forged_piston=false,piston=false": {
+      "model": "create_engines:block/precision_cylinder/block",
+      "x": 180
+    },
+    "casing_style=plain,connecting_rod=true,encased=false,facing=down,forged_piston=false,piston=true": {
+      "model": "create_engines:block/precision_cylinder/block",
+      "x": 180
+    },
+    "casing_style=plain,connecting_rod=true,encased=false,facing=down,forged_piston=true,piston=false": {
+      "model": "create_engines:block/precision_cylinder/block",
+      "x": 180
+    },
+    "casing_style=plain,connecting_rod=true,encased=false,facing=down,forged_piston=true,piston=true": {
+      "model": "create_engines:block/precision_cylinder/block",
+      "x": 180
+    },
+    "casing_style=plain,connecting_rod=true,encased=false,facing=east,forged_piston=false,piston=false": {
+      "model": "create_engines:block/precision_cylinder/block",
+      "x": 90,
+      "y": 90
+    },
+    "casing_style=plain,connecting_rod=true,encased=false,facing=east,forged_piston=false,piston=true": {
+      "model": "create_engines:block/precision_cylinder/block",
+      "x": 90,
+      "y": 90
+    },
+    "casing_style=plain,connecting_rod=true,encased=false,facing=east,forged_piston=true,piston=false": {
+      "model": "create_engines:block/precision_cylinder/block",
+      "x": 90,
+      "y": 90
+    },
+    "casing_style=plain,connecting_rod=true,encased=false,facing=east,forged_piston=true,piston=true": {
+      "model": "create_engines:block/precision_cylinder/block",
+      "x": 90,
+      "y": 90
+    },
+    "casing_style=plain,connecting_rod=true,encased=false,facing=north,forged_piston=false,piston=false": {
+      "model": "create_engines:block/precision_cylinder/block",
+      "x": 90
+    },
+    "casing_style=plain,connecting_rod=true,encased=false,facing=north,forged_piston=false,piston=true": {
+      "model": "create_engines:block/precision_cylinder/block",
+      "x": 90
+    },
+    "casing_style=plain,connecting_rod=true,encased=false,facing=north,forged_piston=true,piston=false": {
+      "model": "create_engines:block/precision_cylinder/block",
+      "x": 90
+    },
+    "casing_style=plain,connecting_rod=true,encased=false,facing=north,forged_piston=true,piston=true": {
+      "model": "create_engines:block/precision_cylinder/block",
+      "x": 90
+    },
+    "casing_style=plain,connecting_rod=true,encased=false,facing=south,forged_piston=false,piston=false": {
+      "model": "create_engines:block/precision_cylinder/block",
+      "x": 90,
+      "y": 180
+    },
+    "casing_style=plain,connecting_rod=true,encased=false,facing=south,forged_piston=false,piston=true": {
+      "model": "create_engines:block/precision_cylinder/block",
+      "x": 90,
+      "y": 180
+    },
+    "casing_style=plain,connecting_rod=true,encased=false,facing=south,forged_piston=true,piston=false": {
+      "model": "create_engines:block/precision_cylinder/block",
+      "x": 90,
+      "y": 180
+    },
+    "casing_style=plain,connecting_rod=true,encased=false,facing=south,forged_piston=true,piston=true": {
+      "model": "create_engines:block/precision_cylinder/block",
+      "x": 90,
+      "y": 180
+    },
+    "casing_style=plain,connecting_rod=true,encased=false,facing=up,forged_piston=false,piston=false": {
+      "model": "create_engines:block/precision_cylinder/block"
+    },
+    "casing_style=plain,connecting_rod=true,encased=false,facing=up,forged_piston=false,piston=true": {
+      "model": "create_engines:block/precision_cylinder/block"
+    },
+    "casing_style=plain,connecting_rod=true,encased=false,facing=up,forged_piston=true,piston=false": {
+      "model": "create_engines:block/precision_cylinder/block"
+    },
+    "casing_style=plain,connecting_rod=true,encased=false,facing=up,forged_piston=true,piston=true": {
+      "model": "create_engines:block/precision_cylinder/block"
+    },
+    "casing_style=plain,connecting_rod=true,encased=false,facing=west,forged_piston=false,piston=false": {
+      "model": "create_engines:block/precision_cylinder/block",
+      "x": 90,
+      "y": 270
+    },
+    "casing_style=plain,connecting_rod=true,encased=false,facing=west,forged_piston=false,piston=true": {
+      "model": "create_engines:block/precision_cylinder/block",
+      "x": 90,
+      "y": 270
+    },
+    "casing_style=plain,connecting_rod=true,encased=false,facing=west,forged_piston=true,piston=false": {
+      "model": "create_engines:block/precision_cylinder/block",
+      "x": 90,
+      "y": 270
+    },
+    "casing_style=plain,connecting_rod=true,encased=false,facing=west,forged_piston=true,piston=true": {
+      "model": "create_engines:block/precision_cylinder/block",
+      "x": 90,
+      "y": 270
+    },
+    "casing_style=plain,connecting_rod=true,encased=true,facing=down,forged_piston=false,piston=false": {
+      "model": "create_engines:block/engine_casing/block",
+      "x": 180
+    },
+    "casing_style=plain,connecting_rod=true,encased=true,facing=down,forged_piston=false,piston=true": {
+      "model": "create_engines:block/engine_casing/block",
+      "x": 180
+    },
+    "casing_style=plain,connecting_rod=true,encased=true,facing=down,forged_piston=true,piston=false": {
+      "model": "create_engines:block/engine_casing/block",
+      "x": 180
+    },
+    "casing_style=plain,connecting_rod=true,encased=true,facing=down,forged_piston=true,piston=true": {
+      "model": "create_engines:block/engine_casing/block",
+      "x": 180
+    },
+    "casing_style=plain,connecting_rod=true,encased=true,facing=east,forged_piston=false,piston=false": {
+      "model": "create_engines:block/engine_casing/block",
+      "x": 90,
+      "y": 90
+    },
+    "casing_style=plain,connecting_rod=true,encased=true,facing=east,forged_piston=false,piston=true": {
+      "model": "create_engines:block/engine_casing/block",
+      "x": 90,
+      "y": 90
+    },
+    "casing_style=plain,connecting_rod=true,encased=true,facing=east,forged_piston=true,piston=false": {
+      "model": "create_engines:block/engine_casing/block",
+      "x": 90,
+      "y": 90
+    },
+    "casing_style=plain,connecting_rod=true,encased=true,facing=east,forged_piston=true,piston=true": {
+      "model": "create_engines:block/engine_casing/block",
+      "x": 90,
+      "y": 90
+    },
+    "casing_style=plain,connecting_rod=true,encased=true,facing=north,forged_piston=false,piston=false": {
+      "model": "create_engines:block/engine_casing/block",
+      "x": 90
+    },
+    "casing_style=plain,connecting_rod=true,encased=true,facing=north,forged_piston=false,piston=true": {
+      "model": "create_engines:block/engine_casing/block",
+      "x": 90
+    },
+    "casing_style=plain,connecting_rod=true,encased=true,facing=north,forged_piston=true,piston=false": {
+      "model": "create_engines:block/engine_casing/block",
+      "x": 90
+    },
+    "casing_style=plain,connecting_rod=true,encased=true,facing=north,forged_piston=true,piston=true": {
+      "model": "create_engines:block/engine_casing/block",
+      "x": 90
+    },
+    "casing_style=plain,connecting_rod=true,encased=true,facing=south,forged_piston=false,piston=false": {
+      "model": "create_engines:block/engine_casing/block",
+      "x": 90,
+      "y": 180
+    },
+    "casing_style=plain,connecting_rod=true,encased=true,facing=south,forged_piston=false,piston=true": {
+      "model": "create_engines:block/engine_casing/block",
+      "x": 90,
+      "y": 180
+    },
+    "casing_style=plain,connecting_rod=true,encased=true,facing=south,forged_piston=true,piston=false": {
+      "model": "create_engines:block/engine_casing/block",
+      "x": 90,
+      "y": 180
+    },
+    "casing_style=plain,connecting_rod=true,encased=true,facing=south,forged_piston=true,piston=true": {
+      "model": "create_engines:block/engine_casing/block",
+      "x": 90,
+      "y": 180
+    },
+    "casing_style=plain,connecting_rod=true,encased=true,facing=up,forged_piston=false,piston=false": {
+      "model": "create_engines:block/engine_casing/block"
+    },
+    "casing_style=plain,connecting_rod=true,encased=true,facing=up,forged_piston=false,piston=true": {
+      "model": "create_engines:block/engine_casing/block"
+    },
+    "casing_style=plain,connecting_rod=true,encased=true,facing=up,forged_piston=true,piston=false": {
+      "model": "create_engines:block/engine_casing/block"
+    },
+    "casing_style=plain,connecting_rod=true,encased=true,facing=up,forged_piston=true,piston=true": {
+      "model": "create_engines:block/engine_casing/block"
+    },
+    "casing_style=plain,connecting_rod=true,encased=true,facing=west,forged_piston=false,piston=false": {
+      "model": "create_engines:block/engine_casing/block",
+      "x": 90,
+      "y": 270
+    },
+    "casing_style=plain,connecting_rod=true,encased=true,facing=west,forged_piston=false,piston=true": {
+      "model": "create_engines:block/engine_casing/block",
+      "x": 90,
+      "y": 270
+    },
+    "casing_style=plain,connecting_rod=true,encased=true,facing=west,forged_piston=true,piston=false": {
+      "model": "create_engines:block/engine_casing/block",
+      "x": 90,
+      "y": 270
+    },
+    "casing_style=plain,connecting_rod=true,encased=true,facing=west,forged_piston=true,piston=true": {
+      "model": "create_engines:block/engine_casing/block",
+      "x": 90,
+      "y": 270
+    },
+    "casing_style=riveted,connecting_rod=false,encased=false,facing=down,forged_piston=false,piston=false": {
+      "model": "create_engines:block/precision_cylinder/block",
+      "x": 180
+    },
+    "casing_style=riveted,connecting_rod=false,encased=false,facing=down,forged_piston=false,piston=true": {
+      "model": "create_engines:block/precision_cylinder/block",
+      "x": 180
+    },
+    "casing_style=riveted,connecting_rod=false,encased=false,facing=down,forged_piston=true,piston=false": {
+      "model": "create_engines:block/precision_cylinder/block",
+      "x": 180
+    },
+    "casing_style=riveted,connecting_rod=false,encased=false,facing=down,forged_piston=true,piston=true": {
+      "model": "create_engines:block/precision_cylinder/block",
+      "x": 180
+    },
+    "casing_style=riveted,connecting_rod=false,encased=false,facing=east,forged_piston=false,piston=false": {
+      "model": "create_engines:block/precision_cylinder/block",
+      "x": 90,
+      "y": 90
+    },
+    "casing_style=riveted,connecting_rod=false,encased=false,facing=east,forged_piston=false,piston=true": {
+      "model": "create_engines:block/precision_cylinder/block",
+      "x": 90,
+      "y": 90
+    },
+    "casing_style=riveted,connecting_rod=false,encased=false,facing=east,forged_piston=true,piston=false": {
+      "model": "create_engines:block/precision_cylinder/block",
+      "x": 90,
+      "y": 90
+    },
+    "casing_style=riveted,connecting_rod=false,encased=false,facing=east,forged_piston=true,piston=true": {
+      "model": "create_engines:block/precision_cylinder/block",
+      "x": 90,
+      "y": 90
+    },
+    "casing_style=riveted,connecting_rod=false,encased=false,facing=north,forged_piston=false,piston=false": {
+      "model": "create_engines:block/precision_cylinder/block",
+      "x": 90
+    },
+    "casing_style=riveted,connecting_rod=false,encased=false,facing=north,forged_piston=false,piston=true": {
+      "model": "create_engines:block/precision_cylinder/block",
+      "x": 90
+    },
+    "casing_style=riveted,connecting_rod=false,encased=false,facing=north,forged_piston=true,piston=false": {
+      "model": "create_engines:block/precision_cylinder/block",
+      "x": 90
+    },
+    "casing_style=riveted,connecting_rod=false,encased=false,facing=north,forged_piston=true,piston=true": {
+      "model": "create_engines:block/precision_cylinder/block",
+      "x": 90
+    },
+    "casing_style=riveted,connecting_rod=false,encased=false,facing=south,forged_piston=false,piston=false": {
+      "model": "create_engines:block/precision_cylinder/block",
+      "x": 90,
+      "y": 180
+    },
+    "casing_style=riveted,connecting_rod=false,encased=false,facing=south,forged_piston=false,piston=true": {
+      "model": "create_engines:block/precision_cylinder/block",
+      "x": 90,
+      "y": 180
+    },
+    "casing_style=riveted,connecting_rod=false,encased=false,facing=south,forged_piston=true,piston=false": {
+      "model": "create_engines:block/precision_cylinder/block",
+      "x": 90,
+      "y": 180
+    },
+    "casing_style=riveted,connecting_rod=false,encased=false,facing=south,forged_piston=true,piston=true": {
+      "model": "create_engines:block/precision_cylinder/block",
+      "x": 90,
+      "y": 180
+    },
+    "casing_style=riveted,connecting_rod=false,encased=false,facing=up,forged_piston=false,piston=false": {
+      "model": "create_engines:block/precision_cylinder/block"
+    },
+    "casing_style=riveted,connecting_rod=false,encased=false,facing=up,forged_piston=false,piston=true": {
+      "model": "create_engines:block/precision_cylinder/block"
+    },
+    "casing_style=riveted,connecting_rod=false,encased=false,facing=up,forged_piston=true,piston=false": {
+      "model": "create_engines:block/precision_cylinder/block"
+    },
+    "casing_style=riveted,connecting_rod=false,encased=false,facing=up,forged_piston=true,piston=true": {
+      "model": "create_engines:block/precision_cylinder/block"
+    },
+    "casing_style=riveted,connecting_rod=false,encased=false,facing=west,forged_piston=false,piston=false": {
+      "model": "create_engines:block/precision_cylinder/block",
+      "x": 90,
+      "y": 270
+    },
+    "casing_style=riveted,connecting_rod=false,encased=false,facing=west,forged_piston=false,piston=true": {
+      "model": "create_engines:block/precision_cylinder/block",
+      "x": 90,
+      "y": 270
+    },
+    "casing_style=riveted,connecting_rod=false,encased=false,facing=west,forged_piston=true,piston=false": {
+      "model": "create_engines:block/precision_cylinder/block",
+      "x": 90,
+      "y": 270
+    },
+    "casing_style=riveted,connecting_rod=false,encased=false,facing=west,forged_piston=true,piston=true": {
+      "model": "create_engines:block/precision_cylinder/block",
+      "x": 90,
+      "y": 270
+    },
+    "casing_style=riveted,connecting_rod=false,encased=true,facing=down,forged_piston=false,piston=false": {
+      "model": "create_engines:block/engine_riveted_casing/block",
+      "x": 180
+    },
+    "casing_style=riveted,connecting_rod=false,encased=true,facing=down,forged_piston=false,piston=true": {
+      "model": "create_engines:block/engine_riveted_casing/block",
+      "x": 180
+    },
+    "casing_style=riveted,connecting_rod=false,encased=true,facing=down,forged_piston=true,piston=false": {
+      "model": "create_engines:block/engine_riveted_casing/block",
+      "x": 180
+    },
+    "casing_style=riveted,connecting_rod=false,encased=true,facing=down,forged_piston=true,piston=true": {
+      "model": "create_engines:block/engine_riveted_casing/block",
+      "x": 180
+    },
+    "casing_style=riveted,connecting_rod=false,encased=true,facing=east,forged_piston=false,piston=false": {
+      "model": "create_engines:block/engine_riveted_casing/block",
+      "x": 90,
+      "y": 90
+    },
+    "casing_style=riveted,connecting_rod=false,encased=true,facing=east,forged_piston=false,piston=true": {
+      "model": "create_engines:block/engine_riveted_casing/block",
+      "x": 90,
+      "y": 90
+    },
+    "casing_style=riveted,connecting_rod=false,encased=true,facing=east,forged_piston=true,piston=false": {
+      "model": "create_engines:block/engine_riveted_casing/block",
+      "x": 90,
+      "y": 90
+    },
+    "casing_style=riveted,connecting_rod=false,encased=true,facing=east,forged_piston=true,piston=true": {
+      "model": "create_engines:block/engine_riveted_casing/block",
+      "x": 90,
+      "y": 90
+    },
+    "casing_style=riveted,connecting_rod=false,encased=true,facing=north,forged_piston=false,piston=false": {
+      "model": "create_engines:block/engine_riveted_casing/block",
+      "x": 90
+    },
+    "casing_style=riveted,connecting_rod=false,encased=true,facing=north,forged_piston=false,piston=true": {
+      "model": "create_engines:block/engine_riveted_casing/block",
+      "x": 90
+    },
+    "casing_style=riveted,connecting_rod=false,encased=true,facing=north,forged_piston=true,piston=false": {
+      "model": "create_engines:block/engine_riveted_casing/block",
+      "x": 90
+    },
+    "casing_style=riveted,connecting_rod=false,encased=true,facing=north,forged_piston=true,piston=true": {
+      "model": "create_engines:block/engine_riveted_casing/block",
+      "x": 90
+    },
+    "casing_style=riveted,connecting_rod=false,encased=true,facing=south,forged_piston=false,piston=false": {
+      "model": "create_engines:block/engine_riveted_casing/block",
+      "x": 90,
+      "y": 180
+    },
+    "casing_style=riveted,connecting_rod=false,encased=true,facing=south,forged_piston=false,piston=true": {
+      "model": "create_engines:block/engine_riveted_casing/block",
+      "x": 90,
+      "y": 180
+    },
+    "casing_style=riveted,connecting_rod=false,encased=true,facing=south,forged_piston=true,piston=false": {
+      "model": "create_engines:block/engine_riveted_casing/block",
+      "x": 90,
+      "y": 180
+    },
+    "casing_style=riveted,connecting_rod=false,encased=true,facing=south,forged_piston=true,piston=true": {
+      "model": "create_engines:block/engine_riveted_casing/block",
+      "x": 90,
+      "y": 180
+    },
+    "casing_style=riveted,connecting_rod=false,encased=true,facing=up,forged_piston=false,piston=false": {
+      "model": "create_engines:block/engine_riveted_casing/block"
+    },
+    "casing_style=riveted,connecting_rod=false,encased=true,facing=up,forged_piston=false,piston=true": {
+      "model": "create_engines:block/engine_riveted_casing/block"
+    },
+    "casing_style=riveted,connecting_rod=false,encased=true,facing=up,forged_piston=true,piston=false": {
+      "model": "create_engines:block/engine_riveted_casing/block"
+    },
+    "casing_style=riveted,connecting_rod=false,encased=true,facing=up,forged_piston=true,piston=true": {
+      "model": "create_engines:block/engine_riveted_casing/block"
+    },
+    "casing_style=riveted,connecting_rod=false,encased=true,facing=west,forged_piston=false,piston=false": {
+      "model": "create_engines:block/engine_riveted_casing/block",
+      "x": 90,
+      "y": 270
+    },
+    "casing_style=riveted,connecting_rod=false,encased=true,facing=west,forged_piston=false,piston=true": {
+      "model": "create_engines:block/engine_riveted_casing/block",
+      "x": 90,
+      "y": 270
+    },
+    "casing_style=riveted,connecting_rod=false,encased=true,facing=west,forged_piston=true,piston=false": {
+      "model": "create_engines:block/engine_riveted_casing/block",
+      "x": 90,
+      "y": 270
+    },
+    "casing_style=riveted,connecting_rod=false,encased=true,facing=west,forged_piston=true,piston=true": {
+      "model": "create_engines:block/engine_riveted_casing/block",
+      "x": 90,
+      "y": 270
+    },
+    "casing_style=riveted,connecting_rod=true,encased=false,facing=down,forged_piston=false,piston=false": {
+      "model": "create_engines:block/precision_cylinder/block",
+      "x": 180
+    },
+    "casing_style=riveted,connecting_rod=true,encased=false,facing=down,forged_piston=false,piston=true": {
+      "model": "create_engines:block/precision_cylinder/block",
+      "x": 180
+    },
+    "casing_style=riveted,connecting_rod=true,encased=false,facing=down,forged_piston=true,piston=false": {
+      "model": "create_engines:block/precision_cylinder/block",
+      "x": 180
+    },
+    "casing_style=riveted,connecting_rod=true,encased=false,facing=down,forged_piston=true,piston=true": {
+      "model": "create_engines:block/precision_cylinder/block",
+      "x": 180
+    },
+    "casing_style=riveted,connecting_rod=true,encased=false,facing=east,forged_piston=false,piston=false": {
+      "model": "create_engines:block/precision_cylinder/block",
+      "x": 90,
+      "y": 90
+    },
+    "casing_style=riveted,connecting_rod=true,encased=false,facing=east,forged_piston=false,piston=true": {
+      "model": "create_engines:block/precision_cylinder/block",
+      "x": 90,
+      "y": 90
+    },
+    "casing_style=riveted,connecting_rod=true,encased=false,facing=east,forged_piston=true,piston=false": {
+      "model": "create_engines:block/precision_cylinder/block",
+      "x": 90,
+      "y": 90
+    },
+    "casing_style=riveted,connecting_rod=true,encased=false,facing=east,forged_piston=true,piston=true": {
+      "model": "create_engines:block/precision_cylinder/block",
+      "x": 90,
+      "y": 90
+    },
+    "casing_style=riveted,connecting_rod=true,encased=false,facing=north,forged_piston=false,piston=false": {
+      "model": "create_engines:block/precision_cylinder/block",
+      "x": 90
+    },
+    "casing_style=riveted,connecting_rod=true,encased=false,facing=north,forged_piston=false,piston=true": {
+      "model": "create_engines:block/precision_cylinder/block",
+      "x": 90
+    },
+    "casing_style=riveted,connecting_rod=true,encased=false,facing=north,forged_piston=true,piston=false": {
+      "model": "create_engines:block/precision_cylinder/block",
+      "x": 90
+    },
+    "casing_style=riveted,connecting_rod=true,encased=false,facing=north,forged_piston=true,piston=true": {
+      "model": "create_engines:block/precision_cylinder/block",
+      "x": 90
+    },
+    "casing_style=riveted,connecting_rod=true,encased=false,facing=south,forged_piston=false,piston=false": {
+      "model": "create_engines:block/precision_cylinder/block",
+      "x": 90,
+      "y": 180
+    },
+    "casing_style=riveted,connecting_rod=true,encased=false,facing=south,forged_piston=false,piston=true": {
+      "model": "create_engines:block/precision_cylinder/block",
+      "x": 90,
+      "y": 180
+    },
+    "casing_style=riveted,connecting_rod=true,encased=false,facing=south,forged_piston=true,piston=false": {
+      "model": "create_engines:block/precision_cylinder/block",
+      "x": 90,
+      "y": 180
+    },
+    "casing_style=riveted,connecting_rod=true,encased=false,facing=south,forged_piston=true,piston=true": {
+      "model": "create_engines:block/precision_cylinder/block",
+      "x": 90,
+      "y": 180
+    },
+    "casing_style=riveted,connecting_rod=true,encased=false,facing=up,forged_piston=false,piston=false": {
+      "model": "create_engines:block/precision_cylinder/block"
+    },
+    "casing_style=riveted,connecting_rod=true,encased=false,facing=up,forged_piston=false,piston=true": {
+      "model": "create_engines:block/precision_cylinder/block"
+    },
+    "casing_style=riveted,connecting_rod=true,encased=false,facing=up,forged_piston=true,piston=false": {
+      "model": "create_engines:block/precision_cylinder/block"
+    },
+    "casing_style=riveted,connecting_rod=true,encased=false,facing=up,forged_piston=true,piston=true": {
+      "model": "create_engines:block/precision_cylinder/block"
+    },
+    "casing_style=riveted,connecting_rod=true,encased=false,facing=west,forged_piston=false,piston=false": {
+      "model": "create_engines:block/precision_cylinder/block",
+      "x": 90,
+      "y": 270
+    },
+    "casing_style=riveted,connecting_rod=true,encased=false,facing=west,forged_piston=false,piston=true": {
+      "model": "create_engines:block/precision_cylinder/block",
+      "x": 90,
+      "y": 270
+    },
+    "casing_style=riveted,connecting_rod=true,encased=false,facing=west,forged_piston=true,piston=false": {
+      "model": "create_engines:block/precision_cylinder/block",
+      "x": 90,
+      "y": 270
+    },
+    "casing_style=riveted,connecting_rod=true,encased=false,facing=west,forged_piston=true,piston=true": {
+      "model": "create_engines:block/precision_cylinder/block",
+      "x": 90,
+      "y": 270
+    },
+    "casing_style=riveted,connecting_rod=true,encased=true,facing=down,forged_piston=false,piston=false": {
+      "model": "create_engines:block/engine_riveted_casing/block",
+      "x": 180
+    },
+    "casing_style=riveted,connecting_rod=true,encased=true,facing=down,forged_piston=false,piston=true": {
+      "model": "create_engines:block/engine_riveted_casing/block",
+      "x": 180
+    },
+    "casing_style=riveted,connecting_rod=true,encased=true,facing=down,forged_piston=true,piston=false": {
+      "model": "create_engines:block/engine_riveted_casing/block",
+      "x": 180
+    },
+    "casing_style=riveted,connecting_rod=true,encased=true,facing=down,forged_piston=true,piston=true": {
+      "model": "create_engines:block/engine_riveted_casing/block",
+      "x": 180
+    },
+    "casing_style=riveted,connecting_rod=true,encased=true,facing=east,forged_piston=false,piston=false": {
+      "model": "create_engines:block/engine_riveted_casing/block",
+      "x": 90,
+      "y": 90
+    },
+    "casing_style=riveted,connecting_rod=true,encased=true,facing=east,forged_piston=false,piston=true": {
+      "model": "create_engines:block/engine_riveted_casing/block",
+      "x": 90,
+      "y": 90
+    },
+    "casing_style=riveted,connecting_rod=true,encased=true,facing=east,forged_piston=true,piston=false": {
+      "model": "create_engines:block/engine_riveted_casing/block",
+      "x": 90,
+      "y": 90
+    },
+    "casing_style=riveted,connecting_rod=true,encased=true,facing=east,forged_piston=true,piston=true": {
+      "model": "create_engines:block/engine_riveted_casing/block",
+      "x": 90,
+      "y": 90
+    },
+    "casing_style=riveted,connecting_rod=true,encased=true,facing=north,forged_piston=false,piston=false": {
+      "model": "create_engines:block/engine_riveted_casing/block",
+      "x": 90
+    },
+    "casing_style=riveted,connecting_rod=true,encased=true,facing=north,forged_piston=false,piston=true": {
+      "model": "create_engines:block/engine_riveted_casing/block",
+      "x": 90
+    },
+    "casing_style=riveted,connecting_rod=true,encased=true,facing=north,forged_piston=true,piston=false": {
+      "model": "create_engines:block/engine_riveted_casing/block",
+      "x": 90
+    },
+    "casing_style=riveted,connecting_rod=true,encased=true,facing=north,forged_piston=true,piston=true": {
+      "model": "create_engines:block/engine_riveted_casing/block",
+      "x": 90
+    },
+    "casing_style=riveted,connecting_rod=true,encased=true,facing=south,forged_piston=false,piston=false": {
+      "model": "create_engines:block/engine_riveted_casing/block",
+      "x": 90,
+      "y": 180
+    },
+    "casing_style=riveted,connecting_rod=true,encased=true,facing=south,forged_piston=false,piston=true": {
+      "model": "create_engines:block/engine_riveted_casing/block",
+      "x": 90,
+      "y": 180
+    },
+    "casing_style=riveted,connecting_rod=true,encased=true,facing=south,forged_piston=true,piston=false": {
+      "model": "create_engines:block/engine_riveted_casing/block",
+      "x": 90,
+      "y": 180
+    },
+    "casing_style=riveted,connecting_rod=true,encased=true,facing=south,forged_piston=true,piston=true": {
+      "model": "create_engines:block/engine_riveted_casing/block",
+      "x": 90,
+      "y": 180
+    },
+    "casing_style=riveted,connecting_rod=true,encased=true,facing=up,forged_piston=false,piston=false": {
+      "model": "create_engines:block/engine_riveted_casing/block"
+    },
+    "casing_style=riveted,connecting_rod=true,encased=true,facing=up,forged_piston=false,piston=true": {
+      "model": "create_engines:block/engine_riveted_casing/block"
+    },
+    "casing_style=riveted,connecting_rod=true,encased=true,facing=up,forged_piston=true,piston=false": {
+      "model": "create_engines:block/engine_riveted_casing/block"
+    },
+    "casing_style=riveted,connecting_rod=true,encased=true,facing=up,forged_piston=true,piston=true": {
+      "model": "create_engines:block/engine_riveted_casing/block"
+    },
+    "casing_style=riveted,connecting_rod=true,encased=true,facing=west,forged_piston=false,piston=false": {
+      "model": "create_engines:block/engine_riveted_casing/block",
+      "x": 90,
+      "y": 270
+    },
+    "casing_style=riveted,connecting_rod=true,encased=true,facing=west,forged_piston=false,piston=true": {
+      "model": "create_engines:block/engine_riveted_casing/block",
+      "x": 90,
+      "y": 270
+    },
+    "casing_style=riveted,connecting_rod=true,encased=true,facing=west,forged_piston=true,piston=false": {
+      "model": "create_engines:block/engine_riveted_casing/block",
+      "x": 90,
+      "y": 270
+    },
+    "casing_style=riveted,connecting_rod=true,encased=true,facing=west,forged_piston=true,piston=true": {
+      "model": "create_engines:block/engine_riveted_casing/block",
       "x": 90,
       "y": 270
     }

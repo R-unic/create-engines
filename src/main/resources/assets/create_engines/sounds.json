@@ -125,6 +125,22 @@
       }
     ]
   },
+  "preignition_knock": {
+    "sounds": [
+      {
+        "name": "create_engines:preignition_knock1",
+        "attenuation_distance": 14
+      },
+      {
+        "name": "create_engines:preignition_knock2",
+        "attenuation_distance": 14
+      },
+      {
+        "name": "create_engines:preignition_knock3",
+        "attenuation_distance": 14
+      }
+    ]
+  },
   "metal_tick": {
     "sounds": [
       {

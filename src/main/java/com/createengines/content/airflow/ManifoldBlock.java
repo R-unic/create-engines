@@ -5,6 +5,7 @@ import java.util.Map;
 
 import org.jetbrains.annotations.Nullable;
 
+import com.createengines.content.CasingStyle;
 import com.createengines.content.Encasing;
 import com.createengines.engine.topology.EngineTopology;
 import com.simibubi.create.content.equipment.wrench.IWrenchable;
@@ -66,7 +67,8 @@ public class ManifoldBlock extends Block implements AirflowPort, IWrenchable {
 		BlockState state = defaultBlockState();
 		for (BooleanProperty property : CONNECTIONS.values())
 			state = state.setValue(property, false);
-		registerDefaultState(state.setValue(Encasing.ENCASED, false));
+		registerDefaultState(state.setValue(Encasing.ENCASED, false)
+			.setValue(Encasing.STYLE, CasingStyle.PLAIN));
 	}
 
 	private static Map<Direction, BooleanProperty> connections() {
@@ -93,7 +95,7 @@ public class ManifoldBlock extends Block implements AirflowPort, IWrenchable {
 	protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {
 		CONNECTIONS.values()
 			.forEach(builder::add);
-		builder.add(Encasing.ENCASED, Encasing.PAINT);
+		builder.add(Encasing.ENCASED, Encasing.PAINT, Encasing.STYLE);
 	}
 
 	@Override

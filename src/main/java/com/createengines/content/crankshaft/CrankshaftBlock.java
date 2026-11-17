@@ -1,5 +1,6 @@
 package com.createengines.content.crankshaft;
 
+import com.createengines.content.CasingStyle;
 import com.createengines.content.Encasing;
 import com.createengines.engine.topology.EngineTopology;
 import com.createengines.registry.CEBlockEntities;
@@ -37,13 +38,14 @@ public class CrankshaftBlock extends RotatedPillarKineticBlock implements IBE<Cr
 	public CrankshaftBlock(Properties properties) {
 		super(properties);
 		registerDefaultState(defaultBlockState().setValue(Encasing.ENCASED, false)
-			.setValue(Encasing.WINDOWED, false));
+			.setValue(Encasing.WINDOWED, false)
+			.setValue(Encasing.STYLE, CasingStyle.PLAIN));
 	}
 
 	@Override
 	protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {
 		super.createBlockStateDefinition(builder);
-		builder.add(Encasing.ENCASED, Encasing.PAINT, Encasing.WINDOWED);
+		builder.add(Encasing.ENCASED, Encasing.PAINT, Encasing.WINDOWED, Encasing.STYLE);
 	}
 
 	@Override

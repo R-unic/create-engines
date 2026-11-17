@@ -2,6 +2,7 @@ package com.createengines.content.cylinder;
 
 import org.jetbrains.annotations.Nullable;
 
+import com.createengines.content.CasingStyle;
 import com.createengines.content.Encasing;
 import com.createengines.content.PartInstallation;
 import com.createengines.content.PartInstallation.Slot;
@@ -64,7 +65,8 @@ public class CylinderBlock extends DirectionalBlock
 			.setValue(HAS_PISTON, false)
 			.setValue(FORGED_PISTON, false)
 			.setValue(HAS_ROD, false)
-			.setValue(Encasing.ENCASED, false));
+			.setValue(Encasing.ENCASED, false)
+			.setValue(Encasing.STYLE, CasingStyle.PLAIN));
 	}
 
 	/** Whether this is the precision cylinder. */
@@ -79,7 +81,7 @@ public class CylinderBlock extends DirectionalBlock
 
 	@Override
 	protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {
-		builder.add(FACING, HAS_PISTON, FORGED_PISTON, HAS_ROD, Encasing.ENCASED, Encasing.PAINT);
+		builder.add(FACING, HAS_PISTON, FORGED_PISTON, HAS_ROD, Encasing.ENCASED, Encasing.PAINT, Encasing.STYLE);
 	}
 
 	@Override

@@ -13,9 +13,17 @@ package com.createengines.engine.sim;
  *                          takes a lot of heat to boil; the other fuels hardly cool anything
  * @param sootFactor        how much of a rich burn's unburned fuel ends up as soot on a spark plug, 1 for the usual and 0
  *                          for a fuel that burns clean however rich it runs
+ * @param preignitionTemp   charge temperature past which a boosted spark engine's charge lights itself early and loses
+ *                          power (see {@link #preignitionLoss}); the autoignition point for every fuel but ethanol
  */
 public record FuelSpec(double energyPerMb, double autoignitionTemp, double airPerMb, double coldSensitivity,
-					   double chargeCooling, double sootFactor) {
+					   double chargeCooling, double sootFactor, double preignitionTemp) {
+
+	/** A fuel whose charge pre-ignites at the temperature it would compression-ignite at. */
+	public FuelSpec(double energyPerMb, double autoignitionTemp, double airPerMb, double coldSensitivity,
+					double chargeCooling, double sootFactor) {
+		this(energyPerMb, autoignitionTemp, airPerMb, coldSensitivity, chargeCooling, sootFactor, autoignitionTemp);
+	}
 
 	/** A fuel that is neither better nor worse than usual in a cold block, and cools and sooty like any other. */
 	public FuelSpec(double energyPerMb, double autoignitionTemp, double airPerMb) {
@@ -45,16 +53,24 @@ public record FuelSpec(double energyPerMb, double autoignitionTemp, double airPe
 	}
 
 	/**
-	 * Share of a spark engine's heat release that is lost because the charge was hotter than this fuel autoignites at
-	 * when it lit, 0 for a charge below that. A charge that heats itself past its autoignition point burns before the plug
+	 * Share of a spark engine's heat release that is lost because the charge was hotter than this fuel's pre-ignition
+	 * temperature when it lit, 0 for a charge below that. A charge that heats itself past its autoignition point burns before the plug
 	 * and against the rising piston, so its work is partly wasted, and boost that squeezes a charge hotter makes more of it.
 	 * It only costs power: no plug is fouled and nothing is damaged.
 	 *
 	 * @param chargeTemp the charge's temperature when it lit (ambient = 1)
 	 */
 	public double preignitionLoss(double chargeTemp) {
-		return Math.min(PREIGNITION_MAX_LOSS, Math.max(0, chargeTemp - autoignitionTemp) * PREIGNITION_LOSS_PER_DEGREE);
+		return Math.min(PREIGNITION_MAX_LOSS, Math.max(0, chargeTemp - preignitionTemp) * PREIGNITION_LOSS_PER_DEGREE);
 	}
+
+	/**
+	 * Where ethanol's charge starts to light early under boost. Its autoignition point (3.4) is kept for compression
+	 * and pilot ignition, but it sat so close to what a fast precision engine reaches unboosted (3.2 at 512 RPM) that
+	 * twin turbos pre-ignited it even through an intercooler (3.9 measured). This is above what a precision V16 on twin
+	 * turbos and an intercooler reaches, so that build runs clean on ethanol and gasoline is the fuel that pays for heat.
+	 */
+	public static final double ETHANOL_PREIGNITION = 5.0;
 
 	/** Pressed seed oil: rustic, sluggish to ignite, modest energy. */
 	public static final FuelSpec PLANT_OIL = new FuelSpec(30, 1.7, 1.6, 1.5);
@@ -66,5 +82,5 @@ public record FuelSpec(double energyPerMb, double autoignitionTemp, double airPe
 	 * Needs a spark like gasoline, with less energy to the mB. It will not light early under boost that makes gasoline
 	 * pre-ignite, boils off so much heat that it cools the charge, and leaves no soot on a plug.
 	 */
-	public static final FuelSpec ETHANOL = new FuelSpec(27, 3.4, 1.0, 1.8, 0.08, 0);
+	public static final FuelSpec ETHANOL = new FuelSpec(27, 3.4, 1.0, 1.8, 0.08, 0, ETHANOL_PREIGNITION);
 }

@@ -45,6 +45,15 @@
     "create_engines:engine_cased_shaft",
     "create_engines:engine_cased_cogwheel",
     "create_engines:engine_cased_large_cogwheel",
+    "create_engines:engine_riveted_cased_shaft",
+    "create_engines:engine_riveted_cased_cogwheel",
+    "create_engines:engine_riveted_cased_large_cogwheel",
+    "create_engines:engine_louvred_cased_shaft",
+    "create_engines:engine_louvred_cased_cogwheel",
+    "create_engines:engine_louvred_cased_large_cogwheel",
+    "create_engines:engine_window_cased_shaft",
+    "create_engines:engine_window_cased_cogwheel",
+    "create_engines:engine_window_cased_large_cogwheel",
     "create_engines:transmission"
   ]
 }

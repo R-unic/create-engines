@@ -63,6 +63,18 @@ class EngineSimulationTest {
 		return new EngineSimulation(List.of(cylinders), 3 * JOURNAL_INERTIA + extraInertia, 0.02);
 	}
 
+	@Test
+	void corruptSpeedStallsInsteadOfRunningForever() {
+		for (double bad : new double[] {Double.NaN, Double.POSITIVE_INFINITY, Double.NEGATIVE_INFINITY}) {
+			EngineSimulation engine = engine(FLYWHEEL_INERTIA, single(new Tank(0)));
+			engine.restore(0, bad, 1);
+			assertTrue(engine.isStopped(), "restore of " + bad);
+			engine.tickCranked(0, MAX_OMEGA, 0, 1);
+			assertTrue(engine.isStopped(), "tick after " + bad);
+			assertFalse(Double.isNaN(engine.omega()));
+		}
+	}
+
 	/** Turns the engine with a starter that it can outrun, like a real one-way starter clutch. */
 	private static void crank(EngineSimulation engine, double seconds) {
 		for (int i = 0; i < seconds * 20; i++)

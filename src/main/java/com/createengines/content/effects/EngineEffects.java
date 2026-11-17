@@ -107,8 +107,8 @@ public final class EngineEffects {
 			flames(level, outlet.at, outlet.normal, 2, 0.18);
 			float volume = CEClientConfig.mechanicalVolume();
 			if (volume > 0)
-				level.playLocalSound(outlet.at.x, outlet.at.y, outlet.at.z, CESounds.METAL_TICK.get(), SoundSource.BLOCKS,
-					0.7f * volume, 1.3f + random.nextFloat() * 0.5f, false);
+				level.playLocalSound(outlet.at.x, outlet.at.y, outlet.at.z, CESounds.PREIGNITION_KNOCK.get(),
+					SoundSource.BLOCKS, 0.3f * volume, 0.9f + random.nextFloat() * 0.3f, false);
 		}
 
 		float roll = random.nextFloat();

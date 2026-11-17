@@ -25,22 +25,24 @@ import net.neoforged.neoforge.registries.datamaps.RegisterDataMapTypesEvent;
 public final class CEDataMaps {
 
 	/**
-	 * The last three are optional: a fuel that leaves them out is an ordinary one in a cold block, cools its charge no
-	 * more than any other fuel and fouls a plug like any other.
+	 * The last four are optional: a fuel that leaves them out is an ordinary one in a cold block, cools its charge no
+	 * more than any other fuel and fouls a plug like any other and pre-ignites under boost at its autoignition point.
 	 */
 	public record FuelProperties(double energyPerMb, double autoignitionTemp, double airPerMb, double coldSensitivity,
-								 double chargeCooling, double sootFactor) {
+								 double chargeCooling, double sootFactor, double preignitionTemp) {
 		public static final Codec<FuelProperties> CODEC = RecordCodecBuilder.create(i -> i.group(
 				Codec.DOUBLE.fieldOf("energy_per_mb").forGetter(FuelProperties::energyPerMb),
 				Codec.DOUBLE.fieldOf("autoignition_temperature").forGetter(FuelProperties::autoignitionTemp),
 				Codec.DOUBLE.fieldOf("air_per_mb").forGetter(FuelProperties::airPerMb),
 				Codec.DOUBLE.optionalFieldOf("cold_sensitivity", 1.0).forGetter(FuelProperties::coldSensitivity),
 				Codec.DOUBLE.optionalFieldOf("charge_cooling", 0.0).forGetter(FuelProperties::chargeCooling),
-				Codec.DOUBLE.optionalFieldOf("soot_factor", 1.0).forGetter(FuelProperties::sootFactor))
+				Codec.DOUBLE.optionalFieldOf("soot_factor", 1.0).forGetter(FuelProperties::sootFactor),
+				Codec.DOUBLE.optionalFieldOf("preignition_temperature", 0.0).forGetter(FuelProperties::preignitionTemp))
 			.apply(i, FuelProperties::new));
 
 		public FuelSpec toSpec() {
-			return new FuelSpec(energyPerMb, autoignitionTemp, airPerMb, coldSensitivity, chargeCooling, sootFactor);
+			return new FuelSpec(energyPerMb, autoignitionTemp, airPerMb, coldSensitivity, chargeCooling, sootFactor,
+				preignitionTemp > 0 ? preignitionTemp : autoignitionTemp);
 		}
 	}
 

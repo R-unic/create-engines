@@ -4,7 +4,6 @@ import java.util.List;
 
 import com.createengines.advancement.Achievements;
 import com.createengines.advancement.Milestone;
-import com.createengines.registry.CEBlocks;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.InteractionResult;
@@ -35,6 +34,12 @@ public final class Encasing {
 	 * camshaft families have it.
 	 */
 	public static final BooleanProperty WINDOWED = BooleanProperty.create("windowed");
+	/**
+	 * Which plate a clad part wears: plain, riveted or louvred (the window plate is {@link #WINDOWED}). Every part that
+	 * can be clad carries it; a part saved before it existed loads as plain.
+	 */
+	public static final EnumProperty<CasingStyle> STYLE = EnumProperty.create("casing_style", CasingStyle.class,
+		CasingStyle.PLAIN, CasingStyle.RIVETED, CasingStyle.LOUVRED);
 	/** The dye on a clad part's casing, the same property Engine Casing blocks carry. */
 	public static final EnumProperty<CasingPaint> PAINT = EngineCasingBlock.PAINT;
 
@@ -54,12 +59,16 @@ public final class Encasing {
 											   Player player) {
 		if (state.getValue(ENCASED))
 			return CasingPaint.apply(stack, state, level, pos, player);
-		boolean window = stack.is(CEBlocks.ENGINE_WINDOW_CASING.asItem()) && canHaveWindow(state);
-		if (!window && !stack.is(CEBlocks.ENGINE_CASING.asItem()))
+		CasingStyle style = CasingStyle.ofItem(stack);
+		if (style == null || style == CasingStyle.WINDOW && !canHaveWindow(state) || !state.hasProperty(STYLE))
 			return ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION;
 		if (!level.isClientSide) {
 			BlockState cased = state.setValue(ENCASED, true);
-			level.setBlock(pos, window ? cased.setValue(WINDOWED, true) : cased, Block.UPDATE_ALL);
+			if (style == CasingStyle.WINDOW)
+				cased = cased.setValue(WINDOWED, true);
+			else
+				cased = cased.setValue(STYLE, style);
+			level.setBlock(pos, cased, Block.UPDATE_ALL);
 			level.playSound(null, pos, state.getSoundType()
 				.getPlaceSound(), net.minecraft.sounds.SoundSource.BLOCKS, 1, 0.8f);
 			if (!player.isCreative())
@@ -77,7 +86,8 @@ public final class Encasing {
 		BlockPos pos = context.getClickedPos();
 		if (!level.isClientSide) {
 			BlockState bare = state.setValue(ENCASED, false)
-				.setValue(PAINT, CasingPaint.NONE);
+				.setValue(PAINT, CasingPaint.NONE)
+				.setValue(STYLE, CasingStyle.PLAIN);
 			level.setBlock(pos, state.hasProperty(WINDOWED) ? bare.setValue(WINDOWED, false) : bare, Block.UPDATE_ALL);
 			level.playSound(null, pos, state.getSoundType()
 				.getBreakSound(), net.minecraft.sounds.SoundSource.BLOCKS, 0.8f, 1.1f);
@@ -103,9 +113,15 @@ public final class Encasing {
 		return state.hasProperty(WINDOWED) && !(state.getBlock() instanceof com.createengines.content.rotor.RotorHousingBlock);
 	}
 
-	/** The casing a clad part gives back: the window casing if it was clad in that. */
+	/** The style a clad part is in: window if it has a pane of glass, else its plate. */
+	public static CasingStyle styleOf(BlockState state) {
+		if (state.hasProperty(WINDOWED) && state.getValue(WINDOWED))
+			return CasingStyle.WINDOW;
+		return state.hasProperty(STYLE) ? state.getValue(STYLE) : CasingStyle.PLAIN;
+	}
+
+	/** The casing a clad part gives back: the one it was clad in. */
 	public static ItemStack casingStack(BlockState state) {
-		return state.hasProperty(WINDOWED) && state.getValue(WINDOWED) ? CEBlocks.ENGINE_WINDOW_CASING.asStack()
-			: CEBlocks.ENGINE_CASING.asStack();
+		return styleOf(state).casingStack();
 	}
 }
