@@ -11,6 +11,7 @@ import com.createengines.advancement.Achievements;
 import com.createengines.advancement.Milestone;
 import com.createengines.config.CEConfig;
 import com.createengines.content.battery.BatteryBlockEntity;
+import com.createengines.engine.GhostRotation;
 import com.createengines.engine.topology.EngineMember;
 import com.createengines.content.GoggleLines;
 import com.createengines.registry.CELang;
@@ -64,6 +65,7 @@ public class AlternatorBlockEntity extends KineticBlockEntity implements EngineM
 	private double energyCarry;
 	private int idleTicks = SUPPLY_GRACE;
 	private int chargeHold;
+	private final GhostRotation ghost = new GhostRotation();
 
 	public AlternatorBlockEntity(BlockEntityType<?> type, BlockPos pos, BlockState state) {
 		super(type, pos, state);
@@ -110,6 +112,7 @@ public class AlternatorBlockEntity extends KineticBlockEntity implements EngineM
 		super.tick();
 		if (level == null || level.isClientSide)
 			return;
+		ghost.tick(this);
 		boolean turning = getSpeed() != 0 && !isOverStressed();
 		List<BatteryBlockEntity> batteries = turning ? batteries() : List.of();
 		float budget = turning ? Math.abs(getSpeed()) * CHARGE_PER_RPM : 0;

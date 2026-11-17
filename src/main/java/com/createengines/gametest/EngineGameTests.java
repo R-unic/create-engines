@@ -45,6 +45,7 @@ import com.createengines.engine.topology.EngineLayout;
 import com.createengines.engine.topology.EngineScanner;
 import com.createengines.engine.topology.CylinderFault;
 import com.createengines.engine.topology.FiringPlanner;
+import com.createengines.content.alternator.AlternatorBlockEntity;
 import com.createengines.registry.CEBlocks;
 import com.createengines.registry.CECreativeTabs;
 import com.createengines.registry.CEFluids;
@@ -2190,6 +2191,94 @@ public class EngineGameTests {
 				"Neither engine should still be publishing a speed: " + first.getGeneratedSpeed() + ", " + second.getGeneratedSpeed());
 			helper.assertTrue(first.getTheoreticalSpeed() == 0 && second.getTheoreticalSpeed() == 0,
 				"The pair should have run down: " + first.getTheoreticalSpeed() + ", " + second.getTheoreticalSpeed());
+			helper.succeed();
+		});
+	}
+
+	/**
+	 * A coupled engine whose two crank lines are geared together at both ends, so the gearing is a closed ring, run on fuel
+	 * and then starved. A ring of gearing is something Create can leave turning with nothing driving it; the engine must
+	 * still come to rest.
+	 */
+	@GameTest(template = "empty", timeoutTicks = 2600)
+	public static void aCoupledEngineGearedInARingStopsWhenItStalls(GameTestHelper helper) {
+		buildSingleCylinder(helper, true);
+		TestEngine.addCoupledLine(helper.getLevel(), helper.absolutePos(BlockPos.ZERO));
+		BlockPos secondCrank = new BlockPos(1, 2, 4);
+		helper.setBlock(new BlockPos(4, 2, 4), alongX(AllBlocks.SHAFT.getDefaultState()));
+		helper.setBlock(new BlockPos(5, 2, 4), alongX(AllBlocks.COGWHEEL.getDefaultState()));
+		helper.setBlock(new BlockPos(5, 2, 3), alongX(AllBlocks.COGWHEEL.getDefaultState()));
+		CylinderHeadBlockEntity head2 = helper.getBlockEntity(TestEngine.HEAD_2);
+		head2.oilTank()
+			.fill(new FluidStack(CEFluids.ENGINE_OIL.get()
+				.getSource(), 250), FluidAction.EXECUTE);
+		head2.tank()
+			.fill(new FluidStack(CEFluids.DIESEL.get()
+				.getSource(), 250), FluidAction.EXECUTE);
+		helper.runAtTickTime(300, () -> helper.setBlock(STARTER_POWER, Blocks.AIR));
+		helper.runAtTickTime(900, () -> {
+			for (BlockPos head : new BlockPos[] { TestEngine.HEAD, TestEngine.HEAD_2 })
+				((CylinderHeadBlockEntity) helper.getBlockEntity(head)).tank()
+					.drain(Integer.MAX_VALUE, FluidAction.EXECUTE);
+		});
+		helper.runAtTickTime(2500, () -> {
+			CrankshaftBlockEntity first = helper.getBlockEntity(PRIMARY);
+			CrankshaftBlockEntity second = helper.getBlockEntity(secondCrank);
+			helper.assertTrue(first.getTheoreticalSpeed() == 0 && second.getTheoreticalSpeed() == 0,
+				"A stalled engine should not still turn: " + first.getTheoreticalSpeed() + ", " + second.getTheoreticalSpeed());
+			helper.succeed();
+		});
+	}
+
+	/**
+	 * A network that is turning with no generator behind it (as a ring of gearing can be left by Create, every block following
+	 * the next) comes to rest: the engine's blocks check for it and release it. The state is forged here by making a motor's
+	 * network forget the motor, which is what leaves its blocks turning on nothing.
+	 */
+	@GameTest(template = "empty", timeoutTicks = 600)
+	public static void aNetworkTurningWithNoGeneratorIsBroughtToRest(GameTestHelper helper) {
+		helper.setBlock(new BlockPos(0, 2, 1), AllBlocks.CREATIVE_MOTOR.getDefaultState()
+			.setValue(com.simibubi.create.content.kinetics.motor.CreativeMotorBlock.FACING, Direction.EAST));
+		helper.setBlock(new BlockPos(1, 2, 1), alongX(AllBlocks.SHAFT.getDefaultState()));
+		helper.setBlock(new BlockPos(2, 2, 1), alongX(AllBlocks.SHAFT.getDefaultState()));
+		BlockPos alternator = new BlockPos(3, 2, 1);
+		helper.setBlock(alternator, TestEngine.axisX(CEBlocks.ALTERNATOR.getDefaultState()));
+		((com.simibubi.create.content.kinetics.motor.CreativeMotorBlockEntity) helper.getBlockEntity(new BlockPos(0, 2, 1))).generatedSpeed.setValue(40);
+		helper.runAtTickTime(50, () -> {
+			AlternatorBlockEntity be = helper.getBlockEntity(alternator);
+			helper.assertTrue(be.getTheoreticalSpeed() != 0, "The motor should be turning the alternator");
+			be.getOrCreateNetwork().sources.clear();
+		});
+		helper.runAtTickTime(300, () -> {
+			AlternatorBlockEntity be = helper.getBlockEntity(alternator);
+			helper.assertTrue(be.getTheoreticalSpeed() == 0,
+				"A network with no generator should have been brought to rest: " + be.getTheoreticalSpeed());
+			helper.succeed();
+		});
+	}
+
+	/**
+	 * A crank that is not its engine's primary must not generate, even if it was saved still publishing a speed and capacity
+	 * (an engine it once drove, or one that was running when the world was saved): left alone it keeps the network turning
+	 * and supplying stress after the engine that owns it has stalled.
+	 */
+	@GameTest(template = "empty", timeoutTicks = 1200)
+	public static void aCoupledCrankLeftPublishingIsMadeToStop(GameTestHelper helper) {
+		buildSingleCylinder(helper, true);
+		TestEngine.addCoupledLine(helper.getLevel(), helper.absolutePos(BlockPos.ZERO));
+		helper.runAtTickTime(300, () -> helper.setBlock(STARTER_POWER, Blocks.AIR));
+		helper.runAtTickTime(500, () -> {
+			CrankshaftBlockEntity other = helper.getBlockEntity(TestEngine.THROW_2);
+			helper.assertTrue(helper.absolutePos(PRIMARY)
+				.equals(other.primaryPos()), "The second line should belong to the first's engine");
+			other.publishCapacity(5000);
+			other.publishSpeed(200);
+			helper.assertTrue(other.getGeneratedSpeed() == 200, "The stale publish should have been applied");
+		});
+		helper.runAtTickTime(900, () -> {
+			CrankshaftBlockEntity other = helper.getBlockEntity(TestEngine.THROW_2);
+			helper.assertTrue(other.getGeneratedSpeed() == 0 && other.publishedCapacity() == 0,
+				"Only the primary generates: " + other.getGeneratedSpeed() + ", " + other.publishedCapacity());
 			helper.succeed();
 		});
 	}

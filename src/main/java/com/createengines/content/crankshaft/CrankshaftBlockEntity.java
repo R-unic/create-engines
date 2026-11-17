@@ -16,6 +16,7 @@ import com.createengines.engine.Diagnosis;
 import com.createengines.engine.EngineController;
 import com.createengines.engine.EngineState;
 import com.createengines.engine.EngineSummary;
+import com.createengines.engine.GhostRotation;
 import com.createengines.engine.sim.Thermal;
 import com.createengines.engine.sim.Torsion;
 import com.createengines.engine.topology.EngineLayout;
@@ -59,6 +60,7 @@ public class CrankshaftBlockEntity extends GeneratingKineticBlockEntity implemen
 	private @Nullable EngineController.Motion savedMotion;
 	private @Nullable EngineSummary summary;
 	private final RenderRotation rotation = new RenderRotation();
+	private final GhostRotation ghost = new GhostRotation();
 	/** Client only, and only on the primary: the engine's own noises (see {@link EngineAmbience}). */
 	private @Nullable EngineAmbience ambience;
 
@@ -102,8 +104,11 @@ public class CrankshaftBlockEntity extends GeneratingKineticBlockEntity implemen
 			return;
 		if (level.isClientSide)
 			tickClient();
-		else if (controller != null)
-			controller.tick();
+		else {
+			if (controller != null)
+				controller.tick();
+			ghost.tick(this);
+		}
 	}
 
 	/**
@@ -206,6 +211,7 @@ public class CrankshaftBlockEntity extends GeneratingKineticBlockEntity implemen
 	public void detachFromEngine() {
 		if (controller != null)
 			releaseEngine();
+		stopGenerating();
 		if (primaryPos != null) {
 			primaryPos = null;
 			sendData();
@@ -213,11 +219,24 @@ public class CrankshaftBlockEntity extends GeneratingKineticBlockEntity implemen
 	}
 
 	public void setPrimary(BlockPos primary, int sense) {
+		// Only the primary generates. A crank that turned an engine before (and was saved still publishing it), or that an engine
+		// has since taken in, must not go on offering the old speed and capacity: it would drive the network on its own, with
+		// the engine it belongs to stalled, and the pair would keep each other turning
+		if (!primary.equals(worldPosition))
+			stopGenerating();
 		if (primary.equals(primaryPos) && sense == this.sense)
 			return;
 		primaryPos = primary;
 		this.sense = sense;
 		sendData();
+	}
+
+	/** Stops offering rotation and stress capacity to the network; nothing happens if it already is not. */
+	private void stopGenerating() {
+		if (controller != null)
+			return;
+		publishCapacity(0);
+		publishSpeed(0);
 	}
 
 	public void updateSummary(EngineSummary next) {
