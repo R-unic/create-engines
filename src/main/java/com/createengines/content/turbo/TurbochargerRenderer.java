@@ -15,6 +15,7 @@ import net.minecraft.client.renderer.LightTexture;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.blockentity.BlockEntityRendererProvider;
+import net.minecraft.core.Direction;
 import net.minecraft.world.level.block.state.BlockState;
 
 /**
@@ -22,6 +23,15 @@ import net.minecraft.world.level.block.state.BlockState;
  * the wheels are modelled along +Y like the engine's other spinning parts and turned onto the shaft's axis.
  */
 public class TurbochargerRenderer extends SafeBlockEntityRenderer<TurbochargerBlockEntity> {
+
+	/** Centre, then turn the up-modelled wheel to each facing; depends only on the facing, so built once. */
+	private static final Matrix4f[] FACING_POSE = new Matrix4f[Direction.values().length];
+
+	static {
+		for (Direction direction : Direction.values())
+			FACING_POSE[direction.get3DDataValue()] = new Matrix4f().translate(0.5f, 0.5f, 0.5f)
+				.rotate(new Quaternionf().rotationTo(new Vector3f(0, 1, 0), new Vector3f(direction.step())));
+	}
 
 	public TurbochargerRenderer(BlockEntityRendererProvider.Context context) {
 	}
@@ -32,8 +42,7 @@ public class TurbochargerRenderer extends SafeBlockEntityRenderer<TurbochargerBl
 		BlockState state = be.getBlockState();
 		var facing = state.getValue(TurbochargerBlock.FACING);
 		// Modelled with the compressor up: spin about that axis, then turn it to face the way the block does
-		Matrix4f pose = new Matrix4f().translate(0.5f, 0.5f, 0.5f)
-			.rotate(new Quaternionf().rotationTo(new Vector3f(0, 1, 0), new Vector3f(facing.step())))
+		Matrix4f pose = new Matrix4f(FACING_POSE[facing.get3DDataValue()])
 			.rotateY((float) Math.toRadians(be.wheelAngle(partialTicks)))
 			.translate(-0.5f, -0.5f, -0.5f);
 		ms.pushPose();

@@ -19,6 +19,8 @@ public class CamshaftVisual extends RotatingPartVisual<CamshaftBlockEntity> {
 
 	/** A lobe set's intake, exhaust and injector lobes, each turned on its own; empty for a plain camshaft. */
 	private final TransformedInstance[] lobes;
+	private boolean lobesPosed;
+	private float[] lastLobeAngles;
 
 	public CamshaftVisual(VisualizationContext context, CamshaftBlockEntity blockEntity, float partialTick) {
 		super(context, blockEntity, partialTick, blockEntity.getBlockState()
@@ -53,6 +55,10 @@ public class CamshaftVisual extends RotatingPartVisual<CamshaftBlockEntity> {
 			return;
 		EnginePoses.LobeAngles angles = EnginePoses.lobeAngles(blockEntity, AnimationTickHolder.getRenderTime(level));
 		float[] each = {angles.intake(), angles.exhaust(), angles.injector()};
+		if (lobesPosed && java.util.Arrays.equals(each, lastLobeAngles))
+			return;
+		lobesPosed = true;
+		lastLobeAngles = each;
 		for (int i = 0; i < lobes.length; i++)
 			lobes[i].setIdentityTransform()
 				.translate(getVisualPosition())

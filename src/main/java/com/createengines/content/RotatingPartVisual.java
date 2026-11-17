@@ -26,6 +26,8 @@ public abstract class RotatingPartVisual<T extends KineticBlockEntity> extends A
 
 	protected final TransformedInstance part;
 	protected final Axis axis;
+	private boolean posed;
+	private float lastAngle;
 
 	protected RotatingPartVisual(VisualizationContext context, T blockEntity, float partialTick, PartialModel model) {
 		super(context, blockEntity, partialTick);
@@ -45,6 +47,11 @@ public abstract class RotatingPartVisual<T extends KineticBlockEntity> extends A
 
 	private void animate() {
 		float angle = angle(AnimationTickHolder.getRenderTime(level));
+		// A part that has not turned since the last frame (a stopped engine) keeps its pose and is not re-uploaded
+		if (posed && Float.floatToRawIntBits(angle) == Float.floatToRawIntBits(lastAngle))
+			return;
+		posed = true;
+		lastAngle = angle;
 		part.setIdentityTransform()
 			.translate(getVisualPosition())
 			.mul(EnginePoses.rotatingPart(axis, angle))

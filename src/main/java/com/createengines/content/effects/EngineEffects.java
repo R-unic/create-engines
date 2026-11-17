@@ -66,7 +66,9 @@ public final class EngineEffects {
 			RainCaps.pulse(level, outlet.cap);
 		if (!CEClientConfig.particles())
 			return;
-		if (outlet == null)
+		// Past 48 blocks nothing below can be seen (particles) or heard (the knock and afterfire are quieter than the
+		// bang, which already stops at 48), so none of it is built
+		if (outlet == null || !nearViewer(level, outlet.at.x, outlet.at.y, outlet.at.z, 48))
 			return;
 		if (outlet.flooded) {
 			bubble(level, outlet);
@@ -210,7 +212,8 @@ public final class EngineEffects {
 		if (!CEClientConfig.particles())
 			return;
 		Opening inlet = pick(level, status.intakeInlets());
-		if (inlet == null)
+		// Everything below is particles, which the game drops beyond 32 blocks of the camera
+		if (inlet == null || !nearViewer(level, inlet.at.x, inlet.at.y, inlet.at.z, 40))
 			return;
 		if (inlet.flooded) {
 			bubble(level, inlet);
@@ -326,7 +329,8 @@ public final class EngineEffects {
 	 */
 	public static void rockDust(Level level, BlockPos block, @Nullable EngineSummary engine) {
 		if (engine == null || !CEClientConfig.particles() || !(engine.state() == EngineState.RUNNING
-			|| engine.state() == EngineState.OVERLOADED) || level.random.nextFloat() >= EngineRock.dustChance(engine.roughness()))
+			|| engine.state() == EngineState.OVERLOADED) || !nearViewer(level, block)
+			|| level.random.nextFloat() >= EngineRock.dustChance(engine.roughness()))
 			return;
 		RandomSource random = level.random;
 		// Off a face with air against it, picked from a random start: dust inside or behind other blocks is never seen
@@ -353,7 +357,7 @@ public final class EngineEffects {
 	 * hot, and a running engine with no coolant to keep it down shimmers. Meant to be called a few times a second.
 	 */
 	public static void heat(Level level, BlockPos block, @Nullable EngineSummary engine) {
-		if (engine == null || engine.temperature() < STEAMING || !CEClientConfig.particles())
+		if (engine == null || engine.temperature() < STEAMING || !CEClientConfig.particles() || !nearViewer(level, block))
 			return;
 		BlockPos above = block.above();
 		if (!level.getBlockState(above)
@@ -379,6 +383,19 @@ public final class EngineEffects {
 		boolean shimmers = turning ? engine.temperature() >= SHIMMERING : engine.cooling() && engine.temperature() >= SHIMMERING - 0.12f;
 		if (shimmers && random.nextFloat() < (turning ? 0.12f : 0.05f))
 			level.addParticle(new GasParticleOptions(0.9f, 0.9f, 0.9f, 0.5f, 0.24f, 0.7f, 26), x, y, z, 0, 0.02, 0);
+	}
+
+	/**
+	 * Whether anyone could see a particle at {@code at}. Ordinary particles more than 32 blocks from the camera are
+	 * dropped by the game on spawn, so a cylinder farther than that from every player (40, to cover a third-person
+	 * camera) skips building them. It only ever lets more work through, never less than the game would show.
+	 */
+	private static boolean nearViewer(Level level, BlockPos at) {
+		return nearViewer(level, at.getX() + 0.5, at.getY() + 0.5, at.getZ() + 0.5, 40);
+	}
+
+	private static boolean nearViewer(Level level, double x, double y, double z, double range) {
+		return level.getNearestPlayer(x, y, z, range, false) != null;
 	}
 
 	/** One of {@code openings} at random, as it stands in the world; null if it is no longer an opening. */

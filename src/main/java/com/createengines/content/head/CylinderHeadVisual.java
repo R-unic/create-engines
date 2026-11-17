@@ -24,6 +24,8 @@ public class CylinderHeadVisual extends AbstractBlockEntityVisual<CylinderHeadBl
 
 	private final TransformedInstance intake;
 	private final TransformedInstance exhaust;
+	private boolean posed;
+	private EnginePoses.ValvePose lastPose;
 
 	public CylinderHeadVisual(VisualizationContext context, CylinderHeadBlockEntity blockEntity, float partialTick) {
 		super(context, blockEntity, partialTick);
@@ -41,6 +43,11 @@ public class CylinderHeadVisual extends AbstractBlockEntityVisual<CylinderHeadBl
 
 	private void animate() {
 		EnginePoses.ValvePose pose = EnginePoses.valves(blockEntity, AnimationTickHolder.getRenderTime(level));
+		// Valves that have not moved since the last frame (a stopped engine) keep their pose and are not re-uploaded
+		if (posed && java.util.Objects.equals(pose, lastPose))
+			return;
+		posed = true;
+		lastPose = pose;
 		intake.setVisible(pose != null);
 		exhaust.setVisible(pose != null);
 		if (pose == null)
