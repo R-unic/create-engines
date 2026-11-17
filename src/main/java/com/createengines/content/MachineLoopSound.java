@@ -11,6 +11,7 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.util.Mth;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.phys.Vec3;
 
 /**
@@ -26,7 +27,11 @@ public final class MachineLoopSound extends AbstractTickableSoundInstance {
 	private static final float FADE_OUT = 0.08f;
 	/** Below this the loop is wanted silent. */
 	private static final float AUDIBLE = 0.02f;
+	/** How often, in ticks, loops the sound engine dropped are forgotten. */
+	private static final int PRUNE_TICKS = 200;
+	private static long lastPrune;
 	private final Object owner;
+	private final long startedAt;
 	private final LoopSource source;
 	private final float loudest;
 	/** How far the loop has faded in, 0 (silent) to 1. */
@@ -35,13 +40,14 @@ public final class MachineLoopSound extends AbstractTickableSoundInstance {
 	private float level;
 	private float currentPitch;
 
-	private MachineLoopSound(Object owner, BlockPos at, SoundEvent sound, float loudest, LoopSource source) {
+	private MachineLoopSound(Object owner, BlockPos at, SoundEvent sound, float loudest, LoopSource source, long startedAt) {
 		super(sound, SoundSource.BLOCKS, SoundInstance.createUnseededRandom());
 		this.owner = owner;
 		this.source = source;
 		this.loudest = loudest;
-		this.level = Mth.clamp(source.loopLevel(), 0, 1);
-		this.currentPitch = source.loopPitch();
+		this.startedAt = startedAt;
+		this.level = LoopSanity.finite(source.loopLevel(), 0, 1, 0);
+		this.currentPitch = LoopSanity.finite(source.loopPitch(), 0.5f, 2f, 1f);
 		looping = true;
 		delay = 0;
 		volume = 0;
@@ -57,14 +63,34 @@ public final class MachineLoopSound extends AbstractTickableSoundInstance {
 	public static void ensurePlaying(Object owner, BlockPos at, SoundEvent sound, float loudest, LoopSource source) {
 		if (source.loopVolume() <= 0)
 			return;
-		SoundManager sounds = Minecraft.getInstance()
-			.getSoundManager();
-		MachineLoopSound current = PLAYING.get(owner);
-		if (current != null && !current.isStopped() && sounds.isActive(current))
+		Minecraft minecraft = Minecraft.getInstance();
+		if (minecraft.level == null || !near(at))
 			return;
-		MachineLoopSound loop = new MachineLoopSound(owner, at, sound, loudest, source);
+		SoundManager sounds = minecraft.getSoundManager();
+		long now = minecraft.level.getGameTime();
+		if (now < lastPrune || now - lastPrune >= PRUNE_TICKS) {
+			lastPrune = now;
+			// Loops the sound engine dropped without ticking would otherwise keep their sources alive until the world is left
+			PLAYING.values()
+				.removeIf(loop -> VoiceClock.settled(now, loop.startedAt) && (loop.isStopped() || !sounds.isActive(loop)));
+		}
+		MachineLoopSound current = PLAYING.get(owner);
+		// A new instance gets a moment to start; one the sound engine declined is only tried again after that, not every tick
+		if (current != null && (!VoiceClock.settled(now, current.startedAt) || !current.isStopped() && sounds.isActive(current)))
+			return;
+		MachineLoopSound loop = new MachineLoopSound(owner, at, sound, loudest, source, now);
 		PLAYING.put(owner, loop);
 		sounds.play(loop);
+	}
+
+	private static boolean near(BlockPos at) {
+		Player player = Minecraft.getInstance().player;
+		return player != null && LoopSanity.inRange(player.distanceToSqr(at.getX() + 0.5, at.getY() + 0.5, at.getZ() + 0.5));
+	}
+
+	private static boolean near(double x, double y, double z) {
+		Player player = Minecraft.getInstance().player;
+		return player != null && LoopSanity.inRange(player.distanceToSqr(x, y, z));
 	}
 
 	/** Forgets every loop, for when the player leaves a world: the sound engine has already dropped them, and the map would keep their sources alive. */
@@ -84,17 +110,17 @@ public final class MachineLoopSound extends AbstractTickableSoundInstance {
 			finish();
 			return;
 		}
-		float wanted = Mth.clamp(source.loopLevel(), 0, 1);
+		float wanted = LoopSanity.finite(source.loopLevel(), 0, 1, 0);
 		// A spinning part keeps turning after it is let go: it is working while it is asked to, and, for a source that
-		// coasts, until its own spin has run down
-		boolean working = wanted > AUDIBLE || source.loopCoasts() && level > AUDIBLE;
+		// coasts, until its own spin has run down. Out of earshot it is not worth a channel.
+		boolean working = near(x, y, z) && (wanted > AUDIBLE || source.loopCoasts() && level > AUDIBLE);
 		fade = Mth.clamp(fade + (working ? FADE_IN : -FADE_OUT), 0, 1);
 		if (fade <= 0 && !working) {
 			finish();
 			return;
 		}
 		level += (wanted - level) * (wanted > level ? source.loopSpinUp() : source.loopSpinDown());
-		float wantedPitch = source.loopPitch();
+		float wantedPitch = LoopSanity.finite(source.loopPitch(), 0.5f, 2f, 1f);
 		currentPitch += (wantedPitch - currentPitch) * (wantedPitch > currentPitch ? source.loopSpinUp() : source.loopSpinDown());
 		Vec3 at = source.loopAt();
 		if (at != null) {
