@@ -115,7 +115,9 @@ cd <copy>
 ### 2.3 Build and packaging checks
 
 - [ ] `./gradlew runData --offline` leaves `git diff src/generated` empty (generated files match the code that makes
-      them, and none are half-committed).
+      them, and none are half-committed). Delete `src/generated` in the private copy first: datagen skips a file whose
+      output matches its `.cache` entry, so a plain re-run cannot show a stale file (1.3.0's did not, and CI's
+      `datagen-idempotence` job, which starts from a fresh checkout, caught it).
 - [ ] `./gradlew build --offline` produces `create_engines-VERSION-MCVERSION.jar`. The version in `gradle.properties`,
       the jar name, the changelog heading and the tag all agree.
 - [ ] **The jar, not the dev classpath, is what gets run.** Drop the built jar into a clean instance with the supported

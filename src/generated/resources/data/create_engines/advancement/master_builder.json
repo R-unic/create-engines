@@ -1,33 +1,9 @@
 {
   "parent": "create_engines:crankshaft",
   "criteria": {
-    "twelve_cylinders": {
-      "conditions": {
-        "event": "twelve_cylinders"
-      },
-      "trigger": "create_engines:event"
-    },
-    "stiff_crank": {
-      "conditions": {
-        "event": "stiff_crank"
-      },
-      "trigger": "create_engines:event"
-    },
     "coupled_cranks": {
       "conditions": {
         "event": "coupled_cranks"
-      },
-      "trigger": "create_engines:event"
-    },
-    "vee_engine": {
-      "conditions": {
-        "event": "vee_engine"
-      },
-      "trigger": "create_engines:event"
-    },
-    "flat_engine": {
-      "conditions": {
-        "event": "flat_engine"
       },
       "trigger": "create_engines:event"
     },
@@ -37,15 +13,39 @@
       },
       "trigger": "create_engines:event"
     },
-    "valley_cam": {
+    "flat_engine": {
       "conditions": {
-        "event": "valley_cam"
+        "event": "flat_engine"
       },
       "trigger": "create_engines:event"
     },
     "rotary_engine": {
       "conditions": {
         "event": "rotary_engine"
+      },
+      "trigger": "create_engines:event"
+    },
+    "stiff_crank": {
+      "conditions": {
+        "event": "stiff_crank"
+      },
+      "trigger": "create_engines:event"
+    },
+    "twelve_cylinders": {
+      "conditions": {
+        "event": "twelve_cylinders"
+      },
+      "trigger": "create_engines:event"
+    },
+    "valley_cam": {
+      "conditions": {
+        "event": "valley_cam"
+      },
+      "trigger": "create_engines:event"
+    },
+    "vee_engine": {
+      "conditions": {
+        "event": "vee_engine"
       },
       "trigger": "create_engines:event"
     }

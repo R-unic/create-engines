@@ -2,7 +2,7 @@
 
 Status: **approved 2026-11-16. Step 1 (the 1.x half) is built. Step 2 (renamed IDs, the migration table, deleting the hidden rows, regrouping the tab tree) is 2.0's responsibility, listed in docs/ROADMAP.md under 2.0, and is not started.**
 
-Where things stand: the 1.1 declutter is done. `CEAdvancements.SHOWN` lists 56 advancements in the tab. The other 54 keep their IDs and
+Where things stand: the 1.1 declutter is done. `CEAdvancements.SHOWN` listed 54 advancements in the tab (64 from 1.3, see "Built in step 1"). The other 56 (46 from 1.3) keep their IDs and
 criteria but have no display, so the stability promise holds. The redesign starts from that and decides what the tab is *for*.
 
 ## The goal
@@ -33,7 +33,7 @@ a checklist, not a tutorial, and never a telling-off.
 
 ## Tracks and keep list (draft for approval)
 
-66 rows shown, up from 56: none of the earlier shown rows left, and ten were added. 44 stay hidden (and are
+64 rows shown, up from 54: none of the earlier shown rows left, and ten were added. 46 stay hidden (and are
 migrated, then deleted, in 2.0). ● announces in chat, ○ is toast-only (an insignificant stepping stone or minor discovery).
 **NEW** is a row that is hidden today. 😬 marks a mistake row. ✦ marks a goal or challenge that gets the sting.
 IDs below are today's; 2.0 may rename them.
@@ -81,12 +81,12 @@ row when any of its old rows was earned; capstones credit per milestone, as they
 
 ## Decisions for the author
 
-- Approve the principles, the track list and the keep list (the 56 shown rows, plus or minus any you name), and mark which are
+- Approve the principles, the track list and the keep list (the 54 shown rows, plus or minus any you name), and mark which are
   chat-quiet.
 
 ## Built in step 1 (1.x)
 
-- `CEAdvancements.SHOWN` holds the 66 rows, and `QUIET` the 18 that are toast only (crankshaft, cylinder, starter, warmed_up,
+- `CEAdvancements.SHOWN` holds the 64 rows, and `QUIET` the 18 that are toast only (crankshaft, cylinder, starter, warmed_up,
   sump, camshaft, pipework, bank_builder, engine_casing, blow_off, thinned_oil, fouled_plug, engine_display, alternator,
   flywheel, preheated, spark_plug, transmission). Every other shown row announces in chat.
 - The sting: `StingSynth` (an engine winding up, from the same note synthesizer the engines use), `StingSound` (client voice),

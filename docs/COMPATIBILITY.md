@@ -36,5 +36,5 @@ Standing rules, from 1.3 on, until a major release (2.0):
 
 - The behaviour baseline covers the simulation, not Create stress or recipe chains end to end; the manifest pins recipe
   text but not what Create does with it.
-- `LegacyWorldGameTests` loads one engine plus empty saves; other builds (refining column, rotary, dyno) are only
+- `LegacyWorldGameTests` loads a diesel, a spark and a rotary engine saved by each of 1.0.0, 1.1.0, 1.2.0 and 1.2.1, one 1.3 engine, and empty saves for every block entity; other builds (refining column, dyno) are only
   covered by the empty-save test and the saved-key manifest.
