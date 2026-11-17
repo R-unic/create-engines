@@ -427,9 +427,20 @@ looks and feels. Tests only guard against those changing by accident.
   GameTest and smoke audit coverage is not done.
 - Item 1: `./gradlew pitest` (about 6 minutes, not part of `check`) runs PIT through its command line, because the Gradle
   plugin does not work with Gradle 9. First report: 1854 mutants in `engine/sim`, 1521 killed, 294 survived, 23 reached
-  by no test. The ratchet `src/smoke/mutation-ratchet.txt` is 317 and may only go down. Survivors cluster in
+  by no test. The ratchet `src/smoke/mutation-ratchet.txt` was 317 and may only go down. It is now 177 (1,721 of 1,898 killed, 91%), after the `*ExactTest` classes, `SimTrajectoryTest` and the refactor below. Survivors were clustered in
   `EngineSimulation` (81), `CylinderModel` (59), `ColumnShape` (33), `Thermal` (24) and `Governor` (20); killing them is
   the follow-up work. The slow fuzz tests are excluded from the mutant runs.
+- Refactor of the simulation core (behaviour-preserving, guarded by `behaviour.txt`, `trajectories.txt`, `PerfBudgetTest`
+  and the GameTests, all unchanged and green): `Induction` (turbos, blowers, intercoolers and how they set each
+  cylinder's air) and `SwingTracker` came out of `EngineSimulation` (727 to 584 lines). `CylinderModel` (733 to 439
+  lines) was split into `Charge` (the gas, shared by the rest), `Ports` (intake and exhaust exchange), `Combustion`
+  (injection, ignition, burn) and `Soiling` (plug fouling and exhaust soot). Direct tests: `ExtractedPartsTest` and
+  `CylinderStateTest`. **Cost:** the gas split makes the 16-cylinder step about 2 to 4 percent slower in
+  `PerfBudgetTest` on this machine (0.083 against 0.081 ms at 1024 RPM, 0.102 against 0.098 ms at 4096 RPM, measured
+  against the original in the same session); allocation per tick stayed at 0 bytes once the stage lists were walked by
+  index and the parallel-stage maps reused. Accepted by the author on 2026-11-16 ("we'll optimize later"): it is about 0.004 ms a tick for sixteen
+  cylinders, to be recovered in the 2.0 optimization pass, which should start from `PerfBudgetTest`'s numbers. Next cut if
+  wanted: in `EngineSimulation`, the oil wash and friction measuring.
 - Item 6: `EngineNoteConcurrencyTest`: 12 voices read while a game thread feeds them hostile state; a read allocates
   almost nothing; direct memory returns to its start after 9000 voices of churn; a voice replaced mid-read finishes.
   Put the 1.2.0 per-read `allocateDirect` back and two of the four fail. Not covered: the sim itself under threads

@@ -1,10 +1,6 @@
 package com.createengines.engine.sim;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.IdentityHashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Objects;
 
 /**
@@ -50,13 +46,12 @@ public final class EngineSimulation {
 	 * the engine it is measuring, and for a bare simulation, which stays at the warm temperature that costs and earns nothing.
 	 */
 	private boolean thermalLive;
-	private final List<Turbocharger> turbos = new ArrayList<>();
-	private final List<Supercharger> superchargers = new ArrayList<>();
-	private final List<Intercooler> intercoolers = new ArrayList<>();
+	/** Turbochargers, superchargers and intercoolers, and how they set the air; see {@link Induction}. */
+	private final Induction induction = new Induction();
 
 	private boolean washesOil = true;
 	/** Measures how unevenly a driven engine turns the crank; see {@link #trackSwing()}. Null unless asked for. */
-	private Swing swing;
+	private SwingTracker swing;
 
 	private double inertia;
 	/** Friction torque not tied to speed, and per rad/s, at the oil the tick began with; see {@link #measureFriction()}. */
@@ -233,106 +228,7 @@ public final class EngineSimulation {
 		double cold = thermal.felt();
 		for (CylinderModel cylinder : cylinders)
 			cylinder.coldness = cold;
-		for (Turbocharger turbo : turbos)
-			turbo.tick(TICK);
-		for (Supercharger blower : superchargers) {
-			if (blower.followsCrank())
-				blower.rpm = blower.driveRatio * rpm();
-			blower.tick(TICK);
-		}
-		applyInduction();
-	}
-
-	/**
-	 * Sets the air every cylinder breathes. The compressors on a cylinder's intake run in turn, so their pressure and
-	 * temperature ratios multiply; the intercoolers then take heat out of the result; and the turbines on its exhaust
-	 * run each hold it up, so their back-pressures add.
-	 */
-	private void applyInduction() {
-		double cool = thermal.chargeFactor();
-		if (turbos.isEmpty() && superchargers.isEmpty() && intercoolers.isEmpty()) {
-			// No compressors, but a cool engine still draws a denser charge
-			for (CylinderModel cylinder : cylinders)
-				cylinder.intakeTemperature = cool;
-			return;
-		}
-		for (CylinderModel cylinder : cylinders) {
-			cylinder.intakePressure = 1;
-			cylinder.intakeTemperature = 1;
-			cylinder.exhaustPressure = 1;
-		}
-		// Stages in series multiply (or add) straight onto the cylinder; stages in parallel each handle a share of the
-		// air, so the cylinder gets their average, whatever the number of them
-		Parallel intake = new Parallel();
-		Parallel exhaust = new Parallel();
-		// The server can scale boost, or switch forced induction off, in which case the turbines add no back-pressure either
-		double strength = Tuning.forcedInduction ? Tuning.boostStrength : 0;
-		double turbine = Tuning.forcedInduction ? 1 : 0;
-		for (Turbocharger turbo : turbos) {
-			double pressure = 1 + turbo.boost() * strength;
-			double temperature = Tuning.blend(turbo.chargeTemperature(), strength);
-			for (CylinderModel cylinder : turbo.compressor()) {
-				if (turbo.parallelCompressor)
-					intake.add(cylinder, pressure, temperature);
-				else {
-					cylinder.intakePressure *= pressure;
-					cylinder.intakeTemperature *= temperature;
-				}
-			}
-			double back = (turbo.backPressure() - 1) * turbine;
-			for (CylinderModel cylinder : turbo.turbine()) {
-				if (turbo.parallelTurbine)
-					exhaust.add(cylinder, back, 0);
-				else
-					cylinder.exhaustPressure += back;
-			}
-		}
-		for (Supercharger blower : superchargers) {
-			double pressure = 1 + blower.boost() * strength;
-			double temperature = Tuning.blend(blower.chargeTemperature(), strength);
-			for (CylinderModel cylinder : blower.compressor()) {
-				if (blower.parallel)
-					intake.add(cylinder, pressure, temperature);
-				else {
-					cylinder.intakePressure *= pressure;
-					cylinder.intakeTemperature *= temperature;
-				}
-			}
-		}
-		intake.forEach((cylinder, pressure, temperature) -> {
-			cylinder.intakePressure *= pressure;
-			cylinder.intakeTemperature *= temperature;
-		});
-		exhaust.forEach((cylinder, back, $) -> cylinder.exhaustPressure += back);
-		for (Intercooler cooler : intercoolers)
-			cooler.cool();
-		if (cool != 1)
-			for (CylinderModel cylinder : cylinders)
-				cylinder.intakeTemperature *= cool;
-	}
-
-	/** Running averages of what several parallel stages make for each cylinder they serve. */
-	private static final class Parallel {
-		/** Made when the first stage in parallel is added: most engines have none, and this is built every tick. */
-		private Map<CylinderModel, double[]> sums;
-
-		void add(CylinderModel cylinder, double first, double second) {
-			if (sums == null)
-				sums = new IdentityHashMap<>();
-			double[] sum = sums.computeIfAbsent(cylinder, $ -> new double[3]);
-			sum[0] += first;
-			sum[1] += second;
-			sum[2]++;
-		}
-
-		void forEach(Average average) {
-			if (sums != null)
-				sums.forEach((cylinder, sum) -> average.accept(cylinder, sum[0] / sum[2], sum[1] / sum[2]));
-		}
-
-		interface Average {
-			void accept(CylinderModel cylinder, double first, double second);
-		}
+		induction.tick(rpm(), cylinders, thermal.chargeFactor());
 	}
 
 	/** Whether unburned fuel thins the oil as it runs. A dynamometer measures the oil as it is and leaves it alone. */
@@ -342,29 +238,29 @@ public final class EngineSimulation {
 
 	/** Adds a turbocharger, which is ticked with the engine. */
 	public void addTurbo(Turbocharger turbo) {
-		turbos.add(turbo);
+		induction.turbos.add(turbo);
 	}
 
 	public List<Turbocharger> turbos() {
-		return turbos;
+		return induction.turbos;
 	}
 
 	/** Adds a supercharger, which is ticked with the engine. */
 	public void addSupercharger(Supercharger supercharger) {
-		superchargers.add(supercharger);
+		induction.superchargers.add(supercharger);
 	}
 
 	public List<Supercharger> superchargers() {
-		return superchargers;
+		return induction.superchargers;
 	}
 
 	/** Adds an intercooler, which cools the air whatever compressors are ahead of it. */
 	public void addIntercooler(Intercooler intercooler) {
-		intercoolers.add(intercooler);
+		induction.intercoolers.add(intercooler);
 	}
 
 	public List<Intercooler> intercoolers() {
-		return intercoolers;
+		return induction.intercoolers;
 	}
 
 	private double advance(double delta, double dt) {
@@ -661,7 +557,7 @@ public final class EngineSimulation {
 	/** Starts measuring the energy swing of a driven engine, which {@link #predictedRipple()} turns into a speed ripple. */
 	public void trackSwing() {
 		if (swing == null)
-			swing = new Swing();
+			swing = new SwingTracker();
 	}
 
 	/**
@@ -671,48 +567,9 @@ public final class EngineSimulation {
 	 * {@link #trackSwing()} was called and a whole cycle has been driven.
 	 */
 	public double predictedRipple() {
-		if (swing == null || swing.result <= 0 || omega <= STALL_OMEGA)
+		if (swing == null || swing.result() <= 0 || omega <= STALL_OMEGA)
 			return 0;
-		return swing.result / (inertia * omega * omega);
-	}
-
-	/**
-	 * Net energy the crank gains over a 720 degree cycle, less what an even torque would have given by the same angle:
-	 * the biggest excess minus the biggest shortfall is how far the energy swings.
-	 */
-	private static final class Swing {
-		private double[] angles = new double[128];
-		private double[] energies = new double[128];
-		private int count;
-		private double totalAngle;
-		private double totalEnergy;
-		double result;
-
-		void add(double work, double radians) {
-			totalAngle += radians;
-			totalEnergy += work;
-			if (count == angles.length) {
-				angles = Arrays.copyOf(angles, count * 2);
-				energies = Arrays.copyOf(energies, count * 2);
-			}
-			angles[count] = totalAngle;
-			energies[count] = totalEnergy;
-			count++;
-			if (totalAngle >= Math.toRadians(SimMath.CYCLE) - 1e-9) {
-				double slope = totalEnergy / totalAngle;
-				double low = 0;
-				double high = 0;
-				for (int i = 0; i < count; i++) {
-					double excess = energies[i] - slope * angles[i];
-					low = Math.min(low, excess);
-					high = Math.max(high, excess);
-				}
-				result = high - low;
-				count = 0;
-				totalAngle = 0;
-				totalEnergy = 0;
-			}
-		}
+		return swing.result() / (inertia * omega * omega);
 	}
 
 	/** Fuel injected per second over the last cycle, mB/s. */
