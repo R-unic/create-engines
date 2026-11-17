@@ -8,6 +8,8 @@ with a boosted, precision-built V12.
 
 Minecraft 1.21.1 · NeoForge 21.1.219 · Create 6.0.10
 
+[Discord](https://discord.gg/QYVpy2dqGE)
+
 > [!NOTE]
 > **Built with AI.** Nearly all of the code, models, textures, sounds, Ponder scenes and docs were written by an AI
 > (Claude) at my direction. I have played, tested and reworked almost all of it over many passes, and it ships with

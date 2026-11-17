@@ -1,0 +1,22 @@
+# Modrinth gallery, in order: file in docs/images, a tab, the title. Read by scripts/sync-modrinth-gallery.sh.
+# The CurseForge gallery has no API and is replaced by hand with the same set.
+engine_showcase_v8_exhaust.png	A V8 from the exhaust side, running
+engine_coupled_overview.png	A coupled two-crankshaft engine
+engine_accessory_twin_turbo_v8.png	A twin-turbo V8
+engine_showcase_v8.png	A V8 built with the Bank Builder
+engine_showcase_flat6.png	A flat six
+engine_showcase_rotary.png	A twin-rotor Wankel
+engine_showcase_inline6.png	A turbocharged inline six
+engine_accessory_blown_flat6.png	A supercharged flat six, a blower and intercooler on each bank
+engine_management_overview.png	Engine with management sensors
+engine_new_parts.png	Flywheel, dynamometer and turbos
+engine_goggles_cylinder.png	Goggle readout on a firing cylinder
+engine_ponder_firing_order_960.png	Firing order Ponder scene
+engine_showcase_v8_top.png	A V8 from above
+engine_showcase_first.png	The first engine, a single-cylinder diesel with a flywheel
+engine_accessory_turbo_stack.png	A turbo and its exhaust stack
+engine_accessory_blowers.png	The blowers of a supercharged flat six, each with its intercooler and air intake
+engine_accessory_blown_inline6.png	An inline six with a variable-drive supercharger
+engine_accessory_variable_turbo.png	A diesel with a variable-geometry turbo and an intercooler
+engine_accessory_flywheel_governor.png	A flywheel and governor on a test-bed engine
+engine_accessory_dyno.png	A dynamometer and second flywheel on a test-bed engine

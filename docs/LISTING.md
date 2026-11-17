@@ -9,7 +9,7 @@ Copy-paste material for the project pages. Not shipped in the jar.
 | Name | Create: Engine Engineer |
 | Slug | create-engine-engineer (check it is free on both sites) |
 | Icon | `docs/images/icon.png` (512x512). The jar carries a 256x256 copy as `logo.png` |
-| Summary (CurseForge, 250 max) | Build working combustion engines from individual parts, from a crude single cylinder to a boosted precision V12, and turn them into Create rotation. |
+| Summary (CurseForge, 250 max) | Build real engines piece by piece: V8s, flat sixes, Wankels, twin-turbos. Tune them, hear them roar, and turn their power into Create rotation. |
 | Short description (Modrinth, 256 max) | Same as the summary. |
 | Categories | Technology, plus the Create addon tag where the site offers one |
 | Game version | 1.21.1 |
@@ -20,7 +20,7 @@ Copy-paste material for the project pages. Not shipped in the jar.
 | Source | https://github.com/R-unic/create-engines |
 | Issues | https://github.com/R-unic/create-engines/issues |
 | Release type | Beta (0.x), switch to Release at 1.0 |
-| AI disclosure | Yes. The notice is the first paragraph of the description below |
+| AI disclosure | Yes. The "About this mod" section of the description below, plus the site's own AI-content field where it has one |
 
 Image links in the description use `raw.githubusercontent.com`, so they only work once the repository (with
 `docs/images`) is pushed to GitHub. CurseForge's editor wants rich text: paste the description into its source (HTML)
@@ -29,141 +29,142 @@ view after converting it, or retype the headings and lists. Modrinth takes the M
 ## Description
 
 ```markdown
-> **Built with AI.** Nearly all of the code, models, textures, sounds, Ponder scenes and docs were written by an AI
-> (Claude) at my direction. I have played, tested and reworked almost all of it over many passes, and it ships with
-> unit tests and in-world GameTests. It is still a young mod, but you shouldn't have to expect things to break. If something
-> does, please report it on the [issue tracker](https://github.com/R-unic/create-engines/issues). Block, item and fluid
-> IDs, config keys and ranges, advancement IDs and the fuel data-map format stay stable within 1.x, and a release that
-> changes how an existing engine behaves says so in its changelog.
-
 # Create: Engine Engineer
 
-An addon for **Create** that lets you build working internal combustion engines out of individual parts and turn them
-into Create rotational force. Start with a crude single cylinder, finish with a boosted, precision-built V12.
+### Build a real engine, one part at a time, and hear it run.
 
-Nothing here is a single "engine block". You place the crankshaft, the throws, the cylinders, heads, pistons, rods,
-camshafts and valves, and the layout you build decides whether the engine runs and how well. Cylinders fire in order
-and the crank animates with them.
+![A V8 from the exhaust side, running](https://raw.githubusercontent.com/R-unic/create-engines/master/docs/images/engine_showcase_v8_exhaust.png)
 
-![A coupled two-crankshaft engine](https://raw.githubusercontent.com/R-unic/create-engines/master/docs/images/engine_coupled_overview.png)
+An addon for **Create** with working internal combustion engines. Place the crankshaft, cylinders, heads, pistons, cams
+and valves yourself, pipe in air and fuel, and the engine you built fires in order, sounds like what it is, and drives
+your Create machines.
 
-## Build an engine
+> 🔊 **It has a voice.** The exhaust note is made from the engine's speed and firing order, so a V-twin lopes, a six
+> hums and a dead cylinder limps. Turbos whistle, blow off and crackle. Turn your sound up.
 
-- Inline, V, flat and rotary (Wankel) layouts, with coupled crankshafts for bigger engines
-- Cam lobes that sit beside the cylinder block, so a V can run one camshaft in its valley and keep every head face free
-  for pipes
-- A **Bank Builder** that lays out a whole inline, V or flat bank in one click (it fits the spark plugs you carry, and
-  lays a cam line beside the bank if you carry a camshaft and cam lobes), and a **Timing Tool** that sets the
-  firing order for you
-- **Torsional flex**: a crank twists under load, so past eight throws on one unbroken crankshaft an engine's rating
-  falls a little for each extra throw, to at most 35 percent. A V12 or flat twelve loses nothing. It only lowers the
-  rating and never harms anything
+---
 
-![A V8 built with the Bank Builder](https://raw.githubusercontent.com/R-unic/create-engines/master/docs/images/engine_showcase_v8.png)
-![A flat six](https://raw.githubusercontent.com/R-unic/create-engines/master/docs/images/engine_showcase_flat6.png)
+## ⚡ At a glance
 
-## Feed and tune it
+| | |
+|---|---|
+| **Layouts** | Inline, V, flat and Wankel, with coupled crankshafts up to a V12 |
+| **Fuels** | Diesel, plant oil, gasoline, ethanol and biodiesel, plus other mods' fuels |
+| **Power** | Turbos, superchargers, intercoolers, flywheels and a 13-gear transmission |
+| **Tools** | Bank Builder, Timing Tool, Dynamometer, Black Box recorder, Engineer's Goggles |
+| **Learning** | A Ponder scene for every part, and advancement tracks |
+| **Needs** | Minecraft 1.21.1, NeoForge, Create 6.0.10 (required on client and server) |
 
-- Air, fuel and exhaust plumbing with pipes, throttle bodies and fuel metering. Burns diesel, plant oil, gasoline and
-  ethanol, with spark ignition where the fuel needs it
-- A craftable fuel chain, all in Create basins: seeds to plant oil to diesel, sugar crops to ethanol, and biodiesel with
-  glycerin on the side. The loop closes: glycerin goes into engine oil and coolant, and used oil is burned as fuel or
-  recycled into oil or charcoal
-- An **Exhaust Heat Exchanger** that turns engine exhaust into basin heat, so an engine can cook its own fuel, and into
-  boiler heat, so the exhaust can make steam for Create steam engines on top of the engine's own power
-- Oil film and lubrication, starters, batteries and alternators, with Forge Energy output
-- An **oil sump that is the engine's service port**: one block against the engine takes its oil, coolant and pilot fuel
-  from any face, so the cylinder heads keep their faces for air and fuel
-- **Oil that goes off**: set the sump's Oil Exchange dial and a running engine changes its own oil, pushing out Used
-  Oil that you burn, refine, coke into charcoal or let go. An Oil Filter slows the ageing
-- **Engine temperature**: a cold engine drags until it warms through, and a cooled one breathes better. Coolant, or
-  just water, goes into the same sump, so there is no radiator to fit. Nothing ever overheats or wears out
-- **Warm-up and cooling**: a cold block burns fuel a little worse, and a Blaze Burner against the heat exchanger
-  preheats it. A stopped engine ticks and its turbine wheel glows red as it cools
-- **Plain-language diagnosis**: goggles name an engine Healthy, Running rough or Failing with the one cause to fix first,
-  and the Dynamometer compares a new run with the last
-- **Dual-fuel pilot injection**: pipe diesel into the sump's pilot tank and a compression engine with no spark plug
-  lights gasoline or ethanol with a small pilot shot
-- A forgiving early game: spark plug soot clears itself, goggles suggest fuel settings, and the Timing Tool can tune
-  every injector in one click
-- Governors and MAF sensors for the late game
-- **Engine readouts**: a Display Link set against a crankshaft shows an engine's state, speed, load, temperature and oil
-  on a display board or nixie tubes, and a comparator reads any of an oil sump's tanks, so a pump or an alarm can keep
-  the oil topped up
-- Fuel buckets say what they are on hover: their energy, whether they light by compression or need a spark plug, and how
-  they take a cold start (other mods' fuels too)
-- Other mods' fuels work too: anything tagged `c:diesel`, `c:gasoline`, `c:ethanol` or `c:plantoil`, or given an entry
+---
+
+## 🛣️ From one cylinder to a V12
+
+| Stage | What you build |
+|---|---|
+| **Start** | A single diesel cylinder and a flywheel. The early game is forgiving, and nothing ever overheats or wears out |
+| **Grow** | An inline six or a V8, laid out in one click with the Bank Builder, fed by your own plant-oil and ethanol chain |
+| **Tune** | Turbos, superchargers, precision parts, a transmission, and the Dynamometer to prove it worked |
+| **Master** | Coupled-crank V12s, Wankel rotaries, a Refinery column, and engines that heat your boilers and basins |
+
+---
+
+## 🔧 Build it
+
+- **Real layouts:** inline, V, flat and rotary (Wankel), with coupled crankshafts for bigger engines
+- **Bank Builder:** lays out a whole inline, V or flat bank in one click (it fits the spark plugs you carry, and lays a
+  cam line beside the bank if you carry a camshaft and cam lobes)
+- **Timing Tool:** sets the firing order for you, and can tune every injector in one click
+- **Cams beside the block:** a V can run one camshaft in its valley and keep every head face free for pipes
+- **Torsional flex:** past eight throws on one unbroken crankshaft an engine's rating falls a little for each extra
+  throw, to at most 35 percent. A V12 or flat twelve loses nothing, and nothing is ever harmed
+
+## ⛽ Feed it
+
+- **A fuel chain in Create basins:** seeds to plant oil to diesel, sugar crops to ethanol, and biodiesel with glycerin on
+  the side. The loop closes: glycerin goes into engine oil and coolant, and used oil is burned, refined, or recycled
+  into oil or charcoal
+- **Refining column:** a Refinery of Reboilers, Column Sections and Condensers that makes fuel more efficiently than a
+  basin
+- **Air, fuel and exhaust plumbing:** pipes, throttle bodies and fuel metering, with spark ignition where the fuel
+  needs it
+- **Oil sump:** one block against the engine takes its oil, coolant and pilot fuel from any face
+- **Oil that goes off:** a running engine can change its own oil, pushing out Used Oil. An Oil Filter slows the ageing
+- **Dual-fuel pilot injection:** a compression engine with no spark plug lights gasoline or ethanol with a small pilot
+  shot of diesel
+- **Exhaust Heat Exchanger:** turns exhaust into basin heat, so an engine can cook its own fuel, and into boiler heat,
+  so the exhaust can make steam for Create steam engines
+- **Other mods' fuels work:** anything tagged `c:diesel`, `c:gasoline`, `c:ethanol` or `c:plantoil`, or given an entry
   in the fuel data map
+- Starters, batteries and alternators, with Forge Energy output
 
-![Engine with management sensors](https://raw.githubusercontent.com/R-unic/create-engines/master/docs/images/engine_management_overview.png)
+## 🚀 Make it powerful
 
-## Make it powerful
+- **Forced induction:** stacked, twin and variable-geometry turbochargers (with anti-lag), plain and variable-drive
+  superchargers, and intercoolers
+- **Precision parts:** precision cylinders, heads, pistons and injectors
+- **Flywheels that matter:** a rough engine is rated for less, and rotating mass smooths it out
+- **A 13-gear transmission** with an Auto mode that shifts to suit the engine
+- **Dynamometer:** draws an engine's torque and power curves, and compares a new run with the last
+- **Governors and MAF sensors** for the late game
+- **Black Box:** a flight recorder that keeps ten minutes of speed, load and warmth and says why an engine stalled
+- **Engine temperature:** a cold engine drags until it warms through, and a cooled one breathes better. Water or coolant
+  goes into the same sump, so there is no radiator to fit
 
-- Turbochargers (stacked, twin, variable-geometry, with anti-lag), superchargers (plain and variable-drive) and intercoolers, with the sound to
-  match: a turbo whistle that climbs with the wheel, a blow-off flutter when redstone dumps the boost or the throttle lifts, anti-lag
-  crackle, and a supercharger whine that rises with its shaft
-- Precision cylinders, heads, pistons and injectors
-- Flywheels that matter: a rough engine is rated for less, and rotating mass smooths it out
-- A 13-gear transmission with an Auto mode that shifts to suit the engine, and a **Dynamometer** that draws an
-  engine's torque and power curves
-- A **Black Box** flight recorder that keeps ten minutes of an engine's speed, load and warmth and says why it stalled
-- Engines that look and sound alive: exhaust colour that reads the mixture, flame from a hot pipe, a cough on starting,
-  ticking as they cool, and a clatter or squeal when they run dry. Nothing runs underwater
-- An exhaust note made up from the engine's speed and firing order, so a V-twin lopes, a six hums and a dead cylinder
-  limps
-- A **Muffler** that quiets the note, the bangs and the pops without costing the engine any power, and **Engine Casing**
-  that joins into one plate and clads cylinders, pipes, cams, and Create's own shafts and cogwheels to hide the sprawl
+## 👂 Hear it, see it
 
-![Flywheel, dynamometer and turbos](https://raw.githubusercontent.com/R-unic/create-engines/master/docs/images/engine_new_parts.png)
-![A twin-turbo V8](https://raw.githubusercontent.com/R-unic/create-engines/master/docs/images/engine_accessory_twin_turbo_v8.png)
-![A supercharged flat six, a blower and intercooler on each bank](https://raw.githubusercontent.com/R-unic/create-engines/master/docs/images/engine_accessory_blown_flat6.png)
+- Exhaust colour that reads the mixture, flame from a hot pipe, a cough on starting, and ticking as it cools
+- A turbo whistle that climbs with the wheel, a blow-off flutter when redstone dumps the boost or the throttle lifts,
+  anti-lag crackle, and a supercharger whine that rises with its shaft
+- A clatter or squeal when an engine runs dry. Nothing runs underwater
+- **Muffler:** quiets the note, the bangs and the pops without costing any power
+- **Engine Casing:** joins into one plate and clads cylinders, pipes, cams, and Create's own shafts and cogwheels to
+  hide the sprawl, in plain, riveted, louvred and window styles, and any dye
+- **Engine readouts:** a Display Link set against a crankshaft shows state, speed, load, temperature and oil on a
+  display board or nixie tubes, and a comparator reads any of an oil sump's tanks
 
-## Learn it
+## 🎓 Learn it
 
-Every part has Engineer's Goggles diagnostics and a Ponder scene. Advancements reward actually using what you build,
-grouped into tracks (builder, power, tuning, driveline, fuel, service) that each end in a capstone, with a Chief
-Engineer advancement for finishing them all.
+- **Engineer's Goggles** name an engine Healthy, Running rough or Failing, with the one cause to fix first
+- **Ponder scenes** for every part
+- **Advancements** that reward actually using what you build, grouped into tracks (builder, power, tuning, driveline,
+  fuel, service) that each end in a capstone, with a Chief Engineer advancement for finishing them all
+- **Hover tooltips** on fuel buckets say what they are: energy, whether they light by compression or need a spark plug,
+  and how they take a cold start
 
-![Goggle readout on a firing cylinder](https://raw.githubusercontent.com/R-unic/create-engines/master/docs/images/engine_goggles_cylinder.png)
-![Firing order Ponder scene](https://raw.githubusercontent.com/R-unic/create-engines/master/docs/images/engine_ponder_firing_order_960.png)
+---
 
-## Gallery
-
-Every layout and every accessory, built and running in the mod.
-
-![A V8, seen from the exhaust side](https://raw.githubusercontent.com/R-unic/create-engines/master/docs/images/engine_showcase_v8_exhaust.png)
-![A V8 from above](https://raw.githubusercontent.com/R-unic/create-engines/master/docs/images/engine_showcase_v8_top.png)
-![A turbocharged inline six](https://raw.githubusercontent.com/R-unic/create-engines/master/docs/images/engine_showcase_inline6.png)
-![A twin-rotor Wankel](https://raw.githubusercontent.com/R-unic/create-engines/master/docs/images/engine_showcase_rotary.png)
-![The first engine, a single-cylinder diesel with a flywheel](https://raw.githubusercontent.com/R-unic/create-engines/master/docs/images/engine_showcase_first.png)
-![A turbo and its exhaust stack](https://raw.githubusercontent.com/R-unic/create-engines/master/docs/images/engine_accessory_turbo_stack.png)
-![The blowers of a supercharged flat six, each with its intercooler and air intake](https://raw.githubusercontent.com/R-unic/create-engines/master/docs/images/engine_accessory_blowers.png)
-![An inline six with a variable-drive supercharger](https://raw.githubusercontent.com/R-unic/create-engines/master/docs/images/engine_accessory_blown_inline6.png)
-![A diesel with a variable-geometry turbo and an intercooler](https://raw.githubusercontent.com/R-unic/create-engines/master/docs/images/engine_accessory_variable_turbo.png)
-![A flywheel and governor on a test-bed engine](https://raw.githubusercontent.com/R-unic/create-engines/master/docs/images/engine_accessory_flywheel_governor.png)
-![A dynamometer and second flywheel on a test-bed engine](https://raw.githubusercontent.com/R-unic/create-engines/master/docs/images/engine_accessory_dyno.png)
-
-## Recommended: raise Create's RPM limit
+## 📈 Recommended: raise Create's RPM limit
 
 Create caps rotation at 256 RPM by default, and engines hit that ceiling. Raise it: in
-`serverconfig/create-server.toml` under `[kinetics]`, set `maxRotationSpeed` to 512 (higher works too). The engine simulation is
-built to stay cheap at speed, and its torque rating follows the limit you set.
+`serverconfig/create-server.toml` under `[kinetics]`, set `maxRotationSpeed` to 512 (higher works too). The engine
+simulation is built to stay cheap at speed, and its torque rating follows the limit you set.
 
-## For modpack makers
+## 📦 For modpack makers
 
 The server config (`serverconfig/create_engines-server.toml`) has `[balance]` multipliers and `[features]` switches, so
 a pack can rebalance without code. Turning a feature off never removes blocks; they stop doing that job. The client
 config thins out engine sound and particles on a big engine. Fuel properties are a datapack data map
-(`data_maps/fluid/fuel.json`), so other mods' fluids can be made into fuels.
+(`data_maps/fluid/fuel.json`), so other mods' fluids can be made into fuels, and refining routes are a data recipe
+type, `create_engines:refining`.
 
-## Requirements
+## ✅ Requirements
 
 - Minecraft 1.21.1, NeoForge 21.1.219 or newer
 - Create 6.0.10 (all of its own requirements, Flywheel and Ponder, come with it)
 - Required on both the client and the server
 
-## Links
+## About this mod
 
+Nearly all of the code, models, textures, sounds, Ponder scenes and docs were written by an AI (Claude) at my
+direction. I have played, tested and reworked almost all of it over many passes, and it ships with unit tests and
+in-world GameTests. If something breaks, please report it on the
+[issue tracker](https://github.com/R-unic/create-engines/issues). Block, item and fluid IDs, config keys and ranges,
+advancement IDs and the fuel data-map format stay stable within 1.x, and a release that changes how an existing engine
+behaves says so in its changelog.
+
+## 🔗 Links
+
+- [Discord](https://discord.gg/QYVpy2dqGE), for help, showcases and suggestions
 - [Source and issue tracker](https://github.com/R-unic/create-engines)
 - [Design notes](https://github.com/R-unic/create-engines/blob/master/docs/DESIGN.md), how the simulation works
 ```

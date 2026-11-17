@@ -1,19 +1,19 @@
 #!/usr/bin/env bash
-# Replace the Modrinth gallery with the screenshots docs/LISTING.md shows, in the order it shows them.
+# Replace the Modrinth gallery with the screenshots listed in docs/images/gallery.txt, in that order.
 # Needs MODRINTH_TOKEN (a personal access token with the "Write projects" scope; publishing
 # alone only needs "Create versions"). MODRINTH_ID defaults to the project slug. DRY_RUN=1 lists and changes nothing.
 set -euo pipefail
 
 project="${MODRINTH_ID:-create-engine-engineer}"
 api="https://api.modrinth.com/v2"
-listing=docs/LISTING.md
+listing=docs/images/gallery.txt
 dry="${DRY_RUN:-0}"
 auth=()
 [ -n "${MODRINTH_TOKEN:-}" ] && auth=(-H "Authorization: $MODRINTH_TOKEN")
 [ "$dry" = 1 ] || [ -n "${MODRINTH_TOKEN:-}" ] || { echo "MODRINTH_TOKEN is not set" >&2; exit 1; }
 
-# "![alt](.../docs/images/file.png)" lines, first mention of each file wins, icon excluded
-mapfile -t entries < <(sed -n 's|^!\[\(.*\)\](.*/docs/images/\([^/)]*\.png\))$|\2\t\1|p' "$listing" | awk -F'\t' '!seen[$1]++')
+# "file.png<TAB>title" lines, first mention of each file wins
+mapfile -t entries < <(sed -e 's/\r$//' -e '/^#/d' -e '/^[[:space:]]*$/d' "$listing" | awk -F'\t' '!seen[$1]++')
 [ "${#entries[@]}" -gt 0 ] || { echo "no images found in $listing" >&2; exit 1; }
 
 for e in "${entries[@]}"; do
