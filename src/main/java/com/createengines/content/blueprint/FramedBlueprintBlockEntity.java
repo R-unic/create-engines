@@ -1,5 +1,7 @@
 package com.createengines.content.blueprint;
 
+import java.util.List;
+
 import org.jetbrains.annotations.Nullable;
 
 import com.createengines.engine.blueprint.Blueprint;
@@ -32,6 +34,7 @@ public class FramedBlueprintBlockEntity extends BlockEntity {
 	private @Nullable Blueprint drawing;
 	private static final int SHEET_REFRESH_TICKS = 20;
 	private FrameSheet.Sheet sheet;
+	private List<Blueprint.Part> byHeight = List.of();
 	private long sheetAt;
 
 	public FramedBlueprintBlockEntity(BlockEntityType<?> type, BlockPos pos, BlockState state) {
@@ -85,6 +88,11 @@ public class FramedBlueprintBlockEntity extends BlockEntity {
 			.relative(down, cell.v());
 	}
 
+	/** The parts of the drawing from the lowest up, worked out once when the blueprint is hung so a frame does not sort them every frame. */
+	public List<Blueprint.Part> partsByHeight() {
+		return byHeight;
+	}
+
 	public void hang(RecordedBlueprint plan) {
 		set(plan);
 		changed();
@@ -108,6 +116,11 @@ public class FramedBlueprintBlockEntity extends BlockEntity {
 				// shown as an empty frame; the item still comes back out as it went in
 			}
 		this.drawing = decoded;
+		this.byHeight = decoded == null ? List.of()
+			: decoded.parts()
+				.stream()
+				.sorted((a, b) -> Integer.compare(a.y(), b.y()))
+				.toList();
 	}
 
 	private void changed() {

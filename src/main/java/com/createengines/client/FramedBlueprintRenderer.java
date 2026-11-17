@@ -1,6 +1,5 @@
 package com.createengines.client;
 
-import java.util.ArrayList;
 import java.util.List;
 
 import org.joml.Matrix3f;
@@ -88,7 +87,7 @@ public class FramedBlueprintRenderer extends SafeBlockEntityRenderer<FramedBluep
 			.mul(new Matrix3f(pose).normal());
 		if (joined)
 			drawBacking(ms, buffer, cx, cy, spanX + PAPER_HALF, spanY + PAPER_HALF);
-		drawPlan(ms, buffer, blueprint, cx, cy, spanX + HALF, spanY + HALF_HEIGHT, textScale, 8f * Math.max(sheet.width(), sheet.height()));
+		drawPlan(ms, buffer, blueprint, be.partsByHeight(), cx, cy, spanX + HALF, spanY + HALF_HEIGHT, textScale, 8f * Math.max(sheet.width(), sheet.height()));
 		drawText(ms, buffer, blueprint, light, cx, cy, spanX + HALF, spanY + HALF_HEIGHT, textScale);
 		ms.popPose();
 	}
@@ -101,7 +100,7 @@ public class FramedBlueprintRenderer extends SafeBlockEntityRenderer<FramedBluep
 	}
 
 	/** The plan, as the drafting sheet draws it, between the name and the figures. */
-	private void drawPlan(PoseStack ms, MultiBufferSource buffer, Blueprint blueprint, float cx, float cy, float halfW, float halfH,
+	private void drawPlan(PoseStack ms, MultiBufferSource buffer, Blueprint blueprint, List<Blueprint.Part> byHeight, float cx, float cy, float halfW, float halfH,
 						  float s, float maxCell) {
 		int minX = Integer.MAX_VALUE, maxX = Integer.MIN_VALUE, minZ = Integer.MAX_VALUE, maxZ = Integer.MIN_VALUE;
 		int minY = Integer.MAX_VALUE, maxY = Integer.MIN_VALUE;
@@ -120,8 +119,6 @@ public class FramedBlueprintRenderer extends SafeBlockEntityRenderer<FramedBluep
 		float cell = Math.min(maxCell, Math.min(areaW / spanX, areaH / spanZ));
 		float left = cx - spanX * cell / 2f;
 		float top = cy - halfH + 14f * s + areaH / 2f - spanZ * cell / 2f;
-		List<Blueprint.Part> byHeight = new ArrayList<>(blueprint.parts());
-		byHeight.sort((a, b) -> Integer.compare(a.y(), b.y()));
 		double range = Math.max(1, maxY - minY);
 		VertexConsumer vc = buffer.getBuffer(RenderType.debugQuads());
 		Matrix4f pose = ms.last()

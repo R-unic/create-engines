@@ -1081,6 +1081,12 @@ public class BlueprintGameTests {
 			.useItemOn(stack, helper.getLevel(), player, net.minecraft.world.InteractionHand.MAIN_HAND, hitOf(helper, at));
 		if (!recorded.equals(frame.plan()) || frame.drawing() == null)
 			helper.fail("the blueprint was not hung and decoded: " + frame.plan());
+		var sorted = frame.partsByHeight();
+		if (sorted.size() != frame.drawing().parts().size())
+			helper.fail("the frame should keep every part for drawing: " + sorted.size() + " of " + frame.drawing().parts().size());
+		for (int i = 1; i < sorted.size(); i++)
+			if (sorted.get(i - 1).y() > sorted.get(i).y())
+				helper.fail("the parts should be kept lowest first so higher blocks draw over lower");
 		if (!stack.isEmpty())
 			helper.fail("a survival player's blueprint should be used up when hung");
 
@@ -1102,6 +1108,8 @@ public class BlueprintGameTests {
 			.useWithoutItem(helper.getLevel(), player, hitOf(helper, at));
 		if (frame.plan() != null)
 			helper.fail("the frame should be empty after the blueprint was taken");
+		if (!frame.partsByHeight().isEmpty())
+			helper.fail("an empty frame should have nothing to draw");
 		boolean found = false;
 		for (int slot = 0; slot < player.getInventory()
 			.getContainerSize(); slot++)
