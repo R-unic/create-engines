@@ -40,3 +40,5 @@ Run 2026-11-16, private copy, Create 6.0.10, NeoForge 21.1.219:
 The warnings are the audit's existing ones and are not specific to a row. Both rows are green, so Flywheel off and Sodium 0.8.13 are supported on this build.
 
 1.4 development, 2026-11-17, private copy (`ce-stage2-copy`), Create 6.0.10-281: `./gradlew compatMatrix` green. Flywheel off 1053 checks, Sodium 0.8.13 1053, EMI 1.1.24 1056 (the three extra are the EMI fuel and part page checks), each with 0 failures and 0 warnings. These are development numbers from before any release record; they were taken with the blueprint, frame, import, API and pack-tool work in the tree but not committed.
+
+1.4.0 release gate, 2026-11-17, private copy, Create 6.0.10-281, f1c04bd: `./gradlew compatMatrix` green. Flywheel off 1059 checks, Sodium 0.8.13 1059, EMI 1.1.24 1062, each with 0 failures and 0 warnings. Create 6.0.10-257 and 6.0.11-346 (Ponder 1.0.92, `:slim` dropped in the copy): GameTests only, "All 305 required tests passed" on be47755. JEI: unchanged, machine row still open.
