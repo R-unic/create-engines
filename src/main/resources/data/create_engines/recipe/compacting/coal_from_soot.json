@@ -1,0 +1,24 @@
+{
+  "type": "create:compacting",
+  "heat_requirement": "heated",
+  "ingredients": [
+    {
+      "item": "create_engines:soot"
+    },
+    {
+      "item": "create_engines:soot"
+    },
+    {
+      "item": "create_engines:soot"
+    },
+    {
+      "item": "create_engines:soot"
+    }
+  ],
+  "results": [
+    {
+      "count": 1,
+      "id": "minecraft:coal"
+    }
+  ]
+}

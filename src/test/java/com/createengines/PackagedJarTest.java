@@ -159,6 +159,50 @@ class PackagedJarTest {
 		}
 	}
 
+	/** What only development uses: the GameTests, the smoke audits and the picture-taking runs (build.gradle keeps them out). */
+	private static boolean isDevelopmentHarness(String name) {
+		return name.startsWith("com/createengines/gametest/") || name.startsWith("com/createengines/smoke/")
+			|| name.startsWith("com/createengines/client/smoke/") || name.startsWith("com/createengines/client/VisualSmokeTest")
+			|| name.startsWith("com/createengines/client/ShowcaseRun");
+	}
+
+	@Test
+	void theJarHasNoTestOrSmokeHarnessClasses() throws IOException {
+		Set<String> leftovers = new TreeSet<>();
+		int classes = 0;
+		try (JarFile file = new JarFile(jar.toFile())) {
+			for (var entries = file.entries(); entries.hasMoreElements();) {
+				String name = entries.nextElement().getName();
+				if (name.startsWith("com/createengines/") && name.endsWith(".class"))
+					classes++;
+				if (isDevelopmentHarness(name))
+					leftovers.add(name);
+			}
+		}
+		assertTrue(classes > 200, "the jar should hold the mod's classes, found " + classes);
+		assertTrue(leftovers.isEmpty(), "development harness classes were packaged: " + leftovers);
+	}
+
+	/** If the jar lacks the harnesses, no class left in it may name one outside the by-name registration that tolerates that. */
+	@Test
+	void nothingInTheJarNeedsAHarnessThatIsNotThere() throws IOException {
+		Set<String> offenders = new TreeSet<>();
+		try (JarFile file = new JarFile(jar.toFile())) {
+			for (var entries = file.entries(); entries.hasMoreElements();) {
+				JarEntry entry = entries.nextElement();
+				String name = entry.getName();
+				if (!name.startsWith("com/createengines/") || !name.endsWith(".class"))
+					continue;
+				try (InputStream in = file.getInputStream(entry)) {
+					for (String referenced : referencedClasses(in))
+						if (isDevelopmentHarness(referenced))
+							offenders.add(name + " -> " + referenced);
+				}
+			}
+		}
+		assertTrue(offenders.isEmpty(), "classes in the jar link to harness classes the jar leaves out: " + offenders);
+	}
+
 	@Test
 	void theModMetadataIsFilledInAndTheResourcesAreThere() throws IOException {
 		try (JarFile file = new JarFile(jar.toFile())) {

@@ -328,6 +328,20 @@ public final class CELang {
 		raw("goggles.column.heat.none", "Cold base");
 		raw("goggles.column.heat.heated", "Heated base");
 		raw("goggles.column.heat.superheated", "Superheated base");
+		// Recipe viewer pages (JEI and EMI) for the column's routes. EMI names a category by its own key.
+		raw("recipe.refining.title", "Refining Column");
+		REGISTRATE.addRawLang("emi.category.create_engines.refining", "Refining Column");
+		raw("recipe.refining.speed", "Speed: %1$s%%");
+		raw("recipe.refining.ratio", "%1$s mB in, %2$s mB out");
+		raw("recipe.refining.catalyst", "1 per %1$s mB of feed");
+		raw("recipe.refining.catalyst.tooltip", "Catalyst: one is used up for every %1$s mB of feed");
+		// Names for the tags this mod defines, which recipe viewers show where a recipe accepts "any of these"
+		REGISTRATE.addRawLang("tag.fluid.c.diesel", "Diesel");
+		REGISTRATE.addRawLang("tag.fluid.c.ethanol", "Ethanol");
+		REGISTRATE.addRawLang("tag.fluid.c.gasoline", "Gasoline");
+		REGISTRATE.addRawLang("tag.fluid.c.plantoil", "Plant Oil");
+		REGISTRATE.addRawLang("tag.fluid.create_engines.poor_lubricants", "Poor Lubricants");
+		REGISTRATE.addRawLang("tag.item.create_engines.ferments_mash", "Mash Ingredients");
 		raw("goggles.column.rate", "Making %1$s mB of product a second");
 		raw("goggles.column.limit.none", "Running");
 		raw("goggles.column.limit.no_feed", "Idle: no feed");

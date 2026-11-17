@@ -42,7 +42,7 @@ Set by the author on 2026-11-14:
 ## At a glance
 
 | Version | Name | What it is | Size |
-|---|---|---|---|
+| --- | --- | --- | --- |
 | 1.0.x | Shakedown | Close the open boxes from the 1.0 checklist | Small |
 | 1.1 | Light and Noise | Spectacle, louder consequences, advancement declutter | Medium |
 | 1.2 | Dress Parts | Cosmetic build variety | Small |
@@ -51,8 +51,6 @@ Set by the author on 2026-11-14:
 | 2.0 | Open Block | The platform, and the one breaking cleanup | Large |
 
 ## 1.0.x Shakedown
-
-No new features: the boxes still open in [RELEASE_1_0.md](RELEASE_1_0.md), and two more looks at what exists.
 
 - A dedicated server with two players: goggles, Display Link, Black Box, sump, starter and advancements all sync.
 - Tick time with 20 or more running engines, and particle and sound load on a big engine at default `effectDensity`.
@@ -76,6 +74,7 @@ The release that makes a running engine worth standing next to. Nothing here cha
 every item is sound, particles or motion on screen, and the simulation's numbers do not move.
 
 **Spectacle**
+
 - **Engines that rock (built, lighter than first written).** The roughness rating already exists as a number. Show it on
   the parts that already move: pistons and rods slap about in their bores by the rating, a pinch of dust shakes off the
   block, a flywheel calms both. The block itself does not shake.
@@ -94,7 +93,7 @@ every item is sound, particles or motion on screen, and the simulation's numbers
 exactly what it is today.
 
 | Already happens | Today | Added |
-|---|---|---|
+| --- | --- | --- |
 | Too rich | Black smoke, a crack of flame | Stack flame under load (built) |
 | Too lean | Lost power | A spit of flame back through the intake mouth |
 | Fouled plug | A dead cylinder, a limping note | A black puff from that cylinder's exhaust on each miss (built) |
@@ -168,7 +167,7 @@ engine. What changes is how they are made: by refining in a column, as a continu
 - **What it refines,** following the heat the basin recipes ask for today:
 
   | Feed | Product | Heat | Cost |
-  |---|---|---|---|
+  | --- | --- | --- | --- |
   | Plant Oil | Diesel | Heated | Cheapest and quickest, with a little coal as catalyst |
   | Diesel | Gasoline | Heated | Middling, with a little blaze powder as catalyst |
   | Sugar Mash | Ethanol | Heated, and twice as much superheated, as today | The dear one: the most feed for each bucket and the slowest to come over, with nether wart as catalyst |
@@ -236,6 +235,7 @@ basin stay as they are; only the ethanol recipes are cut (above). Moving over is
 ## 1.4 Drawing Office
 
 **Blueprints**
+
 - Click an engine with a blank blueprint to record its layout and tune: firing order, cam angles, injector
   settings, every dial.
 - The blueprint opens as a drafting sheet: a top-down drawing, a parts list, and the dyno curve if the engine has a
@@ -271,7 +271,9 @@ make an Engine Engineer engine the obvious thing to bolt into an aircraft or a v
 Not verified: how much of this already works. The afternoon test in 1.0.x answers that.
 
 **Pack-maker tools** (all additive)
-- JEI and EMI pages for fuels (energy, ignition, cold start, boost tolerance) and for which part fits where.
+
+- JEI and EMI pages for fuels (energy, ignition, cold start, boost tolerance) and for which part fits where. The
+  refining routes already have pages in both (1.3.0, `client/compat`); the fuel and part pages are still to do.
 - KubeJS bindings (preview): register fuels, override `Tuning`, listen for start, stall and milestone events.
 - Part stats as an optional data map over the built-in values (preview), so a pack can retune a cylinder without
   code. 2.0's parts as data replaces it and still reads it.
@@ -428,6 +430,7 @@ piece of work, in whichever release has room, and none changes behaviour. What s
 looks and feels. Tests only guard against those changing by accident.
 
 **Done 2026-11-16 (unit-test level, in `./gradlew check`, CI in `.github/workflows/verify.yml`):**
+
 - Item 2, in part: `SimPropertyTest` (replay on another thread, no fuel means no power, fuel conserved, identical twins).
   `SimStressTest` already held the finite and bounded invariants. Not done: step-size independence, which needs the
   step size to be a parameter of the sim.

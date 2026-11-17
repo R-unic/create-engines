@@ -133,7 +133,7 @@ public final class EngineAmbience {
 		if (level.getNearestPlayer(x, y, z, TICKING_RANGE, false) == null)
 			return;
 		level.playLocalSound(x, y, z, CESounds.METAL_TICK.get(), SoundSource.BLOCKS, (0.2f + random.nextFloat() * 0.3f) * volume,
-			0.75f + random.nextFloat() * 0.6f, false);
+			1.0f + random.nextFloat() * 0.5f, false);
 	}
 
 	private BlockPos at() {

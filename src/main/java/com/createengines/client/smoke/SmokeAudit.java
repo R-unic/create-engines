@@ -69,6 +69,9 @@ public final class SmokeAudit {
 	private static final PerfSampler.Series STREAMING = new PerfSampler.Series();
 	private static final PerfSampler.Series STATIC_SOUNDS = new PerfSampler.Series();
 	private static final Map<ResourceLocation, Integer> SOUNDS_PLAYED = new TreeMap<>();
+	/** Sounds that fire by chance, so the fleet may or may not start them; see the end of {@link #fleet}. */
+	private static final java.util.List<String> CHANCE_SOUNDS = java.util.List.of("metal_tick", "preignition_knock", "flare_whoosh");
+	private static final java.util.List<String> startedByHand = new java.util.ArrayList<>();
 	private static final Pattern SOUND_DEBUG = Pattern.compile("(\\d+)/(\\d+) \\+ (\\d+)/(\\d+)");
 
 	private static boolean worldRequested;
@@ -295,6 +298,13 @@ public final class SmokeAudit {
 		}
 		if (t == 40)
 			VisualSmokeTest.server(server -> feedRefinery(server.overworld()));
+		// The whistle only starts for a player within earshot (48 blocks), and the turbo engine is further than that from the camera's
+		// home: stand beside it while the wheel is up to speed, before the boost is dumped, or the whistle is never heard
+		if (t == 250)
+			view(FLEET.get(4).getX() - 1.5, 4.0, -2.0, -18, 5);
+		// ...and back home before the soot trap is poked below, which is heard only from there
+		if (t == 305)
+			view(-1.5, 4.0, -2.0, -18, 5);
 		// What the effects run does to hear the turbo: dump its boost, then shut the fuel rack so anti-lag has to crack
 		if (t == 400)
 			VisualSmokeTest.server(server -> server.overworld()
@@ -397,7 +407,31 @@ public final class SmokeAudit {
 		// The toast sting plays when an advancement is earned; earn them all, last, so no toast is in a picture
 		if (t == 1160)
 			VisualSmokeTest.server(server -> VisualSmokeTest.command(server, "advancement grant @a everything"));
+		// The cooling tick, the pre-ignition knock and the flare's whoosh are chance events by design (a few per second on the right
+		// engine, now and then at a flare), so a fleet of any size can go a whole run without one. Each is started by hand here when the fleet did not, which proves its sound
+		// event and files play; a sound that is not random must still be started by the fleet itself.
+		if (t == 1190)
+			for (String name : CHANCE_SOUNDS) {
+				var id = ResourceLocation.fromNamespaceAndPath(CreateEngines.MOD_ID, name);
+				boolean played;
+				synchronized (SOUNDS_PLAYED) {
+					played = SOUNDS_PLAYED.containsKey(id);
+				}
+				if (!played) {
+					var event = BuiltInRegistries.SOUND_EVENT.get(id);
+					minecraft.level.playLocalSound(minecraft.player.getX(), minecraft.player.getY(), minecraft.player.getZ(), event,
+						net.minecraft.sounds.SoundSource.BLOCKS, 0.3f, 1.0f, false);
+					startedByHand.add(name);
+				}
+			}
 		if (t == 1200) {
+			boolean allHeard;
+			synchronized (SOUNDS_PLAYED) {
+				allHeard = startedByHand.stream()
+					.allMatch(name -> SOUNDS_PLAYED.containsKey(ResourceLocation.fromNamespaceAndPath(CreateEngines.MOD_ID, name)));
+			}
+			REPORT.check("sound", "chance sounds the fleet did not start play when started by hand", allHeard,
+				"started by hand but never heard by the sound engine: " + startedByHand);
 			sample(true);
 			measuring = false;
 			conclusions();
@@ -500,6 +534,32 @@ public final class SmokeAudit {
 		}
 		REPORT.expect("sound", "every sound event starts somewhere in the run", never.isEmpty(),
 			"never started: " + never + " (they exist but nothing in the fleet triggered them)");
+		recipeViewers();
+	}
+
+	/**
+	 * In a compatibility row that loads JEI or EMI, the viewer must have found this mod's plugin and been given every
+	 * refining route. Without the viewer there is nothing to check, and the plugin classes are never touched.
+	 */
+	private static void recipeViewers() {
+		var level = Minecraft.getInstance().level;
+		if (level == null)
+			return;
+		int routes = level.getRecipeManager().getAllRecipesFor(com.createengines.registry.CERecipes.REFINING.get()).size();
+		// A compatibility row names the viewer it is meant to load, so a row that silently loaded nothing fails
+		String required = System.getProperty("create_engines.smokeAudit.requireViewer");
+		if (required != null)
+			REPORT.check("compat", required + " is loaded in the row that is meant to test it",
+				net.neoforged.fml.ModList.get().isLoaded(required), "the row names " + required + " but the game has no such mod");
+		for (String viewer : List.of("jei", "emi")) {
+			if (!net.neoforged.fml.ModList.get().isLoaded(viewer))
+				continue;
+			int given = com.createengines.client.compat.CompatStatus.refiningRoutes(viewer);
+			REPORT.metric(viewer + " refining routes shown", given, "");
+			REPORT.check("compat", viewer + " was given every refining route", routes > 0 && given == routes,
+				viewer + " is installed and the game has " + routes + " refining routes, but its plugin registered " + given
+					+ " (-1 means the plugin never ran)");
+		}
 	}
 
 	private static boolean gallery(int t) {

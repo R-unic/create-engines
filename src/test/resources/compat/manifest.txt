@@ -71,6 +71,7 @@ data:data/create_engines/recipe/cam_lobe.json	e72c7abebe2e0936ba530ad40b407d4132
 data:data/create_engines/recipe/camshaft.json	4940d592647424d85913bb57af49f7b22b29869d
 data:data/create_engines/recipe/cast_flywheel.json	f49f07bfa9672c97930bfeab844a183426144b10
 data:data/create_engines/recipe/column_section.json	c3112054ef74f1d4a6bda7338ffa5404a69d9552
+data:data/create_engines/recipe/compacting/coal_from_soot.json	2e9d7c9c9151e13267d1ee08efce7c7ab4a7e53e
 data:data/create_engines/recipe/compacting/plant_oil.json	785e55877eab02fc0a7afec351d3e59a816ff8f5
 data:data/create_engines/recipe/compacting/plant_oil_saplings.json	ef4921634291d813c708223f20ecaad3b25f97c3
 data:data/create_engines/recipe/compacting/sugar_mash_beetroot.json	1a6d8ad8f1f67c642c5a8e37b5fd9354ec812433
@@ -93,6 +94,7 @@ data:data/create_engines/recipe/flare_stack.json	5894db84be718d0487925cca15e1eee
 data:data/create_engines/recipe/forged_piston.json	bfef1495d4ed5cf59c14709d96ab465a92be550a
 data:data/create_engines/recipe/fuel_injector.json	5d631f71a80570577c85f37e906de2711fbbf65c
 data:data/create_engines/recipe/governor.json	6ed1870bc03bcccd8dd961d899c6868cb4260b4c
+data:data/create_engines/recipe/gray_dye_from_soot.json	93786b6d66421c7497d65d2ccc0033dd7c0d4a1c
 data:data/create_engines/recipe/heat_exchanger.json	804cf6ffb809adb2c0a29a0fd01164bf529daa98
 data:data/create_engines/recipe/heavy_starter.json	ccc4d22ab03e041add5c8e9e2f78ffdb677af937
 data:data/create_engines/recipe/intake_manifold.json	3b9dbab62da90b2f6cc0494c3831d64e2c538e9d
@@ -110,6 +112,7 @@ data:data/create_engines/recipe/mixing/engine_oil_recycled_superheated.json	973f
 data:data/create_engines/recipe/mixing/ethanol.json	a2f0c2380215c112b227eb1d67edfda972ba6eff
 data:data/create_engines/recipe/mixing/ethanol_superheated.json	494d31372e4334c8074ba350928b4156cc682db6
 data:data/create_engines/recipe/mixing/gasoline.json	bce6670745b16a7fe3d489cc012aafef263cb5f8
+data:data/create_engines/recipe/mixing/gunpowder_from_soot.json	2c15a43be9f8e2a35afcc089bad39cacf51a57a8
 data:data/create_engines/recipe/mixing/used_oil_coking.json	99828c0102226fcafe8b7600386e421d4b0b77a7
 data:data/create_engines/recipe/muffler.json	864a395480f07c166f4a706285ed9600367c2c09
 data:data/create_engines/recipe/oil_filter.json	62c44a4d17bea6ba52f6a9c9a42859641b9e487f

@@ -1533,19 +1533,28 @@ public final class EngineController {
 	/** Credits the operator with a muffler quieting the running engine and with casing built round its cylinders. */
 	private void reportLooks(Level level, EngineState state) {
 		boolean running = state == EngineState.RUNNING;
-		int casings = 0;
-		if (running) {
-			java.util.Set<net.minecraft.core.BlockPos> counted = new java.util.HashSet<>();
-			for (Cylinder placed : layout.cylinders())
-				for (net.minecraft.core.Direction side : net.minecraft.core.Direction.values()) {
-					net.minecraft.core.BlockPos beside = placed.pos()
-						.relative(side);
-					if (level.getBlockState(beside)
-						.getBlock() instanceof com.createengines.content.EngineCasingBlock && counted.add(beside))
-						casings++;
-				}
-		}
+		int casings = running ? countCasings(level) : 0;
 		award(level, EngineMilestones.reachedLooks(running, muffling(), casings));
+	}
+
+	/**
+	 * Casing blocks touching the engine's cylinders, each counted once, up to {@link EngineMilestones#CLAD_BLOCKS}:
+	 * that is all the milestone asks, so the scan stops there instead of counting every block of a big engine's casing
+	 * (and keeps no set to do it with).
+	 */
+	private int countCasings(Level level) {
+		CasingTally tally = new CasingTally(EngineMilestones.CLAD_BLOCKS);
+		for (Cylinder placed : layout.cylinders())
+			for (Direction side : Direction.values()) {
+				BlockPos beside = placed.pos()
+					.relative(side);
+				if (level.getBlockState(beside)
+					.getBlock() instanceof com.createengines.content.EngineCasingBlock)
+					tally.add(beside.asLong());
+				if (tally.full())
+					return tally.count();
+			}
+		return tally.count();
 	}
 
 	/** Credits the operator with a flywheel that smooths a running engine, variable vanes at work, and anti-lag. */

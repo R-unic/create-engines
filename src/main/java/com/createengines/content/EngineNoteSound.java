@@ -55,6 +55,8 @@ public final class EngineNoteSound extends AbstractTickableSoundInstance {
 	private final long startedAt;
 	private float fade;
 	private int ticks;
+	private volatile Stream stream;
+	private final StreamStallWatch stall = new StreamStallWatch();
 	/** The cam's place in the cycle as a cylinder last reported it this tick, or NaN. */
 	private double reportedPhase = Double.NaN;
 
@@ -156,7 +158,9 @@ public final class EngineNoteSound extends AbstractTickableSoundInstance {
 	/** The sound engine asks for the audio here instead of reading a file. */
 	@Override
 	public CompletableFuture<AudioStream> getStream(SoundBufferLibrary soundBuffers, Sound sound, boolean looping) {
-		return CompletableFuture.completedFuture(new Stream(synth));
+		Stream made = new Stream(synth);
+		stream = made;
+		return CompletableFuture.completedFuture(made);
 	}
 
 	@Override
@@ -182,6 +186,16 @@ public final class EngineNoteSound extends AbstractTickableSoundInstance {
 		}
 		volume = LOUDEST * CEClientConfig.engineNoteVolume() * fade
 			* Muffling.volume(summary == null ? 0 : summary.muffling());
+		// A stream the sound engine has stopped reading is silent while still "active": end it so a fresh one replaces it
+		Stream current = stream;
+		if (current != null && stall.tick(current.reads, System.nanoTime())) {
+			LOGGER.debug("Engine note at {} stalled: no stream reads for {} ticks, restarting it", crank.getBlockPos(),
+				StreamStallWatch.STALLED_TICKS);
+			if (PLAYING.remove(crank.getBlockPos(), this))
+				BUDGET.finished(crank.getBlockPos(), crank.getLevel() == null ? 0 : crank.getLevel().getGameTime());
+			stop();
+			return;
+		}
 		// Once a second, so cheap: shows a note that is alive but silent
 		if (++ticks % 20 == 0 && volume < 0.02f)
 			LOGGER.debug("Engine note at {} is quiet: volume {}, fade {}, state {}, rpm {}, combustion {}, angles {}",
@@ -222,7 +236,7 @@ public final class EngineNoteSound extends AbstractTickableSoundInstance {
 		private static final AudioFormat FORMAT = new AudioFormat(EngineNoteSynth.SAMPLE_RATE, 16, 1, true, false);
 
 		private final EngineNotePcm pcm;
-		private int reads;
+		private volatile int reads;
 
 		private Stream(EngineNoteSynth synth) {
 			this.pcm = new EngineNotePcm(synth);

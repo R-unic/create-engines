@@ -285,8 +285,9 @@ public final class EngineNoteSynth {
 			thumpPhase -= 2 * Math.PI;
 		thumpEnvelope = thumpEnvelope * THUMP_FALL + (float) (pulse * PULSE_GAIN);
 		// Thumps that overlap pile up, so a fast engine's are thinned until it hums instead of roaring
-		float eventsPerSecond = angles.length * rpm / 120f;
-		float pileUp = 1 / (float) Math.sqrt(1 + (eventsPerSecond / THUMPS_BEFORE_PILE_UP) * (eventsPerSecond / THUMPS_BEFORE_PILE_UP));
+		if ((slowTick++ & (SLOW_EVERY - 1)) == 0)
+			refreshSlow();
+		float pileUp = this.pileUp;
 		float thump = (float) Math.sin(thumpPhase) * thumpEnvelope * THUMP_WEIGHT * pileUp;
 		rumbleEnvelope = rumbleEnvelope * RUMBLE_FALL + (float) (pulse * PULSE_GAIN);
 		rumbleNoise = RUMBLE_POLE * rumbleNoise + (1 - RUMBLE_POLE) * noise();
@@ -299,16 +300,13 @@ public final class EngineNoteSynth {
 		float crackHigh = noise() - crackLow - 0.8f * crackBand;
 		crackBand += crackTune * crackHigh;
 		crackLow += crackTune * crackBand;
-		float crackShare = 1 / (1 + (eventsPerSecond / CRACK_FADE_AT) * (eventsPerSecond / CRACK_FADE_AT));
 		float crack = crackBand * crackEnvelope * CRACK_WEIGHT * crackShare;
 
 		toneA = TONE_POLE * toneA + (1 - TONE_POLE) * (float) (pulse * PULSE_GAIN);
 		toneB = TONE_POLE * toneB + (1 - TONE_POLE) * toneA;
 		toneDc = TONE_DC_POLE * toneDc + (1 - TONE_DC_POLE) * toneB;
-		float toneShare = eventsPerSecond * eventsPerSecond / (eventsPerSecond * eventsPerSecond + TONE_FROM * TONE_FROM);
 		float tone = (toneB - toneDc) * TONE_WEIGHT * toneShare;
 
-		float scale = LEVEL / (float) Math.pow(1 + 0.03f * eventsPerSecond, 0.7);
 		float mix = (float) (body * 0.5 + chuff + thump + rumble + crack + tone) * scale * 2;
 		power += (mix * mix - power) * LEVEL_FOLLOW;
 		// Only a fast engine is levelled, so the lope of a slow one is left alone, and a stopping engine is not turned up, and a resonance the firing rate happens to hit is turned down
@@ -321,6 +319,29 @@ public final class EngineNoteSynth {
 			return 0;
 		}
 		return out;
+	}
+
+	/**
+	 * How the note's mix depends on the firing rate. The rate follows the speed over about a tenth of a second, so these
+	 * (two square roots, a power and divisions) are worked out once every {@link #SLOW_EVERY} samples, about 0.7 ms, instead
+	 * of for every sample.
+	 */
+	private static final int SLOW_EVERY = 16;
+	private int slowTick;
+	private float pileUp = 1;
+	private float crackShare = 1;
+	private float toneShare;
+	private float scale = LEVEL;
+
+	private void refreshSlow() {
+		float eventsPerSecond = angles.length * rpm / 120f;
+		float pile = eventsPerSecond / THUMPS_BEFORE_PILE_UP;
+		pileUp = 1 / (float) Math.sqrt(1 + pile * pile);
+		float fade = eventsPerSecond / CRACK_FADE_AT;
+		crackShare = 1 / (1 + fade * fade);
+		float rate = eventsPerSecond * eventsPerSecond;
+		toneShare = rate / (rate + TONE_FROM * TONE_FROM);
+		scale = LEVEL / (float) Math.pow(1 + 0.03f * eventsPerSecond, 0.7);
 	}
 
 	/** Back to a quiet, stopped engine, if the arithmetic ever goes wrong. */

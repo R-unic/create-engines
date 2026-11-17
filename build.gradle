@@ -19,6 +19,14 @@ base {
 
 java.toolchain.languageVersion = JavaLanguageVersion.of(21)
 
+// The harnesses that test the mod (GameTests, smoke audits, the picture-taking runs) are for development. The jar a player or
+// a server loads leaves them out; the development runs use the classes folder, so they still have them (PackagedJarTest
+// checks the jar, and CreateEnginesClient registers these by name so a jar without them starts).
+tasks.named('jar', Jar) {
+    exclude 'com/createengines/gametest/**', 'com/createengines/smoke/**', 'com/createengines/client/smoke/**',
+        'com/createengines/client/VisualSmokeTest*', 'com/createengines/client/ShowcaseRun*'
+}
+
 sourceSets.main.resources {
     srcDir('src/generated/resources')
     exclude('**/*.bbmodel')
@@ -33,10 +41,27 @@ repositories {
         url = 'https://maven.caffeinemc.net/releases'
         content { includeGroup 'net.caffeinemc' }
     }
+    maven { // JEI, for the recipe viewer plugin and its compatibility row
+        name = 'BlameJared'
+        url = 'https://maven.blamejared.com/'
+        content {
+            includeGroup 'mezz.jei'
+            includeGroup 'net.mezzdev' // JEI's own libraries, which its runtime pulls in
+            includeGroup 'net.mezzdev.config'
+        }
+    }
+    maven { // EMI, likewise
+        name = 'TerraformersMC'
+        url = 'https://maven.terraformersmc.com/'
+        content { includeGroup 'dev.emi' }
+    }
 }
 
 // Only the compatibility-matrix Sodium run loads this; the mod itself does not depend on Sodium. Declared before the runs that use it.
 configurations.create('sodiumRuntime')
+// Likewise the JEI and EMI compatibility rows: each loads one recipe viewer and nothing else changes.
+configurations.create('jeiRuntime')
+configurations.create('emiRuntime')
 
 neoForge {
     version = project.neo_version
@@ -93,6 +118,24 @@ neoForge {
             systemProperty 'create_engines.smokeAudit', 'true'
             // Sodium's jar is an early service jar: FML must see it before mod discovery, so it goes on the boot classpath
             additionalRuntimeClasspathConfiguration.extendsFrom(configurations.sodiumRuntime)
+        }
+
+        // JEI and EMI rows: the same audit with one recipe viewer loaded, which also checks that the viewer found this
+        // mod's plugin and was given every refining route.
+        smokeAuditJei {
+            client()
+            gameDirectory = file('run/smoke-client-jei')
+            systemProperty 'neoforge.enabledGameTestNamespaces', project.mod_id
+            systemProperty 'create_engines.smokeAudit', 'true'
+            systemProperty 'create_engines.smokeAudit.requireViewer', 'jei'
+        }
+
+        smokeAuditEmi {
+            client()
+            gameDirectory = file('run/smoke-client-emi')
+            systemProperty 'neoforge.enabledGameTestNamespaces', project.mod_id
+            systemProperty 'create_engines.smokeAudit', 'true'
+            systemProperty 'create_engines.smokeAudit.requireViewer', 'emi'
         }
 
         // Builds a handful of engines on stone pads and photographs them at 1920x1080 for the mod page, in a game
@@ -152,6 +195,13 @@ dependencies {
     compileOnly("dev.engine-room.flywheel:flywheel-neoforge-api-${minecraft_version}:${flywheel_version}")
     localRuntime("dev.engine-room.flywheel:flywheel-neoforge-${minecraft_version}:${flywheel_version}")
     sodiumRuntime("net.caffeinemc:sodium-neoforge:${sodium_version}") { transitive = false }
+
+    // Recipe viewer plugins (client/compat) compile against the APIs and ship none of them
+    compileOnly("mezz.jei:jei-${minecraft_version}-common-api:${jei_version}") { transitive = false }
+    compileOnly("mezz.jei:jei-${minecraft_version}-neoforge-api:${jei_version}") { transitive = false }
+    compileOnly("dev.emi:emi-neoforge:${emi_version}:api") { transitive = false }
+    jeiRuntime("mezz.jei:jei-${minecraft_version}-neoforge:${jei_version}")
+    emiRuntime("dev.emi:emi-neoforge:${emi_version}") { transitive = false }
 
     // The simulation core has no Minecraft dependencies and is tested as plain Java.
     testImplementation(platform('org.junit:junit-bom:5.11.4'))
@@ -262,8 +312,12 @@ tasks.matching { it.name == 'runVisualSmokeTest' }.configureEach { finalizedBy '
 // Sodium loaded, each judged by the same verifier and allow-list as the main run. A row is green only when its verify
 // task passes. ./gradlew compatMatrix runs every row.
 [[name: 'FlywheelOff', dir: 'run/smoke-client-flywheel-off', flywheel: 'flywheel:off'],
- [name: 'Sodium', dir: 'run/smoke-client-sodium', flywheel: null]].each { row ->
+ [name: 'Sodium', dir: 'run/smoke-client-sodium', flywheel: null],
+ [name: 'Jei', dir: 'run/smoke-client-jei', flywheel: null, mods: 'jeiRuntime'],
+ [name: 'Emi', dir: 'run/smoke-client-emi', flywheel: null, mods: 'emiRuntime']].each { row ->
     def rowDir = file(row.dir)
+    // A recipe viewer is an ordinary mod: its jars go in the row's mods folder, which FML scans (on the classpath they are not found)
+    def rowMods = row.mods ? configurations.getByName(row.mods).incoming.files : null
     def verifyName = "verifyClientSmoke${row.name}"
     tasks.register(verifyName, JavaExec) {
         group = 'verification'
@@ -281,6 +335,12 @@ tasks.matching { it.name == 'runVisualSmokeTest' }.configureEach { finalizedBy '
             new File(rowDir, 'smoke').deleteDir()
             new File(rowDir, 'crash-reports').deleteDir()
             new File(rowDir, 'logs/latest.log').delete()
+            if (rowMods != null) {
+                def modsDir = new File(rowDir, 'mods')
+                modsDir.deleteDir()
+                modsDir.mkdirs()
+                rowMods.files.each { jar -> new File(modsDir, jar.name).bytes = jar.bytes }
+            }
             if (row.flywheel != null) {
                 // Flywheel reads its backend from its own config file; seed it so this row starts with the backend off
                 def config = new File(rowDir, 'config')
@@ -293,10 +353,13 @@ tasks.matching { it.name == 'runVisualSmokeTest' }.configureEach { finalizedBy '
 
 tasks.register('compatMatrix') {
     group = 'verification'
-    description = 'Runs the client audit in every compatibility-matrix row (Flywheel off, Sodium); each is verified.'
-    dependsOn 'runSmokeAuditFlywheelOff', 'runSmokeAuditSodium'
+    description = 'Runs the client audit in every compatibility-matrix row (Flywheel off, Sodium, EMI); each is verified. JEI is run by hand, see docs/COMPAT.md.'
+    // The JEI row (runSmokeAuditJei) is not in this list: JEI 19.70 asks for NeoForge 21.1.238 and this build runs 21.1.219, so it
+    // cannot start here (docs/COMPAT.md). Run it by hand on a NeoForge it accepts.
+    dependsOn 'runSmokeAuditFlywheelOff', 'runSmokeAuditSodium', 'runSmokeAuditEmi'
 }
 tasks.matching { it.name == 'runSmokeAuditSodium' }.configureEach { mustRunAfter 'runSmokeAuditFlywheelOff' }
+tasks.matching { it.name == 'runSmokeAuditEmi' }.configureEach { mustRunAfter 'runSmokeAuditSodium' }
 
 // One command for everything unattended: unit tests, the GameTests with their log check, and the client audit.
 tasks.register('smoke') {

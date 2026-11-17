@@ -20,7 +20,7 @@ Run it in a private copy of the checkout (see "Running it"): other Gradle runs a
 |---|---|---|---|
 | Unit tests | `./gradlew test` | seconds | simulation maths, parsers, sound synthesis, **the harness's own logic** (46 tests) |
 | GameTests | `./gradlew runGameTestServer` (verified by `verifyGameTests`) | ~1 min | engine behaviour; **every block, item, fluid, recipe, loot table and advancement complete; every block entity placed, ticked, saved, loaded, fed garbage and broken in every sampled state; 16 engines at once under a tick budget; engines whose chunks unload, load staggered, stop ticking, or straddle a border; every tuning setting at both ends of its range** |
-| Client audit | `./gradlew runSmokeAudit` (verified by `verifyClientSmoke`) | ~2 min | **every block state's model and sprites, every item model, translation, sound, particle sheet and Flywheel partial; all 88 Ponder storyboards played to their end; six engines, a refinery, a turbo and a supercharger run for a minute with heap, direct memory, particles, sound voices and frame times tracked; the player walking 3000 blocks away and back; screenshots judged by pixels** |
+| Client audit | `./gradlew runSmokeAudit` (verified by `verifyClientSmoke`) | ~2 min | **every block state's model and sprites, every item model, translation, sound, particle sheet and Flywheel partial; all 89 Ponder storyboards played to their end; six engines, a refinery, a turbo and a supercharger run for a minute with heap, direct memory, particles, sound voices and frame times tracked; the player walking 3000 blocks away and back; screenshots judged by pixels** |
 | Log check | automatic after each run above | seconds | errors the game does not call failures: missing model/texture/sound/recipe messages, stack traces, `OutOfMemoryError`, stale classes, anything logged at ERROR, a crash report |
 | Visual smoke | `./gradlew runVisualSmokeTest [-PsmokeEffects ...]` | 2-10 min | the original picture-taking runs, for a person (or Claude) to *look* at: composition, colour, whether it reads as Create. Their log is scanned too, as warnings only |
 
@@ -145,6 +145,10 @@ reason no longer holds.
   about scale, time or lifecycle rather than one rule.
 * New sound event: the fleet must make it play, or it shows as "never started"; add its trigger to the fleet in
   `SmokeAudit.fleet`.
+  One documented exception: sounds that fire by chance by design (`CHANCE_SOUNDS` in `SmokeAudit`: the cooling tick, the
+  pre-ignition knock, the flare whoosh) are started by hand at the end of the run if the fleet did not, and a check fails
+  if the sound engine never hears them. A sound that is not random must still be started by the fleet. The whistle
+  needs the camera within 48 blocks of the turbo, so the run stands there while the wheel is up to speed.
 * A new class of failure you were bitten by: write the check that would have caught it first, in a layer that can fail
   the build, add a unit test that the check fires (and a line to the mutation script), then fix the bug.
 

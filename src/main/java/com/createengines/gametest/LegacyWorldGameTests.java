@@ -152,6 +152,21 @@ public class LegacyWorldGameTests {
 		loadAndCheck(helper, "engine_v1_2_0_rotary.snbt", "1.2.0");
 	}
 
+	@GameTest(template = "empty_large", timeoutTicks = 400)
+	public static void aDieselEngineSavedBy121Loads(GameTestHelper helper) {
+		loadAndCheck(helper, "engine_v1_2_1_diesel.snbt", "1.2.1");
+	}
+
+	@GameTest(template = "empty_large", timeoutTicks = 400)
+	public static void aSparkEngineSavedBy121Loads(GameTestHelper helper) {
+		loadAndCheck(helper, "engine_v1_2_1_spark.snbt", "1.2.1");
+	}
+
+	@GameTest(template = "empty_large", timeoutTicks = 400)
+	public static void aRotaryEngineSavedBy121Loads(GameTestHelper helper) {
+		loadAndCheck(helper, "engine_v1_2_1_rotary.snbt", "1.2.1");
+	}
+
 	private static void loadAndCheck(GameTestHelper helper, String fixture, String saver) {
 		Path file = fixtureDir().resolve(fixture);
 		if (!Files.exists(file)) {

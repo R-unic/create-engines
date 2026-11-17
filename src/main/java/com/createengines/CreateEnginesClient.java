@@ -3,8 +3,6 @@ package com.createengines;
 import java.util.List;
 
 import com.createengines.client.FuelTooltips;
-import com.createengines.client.ShowcaseRun;
-import com.createengines.client.VisualSmokeTest;
 import com.createengines.client.particle.ExhaustFlameParticle;
 import com.createengines.client.particle.GasParticle;
 import com.createengines.client.particle.SparkParticle;
@@ -43,9 +41,31 @@ public class CreateEnginesClient {
 		NeoForge.EVENT_BUS.addListener(FuelTooltips::onTooltip);
 		NeoForge.EVENT_BUS.addListener(CreateEnginesClient::onLoggingOut);
 		PonderIndex.addPlugin(new CEPonderPlugin());
-		VisualSmokeTest.register();
-		com.createengines.client.smoke.SmokeAudit.register();
-		ShowcaseRun.register();
+		registerDevelopmentHarnesses();
+	}
+
+	/** The development-only runs: present on the development classpath, left out of the release jar (see build.gradle). */
+	private static final String[] DEVELOPMENT_HARNESSES = {"com.createengines.client.VisualSmokeTest",
+		"com.createengines.client.smoke.SmokeAudit", "com.createengines.client.ShowcaseRun"};
+
+	/**
+	 * Registers each harness that is there. They are named, not imported, because the jar a player loads does not contain
+	 * them and an import would make the game fail to start. A harness that is there and fails to register is a real error.
+	 */
+	private static void registerDevelopmentHarnesses() {
+		for (String name : DEVELOPMENT_HARNESSES) {
+			Class<?> harness;
+			try {
+				harness = Class.forName(name);
+			} catch (ClassNotFoundException absent) {
+				continue;
+			}
+			try {
+				harness.getMethod("register").invoke(null);
+			} catch (ReflectiveOperationException e) {
+				throw new IllegalStateException("The development harness " + name + " could not register", e);
+			}
+		}
 	}
 
 	/** The sound engine drops every voice when the world closes; forget ours too, or they keep that world's machines alive. */

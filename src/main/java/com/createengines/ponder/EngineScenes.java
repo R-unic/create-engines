@@ -4,6 +4,7 @@ import com.createengines.content.camshaft.CamshaftBlockEntity;
 import com.createengines.content.crankshaft.CrankshaftBlockEntity;
 import com.createengines.content.cylinder.CylinderBlock;
 import com.createengines.content.head.CylinderHeadBlock;
+import com.createengines.content.plate.MakerPlateBlockEntity;
 import com.createengines.content.rotor.RotorHousingBlock;
 import com.createengines.content.rotor.RotorHousingBlockEntity;
 import com.createengines.content.turbo.TurbochargerBlockEntity;
@@ -2858,6 +2859,81 @@ public final class EngineScenes {
 			.text("It gives a redstone signal that rises as the engine's speed climbs to the speed of its peak power: a shift light for a transmission.")
 			.pointAt(util.vector()
 				.blockSurface(dynoPos, Direction.EAST))
+			.placeNearTarget();
+		scene.idle(110);
+		scene.markAsFinished();
+	}
+
+	public static void makerPlate(SceneBuilder builder, SceneBuildingUtil util) {
+		CreateSceneBuilder scene = new CreateSceneBuilder(builder);
+		scene.title("maker_plate", "The Maker's Plate");
+		scene.configureBasePlate(0, 0, 6);
+		scene.world()
+			.showSection(util.select()
+				.layer(0), Direction.UP);
+
+		Selection crank = util.select()
+			.fromTo(1, 2, 3, 3, 2, 3);
+		Selection engine = util.select()
+			.fromTo(2, 3, 3, 2, 4, 3);
+		Selection plate = util.select()
+			.position(3, 2, 4);
+		BlockPos platePos = util.grid()
+			.at(3, 2, 4);
+
+		setThrow(scene, util.select()
+			.position(2, 2, 3), 0);
+		scene.world()
+			.showSection(crank, Direction.DOWN);
+		scene.world()
+			.showSection(engine, Direction.DOWN);
+		scene.world()
+			.setKineticSpeed(crank, 48);
+		scene.idle(20);
+		scene.overlay()
+			.showText(100)
+			.attachKeyFrame()
+			.text("Every engine builder puts a name on their work. The Maker's Plate is that nameplate.")
+			.pointAt(util.vector()
+				.topOf(2, 4, 3))
+			.placeNearTarget();
+		scene.idle(110);
+
+		scene.world()
+			.showSection(plate, Direction.NORTH);
+		scene.world()
+			.modifyBlockEntity(platePos, MakerPlateBlockEntity.class, be -> be.setNameAndBuilder("Old Faithful", "You"));
+		scene.idle(15);
+		scene.overlay()
+			.showText(120)
+			.attachKeyFrame()
+			.text("Screw it to any solid part of the engine. Rename it on an anvil first and the name is engraved on the plate, with the name of whoever placed it.")
+			.pointAt(util.vector()
+				.blockSurface(platePos, Direction.SOUTH))
+			.placeNearTarget();
+		scene.idle(130);
+
+		scene.overlay()
+			.showControls(util.vector()
+				.blockSurface(platePos, Direction.SOUTH), Pointing.RIGHT, 40)
+			.rightClick();
+		scene.idle(50);
+		scene.overlay()
+			.showText(120)
+			.attachKeyFrame()
+			.colored(PonderPalette.BLUE)
+			.text("Use it with an empty hand once the engine's curve has been measured, as a Dynamometer does, and it stamps the engine's peak power and peak torque. Goggles read them back.")
+			.pointAt(util.vector()
+				.blockSurface(platePos, Direction.SOUTH))
+			.placeNearTarget();
+		scene.idle(130);
+
+		scene.overlay()
+			.showText(100)
+			.colored(PonderPalette.GREEN)
+			.text("It is for looks and bragging: it changes nothing about how the engine runs.")
+			.pointAt(util.vector()
+				.blockSurface(platePos, Direction.UP))
 			.placeNearTarget();
 		scene.idle(110);
 		scene.markAsFinished();

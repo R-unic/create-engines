@@ -209,6 +209,10 @@ public final class ClientAudit {
 						.getFluidType()
 						.getDescriptionId());
 		need(report, "creative tab", "itemGroup." + NS + ".main");
+		// The recipe viewer pages for refining routes (JEI and EMI), whether or not a viewer is installed in this run
+		for (String key : List.of(NS + ".recipe.refining.title", NS + ".recipe.refining.speed", NS + ".recipe.refining.ratio",
+			NS + ".recipe.refining.catalyst", NS + ".recipe.refining.catalyst.tooltip", "emi.category." + NS + ".refining"))
+			need(report, "recipe viewer wording " + key, key);
 	}
 
 	private static void advancementText(SmokeReport report) {

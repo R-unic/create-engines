@@ -16,6 +16,7 @@ import com.createengines.content.starter.StarterBlock;
 import com.createengines.engine.CrankGeometry;
 import com.createengines.engine.EngineState;
 import com.createengines.engine.EngineSummary;
+import com.createengines.engine.LoadedBlocks;
 import com.createengines.registry.CEBlocks;
 import com.createengines.registry.CEFluids;
 import com.simibubi.create.AllBlocks;
@@ -104,6 +105,49 @@ public class StressGameTests {
 			CreateEngines.LOGGER.error("Stress test found {} problems:\n  {}", problems.size(), text);
 			helper.fail(problems.size() + " problems, first: " + problems.getFirst());
 		}
+	}
+
+	/**
+	 * {@code LoadedBlocks.blockEntity} answers from one chunk lookup and must give what {@code Level.getBlockEntity} gives
+	 * for anything loaded, nothing for air, nothing outside the world's height, and nothing for a chunk that is not loaded,
+	 * without loading it.
+	 */
+	@GameTest(template = LARGE, timeoutTicks = 40)
+	public static void loadedBlocksFindsPartsWithoutLoadingChunks(GameTestHelper helper) {
+		ServerLevel level = helper.getLevel();
+		BlockPos origin = helper.absolutePos(BlockPos.ZERO);
+		TestEngine.build(level, origin, true);
+		List<String> problems = new ArrayList<>();
+		int found = 0;
+		for (int x = 0; x < 6; x++)
+			for (int y = 0; y < 6; y++)
+				for (int z = 0; z < 6; z++) {
+					BlockPos pos = origin.offset(x, y, z);
+					BlockEntity expected = level.getBlockEntity(pos);
+					if (LoadedBlocks.blockEntity(level, pos) != expected)
+						problems.add("at " + pos.toShortString() + " got " + LoadedBlocks.blockEntity(level, pos) + ", expected " + expected);
+					if (expected != null)
+						found++;
+				}
+		if (found < 3)
+			problems.add("only " + found + " block entities in the engine, the check proved nothing");
+		if (LoadedBlocks.blockEntity(level, origin.offset(TestEngine.PRIMARY)) == null)
+			problems.add("the crankshaft was not found");
+		if (LoadedBlocks.blockEntity(level, origin.offset(20, 10, 20)) != null)
+			problems.add("air has a block entity");
+		if (LoadedBlocks.blockEntity(level, new BlockPos(origin.getX(), level.getMaxBuildHeight() + 5, origin.getZ())) != null)
+			problems.add("a position above the world has a block entity");
+		if (LoadedBlocks.blockEntity(level, new BlockPos(origin.getX(), level.getMinBuildHeight() - 5, origin.getZ())) != null)
+			problems.add("a position below the world has a block entity");
+		BlockPos far = new BlockPos(origin.getX() + 2_000_000, 64, origin.getZ() + 2_000_000);
+		if (level.hasChunkAt(far))
+			problems.add("the far chunk was already loaded before the test");
+		if (LoadedBlocks.blockEntity(level, far) != null)
+			problems.add("a block entity came from a chunk that is not loaded");
+		if (level.hasChunkAt(far))
+			problems.add("looking up a part in an unloaded chunk loaded it");
+		report(helper, problems);
+		helper.succeed();
 	}
 
 	// ---------------------------------------------------------------------------------------------------------------

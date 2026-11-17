@@ -16,3 +16,10 @@ warn: Sound engine/ERROR\].*OpenAlUtil.*Stop: Invalid name parameter
 # not exist yet, which is every first run in a fresh checkout or private copy; it writes the file itself and never logs it again.
 # Without this entry the release gate fails on its first run for a reason that is not a defect. Matches only that file.
 Failed to load properties from file: server\.properties
+
+# Only in the EMI compatibility row. EMI logs an ERROR for each tag it cannot find a name for. Four of the tags in the
+# game belong to Create, NeoForge and Curios, not to this mod (the chocolate and tea convention tags and curios:head), so
+# naming them is not ours to do; the message is a cosmetic notice and changes nothing in the game. This mod's own tags are
+# named in CELang and are deliberately not listed here, so a new tag of ours without a name fails the EMI row. Matches
+# exactly these four.
+\[EMI\] Untranslated tag #(c:buckets/chocolate|c:drinks/tea|c:foods/chocolate|curios:head)$

@@ -342,6 +342,7 @@ public final class CEBlocks {
 
 	/** A brass plate screwed to an engine, with its name, its builder and the figures of its last measured run. */
 	public static final BlockEntry<MakerPlateBlock> MAKER_PLATE = REGISTRATE.block("maker_plate", MakerPlateBlock::new)
+		.lang("Maker's Plate")
 		.initialProperties(SharedProperties::softMetal)
 		.properties(p -> part(p)
 			.mapColor(MapColor.GOLD))

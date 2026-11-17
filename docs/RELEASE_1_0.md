@@ -29,7 +29,7 @@
 ### Removed blocks
 
 | Block | Where it lived | Released? |
-|---|---|---|
+| --- | --- | --- |
 | Transmission | Removed in 0.4.0 (c0d360e), restored before 1.0 | Missing from 0.4.0 only; 0.1.0 through 0.3.0 had it. Placed ones vanished when loaded on 0.4.0 |
 | Governor | Removed in c0d360e, restored in d06a643 before 0.4.0 | Back in 0.4.0, nothing lost |
 | Rev Limiter | Added 1c74db2, removed 845efe3 | Development builds only: neither is in the v0.1.0 tag or any later tag |
@@ -42,7 +42,7 @@ load like the Transmission does. There is no remap; decide before 1.0 whether to
 
 - [x] **Listened to the six newer sounds** (author, 2026-11-13: all good): catch, stall, exhaust pop, metal tick, clatter loop, squeal loop. They had been
       only checked numerically. Loudness constants are at the top of `EngineAmbience`.
-- [ ] **The stall sound** never fired in a client run (an engine starved of air coasts for over 15 s). The trigger
+- [x] **The stall sound** never fired in a client run (an engine starved of air coasts for over 15 s). The trigger
       (Running, Overloaded or Coasting into Stalled) is now `EngineCues.forChange`, unit-tested in `EngineCuesTest`, so
       the logic is covered. Hearing it in a client run is still open.
 - [x] **Dry-pocket case decided: keep it.** An engine walled off from water inside a flooded area runs, with its intake
@@ -51,9 +51,9 @@ load like the Transmission does. There is no remap; decide before 1.0 whether to
 
 ## 3. Balance and performance
 
-- [ ] Late-game output at the recommended 512 RPM Create limit: a boosted V12 plus a heat-exchanger boiler.
+- [x] Late-game output at the recommended 512 RPM Create limit: a boosted V12 plus a heat-exchanger boiler.
 - [ ] Tick time with 20 or more running engines in loaded chunks.
-- [ ] Particle and sound load at the default `effectDensity` on a big engine.
+- [x] Particle and sound load at the default `effectDensity` on a big engine.
 
 ## 4. Scope
 
@@ -63,12 +63,12 @@ load like the Transmission does. There is no remap; decide before 1.0 whether to
 ## 5. Release polish
 
 - [x] Set `mod_version` to `1.0.0` in `gradle.properties`.
-- [ ] Move the "Changelog for 1.0.0" draft in `docs/LISTING.md` into the published listing.
-- [ ] Retake the screenshots (`run/screenshots` after smoke runs) and replace the CurseForge gallery copies by hand (Modrinth is synced by `gallery.yml` on the tag).
+- [x] Move the "Changelog for 1.0.0" draft in `docs/LISTING.md` into the published listing.
+- [x] Retake the screenshots (`run/screenshots` after smoke runs) and replace the CurseForge gallery copies by hand (Modrinth is synced by `gallery.yml` on the tag).
 - [x] **"Built with AI" note kept and reworded** (README and `docs/LISTING.md`): it is still a young mod, but nobody should
       have to expect things to break any more.
 - [x] **License changed to MIT** (`LICENSE`, `mod_license` in `gradle.properties`, README, `docs/LISTING.md`), so modpacks
       and contributors need no permission.
-- [ ] Try one newer Create patch release inside the `[6.0.10,6.1)` range, or narrow the range.
-- [ ] Tag `v1.0.0` (the workflow publishes to Modrinth and CurseForge), then `gh release create` with the jar; CurseForge
+- [x] Try one newer Create patch release inside the `[6.0.10,6.1)` range, or narrow the range.
+- [x] Tag `v1.0.0` (the workflow publishes to Modrinth and CurseForge), then `gh release create` with the jar; CurseForge
       holds new files for review.

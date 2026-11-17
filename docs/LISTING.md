@@ -182,6 +182,9 @@ power at the top of the curve), and two engines on one kinetic network no longer
   Nether Wart. A funnel or hopper can feed catalyst. Sight windows glow while it works and goggles name what is
   stopping it.
 - Routes are a data recipe type, `create_engines:refining`, so packs can add their own.
+- JEI and EMI show every refining route as a page (tested running with EMI; the JEI page is not yet tested running): the feed (each fluid of a tag in turn), the catalyst and how much of
+  it is used, the product, the heat the base needs, the speed and the feed-to-product ratio, with the Reboiler, Column
+  Section and Condenser as the blocks that run it. Neither is required; with neither installed nothing changes.
 - Leaning columns: a layer may sit one block to the side of the one below. Sections join like Create chutes, with no
   joint block.
 - The sight windows glow the colour of the fluid in the column: the lower layers show the feed, the upper layers the
