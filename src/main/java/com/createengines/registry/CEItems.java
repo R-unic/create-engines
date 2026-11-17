@@ -2,6 +2,7 @@ package com.createengines.registry;
 
 import static com.createengines.CreateEngines.REGISTRATE;
 
+import com.createengines.content.blueprint.BlueprintItem;
 import com.createengines.content.jerrycan.JerryCanItem;
 import com.createengines.content.tool.BankBuilderItem;
 import com.createengines.content.tool.TimingToolItem;
@@ -71,6 +72,12 @@ public final class CEItems {
 	/** Four buckets of one fluid in one item, for carrying fuel where there is no pipe. */
 	public static final ItemEntry<JerryCanItem> JERRY_CAN = REGISTRATE.item("jerry_can", JerryCanItem::new)
 		.model((c, p) -> p.withExistingParent(c.getName(), p.modLoc("block/jerry_can/item")))
+		.register();
+
+	/** Records an engine's layout and tune when used on it. */
+	public static final ItemEntry<BlueprintItem> BLUEPRINT = REGISTRATE.item("blueprint", BlueprintItem::new)
+		.properties(p -> p.stacksTo(1))
+		.model((c, p) -> p.generated(c, p.modLoc("item/blueprint")))
 		.register();
 
 	private CEItems() {

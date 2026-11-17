@@ -73,6 +73,8 @@ public class ColumnPortBlockEntity extends SmartBlockEntity implements IHaveGogg
 
 		@Override
 		protected void onContentsChanged(int slot) {
+			// The goggles read the catalyst on the client, so a change in the slot must reach it like the limit does
+			dirty = true;
 			setChanged();
 		}
 	};
@@ -88,6 +90,7 @@ public class ColumnPortBlockEntity extends SmartBlockEntity implements IHaveGogg
 	private int sinceRoute;
 	private int sinceSync;
 	private boolean dirty;
+	private boolean wrongCatalyst;
 	private @Nullable RecipeHolder<RefiningRecipe> route;
 	private @Nullable FluidStack routeFeed;
 	private Heat routeHeat = Heat.NONE;
@@ -183,6 +186,17 @@ public class ColumnPortBlockEntity extends SmartBlockEntity implements IHaveGogg
 		return catalyst.getStackInSlot(0);
 	}
 
+	/** The catalyst of the column this part is in, wherever in the column it is asked. */
+	public ItemStack heldCatalyst() {
+		ColumnPortBlockEntity controller = controller();
+		return (controller == null ? this : controller).catalystStack();
+	}
+
+	/** Whether the Reboiler holds an item that is not the catalyst of the route the column is running. */
+	public boolean wrongCatalyst() {
+		return wrongCatalyst;
+	}
+
 	@Override
 	public void tick() {
 		super.tick();
@@ -203,8 +217,10 @@ public class ColumnPortBlockEntity extends SmartBlockEntity implements IHaveGogg
 
 	private void rescan() {
 		ColumnShape.Result next = RefiningColumns.scan(level, worldPosition);
-		if (next.equals(shape))
+		if (next.equals(shape)) {
+			passCatalystOn();
 			return;
+		}
 		boolean wasController = isController();
 		if (wasController && lit)
 			RefiningColumns.showWork(level, shape, false);
@@ -221,6 +237,25 @@ public class ColumnPortBlockEntity extends SmartBlockEntity implements IHaveGogg
 		}
 		dirty = true;
 		setChanged();
+		passCatalystOn();
+	}
+
+	/**
+	 * A column that grows can move its controller to another corner; the catalyst this block holds is then in a block
+	 * nothing reads, so it goes to the new controller (or onto the ground if that cannot take it).
+	 */
+	private void passCatalystOn() {
+		ItemStack held = catalyst.getStackInSlot(0);
+		if (level == null || held.isEmpty() || isController() || !shape.formed())
+			return;
+		BlockPos at = new BlockPos(shape.x(), shape.y(), shape.z());
+		if (!level.isLoaded(at) || !(level.getBlockEntity(at) instanceof ColumnPortBlockEntity target) || target == this
+			|| target.part() != Part.REBOILER)
+			return;
+		catalyst.setStackInSlot(0, ItemStack.EMPTY);
+		ItemStack left = target.catalyst.insertItem(0, held, false);
+		if (!left.isEmpty())
+			Block.popResource(level, worldPosition, left);
 	}
 
 	/** One tick of the column: take the feed, make the product, use the catalyst. */
@@ -255,6 +290,10 @@ public class ColumnPortBlockEntity extends SmartBlockEntity implements IHaveGogg
 		Limit now;
 		if (route == null) {
 			now = feedFluid.isEmpty() ? Limit.NO_FEED : Limit.COLD;
+			if (wrongCatalyst) {
+				wrongCatalyst = false;
+				dirty = true;
+			}
 			rate += (0 - rate) * 0.1f;
 		} else {
 			RefiningRecipe recipe = route.value();
@@ -264,6 +303,11 @@ public class ColumnPortBlockEntity extends SmartBlockEntity implements IHaveGogg
 				? productTank.getSpace() : 0;
 			ItemStack held = catalyst.getStackInSlot(0);
 			int items = recipe.catalyst() != null && recipe.catalyst().ingredient().test(held) ? held.getCount() : 0;
+			boolean wrong = recipe.catalyst() != null && !held.isEmpty() && items == 0;
+			if (wrong != wrongCatalyst) {
+				wrongCatalyst = wrong;
+				dirty = true;
+			}
 			RefiningColumn.Step step = column.tick(sim, shape.width(), shape.height(), heat, feedFluid.getAmount(), room, items);
 			if (step.feedUsed() > 0)
 				feedTank().drain(step.feedUsed(), IFluidHandler.FluidAction.EXECUTE);
@@ -367,6 +411,7 @@ public class ColumnPortBlockEntity extends SmartBlockEntity implements IHaveGogg
 		tag.putInt("Heat", heat.ordinal());
 		tag.putInt("Limit", limit.ordinal());
 		tag.putFloat("Rate", rate);
+		tag.putBoolean("WrongCatalyst", wrongCatalyst);
 		tag.put("Catalyst", catalyst.serializeNBT(registries));
 	}
 
@@ -388,6 +433,7 @@ public class ColumnPortBlockEntity extends SmartBlockEntity implements IHaveGogg
 		heat = Heat.values()[Math.clamp(tag.getInt("Heat"), 0, Heat.values().length - 1)];
 		limit = Limit.values()[Math.clamp(tag.getInt("Limit"), 0, Limit.values().length - 1)];
 		rate = tag.getFloat("Rate");
+		wrongCatalyst = tag.getBoolean("WrongCatalyst");
 		if (tag.contains("Catalyst")) {
 			// Only the stack in the one slot is read: a saved size from a damaged file must not size the handler
 			CompoundTag saved = tag.getCompound("Catalyst")
@@ -428,6 +474,9 @@ public class ColumnPortBlockEntity extends SmartBlockEntity implements IHaveGogg
 		if (src.limit == Limit.NONE)
 			GoggleLines.add(CELang.translate("goggles.column.rate", String.format(Locale.ROOT, "%.1f", src.rate))
 				.style(ChatFormatting.AQUA), tooltip, 1);
+		else if (src.limit == Limit.NO_CATALYST && src.wrongCatalyst)
+			GoggleLines.add(CELang.translate("goggles.column.limit.wrong_catalyst")
+				.style(ChatFormatting.RED), tooltip, 1);
 		else
 			GoggleLines.add(CELang.translate("goggles.column.limit." + src.limit.name()
 				.toLowerCase(Locale.ROOT))

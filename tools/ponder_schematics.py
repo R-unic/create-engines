@@ -672,3 +672,12 @@ write_schematic("maker_plate", (6, 6, 6), [
     (2, 4, 3, ce("cylinder_head"), head("up")),
     (3, 2, 4, ce("maker_plate"), facing("south")),
 ])
+
+# The blueprint page: a small engine to record and to apply a blueprint to
+write_schematic("blueprint", (6, 6, 6), [
+    (1, 2, 3, ce("crankshaft"), axis("x")),
+    (2, 2, 3, ce("crank_throw"), axis("x")),
+    (3, 2, 3, ce("crankshaft"), axis("x")),
+    (2, 3, 3, ce("cylinder"), cylinder("up")),
+    (2, 4, 3, ce("cylinder_head"), head("up")),
+])

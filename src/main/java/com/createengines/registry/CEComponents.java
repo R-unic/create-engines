@@ -1,6 +1,7 @@
 package com.createengines.registry;
 
 import com.createengines.CreateEngines;
+import com.createengines.content.blueprint.RecordedBlueprint;
 
 import net.minecraft.core.component.DataComponentType;
 import net.minecraft.core.registries.Registries;
@@ -21,6 +22,13 @@ public final class CEComponents {
 			.persistent(SimpleFluidContent.CODEC)
 			.networkSynchronized(SimpleFluidContent.STREAM_CODEC)
 			.cacheEncoding()
+			.build());
+
+	/** The engine recorded in a blueprint, as the blueprint string. */
+	public static final DeferredHolder<DataComponentType<?>, DataComponentType<RecordedBlueprint>> BLUEPRINT =
+		TYPES.register("blueprint", () -> DataComponentType.<RecordedBlueprint>builder()
+			.persistent(RecordedBlueprint.CODEC)
+			.networkSynchronized(RecordedBlueprint.STREAM_CODEC)
 			.build());
 
 	private CEComponents() {

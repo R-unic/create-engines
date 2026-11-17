@@ -34,7 +34,8 @@ public class CEJeiPlugin implements IModPlugin {
 
 	@Override
 	public void registerCategories(IRecipeCategoryRegistration registration) {
-		registration.addRecipeCategories(new RefiningCategory(registration.getJeiHelpers().getGuiHelper()));
+		registration.addRecipeCategories(new RefiningCategory(registration.getJeiHelpers().getGuiHelper()),
+			new FuelCategory(registration.getJeiHelpers().getGuiHelper()), new PartCategory(registration.getJeiHelpers().getGuiHelper()));
 	}
 
 	@Override
@@ -46,6 +47,12 @@ public class CEJeiPlugin implements IModPlugin {
 		registration.addRecipes(RefiningCategory.TYPE, routes);
 		CompatStatus.refiningRoutesRegistered("jei", routes.size());
 		CreateEngines.LOGGER.info("JEI: showing {} refining routes", routes.size());
+		var fuels = com.createengines.client.compat.ViewerEntries.fuels();
+		var parts = com.createengines.client.compat.ViewerEntries.parts();
+		registration.addRecipes(FuelCategory.TYPE, fuels);
+		registration.addRecipes(PartCategory.TYPE, parts);
+		CompatStatus.pagesRegistered("jei", fuels.size(), parts.size());
+		CreateEngines.LOGGER.info("JEI: showing {} fuels and {} parts", fuels.size(), parts.size());
 	}
 
 	@Override

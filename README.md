@@ -49,6 +49,13 @@ Minecraft 1.21.1 · NeoForge 21.1.219 · Create 6.0.10
   with spark ignition
 - A craftable fuel chain: seeds to plant oil to diesel, sugar crops to ethanol, and biodiesel with glycerin on the
   side, all in Create basins. The loop closes: glycerin goes into engine oil and coolant, and used oil is burned as fuel or recycled into oil or charcoal
+- A **Refining Column**, a multiblock that makes the same fuels better than a basin: a square of Reboilers (1 to 3
+  wide) on a Blaze Burner or heat exchanger, layers of Column Sections (which may lean a block to the side, and glow with
+  the fluid inside), and Condensers on top. Plant oil to diesel, diesel to gasoline and sugar mash to ethanol, using a
+  little catalyst (coal, blaze powder, nether wart) a funnel can feed in. Routes are the data recipe type
+  `create_engines:refining`, so a pack can add its own, and JEI and EMI list them. A **Flare Stack** on a working
+  Condenser burns a flame, a **Soot Trap** on a rich engine's exhaust catches soot for dye, gunpowder and coal, and a
+  **Jerry Can** carries four buckets of a fluid. Basin ethanol is weaker than it was, since the column is the way to make it
 - An **Exhaust Heat Exchanger** that turns engine exhaust into basin heat, so an engine can cook its own fuel, and
   into boiler heat, so the exhaust can make steam for Create steam engines on top of the engine's own power
 - Oil film and lubrication, starters, batteries and alternators
@@ -71,6 +78,10 @@ Minecraft 1.21.1 · NeoForge 21.1.219 · Create 6.0.10
   lights gasoline or ethanol with a small pilot shot
 - A forgiving early game: spark plug soot clears itself, goggles suggest fuel settings, and the Timing Tool can tune
   every injector in one click
+- **Blueprints**: a Blueprint records a built engine's layout and every dial, copies the whole tune onto another engine of the
+  same build, and shows as a drafting sheet (the plan, the parts, the Maker's Plate figures). A Bank Builder with one in the
+  other hand lays the engine out from the parts you carry, it exports as a Create schematic, it copies out as text and pastes
+  in again (the server checks every block and dial), and a Framed Blueprint hangs it on a wall
 - Governors and MAF sensors for the late game
 - **Engine readouts**: a Display Link set against a crankshaft shows an engine's state, speed, load, temperature and
   oil on a display board or nixie tubes, and a comparator reads any of an oil sump's tanks, so a pump or an alarm can
@@ -88,11 +99,16 @@ Minecraft 1.21.1 · NeoForge 21.1.219 · Create 6.0.10
 - A **Black Box** flight recorder that keeps ten minutes of an engine's speed, load and warmth and says why it stalled
 - An exhaust note made up from the engine's speed and firing order, so a V-twin lopes, a six hums and a dead cylinder limps
 - A **Muffler** that quiets the note, the bangs and the pops without costing the engine any power, and **Engine Casing**
-  that joins into one plate and clads cylinders, pipes, cams, and Create's own shafts and cogwheels to hide the sprawl
+  that joins into one plate and clads cylinders, pipes, cams, and Create's own shafts and cogwheels to hide the sprawl, in
+  plain, riveted, louvred and window styles and any of Create's dye colours. A **Rain Cap** flaps on an exhaust outlet, and
+  a **Maker's Plate** carries an engine's name, its builder and the figures from its last Dynamometer run. All of it is
+  cosmetic and never changes an engine's rating
 - Exhaust that tells the truth: a thin haze when the mixture is right, black when it is rich, white vapour until the
   block warms, a blue cast when fuel has thinned the oil, and a crack of flame when unburned fuel meets a hot pipe.
   Engines cough as they catch and knock as they die, tick as they cool, squeal and spark when they run dry, draw the
-  air in at their intakes and steam in the rain
+  air in at their intakes and steam in the rain. Pistons slap about in their bores by how rough the engine is, a V's
+  valley cam shows its pushrods, and every cause the goggles name (rich, lean, a fouled plug, a dry sump, a flood, a
+  blocked exhaust, a gasoline pre-ignition rattle, an overload) has a sight or a sound of its own
 - Nothing burns underwater: water against a cylinder, a head or a rotor housing stops the engine wherever its pipes
   lead, and so does an intake or exhaust that opens in it. A flood stops an engine; it does not wash it away
 
@@ -118,6 +134,13 @@ modpack can rebalance without code. Turning a feature off never removes blocks; 
 config (`engineParticles`, `bangVolume`, `engineNoteVolume`, `mechanicalVolume`, `boostVolume`, `effectDensity`) thins out engine sound and particles on a big engine.
 Fuel properties are a datapack data map (`data_maps/fluid/fuel.json`), so other mods' fluids can be made into fuels.
 
+For pack makers, three config presets ship in the jar (`config_presets/casual.toml`, `standard.toml`, `expert.toml`): copy
+their `[balance]` and `[features]` tables over the ones in the config. **Preview, may still change until 2.0:** a part stats
+data map (`data_maps/block/part_stats.json`, optional scales on a cylinder's stats, keyed by `create_engines:cylinder` or
+`create_engines:precision_cylinder`) and a public API (`com.createengines.api`: `EngineApi.viewAt` and two events,
+`EngineStateChangeEvent` and `EngineMilestoneEvent`, on `NeoForge.EVENT_BUS`). JEI and EMI show the refining routes, every
+fuel and every engine part.
+
 ## Recommended: raise Create's RPM limit
 
 Create caps rotation at 256 RPM by default, and engines hit that ceiling. We recommend raising it: in
@@ -131,11 +154,14 @@ limit you set. Everything else on the kinetic network still obeys Create's own r
 ./gradlew build
 ```
 
-Other useful tasks: `./gradlew test` (simulation unit tests), `./gradlew runGameTestServer` (in-world GameTests) and
-`./gradlew runVisualSmokeTest` (builds an engine and saves screenshots to `run/screenshots/`).
+Other useful tasks: `./gradlew test` (simulation unit tests), `./gradlew runGameTestServer` (in-world GameTests),
+`./gradlew smoke` (unit tests, GameTests and the client audit, each verified; run it in a private copy of the checkout,
+see docs/SMOKE.md) and `./gradlew runVisualSmokeTest` (builds an engine and saves screenshots to `run/screenshots/`).
 
-Design notes and how the simulation works are in [docs/DESIGN.md](docs/DESIGN.md). The 1.0 release checklist is in
-[docs/RELEASE_1_0.md](docs/RELEASE_1_0.md).
+Design notes and how the simulation works are in [docs/DESIGN.md](docs/DESIGN.md). Where the project is going is in
+[docs/ROADMAP.md](docs/ROADMAP.md). How a release is checked is in [docs/STABILITY.md](docs/STABILITY.md), with the test
+layers in [docs/SMOKE.md](docs/SMOKE.md) and the rules that keep old worlds loading in
+[docs/COMPATIBILITY.md](docs/COMPATIBILITY.md). Each release's signed record is in [docs/releases](docs/releases).
 
 ## License
 

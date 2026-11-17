@@ -19,6 +19,7 @@
     "create_engines:exhaust_outlet",
     "create_engines:rain_cap",
     "create_engines:maker_plate",
+    "create_engines:framed_blueprint",
     "create_engines:starter",
     "create_engines:heavy_starter",
     "create_engines:battery",

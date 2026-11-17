@@ -67,6 +67,7 @@ import com.createengines.engine.topology.EngineLayout.CamLine;
 import com.createengines.engine.topology.EngineLayout.Cylinder;
 import com.createengines.engine.topology.EngineLayout.Turbo;
 import com.createengines.engine.topology.PrecisionParts;
+import com.createengines.registry.CEDataMaps;
 import com.createengines.registry.CEFluids;
 import com.simibubi.create.content.kinetics.base.KineticBlockEntity;
 import com.simibubi.create.foundation.blockEntity.behaviour.scrollValue.ScrollValueBehaviour;
@@ -265,7 +266,8 @@ public final class EngineController {
 			CylinderModel model = cylinder.rotary()
 				? CylinderModel.rotary(PrecisionParts.rotarySpec(cylinder.precision()), CamProfile.ROTARY,
 					cylinder.tdcAngle(), cylinder.chamber())
-				: new CylinderModel(PrecisionParts.spec(cylinder.precision()), CamProfile.BASIC, cylinder.tdcAngle(),
+				: new CylinderModel(CEDataMaps.partStats(PrecisionParts.has(cylinder.precision(), PrecisionParts.BORE))
+						.apply(PrecisionParts.spec(cylinder.precision())), CamProfile.BASIC, cylinder.tdcAngle(),
 					camshaft, cylinder.lobeAngle());
 			model.fuelSupply = CylinderFault.NO_INJECTOR.in(cylinder.faults()) ? FuelSupply.NONE : fuelGallery;
 			model.ignition = cylinder.sparkPlug() ? plugs : IgnitionSource.NONE;
@@ -1481,6 +1483,8 @@ public final class EngineController {
 			mafTrimming, mafEnriching,
 			governedTicks >= GOVERNED_TICKS, precision && cylinders >= EngineMilestones.EVEN_FIRING_CYLINDERS,
 			layout.lines() > 1);
+		if (state != previousState)
+			com.createengines.api.EngineEvents.stateChanged(level, layout.primary(), previousState, state);
 		previousState = state;
 		award(level, EngineMilestones.reached(snapshot));
 	}
@@ -1492,6 +1496,9 @@ public final class EngineController {
 			if (last != null && ticks - last < MILESTONE_COOLDOWN)
 				continue;
 			milestoneTicks.put(milestone, ticks);
+			if (last == null)
+				com.createengines.api.EngineEvents.milestone(level, layout.primary(), milestone.name()
+					.toLowerCase(java.util.Locale.ROOT));
 			Achievements.award(level, layout.members(), milestone);
 		}
 	}

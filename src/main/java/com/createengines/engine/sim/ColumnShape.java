@@ -4,10 +4,10 @@ package com.createengines.engine.sim;
  * Finds the refining column in a block of parts: a square base of Reboilers, one or more layers of Column Sections of
  * the same square on it, and a layer of Condensers of that square straight on the last of them. The first layer of
  * sections sits straight on the Reboilers. After that a layer may lean: it may sit one block to the side (along x or z)
- * of the layer below, which joins the two with a slanted piece. A lean fills the blocks beside the two layers with joint
- * pieces (the sections draw the arms themselves, so those blocks must be empty; if one is not, the column does not form and the fault names
- * the block. Nothing here knows about blocks: the caller says what part sits at a position, so the rules are tested
- * as plain Java.
+ * of the layer below, which joins the two with a slanted piece. There is no joint block: the sections draw the arms
+ * themselves into the blocks beside the two layers (those cells are the {@link Result#joints()}), so those blocks must
+ * be empty; if one is not, the column does not form and the fault names the block. Nothing here knows about blocks: the
+ * caller says what part sits at a position, so the rules are tested as plain Java.
  */
 public final class ColumnShape {
 

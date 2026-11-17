@@ -1,0 +1,25 @@
+# Create: Engine Engineer, preset "Standard": the shipped balance, written out.
+#
+# How to use a preset: stop the game, open the world's serverconfig/create_engines-server.toml, and copy the [balance] and
+# [features] tables from here over the ones there (leave [engine], the calibration, alone). A modpack can ship the same
+# tables in its defaultconfigs folder. Every key here is an existing setting: a preset adds no dial of its own.
+
+[balance]
+	fuelConsumption = 1.0
+	precisionBonus = 1.0
+	boostStrength = 1.0
+	rotaryPower = 1.0
+	heatRecoveryOutput = 1.0
+	coolingBonus = 1.0
+	torsionalFlex = 1.0
+	alternatorEnergy = 2.0
+
+[features]
+	forcedInduction = true
+	sparkFouling = true
+	oilDilution = true
+	oilAgeing = true
+	engineTemperature = true
+	pilotInjection = true
+	rotaryEngines = true
+	heatRecovery = true

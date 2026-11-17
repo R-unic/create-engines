@@ -832,7 +832,7 @@ public class StressGameTests {
 	 * longer see may load the chunk it is in again. Builds an engine in a forced chunk, lets it run long enough to be
 	 * scanned, unforces the chunk, waits for it to unload, and counts how often it is loaded over the next 700 ticks.
 	 */
-	@GameTest(template = LARGE, timeoutTicks = 1500)
+	@GameTest(template = LARGE, timeoutTicks = 2500)
 	public static void anEngineInAnUnloadedChunkDoesNotPullItBackIn(GameTestHelper helper) {
 		ServerLevel level = helper.getLevel();
 		int cx = 70000, cz = 70000;
@@ -851,20 +851,35 @@ public class StressGameTests {
 		int[] unloadedAt = {-1};
 		int[] baseline = {0};
 		int[] tick = {0};
+		int[] formedAt = {-1};
+		// Forming and unloading both wait on the chunk system (a far chunk and its neighbours are generated on other threads),
+		// so each is waited for up to a generous limit instead of being judged at a fixed tick. What the test judges, that the
+		// engine formed and that the chunk is not loaded again afterwards, is unchanged.
+		final int formLimit = 600;
+		final int unloadLimit = 300;
 		helper.onEachTick(() -> {
 			int now = tick[0]++;
-			if (now == 60) {
+			if (formedAt[0] < 0) {
 				CrankshaftBlockEntity crank = (CrankshaftBlockEntity) level.getBlockEntity(origin.offset(TestEngine.PRIMARY));
-				helper.assertTrue(crank != null && crank.summary() != null, "The engine in the forced chunk never formed");
-				level.setChunkForced(cx, cz, false);
+				if (crank != null && crank.summary() != null) {
+					formedAt[0] = now;
+					level.setChunkForced(cx, cz, false);
+				} else if (now >= formLimit) {
+					net.neoforged.neoforge.common.NeoForge.EVENT_BUS.unregister(listener);
+					level.setChunkForced(cx, cz, false);
+					helper.fail("The engine in the forced chunk never formed in " + formLimit + " ticks");
+				}
+				return;
 			}
-			if (now > 60 && unloadedAt[0] < 0 && level.getChunkSource()
+			if (unloadedAt[0] < 0 && level.getChunkSource()
 				.getChunkNow(cx, cz) == null) {
 				unloadedAt[0] = now;
 				baseline[0] = loads[0];
 			}
-			if (now == 100)
-				helper.assertTrue(unloadedAt[0] >= 0, "The unforced chunk never unloaded, so the test cannot judge");
+			if (unloadedAt[0] < 0 && now >= formedAt[0] + unloadLimit) {
+				net.neoforged.neoforge.common.NeoForge.EVENT_BUS.unregister(listener);
+				helper.fail("The unforced chunk never unloaded in " + unloadLimit + " ticks, so the test cannot judge");
+			}
 			if (unloadedAt[0] >= 0 && now == unloadedAt[0] + 700) {
 				net.neoforged.neoforge.common.NeoForge.EVENT_BUS.unregister(listener);
 				int again = loads[0] - baseline[0];

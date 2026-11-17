@@ -10,6 +10,7 @@ import java.util.function.Supplier;
 import org.joml.Vector3f;
 
 import com.createengines.CreateEngines;
+import com.createengines.content.blueprint.RecordedBlueprint;
 import com.createengines.advancement.AdvancementSting;
 import com.createengines.content.effects.GasParticleOptions;
 import com.createengines.content.effects.GlowParticleOptions;
@@ -109,12 +110,28 @@ public class CodecFuzzGameTests {
 			net.minecraft.world.level.material.Fluids.LAVA, 1)));
 	}
 
+	private static List<RecordedBlueprint> blueprintSamples() {
+		try {
+			String text = com.createengines.engine.blueprint.BlueprintCodec.encode(new com.createengines.engine.blueprint.Blueprint(
+				"Fuzz", "tester", List.of(new com.createengines.engine.blueprint.Blueprint.Part(0, 0, 0,
+					"create_engines:crankshaft", java.util.Map.of("axis", "x"), java.util.Map.of()))));
+			return List.of(new RecordedBlueprint(text, "Fuzz", 1), new RecordedBlueprint("", "", 0));
+		} catch (com.createengines.engine.blueprint.BlueprintException e) {
+			throw new IllegalStateException(e);
+		}
+	}
+
 	private static List<Subject<?>> subjects(GameTestHelper helper) {
 		List<Subject<?>> out = new ArrayList<>();
 		out.add(new Subject<>("sting packet", AdvancementSting.Payload.CODEC, CodecFuzzGameTests::stingSamples));
 		out.add(new Subject<>("gas particle", GasParticleOptions.STREAM_CODEC, CodecFuzzGameTests::gasSamples));
 		out.add(new Subject<>("glow particle", GlowParticleOptions.STREAM_CODEC, CodecFuzzGameTests::glowSamples));
 		out.add(new Subject<>("jerry can fluid", SimpleFluidContent.STREAM_CODEC, CodecFuzzGameTests::canSamples));
+		out.add(new Subject<>("blueprint import packet", com.createengines.content.blueprint.BlueprintImport.Payload.CODEC,
+			() -> List.of(new com.createengines.content.blueprint.BlueprintImport.Payload(""),
+				new com.createengines.content.blueprint.BlueprintImport.Payload("CEBP2:AAAA"))));
+		out.add(new Subject<>("blueprint item", RecordedBlueprint.STREAM_CODEC.<RegistryFriendlyByteBuf>mapStream(buf -> buf),
+			CodecFuzzGameTests::blueprintSamples));
 		StreamCodec<RegistryFriendlyByteBuf, RefiningRecipe> recipeCodec =
 			CERecipes.REFINING_SERIALIZER.get().streamCodec();
 		out.add(new Subject<>("refining recipe", recipeCodec, () -> helper.getLevel().getRecipeManager()
@@ -361,6 +378,13 @@ public class CodecFuzzGameTests {
 			return o;
 		}, problems);
 		fuzzJson("jerry can fluid json", SimpleFluidContent.CODEC, null, problems);
+		fuzzJson("blueprint item json", RecordedBlueprint.CODEC, random -> {
+			JsonObject o = new JsonObject();
+			o.addProperty("text", "CEBP1:AAAA");
+			o.addProperty("name", "Fuzz");
+			o.addProperty("parts", 1);
+			return o;
+		}, problems);
 		conclude(helper, problems, "data codecs");
 	}
 

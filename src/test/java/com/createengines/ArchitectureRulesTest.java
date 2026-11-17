@@ -35,6 +35,7 @@ class ArchitectureRulesTest {
 	/** Packages that must stay free of the game. */
 	private static final List<String> PURE_PACKAGES = List.of(
 		"com/createengines/engine/sim",
+		"com/createengines/engine/blueprint",
 		"com/createengines/smoke");
 	private static final List<String> FORBIDDEN_FOR_PURE = List.of("net.minecraft", "net.neoforged", "com.simibubi", "com.mojang",
 		"dev.engine_room", "com.tterrag", "net.createmod");

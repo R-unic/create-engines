@@ -56,3 +56,6 @@ replay_pid*
 ### OS ###
 Thumbs.db
 desktop.ini
+
+### Discord feedback (local only) ###
+feedback/

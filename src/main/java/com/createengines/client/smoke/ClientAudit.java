@@ -51,6 +51,7 @@ public final class ClientAudit {
 
 	public static void run(SmokeReport report) {
 		ServerAudit.guard(report, "models", "blocks", () -> blockModels(report));
+		ServerAudit.guard(report, "models", "painted states share their model", () -> paintedModels(report));
 		ServerAudit.guard(report, "models", "items", () -> itemModels(report));
 		ServerAudit.guard(report, "models", "partial models", () -> partialModels(report));
 		ServerAudit.guard(report, "lang", "names", () -> names(report));
@@ -58,6 +59,76 @@ public final class ClientAudit {
 		ServerAudit.guard(report, "sound", "events", () -> sounds(report));
 		ServerAudit.guard(report, "particles", "sprite sheets", () -> particles(report));
 		ServerAudit.guard(report, "tab", "creative tab", () -> creativeTab(report));
+		ServerAudit.guard(report, "compat", "viewer pages", () -> viewerPages(report));
+		ServerAudit.guard(report, "gui", "blueprint sheet", () -> {
+			try {
+				blueprintSheet(report);
+			} catch (com.createengines.engine.blueprint.BlueprintException e) {
+				throw new IllegalStateException(e);
+			}
+		});
+	}
+
+	/** The fuel and part pages the recipe viewers show, whether or not a viewer is installed: every shipped fuel has one. */
+	private static void viewerPages(SmokeReport report) {
+		var fuels = com.createengines.client.compat.ViewerEntries.fuels();
+		for (var fluid : List.of(com.createengines.registry.CEFluids.PLANT_OIL, com.createengines.registry.CEFluids.DIESEL,
+			com.createengines.registry.CEFluids.GASOLINE, com.createengines.registry.CEFluids.ETHANOL))
+			report.check("compat", "the fuel page list holds " + fluid.getId()
+				.getPath(), fuels.stream()
+					.anyMatch(fuel -> fuel.stack()
+						.getFluid() == fluid.get()
+							.getSource()),
+				"no fuel page for it");
+		for (var fuel : fuels)
+			report.check("compat", "the page of " + BuiltInRegistries.FLUID.getKey(fuel.stack()
+				.getFluid())
+				.getPath() + " has text", !com.createengines.client.compat.ViewerEntries.fuelLines(fuel)
+					.isEmpty(),
+				"an empty fuel page");
+	}
+
+	/** Draws the drafting sheet for a small engine with a plate, a full-size one with none, and a damaged one. */
+	private static void blueprintSheet(SmokeReport report) throws com.createengines.engine.blueprint.BlueprintException {
+		Minecraft minecraft = Minecraft.getInstance();
+		List<com.createengines.engine.blueprint.Blueprint.Part> small = new ArrayList<>();
+		small.add(new com.createengines.engine.blueprint.Blueprint.Part(0, 0, 0, NS + ":crankshaft", java.util.Map.of("axis", "x"),
+			java.util.Map.of()));
+		small.add(new com.createengines.engine.blueprint.Blueprint.Part(1, 0, 0, NS + ":crank_throw", java.util.Map.of("axis", "x"),
+			java.util.Map.of("throw_angle", 3)));
+		small.add(new com.createengines.engine.blueprint.Blueprint.Part(1, 1, 0, NS + ":cylinder", java.util.Map.of(), java.util.Map.of()));
+		small.add(new com.createengines.engine.blueprint.Blueprint.Part(1, 2, 0, NS + ":cylinder_head", java.util.Map.of(),
+			java.util.Map.of("fuel_metering", 12)));
+		List<com.createengines.engine.blueprint.Blueprint.Part> large = new ArrayList<>();
+		for (int i = 0; i < com.createengines.engine.blueprint.Blueprint.Limits.MAX_PARTS; i++)
+			large.add(new com.createengines.engine.blueprint.Blueprint.Part(i % 64 - 32, i / 64 % 64 - 32, i / 4096 - 0,
+				i % 3 == 0 ? NS + ":cylinder" : i % 3 == 1 ? NS + ":exhaust_manifold" : "other_mod:strange_block"));
+		var plated = new com.createengines.engine.blueprint.Blueprint("Audit", "auditor", small,
+			new com.createengines.engine.sim.PlateFigures(88.8f, 120, 4321.5f, 240));
+		var crowded = new com.createengines.engine.blueprint.Blueprint("Crowd", "", large);
+		for (var blueprint : List.of(plated, crowded)) {
+			String text = com.createengines.engine.blueprint.BlueprintCodec.encode(blueprint);
+			drawSheet(minecraft, new com.createengines.content.blueprint.RecordedBlueprint(text, blueprint.name(),
+				blueprint.parts().size()));
+			report.check("gui", "the blueprint sheet draws " + blueprint.name(), true, "");
+		}
+		drawSheet(minecraft, new com.createengines.content.blueprint.RecordedBlueprint("CEBP2:damaged", "Broken", 1));
+		report.check("gui", "the blueprint sheet draws a damaged blueprint", true, "");
+		drawScreen(minecraft, com.createengines.client.BlueprintImportScreen.create());
+		report.check("gui", "the blueprint import dialog draws", true, "");
+	}
+
+	private static void drawSheet(Minecraft minecraft, com.createengines.content.blueprint.RecordedBlueprint recorded) {
+		drawScreen(minecraft, com.createengines.client.BlueprintScreen.create(recorded));
+	}
+
+	private static void drawScreen(Minecraft minecraft, net.minecraft.client.gui.screens.Screen sheet) {
+		sheet.init(minecraft, 427, 240);
+		net.minecraft.client.gui.GuiGraphics graphics = new net.minecraft.client.gui.GuiGraphics(minecraft,
+			minecraft.renderBuffers()
+				.bufferSource());
+		sheet.render(graphics, 0, 0, 0f);
+		graphics.flush();
 	}
 
 	private static boolean missing(net.minecraft.client.renderer.texture.TextureAtlasSprite sprite) {
@@ -123,6 +194,52 @@ public final class ClientAudit {
 			}
 		}
 		report.metric("blocks with no baked model (drawn by renderers)", invisible, "");
+	}
+
+	/**
+	 * Painted states of the multipart parts (the pipes above all) must point at the baked model of the same state unpainted,
+	 * which is what keeps about 440 MB of heap from the 17 dye values (see {@link com.createengines.client.SharedCasingModels}),
+	 * and must still draw exactly what their own model would have.
+	 */
+	private static void paintedModels(SmokeReport report) {
+		var dispatcher = Minecraft.getInstance()
+			.getBlockRenderer();
+		int multipart = 0, notShared = 0, differ = 0;
+		String example = "";
+		RandomSource random = RandomSource.create(7);
+		for (Block block : ServerAudit.blocks()) {
+			if (!block.getStateDefinition()
+				.getProperties()
+				.contains(com.createengines.content.Encasing.PAINT))
+				continue;
+			List<BlockState> states = block.getStateDefinition()
+				.getPossibleStates();
+			for (int i = 0; i < states.size(); i += Math.max(1, states.size() / 300)) {
+				BlockState painted = states.get(i);
+				BakedModel model = dispatcher.getBlockModel(painted);
+				if (!(model instanceof net.minecraft.client.resources.model.MultiPartBakedModel))
+					continue;
+				multipart++;
+				BlockState bare = painted.setValue(com.createengines.content.Encasing.PAINT, com.createengines.content.CasingPaint.NONE);
+				if (dispatcher.getBlockModel(bare) != model) {
+					notShared++;
+					example = painted.toString();
+				}
+				for (Direction face : Direction.values())
+					if (model.getQuads(painted, face, random, ModelData.EMPTY, null)
+						.size() != dispatcher.getBlockModel(bare)
+							.getQuads(bare, face, random, ModelData.EMPTY, null)
+							.size()) {
+						differ++;
+						example = painted.toString();
+					}
+			}
+		}
+		report.metric("painted multipart states checked", multipart, "");
+		report.check("models", "painted multipart states share the unpainted baked model", multipart > 0 && notShared == 0,
+			notShared + " of " + multipart + " painted states still hold their own copy, e.g. " + example);
+		report.check("models", "a painted state draws what its unpainted twin draws", differ == 0,
+			differ + " faces differ, e.g. " + example);
 	}
 
 	private static boolean hasRenderer(net.minecraft.world.level.block.entity.BlockEntity entity) {
@@ -209,9 +326,15 @@ public final class ClientAudit {
 						.getFluidType()
 						.getDescriptionId());
 		need(report, "creative tab", "itemGroup." + NS + ".main");
+		for (var refusal : com.createengines.engine.blueprint.BlueprintException.Refusal.values())
+			need(report, "blueprint refusal " + refusal, NS + ".blueprint.refusal." + refusal.name()
+				.toLowerCase(java.util.Locale.ROOT));
 		// The recipe viewer pages for refining routes (JEI and EMI), whether or not a viewer is installed in this run
 		for (String key : List.of(NS + ".recipe.refining.title", NS + ".recipe.refining.speed", NS + ".recipe.refining.ratio",
-			NS + ".recipe.refining.catalyst", NS + ".recipe.refining.catalyst.tooltip", "emi.category." + NS + ".refining"))
+			NS + ".recipe.refining.catalyst", NS + ".recipe.refining.catalyst.tooltip", "emi.category." + NS + ".refining",
+			NS + ".recipe.fuels.title", NS + ".recipe.parts.title", NS + ".recipe.fuel.boost.takes", NS + ".recipe.fuel.boost.limited",
+			NS + ".recipe.part.install", NS + ".recipe.part.precision", NS + ".recipe.part.fits", "emi.category." + NS + ".fuels",
+			"emi.category." + NS + ".parts"))
 			need(report, "recipe viewer wording " + key, key);
 	}
 

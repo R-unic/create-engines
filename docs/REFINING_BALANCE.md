@@ -29,8 +29,8 @@ feed and a quarter of the catalyst. Ethanol is the one fuel that gets dearer: th
 the weakened basin, so a player who moves to the column makes more than the basin gives from 1.3 on, and a little less
 than the old basin gave. Nether wart is the catalyst, so ethanol also asks for a Nether trip.
 
-When the basin ethanol recipes are cut (with the column, not before), biodiesel asks for 1.43 times less ethanol to
-match (25 mB becomes 17), so Glycerin, and the coolant and engine oil made from it, cost what they do today.
+The basin ethanol recipes were cut in 1.3.0 together with the column, and biodiesel asks for 1.43 times less ethanol to
+match (25 mB became 17), so Glycerin, and the coolant and engine oil made from it, cost what they did before.
 
 ## Speed
 

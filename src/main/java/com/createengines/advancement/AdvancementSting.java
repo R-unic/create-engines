@@ -46,6 +46,7 @@ public final class AdvancementSting {
 		PayloadRegistrar registrar = event.registrar("1")
 			.optional();
 		registrar.playToClient(Payload.TYPE, Payload.CODEC, (payload, context) -> Receiver.play(payload.big()));
+		com.createengines.content.blueprint.BlueprintImport.register(registrar);
 	}
 
 	public static void onEarned(AdvancementEvent.AdvancementEarnEvent event) {

@@ -39,6 +39,7 @@ data:data/create_engines/loot_table/blocks/engine_window_casing.json	bf745d0a101
 data:data/create_engines/loot_table/blocks/exhaust_manifold.json	d18d2f821c6c674637f6dcfa793c3c846d84d3ef
 data:data/create_engines/loot_table/blocks/exhaust_outlet.json	c97cf6eafc27d6912fe43a51cc13751fc1e4a78c
 data:data/create_engines/loot_table/blocks/flare_stack.json	51ef82edad0f2b6fdbd0daa450a9d104eef04a63
+data:data/create_engines/loot_table/blocks/framed_blueprint.json	8f33e4ad7fdb742d0d9bef5f35a149c2c0be99ad
 data:data/create_engines/loot_table/blocks/governor.json	51f870f396385db054fde9b8931c37d91a261623
 data:data/create_engines/loot_table/blocks/heat_exchanger.json	5bd16a70b9f44bf37a0fe63b7b0d76b80a7a2940
 data:data/create_engines/loot_table/blocks/heavy_starter.json	205c33942a04e8e1b6779f98a210a8d1bddc3906
@@ -67,6 +68,7 @@ data:data/create_engines/recipe/bank_builder.json	c0c262184ff1344edf3bd5984eb8a1
 data:data/create_engines/recipe/battery.json	ab6c5fa8ada875e62424f2d3e2fa1a19ecb2b379
 data:data/create_engines/recipe/black_box.json	6717900f2417a4598709110a4198fd06a3b7dada
 data:data/create_engines/recipe/black_dye_from_soot.json	4ba80ea31d6b360979f7909261119b451f826fc9
+data:data/create_engines/recipe/blueprint.json	7a5d217ebe6610280931d52b074f411a8b18cfaf
 data:data/create_engines/recipe/cam_lobe.json	e72c7abebe2e0936ba530ad40b407d4132b99919
 data:data/create_engines/recipe/camshaft.json	4940d592647424d85913bb57af49f7b22b29869d
 data:data/create_engines/recipe/cast_flywheel.json	f49f07bfa9672c97930bfeab844a183426144b10
@@ -92,6 +94,7 @@ data:data/create_engines/recipe/exhaust_manifold.json	31cf412c551515f9485a094a8f
 data:data/create_engines/recipe/exhaust_outlet.json	7a40e5a0d017e12aef4307f4a353336f835d757f
 data:data/create_engines/recipe/flare_stack.json	5894db84be718d0487925cca15e1eee21abc223f
 data:data/create_engines/recipe/forged_piston.json	bfef1495d4ed5cf59c14709d96ab465a92be550a
+data:data/create_engines/recipe/framed_blueprint.json	950126846ddc44734880b1640420d4b80e9c2af4
 data:data/create_engines/recipe/fuel_injector.json	5d631f71a80570577c85f37e906de2711fbbf65c
 data:data/create_engines/recipe/governor.json	6ed1870bc03bcccd8dd961d899c6868cb4260b4c
 data:data/create_engines/recipe/gray_dye_from_soot.json	93786b6d66421c7497d65d2ccc0033dd7c0d4a1c
@@ -182,6 +185,20 @@ nbt:BlackBoxBlockEntity:Span
 nbt:BlackBoxBlockEntity:States
 nbt:BlackBoxBlockEntity:Tape
 nbt:BlackBoxBlockEntity:Warmth
+nbt:BlueprintGameTests:Plan
+nbt:BlueprintGameTests:axis
+nbt:BlueprintGameTests:blocks
+nbt:BlueprintGameTests:name
+nbt:BlueprintGameTests:parts
+nbt:BlueprintGameTests:piston
+nbt:BlueprintGameTests:text
+nbt:BlueprintSchematic:DataVersion
+nbt:BlueprintSchematic:blocks
+nbt:BlueprintSchematic:entities
+nbt:BlueprintSchematic:palette
+nbt:BlueprintSchematic:pos
+nbt:BlueprintSchematic:size
+nbt:BlueprintSchematic:state
 nbt:CamshaftBlockEntity:Actuated
 nbt:CamshaftBlockEntity:Locked
 nbt:CamshaftBlockEntity:Primary
@@ -270,6 +287,7 @@ nbt:EngineSummary:State
 nbt:EngineSummary:Temperature
 nbt:EngineSummary:Thinning
 nbt:EngineSummary:Torque
+nbt:FramedBlueprintBlockEntity:Plan
 nbt:GovernorBlockEntity:Held
 nbt:GovernorBlockEntity:OnEngine
 nbt:GovernorBlockEntity:Position
@@ -353,6 +371,7 @@ prop:RotorHousingBlock:fine_injector
 prop:RotorHousingBlock:injector
 prop:RotorHousingBlock:rotor
 prop:RotorHousingBlock:spark_plug
+reg:CEComponents:blueprint
 reg:CEComponents:can_fluid
 reg:CECreativeTabs:main
 reg:CEParticles:exhaust_flame
@@ -401,6 +420,7 @@ reg:block:engine_window_casing
 reg:block:exhaust_manifold
 reg:block:exhaust_outlet
 reg:block:flare_stack
+reg:block:framed_blueprint
 reg:block:governor
 reg:block:heat_exchanger
 reg:block:heavy_starter
@@ -436,6 +456,7 @@ reg:blockEntity:dyno
 reg:blockEntity:engine_cased_cogwheel
 reg:blockEntity:engine_cased_large_cogwheel
 reg:blockEntity:engine_cased_shaft
+reg:blockEntity:framed_blueprint
 reg:blockEntity:governor
 reg:blockEntity:heat_exchanger
 reg:blockEntity:maf_sensor
@@ -466,6 +487,7 @@ reg:fluid:plant_oil
 reg:fluid:sugar_mash
 reg:fluid:used_oil
 reg:item:bank_builder
+reg:item:blueprint
 reg:item:connecting_rod
 reg:item:forged_piston
 reg:item:fuel_injector

@@ -1,7 +1,7 @@
 # Roadmap: 1.0.1 to 2.0.0
 
-Written 2026-11-14, at 1.0.1. This is a plan, not a promise: the order is firm, the contents of each release are
-the current best guess, and nothing here has a date.
+Written 2026-11-14, at 1.0.1. Brought up to date 2026-11-17, at 1.3.0 (shipped). This is a plan, not a promise: the
+order is firm, the contents of each release are the current best guess, and nothing here has a date.
 
 ## Direction
 
@@ -41,16 +41,21 @@ Set by the author on 2026-11-14:
 
 ## At a glance
 
-| Version | Name | What it is | Size |
-| --- | --- | --- | --- |
-| 1.0.x | Shakedown | Close the open boxes from the 1.0 checklist | Small |
-| 1.1 | Light and Noise | Spectacle, louder consequences, advancement declutter | Medium |
-| 1.2 | Dress Parts | Cosmetic build variety | Small |
-| 1.3 | Refinery | A refinery multiblock for the fuels that already exist | Large |
-| 1.4 | Drawing Office | Blueprints, pack-maker tools, Aeronautics and other addons | Large |
-| 2.0 | Open Block | The platform, and the one breaking cleanup | Large |
+| Version | Name | What it is | Size | Status |
+| --- | --- | --- | --- | --- |
+| 1.0.x | Shakedown | Close the open boxes from the 1.0 checklist | Small | 1.0.1 shipped; some boxes still open (below) |
+| 1.1 | Light and Noise | Spectacle, louder consequences, advancement declutter | Medium | Shipped as v1.1.0 |
+| 1.2 | Dress Parts | Cosmetic build variety | Small | Shipped as v1.2.0 (v1.2.1 fixed the sound-thread memory leak) |
+| 1.3 | Refinery | A refinery multiblock for the fuels that already exist | Large | Shipped as v1.3.0, 2026-11-17 |
+| 1.4 | Drawing Office | Blueprints, pack-maker tools, Aeronautics and other addons | Large | **In progress** (see its section) |
+| 2.0 | Open Block | The platform, and the one breaking cleanup | Large | Not started |
 
 ## 1.0.x Shakedown
+
+Status 2026-11-17: 1.0.1 shipped. From the release records, the rule 8 test exists (`CompatManifestTest` and
+`LegacyWorldGameTests`) and the newest Create patch was tested (6.0.11, see `docs/COMPAT.md`). The list below was not
+ticked off item by item, so read each line as open unless a later section says it was done. The **Aeronautics
+afternoon** is open, and 1.4 needs it first (see 1.4, stage 0).
 
 - A dedicated server with two players: goggles, Display Link, Black Box, sump, starter and advancements all sync.
 - Tick time with 20 or more running engines, and particle and sound load on a big engine at default `effectDensity`.
@@ -69,6 +74,8 @@ Set by the author on 2026-11-14:
   the 1.4 work early.
 
 ## 1.1 Light and Noise
+
+**Shipped as v1.1.0.** What is below is the plan as written; the changelog in `docs/LISTING.md` is what shipped.
 
 The release that makes a running engine worth standing next to. Nothing here changes a rating or adds a failure:
 every item is sound, particles or motion on screen, and the simulation's numbers do not move.
@@ -120,6 +127,10 @@ that it leaves the tab and the ones below it stay attached, before the rest foll
 
 ## 1.2 Dress Parts
 
+**Shipped as v1.2.0.** Casing styles later also reached shafts and cogwheels (1.3.0), and the `casing_style` state on
+pipes cost about 440 MB of heap at model load (see `docs/releases/v1.3.0.md`, Exceptions): cheaper pipe models are a 1.4
+item.
+
 Two players' engines should not look alike. Every part here is cosmetic.
 
 - **Rain cap:** a hinged cap on an exhaust end that flaps with each exhaust pulse and drops shut when the engine stops.
@@ -139,6 +150,14 @@ Two players' engines should not look alike. Every part here is cosmetic.
   blueprint that wants the curve reads it from the engine or a Dynamometer.
 
 ## 1.3 Refinery
+
+**Shipped as v1.3.0 on 2026-11-17**, including leaning columns (with no joint block, as decided), the Flare Stack, Soot
+Trap, Jerry Can, the Basin goggle line, fluid-coloured sight windows and the JEI and EMI refining pages. The text below
+is the plan, with the stage notes added as the stages were built. Where it says a joint piece, the shipped design has no
+joint block: the sections draw their own arms. The Ponder page for the swap is in, and the price of the new ethanol is
+in the changelog and `docs/REFINING_BALANCE.md`. **Known gaps:** diagonal leans in x and z at once, the JEI page was
+checked by hand by the author in their own world on 2026-11-17 (works), but the machine row cannot run on this NeoForge, and the Create 6.0.10 builds 217 to 256 fail one
+Transmission GameTest (the listing says to use build 257 or newer).
 
 The same four fuels, made a better way. Plant oil, diesel, gasoline and ethanol stay exactly as they are in an
 engine. What changes is how they are made: by refining in a column, as a continuous flow, instead of batches in a basin.
@@ -233,6 +252,125 @@ basin stay as they are; only the ethanol recipes are cut (above). Moving over is
 - A Ponder page shows the swap.
 
 ## 1.4 Drawing Office
+
+**Status 2026-11-17: stages 1 to 6 and 8 are built and tested (none committed or released); stage 7 waits on the author's
+Aeronautics afternoon, and stage 9 and the release record are not started.** Nothing here has shipped. The order below is how
+the work is cut up, and every stage is additive (no existing ID, config key or number moves), so each can land on its own.
+
+| Stage | What | State |
+| --- | --- | --- |
+| 0 | The Aeronautics afternoon from 1.0.x: an engine on a simulated contraption, written down. Needs the author and the addon. It decides how big stage 7 is | Open, the author's |
+| 1 | **The blueprint format:** `engine/blueprint` (plain Java). A `Blueprint` of parts, each with a position, a block id, state properties and dials; the pasteable string `CEBP<version>:<body>`; hard limits; a policy the game side fills in. Unit tests only, no game | **Built 2026-11-17** |
+| 2 | **Record:** a Blueprint item (`blueprint`, paper and blue dye): used on any block of a built engine while blank, it records the engine's layout and every dial through the scanner, and holds it as the `CEBP` string in the `blueprint` data component. The game side of the policy (this mod's blocks only, real state properties, real dial ranges) | **Built 2026-11-17** |
+| 3 | **Apply:** one click copies the whole tune onto an identical engine, checked on the server | **Built 2026-11-17** |
+| 4 | **The drafting sheet:** the screen (the plan seen from above, the parts, the Maker's Plate figures), a Ponder page, the item tooltip. Goggle lines do not apply: a blueprint is an item, not a block | **Built 2026-11-17** |
+| 5 | **Build from it:** the Bank Builder lays the engine from the parts you carry; the blueprint exports as a Create schematic | **Built 2026-11-17** |
+| 6 | **Share and hang:** paste in, copy out, server checks; the framed blueprint | **Built 2026-11-17** |
+| 7 | **Aeronautics** compatibility and Ponder page (sized by stage 0), then the other addons | **Not started**: needs the addon, so it waits on stage 0 (the author's) |
+| 8 | **Pack-maker tools:** JEI and EMI pages for fuels and parts, three config presets, the part stats data map, the `api` package with its events (the last two preview). KubeJS bindings are not built (see below) | **Built 2026-11-17**, except KubeJS |
+| 9 | Cheaper pipe models (the `casing_style` heap cost found in 1.3), then the release record | **Part done 2026-11-17**: painted states share their model (about 90 MB of the 440 MB); the rest is open. Release record not started |
+
+**Stage 9, as far as it went (2026-11-17).** A block's dye is only a tint, yet each of its 17 values is a block state and vanilla
+bakes a multipart model (a 64-way connection table of conditions) per state. `client.SharedCasingModels` (on `ModelEvent.ModifyBakingResult`)
+points every painted state of a multipart block at its unpainted twin's baked model, so the copies are freed. Measured in the
+client audit on the same harness as 1.3: settled heap after engines 1179 MB, against 1267 MB before (about 90 MB, not the
+hoped 440 MB). The audit checks 925 painted multipart states share the model and draw the same quads. What remains is the
+unpainted bake itself, 64 shapes by encased by three styles per pipe, each with about 450 conditions; sharing across styles is
+impossible (the model differs), so the next step is a model that bakes once per shape (a custom loader) or fewer conditions per
+state, and needs a profile and a look in game. The peak at model load is not reduced, only what stays. Separately, the audit JVM
+exited with code -1073740791 after the report was written and `verifyClientSmoke` passed; not investigated.
+
+**Blueprint format, as built (stage 1).** A blueprint is a name, a builder and up to 4096 parts, each within 127 blocks of
+the origin on every axis, so one is always small enough to paste. The string is the prefix `CEBP`, the format version, a
+colon, then the body deflated and written as URL-safe base64; whitespace in a pasted string is ignored so a chat wrap does
+not matter. A later release reads every format up to its own and refuses a newer one with a message that says so. The
+decoder checks every size before using it (text length, unpacked size capped at 1 MiB so a small string cannot unpack
+into a large one, every count and string length) and ends in a `BlueprintException` with a `Refusal` and never anything
+else. `BlueprintFormatTest` freezes a string per shipped format and is never edited. What the format cannot know (which
+blocks exist, which dials a block has and their ranges) comes in through `BlueprintPolicy`, which the game side
+implements in stage 2; `BlueprintRules.check` applies it before any block is placed. Tests: `BlueprintCodecTest` (round
+trip, order-independent output, every truncation, 3000 mutations and 3000 garbage strings, a decompression bomb,
+limits), `BlueprintRulesTest`, `BlueprintFormatTest`, and the package is on `ArchitectureRulesTest`'s plain-Java list.
+
+**Recording, as built (stage 2).** `content/blueprint`: `BlueprintRecorder` reads the engine the scanner finds from the clicked
+block (`EngineLayout.members()`) into a `Blueprint`, positions relative to the primary crankshaft, each block's state
+properties that differ from the block's default, and every dial. `EngineDials` is the one table of dials: block, name, range
+and how to reach the value box, for crank throws and rotor housings (`throw_angle`), cam lobes (`lobe_angle`), heads and
+rotors (`fuel_metering`), throttles (`idle`, `wide`), MAF sensors and governors (`target`), turbos (`limit`, `anti_lag`),
+superchargers (`limit`), the transmission (`gear`) and the sump (`oil_exchange`, `signal_tank`). `EngineBlueprintPolicy` accepts
+only registered `create_engines` blocks, properties and values the block really has, and dials in range. Only this mod's
+blocks are recorded: Create's own blocks the scanner counts as part of the engine are counted and left out, and the gearing
+to a camshaft is not part of what the scanner follows, so it is not recorded either (stage 5 has to decide how a build
+handles that). Fluids, fuel and oil are not recorded. The new IDs join the 1.x promise at release: item `blueprint`, data
+component `blueprint`, recipe `blueprint`; dial names and the `CEBP` format are frozen the same way. A sneak-use on a
+recorded blueprint records over it; a plain use says what it holds. Tests (`BlueprintGameTests`): a built engine is recorded
+block by block, every dial at its setting, recording changes nothing, a non-engine is refused, what is recorded passes the
+server's rules and survives the string, the rules refuse foreign blocks, bad properties and out-of-range dials, the item data
+round-trips, no block of this mod has a property a part cannot hold, and the guard that fails if `EngineDials` differs from
+any real value box (checked by changing one range: it fails with the block and both ranges). The item data is also in
+`CodecFuzzGameTests`. **Not done:** the item has not been used by a player in a game, so the sprite, tooltip, messages and
+recipe have not been seen; Ponder page, goggle lines and the drafting sheet are stage 4.
+
+**Stages 3 to 6 and 8, as built (2026-11-17).**
+
+- **Apply (3).** `BlueprintApplier` decodes the item's string, runs `BlueprintRules.check`, records the engine as it stands and
+  compares it with the blueprint (`engine.blueprint.BlueprintDiff`, plain Java). Only if every block of this mod is in the
+  same place with the same block and state does it set the dials that differ, each through the block's own value box. If not,
+  nothing changes and the first five differences are named (missing, extra, different block, different state). The engine has
+  to be built the same way round: turned or mirrored copies are refused as a different build, because a crank's throw angle is
+  measured about its axis and a half turn flips the direction of that axis, so turning a build is not just moving blocks.
+  Use a recorded blueprint on an engine to apply it; sneak and use to record over it.
+- **The sheet (4).** Format 2 (`CEBP2:`) adds the Maker's Plate figures to the string (format 1 still reads; a frozen string for
+  each is tested). The recorder takes them from the first stamped plate fixed to the engine, and the blueprint's name from the
+  anvil name, else the plate's, else "Engine". `client.BlueprintScreen` draws the plan (east right, south down, higher blocks
+  over lower), the parts counted by block, and the figures; use the item in the air to read it. The Ponder page `blueprint`
+  covers recording, reading, applying, building, sharing and the frame.
+- **Build (5).** `BlueprintBuilder`: hold a Bank Builder with a recorded blueprint in the other hand and use it on a face; the
+  engine's crankshaft goes against that face. The whole site is checked first (loaded and inside the world and border, free to
+  build in, the player allowed by spawn protection and by the ordinary place event for every block, every part in the
+  inventory by Create's own item requirement for each block) and nothing is placed or taken unless every check passes. Creative
+  players pay nothing. A block with no item to pay for it (a cased shaft) cannot be built by hand in survival. Orientation is as
+  recorded (no turning, same reason as above). Create's own blocks are not in a blueprint, so the cam gearing and couplings are
+  not built. With an Empty Schematic in the other hand, using the blueprint in the air writes `schematics/uploaded/<player>/engine_<name>.nbt`
+  and swaps the Empty Schematic for a Create schematic of it: blocks and states only (a Schematicannon prices them through each
+  block's requirement); dials are not in a schematic, so apply the blueprint after.
+- **Share and hang (6).** A blank blueprint used in the air opens a box to paste into and a button that sends it to the server
+  (`BlueprintImport`, one client-to-server packet, at most 30,000 characters, because that packet is cut at 32 KB). The server
+  decodes it, runs every rule (this mod's blocks only, every state property and dial real and in range), stores its own
+  re-encoding, and says why it refuses anything else. Sneak and use a recorded blueprint in the air copies its string to the
+  clipboard. The Framed Blueprint (`framed_blueprint`, iron nuggets round paper) goes on any face; use a recorded blueprint on it to hang it, an
+  empty hand reads it, sneak with an empty hand takes it back, and breaking it drops the frame and the blueprint. A renderer draws the plan and the
+  figures on the paper. Cosmetic only.
+  **Joined frames (added 2026-11-17):** framed blueprints that touch edge to edge on the same wall and together make a full
+  rectangle (at most 8 by 8, none missing, all facing the same way) draw as one sheet: the plan, the name and the figures
+  are scaled up across every frame, with paper laid over the rims and bolts between them. The picture is the blueprint in
+  the top-left frame, or if that is empty the first one reading left to right and top to bottom. The other frames keep
+  what they hold (and give it back when taken or broken) but show nothing of their own. A ragged group (an L, a hole), a
+  gap, or a ninth frame in a row leaves every frame drawing alone, exactly as before. The grouping is `engine.blueprint.FrameSheet`
+  (plain Java; `FrameSheetTest`), the world side asks it through `FramedBlueprintBlockEntity.sheet()` (looked up again at most
+  once a second, since a client is not told when a neighbour changes), and the paper's right and down directions come from
+  `FramedBlueprintBlock.paperRight` and `paperDown`, the same turn the renderer uses. No block state, ID or saved data
+  changed; only what a row of existing frames looks like. GameTests: every one of the six faces joins a 2 by 2 and a lone, ragged or
+  differently facing frame does not; a row falling apart; a sheet's frames still give their blueprints back.
+- **Pack-maker tools (8).** Three config presets in the jar (`config_presets/casual.toml`, `standard.toml`, `expert.toml`):
+  tables to copy over `[balance]` and `[features]`, every key an existing setting, `standard` held equal to the shipped defaults by
+  a test. The part stats data map (**preview**, `data_maps/block/part_stats.json`, keyed by `create_engines:cylinder` or
+  `create_engines:precision_cylinder`): optional scales from 0.1 to 10 on a cylinder's compression, intake and exhaust flow, fuel per shot,
+  ignition delay, burn time, friction, inertia, displacement and injector flow; with no entry the spec object is returned unchanged, and rotor
+  housings are not covered. The `api` package (**preview**): `EngineApi.viewAt`, a read-only `EngineView`, and two events on
+  `NeoForge.EVENT_BUS`, `EngineStateChangeEvent` (a start is a change to RUNNING, a stall to STALLED) and `EngineMilestoneEvent`;
+  a listener that throws is logged and never stops an engine. JEI and EMI pages for every fuel (energy, how it lights, cold start,
+  boost tolerance) and for every installable part and the blocks it goes into. **KubeJS is not built:** the Gradle cache has no KubeJS
+  to compile against, so there is no plugin class. A script can already listen to the two API events through KubeJS's own NeoForge
+  event bridge, add fuels and part stats with datapack files, and read an engine through the API.
+- **Tests.** Unit: the codec, the rules, the diff, the file names, the part stats arithmetic, the status names. GameTests
+  (`BlueprintGameTests`, `PackToolsGameTests`): recording, applying, refusing, building in creative and survival, protection vetoes,
+  blocked and unloaded sites, the Bank Builder flow, the structure file, import (good, hostile, too long), the frame (hang, take,
+  save and load, break, fall off), the config presets, the part stats format, the API events and view, and the table of dials
+  against every real value box. Client audit: the sheet and the import dialog draw, every refusal has wording, every fuel has a page.
+  **One existing test changed:** `anEngineInAnUnloadedChunkDoesNotPullItBackIn` judged at fixed ticks (60 and 100) whether the far chunk
+  had finished generating and then unloaded, and failed depending on which other tests ran beside it; it now waits for each (up to
+  600 and 300 ticks) before judging, and still asserts the same two things.
 
 **Blueprints**
 
@@ -370,6 +508,22 @@ Queued 2026-11-16, author's decision: applies to every engine, held for 2.0 so 1
 - **Moves guarded numbers.** `compat/behaviour.txt` and `compat/trajectories.txt` are regenerated by hand in the 2.0
   change, and the diff is shown. It goes under Exceptions in the 2.0 release record. Needs new tests for the curve and a
   save of an old world to confirm it still loads.
+- **Do not ship in 1.x**, not even behind a default-off option, unless the author says otherwise.
+
+### Altitude-dependent intake (Aeronautics compat, breaking, 2.0 only)
+
+Queued 2026-11-17, author's decision: held for 2.0 so 1.x builds keep their numbers.
+
+- **Why.** For the Create Aeronautics compat, intake air should thin with altitude, so a naturally aspirated engine loses
+  power as it climbs and turbos and superchargers at high altitude become a must, not an extra.
+- **Direction.** The intake charge is scaled by an air-density factor from the engine's Y level (or the Aeronautics
+  altitude where that mod is present). Forced induction offsets it through the existing boost stages in `applyInduction`.
+  The curve and the altitude at which it starts to bite are chosen by measuring, not guessed.
+- **Moves guarded numbers** for any engine above the start altitude, so `compat/behaviour.txt` and
+  `compat/trajectories.txt` are regenerated by hand in the 2.0 change with the diff shown, and it goes under Exceptions in
+  the 2.0 release record. Needs new tests for the curve and a check that an old world still loads.
+- **Still to decide:** whether it applies in vanilla worlds without Aeronautics (build-height engines would suffer), or
+  only when Aeronautics is loaded or a config option is on.
 - **Do not ship in 1.x**, not even behind a default-off option, unless the author says otherwise.
 
 ### Optimization pass

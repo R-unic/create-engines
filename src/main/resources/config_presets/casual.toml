@@ -1,0 +1,26 @@
+# Create: Engine Engineer, preset "Casual": thriftier engines and nothing to look after. Plugs never foul, oil never thins or
+# goes off, a long crank loses no rating, and a cooled engine and an exhaust heat exchanger do a little more.
+#
+# How to use a preset: stop the game, open the world's serverconfig/create_engines-server.toml, and copy the [balance] and
+# [features] tables from here over the ones there (leave [engine], the calibration, alone). A modpack can ship the same
+# tables in its defaultconfigs folder. Every key here is an existing setting: a preset adds no dial of its own.
+
+[balance]
+	fuelConsumption = 0.6
+	precisionBonus = 1.0
+	boostStrength = 1.0
+	rotaryPower = 1.0
+	heatRecoveryOutput = 1.5
+	coolingBonus = 1.5
+	torsionalFlex = 0.0
+	alternatorEnergy = 2.0
+
+[features]
+	forcedInduction = true
+	sparkFouling = false
+	oilDilution = false
+	oilAgeing = false
+	engineTemperature = true
+	pilotInjection = true
+	rotaryEngines = true
+	heatRecovery = true

@@ -8,6 +8,8 @@ import java.util.function.Predicate;
 import org.jetbrains.annotations.Nullable;
 
 import com.createengines.advancement.CETriggers;
+import com.createengines.content.blueprint.BlueprintItem;
+import com.createengines.content.blueprint.RecordedBlueprint;
 import com.createengines.advancement.Milestone;
 import com.createengines.config.CEConfig;
 import com.createengines.content.camshaft.CamshaftBlock;
@@ -124,8 +126,13 @@ public class BankBuilderItem extends Item {
 			cycle(stack, level, player);
 			return InteractionResult.sidedSuccess(level.isClientSide);
 		}
-		if (!level.isClientSide)
-			build(level, context.getClickedPos(), context.getClickedFace(), layout(stack), precision(stack), player);
+		if (!level.isClientSide) {
+			RecordedBlueprint plan = BlueprintItem.recorded(player.getOffhandItem());
+			if (plan != null)
+				BlueprintItem.buildFor(level, context, plan, player);
+			else
+				build(level, context.getClickedPos(), context.getClickedFace(), layout(stack), precision(stack), player);
+		}
 		return InteractionResult.sidedSuccess(level.isClientSide);
 	}
 
@@ -152,6 +159,10 @@ public class BankBuilderItem extends Item {
 			.copy()
 			.withStyle(ChatFormatting.AQUA));
 		tooltip.add(CELang.translate("tool.bank_builder.hint")
+			.component()
+			.copy()
+			.withStyle(ChatFormatting.DARK_GRAY));
+		tooltip.add(CELang.translate("tooltip.bank_builder.blueprint")
 			.component()
 			.copy()
 			.withStyle(ChatFormatting.DARK_GRAY));

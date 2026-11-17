@@ -276,4 +276,99 @@ public class RefiningColumnGameTests {
 			helper.succeed();
 		});
 	}
+
+	@GameTest(template = "empty", timeoutTicks = 300)
+	public static void aCatalystOfAnotherRouteIsNamedAsTheWrongOne(GameTestHelper helper) {
+		build(helper, 1, BlazeBurnerBlock.HeatLevel.KINDLED);
+		BlockPos reboiler = new BlockPos(1, BASE_Y, 1);
+		helper.runAfterDelay(15, () -> {
+			fluids(helper, reboiler).fill(of(CEFluids.PLANT_OIL.getSource(), 500), IFluidHandler.FluidAction.EXECUTE);
+			// Nether wart is the ethanol catalyst: it is a valid item for the slot but not for plant oil
+			helper.getLevel()
+				.getCapability(Capabilities.ItemHandler.BLOCK, helper.absolutePos(reboiler), Direction.UP)
+				.insertItem(0, new ItemStack(Items.NETHER_WART, 4), false);
+		});
+		helper.runAfterDelay(200, () -> {
+			ColumnPortBlockEntity controller = port(helper, reboiler);
+			helper.assertTrue(controller.productTank()
+				.isEmpty(), "the wrong catalyst makes nothing");
+			helper.assertTrue(controller.limit() == com.createengines.engine.sim.RefiningColumn.Limit.NO_CATALYST,
+				"it should be held back for catalyst, it says " + controller.limit());
+			helper.assertTrue(controller.wrongCatalyst(), "it should say the catalyst loaded is the wrong one");
+			helper.succeed();
+		});
+	}
+
+	@GameTest(template = "empty", timeoutTicks = 300)
+	public static void theRightCatalystIsNeverCalledWrong(GameTestHelper helper) {
+		build(helper, 1, BlazeBurnerBlock.HeatLevel.KINDLED);
+		BlockPos reboiler = new BlockPos(1, BASE_Y, 1);
+		helper.runAfterDelay(15, () -> {
+			fluids(helper, reboiler).fill(of(CEFluids.PLANT_OIL.getSource(), 500), IFluidHandler.FluidAction.EXECUTE);
+			helper.getLevel()
+				.getCapability(Capabilities.ItemHandler.BLOCK, helper.absolutePos(reboiler), Direction.UP)
+				.insertItem(0, new ItemStack(Items.COAL, 4), false);
+		});
+		helper.runAfterDelay(100, () -> {
+			ColumnPortBlockEntity controller = port(helper, reboiler);
+			helper.assertTrue(!controller.wrongCatalyst(), "coal is the plant oil catalyst");
+			helper.assertTrue(controller.limit() != com.createengines.engine.sim.RefiningColumn.Limit.NO_CATALYST,
+				"holding coal it should not be held back for catalyst, it says " + controller.limit());
+			helper.succeed();
+		});
+	}
+
+	@GameTest(template = "empty", timeoutTicks = 300)
+	public static void growingAColumnKeepsItsCatalyst(GameTestHelper helper) {
+		// A 1 wide column at (2, 2) takes catalyst, then the other three columns of a 2 wide square are built around it:
+		// the controller moves to the corner (1, 1) and the catalyst must go with it
+		for (int y = 0; y < 4; y++)
+			helper.setBlock(new BlockPos(2, BASE_Y + y, 2), y == 0 ? CEBlocks.REBOILER.getDefaultState()
+				: y == 3 ? CEBlocks.CONDENSER.getDefaultState() : CEBlocks.COLUMN_SECTION.getDefaultState());
+		BlockPos old = new BlockPos(2, BASE_Y, 2);
+		BlockPos corner = new BlockPos(1, BASE_Y, 1);
+		helper.runAfterDelay(40, () -> {
+			if (!port(helper, old).isController())
+				helper.fail("the lone column should be formed and running by now");
+			helper.getLevel()
+				.getCapability(Capabilities.ItemHandler.BLOCK, helper.absolutePos(old), Direction.UP)
+				.insertItem(0, new ItemStack(Items.COAL, 5), false);
+			for (int x = 1; x <= 2; x++)
+				for (int z = 1; z <= 2; z++)
+					if (x != 2 || z != 2)
+						for (int y = 0; y < 4; y++)
+							helper.setBlock(new BlockPos(x, BASE_Y + y, z), y == 0 ? CEBlocks.REBOILER.getDefaultState()
+								: y == 3 ? CEBlocks.CONDENSER.getDefaultState() : CEBlocks.COLUMN_SECTION.getDefaultState());
+		});
+		helper.succeedWhen(() -> {
+			helper.assertTrue(port(helper, corner).isController(), "the corner Reboiler should now run the column");
+			helper.assertTrue(port(helper, corner).catalystStack()
+				.getCount() == 5, "the controller should hold the 5 coal, it holds " + port(helper, corner).catalystStack());
+			helper.assertTrue(port(helper, old).catalystStack()
+				.isEmpty(), "the old Reboiler should have none left");
+		});
+	}
+
+	@GameTest(template = "empty", timeoutTicks = 200)
+	public static void handingCatalystToAReboilerLoadsItAndAFullSlotRefusesMore(GameTestHelper helper) {
+		build(helper, 1, BlazeBurnerBlock.HeatLevel.KINDLED);
+		BlockPos reboiler = new BlockPos(1, BASE_Y, 1);
+		helper.runAfterDelay(15, () -> {
+			var player = helper.makeMockPlayer(net.minecraft.world.level.GameType.SURVIVAL);
+			player.setItemInHand(net.minecraft.world.InteractionHand.MAIN_HAND, new ItemStack(Items.COAL, 10));
+			helper.useBlock(reboiler, player);
+			helper.assertTrue(port(helper, reboiler).catalystStack()
+				.getCount() == 10, "the 10 coal should be in the slot");
+			helper.assertTrue(player.getMainHandItem()
+				.isEmpty(), "and out of the hand");
+			player.setItemInHand(net.minecraft.world.InteractionHand.MAIN_HAND,
+				new ItemStack(Items.COAL, ColumnPortBlockEntity.CATALYST_SLOT));
+			helper.useBlock(reboiler, player);
+			helper.assertTrue(port(helper, reboiler).catalystStack()
+				.getCount() == ColumnPortBlockEntity.CATALYST_SLOT, "the slot fills to its limit");
+			helper.assertTrue(player.getMainHandItem()
+				.getCount() == 10, "what did not fit stays in the hand, it holds " + player.getMainHandItem());
+			helper.succeed();
+		});
+	}
 }

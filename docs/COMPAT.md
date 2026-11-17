@@ -17,12 +17,12 @@ Run it in a private copy of the checkout (see docs/SMOKE.md "Running it"). Each 
 | Flywheel off | `runSmokeAuditFlywheelOff` (seeds `flywheel-client.toml` with `backend = "OFF"`) | see "Last recorded results" |
 | Sodium 0.8.13 | `runSmokeAuditSodium` (Sodium on the early classpath, as its jar requires) | see "Last recorded results" |
 | EMI 1.1.24 | `runSmokeAuditEmi` (the jar is copied into the row's `mods` folder; the audit fails unless EMI loaded and its plugin was given every refining route) | 2026-11-17, private copy: 1005 checks, 0 failures, 0 warnings; EMI shows the 4 shipped refining routes |
-| JEI 19.70 | `runSmokeAuditJei`, same method, not part of `compatMatrix` | **open: not run.** JEI 19.70.0.469 asks for NeoForge 21.1.238 and this build is on 21.1.219, so the game stops at startup. Needs an older JEI 19.x that accepts 21.1.219 (not in the Gradle cache), or a build on a newer NeoForge. Until then the JEI page is checked only by compiling against JEI's API and by the jar tests (`RecipeViewerCompatTest`) |
+| JEI 19.70 | `runSmokeAuditJei`, same method, not part of `compatMatrix` | **author-tested, machine row still open.** The author ran the game with JEI in their own world on 2026-11-17 and reported the refining page works (version of JEI and NeoForge not recorded). The machine row has never run: JEI 19.70.0.469 asks for NeoForge 21.1.238 and this build is on 21.1.219, so `runSmokeAuditJei` stops at startup. Until a JEI that this build accepts is in the Gradle cache (or the build moves to a newer NeoForge), the page is covered by compiling against JEI's API, `RecipeViewerCompatTest`, and that hand check |
 | Oldest and newest supported Create | `-Pcreate_version=...` on `runGameTestServer` (and `runSmokeAudit` for the newest). Create 6.0.11 has no `slim` jar and needs Ponder 1.0.92 (`-Pponder_version=1.0.92`), and its build file line must drop `:slim`, in a private copy | 1.3.0, 2026-11-17: 6.0.11-346 passes the audit (995 checks, at 4854d59) and 224 GameTests (re-run at 12593bf); 6.0.10-257 passes 224 GameTests at 12593bf, and -265 and -281 passed at 4854d59; 6.0.10-217, -249, -251, -255 and -256 fail `aTransmissionShiftsFromNeutralToAuto` only. Listing says build 257 or newer |
 | Create Aeronautics (1.4 work) | not built yet | **open: needs the addon and the 1.4 work** |
 | Other Create addons | the list is the author's to choose | **open: no addons chosen** |
 
-What a row checks, beyond the audit's own sweep: no log errors beyond the allow-list, every model and all 89 Ponder
+What a row checks, beyond the audit's own sweep: no log errors beyond the allow-list, every model and all 91 Ponder
 pages render, engines run and power their networks, and the fleet leaks nothing.
 
 Not yet automated for any row: a world saved without the mod opening with it, and a world saved with the mod opening
@@ -38,3 +38,5 @@ Run 2026-11-16, private copy, Create 6.0.10, NeoForge 21.1.219:
 | Sodium 0.8.13 (loaded, confirmed in the log) | 964 | 0 | 1 (the same Ponder page) |
 
 The warnings are the audit's existing ones and are not specific to a row. Both rows are green, so Flywheel off and Sodium 0.8.13 are supported on this build.
+
+1.4 development, 2026-11-17, private copy (`ce-stage2-copy`), Create 6.0.10-281: `./gradlew compatMatrix` green. Flywheel off 1053 checks, Sodium 0.8.13 1053, EMI 1.1.24 1056 (the three extra are the EMI fuel and part page checks), each with 0 failures and 0 warnings. These are development numbers from before any release record; they were taken with the blueprint, frame, import, API and pack-tool work in the tree but not committed.

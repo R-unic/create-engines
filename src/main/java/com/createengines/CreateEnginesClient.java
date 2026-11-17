@@ -34,10 +34,15 @@ public class CreateEnginesClient {
 		modContainer.registerConfig(ModConfig.Type.CLIENT, CEClientConfig.SPEC);
 		com.createengines.content.CESpriteShifts.STYLED_CASING_BEHAVIOUR = com.createengines.client.StyledCasingCTBehaviour::new;
 		CEPartialModels.init();
+		com.createengines.content.blueprint.BlueprintViewer.opener = com.createengines.client.BlueprintScreen::open;
+		com.createengines.content.blueprint.BlueprintViewer.copier = com.createengines.client.BlueprintImportScreen::copy;
+		com.createengines.content.blueprint.BlueprintViewer.importer = com.createengines.client.BlueprintImportScreen::open;
 		modEventBus.addListener(CreateEnginesClient::registerBucketColours);
 		modEventBus.addListener(CreateEnginesClient::registerParticles);
+		modEventBus.addListener(CreateEnginesClient::registerRenderers);
 		modEventBus.addListener(CreateEnginesClient::registerCasingColours);
 		modEventBus.addListener(CreateEnginesClient::registerColumnColours);
+		modEventBus.addListener(com.createengines.client.SharedCasingModels::onModifyBakingResult);
 		NeoForge.EVENT_BUS.addListener(FuelTooltips::onTooltip);
 		NeoForge.EVENT_BUS.addListener(CreateEnginesClient::onLoggingOut);
 		PonderIndex.addPlugin(new CEPonderPlugin());
@@ -96,6 +101,12 @@ public class CreateEnginesClient {
 			int r = (colour >> 16 & 0xFF), g = (colour >> 8 & 0xFF), b = (colour & 0xFF);
 			return (r + (255 - r) / 4) << 16 | (g + (255 - g) / 4) << 8 | (b + (255 - b) / 4);
 		}, com.createengines.registry.CEBlocks.COLUMN_SECTION.get());
+	}
+
+	/** The frame draws the blueprint hung in it. */
+	private static void registerRenderers(net.neoforged.neoforge.client.event.EntityRenderersEvent.RegisterRenderers event) {
+		event.registerBlockEntityRenderer(com.createengines.registry.CEBlockEntities.FRAMED_BLUEPRINT.get(),
+			com.createengines.client.FramedBlueprintRenderer::new);
 	}
 
 	private static void registerParticles(RegisterParticleProvidersEvent event) {

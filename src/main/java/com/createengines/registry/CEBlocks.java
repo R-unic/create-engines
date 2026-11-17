@@ -7,6 +7,7 @@ import com.createengines.content.CasingStyle;
 import com.createengines.content.EngineCasedCogwheelBlock;
 import com.createengines.content.EngineCasedShaftBlock;
 import com.createengines.content.EngineCasingBlock;
+import com.createengines.content.blueprint.FramedBlueprintBlock;
 import com.createengines.content.plate.MakerPlateBlock;
 import com.createengines.content.raincap.RainCapBlock;
 import com.createengines.content.Encasing;
@@ -352,6 +353,20 @@ public final class CEBlocks {
 		.item()
 		.transform(ModelGen.customItemModel())
 		.register();
+
+	/** A frame that hangs a recorded blueprint on a wall as its drawing, with the figures from its Maker's Plate. */
+	public static final BlockEntry<FramedBlueprintBlock> FRAMED_BLUEPRINT =
+		REGISTRATE.block("framed_blueprint", FramedBlueprintBlock::new)
+			.lang("Framed Blueprint")
+			.initialProperties(SharedProperties::softMetal)
+			.properties(p -> part(p)
+				.mapColor(MapColor.COLOR_BLUE))
+			.transform(TagGen.pickaxeOnly())
+			.blockstate((c, p) -> BlockStateGen.directionalBlockIgnoresWaterlogged(c, p,
+				s -> AssetLookup.partialBaseModel(c, p)))
+			.item()
+			.transform(ModelGen.customItemModel())
+			.register();
 
 	public static final BlockEntry<StarterBlock> STARTER = REGISTRATE.block("starter", StarterBlock::new)
 		.initialProperties(SharedProperties::softMetal)

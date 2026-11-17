@@ -2,10 +2,14 @@ package com.createengines.content.refinery;
 
 import com.createengines.engine.sim.ColumnShape.Part;
 import com.createengines.registry.CEBlockEntities;
+import com.createengines.registry.CELang;
 import com.simibubi.create.content.equipment.wrench.IWrenchable;
 import com.simibubi.create.foundation.block.IBE;
 
+import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
+import net.minecraft.sounds.SoundEvents;
+import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.ItemInteractionResult;
 import net.minecraft.world.entity.player.Player;
@@ -46,6 +50,19 @@ public class ColumnPortBlock extends Block implements IWrenchable, IBE<ColumnPor
 				int moved = stack.getCount() - left.getCount();
 				if (moved > 0 && !player.isCreative())
 					stack.shrink(moved);
+				if (moved > 0) {
+					level.playSound(null, pos, SoundEvents.ITEM_FRAME_ADD_ITEM, SoundSource.BLOCKS, 0.8f, 1f);
+					ItemStack held = port.heldCatalyst();
+					player.displayClientMessage(CELang.translate("goggles.column.catalyst", held.getCount(), held.getHoverName()
+						.getString())
+						.style(ChatFormatting.YELLOW)
+						.component(), true);
+				} else {
+					// The slot is full, or holds a different catalyst: say so instead of doing nothing
+					player.displayClientMessage(CELang.translate("column.catalyst.refused")
+						.style(ChatFormatting.RED)
+						.component(), true);
+				}
 			}
 			return ItemInteractionResult.sidedSuccess(level.isClientSide);
 		}

@@ -556,6 +556,14 @@ public final class SmokeAudit {
 				continue;
 			int given = com.createengines.client.compat.CompatStatus.refiningRoutes(viewer);
 			REPORT.metric(viewer + " refining routes shown", given, "");
+			int fuels = com.createengines.client.compat.ViewerEntries.fuels().size();
+			int parts = com.createengines.client.compat.ViewerEntries.parts().size();
+			REPORT.check("compat", viewer + " was given every fuel and every part page",
+				fuels >= 4 && parts > 0 && com.createengines.client.compat.CompatStatus.fuelPages(viewer) == fuels
+					&& com.createengines.client.compat.CompatStatus.partPages(viewer) == parts,
+				viewer + " should show " + fuels + " fuels and " + parts + " parts, but its plugin registered "
+					+ com.createengines.client.compat.CompatStatus.fuelPages(viewer) + " and "
+					+ com.createengines.client.compat.CompatStatus.partPages(viewer) + " (-1 means the plugin never ran)");
 			REPORT.check("compat", viewer + " was given every refining route", routes > 0 && given == routes,
 				viewer + " is installed and the game has " + routes + " refining routes, but its plugin registered " + given
 					+ " (-1 means the plugin never ran)");

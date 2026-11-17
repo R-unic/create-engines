@@ -109,6 +109,8 @@ public class CEPonderPlugin implements PonderPlugin {
 			.addStoryBoard("soot_trap", RefineryScenes::sootTrap);
 		scenes.forComponents(CEItems.JERRY_CAN)
 			.addStoryBoard("jerry_can", RefineryScenes::jerryCan);
+		scenes.forComponents(CEItems.BLUEPRINT, CEBlocks.FRAMED_BLUEPRINT)
+			.addStoryBoard("blueprint", BlueprintScenes::blueprint);
 		for (String fuel : new String[] {"plant_oil", "diesel", "gasoline", "sugar_mash", "ethanol", "glycerin", "used_oil", "coolant"})
 			helper.forComponents(CreateEngines.asResource(fuel + "_bucket"))
 				.addStoryBoard("fuels", EngineScenes::fuels);

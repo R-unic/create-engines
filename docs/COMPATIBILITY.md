@@ -29,7 +29,9 @@ Standing rules, from 1.3 on, until a major release (2.0):
   `ExactRpm` for the pattern).
 - A new fixture is added for each shipped version (`engine_1_4.snbt`, ...) and loaded by a test beside the old one.
   Fixtures from shipped versions are never regenerated.
-- The 1.3 baseline may still be topped up while 1.3 is unreleased; once it ships it is frozen.
+- The 1.3 baseline shipped with v1.3.0 and is frozen: its fixture (`engine_1_3.snbt`) and its lines in `behaviour.txt`,
+  `trajectories.txt` and `manifest.txt` are never edited. 1.4's own fixture is recorded from the v1.3.0 source with
+  `scripts/record-corpus.ps1 v1.3.0` and kept beside it.
 - At 2.0 the baselines are deliberately regenerated and the old fixtures are retired in one reviewed change.
 
 ## Known gaps

@@ -237,4 +237,51 @@ class RefiningColumnTest {
 		assertTrue(Heat.SUPERHEATED.satisfies(Heat.HEATED) && Heat.HEATED.satisfies(Heat.NONE));
 		assertTrue(!Heat.HEATED.satisfies(Heat.SUPERHEATED) && !Heat.NONE.satisfies(Heat.HEATED));
 	}
+
+	// A 3 wide, 4 tall column passes exactly 9 mB a tick, so an extra banked mB shows as 10
+
+	@Test
+	void aTickWithNoFeedBanksNothingForTheNext() {
+		RefiningColumn column = new RefiningColumn();
+		Step dry = column.tick(NO_CATALYST, 3, 4, Heat.HEATED, 0, PLENTY, PLENTY);
+		assertEquals(Limit.NO_FEED, dry.limit());
+		assertEquals(9, column.tick(NO_CATALYST, 3, 4, Heat.HEATED, PLENTY, PLENTY, PLENTY).feedUsed());
+	}
+
+	@Test
+	void aFullProductTankBanksNothingForTheNext() {
+		RefiningColumn column = new RefiningColumn();
+		Step full = column.tick(NO_CATALYST, 3, 4, Heat.HEATED, PLENTY, 0, PLENTY);
+		assertEquals(Limit.PRODUCT_FULL, full.limit());
+		assertEquals(0, full.feedUsed());
+		assertEquals(9, column.tick(NO_CATALYST, 3, 4, Heat.HEATED, PLENTY, PLENTY, PLENTY).feedUsed());
+	}
+
+	@Test
+	void noRoomAtAllPassesNoFeedEvenWhenTheRouteMakesLessThanItTakes() {
+		// Ethanol: 1000 in, 170 out. With no room a mB of feed would still need to be refused
+		RefiningRoute ethanol = new RefiningRoute(1000, 170, Heat.HEATED, 0, 0.5);
+		Step step = new RefiningColumn().tick(ethanol, 3, 4, Heat.HEATED, PLENTY, 0, 0);
+		assertEquals(0, step.feedUsed());
+		assertEquals(Limit.PRODUCT_FULL, step.limit());
+	}
+
+	@Test
+	void catalystThatJustCoversTheTickIsNotCalledALimit() {
+		// One item serves 9 mB and the tick passes 9: it is used up exactly, and nothing held the column back
+		RefiningRoute exact = new RefiningRoute(1000, 1100, Heat.HEATED, 9, 1);
+		Step step = new RefiningColumn().tick(exact, 3, 4, Heat.HEATED, PLENTY, PLENTY, 1);
+		assertEquals(9, step.feedUsed());
+		assertEquals(1, step.catalystUsed());
+		assertEquals(Limit.NONE, step.limit());
+	}
+
+	@Test
+	void catalystIsUsedUpOnlyAsFastAsItIsNeededWhenItDoesNotDivideTheTick() {
+		// 12 mB an item against 9 a tick: over 1200 ticks 10800 mB of feed takes exactly 900 items, none wasted
+		RefiningRoute twelve = new RefiningRoute(1000, 1100, Heat.HEATED, 12, 1);
+		long[] done = run(new RefiningColumn(), twelve, 3, 4, Heat.HEATED, 1200);
+		assertEquals(10800, done[0]);
+		assertEquals(900, done[2]);
+	}
 }

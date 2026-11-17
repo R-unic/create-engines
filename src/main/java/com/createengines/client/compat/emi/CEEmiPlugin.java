@@ -4,8 +4,11 @@ import java.util.List;
 
 import com.createengines.CreateEngines;
 import com.createengines.client.compat.CompatStatus;
+import com.createengines.client.compat.ViewerEntries;
 import com.createengines.content.refinery.RefiningRecipe;
 import com.createengines.registry.CEBlocks;
+import com.createengines.registry.CEFluids;
+import com.createengines.registry.CEItems;
 import com.createengines.registry.CERecipes;
 
 import dev.emi.emi.api.EmiEntrypoint;
@@ -26,8 +29,23 @@ public class CEEmiPlugin implements EmiPlugin {
 	public static final EmiRecipeCategory REFINING = new EmiRecipeCategory(CreateEngines.asResource("refining"),
 		EmiStack.of(CEBlocks.REBOILER.get()));
 
+	public static final EmiRecipeCategory FUELS = new EmiRecipeCategory(CreateEngines.asResource("fuels"),
+		EmiStack.of(CEFluids.DIESEL.getBucket()
+			.get()));
+
+	public static final EmiRecipeCategory PARTS = new EmiRecipeCategory(CreateEngines.asResource("parts"),
+		EmiStack.of(CEItems.PISTON.get()));
+
 	@Override
 	public void register(EmiRegistry registry) {
+		registry.addCategory(FUELS);
+		registry.addCategory(PARTS);
+		var fuels = ViewerEntries.fuels();
+		var parts = ViewerEntries.parts();
+		fuels.forEach(fuel -> registry.addRecipe(new FuelEmiRecipe(fuel)));
+		parts.forEach(part -> registry.addRecipe(new PartEmiRecipe(part)));
+		CompatStatus.pagesRegistered("emi", fuels.size(), parts.size());
+		CreateEngines.LOGGER.info("EMI: showing {} fuels and {} parts", fuels.size(), parts.size());
 		registry.addCategory(REFINING);
 		registry.addWorkstation(REFINING, EmiStack.of(CEBlocks.REBOILER.get()));
 		registry.addWorkstation(REFINING, EmiStack.of(CEBlocks.COLUMN_SECTION.get()));

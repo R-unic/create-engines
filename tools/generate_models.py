@@ -386,6 +386,26 @@ def maker_plate():
     write("maker_plate/item", textures, elements)
 
 
+def framed_blueprint():
+    """A frame for a blueprint, modelled facing up: a cast iron frame round a sheet of blueprint paper. The renderer draws
+    the plan and the figures on the paper (the paper is 1.2 pixels up, see FramedBlueprintRenderer)."""
+    textures = {"frame": IRON, "rim": BRASS_CASING, "paper": "create_engines:block/blueprint_paper", "bolt": BRASS,
+                "particle": IRON}
+    elements = [
+        box((2, 0, 2), (14, 1.0, 14), "frame"),
+        box((2, 1.0, 2), (14, 1.5, 2.7), "rim"),
+        box((2, 1.0, 13.3), (14, 1.5, 14), "rim"),
+        box((2, 1.0, 2.7), (2.7, 1.5, 13.3), "rim"),
+        box((13.3, 1.0, 2.7), (14, 1.5, 13.3), "rim"),
+        box((2.7, 1.0, 2.7), (13.3, 1.2, 13.3), "paper"),
+    ]
+    for x in (2.1, 12.9):
+        for z in (2.1, 12.9):
+            elements.append(box((x, 1.5, z), (x + 1, 1.8, z + 1), "bolt"))
+    write("framed_blueprint/block", textures, elements)
+    write("framed_blueprint/item", textures, elements)
+
+
 def to_frame(point, direction):
     """Maps a point from the 'arm runs out of the north face' frame to the frame where it runs out of direction."""
     x, y, z = point
@@ -1437,6 +1457,7 @@ def main():
     exhaust_outlet()
     rain_cap()
     maker_plate()
+    framed_blueprint()
     pipes()
     starter()
     battery()

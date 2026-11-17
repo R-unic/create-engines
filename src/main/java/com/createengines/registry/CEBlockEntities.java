@@ -33,6 +33,7 @@ import com.createengines.content.supercharger.SuperchargerBlockEntity;
 import com.createengines.content.supercharger.SuperchargerVisual;
 import com.createengines.content.transmission.TransmissionBlockEntity;
 import com.createengines.content.turbo.TurbochargerBlockEntity;
+import com.createengines.content.blueprint.FramedBlueprintBlockEntity;
 import com.createengines.content.plate.MakerPlateBlockEntity;
 import com.createengines.content.plate.MakerPlateRenderer;
 import com.createengines.content.raincap.RainCapBlockEntity;
@@ -168,6 +169,11 @@ public final class CEBlockEntities {
 		.blockEntity("rain_cap", RainCapBlockEntity::new)
 		.validBlocks(CEBlocks.RAIN_CAP)
 		.renderer(() -> RainCapRenderer::new)
+		.register();
+
+	public static final BlockEntityEntry<FramedBlueprintBlockEntity> FRAMED_BLUEPRINT = REGISTRATE
+		.blockEntity("framed_blueprint", FramedBlueprintBlockEntity::new)
+		.validBlocks(CEBlocks.FRAMED_BLUEPRINT)
 		.register();
 
 	public static final BlockEntityEntry<MakerPlateBlockEntity> MAKER_PLATE = REGISTRATE
