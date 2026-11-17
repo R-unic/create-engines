@@ -20,7 +20,8 @@ Sounds:
   supercharger_whine a seamless loop of a roots blower: gear whine over the beat of its lobes; pitch follows its shaft
   engine_catch       an engine catching on the starter: a few firings, each sooner and harder than the last
   engine_stall       an engine dying: its last firings slowing and weakening, a clunk and a sigh from the exhaust
-  exhaust_pop1..3    unburned fuel lighting in a hot exhaust: a crack, a short thump and the ring of the pipe
+  exhaust_pop1..3    unburned fuel lighting in a hot exhaust (the backfire): a hard-driven burst of noise with its weight in
+                     the low mids, close reflections and a dense crackle behind it; no fixed tones
   metal_tick1..3     hot metal ticking as it cools: a small bright tink
   preignition_knock1..3  a charge lighting itself early under boost: a quick run of hard metallic knocks
   engine_clatter     a seamless loop of valve gear: soft tappet knocks over the hum of the gears; pitch follows the crank
@@ -66,6 +67,8 @@ def load_sndfile():
             lib.sf_write_float.restype = ctypes.c_int64
             lib.sf_write_float.argtypes = [ctypes.c_void_p, ctypes.POINTER(ctypes.c_float), ctypes.c_int64]
             lib.sf_close.argtypes = [ctypes.c_void_p]
+            lib.sf_command.restype = ctypes.c_int
+            lib.sf_command.argtypes = [ctypes.c_void_p, ctypes.c_int, ctypes.c_void_p, ctypes.c_int]
             return lib
     return None
 
@@ -87,6 +90,11 @@ def write_ogg_ffmpeg(path, samples):
                        check=True)
 
 
+# Sounds that are mostly noise bursts, which the encoder's default quality smears into a grainy, crushed-sounding warble.
+# Only these are encoded at a higher quality; the others keep their recordings.
+HIGH_QUALITY = {"exhaust_pop1": 0.8, "exhaust_pop2": 0.8, "exhaust_pop3": 0.8}
+
+
 def write_ogg(lib, name, samples):
     os.makedirs(OUT, exist_ok=True)
     path = os.path.join(OUT, name + ".ogg")
@@ -98,6 +106,11 @@ def write_ogg(lib, name, samples):
     handle = lib.sf_open(path.encode(), SFM_WRITE, ctypes.byref(info))
     if not handle:
         sys.exit("Could not open " + path)
+    quality = HIGH_QUALITY.get(name)
+    if quality is not None:
+        # SFC_SET_VBR_ENCODING_QUALITY: libsndfile's default is low, and short bursts of noise show it as a warble
+        q = ctypes.c_double(quality)
+        lib.sf_command(handle, 0x1300, ctypes.byref(q), 8)
     data = np.ascontiguousarray(samples, dtype=np.float32)
     lib.sf_write_float(handle, data.ctypes.data_as(ctypes.POINTER(ctypes.c_float)), len(data))
     lib.sf_close(handle)
@@ -111,6 +124,10 @@ def band(noise, low, high, order=3):
 
 def lowpass(noise, cutoff, order=3):
     return signal.sosfilt(signal.butter(order, cutoff, btype="lowpass", fs=SR, output="sos"), noise)
+
+
+def highpass(noise, cutoff, order=2):
+    return signal.sosfilt(signal.butter(order, cutoff, btype="highpass", fs=SR, output="sos"), noise)
 
 
 def finish(mix, peak=0.9):
@@ -327,18 +344,50 @@ def engine_stall():
 
 
 def exhaust_pop(seed, pitch):
-    """Unburned fuel lighting in a hot exhaust: a hard crack, a short thump behind it and the pipe ringing after."""
+    """Unburned fuel lighting in a hot exhaust, as a real backfire sounds: a loud, hard-driven burst of noise with its
+    weight in the low mids (too much low end is a door slamming, too much top is keys dropped), dying over a tenth of a
+    second, and behind it a dense, uneven crackle of tiny pops rather than a few separate clicks. There are no fixed
+    tones and no isolated clicks in it."""
     rng = np.random.default_rng(seed)
-    n = int(0.32 * SR)
+    n = int(0.34 * SR)
     t = np.arange(n) / SR
-    rise = np.minimum(t / 0.0008, 1)
-    crack = band(rng.standard_normal(n), 900 * pitch, 7500, 2) * rise * np.exp(-t / 0.009)
-    thump = np.sin(2 * np.pi * np.cumsum((70 + 160 * np.exp(-t / 0.012)) * pitch) / SR) * rise * np.exp(-t / 0.035)
-    ring = (np.sin(2 * np.pi * 318 * pitch * t) + 0.55 * np.sin(2 * np.pi * 655 * pitch * t + 0.9)
-            + 0.3 * np.sin(2 * np.pi * 1012 * pitch * t + 2.0)) * np.minimum(t / 0.004, 1) * np.exp(-t / 0.05)
-    tail = band(rng.standard_normal(n), 300, 2200, 2) * np.minimum(t / 0.01, 1) * np.exp(-t / 0.06)
-    mix = 0.9 * crack / np.max(np.abs(crack)) + 0.7 * thump + 0.22 * ring + 0.18 * tail / np.max(np.abs(tail))
-    mix = np.tanh(1.8 * mix)
+
+    def burst(at, level, tone, length):
+        k = int(at * SR)
+        m = n - k
+        u = np.arange(m) / SR
+        acc = np.zeros(m)
+        for lo, hi, decay, gain in ((1800, 6500, 0.007, 0.55), (600, 2600, 0.02, 1.0), (220, 1000, 0.04, 1.0),
+                                    (90, 320, 0.05, 0.5)):
+            noise = band(rng.standard_normal(m), lo * tone, hi * tone, 2)
+            noise /= np.max(np.abs(noise))
+            # The strength stutters while it fades: combustion is turbulent, not a clean decay
+            grit = np.clip(1 + 0.3 * lowpass(rng.standard_normal(m), 200, 2) / 0.1, 0.5, 1.5)
+            acc += gain * noise * np.minimum(u / 0.0004, 1) * np.exp(-u / (decay * length)) * grit
+        out = np.zeros(n)
+        out[k:] = level * acc
+        return out
+
+    mix = burst(0.0, 1.0, pitch, 1.0)
+    # The crackle: a dense scatter of tiny pops (about 150 a second, thinning out), each a few hundred hertz wide
+    density = 55 * np.exp(-t / 0.09) / SR
+    hits = (rng.random(n) < density) * rng.uniform(0.3, 1.0, n) * rng.choice([-1, 1], n)
+    # Each tiny pop is a few samples of ringing noise, not a single-sample impulse, which would sound like digital grit
+    grain = np.exp(-np.arange(int(0.003 * SR)) / (0.0008 * SR)) * rng.standard_normal(int(0.003 * SR))
+    crackle = band(np.convolve(hits, grain)[:n], 350 * pitch, 2600, 2)
+    crackle = crackle / np.max(np.abs(crackle)) * np.minimum(t / 0.012, 1)
+    mix = mix / np.max(np.abs(mix)) + 0.55 * crackle * np.exp(-np.maximum(t - 0.02, 0) / 0.1)
+
+    # The pipe: a few close reflections, dulled, to put the pop in a space
+    echoes = np.zeros(n)
+    for _ in range(5):
+        d = int(rng.uniform(0.004, 0.045) * SR)
+        echoes[d:] += rng.uniform(0.15, 0.35) * lowpass(mix, 3000, 1)[:n - d]
+    mix = highpass(mix + echoes, 70)
+
+    # Driven, so it is loud and violent rather than a clean noise burst
+    # (a gentle drive: pushed harder than this the clipping turns the noise into something that sounds bitcrushed)
+    mix = lowpass(np.tanh(1.4 * mix / np.max(np.abs(mix))), 7500, 2)
     mix *= np.clip((n - np.arange(n)) / (0.05 * SR), 0, 1)
     return finish(mix)
 
