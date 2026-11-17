@@ -9,10 +9,12 @@ import java.util.TreeMap;
 
 import org.jetbrains.annotations.Nullable;
 
+import com.createengines.config.CEConfig;
 import com.createengines.content.plate.MakerPlateBlock;
 import com.createengines.content.plate.MakerPlateBlockEntity;
 import com.createengines.engine.blueprint.Blueprint;
 import com.createengines.engine.blueprint.Blueprint.Limits;
+import com.createengines.engine.topology.EngineGearing;
 import com.createengines.engine.topology.EngineLayout;
 import com.createengines.engine.topology.EngineScanner;
 import com.simibubi.create.foundation.blockEntity.behaviour.scrollValue.ScrollValueBehaviour;
@@ -90,11 +92,17 @@ public final class BlueprintRecorder {
 			return Result.failed(Failure.INCOMPLETE, "");
 		BlockPos origin = layout.primary();
 		List<BlockPos> members = new ArrayList<>(layout.members());
+		// The gearing that turns the camshafts is Create's, and the scanner does not follow it, so find it here
+		EngineGearing.Result gearing = EngineGearing.find(level, layout, CEConfig.MAX_COUPLING_WALK.get());
+		for (BlockPos pos : gearing.blocks())
+			if (!layout.members()
+				.contains(pos))
+				members.add(pos);
 		members.sort(Comparator.<BlockPos>comparingInt(p -> p.getY())
 			.thenComparingInt(p -> p.getZ())
 			.thenComparingInt(p -> p.getX()));
 		List<Blueprint.Part> parts = new ArrayList<>();
-		int skipped = 0;
+		int skipped = gearing.unlinked();
 		for (BlockPos pos : members) {
 			BlockState state = level.getBlockState(pos);
 			ResourceLocation key = BuiltInRegistries.BLOCK.getKey(state.getBlock());

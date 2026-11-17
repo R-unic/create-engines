@@ -15,6 +15,8 @@ import com.simibubi.create.foundation.blockEntity.behaviour.scrollValue.ScrollVa
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.Mirror;
+import net.minecraft.world.level.block.Rotation;
 import net.minecraft.world.level.block.entity.BlockEntity;
 
 /**
@@ -24,8 +26,9 @@ import net.minecraft.world.level.block.entity.BlockEntity;
  * through the block's own value box so it is clamped and notifies the engine as a player's change would. Nothing else is
  * touched: no block is placed, broken or turned.
  * <p>
- * The engine has to be built the same way round, since a blueprint holds states such as an axis and a facing as built.
- * Applying onto a copy that is turned or mirrored is not done: it is refused as a different build.
+ * A blueprint holds states such as an axis and a facing as built, so the engine has to be the same build. A copy built
+ * turned a quarter, a half or three quarters of a turn (see {@link BlueprintTurner}), mirrored where a turn needs it, is
+ * recognised as the same build and the dials are set on it. Any other mirror image is refused as a different build.
  */
 public final class BlueprintApplier {
 
@@ -83,8 +86,13 @@ public final class BlueprintApplier {
 			return Result.of(now.failure() == BlueprintRecorder.Failure.INCOMPLETE ? Status.INCOMPLETE : Status.NO_ENGINE);
 		Blueprint actual = comparable(blueprint, now.blueprint());
 		List<Mismatch> mismatches = BlueprintDiff.compare(blueprint, actual, MAX_MISMATCHES);
-		if (!mismatches.isEmpty())
-			return new Result(Status.DIFFERENT, 0, mismatches, "");
+		if (!mismatches.isEmpty()) {
+			// Not built the way it was recorded: it may be the same engine turned (or mirrored, where a turn needs it)
+			Blueprint turned = sameBuildTurned(blueprint, actual);
+			if (turned == null)
+				return new Result(Status.DIFFERENT, 0, mismatches, "");
+			blueprint = turned;
+		}
 		BlockPos origin = now.origin();
 		int changed = 0;
 		for (DialChange change : BlueprintDiff.dialChanges(blueprint, actual)) {
@@ -95,6 +103,45 @@ public final class BlueprintApplier {
 			changed++;
 		}
 		return new Result(changed > 0 ? Status.APPLIED : Status.ALREADY_SET, changed, List.of(), "");
+	}
+
+	/**
+	 * The blueprint turned so that it is the same build as the engine, with its crankshaft where the engine's primary crankshaft
+	 * is (the engine's primary is the first of its crank line in the scanner's order, which is not always the block the turned
+	 * blueprint calls its origin), or null if no turn does it.
+	 */
+	static @Nullable Blueprint sameBuildTurned(Blueprint blueprint, Blueprint actual) {
+		Blueprint.Part anchor = actual.parts()
+			.stream()
+			.filter(p -> p.x() == 0 && p.y() == 0 && p.z() == 0)
+			.findFirst()
+			.orElse(null);
+		if (anchor == null)
+			return null;
+		for (Rotation rotation : BlueprintTurner.TURNS) {
+			if (rotation == Rotation.NONE && BlueprintTurner.mirrorFor(blueprint, rotation) == Mirror.NONE)
+				continue;
+			Blueprint turned = BlueprintTurner.turn(blueprint, rotation);
+			if (turned == null)
+				continue;
+			for (Blueprint.Part candidate : turned.parts()) {
+				if (!candidate.block()
+					.equals(anchor.block()) || !candidate.state()
+						.equals(anchor.state()))
+					continue;
+				Blueprint shifted = shifted(turned, -candidate.x(), -candidate.y(), -candidate.z());
+				if (BlueprintDiff.sameBuild(shifted, actual))
+					return shifted;
+			}
+		}
+		return null;
+	}
+
+	private static Blueprint shifted(Blueprint blueprint, int dx, int dy, int dz) {
+		List<Blueprint.Part> parts = new java.util.ArrayList<>();
+		for (Blueprint.Part part : blueprint.parts())
+			parts.add(new Blueprint.Part(part.x() + dx, part.y() + dy, part.z() + dz, part.block(), part.state(), part.dials()));
+		return new Blueprint(blueprint.name(), blueprint.builder(), parts, blueprint.figures());
 	}
 
 	/**

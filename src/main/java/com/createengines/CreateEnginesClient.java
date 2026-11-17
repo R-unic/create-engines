@@ -44,6 +44,7 @@ public class CreateEnginesClient {
 		modEventBus.addListener(CreateEnginesClient::registerColumnColours);
 		modEventBus.addListener(com.createengines.client.SharedCasingModels::onModifyBakingResult);
 		NeoForge.EVENT_BUS.addListener(FuelTooltips::onTooltip);
+		NeoForge.EVENT_BUS.addListener(com.createengines.client.BuildPreview::onRender);
 		NeoForge.EVENT_BUS.addListener(CreateEnginesClient::onLoggingOut);
 		PonderIndex.addPlugin(new CEPonderPlugin());
 		registerDevelopmentHarnesses();

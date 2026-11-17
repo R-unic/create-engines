@@ -169,6 +169,68 @@ behaves says so in its changelog.
 - [Design notes](https://github.com/R-unic/create-engines/blob/master/docs/DESIGN.md), how the simulation works
 ```
 
+## Changelog for 1.4.0
+
+The Drawing Office: blueprints for engines, and tools for pack makers. IDs and config keys already in 1.3 are unchanged.
+Two things change how something that already exists behaves, each named below: an oil sump no longer turns plant oil
+into used oil, and a refining column keeps and reports its catalyst better. Everything else is new.
+- Blueprint (item `blueprint`, paper and blue dye): use it on any block of a built engine to record the whole layout and
+  every dial (throw and lobe angles, fuel metering, idle and wide throttle, MAF and governor targets, turbo and
+  supercharger limits, the transmission gear, the sump's oil exchange and signal tank) as a pasteable string, `CEBP2:...`.
+  The Maker's Plate figures and the engine's name ride along. The shafts, cogwheels, chain drives and gearboxes that turn each
+  camshaft or gear one crank line to another are recorded with the engine; a line reachable only through a belt is left out
+  and counted as skipped. Fluids, fuel and oil are not recorded.
+  Use a recorded blueprint in the air to read it as a drafting sheet (the plan from above, the parts counted, the figures),
+  sneak and use to record over it.
+- Apply: use a recorded blueprint on an engine built the same way to set every dial that differs, checked on the server
+  first. A copy built turned a quarter, half or three quarters of a turn is recognised as the same build. If the build
+  differs it changes nothing and names the first five differences.
+- Build from it: hold a Bank Builder with a recorded blueprint in the other hand and use it on a face. The whole site is
+  checked first (loaded, free, protection and every part in your inventory) and nothing is placed unless all of it passes;
+  creative players pay nothing. The engine is built turned by the way you face (north is as recorded), and an outline
+  preview shows it before anything is placed, green where it is free and red where something is in the way. A turn that would
+  make a crank run the other way is built mirrored across the crank, which is the same engine. With an Empty Schematic in the other hand, using the blueprint in the air writes a Create
+  schematic of the engine's blocks (dials are not in a schematic; apply the blueprint after).
+- Share: a blank blueprint used in the air opens a box to paste a string into; the server decodes it, checks every rule
+  (this mod's blocks only, every state and dial real and in range, at most 4096 parts, 30,000 characters) and refuses bad
+  ones with a reason. Sneak and use a recorded one in the air copies its string. The string carries a format version, so a
+  later release reads this one.
+- Framed Blueprint (block `framed_blueprint`, iron nuggets round paper): hang a recorded blueprint on any wall, floor or
+  ceiling; it draws the plan and the plate figures on the paper. Frames that touch edge to edge and make a full
+  rectangle, up to 8 by 8, draw one enlarged picture across the whole sheet (the top-left frame's blueprint, or the first one
+  reading left to right and down); a ragged group or a gap leaves every frame drawing alone. Empty hand reads it, sneak with
+  an empty hand takes it back, and breaking it drops the frame and the blueprint.
+- Ponder page for the blueprint (recording, reading, applying, building, sharing and the frame).
+- For pack makers: three config presets in the jar (`config_presets/casual.toml`, `standard.toml`, `expert.toml`; tables to
+  copy over `[balance]` and `[features]`, `standard` equal to the shipped defaults); a **preview** part stats data map
+  (`data_maps/block/part_stats.json`, keyed by `create_engines:cylinder` or `create_engines:precision_cylinder`, scales from 0.1
+  to 10 on a cylinder's compression, flows, fuel per shot, ignition delay, burn time, friction, inertia, displacement and injector
+  flow; with no entry nothing changes); and a **preview** `api` package (`EngineApi.viewAt`, a read-only `EngineView`, and the
+  events `EngineStateChangeEvent` and `EngineMilestoneEvent` on `NeoForge.EVENT_BUS`; a listener that throws is logged and never
+  stops an engine). Preview parts may still change before 2.0.
+- JEI and EMI show every fuel (energy, how it lights, cold start, boost tolerance) and every installable part with the
+  blocks it goes into. EMI ran in testing; JEI has not run in a game (it needs a newer NeoForge than this build).
+- Refining column: putting catalyst in a Reboiler by hand now plays a sound and shows what it holds (or says the slot is full
+  or holds a different catalyst); a catalyst that is not the route's shows "wrong catalyst" in the goggles instead of "no
+  catalyst"; and when a column grows so that its controller moves to another corner, the catalyst in the old controller
+  is passed to the new one (or dropped) instead of being left in a block nothing reads. New saved key `WrongCatalyst` on the
+  column port (missing reads as false).
+- Changed behaviour: an Oil Sump's oil exchange only wears engine oil into used oil. Plant oil and the other poor lubricants
+  burn off instead, so they can no longer be turned into recyclable used oil, and they do not need room in the used tank.
+  Engine oil exchanges exactly as before.
+- Memory: every state of one of this mod's multipart blocks (the pipes above all) now shares one baked model, about 108 MB less
+  settled heap in our audit (1269 to 1161 MB), checked by comparing every quad a sample of states draws before and after. Most of
+  the 440 MB that casing styles cost on pipes in 1.3 remains: it is the block states themselves (a pipe has one for every
+  connection shape, casing, style and dye), and cutting them needs a state property removed, which waits for 2.0.
+- Under the hood: the new `engine.blueprint` package is plain Java with unit tests, including a fuzzed decoder and frozen
+  strings for each format version; the audits cover the drafting sheet and import screen; the world corpus gains the
+  engines 1.3.0 saved and the ones 1.4 saves.
+- New IDs and keys (they join the 1.x promise): item `blueprint`, block `framed_blueprint` and its block entity, data component
+  `blueprint`, recipes `blueprint` and `framed_blueprint`, loot table for `framed_blueprint`, data map `create_engines:part_stats`
+  (preview), the client-to-server packet `create_engines:import_blueprint`, the string format `CEBP1:` and `CEBP2:` and every
+  dial name above, the files `config_presets/*.toml`, a Ponder page `blueprint`, block state property `facing` on the frame.
+  Saved keys: `Plan` on the framed blueprint; `WrongCatalyst` on the column port. Config keys: none added.
+
 ## Changelog for 1.3.0
 
 The Refinery: a column that turns feed into fuel more efficiently than a basin. IDs and config keys are unchanged, and

@@ -104,13 +104,13 @@ final class CrankCoupling {
 		return found;
 	}
 
-	private static boolean surroundingsLoaded(Level level, BlockPos pos) {
+	static boolean surroundingsLoaded(Level level, BlockPos pos) {
 		return level.hasChunkAt(pos.offset(-1, 0, -1)) && level.hasChunkAt(pos.offset(1, 0, 1))
 			&& level.hasChunkAt(pos.offset(-1, 0, 1)) && level.hasChunkAt(pos.offset(1, 0, -1));
 	}
 
 	@SuppressWarnings("unchecked")
-	private static List<KineticBlockEntity> neighbours(KineticBlockEntity be) {
+	static List<KineticBlockEntity> neighbours(KineticBlockEntity be) {
 		try {
 			return (List<KineticBlockEntity>) NEIGHBOURS.invoke(null, be);
 		} catch (ReflectiveOperationException | RuntimeException e) {
@@ -118,7 +118,7 @@ final class CrankCoupling {
 		}
 	}
 
-	private static float modifier(KineticBlockEntity from, KineticBlockEntity to) {
+	static float modifier(KineticBlockEntity from, KineticBlockEntity to) {
 		try {
 			return (float) MODIFIER.invoke(null, from, to);
 		} catch (ReflectiveOperationException | RuntimeException e) {

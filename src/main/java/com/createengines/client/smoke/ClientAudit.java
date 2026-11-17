@@ -106,6 +106,11 @@ public final class ClientAudit {
 		var plated = new com.createengines.engine.blueprint.Blueprint("Audit", "auditor", small,
 			new com.createengines.engine.sim.PlateFigures(88.8f, 120, 4321.5f, 240));
 		var crowded = new com.createengines.engine.blueprint.Blueprint("Crowd", "", large);
+		report.check("gui", "the build preview draws a small blueprint whole",
+			com.createengines.client.BuildPreview.cells(plated, net.minecraft.core.BlockPos.ZERO).size() == small.size(), "");
+		report.check("gui", "the build preview caps a crowded blueprint",
+			com.createengines.client.BuildPreview.cells(crowded, net.minecraft.core.BlockPos.ZERO)
+				.size() == com.createengines.client.BuildPreview.MAX_DRAWN, "");
 		for (var blueprint : List.of(plated, crowded)) {
 			String text = com.createengines.engine.blueprint.BlueprintCodec.encode(blueprint);
 			drawSheet(minecraft, new com.createengines.content.blueprint.RecordedBlueprint(text, blueprint.name(),
@@ -235,6 +240,29 @@ public final class ClientAudit {
 					}
 			}
 		}
+		// Every state that was sampled before sharing must draw exactly what it drew then
+		int sampledDiffer = 0, sampledNotShared = 0;
+		String sampledExample = "";
+		for (var entry : com.createengines.client.SharedCasingModels.BEFORE.entrySet()) {
+			BlockState state = entry.getKey();
+			BakedModel now = dispatcher.getBlockModel(state);
+			BakedModel standard = dispatcher.getBlockModel(state.getBlock()
+				.defaultBlockState());
+			if (now != standard) {
+				sampledNotShared++;
+				sampledExample = state.toString();
+			}
+			if (!java.util.Arrays.equals(entry.getValue(), com.createengines.client.SharedCasingModels.digest(now, state))) {
+				sampledDiffer++;
+				sampledExample = state.toString();
+			}
+		}
+		report.metric("multipart states sampled before sharing", com.createengines.client.SharedCasingModels.BEFORE.size(), "");
+		report.check("models", "a sampled multipart state still draws exactly what it drew before sharing",
+			!com.createengines.client.SharedCasingModels.BEFORE.isEmpty() && sampledDiffer == 0,
+			sampledDiffer + " of " + com.createengines.client.SharedCasingModels.BEFORE.size() + " differ, e.g. " + sampledExample);
+		report.check("models", "every multipart state of the mod shares its block's one baked model", sampledNotShared == 0,
+			sampledNotShared + " sampled states hold their own copy, e.g. " + sampledExample);
 		report.metric("painted multipart states checked", multipart, "");
 		report.check("models", "painted multipart states share the unpainted baked model", multipart > 0 && notShared == 0,
 			notShared + " of " + multipart + " painted states still hold their own copy, e.g. " + example);

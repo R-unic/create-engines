@@ -25,6 +25,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.Rotation;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.properties.Property;
@@ -33,8 +34,9 @@ import net.neoforged.neoforge.event.level.BlockEvent;
 import net.neoforged.neoforge.common.util.BlockSnapshot;
 
 /**
- * Lays an engine out from a recorded blueprint, as the player: every block in the blueprint, in the orientation it was
- * recorded in, with its crankshaft at {@code origin}, from the parts the player carries. All or nothing: the whole site is
+ * Lays an engine out from a recorded blueprint, as the player: every block in the blueprint, turned by the way the player
+ * faces (facing north builds it as it was recorded, see {@link BlueprintTurner}), with its crankshaft at {@code origin}, from
+ * the parts the player carries. All or nothing: the whole site is
  * checked first (loaded, inside the world, free to build in, allowed to the player, every part in the inventory) and
  * nothing is placed or taken unless every check passes. Claims and protection mods get to refuse each block through the
  * ordinary place event, as they would for the player's own hand.
@@ -82,6 +84,14 @@ public final class BlueprintBuilder {
 
 	/** Decodes, checks and builds a recorded blueprint with its crankshaft at {@code origin}. */
 	public static Result build(Player player, Level level, BlockPos origin, RecordedBlueprint recorded) {
+		return build(player, level, origin, recorded, Rotation.NONE);
+	}
+
+	/**
+	 * Decodes, checks and builds a recorded blueprint turned by {@code rotation} (see {@link BlueprintTurner}), with the
+	 * crankshaft it was recorded at at {@code origin}.
+	 */
+	public static Result build(Player player, Level level, BlockPos origin, RecordedBlueprint recorded, Rotation rotation) {
 		Blueprint blueprint;
 		try {
 			blueprint = BlueprintCodec.decode(recorded.text());
@@ -89,7 +99,10 @@ public final class BlueprintBuilder {
 		} catch (BlueprintException e) {
 			return Result.of(Status.REFUSED);
 		}
-		return build(player, level, origin, blueprint);
+		Blueprint turned = BlueprintTurner.turn(blueprint, rotation);
+		if (turned == null)
+			return Result.of(Status.REFUSED);
+		return build(player, level, origin, turned);
 	}
 
 	/** Builds a blueprint that has already been checked. */

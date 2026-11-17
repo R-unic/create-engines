@@ -268,7 +268,7 @@ the work is cut up, and every stage is additive (no existing ID, config key or n
 | 6 | **Share and hang:** paste in, copy out, server checks; the framed blueprint | **Built 2026-11-17** |
 | 7 | **Aeronautics** compatibility and Ponder page (sized by stage 0), then the other addons | **Not started**: needs the addon, so it waits on stage 0 (the author's) |
 | 8 | **Pack-maker tools:** JEI and EMI pages for fuels and parts, three config presets, the part stats data map, the `api` package with its events (the last two preview). KubeJS bindings are not built (see below) | **Built 2026-11-17**, except KubeJS |
-| 9 | Cheaper pipe models (the `casing_style` heap cost found in 1.3), then the release record | **Part done 2026-11-17**: painted states share their model (about 90 MB of the 440 MB); the rest is open. Release record not started |
+| 9 | Cheaper pipe models (the `casing_style` heap cost found in 1.3), then the release record | **Done as far as 1.x allows, 2026-11-17**: every state of a multipart block shares one model (about 108 MB of the 440 MB); the rest is block-state bookkeeping that needs fewer states, so it is a 2.0 item. Release record not started |
 
 **Stage 9, as far as it went (2026-11-17).** A block's dye is only a tint, yet each of its 17 values is a block state and vanilla
 bakes a multipart model (a 64-way connection table of conditions) per state. `client.SharedCasingModels` (on `ModelEvent.ModifyBakingResult`)
@@ -277,7 +277,19 @@ client audit on the same harness as 1.3: settled heap after engines 1179 MB, aga
 hoped 440 MB). The audit checks 925 painted multipart states share the model and draw the same quads. What remains is the
 unpainted bake itself, 64 shapes by encased by three styles per pipe, each with about 450 conditions; sharing across styles is
 impossible (the model differs), so the next step is a model that bakes once per shape (a custom loader) or fewer conditions per
-state, and needs a profile and a look in game. The peak at model load is not reduced, only what stays. Separately, the audit JVM
+state, and needs a profile and a look in game. The peak at model load is not reduced, only what stays.
+**Second step, and what the profile showed (2026-11-17).** `SharedCasingModels` now points every state of each of this mod's
+multipart blocks at one baked model for the block, not only the painted ones, since a multipart model reads the state it is
+asked about. The audit checks that 1,719 sampled states draw exactly what they drew before (a hash of every quad's vertices,
+sprite and tint, per face) and share the block's one model. Settled heap went 1179 to 1161 MB, so only about 18 MB more. A class
+histogram of the running client (`jcmd GC.class_histogram`) shows why: the baked models were not the bulk of it. About 151,000
+`BlockState` objects with their property tables, shape caches and occlusion slices (`SubShape` and `SliceShape`, 283,000 of them)
+come to a few hundred MB, and a pipe has a state for every connection shape, encasing, casing style and dye. Cutting that means
+fewer states, which means removing a state property, and `casing_style` and the dye are in the 1.x promise. So the 440 MB is
+**not recoverable in 1.x**; it moves to 2.0 with the other state cleanups (candidates: fold the dye into a block entity or a
+data component, and drop the per-state occlusion cache with `noOcclusion` on pipes after a look at light and culling).
+The histogram also showed 54 million queued chunk-save tasks (`IOWorker`, 3.4 GB) in the audit's walking phase; that is the audit
+or something in this mod saving chunks far too often, and it has not been looked into. Separately, the audit JVM
 exited with code -1073740791 after the report was written and `verifyClientSmoke` passed; not investigated.
 
 **Blueprint format, as built (stage 1).** A blueprint is a name, a builder and up to 4096 parts, each within 127 blocks of
@@ -299,9 +311,10 @@ and how to reach the value box, for crank throws and rotor housings (`throw_angl
 rotors (`fuel_metering`), throttles (`idle`, `wide`), MAF sensors and governors (`target`), turbos (`limit`, `anti_lag`),
 superchargers (`limit`), the transmission (`gear`) and the sump (`oil_exchange`, `signal_tank`). `EngineBlueprintPolicy` accepts
 only registered `create_engines` blocks, properties and values the block really has, and dials in range. Only this mod's
-blocks are recorded: Create's own blocks the scanner counts as part of the engine are counted and left out, and the gearing
-to a camshaft is not part of what the scanner follows, so it is not recorded either (stage 5 has to decide how a build
-handles that). Fluids, fuel and oil are not recorded. The new IDs join the 1.x promise at release: item `blueprint`, data
+blocks are recorded, and so are Create's own blocks the scanner counts as part of the engine (shafts, cogwheels and chain
+drives that couple crank lines; checked 2026-11-17 against `BlueprintRecorder` and `EngineBlueprintPolicy`, which allow the
+`create` namespace). The gearing from a crank to a camshaft is not part of what the scanner follows, so it is not recorded:
+this is the one gap left in recording. Fluids, fuel and oil are not recorded. The new IDs join the 1.x promise at release: item `blueprint`, data
 component `blueprint`, recipe `blueprint`; dial names and the `CEBP` format are frozen the same way. A sneak-use on a
 recorded blueprint records over it; a plain use says what it holds. Tests (`BlueprintGameTests`): a built engine is recorded
 block by block, every dial at its setting, recording changes nothing, a non-engine is refused, what is recorded passes the
@@ -317,9 +330,8 @@ recipe have not been seen; Ponder page, goggle lines and the drafting sheet are 
   compares it with the blueprint (`engine.blueprint.BlueprintDiff`, plain Java). Only if every block of this mod is in the
   same place with the same block and state does it set the dials that differ, each through the block's own value box. If not,
   nothing changes and the first five differences are named (missing, extra, different block, different state). The engine has
-  to be built the same way round: turned or mirrored copies are refused as a different build, because a crank's throw angle is
-  measured about its axis and a half turn flips the direction of that axis, so turning a build is not just moving blocks.
-  Use a recorded blueprint on an engine to apply it; sneak and use to record over it.
+  to be the same build, and a copy built turned a quarter, half or three quarters of a turn is recognised as the same build
+  (`BlueprintTurner`, below). Use a recorded blueprint on an engine to apply it; sneak and use to record over it.
 - **The sheet (4).** Format 2 (`CEBP2:`) adds the Maker's Plate figures to the string (format 1 still reads; a frozen string for
   each is tested). The recorder takes them from the first stamped plate fixed to the engine, and the blueprint's name from the
   anvil name, else the plate's, else "Engine". `client.BlueprintScreen` draws the plan (east right, south down, higher blocks
@@ -329,9 +341,15 @@ recipe have not been seen; Ponder page, goggle lines and the drafting sheet are 
   engine's crankshaft goes against that face. The whole site is checked first (loaded and inside the world and border, free to
   build in, the player allowed by spawn protection and by the ordinary place event for every block, every part in the
   inventory by Create's own item requirement for each block) and nothing is placed or taken unless every check passes. Creative
-  players pay nothing. A block with no item to pay for it (a cased shaft) cannot be built by hand in survival. Orientation is as
-  recorded (no turning, same reason as above). Create's own blocks are not in a blueprint, so the cam gearing and couplings are
-  not built. With an Empty Schematic in the other hand, using the blueprint in the air writes `schematics/uploaded/<player>/engine_<name>.nbt`
+  players pay nothing. A block with no item to pay for it (a cased shaft) cannot be built by hand in survival. The engine is turned
+  by the way the player faces: facing north builds it as it was recorded, east a quarter turn clockwise, and so on, and the
+  Bank Builder's outline preview (`client.BuildPreview`, green where free, red where something is in the way) shows the same
+  turn before anything is placed. Create's own blocks on the crank line, and the cogwheels, chain drives and gearboxes that
+  turn each camshaft and gear one crank line to another in a coupled engine (`engine.topology.EngineGearing`, found by walking
+  Create's own connections from the crank to each cam line and each further crank line), are in a blueprint and are built and
+  paid for like any other block; a line reachable only through a belt is left out and counted as skipped, since a belt is more
+  than one block. (Found 2026-11-17 by the coupled-engine turn test: before this, a coupled engine's blueprint did not hold its
+  coupling gears, so the copy was two separate engines.) With an Empty Schematic in the other hand, using the blueprint in the air writes `schematics/uploaded/<player>/engine_<name>.nbt`
   and swaps the Empty Schematic for a Create schematic of it: blocks and states only (a Schematicannon prices them through each
   block's requirement); dials are not in a schematic, so apply the blueprint after.
 - **Share and hang (6).** A blank blueprint used in the air opens a box to paste into and a button that sends it to the server
@@ -363,6 +381,19 @@ recipe have not been seen; Ponder page, goggle lines and the drafting sheet are 
   boost tolerance) and for every installable part and the blocks it goes into. **KubeJS is not built:** the Gradle cache has no KubeJS
   to compile against, so there is no plugin class. A script can already listen to the two API events through KubeJS's own NeoForge
   event bridge, add fuels and part stats with datapack files, and read an engine through the API.
+- **Turned builds (added 2026-11-17).** `BlueprintTurner` turns a blueprint by 0, 90, 180 or 270 degrees about the vertical:
+  each block's place, each state through the block's own `rotate` and `mirror`, and each crank's throw angle (the pin's direction
+  is carried through the turn and read back against the new axis, since a crank's rest direction depends on its axis). Cam lobe
+  angles are timing values and are kept. An engine always turns the same way about its crank's positive axis, so a turn that
+  would carry that direction onto the negative direction of the new axis (a half turn, and one quarter turn either way,
+  depending on the axis) also mirrors the copy across a plane through the crank: it looks mirrored and runs as the same engine.
+  The Bank Builder turns by the way the player faces (north is as recorded); applying finds the matching turn by trying all
+  four, anchored on the engine's own primary crankshaft, which is not always the block the turned blueprint calls its origin.
+  Tests: `aTurnedBuildScansAsTheSameEngine`, `aTurnedRotaryBuildScansAsTheSameEngine` (twin rotor, the second half a turn
+  round) and `aTurnedCoupledBuildScansAsTheSameEngine` (two geared crank lines): all four turns each, same cylinders at the
+  turned places with the same top dead centre, cam timing and faults, read from the real scanner; and
+  `aBlueprintAppliesToATurnedCopyOfItsEngine`. Not covered: a V engine with cylinders on both sides of the crank, and a pipe
+  network turned (the engines above have single openings).
 - **Tests.** Unit: the codec, the rules, the diff, the file names, the part stats arithmetic, the status names. GameTests
   (`BlueprintGameTests`, `PackToolsGameTests`): recording, applying, refusing, building in creative and survival, protection vetoes,
   blocked and unloaded sites, the Bank Builder flow, the structure file, import (good, hostile, too long), the frame (hang, take,

@@ -27,8 +27,8 @@ import net.neoforged.neoforge.gametest.PrefixGameTestTemplate;
  * {@code CompatManifestTest} and {@code BehaviourBaselineTest}): they load what an earlier version saved, not what
  * this version would save.
  * <ul>
- *     <li>{@code src/test/resources/compat/world/engine_1_3.snbt} is a running spark engine with a battery and an
- *     alternator, as 1.3 saved it. It is loaded block by block and must come back with every saved key intact and
+ *     <li>{@code src/test/resources/compat/world/engine_1_4.snbt} is a running spark engine with a battery and an
+ *     alternator, as 1.4 saved it ({@code engine_1_3.snbt} is the same as 1.3 saved it). It is loaded block by block and must come back with every saved key intact and
  *     keep running. The fixture is never regenerated once a version has shipped; a later version that cannot read it
  *     has broken old worlds. A new fixture for a new version is added beside it ({@code COMPAT_REGEN=1} writes the
  *     file only if it does not exist).</li>
@@ -40,7 +40,7 @@ import net.neoforged.neoforge.gametest.PrefixGameTestTemplate;
 @PrefixGameTestTemplate(false)
 public class LegacyWorldGameTests {
 
-	private static final String FIXTURE = "engine_1_3.snbt";
+	private static final String FIXTURE = "engine_1_4.snbt";
 	/** Create's kinetic bookkeeping, rebuilt by its network after a load rather than read back. */
 	private static final java.util.Set<String> KINETIC_ONLY = java.util.Set.of("Network", "Source", "Stress", "Capacity");
 	private static final int WIDTH = 9;
@@ -101,7 +101,12 @@ public class LegacyWorldGameTests {
 
 	@GameTest(template = "empty_large", timeoutTicks = 400)
 	public static void anEngineSavedByThe13ReleaseLoadsAndKeepsItsData(GameTestHelper helper) {
-		loadAndCheck(helper, FIXTURE, "1.3");
+		loadAndCheck(helper, "engine_1_3.snbt", "1.3");
+	}
+
+	@GameTest(template = "empty_large", timeoutTicks = 400)
+	public static void anEngineSavedByThe14ReleaseLoadsAndKeepsItsData(GameTestHelper helper) {
+		loadAndCheck(helper, FIXTURE, "1.4");
 	}
 
 	// The world corpus (verification track item 4): engines saved by the real releases, recorded by scripts/record-corpus.ps1
@@ -165,6 +170,21 @@ public class LegacyWorldGameTests {
 	@GameTest(template = "empty_large", timeoutTicks = 400)
 	public static void aRotaryEngineSavedBy121Loads(GameTestHelper helper) {
 		loadAndCheck(helper, "engine_v1_2_1_rotary.snbt", "1.2.1");
+	}
+
+	@GameTest(template = "empty_large", timeoutTicks = 400)
+	public static void aDieselEngineSavedBy130Loads(GameTestHelper helper) {
+		loadAndCheck(helper, "engine_v1_3_0_diesel.snbt", "1.3.0");
+	}
+
+	@GameTest(template = "empty_large", timeoutTicks = 400)
+	public static void aSparkEngineSavedBy130Loads(GameTestHelper helper) {
+		loadAndCheck(helper, "engine_v1_3_0_spark.snbt", "1.3.0");
+	}
+
+	@GameTest(template = "empty_large", timeoutTicks = 400)
+	public static void aRotaryEngineSavedBy130Loads(GameTestHelper helper) {
+		loadAndCheck(helper, "engine_v1_3_0_rotary.snbt", "1.3.0");
 	}
 
 	private static void loadAndCheck(GameTestHelper helper, String fixture, String saver) {

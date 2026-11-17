@@ -119,6 +119,29 @@ public class BlueprintGameTests {
 		helper.succeed();
 	}
 
+	/** The gearing that turns the camshaft (a large cogwheel and two chain drives in the test engine) is recorded, at its offsets. */
+	@GameTest(template = "empty")
+	public static void theGearingToTheCamshaftIsRecorded(GameTestHelper helper) {
+		BlueprintRecorder.Result result = recordTestEngine(helper);
+		if (!result.ok())
+			helper.fail("recording failed: " + result.failure());
+		BlockPos origin = TestEngine.PRIMARY;
+		for (BlockPos gear : List.of(new BlockPos(5, 3, 3), new BlockPos(6, 3, 3), new BlockPos(6, 4, 3))) {
+			BlockPos offset = gear.subtract(origin);
+			boolean found = result.blueprint()
+				.parts()
+				.stream()
+				.anyMatch(p -> p.x() == offset.getX() && p.y() == offset.getY() && p.z() == offset.getZ()
+					&& p.block()
+						.startsWith("create:"));
+			if (!found)
+				helper.fail("the cam gearing block at " + gear + " is not in the blueprint");
+		}
+		if (result.skipped() != 0)
+			helper.fail("a cam line was left out as unlinked: " + result.skipped());
+		helper.succeed();
+	}
+
 	@GameTest(template = "empty")
 	public static void everyDialOnTheEngineIsRecordedAtItsSetting(GameTestHelper helper) {
 		ServerLevel level = helper.getLevel();
@@ -638,6 +661,110 @@ public class BlueprintGameTests {
 		return total;
 	}
 
+	/** Where the four turned copies go, far enough apart that none touches another. */
+	private static final BlockPos[] TURN_SITES = {new BlockPos(12, 2, 12), new BlockPos(34, 2, 12), new BlockPos(12, 2, 34),
+		new BlockPos(34, 2, 34)};
+
+	private static double angleGap(double a, double b) {
+		return Math.abs(((a - b) % 360 + 540) % 360 - 180);
+	}
+
+	/**
+	 * An engine built from a blueprint turned any of the four ways, with the mirror a turn sometimes needs, scans as the same
+	 * engine: the same cylinders at the turned places, each with the same top-dead-centre angle and cam timing and no fault.
+	 */
+	@GameTest(template = "empty_large", timeoutTicks = 400)
+	public static void aTurnedBuildScansAsTheSameEngine(GameTestHelper helper) throws BlueprintException {
+		recordedTestEngine(helper);
+		turnedCopiesScanAlike(helper, TestEngine.HEAD);
+	}
+
+	/** The twin-rotor engine, whose second rotor sits half a turn round: its throw angles are the sharpest test of the turn. */
+	@GameTest(template = "empty_large", timeoutTicks = 400)
+	public static void aTurnedRotaryBuildScansAsTheSameEngine(GameTestHelper helper) throws BlueprintException {
+		TestEngine.buildRotary(helper.getLevel(), helper.absolutePos(BlockPos.ZERO), true);
+		TestEngine.addSecondRotor(helper.getLevel(), helper.absolutePos(BlockPos.ZERO));
+		turnedCopiesScanAlike(helper, TestEngine.HOUSING);
+	}
+
+	/** Two crank lines geared together, the second turning the same way: one engine on two parallel axes. */
+	@GameTest(template = "empty_large", timeoutTicks = 400)
+	public static void aTurnedCoupledBuildScansAsTheSameEngine(GameTestHelper helper) throws BlueprintException {
+		TestEngine.build(helper.getLevel(), helper.absolutePos(BlockPos.ZERO), true);
+		TestEngine.addCoupledLine(helper.getLevel(), helper.absolutePos(BlockPos.ZERO));
+		turnedCopiesScanAlike(helper, TestEngine.HEAD);
+	}
+
+	private static void turnedCopiesScanAlike(GameTestHelper helper, BlockPos click) throws BlueprintException {
+		ServerLevel level = helper.getLevel();
+		BlueprintRecorder.Result result = BlueprintRecorder.record(level, helper.absolutePos(click), "Turn", "t");
+		if (!result.ok())
+			helper.fail("recording failed: " + result.failure());
+		Blueprint plain = result.blueprint();
+		RecordedBlueprint recorded = new RecordedBlueprint(BlueprintCodec.encode(plain), "Turn", plain.parts()
+			.size());
+		BlockPos primary = result.origin();
+		var original = com.createengines.engine.topology.EngineScanner.scan(level, primary);
+		if (original == null || original.incomplete())
+			helper.fail("the original engine did not scan");
+		Player player = helper.makeMockPlayer(net.minecraft.world.level.GameType.CREATIVE);
+		for (int k = 0; k < 4; k++) {
+			net.minecraft.world.level.block.Rotation rotation = com.createengines.content.blueprint.BlueprintTurner.TURNS.get(k);
+			net.minecraft.world.level.block.Mirror mirror = com.createengines.content.blueprint.BlueprintTurner.mirrorFor(plain, rotation);
+			BlockPos site = helper.absolutePos(TURN_SITES[k]);
+			BlueprintBuilder.Result built = BlueprintBuilder.build(player, level, site, recorded, rotation);
+			if (built.status() != BlueprintBuilder.Status.BUILT)
+				helper.fail(rotation + " (" + mirror + "): building gave " + built);
+			var layout = com.createengines.engine.topology.EngineScanner.scan(level, site);
+			if (layout == null || layout.incomplete() || layout.broken())
+				helper.fail(rotation + ": the turned engine did not scan whole");
+			if (layout.cylinders().size() != original.cylinders().size())
+				helper.fail(rotation + ": " + layout.cylinders().size() + " cylinders, expected " + original.cylinders().size());
+			for (var cylinder : original.cylinders()) {
+				BlockPos rel = cylinder.pos().subtract(primary);
+				int[] at = com.createengines.content.blueprint.BlueprintTurner.place(rel.getX(), rel.getZ(), rotation, mirror);
+				BlockPos expected = site.offset(at[0], rel.getY(), at[1]);
+				var twin = layout.cylinders().stream().filter(c -> c.pos().equals(expected)).findFirst().orElse(null);
+				if (twin == null)
+					helper.fail(rotation + " (" + mirror + "): no cylinder at the turned place " + expected);
+				if (angleGap(twin.tdcAngle(), cylinder.tdcAngle()) > 1e-3)
+					helper.fail(rotation + " (" + mirror + "): top dead centre " + twin.tdcAngle() + ", expected " + cylinder.tdcAngle());
+				if (angleGap(twin.lobeAngle(), cylinder.lobeAngle()) > 1e-3)
+					helper.fail(rotation + " (" + mirror + "): cam timing " + twin.lobeAngle() + ", expected " + cylinder.lobeAngle());
+				if (twin.faults() != cylinder.faults() || twin.sparkPlug() != cylinder.sparkPlug() || twin.sense() != cylinder.sense())
+					helper.fail(rotation + " (" + mirror + "): faults " + twin.faults() + " expected " + cylinder.faults());
+			}
+		}
+		helper.succeed();
+	}
+
+	/** A blueprint applies to a copy of its engine that was built turned, and sets the dials there. */
+	@GameTest(template = "empty_large", timeoutTicks = 400)
+	public static void aBlueprintAppliesToATurnedCopyOfItsEngine(GameTestHelper helper) throws BlueprintException {
+		RecordedBlueprint recorded = recordedTestEngine(helper);
+		ServerLevel level = helper.getLevel();
+		Blueprint plain = BlueprintCodec.decode(recorded.text());
+		Player player = helper.makeMockPlayer(net.minecraft.world.level.GameType.CREATIVE);
+		BlockPos head = TestEngine.HEAD.subtract(TestEngine.PRIMARY);
+		for (int k = 1; k < 4; k++) {
+			net.minecraft.world.level.block.Rotation rotation = com.createengines.content.blueprint.BlueprintTurner.TURNS.get(k);
+			net.minecraft.world.level.block.Mirror mirror = com.createengines.content.blueprint.BlueprintTurner.mirrorFor(plain, rotation);
+			BlockPos site = helper.absolutePos(TURN_SITES[k]);
+			BlueprintBuilder.build(player, level, site, recorded, rotation);
+			int[] at = com.createengines.content.blueprint.BlueprintTurner.place(head.getX(), head.getZ(), rotation, mirror);
+			BlockPos turnedHead = site.offset(at[0], head.getY(), at[1]);
+			if (!(level.getBlockEntity(turnedHead) instanceof CylinderHeadBlockEntity entity))
+				helper.fail(rotation + ": no cylinder head at the turned place " + turnedHead);
+			else {
+				entity.metering.setValue(3);
+				BlueprintApplier.Result result = BlueprintApplier.apply(level, turnedHead, recorded);
+				if (result.status() != BlueprintApplier.Status.APPLIED || entity.metering.getValue() != 14)
+					helper.fail(rotation + " (" + mirror + "): applying gave " + result + " and the dial is " + entity.metering.getValue());
+			}
+		}
+		helper.succeed();
+	}
+
 	@GameTest(template = "empty_large")
 	public static void aBlueprintBuildsTheSameEngineInCreativeMode(GameTestHelper helper) throws BlueprintException {
 		RecordedBlueprint recorded = recordedTestEngine(helper);
@@ -761,6 +888,8 @@ public class BlueprintGameTests {
 	public static void theBankBuilderWithABlueprintInTheOtherHandBuildsIt(GameTestHelper helper) throws BlueprintException {
 		RecordedBlueprint recorded = recordedTestEngine(helper);
 		Player player = helper.makeMockPlayer(net.minecraft.world.level.GameType.CREATIVE);
+		// Facing north builds the engine as it was recorded; any other way turns it (see the turned-build tests)
+		player.setYRot(180f);
 		ItemStack plan = new ItemStack(CEItems.BLUEPRINT.get());
 		plan.set(CEComponents.BLUEPRINT.get(), recorded);
 		player.setItemInHand(net.minecraft.world.InteractionHand.OFF_HAND, plan);

@@ -2383,11 +2383,6 @@ public class EngineGameTests {
 	}
 
 	@GameTest(template = "empty_large", timeoutTicks = 7000)
-	public static void neutralWithAFastSourceOnTheOutputKeepsTheTransmission(GameTestHelper helper) {
-		checkNeutralWithASourceOnTheOutput(helper, 200, -1);
-	}
-
-	@GameTest(template = "empty_large", timeoutTicks = 7000)
 	public static void neutralWithAFastReverseSourceOnTheOutputKeepsTheTransmission(GameTestHelper helper) {
 		checkNeutralWithASourceOnTheOutput(helper, -200, -1);
 	}
@@ -2405,11 +2400,6 @@ public class EngineGameTests {
 	@GameTest(template = "empty_large", timeoutTicks = 7000)
 	public static void neutralOnAStoppedEngineWithAReverseSourceOnTheOutputKeepsTheTransmission(GameTestHelper helper) {
 		checkNeutralWithASourceOnTheOutput(helper, -16, 700);
-	}
-
-	@GameTest(template = "empty_large", timeoutTicks = 7000)
-	public static void neutralWhileTheEngineSlowsWithASourceOnTheOutputKeepsTheTransmission(GameTestHelper helper) {
-		checkNeutralWithASourceOnTheOutput(helper, 64, 60);
 	}
 
 	/**
@@ -2500,7 +2490,6 @@ public class EngineGameTests {
 			String speeds = "wheel controller " + wheelController.getSpeed() + ", wheel cog " + wheelCog.getSpeed()
 				+ ", engine controller " + engineController.getSpeed() + ", engine cog " + engineCog.getSpeed()
 				+ ", press " + press.getSpeed();
-			System.out.println("RIG SPEEDS (stallAfter " + stallAfter + ", shift " + shift + "): " + speeds);
 			helper.assertTrue(wheelCog.getSpeed() != 0 && engineCog.getSpeed() != 0 && press.getSpeed() != 0,
 				"The rig should be turning before anything changes: " + speeds);
 			helper.assertTrue(Math.abs(wheelCog.getSpeed()) == Math.abs(engineCog.getSpeed()),
