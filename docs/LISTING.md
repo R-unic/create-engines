@@ -150,7 +150,7 @@ type, `create_engines:refining`.
 ## ✅ Requirements
 
 - Minecraft 1.21.1, NeoForge 21.1.219 or newer
-- Create 6.0.10 (all of its own requirements, Flywheel and Ponder, come with it)
+- Create 6.0.10 (all of its own requirements, Flywheel and Ponder, come with it). Use Create 6.0.10 build 257 or newer: tested on 6.0.10-257 to 6.0.10-281 and on 6.0.11-346. On the older 6.0.10 builds (217 to 256) the mod loads and runs, but in our tests the Transmission moved from Neutral to Auto did not drive the machines behind it, so update Create if you use the Transmission.
 - Required on both the client and the server
 
 ## About this mod
@@ -188,7 +188,7 @@ power at the top of the curve), and two engines on one kinetic network no longer
   product. A comparator on a Reboiler reads the feed level and on a Condenser the product level.
 - Flare Stack: burns on a working Condenser, with a soft whoosh now and then.
 - Soot Trap: catches the soot a rich engine would send out of the exhaust (50 mB of unburned fuel is one Soot, up to 64).
-  Empty it by hand, hopper or funnel. Soot grinds to black dye. A caught lump makes a small clink.
+  Empty it by hand, hopper or funnel. Soot grinds to black dye, and also makes gray dye, gunpowder (heated basin mixing, with sugar) and coal (basin compacting over a blaze burner), and burns as a weak furnace fuel. A caught lump makes a small clink.
 - Jerry Can: four buckets of one fluid in an item, for fuel that has to go where there is no pipe. Its bar takes the
   colour of the fluid, and sneak-use on a block pours one bucket onto the ground as a source block.
 - Basin ethanol is weaker: 35 mB per 250 (heated) and 70 mB per 250 (superheated), and biodiesel asks for 17 mB of
@@ -196,7 +196,7 @@ power at the top of the curve), and two engines on one kinetic network no longer
   make ethanol.
 - Goggles on a Create Basin say when a column would make more of a fuel from what it holds, and fuel buckets say
   when a column makes them.
-- Ponder pages for the refining column, leaning columns, the Soot Trap and the Jerry Can.
+- Ponder pages for the refining column, leaning columns, the Soot Trap, the Jerry Can and the Maker's Plate (which had none).
 - Plant oil, and any fluid in the new `create_engines:poor_lubricants` tag, now lubricates an engine at 0.6 of engine
   oil's strength. Engine oil is unchanged.
 - Fix: an engine split by an unloaded chunk (crankshaft chunk loaded, far half not) used to have its crank speed zeroed
@@ -210,7 +210,7 @@ power at the top of the curve), and two engines on one kinetic network no longer
   engine size and sharpness, load and boost, shaping it), and the engine clatter sample is regenerated. Machine and
   starter loops wait out the sound engine's settle delay, fade out beyond 48 blocks, ignore bad pitch and volume values,
   and drop finished instances instead of keeping them until you leave the world.
-- Advancements play a short synthesised sting and no longer announce themselves in chat.
+- Advancements: each one earned plays a short synthesised sting. Eighteen minor ones (such as Bottom End, Bore Ambition, Turn the Key and Oil Pan) show a toast without a line in chat; every other shown one still announces. Ten that were hidden before are now shown (Smoke Signals, Fouled Up, Gas in the Oil, Overworked, Under the Hood, Psssht, Gear Up, Always Fresh, Cool Running, Block Heater). Six keep their IDs and criteria but sit under a new parent in the tab (Let It Shift, Gearhead, Full Driveline and Reverse Engineering under Gear Up, Tucked In under Under the Hood, Gas in the Oil under Smoke Signals). Chief Engineer now also hands over an engraved Maker's Plate named Chief Engineer, from the new loot table `create_engines:advancement/chief_engineer`.
 - Ethanol under boost: ethanol now starts to light early under boost at its own temperature (5.0), where it used to
   use its autoignition point (3.4), which compression and pilot ignition still use. Only boosted spark engines burning
   ethanol are affected, and only at the top of the speed range: the last few of the sixteen measured speeds gain
@@ -226,7 +226,7 @@ power at the top of the curve), and two engines on one kinetic network no longer
 - Casing styles on shafts and cogwheels: Riveted, Louvred and Window Engine Casing can now clad a Create shaft, cogwheel
   and large cogwheel, nine new blocks (`engine_<style>_cased_shaft`, `_cased_cogwheel` and `_cased_large_cogwheel`),
   and connect to their own style.
-- Sound: a new pre-ignition knock sound set replaces the metal tick on a rattling exhaust. Engine notes and machine
+- Sound: the cooling tick of a stopped hot engine is higher and brighter (its three samples retuned from about 1.8 to 2.6 kHz up to 2.5 to 3.6 kHz, and played at 1.0 to 1.5 pitch instead of 0.75 to 1.35). A new pre-ignition knock sound set replaces the metal tick on a rattling exhaust. The exhaust backfire sound (`exhaust_pop`, three samples) is rebuilt from layered noise: a hard-driven burst weighted in the low mids, a few close reflections and a crackle of tiny pops, with no fixed tones, so it no longer sounds synthetic (sound files only; the event and when it plays are unchanged). Engine notes and machine
   loops share a budget so a flapping engine cannot start and drop voices every few ticks: at most 16 machine loops at
   once, a rest of two seconds after a voice ends, and at most four starts a second. The quiet loops (clatter, squeal,
   intake roar) start at a level of 0.05 instead of 0.02.
@@ -242,6 +242,7 @@ power at the top of the curve), and two engines on one kinetic network no longer
 - Under the hood: `EngineSimulation` and `CylinderModel` are split into smaller parts with no change in behaviour, and
   the layout-derived muffling and soot-trap runs are cached. New tests cover compatibility with every earlier release's
   saved engines, exact simulation values, fuzzed network and save data, and engines run with Sodium and without Flywheel.
+- New IDs and keys (they join the 1.x promise): blocks `reboiler`, `column_section`, `condenser`, `flare_stack`, `soot_trap` and the nine `engine_<riveted|louvred|window>_cased_<shaft|cogwheel|large_cogwheel>`; items `jerry_can` and `soot`; block entities `column_port` and `soot_trap`; sound events `advancement_sting`, `flare_whoosh`, `preignition_knock` and `soot_catch`; recipe type `create_engines:refining` with the routes `diesel`, `gasoline`, `ethanol` and `ethanol_superheated`; data component `can_fluid`; fluid tag `create_engines:poor_lubricants`; loot table `create_engines:advancement/chief_engineer`; recipes `reboiler`, `column_section`, `condenser`, `flare_stack`, `soot_trap`, `jerry_can`, `black_dye_from_soot`, `gray_dye_from_soot`, `gunpowder_from_soot` and `coal_from_soot`; block state properties `casing_style` (plain, riveted, louvred, on every clad part), and `active`, `tint`, `lean_up` and `lean_down` on the column section and `lit` on the flare stack; fuel data-map field `preignition_temperature`; a mixin config `create_engines.mixins.json` (the Basin goggle line, which fails soft if Create changes). Saved keys: `Width`, `Height`, `Fault`, `BaseX/Y/Z`, `BlockedX/Y/Z`, `Lean`, `Heat`, `Limit`, `Rate`, `Catalyst` and `Size` on the column port; `Stored` and `Gathered` on the soot trap; `OilExchange` and `SumpSignal` on the oil sump (an older sump save still loads through the old shared key). Config keys: none added.
 
 ## Changelog for 1.2.1
 
