@@ -80,18 +80,12 @@ public record EngineSummary(EngineState state, float rpm, float availableTorque,
 		tag.putFloat("Boost", boost);
 		tag.putInt("Lines", lines);
 		tag.putBoolean("Starter", starterEngaged);
-		int[] angles = new int[firingAngles.length];
-		for (int i = 0; i < angles.length; i++)
-			angles[i] = Math.round(firingAngles[i] * 10);
-		tag.putIntArray("Firings", angles);
+		tag.putIntArray("Firings", FiringAngles.toTenths(firingAngles));
 		return tag;
 	}
 
 	public static EngineSummary read(CompoundTag tag) {
-		int[] angles = tag.getIntArray("Firings");
-		float[] firingAngles = new float[angles.length];
-		for (int i = 0; i < angles.length; i++)
-			firingAngles[i] = angles[i] / 10f;
+		float[] firingAngles = FiringAngles.fromTenths(tag.getIntArray("Firings"));
 		EngineState[] states = EngineState.values();
 		Diagnosis.Health[] healths = Diagnosis.Health.values();
 		Diagnosis.Cause[] causes = Diagnosis.Cause.values();

@@ -171,9 +171,10 @@ behaves says so in its changelog.
 
 ## Changelog for 1.3.0
 
-The Refinery: a column that turns feed into fuel more efficiently than a basin. Existing engines, ratings, IDs and
-config keys are unchanged, and diesel and gasoline from a basin make exactly what they did. The one exception is
-basin ethanol, which gets weaker (see below).
+The Refinery: a column that turns feed into fuel more efficiently than a basin. IDs and config keys are unchanged, and
+diesel and gasoline from a basin make exactly what they did. Three things change how something that already exists
+behaves, and each is named below: basin ethanol gets weaker, ethanol on a boosted spark engine pre-ignites later (more
+power at the top of the curve), and two engines on one kinetic network no longer hold each other turning.
 - Refining column: a square of Reboilers (1 to 3 wide) on a heat source, layers of Column Sections, and a layer of
   Condensers on top. Pipe feed into any Reboiler and take product from any Condenser. The heat under the base
   picks the route, and a wider or taller column runs faster. Plant oil to diesel and diesel to gasoline use about a
@@ -201,11 +202,43 @@ basin ethanol, which gets weaker (see below).
 - Fix: an engine split by an unloaded chunk (crankshaft chunk loaded, far half not) used to have its crank speed zeroed
   every tick and came back stalled for good. It now keeps its speed and carries on when the chunk loads again, as an
   engine unloaded whole already did.
+- Fix: an engine could lose its whole exhaust note, and the bangs that give way to it, when one cylinder's firing angle
+  rounded up to the full 720 degree cycle on its way to the client (any angle from 719.95 up). 1.2.1 made the note
+  refuse such an angle by going silent; the angles are now wrapped into the cycle and kept in firing order before they
+  are sent and when they are read.
 - Sound: the cylinder firing sound is redesigned (a sharp crack per firing that fades as firings merge into a tone, with
   engine size and sharpness, load and boost, shaping it), and the engine clatter sample is regenerated. Machine and
   starter loops wait out the sound engine's settle delay, fade out beyond 48 blocks, ignore bad pitch and volume values,
   and drop finished instances instead of keeping them until you leave the world.
 - Advancements play a short synthesised sting and no longer announce themselves in chat.
+- Ethanol under boost: ethanol now starts to light early under boost at its own temperature (5.0), where it used to
+  use its autoignition point (3.4), which compression and pilot ignition still use. Only boosted spark engines burning
+  ethanol are affected, and only at the top of the speed range: the last few of the sixteen measured speeds gain
+  torque (a one-cylinder crude build goes from 0.26 to 0.49 at its top speed, a six-cylinder one from 1.21 to 2.08). Gasoline,
+  diesel, biodiesel and every other fuel and speed are exactly as they were. A fuel can set its own point with the new
+  optional `preignition_temperature` field in the fuel data map; leaving it out means its autoignition point, as before.
+- Fix: two engines on one kinetic network no longer keep each other turning with no fuel. An engine holds its crank to
+  the network's speed only when something other than an engine (a motor, a wheel, a hand crank) is driving it. An engine
+  split by a missing chunk also stops its starter cranking while it is split.
+- Fix: the two dials on an Oil Sump (oil exchange and comparator signal) shared one save key and overwrote each other, so
+  the screen could show the other dial's value. Each has its own key now; a sump saved before this still loads, and both
+  dials read the old shared key when they have none of their own.
+- Casing styles on shafts and cogwheels: Riveted, Louvred and Window Engine Casing can now clad a Create shaft, cogwheel
+  and large cogwheel, nine new blocks (`engine_<style>_cased_shaft`, `_cased_cogwheel` and `_cased_large_cogwheel`),
+  and connect to their own style.
+- Sound: a new pre-ignition knock sound set replaces the metal tick on a rattling exhaust. Engine notes and machine
+  loops share a budget so a flapping engine cannot start and drop voices every few ticks: at most 16 machine loops at
+  once, a rest of two seconds after a voice ends, and at most four starts a second. The quiet loops (clatter, squeal,
+  intake roar) start at a level of 0.05 instead of 0.02.
+- Rendering: the gas drawn inside each cylinder is cut with fewer sides and rings from 16 blocks away, and is not drawn
+  beyond 40 blocks, where it is a smudge in a bore. Stopped engines no longer re-pose and re-upload their shafts, crank
+  throws, cam lobes, valves, pistons and rods every frame, and a cylinder without pushrods stops posing four hidden
+  parts every frame. Heat shimmer, rock dust, intake draught and exhaust effects are not built when no player is within
+  40 blocks (48 for exhaust).
+- Goggles: several lines are shorter (power, torsional flex, muffled, roughness, cold, cool, warm, cooling down,
+  coasting, overloaded). They say the same things.
+- Saves: a damaged engine save with infinity or NaN in its saved motion is read as zero, instead of an engine that never
+  stalls or settles. The Soot item model is now a flat item sprite.
 - Under the hood: `EngineSimulation` and `CylinderModel` are split into smaller parts with no change in behaviour, and
   the layout-derived muffling and soot-trap runs are cached. New tests cover compatibility with every earlier release's
   saved engines, exact simulation values, fuzzed network and save data, and engines run with Sodium and without Flywheel.

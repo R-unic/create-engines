@@ -154,6 +154,9 @@ public final class EngineNoteSound extends AbstractTickableSoundInstance {
 		boolean audible = wanted.combustion() > 0 && wanted.rpm() > 1 && near(crank);
 		fade = Mth.clamp(fade + (audible ? FADE_IN : -FADE_OUT), 0, 1);
 		if (fade <= 0 && !audible) {
+			// Once per note, so cheap: says why an engine that was playing went quiet
+			LOGGER.debug("Engine note at {} ended: {}, rpm {}, combustion {}, in range {}", crank.getBlockPos(),
+				summary == null ? "no summary" : "state " + summary.state(), wanted.rpm(), wanted.combustion(), near(crank));
 			if (PLAYING.remove(crank.getBlockPos(), this))
 				BUDGET.finished(crank.getBlockPos(), crank.getLevel() == null ? 0 : crank.getLevel().getGameTime());
 			stop();
