@@ -38,3 +38,21 @@ run/
 **/src/generated/**/.cache/
 repo/
 !**/src/**/repo/
+
+### Python ###
+__pycache__/
+*.pyc
+
+### Logs, crashes, temp ###
+*.log
+hs_err_pid*
+replay_pid*
+*.tmp
+*.bak
+*.orig
+*.rej
+*.swp
+
+### OS ###
+Thumbs.db
+desktop.ini
