@@ -55,8 +55,9 @@ anything under `src/generated`.
 
 ## Proof it can fail
 
-A harness that has only ever passed has proved nothing. `scripts/smoke-mutations.ps1` breaks a *copy* of the mod in ten
-known ways and lists what must turn red. Verified 2026-11-16, each caught by the check named:
+A harness that has only ever passed has proved nothing. `scripts/smoke-mutations.ps1` breaks a *copy* of the mod in twelve
+known ways and lists what must turn red. The first ten were verified 2026-11-16 and the last two on 2026-11-18 (the client
+set, in a private copy: every EXPECT line appeared among the failures), each caught by the check named:
 
 | Break | Caught by |
 |---|---|
@@ -70,6 +71,8 @@ known ways and lists what must turn red. Verified 2026-11-16, each caught by the
 | a sound event missing from `sounds.json` | `[sound] event exhaust_pop is in sounds.json` |
 | a direct buffer allocated and kept on every sound read (the 1.2.0 bug, made worse) | `[perf] direct memory does not climb` |
 | a particle description missing (crashes the game) | `[particles] gas has a particle description` + `the run did not complete` |
+| the multipart models no longer shared (1.4.0: every pipe state holds its own copy again, about 440 MB) | `[models] every multipart state of the mod shares its block's one baked model` |
+| a model face whose texture coordinates run past the edge of its sprite (the 1.4.0 purple rockers and pushrods) | `[models] partial model ROCKER keeps its texture coordinates inside its sprites` (the baked quads), and `ModelUvAssetsTest` for the model files |
 
 Building this found real holes in the harness itself, all fixed: an empty tag does not look empty (vanilla swaps in a
 barrier named "Empty Tag", so a naive check passes it), a crash lost every finding made before it, and a run that died
@@ -96,6 +99,13 @@ client audit is the guard.
 * **Exact checks over pictures.** A missing texture is found by walking every quad of every baked model and comparing its
   sprite to the missing-texture sprite, per block state. That cannot be missed the way a magenta corner of a screenshot
   can. The pixel checks (`PixelChecks`) are a backstop for what the model walk cannot see.
+* **Texture coordinates too.** The sprite check cannot see a face that has the right sprite and the wrong coordinates: a
+  face that runs off the edge of its sprite shows the sprite next to it in the atlas, which is stray colour or purple and
+  black in one pack and fine in another (1.4.0: pushrods, rockers and head plugs, found by a player, not by the audit, which
+  passed with it on screen). So the audit also measures every quad's coordinates against its own sprite (`UvBounds`), for
+  blocks, items and the Flywheel partial models, and `ModelUvAssetsTest` does the same for the model files with no game.
+  The allowance is half a pixel; fix a failure in `tools/generate_models.py` (`WRAP_UV`, `WRAP_MIN_OVERRUN`) or give the
+  face a `uv`, never by widening it. The pixel check missed this one too: a shaded missing texture is dark purple, not magenta.
 * **Trends over snapshots.** The 1.2.0 sound crash was a slow leak of direct memory. No screenshot shows that; a series of
   `BufferPoolMXBean` readings with a climbing fit does (`PerfSampler.climbing`). Heap is sampled after a GC so garbage is
   not mistaken for a leak; frame times are judged by percentiles because a stutter lives in p99, not the mean.

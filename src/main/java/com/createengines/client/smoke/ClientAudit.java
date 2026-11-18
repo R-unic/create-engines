@@ -11,6 +11,7 @@ import java.util.TreeSet;
 import com.createengines.CreateEngines;
 import com.createengines.registry.CEPartialModels;
 import com.createengines.smoke.SmokeReport;
+import com.createengines.smoke.UvBounds;
 import com.createengines.smoke.audit.ServerAudit;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
@@ -142,6 +143,34 @@ public final class ClientAudit {
 			.equals(MissingTextureAtlasSprite.getLocation());
 	}
 
+	/**
+	 * A face whose texture coordinates run off the edge of its own sprite shows the sprite beside it in the atlas, which is
+	 * stray colour or the purple and black of the missing texture in some packs and fine in others: the sprite is the right
+	 * one, so {@link #missing} cannot see it. Returns a description of the worst such face, or null if there is none.
+	 */
+	static String uvOverrun(BakedModel model, BlockState state) {
+		RandomSource random = RandomSource.create(42);
+		double worst = 0;
+		String where = null;
+		List<Direction> faces = new ArrayList<>(List.of(Direction.values()));
+		faces.add(null);
+		for (Direction face : faces)
+			for (var quad : model.getQuads(state, face, random, ModelData.EMPTY, null)) {
+				var sprite = quad.getSprite();
+				if (missing(sprite))
+					continue;
+				double overrun = UvBounds.worstOverrun(quad.getVertices(), sprite.getU0(), sprite.getU1(), sprite.getV0(),
+					sprite.getV1());
+				if (overrun > worst) {
+					worst = overrun;
+					where = (face == null ? "unculled" : face.toString()) + " face of sprite " + sprite.contents()
+						.name();
+				}
+			}
+		return UvBounds.exceeds(worst) ? "has a " + where + " whose texture coordinates run " + Math.round(worst * 100) / 100.0
+			+ " pixels outside the sprite: it samples the sprite next to it in the atlas" : null;
+	}
+
 	/** The reasons a baked model would draw a purple checkerboard, or nothing, on some face. */
 	private static List<String> modelProblems(BakedModel model, BlockState state) {
 		List<String> problems = new ArrayList<>();
@@ -161,6 +190,9 @@ public final class ClientAudit {
 					problems.add("has a face with the missing texture (" + (face == null ? "unculled" : face) + ")");
 		if (missing(model.getParticleIcon(ModelData.EMPTY)))
 			problems.add("has the missing texture as its break-particle sprite");
+		String uv = uvOverrun(model, state);
+		if (uv != null)
+			problems.add(uv);
 		return problems;
 	}
 
@@ -302,8 +334,11 @@ public final class ClientAudit {
 				for (var quad : model.getQuads(null, face, random, ModelData.EMPTY, null))
 					if (missing(quad.getSprite()) && !problems.contains("quad"))
 						problems.add("quad");
-			if (problems.isEmpty())
+			String uv = uvOverrun(model, null);
+			if (problems.isEmpty() && uv == null)
 				report.pass("models", "item " + name);
+			else if (uv != null)
+				report.fail("models", "item " + name, uv);
 			else
 				report.fail("models", "item " + name, "has a face with the missing texture");
 		}
@@ -323,6 +358,9 @@ public final class ClientAudit {
 				BakedModel model = partial.get();
 				report.check("models", "partial model " + field.getName(), model != null && model != missingModel,
 					"Flywheel cannot find " + partial.modelLocation() + ", so the part would not be drawn");
+				String uv = model == null || model == missingModel ? null : uvOverrun(model, null);
+				report.check("models", "partial model " + field.getName() + " keeps its texture coordinates inside its sprites",
+					uv == null, uv);
 			} catch (ReflectiveOperationException | RuntimeException e) {
 				report.fail("models", "partial model " + field.getName(), e.toString());
 			}
