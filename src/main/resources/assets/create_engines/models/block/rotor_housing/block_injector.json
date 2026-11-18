@@ -925,16 +925,40 @@
           "texture": "#injector"
         },
         "east": {
-          "texture": "#injector"
+          "texture": "#injector",
+          "uv": [
+            14.5,
+            11,
+            16.0,
+            14
+          ]
         },
         "west": {
-          "texture": "#injector"
+          "texture": "#injector",
+          "uv": [
+            0,
+            11,
+            1.5,
+            14
+          ]
         },
         "up": {
-          "texture": "#injector"
+          "texture": "#injector",
+          "uv": [
+            11,
+            0,
+            14,
+            1.5
+          ]
         },
         "down": {
-          "texture": "#injector"
+          "texture": "#injector",
+          "uv": [
+            11,
+            14.5,
+            14,
+            16.0
+          ]
         }
       }
     }

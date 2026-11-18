@@ -115,16 +115,40 @@
       ],
       "faces": {
         "north": {
-          "texture": "#terminal"
+          "texture": "#terminal",
+          "uv": [
+            7.5,
+            0,
+            8.5,
+            3
+          ]
         },
         "south": {
-          "texture": "#terminal"
+          "texture": "#terminal",
+          "uv": [
+            7.5,
+            0,
+            8.5,
+            3
+          ]
         },
         "east": {
-          "texture": "#terminal"
+          "texture": "#terminal",
+          "uv": [
+            7.5,
+            0,
+            8.5,
+            3
+          ]
         },
         "west": {
-          "texture": "#terminal"
+          "texture": "#terminal",
+          "uv": [
+            7.5,
+            0,
+            8.5,
+            3
+          ]
         },
         "up": {
           "texture": "#terminal"

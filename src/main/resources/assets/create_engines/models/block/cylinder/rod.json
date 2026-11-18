@@ -50,16 +50,40 @@
       ],
       "faces": {
         "north": {
-          "texture": "#rod"
+          "texture": "#rod",
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ]
         },
         "south": {
-          "texture": "#rod"
+          "texture": "#rod",
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ]
         },
         "east": {
-          "texture": "#rod"
+          "texture": "#rod",
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ]
         },
         "west": {
-          "texture": "#rod"
+          "texture": "#rod",
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ]
         },
         "up": {
           "texture": "#rod"

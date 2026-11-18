@@ -19,16 +19,40 @@
       ],
       "faces": {
         "north": {
-          "texture": "#piston"
+          "texture": "#piston",
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ]
         },
         "south": {
-          "texture": "#piston"
+          "texture": "#piston",
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ]
         },
         "east": {
-          "texture": "#piston"
+          "texture": "#piston",
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ]
         },
         "west": {
-          "texture": "#piston"
+          "texture": "#piston",
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ]
         },
         "up": {
           "texture": "#piston"

@@ -20,16 +20,40 @@
       ],
       "faces": {
         "north": {
-          "texture": "#piston"
+          "texture": "#piston",
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ]
         },
         "south": {
-          "texture": "#piston"
+          "texture": "#piston",
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ]
         },
         "east": {
-          "texture": "#piston"
+          "texture": "#piston",
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ]
         },
         "west": {
-          "texture": "#piston"
+          "texture": "#piston",
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ]
         },
         "up": {
           "texture": "#piston"
@@ -116,16 +140,40 @@
       ],
       "faces": {
         "north": {
-          "texture": "#pin"
+          "texture": "#pin",
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ]
         },
         "south": {
-          "texture": "#pin"
+          "texture": "#pin",
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ]
         },
         "east": {
-          "texture": "#pin"
+          "texture": "#pin",
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ]
         },
         "west": {
-          "texture": "#pin"
+          "texture": "#pin",
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ]
         },
         "up": {
           "texture": "#pin"

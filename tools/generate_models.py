@@ -17,14 +17,14 @@ FACES = ("north", "south", "east", "west", "up", "down")
 # Only the refinery models use this: older models were made and approved with the default patches, so they stay as
 # they are. Set by the functions that want it.
 WRAP_UV = False
+# With WRAP_UV off, a face is still moved back inside its texture when it runs this many pixels outside it or more
+WRAP_MIN_OVERRUN = 0.5
 
 
 def _wrapped_default_uv(a, b, face):
     """The patch a face would show by default, moved back inside the texture when the element pokes out of the block
     (a boss or port outside 0..16): outside the sprite the default patch samples the neighbouring sprites in the atlas
     and shows as stray colours. Returns None when the default is already inside and needs no uv."""
-    if not WRAP_UV:
-        return None
     x1, y1, z1 = a
     x2, y2, z2 = b
     u0, v0, u1, v1 = {
@@ -36,6 +36,12 @@ def _wrapped_default_uv(a, b, face):
         "east": (16 - z2, 16 - y2, 16 - z1, 16 - y1),
     }[face]
     if min(u0, v0) >= 0 and max(u1, v1) <= 16:
+        return None
+    # Models made before WRAP_UV (the pipe arms and the like) keep their approved default patches where the overrun is a
+    # fraction of a pixel; a pixel or more (the head plugs and injectors, rockers, pushrods, valves, pistons, rods) shows as
+    # stray colour from the neighbouring sprite, which one atlas layout hides and another (a bigger modpack) does not
+    overrun = max(-min(u0, v0, 0), max(u1, v1, 16) - 16)
+    if not WRAP_UV and overrun < WRAP_MIN_OVERRUN:
         return None
     du = -(u0 // 16) * 16
     dv = -(v0 // 16) * 16

@@ -216,6 +216,10 @@ into used oil, and a refining column keeps and reports its catalyst better. Ever
   `getFiring`, `getTemperature`, `getOilCondition`, `getBoost`, `getHealth`, `getCause`; nil when the block is not part of a
   built engine). Tested against KubeJS 2101.7.2 and CC: Tweaked 1.120.2 (a test listener and a test peripheral call, not a
   player's script or program); see `docs/INTEGRATIONS.md`. Preview, like the `api` package under them.
+- Fix: pushrods, rockers, valves, pistons, connecting rods, the plugs and injectors on cylinder heads and rotor housings,
+  the oil sump and the variable turbocharger could show a purple and black patch (or stray colours from a neighbouring texture),
+  depending on what else was loaded. Parts drawn partly outside their block had texture coordinates running off the edge of
+  their texture; they now stay inside it. Nothing else about them changes.
 - Fix: intake manifolds and pipes now turn and mirror with a structure, a schematic or a turned blueprint build; before, their
   connection arms stayed pointing the old way when the block was rotated. Placed pipes in existing worlds are not touched.
 - JEI and EMI show every fuel (energy, how it lights, cold start, boost tolerance) and every installable part with the

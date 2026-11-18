@@ -536,10 +536,22 @@
       ],
       "faces": {
         "north": {
-          "texture": "#bolt"
+          "texture": "#bolt",
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ]
         },
         "south": {
-          "texture": "#bolt"
+          "texture": "#bolt",
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ]
         },
         "east": {
           "texture": "#bolt"
@@ -548,10 +560,22 @@
           "texture": "#bolt"
         },
         "up": {
-          "texture": "#bolt"
+          "texture": "#bolt",
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ]
         },
         "down": {
-          "texture": "#bolt"
+          "texture": "#bolt",
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ]
         }
       }
     },
