@@ -708,6 +708,18 @@ public class BlueprintGameTests {
 		turnedCopiesScanAlike(helper, TestEngine.HEAD);
 	}
 
+	/** The intake runs through a bent pipe (two bends, one going up) to an opening: every turn and mirror must keep it reaching the head. */
+	@GameTest(template = "empty_large", timeoutTicks = 400)
+	public static void aTurnedBentPipeNetworkScansAsTheSameEngine(GameTestHelper helper) throws BlueprintException {
+		TestEngine.build(helper.getLevel(), helper.absolutePos(BlockPos.ZERO), true);
+		TestEngine.addBentIntake(helper.getLevel(), helper.absolutePos(BlockPos.ZERO));
+		var layout = com.createengines.engine.topology.EngineScanner.scan(helper.getLevel(), helper.absolutePos(TestEngine.PRIMARY));
+		if (layout == null || layout.ports().stream().noneMatch(p -> p.kind() == com.createengines.content.airflow.PortKind.INTAKE
+			&& p.openings() == 1 && p.heads() == 1))
+			helper.fail("the bent intake should reach the head through one opening: " + (layout == null ? "no engine" : layout.ports()));
+		turnedCopiesScanAlike(helper, TestEngine.HEAD);
+	}
+
 	/** The second line turns the other way (four cogwheels, not three): its sense must survive every turn and mirror. */
 	@GameTest(template = "empty_large", timeoutTicks = 400)
 	public static void aTurnedCounterRotatingBuildScansAsTheSameEngine(GameTestHelper helper) throws BlueprintException {
@@ -802,6 +814,26 @@ public class BlueprintGameTests {
 					helper.fail(rotation + " (" + mirror + "): cam timing " + twin.lobeAngle() + ", expected " + cylinder.lobeAngle());
 				if (twin.faults() != cylinder.faults() || twin.sparkPlug() != cylinder.sparkPlug())
 					helper.fail(rotation + " (" + mirror + "): faults " + twin.faults() + " expected " + cylinder.faults());
+			}
+			// The pipe networks reach the same openings, turned: same kinds, counts, heads and opening places
+			if (layout.ports().size() != original.ports().size())
+				helper.fail(rotation + " (" + mirror + "): " + layout.ports().size() + " pipe networks, expected " + original.ports().size());
+			for (var port : original.ports()) {
+				// Which network is which can change with the turn, so find the one holding the first opening's turned place
+				var twinPort = (com.createengines.engine.topology.EngineLayout.PortNetwork) null;
+				for (BlockPos outlet : port.outlets()) {
+					BlockPos rel = outlet.subtract(primary);
+					int[] at = com.createengines.content.blueprint.BlueprintTurner.place(rel.getX(), rel.getZ(), rotation, mirror);
+					BlockPos expected = site.offset(at[0], rel.getY(), at[1]);
+					if (twinPort == null)
+						twinPort = layout.ports().stream().filter(p -> p.kind() == port.kind() && p.outlets().contains(expected)).findFirst()
+							.orElse(null);
+					if (twinPort == null || !twinPort.outlets().contains(expected))
+						helper.fail(rotation + " (" + mirror + "): the " + port.kind() + " opening at " + rel + " is not at " + expected);
+				}
+				if (twinPort != null && (twinPort.openings() != port.openings() || twinPort.heads() != port.heads()))
+					helper.fail(rotation + " (" + mirror + "): the " + port.kind() + " network has " + twinPort.openings() + " openings and "
+						+ twinPort.heads() + " heads, expected " + port.openings() + " and " + port.heads());
 			}
 		}
 		helper.succeed();

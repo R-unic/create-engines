@@ -269,6 +269,28 @@ public final class TestEngine {
 			set.accept(new BlockPos(0, 2, z), axisX(AllBlocks.COGWHEEL.getDefaultState()));
 	}
 
+	/**
+	 * Replaces {@link #build}'s straight air intake with three pipes and an opening on top: head, north, north again then west,
+	 * then west and up to an opening facing up. The arms are in three different directions, so a pipe left unturned breaks the run.
+	 */
+	public static void addBentIntake(Level level, BlockPos origin) {
+		BiConsumer<BlockPos, BlockState> set = (pos, state) -> level.setBlock(origin.offset(pos), state, Block.UPDATE_ALL);
+		level.removeBlock(origin.offset(AIR_INTAKE), false);
+		set.accept(new BlockPos(1, 5, 0), CEBlocks.AIR_INTAKE.getDefaultState()
+			.setValue(PortOpeningBlock.FACING, Direction.UP));
+		set.accept(new BlockPos(1, 4, 0), pipe(Direction.EAST, Direction.UP));
+		set.accept(new BlockPos(2, 4, 0), pipe(Direction.SOUTH, Direction.WEST));
+		set.accept(AIR_INTAKE, pipe(Direction.SOUTH, Direction.NORTH));
+	}
+
+	private static BlockState pipe(Direction first, Direction second) {
+		BlockState state = CEBlocks.INTAKE_MANIFOLD.getDefaultState();
+		for (Direction direction : Direction.values())
+			state = state.setValue(com.createengines.content.airflow.ManifoldBlock.CONNECTIONS.get(direction),
+				direction == first || direction == second);
+		return state;
+	}
+
 	private TestEngine() {
 	}
 }
