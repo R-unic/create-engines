@@ -189,6 +189,17 @@ public class CrankshaftBlockEntity extends GeneratingKineticBlockEntity implemen
 		setPrimary(worldPosition, 1);
 	}
 
+	/**
+	 * Builds this engine again from the layout it has, carrying its speed, oil and heat over, so that whatever is asked
+	 * when an engine is built (the sources packs and addons add) is asked again.
+	 */
+	public void rebuildEngine() {
+		if (controller == null)
+			return;
+		controller = new EngineController(this, controller.layout(), controller.motion());
+		setPrimary(worldPosition, 1);
+	}
+
 	/** The engine this crankshaft hosts, if it is the primary of a built one. */
 	public @Nullable EngineController controller() {
 		return controller;

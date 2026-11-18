@@ -25,6 +25,16 @@ not a separate class: its gas, ports and burning are shared with the piston, so 
 `GoggleOverlayMixin` importing client code, `ArchitectureRulesTest`), and all 313 GameTests pass. `compat/behaviour.txt`
 and `compat/trajectories.txt` untouched. `pitest` not re-run.
 
+**Built (step 4, registration, uncommitted until the commit that follows this line):** `api.EngineExtensions.register` /
+`unregister` take an `api.EngineSourceProvider`, which `EngineController` asks whenever an engine is built and which
+returns `TorqueSource`s for `sim.addSource`. `EngineExtensions.rebuild(level, pos)` rebuilds the engine at a block (keeping
+motion, oil and heat) so a pack's own block can change what it supplies. A provider that throws or returns nulls is
+reported (logged as an error, or to `reportFailuresTo` for a test) and skipped; the engine still builds. Preview API,
+frozen at 2.0. Three GameTests in `PackToolsGameTests`: a source is on the crank and stepped, a failing provider is
+skipped and reported, `rebuild` asks again. All 316 GameTests pass in a private copy. **Limits, by design for now:** an
+added block is not a scanner member, so it does not trigger a rescan by itself (the pack calls `rebuild`), is not in
+blueprints, and has no goggle lines; added sources get no boost (Induction reads cylinders only).
+
 **Not built:** narrowing the 19 files (step 3), boost for added sources, any registry.
 
 ## What exists today (checked in the code)

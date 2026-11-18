@@ -40,10 +40,12 @@ import com.createengines.engine.sim.Camshaft;
 import com.createengines.engine.sim.CoolantSupply;
 import com.createengines.engine.sim.CycleResult;
 import com.createengines.engine.sim.CycleStats;
+import com.createengines.api.EngineExtensions;
 import com.createengines.engine.sim.CylinderModel;
 import com.createengines.engine.sim.CylinderSpec;
 import com.createengines.engine.sim.Dynamometer;
 import com.createengines.engine.sim.EngineSimulation;
+import com.createengines.engine.sim.TorqueSource;
 import com.createengines.engine.sim.FuelSpec;
 import com.createengines.engine.sim.Governor;
 import com.createengines.engine.sim.FuelSupply;
@@ -195,6 +197,11 @@ public final class EngineController {
 	private boolean warmStart;
 	private boolean hardStart;
 
+	/** Everything on this engine's crank: its cylinders, then whatever packs and addons added. */
+	public List<TorqueSource> sources() {
+		return sim.sources();
+	}
+
 	public EngineController(CrankshaftBlockEntity primary, EngineLayout layout, @Nullable Motion motion) {
 		this.primary = primary;
 		this.layout = layout;
@@ -336,6 +343,9 @@ public final class EngineController {
 		}
 		for (EngineLayout.Inline placed : layout.intercoolers())
 			sim.addIntercooler(new Intercooler(breathingOn(placed.intake())));
+		// Whatever packs and addons drive the crank with besides cylinders
+		for (TorqueSource source : EngineExtensions.sourcesFor(level, layout))
+			sim.addSource(source);
 		// A new engine starts dry, and has to be oiled; its oil is new and its block cold
 		sim.lubrication()
 			.setFilm(motion == null ? 0 : motion.film());
