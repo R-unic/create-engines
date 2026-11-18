@@ -38,6 +38,9 @@ public class CylinderHeadVisual extends AbstractBlockEntityVisual<CylinderHeadBl
 
 	@Override
 	public void beginFrame(DynamicVisual.Context context) {
+		// Posed from the render time, so it is exact again the frame it comes back into view
+		if (!isVisible(context.frustum()))
+			return;
 		animate();
 	}
 
