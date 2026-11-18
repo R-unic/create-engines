@@ -68,6 +68,11 @@ repositories {
         url = 'https://maven.squiddev.cc'
         content { includeGroup 'cc.tweaked' }
     }
+    maven { // Create Aeronautics and Sable, for the compatibility matrix only (Modrinth's maven, version ids)
+        name = 'Modrinth'
+        url = 'https://api.modrinth.com/maven'
+        content { includeGroup 'maven.modrinth' }
+    }
 }
 
 // Only the compatibility-matrix Sodium run loads this; the mod itself does not depend on Sodium. Declared before the runs that use it.
@@ -78,6 +83,8 @@ configurations.create('emiRuntime')
 // And the KubeJS and CC: Tweaked rows.
 configurations.create('kubejsRuntime')
 configurations.create('ccRuntime')
+// And the Create Aeronautics row (with Sable, which it needs).
+configurations.create('aeronauticsRuntime')
 
 neoForge {
     version = project.neo_version
@@ -172,6 +179,25 @@ neoForge {
             systemProperty 'create_engines.smokeAudit.requireIntegration', 'computercraft'
         }
 
+        // Create Aeronautics row: the same audit with Aeronautics (and Sable) loaded
+        smokeAuditAeronautics {
+            client()
+            gameDirectory = file('run/smoke-client-aeronautics')
+            systemProperty 'neoforge.enabledGameTestNamespaces', project.mod_id
+            systemProperty 'create_engines.smokeAudit', 'true'
+            systemProperty 'create_engines.smokeAudit.requireIntegration', 'aeronautics'
+        }
+
+        // The showcase with Aeronautics loaded, in a game folder of its own; its mods folder is filled by the run task
+        showcaseAeronautics {
+            client()
+            gameDirectory = file('run/showcase-aeronautics')
+            systemProperty 'neoforge.enabledGameTestNamespaces', project.mod_id
+            systemProperty 'create_engines.showcase', 'true'
+            systemProperty 'create_engines.showcase.set', project.hasProperty('showcaseSet') ? project.property('showcaseSet') : 'engines'
+            programArguments.addAll '--width', '1920', '--height', '1080'
+        }
+
         // Builds a handful of engines on stone pads and photographs them at 1920x1080 for the mod page, in a game
         // folder of its own so it neither shares nor disturbs the settings of a development client.
         showcase {
@@ -245,6 +271,8 @@ dependencies {
     kubejsRuntime("dev.latvian.mods:kubejs-neoforge:${kubejs_version}") { transitive = false }
     kubejsRuntime("dev.latvian.mods:rhino:${rhino_version}") { transitive = false }
     ccRuntime("cc.tweaked:cc-tweaked-${minecraft_version}-forge:${cc_tweaked_version}") { transitive = false }
+    aeronauticsRuntime("maven.modrinth:create-aeronautics:${aeronautics_version}") { transitive = false }
+    aeronauticsRuntime("maven.modrinth:sable:${sable_version}") { transitive = false }
 
     // The simulation core has no Minecraft dependencies and is tested as plain Java.
     testImplementation(platform('org.junit:junit-bom:5.11.4'))
@@ -359,7 +387,8 @@ tasks.matching { it.name == 'runVisualSmokeTest' }.configureEach { finalizedBy '
  [name: 'Jei', dir: 'run/smoke-client-jei', flywheel: null, mods: 'jeiRuntime'],
  [name: 'Emi', dir: 'run/smoke-client-emi', flywheel: null, mods: 'emiRuntime'],
  [name: 'Kubejs', dir: 'run/smoke-client-kubejs', flywheel: null, mods: 'kubejsRuntime'],
- [name: 'Cc', dir: 'run/smoke-client-cc', flywheel: null, mods: 'ccRuntime']].each { row ->
+ [name: 'Cc', dir: 'run/smoke-client-cc', flywheel: null, mods: 'ccRuntime'],
+ [name: 'Aeronautics', dir: 'run/smoke-client-aeronautics', flywheel: null, mods: 'aeronauticsRuntime']].each { row ->
     def rowDir = file(row.dir)
     // A recipe viewer is an ordinary mod: its jars go in the row's mods folder, which FML scans (on the classpath they are not found)
     def rowMods = row.mods ? configurations.getByName(row.mods).incoming.files : null
@@ -402,6 +431,20 @@ tasks.register('compatMatrix') {
     // The JEI row (runSmokeAuditJei) is not in this list: JEI 19.70 asks for NeoForge 21.1.238 and this build runs 21.1.219, so it
     // cannot start here (docs/COMPAT.md). Run it by hand on a NeoForge it accepts.
     dependsOn 'runSmokeAuditFlywheelOff', 'runSmokeAuditSodium', 'runSmokeAuditEmi', 'runSmokeAuditKubejs', 'runSmokeAuditCc'
+    // runSmokeAuditAeronautics is not in this list while its row is red (docs/COMPAT.md): it fails the log check on an error
+    // Simulated logs about its own model, and the showcase shows wrong textures on this mod's small parts with it loaded
+}
+
+// The showcase with Aeronautics loaded: its jars go in the game folder's mods folder, as in the rows above
+def aeroShowcaseDir = file('run/showcase-aeronautics')
+def aeroShowcaseMods = configurations.getByName('aeronauticsRuntime').incoming.files
+tasks.matching { it.name == 'runShowcaseAeronautics' }.configureEach {
+    doFirst {
+        def modsDir = new File(aeroShowcaseDir, 'mods')
+        modsDir.deleteDir()
+        modsDir.mkdirs()
+        aeroShowcaseMods.files.each { jar -> new File(modsDir, jar.name).bytes = jar.bytes }
+    }
 }
 tasks.matching { it.name == 'runSmokeAuditSodium' }.configureEach { mustRunAfter 'runSmokeAuditFlywheelOff' }
 tasks.matching { it.name == 'runSmokeAuditEmi' }.configureEach { mustRunAfter 'runSmokeAuditSodium' }
