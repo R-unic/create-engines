@@ -105,8 +105,8 @@ public class BlueprintItem extends Item {
 
 	/** Builds the recorded engine with its crankshaft against the face that was clicked. Used by the Bank Builder. */
 	public static void buildFor(Level level, UseOnContext context, RecordedBlueprint held, Player player) {
-		BlueprintBuilder.Result result = BlueprintBuilder.build(player, level, context.getClickedPos()
-			.relative(context.getClickedFace()), held, BlueprintTurner.forFacing(player.getDirection()));
+		BlueprintBuilder.Result result = BlueprintBuilder.buildOn(player, level, context.getClickedPos(),
+			context.getClickedFace(), held, BlueprintTurner.forFacing(player.getDirection()));
 		BlueprintBuilder.report(player, result, held.name());
 	}
 

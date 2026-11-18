@@ -105,6 +105,24 @@ class LogScannerTest {
 	}
 
 	@Test
+	void theSimulatedRopeConnectorEntryHidesOnlyThatModel() throws Exception {
+		var scanner = new LogScanner().configure(java.nio.file.Files.readString(java.nio.file.Path.of("src/smoke/log-allowlist.txt")));
+		String line = "[18Nov2026 01:03:40.025] [Worker-Main-1/WARN] [net.minecraft.client.resources.model.ModelBakery/]: "
+			+ "Unable to load model: 'minecraft:block' referenced from: simulated:block/rope_connector/block_horizontal: "
+			+ "java.io.FileNotFoundException: minecraft:models/block.json";
+		assertTrue(scanner.scan(List.of(line))
+			.isEmpty());
+		// the same missing parent on another model, a different missing parent, and one of ours all still fail
+		assertFalse(scanner.scan(List.of(line.replace("block_horizontal", "block_vertical")))
+			.isEmpty());
+		assertFalse(scanner.scan(List.of(line.replace("'minecraft:block'", "'minecraft:item/generated'")))
+			.isEmpty());
+		assertFalse(scanner.scan(List.of(line.replace("simulated:block/rope_connector/block_horizontal",
+			"create_engines:block/piston")))
+			.isEmpty());
+	}
+
+	@Test
 	void aCausedByUnderAnErrorIsItsOwnFinding() {
 		var findings = scan("[1] [Render thread/ERROR] [x/]: Failed to render", "\tat net.foo.Bar.baz(Bar.java:1)",
 			"Caused by: java.lang.NullPointerException: engine was null");

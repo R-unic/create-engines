@@ -188,6 +188,13 @@ neoForge {
             systemProperty 'create_engines.smokeAudit.requireIntegration', 'aeronautics'
         }
 
+        // A normal playable client with Aeronautics (and Sable) loaded, for hands-on testing (no smoke or showcase harness)
+        clientAeronautics {
+            client()
+            gameDirectory = file('run/client-aeronautics')
+            systemProperty 'neoforge.enabledGameTestNamespaces', project.mod_id
+        }
+
         // The showcase with Aeronautics loaded, in a game folder of its own; its mods folder is filled by the run task
         showcaseAeronautics {
             client()
@@ -436,14 +443,16 @@ tasks.register('compatMatrix') {
 }
 
 // The showcase with Aeronautics loaded: its jars go in the game folder's mods folder, as in the rows above
-def aeroShowcaseDir = file('run/showcase-aeronautics')
 def aeroShowcaseMods = configurations.getByName('aeronauticsRuntime').incoming.files
-tasks.matching { it.name == 'runShowcaseAeronautics' }.configureEach {
-    doFirst {
-        def modsDir = new File(aeroShowcaseDir, 'mods')
-        modsDir.deleteDir()
-        modsDir.mkdirs()
-        aeroShowcaseMods.files.each { jar -> new File(modsDir, jar.name).bytes = jar.bytes }
+['runShowcaseAeronautics': 'run/showcase-aeronautics', 'runClientAeronautics': 'run/client-aeronautics'].each { taskName, dir ->
+    def gameDir = file(dir)
+    tasks.matching { it.name == taskName }.configureEach {
+        doFirst {
+            def modsDir = new File(gameDir, 'mods')
+            modsDir.deleteDir()
+            modsDir.mkdirs()
+            aeroShowcaseMods.files.each { jar -> new File(modsDir, jar.name).bytes = jar.bytes }
+        }
     }
 }
 tasks.matching { it.name == 'runSmokeAuditSodium' }.configureEach { mustRunAfter 'runSmokeAuditFlywheelOff' }

@@ -5,6 +5,7 @@ import java.util.List;
 
 import org.jetbrains.annotations.Nullable;
 
+import com.createengines.content.blueprint.BlueprintBuilder;
 import com.createengines.content.blueprint.BlueprintItem;
 import com.createengines.content.blueprint.BlueprintTurner;
 import com.createengines.content.blueprint.RecordedBlueprint;
@@ -12,6 +13,7 @@ import com.createengines.content.tool.BankBuilderItem;
 import com.createengines.engine.blueprint.Blueprint;
 import com.createengines.engine.blueprint.BlueprintCodec;
 import com.createengines.engine.blueprint.BlueprintException;
+import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 
@@ -63,22 +65,33 @@ public final class BuildPreview {
 			return;
 
 		Level level = minecraft.level;
-		BlockPos origin = hit.getBlockPos()
-			.relative(hit.getDirection());
+		BlockPos origin = BlueprintBuilder.originOn(blueprint, hit.getBlockPos(), hit.getDirection());
 		Vec3 camera = event.getCamera()
 			.getPosition();
 		PoseStack pose = event.getPoseStack();
 		MultiBufferSource.BufferSource buffers = minecraft.renderBuffers()
 			.bufferSource();
-		VertexConsumer lines = buffers.getBuffer(RenderType.lines());
+		List<AABB> clear = new ArrayList<>();
+		List<AABB> blocked = new ArrayList<>();
 		for (BlockPos pos : cells(blueprint, origin)) {
 			BlockState there = level.getBlockState(pos);
 			boolean free = there.isAir() || there.canBeReplaced();
-			AABB box = new AABB(pos).inflate(-0.02)
-				.move(-camera.x, -camera.y, -camera.z);
-			LevelRenderer.renderLineBox(pose, lines, box, free ? 0.35f : 1f, free ? 0.9f : 0.2f, free ? 0.45f : 0.2f, 0.9f);
+			(free ? clear : blocked).add(new AABB(pos).inflate(-0.02)
+				.move(-camera.x, -camera.y, -camera.z));
 		}
+		VertexConsumer lines = buffers.getBuffer(RenderType.lines());
+		for (AABB box : clear)
+			LevelRenderer.renderLineBox(pose, lines, box, 0.35f, 0.9f, 0.45f, 0.9f);
 		buffers.endBatch(RenderType.lines());
+		if (!blocked.isEmpty()) {
+			// Drawn through the terrain: a cell inside the ground is inside a solid block and would be hidden otherwise
+			RenderSystem.disableDepthTest();
+			lines = buffers.getBuffer(RenderType.lines());
+			for (AABB box : blocked)
+				LevelRenderer.renderLineBox(pose, lines, box, 1f, 0.2f, 0.2f, 0.9f);
+			buffers.endBatch(RenderType.lines());
+			RenderSystem.enableDepthTest();
+		}
 	}
 
 	/** The cells the blueprint would fill with its origin at {@code origin}, at most {@link #MAX_DRAWN} of them. */

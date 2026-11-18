@@ -362,6 +362,16 @@ public class ColumnPortBlockEntity extends SmartBlockEntity implements IHaveGogg
 		return (controller == null ? catalyst : controller.catalyst).insertItem(0, stack, false);
 	}
 
+	/** Takes the catalyst out of the Reboiler's slot, wherever in the column it is asked; up to one stack, empty if none. */
+	public ItemStack extractCatalyst() {
+		ColumnPortBlockEntity controller = controller();
+		ItemStackHandler slot = (controller == null ? catalyst : controller.catalyst);
+		ItemStack held = slot.getStackInSlot(0);
+		if (held.isEmpty())
+			return ItemStack.EMPTY;
+		return slot.extractItem(0, held.getMaxStackSize(), false);
+	}
+
 	/** Spills the catalyst when the controller is broken. */
 	public void dropCatalyst() {
 		if (level != null && lit)
@@ -544,7 +554,7 @@ public class ColumnPortBlockEntity extends SmartBlockEntity implements IHaveGogg
 		}
 	}
 
-	/** The catalyst slot, seen from any Reboiler: it takes catalyst and never gives it back. */
+	/** The catalyst slot, seen from any Reboiler: it takes catalyst and gives it back to hoppers and funnels. */
 	private final class CatalystPort implements IItemHandler {
 
 		private ColumnPortBlockEntity owner() {
@@ -569,7 +579,7 @@ public class ColumnPortBlockEntity extends SmartBlockEntity implements IHaveGogg
 
 		@Override
 		public ItemStack extractItem(int slot, int amount, boolean simulate) {
-			return ItemStack.EMPTY;
+			return owner().catalyst.extractItem(slot, amount, simulate);
 		}
 
 		@Override

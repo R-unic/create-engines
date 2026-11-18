@@ -394,22 +394,46 @@ def maker_plate():
 
 def framed_blueprint():
     """A frame for a blueprint, modelled facing up: a cast iron frame round a sheet of blueprint paper. The renderer draws
-    the plan and the figures on the paper (the paper is 1.2 pixels up, see FramedBlueprintRenderer)."""
+    the plan and the figures on the paper (the paper is 1.2 pixels up, see FramedBlueprintRenderer). Sixteen models, one
+    per set of joined sides (bit 0 north, 1 east, 2 south, 3 west, in the model's own frame): a joined side has no rim or
+    bolts, and the plate and paper run out to the block's edge so neighbouring frames read as one sheet. Model c0 is the
+    lone frame, and is what the item shows."""
     textures = {"frame": IRON, "rim": BRASS_CASING, "paper": "create_engines:block/blueprint_paper", "bolt": BRASS,
                 "particle": IRON}
-    elements = [
+    for mask in range(16):
+        n, e, s, w = (bool(mask & 1), bool(mask & 2), bool(mask & 4), bool(mask & 8))
+        x0, x1 = (0 if w else 2), (16 if e else 14)
+        z0, z1 = (0 if n else 2), (16 if s else 14)
+        px0, px1 = (0 if w else 2.7), (16 if e else 13.3)
+        pz0, pz1 = (0 if n else 2.7), (16 if s else 13.3)
+        elements = [
+            box((x0, 0, z0), (x1, 1.0, z1), "frame"),
+            box((px0, 1.0, pz0), (px1, 1.2, pz1), "paper"),
+        ]
+        if not n:
+            elements.append(box((x0, 1.0, 2), (x1, 1.5, 2.7), "rim"))
+        if not s:
+            elements.append(box((x0, 1.0, 13.3), (x1, 1.5, 14), "rim"))
+        rz0, rz1 = (2.7 if not n else 0), (13.3 if not s else 16)
+        if not w:
+            elements.append(box((2, 1.0, rz0), (2.7, 1.5, rz1), "rim"))
+        if not e:
+            elements.append(box((13.3, 1.0, rz0), (14, 1.5, rz1), "rim"))
+        for x, side in ((2.1, w), (12.9, e)):
+            for z, end in ((2.1, n), (12.9, s)):
+                if not side and not end:
+                    elements.append(box((x, 1.5, z), (x + 1, 1.8, z + 1), "bolt"))
+        write("framed_blueprint/c%d" % mask, textures, elements)
+        if mask == 0:
+            write("framed_blueprint/block", textures, elements)
+    write("framed_blueprint/item", textures, [
         box((2, 0, 2), (14, 1.0, 14), "frame"),
         box((2, 1.0, 2), (14, 1.5, 2.7), "rim"),
         box((2, 1.0, 13.3), (14, 1.5, 14), "rim"),
         box((2, 1.0, 2.7), (2.7, 1.5, 13.3), "rim"),
         box((13.3, 1.0, 2.7), (14, 1.5, 13.3), "rim"),
         box((2.7, 1.0, 2.7), (13.3, 1.2, 13.3), "paper"),
-    ]
-    for x in (2.1, 12.9):
-        for z in (2.1, 12.9):
-            elements.append(box((x, 1.5, z), (x + 1, 1.8, z + 1), "bolt"))
-    write("framed_blueprint/block", textures, elements)
-    write("framed_blueprint/item", textures, elements)
+    ] + [box((x, 1.5, z), (x + 1, 1.8, z + 1), "bolt") for x in (2.1, 12.9) for z in (2.1, 12.9)])
 
 
 def to_frame(point, direction):

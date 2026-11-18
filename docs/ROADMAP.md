@@ -259,7 +259,7 @@ the work is cut up, and every stage is additive (no existing ID, config key or n
 
 | Stage | What | State |
 | --- | --- | --- |
-| 0 | The Aeronautics afternoon from 1.0.x: an engine on a simulated contraption, written down. Needs the author and the addon. It decides how big stage 7 is | Open, the author's |
+| 0 | The Aeronautics afternoon from 1.0.x: an engine on a simulated contraption, written down. Needs the author and the addon. It decides how big stage 7 is | **Started 2026-11-18**: a Precision V-twin on a wheeled contraption works (author, one test). Particles, sound, and save and reload fine on it. Propellers and other engines are still unwritten-down |
 | 1 | **The blueprint format:** `engine/blueprint` (plain Java). A `Blueprint` of parts, each with a position, a block id, state properties and dials; the pasteable string `CEBP<version>:<body>`; hard limits; a policy the game side fills in. Unit tests only, no game | **Built 2026-11-17** |
 | 2 | **Record:** a Blueprint item (`blueprint`, paper and blue dye): used on any block of a built engine while blank, it records the engine's layout and every dial through the scanner, and holds it as the `CEBP` string in the `blueprint` data component. The game side of the policy (this mod's blocks only, real state properties, real dial ranges) | **Built 2026-11-17** |
 | 3 | **Apply:** one click copies the whole tune onto an identical engine, checked on the server | **Built 2026-11-17** |

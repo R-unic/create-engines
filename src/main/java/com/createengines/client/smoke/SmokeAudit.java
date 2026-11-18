@@ -21,6 +21,7 @@ import com.createengines.engine.EngineSummary;
 import com.createengines.gametest.TestEngine;
 import com.createengines.smoke.PerfSampler;
 import com.createengines.smoke.PixelChecks;
+import com.createengines.smoke.RunningWindow;
 import com.createengines.smoke.SmokeReport;
 import com.createengines.smoke.audit.ServerAudit;
 import com.mojang.blaze3d.platform.NativeImage;
@@ -254,6 +255,70 @@ public final class SmokeAudit {
 		int[] sounds = soundCounts();
 		STATIC_SOUNDS.add(sounds[0]);
 		STREAMING.add(sounds[2]);
+		recordFleetHistory();
+	}
+
+	/** One short line per sample for every fleet engine, so a fleet check that fails says how the engine got there, not just where it ended. */
+	private static final StringBuilder FLEET_HISTORY = new StringBuilder();
+	private static final String[] lastSeen = new String[16];
+	/** When each fleet engine was last seen running: the "is running" fleet check judges a window, not an instant (see {@link RunningWindow}). */
+	private static final RunningWindow[] RUNNING_SEEN = new RunningWindow[16];
+	static {
+		for (int i = 0; i < RUNNING_SEEN.length; i++)
+			RUNNING_SEEN[i] = new RunningWindow();
+	}
+	private static int auditTick;
+
+	/** Every change of a fleet engine's state or health, with the audit tick it was seen on: a stutter that a 50-tick sample would miss. */
+	private static void recordTransitions(int t) {
+		var level = Minecraft.getInstance().level;
+		if (level == null || origin == null)
+			return;
+		for (int i = 0; i < FLEET.size(); i++)
+			if (level.getBlockEntity(origin.offset(FLEET.get(i))
+				.offset(TestEngine.PRIMARY)) instanceof CrankshaftBlockEntity crank && crank.engineSummary() != null) {
+				EngineSummary summary = crank.engineSummary();
+				RUNNING_SEEN[i].observe(t, summary.state() == EngineState.RUNNING);
+				if (FLEET_HISTORY.length() > 6000)
+					continue;
+				String now = summary.state()
+					.name()
+					.charAt(0) + "" + (summary.cause() == null ? "" : summary.cause()
+						.name()
+						.charAt(0));
+				if (!now.equals(lastSeen[i])) {
+					FLEET_HISTORY.append(" t")
+						.append(t)
+						.append(" e")
+						.append(i)
+						.append(' ')
+						.append(now)
+						.append(Math.round(summary.rpm()));
+					lastSeen[i] = now;
+				}
+			}
+	}
+
+	private static void recordFleetHistory() {
+		var level = Minecraft.getInstance().level;
+		if (level == null || origin == null || FLEET_HISTORY.length() > 6000)
+			return;
+		FLEET_HISTORY.append('|');
+		for (int i = 0; i < FLEET.size(); i++)
+			if (level.getBlockEntity(origin.offset(FLEET.get(i))
+				.offset(TestEngine.PRIMARY)) instanceof CrankshaftBlockEntity crank && crank.engineSummary() != null) {
+				EngineSummary s = crank.engineSummary();
+				FLEET_HISTORY.append(i)
+					.append(':')
+					.append(s.state()
+						.name()
+						.charAt(0))
+					.append(s.cause() == null ? "" : s.cause()
+						.name()
+						.charAt(0))
+					.append(Math.round(s.rpm()))
+					.append(' ');
+			}
 	}
 
 	private static int[] baselineSounds = new int[4];
@@ -267,6 +332,9 @@ public final class SmokeAudit {
 	private static boolean fleet(int t) {
 		phaseName = "fleet";
 		var minecraft = Minecraft.getInstance();
+		auditTick = t;
+		if (t > 0)
+			recordTransitions(t);
 		if (t == 0) {
 			baselineSounds = soundCounts();
 			sample(true);
@@ -478,6 +546,7 @@ public final class SmokeAudit {
 
 	private static void checkEngines(String when) {
 		var level = Minecraft.getInstance().level;
+		com.createengines.CreateEngines.LOGGER.info("FLEETHISTORY {}: {}", when, FLEET_HISTORY);
 		for (int i = 0; i < FLEET.size(); i++) {
 			BlockPos at = origin.offset(FLEET.get(i))
 				.offset(TestEngine.PRIMARY);
@@ -496,7 +565,13 @@ public final class SmokeAudit {
 				case 2 -> REPORT.check("fleet", name + " stays dead (its intake is under water)", !running,
 					describe(summary));
 				case 3 -> REPORT.pass("fleet", name);
-				default -> REPORT.check("fleet", name + " is running", running, describe(summary));
+				default -> {
+					// Judged over a window: a rich boosted single-cylinder engine stutters for ~20 ticks now and then and is still running
+					boolean ran = running || RUNNING_SEEN[i].ranWithin(auditTick, RunningWindow.DEFAULT_WINDOW);
+					REPORT.check("fleet", name + " is running", ran,
+						ran ? describe(summary) : describe(summary) + "; not seen running for " + RunningWindow.DEFAULT_WINDOW
+							+ " ticks; history (audit tick, engine, state+cause initial, rpm): " + FLEET_HISTORY);
+				}
 			}
 			REPORT.check("fleet", name + " has finite figures", Float.isFinite(summary.rpm()) && Float.isFinite(summary.temperature()),
 				summary.toString());

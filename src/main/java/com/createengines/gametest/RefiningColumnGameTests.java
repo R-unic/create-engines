@@ -350,6 +350,42 @@ public class RefiningColumnGameTests {
 	}
 
 	@GameTest(template = "empty", timeoutTicks = 200)
+	public static void anEmptyHandTakesTheCatalystBackOutOfAReboiler(GameTestHelper helper) {
+		build(helper, 1, BlazeBurnerBlock.HeatLevel.KINDLED);
+		BlockPos reboiler = new BlockPos(1, BASE_Y, 1);
+		helper.runAfterDelay(15, () -> {
+			var player = helper.makeMockPlayer(net.minecraft.world.level.GameType.SURVIVAL);
+			port(helper, reboiler).insertCatalyst(new ItemStack(Items.COAL, 10));
+			player.setItemInHand(net.minecraft.world.InteractionHand.MAIN_HAND, ItemStack.EMPTY);
+			helper.useBlock(reboiler, player);
+			helper.assertTrue(port(helper, reboiler).catalystStack()
+				.isEmpty(), "the slot should be empty, it holds " + port(helper, reboiler).catalystStack());
+			helper.assertTrue(player.getInventory()
+				.countItem(Items.COAL) == 10, "the 10 coal should be in the player's inventory");
+			helper.succeed();
+		});
+	}
+
+	@GameTest(template = "empty", timeoutTicks = 200)
+	public static void aHopperCanPullCatalystOutOfAReboiler(GameTestHelper helper) {
+		build(helper, 1, BlazeBurnerBlock.HeatLevel.KINDLED);
+		BlockPos reboiler = new BlockPos(1, BASE_Y, 1);
+		helper.runAfterDelay(15, () -> {
+			var items = port(helper, reboiler).itemCapability();
+			items.insertItem(0, new ItemStack(Items.COAL, 10), false);
+			helper.assertTrue(items.extractItem(0, 4, true)
+				.getCount() == 4, "a simulated pull should show 4 coal");
+			helper.assertTrue(port(helper, reboiler).catalystStack()
+				.getCount() == 10, "a simulated pull should take nothing");
+			helper.assertTrue(items.extractItem(0, 4, false)
+				.getCount() == 4, "the pull should give 4 coal");
+			helper.assertTrue(port(helper, reboiler).catalystStack()
+				.getCount() == 6, "6 coal should be left");
+			helper.succeed();
+		});
+	}
+
+	@GameTest(template = "empty", timeoutTicks = 200)
 	public static void handingCatalystToAReboilerLoadsItAndAFullSlotRefusesMore(GameTestHelper helper) {
 		build(helper, 1, BlazeBurnerBlock.HeatLevel.KINDLED);
 		BlockPos reboiler = new BlockPos(1, BASE_Y, 1);

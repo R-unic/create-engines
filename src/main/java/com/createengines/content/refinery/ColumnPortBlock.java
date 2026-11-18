@@ -74,6 +74,31 @@ public class ColumnPortBlock extends Block implements IWrenchable, IBE<ColumnPor
 		return ItemInteractionResult.sidedSuccess(level.isClientSide);
 	}
 
+	/** An empty hand (or any item that is not catalyst or a fluid container) on a Reboiler takes the catalyst back out. */
+	@Override
+	protected net.minecraft.world.InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos, Player player,
+																  BlockHitResult hit) {
+		if (part != Part.REBOILER || !(level.getBlockEntity(pos) instanceof ColumnPortBlockEntity port))
+			return net.minecraft.world.InteractionResult.PASS;
+		if (port.heldCatalyst().isEmpty())
+			return net.minecraft.world.InteractionResult.PASS;
+		if (!level.isClientSide) {
+			ItemStack taken = port.extractCatalyst();
+			if (!taken.isEmpty()) {
+				player.getInventory()
+					.placeItemBackInInventory(taken);
+				level.playSound(null, pos, SoundEvents.ITEM_FRAME_REMOVE_ITEM, SoundSource.BLOCKS, 0.8f, 1f);
+				ItemStack held = port.heldCatalyst();
+				if (!held.isEmpty())
+					player.displayClientMessage(CELang.translate("goggles.column.catalyst", held.getCount(), held.getHoverName()
+						.getString())
+						.style(ChatFormatting.YELLOW)
+						.component(), true);
+			}
+		}
+		return net.minecraft.world.InteractionResult.sidedSuccess(level.isClientSide);
+	}
+
 	/** A comparator reads the column's feed tank off a Reboiler and its product tank off a Condenser. */
 	@Override
 	protected boolean hasAnalogOutputSignal(BlockState state) {

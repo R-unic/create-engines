@@ -11,6 +11,12 @@ import com.simibubi.create.content.equipment.wrench.IWrenchable;
 import com.simibubi.create.foundation.block.IBE;
 
 import net.minecraft.ChatFormatting;
+import java.util.ArrayDeque;
+import java.util.HashSet;
+import java.util.Set;
+
+import com.createengines.engine.blueprint.FrameSheet;
+
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.sounds.SoundEvents;
@@ -31,6 +37,7 @@ import net.minecraft.world.level.block.RenderShape;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.StateDefinition;
+import net.minecraft.world.level.block.state.properties.BooleanProperty;
 import net.minecraft.world.level.block.state.properties.DirectionProperty;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.shapes.CollisionContext;
@@ -46,20 +53,61 @@ public class FramedBlueprintBlock extends DirectionalBlock implements IWrenchabl
 
 	public static final DirectionProperty FACING = DirectionalBlock.FACING;
 
-	private static final VoxelShape[] SHAPES = new VoxelShape[6];
+	/** Joined on the paper's far side down, to the left, up and to the right: the frame runs on into that neighbour. */
+	public static final BooleanProperty JOIN_DOWN = BooleanProperty.create("join_down");
+	public static final BooleanProperty JOIN_LEFT = BooleanProperty.create("join_left");
+	public static final BooleanProperty JOIN_UP = BooleanProperty.create("join_up");
+	public static final BooleanProperty JOIN_RIGHT = BooleanProperty.create("join_right");
+
+	/** Frames further than this from the one that changed cannot be in its sheet (a sheet is at most 8 by 8). */
+	private static final int GROUP_LIMIT = FrameSheet.MAX_SIDE * FrameSheet.MAX_SIDE + 1;
+
+	private static final VoxelShape[] SHAPES = new VoxelShape[6 * 16];
 
 	static {
-		SHAPES[Direction.UP.ordinal()] = Block.box(2, 0, 2, 14, 1.5, 14);
-		SHAPES[Direction.DOWN.ordinal()] = Block.box(2, 14.5, 2, 14, 16, 14);
-		SHAPES[Direction.NORTH.ordinal()] = Block.box(2, 2, 14.5, 14, 14, 16);
-		SHAPES[Direction.SOUTH.ordinal()] = Block.box(2, 2, 0, 14, 14, 1.5);
-		SHAPES[Direction.EAST.ordinal()] = Block.box(0, 2, 2, 1.5, 14, 14);
-		SHAPES[Direction.WEST.ordinal()] = Block.box(14.5, 2, 2, 16, 14, 14);
+		for (Direction facing : Direction.values())
+			for (int mask = 0; mask < 16; mask++) {
+				float x0 = (mask & 8) != 0 ? 0 : 2, x1 = (mask & 2) != 0 ? 16 : 14;
+				float z0 = (mask & 1) != 0 ? 0 : 2, z1 = (mask & 4) != 0 ? 16 : 14;
+				SHAPES[facing.ordinal() * 16 + mask] = turnedBox(facing, x0, 0, z0, x1, 1.5f, z1);
+			}
+	}
+
+	/** A box given for a frame facing up, turned onto {@code facing} exactly as the blockstate turns the model. */
+	private static VoxelShape turnedBox(Direction facing, float x0, float y0, float z0, float x1, float y1, float z1) {
+		int turnX = facing == Direction.UP ? 0 : facing == Direction.DOWN ? 180 : 90;
+		int turnY = facing.getAxis()
+			.isVertical() ? 0 : ((int) facing.toYRot() + 180) % 360;
+		org.joml.Vector3f a = new org.joml.Vector3f(x0 - 8, y0 - 8, z0 - 8).rotateX((float) -Math.toRadians(turnX))
+			.rotateY((float) -Math.toRadians(turnY));
+		org.joml.Vector3f b = new org.joml.Vector3f(x1 - 8, y1 - 8, z1 - 8).rotateX((float) -Math.toRadians(turnX))
+			.rotateY((float) -Math.toRadians(turnY));
+		return Block.box(Math.min(a.x, b.x) + 8, Math.min(a.y, b.y) + 8, Math.min(a.z, b.z) + 8, Math.max(a.x, b.x) + 8,
+			Math.max(a.y, b.y) + 8, Math.max(a.z, b.z) + 8);
+	}
+
+	/** The join property for the side of the paper that faces {@code side} in the world, or null if it is a face or the back. */
+	private static BooleanProperty joinFor(Direction facing, Direction side) {
+		if (side == paperDown(facing))
+			return JOIN_DOWN;
+		if (side == paperRight(facing)
+			.getOpposite())
+			return JOIN_LEFT;
+		if (side == paperDown(facing)
+			.getOpposite())
+			return JOIN_UP;
+		if (side == paperRight(facing))
+			return JOIN_RIGHT;
+		return null;
 	}
 
 	public FramedBlueprintBlock(Properties properties) {
 		super(properties);
-		registerDefaultState(defaultBlockState().setValue(FACING, Direction.UP));
+		registerDefaultState(defaultBlockState().setValue(FACING, Direction.UP)
+			.setValue(JOIN_DOWN, false)
+			.setValue(JOIN_LEFT, false)
+			.setValue(JOIN_UP, false)
+			.setValue(JOIN_RIGHT, false));
 	}
 
 	@Override
@@ -80,8 +128,77 @@ public class FramedBlueprintBlock extends DirectionalBlock implements IWrenchabl
 	protected void neighborChanged(BlockState state, Level level, BlockPos pos, Block neighborBlock, BlockPos neighborPos,
 								   boolean movedByPiston) {
 		super.neighborChanged(state, level, pos, neighborBlock, neighborPos, movedByPiston);
-		if (!level.isClientSide && !canSurvive(state, level, pos))
+		if (level.isClientSide)
+			return;
+		if (!canSurvive(state, level, pos))
 			level.destroyBlock(pos, true);
+		else if (!level.getBlockTicks()
+			.hasScheduledTick(pos, this))
+			level.scheduleTick(pos, this, 1);
+	}
+
+	@Override
+	protected void onPlace(BlockState state, Level level, BlockPos pos, BlockState oldState, boolean movedByPiston) {
+		super.onPlace(state, level, pos, oldState, movedByPiston);
+		if (!level.isClientSide && !oldState.is(this))
+			level.scheduleTick(pos, this, 1);
+	}
+
+	/** Frames saved before they could join (or loaded into a changed neighbourhood) settle a moment after they load. */
+	@Override
+	protected void tick(BlockState state, net.minecraft.server.level.ServerLevel level, BlockPos pos, net.minecraft.util.RandomSource random) {
+		settleGroup(level, pos);
+	}
+
+	/** True if the block at {@code at} is a frame on the same wall, facing the same way. */
+	private static boolean sameWall(Level level, BlockPos at, Direction facing) {
+		BlockState there = level.getBlockState(at);
+		return there.getBlock() instanceof FramedBlueprintBlock && there.getValue(FACING) == facing;
+	}
+
+	/**
+	 * Works out which sides of every frame in the group around {@code start} run on into a neighbour: exactly the sides the
+	 * renderer will draw as one sheet ({@link FrameSheet}), so the model and the picture always agree. Only the client
+	 * is told (no further neighbour updates), so this cannot loop.
+	 */
+	private static void settleGroup(Level level, BlockPos start) {
+		BlockState first = level.getBlockState(start);
+		if (!(first.getBlock() instanceof FramedBlueprintBlock))
+			return;
+		Direction facing = first.getValue(FACING);
+		Direction right = paperRight(facing);
+		Direction down = paperDown(facing);
+		Set<BlockPos> seen = new HashSet<>();
+		ArrayDeque<BlockPos> open = new ArrayDeque<>();
+		seen.add(start);
+		open.add(start);
+		// Frames beside the group that have just been left out of it (a removed frame) are settled too
+		for (Direction side : new Direction[] { right, right.getOpposite(), down, down.getOpposite() }) {
+			BlockPos next = start.relative(side);
+			if (sameWall(level, next, facing) && seen.add(next))
+				open.add(next);
+		}
+		int visited = 0;
+		while (!open.isEmpty() && visited++ < GROUP_LIMIT) {
+			BlockPos at = open.poll();
+			for (Direction side : new Direction[] { right, right.getOpposite(), down, down.getOpposite() }) {
+				BlockPos next = at.relative(side);
+				if (sameWall(level, next, facing) && seen.add(next) && seen.size() <= GROUP_LIMIT * 2)
+					open.add(next);
+			}
+		}
+		for (BlockPos at : seen) {
+			if (!sameWall(level, at, facing))
+				continue;
+			FrameSheet.Sheet sheet = FrameSheet.find(cell -> sameWall(level, FramedBlueprintBlockEntity.cell(at, right, down, cell), facing),
+				cell -> false);
+			BlockState old = level.getBlockState(at);
+			BlockState now = old;
+			for (Direction side : new Direction[] { right, right.getOpposite(), down, down.getOpposite() })
+				now = now.setValue(joinFor(facing, side), sheet.joined() && sameWall(level, at.relative(side), facing));
+			if (now != old)
+				level.setBlock(at, now, Block.UPDATE_CLIENTS);
+		}
 	}
 
 	@Override
@@ -165,8 +282,10 @@ public class FramedBlueprintBlock extends DirectionalBlock implements IWrenchabl
 
 	@Override
 	protected VoxelShape getShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext context) {
+		int mask = (state.getValue(JOIN_DOWN) ? 1 : 0) | (state.getValue(JOIN_LEFT) ? 2 : 0) | (state.getValue(JOIN_UP) ? 4 : 0)
+			| (state.getValue(JOIN_RIGHT) ? 8 : 0);
 		return SHAPES[state.getValue(FACING)
-			.ordinal()];
+			.ordinal() * 16 + mask];
 	}
 
 	@Override
@@ -176,7 +295,7 @@ public class FramedBlueprintBlock extends DirectionalBlock implements IWrenchabl
 
 	@Override
 	protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {
-		builder.add(FACING);
+		builder.add(FACING, JOIN_DOWN, JOIN_LEFT, JOIN_UP, JOIN_RIGHT);
 	}
 
 	@Override

@@ -228,7 +228,8 @@ into used oil, and a refining column keeps and reports its catalyst better. Ever
   or holds a different catalyst); a catalyst that is not the route's shows "wrong catalyst" in the goggles instead of "no
   catalyst"; and when a column grows so that its controller moves to another corner, the catalyst in the old controller
   is passed to the new one (or dropped) instead of being left in a block nothing reads. New saved key `WrongCatalyst` on the
-  column port (missing reads as false).
+  column port (missing reads as false). An empty hand on a Reboiler now takes the catalyst back out (up to a stack), and
+  a hopper or funnel can now pull catalyst out of it; before, the slot only took catalyst in and never gave it back.
 - Changed behaviour: an Oil Sump's oil exchange only wears engine oil into used oil. Plant oil and the other poor lubricants
   burn off instead, so they can no longer be turned into recyclable used oil, and they do not need room in the used tank.
   Engine oil exchanges exactly as before.

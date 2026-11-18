@@ -69,6 +69,7 @@ import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockBehaviour;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.material.MapColor;
+import net.neoforged.neoforge.client.model.generators.ConfiguredModel;
 import net.neoforged.neoforge.client.model.generators.ModelFile;
 
 public final class CEBlocks {
@@ -362,8 +363,22 @@ public final class CEBlocks {
 			.properties(p -> part(p)
 				.mapColor(MapColor.COLOR_BLUE))
 			.transform(TagGen.pickaxeOnly())
-			.blockstate((c, p) -> BlockStateGen.directionalBlockIgnoresWaterlogged(c, p,
-				s -> AssetLookup.partialBaseModel(c, p)))
+				.blockstate((c, p) -> p.getVariantBuilder(c.get())
+					.forAllStates(s -> {
+						Direction facing = s.getValue(FramedBlueprintBlock.FACING);
+						int mask = (s.getValue(FramedBlueprintBlock.JOIN_DOWN) ? 1 : 0) | (s.getValue(FramedBlueprintBlock.JOIN_LEFT) ? 2 : 0)
+							| (s.getValue(FramedBlueprintBlock.JOIN_UP) ? 4 : 0) | (s.getValue(FramedBlueprintBlock.JOIN_RIGHT) ? 8 : 0);
+						// The same turns the frame has always had: x then y, for the face it hangs on
+						int x = facing == Direction.UP ? 0 : facing == Direction.DOWN ? 180 : 90;
+						int y = facing.getAxis()
+							.isVertical() ? 0 : ((int) facing.toYRot() + 180) % 360;
+						return ConfiguredModel.builder()
+							.modelFile(p.models()
+								.getExistingFile(p.modLoc("block/framed_blueprint/c" + mask)))
+							.rotationX(x)
+							.rotationY(y)
+							.build();
+					}))
 			.item()
 			.transform(ModelGen.customItemModel())
 			.register();

@@ -16,6 +16,7 @@ import com.simibubi.create.content.schematics.requirement.ItemRequirement;
 
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.network.chat.Component;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
@@ -103,6 +104,40 @@ public final class BlueprintBuilder {
 		if (turned == null)
 			return Result.of(Status.REFUSED);
 		return build(player, level, origin, turned);
+	}
+
+	/**
+	 * Builds a recorded blueprint turned by {@code rotation} against the face {@code face} of {@code clicked}, as the Bank
+	 * Builder does: see {@link #originOn}.
+	 */
+	public static Result buildOn(Player player, Level level, BlockPos clicked, Direction face, RecordedBlueprint recorded,
+		Rotation rotation) {
+		Blueprint turned;
+		try {
+			Blueprint blueprint = BlueprintCodec.decode(recorded.text());
+			BlueprintRules.check(blueprint, EngineBlueprintPolicy.INSTANCE);
+			turned = BlueprintTurner.turn(blueprint, rotation);
+		} catch (BlueprintException e) {
+			return Result.of(Status.REFUSED);
+		}
+		if (turned == null)
+			return Result.of(Status.REFUSED);
+		return build(player, level, originOn(turned, clicked, face), turned);
+	}
+
+	/**
+	 * Where the crankshaft goes for a build against {@code face} of {@code clicked}: the cell next to that face, and for
+	 * the top of a block lifted until the lowest part of the (already turned) blueprint rests on it, so an engine that
+	 * hangs cylinders below its crank does not sink into the ground it stands on.
+	 */
+	public static BlockPos originOn(Blueprint turned, BlockPos clicked, Direction face) {
+		BlockPos origin = clicked.relative(face);
+		if (face != Direction.UP)
+			return origin;
+		int lowest = 0;
+		for (Blueprint.Part part : turned.parts())
+			lowest = Math.min(lowest, part.y());
+		return origin.above(-lowest);
 	}
 
 	/** Builds a blueprint that has already been checked. */

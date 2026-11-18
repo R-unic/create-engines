@@ -119,6 +119,30 @@ public class BlueprintGameTests {
 		helper.succeed();
 	}
 
+	/** Building against the top of a block lifts an engine that hangs below its crank so its lowest part rests on the block. */
+	@GameTest(template = "empty")
+	public static void anEngineHangingBelowItsCrankRestsOnTheGroundClicked(GameTestHelper helper) {
+		List<Blueprint.Part> parts = List.of(part(0, 0, 0), part(0, -1, 0), part(0, -2, 0));
+		Blueprint hanging = new Blueprint("t", "t", parts);
+		BlockPos ground = new BlockPos(4, 1, 4);
+		if (!BlueprintBuilder.originOn(hanging, ground, Direction.UP)
+			.equals(ground.above(3)))
+			helper.fail("the lowest part (2 below the crank) should rest on the ground: "
+				+ BlueprintBuilder.originOn(hanging, ground, Direction.UP));
+		Blueprint above = new Blueprint("t", "t", List.of(part(0, 0, 0), part(0, 1, 0)));
+		if (!BlueprintBuilder.originOn(above, ground, Direction.UP)
+			.equals(ground.above()))
+			helper.fail("an engine above its crank should not be lifted");
+		if (!BlueprintBuilder.originOn(hanging, ground, Direction.EAST)
+			.equals(ground.east()))
+			helper.fail("a side face should not lift the engine");
+		helper.succeed();
+	}
+
+	private static Blueprint.Part part(int x, int y, int z) {
+		return new Blueprint.Part(x, y, z, CreateEngines.MOD_ID + ":cylinder", Map.of(), Map.of());
+	}
+
 	/** The gearing that turns the camshaft (a large cogwheel and two chain drives in the test engine) is recorded, at its offsets. */
 	@GameTest(template = "empty")
 	public static void theGearingToTheCamshaftIsRecorded(GameTestHelper helper) {
@@ -1275,6 +1299,60 @@ public class BlueprintGameTests {
 				helper.fail(facing + ": a ragged group should not join");
 		}
 		helper.succeed();
+	}
+
+	private static int joins(GameTestHelper helper, BlockPos at) {
+		BlockState s = helper.getBlockState(at);
+		return (s.getValue(FramedBlueprintBlock.JOIN_DOWN) ? 1 : 0) | (s.getValue(FramedBlueprintBlock.JOIN_LEFT) ? 2 : 0)
+			| (s.getValue(FramedBlueprintBlock.JOIN_UP) ? 4 : 0) | (s.getValue(FramedBlueprintBlock.JOIN_RIGHT) ? 8 : 0);
+	}
+
+	@GameTest(template = "empty_large", timeoutTicks = 400)
+	public static void joinedFramesRunTheirBlocksTogetherOnExactlyTheJoinedSides(GameTestHelper helper) {
+		BlockPos origin = new BlockPos(8, 6, 8);
+		var run = helper.startSequence();
+		for (Direction facing : Direction.values()) {
+			run.thenExecute(() -> {
+				for (int x = 4; x <= 12; x++)
+					for (int y = 2; y <= 10; y++)
+						for (int z = 4; z <= 12; z++)
+							helper.setBlock(new BlockPos(x, y, z), Blocks.AIR);
+				for (int u = 0; u < 2; u++)
+					for (int v = 0; v < 2; v++)
+						hangFrame(helper, frameCell(origin, facing, u, v), facing);
+			})
+				.thenExecuteAfter(3, () -> {
+					// bit 1 is the side below on the paper, 2 the left, 4 above, 8 the right
+					for (int u = 0; u < 2; u++)
+						for (int v = 0; v < 2; v++) {
+							int mask = joins(helper, frameCell(origin, facing, u, v));
+							int expected = (u == 0 ? 8 : 2) | (v == 0 ? 1 : 4);
+							if (mask != expected)
+								helper.fail(facing + ": frame (" + u + "," + v + ") joins " + mask + " but should join " + expected);
+						}
+					// a third frame in the row makes a ragged group: nothing is joined any more
+					hangFrame(helper, frameCell(origin, facing, 2, 0), facing);
+				})
+				.thenExecuteAfter(3, () -> {
+					for (int u = 0; u < 3; u++)
+						if (joins(helper, frameCell(origin, facing, u, 0)) != 0)
+							helper.fail(facing + ": a ragged group should be drawn as separate frames");
+					// taking it away joins the four again
+					helper.setBlock(frameCell(origin, facing, 2, 0), Blocks.AIR);
+				})
+				.thenExecuteAfter(3, () -> {
+					if (joins(helper, frameCell(origin, facing, 0, 0)) == 0)
+						helper.fail(facing + ": removing the odd frame should join the square again");
+					// and taking one of the four leaves three in an L, which stand alone
+					helper.setBlock(frameCell(origin, facing, 1, 1), Blocks.AIR);
+				})
+				.thenExecuteAfter(3, () -> {
+					for (int[] cell : new int[][] { { 0, 0 }, { 1, 0 }, { 0, 1 } })
+						if (joins(helper, frameCell(origin, facing, cell[0], cell[1])) != 0)
+							helper.fail(facing + ": three frames in an L should stand alone");
+				});
+		}
+		run.thenSucceed();
 	}
 
 	@GameTest(template = "empty_large")

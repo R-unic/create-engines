@@ -28,18 +28,18 @@ import net.minecraft.core.Direction;
  */
 public class FramedBlueprintRenderer extends SafeBlockEntityRenderer<FramedBlueprintBlockEntity> {
 
-	/** The paper is 1.2 pixels up in the modelled frame. */
-	private static final float FACE = 1.2f / 16 + 0.002f;
+	/**
+	 * The paper is 1.2 pixels up in the modelled frame (and runs unbroken across joined frames, whose models have no rim
+	 * between them). The drawing sits a clear step above it, and the text a step above that, so no two layers share a depth.
+	 */
+	private static final float FACE = 1.2f / 16 + 0.004f;
+	/** Text pixels the lettering floats above the plan. */
+	private static final float TEXT_LIFT = 0.7f;
 	private static final float SCALE = 0.0085f;
 	/** The paper is about 80 text pixels across. */
 	private static final float HALF = 40f;
-	private static final float HALF_HEIGHT = 44f;
-	/** Joined frames draw above the bolts (1.8 pixels up) so the paper laid across the seams covers them. */
-	private static final float FACE_JOINED = 1.85f / 16 + 0.002f;
-	/** Half the paper's width and height in text pixels (10.6 model pixels across). */
-	private static final float PAPER_HALF = 39f;
-	/** The average of the paper texture. */
-	private static final int PAPER_COLOUR = 0x3863A2;
+	/** Kept inside the paper (39 text pixels from its centre) so the title and figures are not cut off by the rim. */
+	private static final float HALF_HEIGHT = 40f;
 
 	private final Font font;
 
@@ -62,12 +62,11 @@ public class FramedBlueprintRenderer extends SafeBlockEntityRenderer<FramedBluep
 		int x = facing == Direction.UP ? 0 : facing == Direction.DOWN ? 180 : 90;
 		int y = facing.getAxis()
 			.isVertical() ? 0 : ((int) facing.toYRot() + 180) % 360;
-		boolean joined = sheet.joined();
 		Matrix4f pose = new Matrix4f().translate(0.5f, 0.5f, 0.5f)
 			.rotateY((float) -Math.toRadians(y))
 			.rotateX((float) -Math.toRadians(x))
 			.translate(-0.5f, -0.5f, -0.5f)
-			.translate(0.5f, joined ? FACE_JOINED : FACE, 0.5f)
+			.translate(0.5f, FACE, 0.5f)
 			.rotateX((float) Math.toRadians(-90))
 			.rotateZ((float) Math.PI)
 			.scale(SCALE, -SCALE, SCALE);
@@ -85,18 +84,9 @@ public class FramedBlueprintRenderer extends SafeBlockEntityRenderer<FramedBluep
 		ms.last()
 			.normal()
 			.mul(new Matrix3f(pose).normal());
-		if (joined)
-			drawBacking(ms, buffer, cx, cy, spanX + PAPER_HALF, spanY + PAPER_HALF);
 		drawPlan(ms, buffer, blueprint, be.partsByHeight(), cx, cy, spanX + HALF, spanY + HALF_HEIGHT, textScale, 8f * Math.max(sheet.width(), sheet.height()));
 		drawText(ms, buffer, blueprint, light, cx, cy, spanX + HALF, spanY + HALF_HEIGHT, textScale);
 		ms.popPose();
-	}
-
-	/** Paper laid over the rims and bolts between the frames of a joined sheet, so the picture runs unbroken. */
-	private static void drawBacking(PoseStack ms, MultiBufferSource buffer, float cx, float cy, float halfW, float halfH) {
-		VertexConsumer vc = buffer.getBuffer(RenderType.debugQuads());
-		quad(vc, ms.last()
-			.pose(), cx - halfW, cy - halfH, cx + halfW, cy + halfH, PAPER_COLOUR);
 	}
 
 	/** The plan, as the drafting sheet draws it, between the name and the figures. */
@@ -141,14 +131,19 @@ public class FramedBlueprintRenderer extends SafeBlockEntityRenderer<FramedBluep
 
 	private void drawText(PoseStack ms, MultiBufferSource buffer, Blueprint blueprint, int light, float cx, float cy, float halfW,
 						  float halfH, float s) {
+		ms.pushPose();
+		ms.translate(0, 0, TEXT_LIFT);
 		drawCentred(ms, buffer, blueprint.name(), cx, cy - halfH + 3 * s, halfW, s, light, 0xD7E6FA);
 		PlateFigures figures = blueprint.figures();
-		if (figures == null)
+		if (figures == null) {
+			ms.popPose();
 			return;
+		}
 		drawCentred(ms, buffer, MakerPlateBlockEntity.compact(figures.peakPower()) + " SU @ " + figures.powerRpm(), cx,
 			cy + halfH - 18 * s, halfW, s, light, 0x9AFFA8);
 		drawCentred(ms, buffer, MakerPlateBlockEntity.compact(figures.peakTorque()) + " per RPM @ " + figures.torqueRpm(), cx,
 			cy + halfH - 9 * s, halfW, s, light, 0x9AE0FF);
+		ms.popPose();
 	}
 
 	private void drawCentred(PoseStack ms, MultiBufferSource buffer, String text, float cx, float top, float halfW, float s, int light,

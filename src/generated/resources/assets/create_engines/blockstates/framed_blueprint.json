@@ -1,28 +1,418 @@
 {
   "variants": {
-    "facing=down": {
-      "model": "create_engines:block/framed_blueprint/block",
+    "facing=down,join_down=false,join_left=false,join_right=false,join_up=false": {
+      "model": "create_engines:block/framed_blueprint/c0",
       "x": 180
     },
-    "facing=east": {
-      "model": "create_engines:block/framed_blueprint/block",
+    "facing=down,join_down=false,join_left=false,join_right=false,join_up=true": {
+      "model": "create_engines:block/framed_blueprint/c4",
+      "x": 180
+    },
+    "facing=down,join_down=false,join_left=false,join_right=true,join_up=false": {
+      "model": "create_engines:block/framed_blueprint/c8",
+      "x": 180
+    },
+    "facing=down,join_down=false,join_left=false,join_right=true,join_up=true": {
+      "model": "create_engines:block/framed_blueprint/c12",
+      "x": 180
+    },
+    "facing=down,join_down=false,join_left=true,join_right=false,join_up=false": {
+      "model": "create_engines:block/framed_blueprint/c2",
+      "x": 180
+    },
+    "facing=down,join_down=false,join_left=true,join_right=false,join_up=true": {
+      "model": "create_engines:block/framed_blueprint/c6",
+      "x": 180
+    },
+    "facing=down,join_down=false,join_left=true,join_right=true,join_up=false": {
+      "model": "create_engines:block/framed_blueprint/c10",
+      "x": 180
+    },
+    "facing=down,join_down=false,join_left=true,join_right=true,join_up=true": {
+      "model": "create_engines:block/framed_blueprint/c14",
+      "x": 180
+    },
+    "facing=down,join_down=true,join_left=false,join_right=false,join_up=false": {
+      "model": "create_engines:block/framed_blueprint/c1",
+      "x": 180
+    },
+    "facing=down,join_down=true,join_left=false,join_right=false,join_up=true": {
+      "model": "create_engines:block/framed_blueprint/c5",
+      "x": 180
+    },
+    "facing=down,join_down=true,join_left=false,join_right=true,join_up=false": {
+      "model": "create_engines:block/framed_blueprint/c9",
+      "x": 180
+    },
+    "facing=down,join_down=true,join_left=false,join_right=true,join_up=true": {
+      "model": "create_engines:block/framed_blueprint/c13",
+      "x": 180
+    },
+    "facing=down,join_down=true,join_left=true,join_right=false,join_up=false": {
+      "model": "create_engines:block/framed_blueprint/c3",
+      "x": 180
+    },
+    "facing=down,join_down=true,join_left=true,join_right=false,join_up=true": {
+      "model": "create_engines:block/framed_blueprint/c7",
+      "x": 180
+    },
+    "facing=down,join_down=true,join_left=true,join_right=true,join_up=false": {
+      "model": "create_engines:block/framed_blueprint/c11",
+      "x": 180
+    },
+    "facing=down,join_down=true,join_left=true,join_right=true,join_up=true": {
+      "model": "create_engines:block/framed_blueprint/c15",
+      "x": 180
+    },
+    "facing=east,join_down=false,join_left=false,join_right=false,join_up=false": {
+      "model": "create_engines:block/framed_blueprint/c0",
       "x": 90,
       "y": 90
     },
-    "facing=north": {
-      "model": "create_engines:block/framed_blueprint/block",
+    "facing=east,join_down=false,join_left=false,join_right=false,join_up=true": {
+      "model": "create_engines:block/framed_blueprint/c4",
+      "x": 90,
+      "y": 90
+    },
+    "facing=east,join_down=false,join_left=false,join_right=true,join_up=false": {
+      "model": "create_engines:block/framed_blueprint/c8",
+      "x": 90,
+      "y": 90
+    },
+    "facing=east,join_down=false,join_left=false,join_right=true,join_up=true": {
+      "model": "create_engines:block/framed_blueprint/c12",
+      "x": 90,
+      "y": 90
+    },
+    "facing=east,join_down=false,join_left=true,join_right=false,join_up=false": {
+      "model": "create_engines:block/framed_blueprint/c2",
+      "x": 90,
+      "y": 90
+    },
+    "facing=east,join_down=false,join_left=true,join_right=false,join_up=true": {
+      "model": "create_engines:block/framed_blueprint/c6",
+      "x": 90,
+      "y": 90
+    },
+    "facing=east,join_down=false,join_left=true,join_right=true,join_up=false": {
+      "model": "create_engines:block/framed_blueprint/c10",
+      "x": 90,
+      "y": 90
+    },
+    "facing=east,join_down=false,join_left=true,join_right=true,join_up=true": {
+      "model": "create_engines:block/framed_blueprint/c14",
+      "x": 90,
+      "y": 90
+    },
+    "facing=east,join_down=true,join_left=false,join_right=false,join_up=false": {
+      "model": "create_engines:block/framed_blueprint/c1",
+      "x": 90,
+      "y": 90
+    },
+    "facing=east,join_down=true,join_left=false,join_right=false,join_up=true": {
+      "model": "create_engines:block/framed_blueprint/c5",
+      "x": 90,
+      "y": 90
+    },
+    "facing=east,join_down=true,join_left=false,join_right=true,join_up=false": {
+      "model": "create_engines:block/framed_blueprint/c9",
+      "x": 90,
+      "y": 90
+    },
+    "facing=east,join_down=true,join_left=false,join_right=true,join_up=true": {
+      "model": "create_engines:block/framed_blueprint/c13",
+      "x": 90,
+      "y": 90
+    },
+    "facing=east,join_down=true,join_left=true,join_right=false,join_up=false": {
+      "model": "create_engines:block/framed_blueprint/c3",
+      "x": 90,
+      "y": 90
+    },
+    "facing=east,join_down=true,join_left=true,join_right=false,join_up=true": {
+      "model": "create_engines:block/framed_blueprint/c7",
+      "x": 90,
+      "y": 90
+    },
+    "facing=east,join_down=true,join_left=true,join_right=true,join_up=false": {
+      "model": "create_engines:block/framed_blueprint/c11",
+      "x": 90,
+      "y": 90
+    },
+    "facing=east,join_down=true,join_left=true,join_right=true,join_up=true": {
+      "model": "create_engines:block/framed_blueprint/c15",
+      "x": 90,
+      "y": 90
+    },
+    "facing=north,join_down=false,join_left=false,join_right=false,join_up=false": {
+      "model": "create_engines:block/framed_blueprint/c0",
       "x": 90
     },
-    "facing=south": {
-      "model": "create_engines:block/framed_blueprint/block",
+    "facing=north,join_down=false,join_left=false,join_right=false,join_up=true": {
+      "model": "create_engines:block/framed_blueprint/c4",
+      "x": 90
+    },
+    "facing=north,join_down=false,join_left=false,join_right=true,join_up=false": {
+      "model": "create_engines:block/framed_blueprint/c8",
+      "x": 90
+    },
+    "facing=north,join_down=false,join_left=false,join_right=true,join_up=true": {
+      "model": "create_engines:block/framed_blueprint/c12",
+      "x": 90
+    },
+    "facing=north,join_down=false,join_left=true,join_right=false,join_up=false": {
+      "model": "create_engines:block/framed_blueprint/c2",
+      "x": 90
+    },
+    "facing=north,join_down=false,join_left=true,join_right=false,join_up=true": {
+      "model": "create_engines:block/framed_blueprint/c6",
+      "x": 90
+    },
+    "facing=north,join_down=false,join_left=true,join_right=true,join_up=false": {
+      "model": "create_engines:block/framed_blueprint/c10",
+      "x": 90
+    },
+    "facing=north,join_down=false,join_left=true,join_right=true,join_up=true": {
+      "model": "create_engines:block/framed_blueprint/c14",
+      "x": 90
+    },
+    "facing=north,join_down=true,join_left=false,join_right=false,join_up=false": {
+      "model": "create_engines:block/framed_blueprint/c1",
+      "x": 90
+    },
+    "facing=north,join_down=true,join_left=false,join_right=false,join_up=true": {
+      "model": "create_engines:block/framed_blueprint/c5",
+      "x": 90
+    },
+    "facing=north,join_down=true,join_left=false,join_right=true,join_up=false": {
+      "model": "create_engines:block/framed_blueprint/c9",
+      "x": 90
+    },
+    "facing=north,join_down=true,join_left=false,join_right=true,join_up=true": {
+      "model": "create_engines:block/framed_blueprint/c13",
+      "x": 90
+    },
+    "facing=north,join_down=true,join_left=true,join_right=false,join_up=false": {
+      "model": "create_engines:block/framed_blueprint/c3",
+      "x": 90
+    },
+    "facing=north,join_down=true,join_left=true,join_right=false,join_up=true": {
+      "model": "create_engines:block/framed_blueprint/c7",
+      "x": 90
+    },
+    "facing=north,join_down=true,join_left=true,join_right=true,join_up=false": {
+      "model": "create_engines:block/framed_blueprint/c11",
+      "x": 90
+    },
+    "facing=north,join_down=true,join_left=true,join_right=true,join_up=true": {
+      "model": "create_engines:block/framed_blueprint/c15",
+      "x": 90
+    },
+    "facing=south,join_down=false,join_left=false,join_right=false,join_up=false": {
+      "model": "create_engines:block/framed_blueprint/c0",
       "x": 90,
       "y": 180
     },
-    "facing=up": {
-      "model": "create_engines:block/framed_blueprint/block"
+    "facing=south,join_down=false,join_left=false,join_right=false,join_up=true": {
+      "model": "create_engines:block/framed_blueprint/c4",
+      "x": 90,
+      "y": 180
     },
-    "facing=west": {
-      "model": "create_engines:block/framed_blueprint/block",
+    "facing=south,join_down=false,join_left=false,join_right=true,join_up=false": {
+      "model": "create_engines:block/framed_blueprint/c8",
+      "x": 90,
+      "y": 180
+    },
+    "facing=south,join_down=false,join_left=false,join_right=true,join_up=true": {
+      "model": "create_engines:block/framed_blueprint/c12",
+      "x": 90,
+      "y": 180
+    },
+    "facing=south,join_down=false,join_left=true,join_right=false,join_up=false": {
+      "model": "create_engines:block/framed_blueprint/c2",
+      "x": 90,
+      "y": 180
+    },
+    "facing=south,join_down=false,join_left=true,join_right=false,join_up=true": {
+      "model": "create_engines:block/framed_blueprint/c6",
+      "x": 90,
+      "y": 180
+    },
+    "facing=south,join_down=false,join_left=true,join_right=true,join_up=false": {
+      "model": "create_engines:block/framed_blueprint/c10",
+      "x": 90,
+      "y": 180
+    },
+    "facing=south,join_down=false,join_left=true,join_right=true,join_up=true": {
+      "model": "create_engines:block/framed_blueprint/c14",
+      "x": 90,
+      "y": 180
+    },
+    "facing=south,join_down=true,join_left=false,join_right=false,join_up=false": {
+      "model": "create_engines:block/framed_blueprint/c1",
+      "x": 90,
+      "y": 180
+    },
+    "facing=south,join_down=true,join_left=false,join_right=false,join_up=true": {
+      "model": "create_engines:block/framed_blueprint/c5",
+      "x": 90,
+      "y": 180
+    },
+    "facing=south,join_down=true,join_left=false,join_right=true,join_up=false": {
+      "model": "create_engines:block/framed_blueprint/c9",
+      "x": 90,
+      "y": 180
+    },
+    "facing=south,join_down=true,join_left=false,join_right=true,join_up=true": {
+      "model": "create_engines:block/framed_blueprint/c13",
+      "x": 90,
+      "y": 180
+    },
+    "facing=south,join_down=true,join_left=true,join_right=false,join_up=false": {
+      "model": "create_engines:block/framed_blueprint/c3",
+      "x": 90,
+      "y": 180
+    },
+    "facing=south,join_down=true,join_left=true,join_right=false,join_up=true": {
+      "model": "create_engines:block/framed_blueprint/c7",
+      "x": 90,
+      "y": 180
+    },
+    "facing=south,join_down=true,join_left=true,join_right=true,join_up=false": {
+      "model": "create_engines:block/framed_blueprint/c11",
+      "x": 90,
+      "y": 180
+    },
+    "facing=south,join_down=true,join_left=true,join_right=true,join_up=true": {
+      "model": "create_engines:block/framed_blueprint/c15",
+      "x": 90,
+      "y": 180
+    },
+    "facing=up,join_down=false,join_left=false,join_right=false,join_up=false": {
+      "model": "create_engines:block/framed_blueprint/c0"
+    },
+    "facing=up,join_down=false,join_left=false,join_right=false,join_up=true": {
+      "model": "create_engines:block/framed_blueprint/c4"
+    },
+    "facing=up,join_down=false,join_left=false,join_right=true,join_up=false": {
+      "model": "create_engines:block/framed_blueprint/c8"
+    },
+    "facing=up,join_down=false,join_left=false,join_right=true,join_up=true": {
+      "model": "create_engines:block/framed_blueprint/c12"
+    },
+    "facing=up,join_down=false,join_left=true,join_right=false,join_up=false": {
+      "model": "create_engines:block/framed_blueprint/c2"
+    },
+    "facing=up,join_down=false,join_left=true,join_right=false,join_up=true": {
+      "model": "create_engines:block/framed_blueprint/c6"
+    },
+    "facing=up,join_down=false,join_left=true,join_right=true,join_up=false": {
+      "model": "create_engines:block/framed_blueprint/c10"
+    },
+    "facing=up,join_down=false,join_left=true,join_right=true,join_up=true": {
+      "model": "create_engines:block/framed_blueprint/c14"
+    },
+    "facing=up,join_down=true,join_left=false,join_right=false,join_up=false": {
+      "model": "create_engines:block/framed_blueprint/c1"
+    },
+    "facing=up,join_down=true,join_left=false,join_right=false,join_up=true": {
+      "model": "create_engines:block/framed_blueprint/c5"
+    },
+    "facing=up,join_down=true,join_left=false,join_right=true,join_up=false": {
+      "model": "create_engines:block/framed_blueprint/c9"
+    },
+    "facing=up,join_down=true,join_left=false,join_right=true,join_up=true": {
+      "model": "create_engines:block/framed_blueprint/c13"
+    },
+    "facing=up,join_down=true,join_left=true,join_right=false,join_up=false": {
+      "model": "create_engines:block/framed_blueprint/c3"
+    },
+    "facing=up,join_down=true,join_left=true,join_right=false,join_up=true": {
+      "model": "create_engines:block/framed_blueprint/c7"
+    },
+    "facing=up,join_down=true,join_left=true,join_right=true,join_up=false": {
+      "model": "create_engines:block/framed_blueprint/c11"
+    },
+    "facing=up,join_down=true,join_left=true,join_right=true,join_up=true": {
+      "model": "create_engines:block/framed_blueprint/c15"
+    },
+    "facing=west,join_down=false,join_left=false,join_right=false,join_up=false": {
+      "model": "create_engines:block/framed_blueprint/c0",
+      "x": 90,
+      "y": 270
+    },
+    "facing=west,join_down=false,join_left=false,join_right=false,join_up=true": {
+      "model": "create_engines:block/framed_blueprint/c4",
+      "x": 90,
+      "y": 270
+    },
+    "facing=west,join_down=false,join_left=false,join_right=true,join_up=false": {
+      "model": "create_engines:block/framed_blueprint/c8",
+      "x": 90,
+      "y": 270
+    },
+    "facing=west,join_down=false,join_left=false,join_right=true,join_up=true": {
+      "model": "create_engines:block/framed_blueprint/c12",
+      "x": 90,
+      "y": 270
+    },
+    "facing=west,join_down=false,join_left=true,join_right=false,join_up=false": {
+      "model": "create_engines:block/framed_blueprint/c2",
+      "x": 90,
+      "y": 270
+    },
+    "facing=west,join_down=false,join_left=true,join_right=false,join_up=true": {
+      "model": "create_engines:block/framed_blueprint/c6",
+      "x": 90,
+      "y": 270
+    },
+    "facing=west,join_down=false,join_left=true,join_right=true,join_up=false": {
+      "model": "create_engines:block/framed_blueprint/c10",
+      "x": 90,
+      "y": 270
+    },
+    "facing=west,join_down=false,join_left=true,join_right=true,join_up=true": {
+      "model": "create_engines:block/framed_blueprint/c14",
+      "x": 90,
+      "y": 270
+    },
+    "facing=west,join_down=true,join_left=false,join_right=false,join_up=false": {
+      "model": "create_engines:block/framed_blueprint/c1",
+      "x": 90,
+      "y": 270
+    },
+    "facing=west,join_down=true,join_left=false,join_right=false,join_up=true": {
+      "model": "create_engines:block/framed_blueprint/c5",
+      "x": 90,
+      "y": 270
+    },
+    "facing=west,join_down=true,join_left=false,join_right=true,join_up=false": {
+      "model": "create_engines:block/framed_blueprint/c9",
+      "x": 90,
+      "y": 270
+    },
+    "facing=west,join_down=true,join_left=false,join_right=true,join_up=true": {
+      "model": "create_engines:block/framed_blueprint/c13",
+      "x": 90,
+      "y": 270
+    },
+    "facing=west,join_down=true,join_left=true,join_right=false,join_up=false": {
+      "model": "create_engines:block/framed_blueprint/c3",
+      "x": 90,
+      "y": 270
+    },
+    "facing=west,join_down=true,join_left=true,join_right=false,join_up=true": {
+      "model": "create_engines:block/framed_blueprint/c7",
+      "x": 90,
+      "y": 270
+    },
+    "facing=west,join_down=true,join_left=true,join_right=true,join_up=false": {
+      "model": "create_engines:block/framed_blueprint/c11",
+      "x": 90,
+      "y": 270
+    },
+    "facing=west,join_down=true,join_left=true,join_right=true,join_up=true": {
+      "model": "create_engines:block/framed_blueprint/c15",
       "x": 90,
       "y": 270
     }

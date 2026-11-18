@@ -41,6 +41,13 @@ public class FramedBlueprintBlockEntity extends BlockEntity {
 		super(type, pos, state);
 	}
 
+	@Override
+	public void onLoad() {
+		super.onLoad();
+		if (level instanceof net.minecraft.server.level.ServerLevel server)
+			server.scheduleTick(worldPosition, getBlockState().getBlock(), 1);
+	}
+
 	/** What is hung in the frame, or null if it is empty. */
 	public @Nullable RecordedBlueprint plan() {
 		return plan;

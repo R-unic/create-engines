@@ -23,3 +23,11 @@ Failed to load properties from file: server\.properties
 # named in CELang and are deliberately not listed here, so a new tag of ours without a name fails the EMI row. Matches
 # exactly these four.
 \[EMI\] Untranslated tag #(c:buckets/chocolate|c:drinks/tea|c:foods/chocolate|curios:head)$
+
+# Only in the Create Aeronautics compatibility row. Simulated (the physics mod bundled in the Aeronautics jar, 1.2.1) ships
+# the model simulated:block/rope_connector/block_horizontal with "parent": "block", which resolves to minecraft:block, a model
+# vanilla does not have. The bake logs a WARN and the game draws that one block's model as missing. It is a defect in
+# Simulated's own asset, found by reading the model in its jar; this mod has no part in it and nothing of ours is drawn
+# wrong by it. Matches only this model and only this missing parent, so any other model that fails to load, ours or
+# another mod's, still fails the row. Delete it when Aeronautics ships a fixed Simulated.
+Unable to load model: 'minecraft:block' referenced from: simulated:block/rope_connector/block_horizontal:
