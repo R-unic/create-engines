@@ -254,7 +254,7 @@ basin stay as they are; only the ethanol recipes are cut (above). Moving over is
 ## 1.4 Drawing Office
 
 **Status 2026-11-17: stages 1 to 6 and 8 are built and tested (none committed or released); stage 7 waits on the author's
-Aeronautics afternoon, and stage 9 and the release record are not started.** Nothing here has shipped. The order below is how
+Aeronautics afternoon; stage 9 is done as far as 1.x allows and the release record is written, awaiting the author's Part 3 and sign-off.** Nothing here has shipped. The order below is how
 the work is cut up, and every stage is additive (no existing ID, config key or number moves), so each can land on its own.
 
 | Stage | What | State |
@@ -268,7 +268,7 @@ the work is cut up, and every stage is additive (no existing ID, config key or n
 | 6 | **Share and hang:** paste in, copy out, server checks; the framed blueprint | **Built 2026-11-17** |
 | 7 | **Aeronautics** compatibility and Ponder page (sized by stage 0), then the other addons | **Not started**: needs the addon, so it waits on stage 0 (the author's) |
 | 8 | **Pack-maker tools:** JEI and EMI pages for fuels and parts, three config presets, the part stats data map, the `api` package with its events (the last two preview). KubeJS events and a global, and a CC: Tweaked peripheral, both read-only | **Built 2026-11-17** |
-| 9 | Cheaper pipe models (the `casing_style` heap cost found in 1.3), then the release record | **Done as far as 1.x allows, 2026-11-17**: every state of a multipart block shares one model (about 108 MB of the 440 MB); the rest is block-state bookkeeping that needs fewer states, so it is a 2.0 item. Release record not started |
+| 9 | Cheaper pipe models (the `casing_style` heap cost found in 1.3), then the release record | **Done as far as 1.x allows, 2026-11-17**: every state of a multipart block shares one model (about 108 MB of the 440 MB); the rest is block-state bookkeeping that needs fewer states, so it is a 2.0 item. Release record written (`docs/releases/v1.4.0.md`), Part 2 to be re-run on the final tree, Part 3 and sign-off are the author's |
 
 **Stage 9, as far as it went (2026-11-17).** A block's dye is only a tint, yet each of its 17 values is a block state and vanilla
 bakes a multipart model (a 64-way connection table of conditions) per state. `client.SharedCasingModels` (on `ModelEvent.ModifyBakingResult`)

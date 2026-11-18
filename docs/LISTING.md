@@ -208,6 +208,16 @@ into used oil, and a refining column keeps and reports its catalyst better. Ever
   flow; with no entry nothing changes); and a **preview** `api` package (`EngineApi.viewAt`, a read-only `EngineView`, and the
   events `EngineStateChangeEvent` and `EngineMilestoneEvent` on `NeoForge.EVENT_BUS`; a listener that throws is logged and never
   stops an engine). Preview parts may still change before 2.0.
+- Script and computer integrations (both read-only, both optional, neither mod is needed): KubeJS server scripts get
+  `CreateEnginesEvents.stateChanged` (`level`, `pos`, `from`, `to`, `started`, `stalled`) and `CreateEnginesEvents.milestone`
+  (`level`, `pos`, `milestone`), and a `CreateEngines.engineAt(level, pos)` global that returns the read-only engine view.
+  CC: Tweaked computers get a `create_engines_engine` peripheral on a crankshaft, cylinder, cylinder head or rotor housing
+  that answers for the whole engine (`getEngine`, `getStatus`, `getRpm`, `getAvailableTorque`, `getLoadTorque`, `getCylinders`,
+  `getFiring`, `getTemperature`, `getOilCondition`, `getBoost`, `getHealth`, `getCause`; nil when the block is not part of a
+  built engine). Tested against KubeJS 2101.7.2 and CC: Tweaked 1.120.2 (a test listener and a test peripheral call, not a
+  player's script or program); see `docs/INTEGRATIONS.md`. Preview, like the `api` package under them.
+- Fix: intake manifolds and pipes now turn and mirror with a structure, a schematic or a turned blueprint build; before, their
+  connection arms stayed pointing the old way when the block was rotated. Placed pipes in existing worlds are not touched.
 - JEI and EMI show every fuel (energy, how it lights, cold start, boost tolerance) and every installable part with the
   blocks it goes into. EMI ran in testing; JEI has not run in a game (it needs a newer NeoForge than this build).
 - Refining column: putting catalyst in a Reboiler by hand now plays a sound and shows what it holds (or says the slot is full
@@ -222,12 +232,17 @@ into used oil, and a refining column keeps and reports its catalyst better. Ever
   settled heap in our audit (1269 to 1161 MB), checked by comparing every quad a sample of states draws before and after. Most of
   the 440 MB that casing styles cost on pipes in 1.3 remains: it is the block states themselves (a pipe has one for every
   connection shape, casing, style and dye), and cutting them needs a state property removed, which waits for 2.0.
+- Known limit: a Transmission shifting to Neutral while a fast source (about 200 RPM forward) drives its output side, or
+  while the engine is slowing with a 64 RPM source on the output, is not supported: Create can break the shaft beside the
+  transmission before the shift completes. Slow sources (16 RPM either way), a 200 RPM reverse source, a stalled engine and
+  two controllers are tested and work.
 - Under the hood: the new `engine.blueprint` package is plain Java with unit tests, including a fuzzed decoder and frozen
   strings for each format version; the audits cover the drafting sheet and import screen; the world corpus gains the
   engines 1.3.0 saved and the ones 1.4 saves.
 - New IDs and keys (they join the 1.x promise): item `blueprint`, block `framed_blueprint` and its block entity, data component
   `blueprint`, recipes `blueprint` and `framed_blueprint`, loot table for `framed_blueprint`, data map `create_engines:part_stats`
-  (preview), the client-to-server packet `create_engines:import_blueprint`, the string format `CEBP1:` and `CEBP2:` and every
+  (preview), the CC peripheral type `create_engines_engine` and its method names (preview), the KubeJS event group
+  `CreateEnginesEvents` with `stateChanged` and `milestone`, and the global `CreateEngines` (preview), the client-to-server packet `create_engines:import_blueprint`, the string format `CEBP1:` and `CEBP2:` and every
   dial name above, the files `config_presets/*.toml`, a Ponder page `blueprint`, block state property `facing` on the frame.
   Saved keys: `Plan` on the framed blueprint; `WrongCatalyst` on the column port. Config keys: none added.
 
