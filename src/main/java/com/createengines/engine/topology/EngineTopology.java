@@ -153,6 +153,13 @@ public final class EngineTopology {
 		// Carry motion from whichever old engine shared a crankshaft with each new one
 		Map<BlockPos, EngineController.Motion> carried = new HashMap<>();
 		for (EngineLayout layout : rebuilt.values()) {
+			// An engine that came back exactly as it was (the periodic revalidation, a neighbour update that changed nothing)
+			// keeps its controller, and so has no use for motion to carry across
+			if (LoadedBlocks.blockEntity(level, layout.primary()) instanceof CrankshaftBlockEntity host
+				&& host.controller() != null && host.controller()
+					.layout()
+					.equals(layout))
+				continue;
 			Set<BlockPos> segments = new HashSet<>();
 			layout.segments()
 				.forEach(s -> segments.add(s.pos()));

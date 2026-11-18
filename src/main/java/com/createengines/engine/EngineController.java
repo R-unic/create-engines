@@ -516,7 +516,7 @@ public final class EngineController {
 		// Starters turning the crank the same way as the one that sets the pace all push on it, so a big engine can be
 		// cranked by several drives, each feeling its share of the effort. One much slower than the leader would just
 		// be overrun by its clutch, so it sits out.
-		List<BlockPos> pushing = new ArrayList<>();
+		List<BlockPos> pushing = activeStarter == null ? List.of() : new ArrayList<>();
 		if (activeStarter != null)
 			for (BlockPos pos : layout.starters())
 				if (LoadedBlocks.blockEntity(level, pos) instanceof StarterBlockEntity starter && starter.wantsToCrank()
