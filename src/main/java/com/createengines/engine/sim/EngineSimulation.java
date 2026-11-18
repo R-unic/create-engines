@@ -1,5 +1,6 @@
 package com.createengines.engine.sim;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
@@ -33,6 +34,8 @@ public final class EngineSimulation {
 	private static final double BOIL_OFF_PER_CYCLE = 0.04;
 
 	private final List<CylinderModel> cylinders;
+	/** Everything that puts work on the crank: the cylinders first, then any {@link #addSource added} ones. */
+	private final List<TorqueSource> sources;
 	private final List<Camshaft> camshafts;
 	private final double baseInertia;
 	private final double baseFriction;
@@ -103,6 +106,7 @@ public final class EngineSimulation {
 	public EngineSimulation(List<CylinderModel> cylinders, double baseInertia, double baseFriction,
 							double baseViscousFriction) {
 		this.cylinders = List.copyOf(cylinders);
+		this.sources = new ArrayList<>(this.cylinders);
 		this.camshafts = cylinders.stream()
 			.map(CylinderModel::camshaft)
 			.filter(Objects::nonNull)
@@ -112,7 +116,7 @@ public final class EngineSimulation {
 		this.baseFriction = baseFriction;
 		this.baseViscousFriction = baseViscousFriction;
 		this.inertia = baseInertia + cylinders.stream()
-			.mapToDouble(c -> c.spec.inertia())
+			.mapToDouble(CylinderModel::inertia)
 			.sum();
 	}
 
@@ -221,16 +225,17 @@ public final class EngineSimulation {
 	/** Closes the tick's heat accounting and lets each turbo spool on it; they spin down even while the crank is stopped. */
 	private void endTick() {
 		double exhaustHeat = 0;
-		for (CylinderModel cylinder : cylinders) {
-			cylinder.endTick();
-			exhaustHeat += cylinder.exhaustHeatLastTick();
+		for (int i = 0; i < sources.size(); i++) {
+			TorqueSource source = sources.get(i);
+			source.endTick();
+			exhaustHeat += source.exhaustHeatLastTick();
 		}
 		if (thermalLive && Tuning.engineTemperature)
-			thermal.update(Thermal.heatIn(exhaustHeat / TICK, tickFrictionWork / TICK), cylinders.size(), TICK, coolant);
+			thermal.update(Thermal.heatIn(exhaustHeat / TICK, tickFrictionWork / TICK), sources.size(), TICK, coolant);
 		tickFrictionWork = 0;
 		double cold = thermal.felt();
-		for (CylinderModel cylinder : cylinders)
-			cylinder.coldness = cold;
+		for (int i = 0; i < sources.size(); i++)
+			sources.get(i).setColdness(cold);
 		induction.tick(rpm(), cylinders, thermal.chargeFactor());
 	}
 
@@ -270,20 +275,10 @@ public final class EngineSimulation {
 		for (Camshaft camshaft : camshafts)
 			camshaft.sync(angle);
 		double gasWork = 0;
-		for (CylinderModel cylinder : cylinders) {
-			Camshaft camshaft = cylinder.camshaft();
-			double before = cylinder.currentCycle().fuelInjected;
-			if (cylinder.ported()) {
-				// A rotary chamber is in step with the shaft by the housing's gears: its ports follow its own cycle
-				double cycle = cylinder.pistonAngle(angle, rotaryAngle, direction);
-				double cycleDelta = delta * cylinder.angleScale();
-				gasWork += cylinder.step(cycle, cycleDelta, cycle, cycleDelta, dt);
-			} else {
-				double camDelta = camshaft == null ? 0 : 2 * camshaft.ratio * delta;
-				gasWork += cylinder.step(cylinder.pistonAngle(angle, direction), delta, cylinder.camCycleAngle(), camDelta,
-					dt);
-			}
-			cycleFuel += Math.max(0, cylinder.currentCycle().fuelInjected - before);
+		for (int i = 0; i < sources.size(); i++) {
+			TorqueSource source = sources.get(i);
+			gasWork += source.advance(angle, rotaryAngle, direction, delta, dt);
+			cycleFuel += source.fuelUsedLastStep();
 		}
 		for (Camshaft camshaft : camshafts)
 			camshaft.advance(delta);
@@ -328,12 +323,12 @@ public final class EngineSimulation {
 			return;
 		double unburned = 0;
 		int injecting = 0;
-		for (CylinderModel cylinder : cylinders) {
-			CycleStats last = cylinder.lastCycle();
-			if (last.fuelInjected <= 0)
+		for (int i = 0; i < sources.size(); i++) {
+			double fraction = sources.get(i).unburnedFraction();
+			if (fraction < 0)
 				continue;
 			injecting++;
-			unburned += last.unburnedFraction();
+			unburned += fraction;
 		}
 		if (injecting == 0)
 			return;
@@ -366,8 +361,8 @@ public final class EngineSimulation {
 		double film = lubrication.effective();
 		double friction = baseFriction * Lubrication.staticFactor(film)
 			+ baseViscousFriction * omega * Lubrication.viscousFactor(film);
-		for (CylinderModel cylinder : cylinders)
-			friction += cylinder.spec.frictionAt(omega, film);
+		for (int i = 0; i < sources.size(); i++)
+			friction += sources.get(i).frictionAt(omega, film);
 		return friction * drag();
 	}
 
@@ -382,9 +377,10 @@ public final class EngineSimulation {
 		double viscousFactor = Lubrication.viscousFactor(film) * drag;
 		double fixed = baseFriction * staticFactor;
 		double perOmega = baseViscousFriction * viscousFactor;
-		for (CylinderModel cylinder : cylinders) {
-			fixed += cylinder.spec.frictionStatic() * staticFactor;
-			perOmega += cylinder.spec.frictionViscous() * viscousFactor;
+		for (int i = 0; i < sources.size(); i++) {
+			TorqueSource source = sources.get(i);
+			fixed += source.frictionStatic() * staticFactor;
+			perOmega += source.frictionViscous() * viscousFactor;
 		}
 		stepFriction = fixed;
 		stepViscousFriction = perOmega;
@@ -442,22 +438,8 @@ public final class EngineSimulation {
 		if (!hasCompletedCycle)
 			return 0;
 		double work = 0;
-		for (CylinderModel cylinder : cylinders) {
-			CycleStats last = cylinder.lastCycle();
-			double scale = 1;
-			FuelSpec fuel = cylinder.fuelSupply.fuel();
-			if (last.result.fired() && last.fuelBurned > 0 && fuel != null) {
-				double airLimit = last.freshAirAtInjection / fuel.airPerMb();
-				// A MAF sensor sets the shot from the air, up to what the injector can deliver; without one it is
-				// whatever Fuel Metering says
-				double fullShot = cylinder.airMatch > 0
-					? Math.min(airLimit * cylinder.airMatch, cylinder.injectorLimit(fuel))
-					: cylinder.usualShot(fuel) * cylinder.metering * cylinder.fuelTrim;
-				scale = Math.max(1, Math.min(fullShot, airLimit) / last.fuelBurned);
-			}
-			// A rotary chamber takes a turn and a half of the shaft to do what a piston does in two
-			work += last.work * scale * SimMath.CYCLE / cylinder.cycleDegrees();
-		}
+		for (int i = 0; i < sources.size(); i++)
+			work += sources.get(i).availableWork();
 		return Math.max(0, work / Math.toRadians(SimMath.CYCLE) - frictionTorque());
 	}
 
@@ -465,8 +447,8 @@ public final class EngineSimulation {
 	public boolean isSustaining() {
 		if (!hasCompletedCycle || netTorque <= 0)
 			return false;
-		for (CylinderModel cylinder : cylinders)
-			if (cylinder.lastCycle().result.fired())
+		for (int i = 0; i < sources.size(); i++)
+			if (sources.get(i).fired())
 				return true;
 		return false;
 	}
@@ -477,8 +459,8 @@ public final class EngineSimulation {
 			return;
 		this.direction = direction > 0 ? 1 : -1;
 		// Cylinders on a shared cam lobe are timed relative to each other, and that depends on the way the crank turns
-		for (CylinderModel cylinder : cylinders)
-			cylinder.setDirection(this.direction);
+		for (int i = 0; i < sources.size(); i++)
+			sources.get(i).setDirection(this.direction);
 	}
 
 	/** Restores motion state, e.g. after a topology rebuild or loading from disk. */
@@ -489,6 +471,21 @@ public final class EngineSimulation {
 		this.omega = Double.isFinite(omega) ? Math.max(0, omega) : 0;
 		for (Camshaft camshaft : camshafts)
 			camshaft.angle = this.angle / 2;
+	}
+
+	/**
+	 * Adds something that puts work on the crank besides the cylinders this simulation was built with, such as a turbine
+	 * a pack supplies. Its inertia joins the crank's. It is stepped, rubbed and heated like a cylinder, but it takes no
+	 * part in {@link #cylinders()} or in boost, which are cylinder things.
+	 */
+	public void addSource(TorqueSource source) {
+		sources.add(Objects.requireNonNull(source));
+		inertia += source.inertia();
+	}
+
+	/** Every source on the crank: the cylinders, then any added ones. */
+	public List<TorqueSource> sources() {
+		return java.util.Collections.unmodifiableList(sources);
 	}
 
 	public List<CylinderModel> cylinders() {
