@@ -378,8 +378,11 @@ public final class SmokeAudit {
 			view(FLEET.get(5).getX() - 1.5, 4.0, -2.0, -18, 5);
 		if (t == 760)
 			capture("fleet_supercharged", true);
-		if (t == 800)
+		if (t == 800) {
 			checkEngines("before walking away");
+			// KubeJS and CC: Tweaked rows only: the other mod found this mod's plugin or peripheral and they work together
+			IntegrationAudit.run(REPORT, origin.offset(TestEngine.PRIMARY));
+		}
 		// Walk far away, so every chunk of the fleet unloads on the client, and stay a while
 		if (t == 820)
 			VisualSmokeTest.server(server -> VisualSmokeTest.command(server, String.format(Locale.ROOT, "tp @a %d %d %d",

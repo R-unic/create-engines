@@ -695,6 +695,68 @@ public class BlueprintGameTests {
 		turnedCopiesScanAlike(helper, TestEngine.HEAD);
 	}
 
+	/** Two cylinders on one throw, one standing up and one leaning out to the north: the facing of a cylinder is turned too. */
+	@GameTest(template = "empty_large", timeoutTicks = 400)
+	public static void aTurnedVEngineScansAsTheSameEngine(GameTestHelper helper) throws BlueprintException {
+		TestEngine.build(helper.getLevel(), helper.absolutePos(BlockPos.ZERO), true);
+		TestEngine.addSideCylinder(helper.getLevel(), helper.absolutePos(BlockPos.ZERO));
+		var layout = com.createengines.engine.topology.EngineScanner.scan(helper.getLevel(), helper.absolutePos(TestEngine.PRIMARY));
+		if (layout == null || layout.cylinders().size() != 2)
+			helper.fail("the V engine should scan as two cylinders, not " + (layout == null ? "nothing" : layout.cylinders().size()));
+		if (angleGap(layout.cylinders().get(0).tdcAngle(), layout.cylinders().get(1).tdcAngle()) < 1)
+			helper.fail("the two cylinders should not share a top dead centre");
+		turnedCopiesScanAlike(helper, TestEngine.HEAD);
+	}
+
+	/** The second line turns the other way (four cogwheels, not three): its sense must survive every turn and mirror. */
+	@GameTest(template = "empty_large", timeoutTicks = 400)
+	public static void aTurnedCounterRotatingBuildScansAsTheSameEngine(GameTestHelper helper) throws BlueprintException {
+		TestEngine.build(helper.getLevel(), helper.absolutePos(BlockPos.ZERO), true);
+		TestEngine.addCounterRotatingLine(helper.getLevel(), helper.absolutePos(BlockPos.ZERO));
+		var layout = com.createengines.engine.topology.EngineScanner.scan(helper.getLevel(), helper.absolutePos(TestEngine.PRIMARY));
+		if (layout == null || layout.cylinders().size() != 2)
+			helper.fail("the counter-rotating engine should scan as two cylinders, not "
+				+ (layout == null ? "nothing" : layout.cylinders().size()));
+		if (layout.cylinders().get(0).sense() == layout.cylinders().get(1).sense())
+			helper.fail("the two lines should turn opposite ways");
+		turnedCopiesScanAlike(helper, TestEngine.HEAD);
+	}
+
+	/** A pipe's open ends turn and mirror with the build: a pipe cannot be left pointing the way it did before the turn. */
+	@GameTest(template = "empty")
+	public static void aTurnedPipeKeepsItsOpenEndsPointingTheSameWay(GameTestHelper helper) {
+		String pipe = "create_engines:intake_manifold";
+		Blueprint blueprint = new Blueprint("Pipes", "", java.util.List.of(
+			new Blueprint.Part(0, 0, 0, pipe, java.util.Map.of("north", "true", "up", "true"), java.util.Map.of()),
+			new Blueprint.Part(0, 0, -1, pipe, java.util.Map.of("south", "true", "east", "true"), java.util.Map.of())));
+		// A quarter turn clockwise: north goes to east, east to south, south to west
+		Blueprint turned = com.createengines.content.blueprint.BlueprintTurner.turn(blueprint,
+			net.minecraft.world.level.block.Rotation.CLOCKWISE_90, net.minecraft.world.level.block.Mirror.NONE);
+		Blueprint.Part a = partAt(turned, 0, 0, 0), b = partAt(turned, 1, 0, 0);
+		if (a == null || b == null)
+			helper.fail("the turned pipes are not where a quarter turn puts them");
+		else if (!a.state().equals(java.util.Map.of("east", "true", "up", "true"))
+			|| !b.state().equals(java.util.Map.of("west", "true", "south", "true")))
+			helper.fail("the turned pipes' open ends are " + a.state() + " and " + b.state());
+		// Mirrored left to right (z flips): north and south swap, east and west stay
+		Blueprint mirrored = com.createengines.content.blueprint.BlueprintTurner.turn(blueprint,
+			net.minecraft.world.level.block.Rotation.NONE, net.minecraft.world.level.block.Mirror.LEFT_RIGHT);
+		Blueprint.Part c = partAt(mirrored, 0, 0, 0), d = partAt(mirrored, 0, 0, 1);
+		if (c == null || d == null)
+			helper.fail("the mirrored pipes are not where a mirror puts them");
+		else if (!c.state().equals(java.util.Map.of("south", "true", "up", "true"))
+			|| !d.state().equals(java.util.Map.of("north", "true", "east", "true")))
+			helper.fail("the mirrored pipes' open ends are " + c.state() + " and " + d.state());
+		helper.succeed();
+	}
+
+	private static Blueprint.Part partAt(Blueprint blueprint, int x, int y, int z) {
+		for (Blueprint.Part part : blueprint.parts())
+			if (part.x() == x && part.y() == y && part.z() == z)
+				return part;
+		return null;
+	}
+
 	private static void turnedCopiesScanAlike(GameTestHelper helper, BlockPos click) throws BlueprintException {
 		ServerLevel level = helper.getLevel();
 		BlueprintRecorder.Result result = BlueprintRecorder.record(level, helper.absolutePos(click), "Turn", "t");
@@ -720,6 +782,7 @@ public class BlueprintGameTests {
 				helper.fail(rotation + ": the turned engine did not scan whole");
 			if (layout.cylinders().size() != original.cylinders().size())
 				helper.fail(rotation + ": " + layout.cylinders().size() + " cylinders, expected " + original.cylinders().size());
+			int flip = 0; // sense is relative to the first crank line; a turn can change which line that is, and then every sense and top dead centre changes sign together
 			for (var cylinder : original.cylinders()) {
 				BlockPos rel = cylinder.pos().subtract(primary);
 				int[] at = com.createengines.content.blueprint.BlueprintTurner.place(rel.getX(), rel.getZ(), rotation, mirror);
@@ -727,11 +790,17 @@ public class BlueprintGameTests {
 				var twin = layout.cylinders().stream().filter(c -> c.pos().equals(expected)).findFirst().orElse(null);
 				if (twin == null)
 					helper.fail(rotation + " (" + mirror + "): no cylinder at the turned place " + expected);
-				if (angleGap(twin.tdcAngle(), cylinder.tdcAngle()) > 1e-3)
-					helper.fail(rotation + " (" + mirror + "): top dead centre " + twin.tdcAngle() + ", expected " + cylinder.tdcAngle());
+				int relative = twin.sense() * cylinder.sense();
+				if (flip == 0)
+					flip = relative;
+				if (relative != flip)
+					helper.fail(rotation + " (" + mirror + "): the senses did not all change together, at " + rel);
+				if (angleGap(twin.tdcAngle(), flip * cylinder.tdcAngle()) > 1e-3)
+					helper.fail(rotation + " (" + mirror + "): top dead centre " + twin.tdcAngle() + ", expected " + flip * cylinder.tdcAngle()
+						+ " (sense " + twin.sense() + ", was " + cylinder.sense() + ", at " + rel + ")");
 				if (angleGap(twin.lobeAngle(), cylinder.lobeAngle()) > 1e-3)
 					helper.fail(rotation + " (" + mirror + "): cam timing " + twin.lobeAngle() + ", expected " + cylinder.lobeAngle());
-				if (twin.faults() != cylinder.faults() || twin.sparkPlug() != cylinder.sparkPlug() || twin.sense() != cylinder.sense())
+				if (twin.faults() != cylinder.faults() || twin.sparkPlug() != cylinder.sparkPlug())
 					helper.fail(rotation + " (" + mirror + "): faults " + twin.faults() + " expected " + cylinder.faults());
 			}
 		}

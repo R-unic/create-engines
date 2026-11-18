@@ -231,6 +231,44 @@ public final class TestEngine {
 			set.accept(new BlockPos(0, 2, z), axisX(AllBlocks.COGWHEEL.getDefaultState()));
 	}
 
+	/** The side cylinder of {@link #addSideCylinder}: on the first throw, level with it, and its head. */
+	public static final BlockPos SIDE_CYLINDER = new BlockPos(2, 2, 1);
+	public static final BlockPos SIDE_HEAD = new BlockPos(2, 2, 0);
+
+	/**
+	 * Makes {@link #build} a two-cylinder engine on one throw: a second cylinder leans out sideways from the throw, to the
+	 * north, a quarter turn from the one standing up (a V of ninety degrees). It has no camshaft lobe of its own.
+	 */
+	public static void addSideCylinder(Level level, BlockPos origin) {
+		level.setBlock(origin.offset(SIDE_CYLINDER), CEBlocks.CYLINDER.getDefaultState()
+			.setValue(CylinderBlock.FACING, Direction.NORTH)
+			.setValue(CylinderBlock.HAS_PISTON, true)
+			.setValue(CylinderBlock.HAS_ROD, true), Block.UPDATE_ALL);
+		level.setBlock(origin.offset(SIDE_HEAD), CEBlocks.CYLINDER_HEAD.getDefaultState()
+			.setValue(CylinderHeadBlock.FACING, Direction.NORTH)
+			.setValue(CylinderHeadBlock.HAS_INJECTOR, true), Block.UPDATE_ALL);
+	}
+
+	/**
+	 * Like {@link #addCoupledLine}, but the third crank line sits one line further out, joined by four cogwheels instead of
+	 * three, so it turns the opposite way to the first. Call after {@link #build}, instead of {@link #addCoupledLine}.
+	 */
+	public static void addCounterRotatingLine(Level level, BlockPos origin) {
+		BiConsumer<BlockPos, BlockState> set = (pos, state) -> level.setBlock(origin.offset(pos), state, Block.UPDATE_ALL);
+		for (int x = 1; x <= 3; x++)
+			set.accept(new BlockPos(x, 2, 5), axisX(CEBlocks.CRANKSHAFT.getDefaultState()));
+		set.accept(new BlockPos(4, 2, 5), axisX(CEBlocks.CRANK_THROW.getDefaultState()));
+		set.accept(new BlockPos(4, 3, 5), CEBlocks.CYLINDER.getDefaultState()
+			.setValue(CylinderBlock.FACING, Direction.UP)
+			.setValue(CylinderBlock.HAS_PISTON, true)
+			.setValue(CylinderBlock.HAS_ROD, true));
+		set.accept(new BlockPos(4, 4, 5), CEBlocks.CYLINDER_HEAD.getDefaultState()
+			.setValue(CylinderHeadBlock.FACING, Direction.UP)
+			.setValue(CylinderHeadBlock.HAS_INJECTOR, true));
+		for (int z = 2; z <= 5; z++)
+			set.accept(new BlockPos(0, 2, z), axisX(AllBlocks.COGWHEEL.getDefaultState()));
+	}
+
 	private TestEngine() {
 	}
 }

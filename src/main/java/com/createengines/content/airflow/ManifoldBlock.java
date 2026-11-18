@@ -23,6 +23,8 @@ import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.LevelAccessor;
 import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.Mirror;
+import net.minecraft.world.level.block.Rotation;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.StateDefinition;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
@@ -109,6 +111,23 @@ public class ManifoldBlock extends Block implements AirflowPort, IWrenchable {
 				state = state.setValue(CONNECTIONS.get(direction), true);
 		}
 		return state;
+	}
+
+	/** The open ends turn with the pipe when a structure, a schematic or a turned blueprint is placed turned. */
+	@Override
+	protected BlockState rotate(BlockState state, Rotation rotation) {
+		BlockState turned = state;
+		for (Direction direction : Direction.values())
+			turned = turned.setValue(CONNECTIONS.get(rotation.rotate(direction)), state.getValue(CONNECTIONS.get(direction)));
+		return turned;
+	}
+
+	@Override
+	protected BlockState mirror(BlockState state, Mirror mirror) {
+		BlockState turned = state;
+		for (Direction direction : Direction.values())
+			turned = turned.setValue(CONNECTIONS.get(mirror.mirror(direction)), state.getValue(CONNECTIONS.get(direction)));
+		return turned;
 	}
 
 	@Override

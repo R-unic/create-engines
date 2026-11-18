@@ -267,7 +267,7 @@ the work is cut up, and every stage is additive (no existing ID, config key or n
 | 5 | **Build from it:** the Bank Builder lays the engine from the parts you carry; the blueprint exports as a Create schematic | **Built 2026-11-17** |
 | 6 | **Share and hang:** paste in, copy out, server checks; the framed blueprint | **Built 2026-11-17** |
 | 7 | **Aeronautics** compatibility and Ponder page (sized by stage 0), then the other addons | **Not started**: needs the addon, so it waits on stage 0 (the author's) |
-| 8 | **Pack-maker tools:** JEI and EMI pages for fuels and parts, three config presets, the part stats data map, the `api` package with its events (the last two preview). KubeJS bindings are not built (see below) | **Built 2026-11-17**, except KubeJS |
+| 8 | **Pack-maker tools:** JEI and EMI pages for fuels and parts, three config presets, the part stats data map, the `api` package with its events (the last two preview). KubeJS events and a global, and a CC: Tweaked peripheral, both read-only | **Built 2026-11-17** |
 | 9 | Cheaper pipe models (the `casing_style` heap cost found in 1.3), then the release record | **Done as far as 1.x allows, 2026-11-17**: every state of a multipart block shares one model (about 108 MB of the 440 MB); the rest is block-state bookkeeping that needs fewer states, so it is a 2.0 item. Release record not started |
 
 **Stage 9, as far as it went (2026-11-17).** A block's dye is only a tint, yet each of its 17 values is a block state and vanilla
@@ -378,9 +378,16 @@ recipe have not been seen; Ponder page, goggle lines and the drafting sheet are 
   housings are not covered. The `api` package (**preview**): `EngineApi.viewAt`, a read-only `EngineView`, and two events on
   `NeoForge.EVENT_BUS`, `EngineStateChangeEvent` (a start is a change to RUNNING, a stall to STALLED) and `EngineMilestoneEvent`;
   a listener that throws is logged and never stops an engine. JEI and EMI pages for every fuel (energy, how it lights, cold start,
-  boost tolerance) and for every installable part and the blocks it goes into. **KubeJS is not built:** the Gradle cache has no KubeJS
-  to compile against, so there is no plugin class. A script can already listen to the two API events through KubeJS's own NeoForge
-  event bridge, add fuels and part stats with datapack files, and read an engine through the API.
+  boost tolerance) and for every installable part and the blocks it goes into. **KubeJS and CC: Tweaked (added 2026-11-17,
+  `compat/kubejs`, `compat/computercraft`, docs/INTEGRATIONS.md):** both read-only, on the `api` package. A KubeJS plugin (named in
+  `kubejs.plugins.txt`, so nothing in the mod names a KubeJS class) adds `CreateEnginesEvents.stateChanged` and `.milestone` for server
+  scripts and a `CreateEngines.engineAt(level, pos)` global; a CC peripheral of type `create_engines_engine` sits on crankshafts,
+  cylinders, heads and rotor housings and answers for the whole engine (`getEngine`, `getStatus`, `getRpm`, `getHealth` and the
+  rest). Fuels and part stats are added with datapack files, which KubeJS already does. Both have a compatibility-matrix row
+  (`runSmokeAuditKubejs`, `runSmokeAuditCc`) whose audit fails unless the other mod found this mod's plugin or peripheral: KubeJS
+  must hand a script listener the events the engine code posts, CC must offer the peripheral on a running engine and read it. Setting
+  throttle or rack from a computer is deliberately not built (the API is read-only); a real script and a real Lua program were
+  not run by a player.
 - **Turned builds (added 2026-11-17).** `BlueprintTurner` turns a blueprint by 0, 90, 180 or 270 degrees about the vertical:
   each block's place, each state through the block's own `rotate` and `mirror`, and each crank's throw angle (the pin's direction
   is carried through the turn and read back against the new axis, since a crank's rest direction depends on its axis). Cam lobe
@@ -392,8 +399,14 @@ recipe have not been seen; Ponder page, goggle lines and the drafting sheet are 
   Tests: `aTurnedBuildScansAsTheSameEngine`, `aTurnedRotaryBuildScansAsTheSameEngine` (twin rotor, the second half a turn
   round) and `aTurnedCoupledBuildScansAsTheSameEngine` (two geared crank lines): all four turns each, same cylinders at the
   turned places with the same top dead centre, cam timing and faults, read from the real scanner; and
-  `aBlueprintAppliesToATurnedCopyOfItsEngine`. Not covered: a V engine with cylinders on both sides of the crank, and a pipe
-  network turned (the engines above have single openings).
+  `aBlueprintAppliesToATurnedCopyOfItsEngine`; also `aTurnedVEngineScansAsTheSameEngine` (a second cylinder leaning out
+  sideways on the same throw), `aTurnedCounterRotatingBuildScansAsTheSameEngine` (a second line geared the other way) and
+  `aTurnedPipeKeepsItsOpenEndsPointingTheSameWay`. The pipe test found a real defect: `ManifoldBlock` stored its open ends but
+  had no `rotate` or `mirror`, so any turned or mirrored placement (a turned build, a vanilla structure, a Create schematic)
+  left the pipe arms pointing the old way; it now turns them. The counter-rotating test showed that a segment's `sense` is
+  relative to the first crank line the scan reaches, so a turn can change which line is first and then every sense and top dead
+  centre changes sign together; the test accepts one such global flip and nothing else. Not covered: a turned pipe network
+  scanned as an engine (the pipe test checks the states, not a built network).
 - **Tests.** Unit: the codec, the rules, the diff, the file names, the part stats arithmetic, the status names. GameTests
   (`BlueprintGameTests`, `PackToolsGameTests`): recording, applying, refusing, building in creative and survival, protection vetoes,
   blocked and unloaded sites, the Bank Builder flow, the structure file, import (good, hostile, too long), the frame (hang, take,

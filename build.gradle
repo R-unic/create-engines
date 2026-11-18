@@ -55,6 +55,19 @@ repositories {
         url = 'https://maven.terraformersmc.com/'
         content { includeGroup 'dev.emi' }
     }
+    maven { // KubeJS and Rhino, for the script integration and its compatibility row
+        name = 'Latvian'
+        url = 'https://maven.latvian.dev/releases'
+        content {
+            includeGroup 'dev.latvian.mods'
+            includeGroup 'dev.latvian.apps'
+        }
+    }
+    maven { // CC: Tweaked, for the computer peripheral and its compatibility row
+        name = 'SquidDev'
+        url = 'https://maven.squiddev.cc'
+        content { includeGroup 'cc.tweaked' }
+    }
 }
 
 // Only the compatibility-matrix Sodium run loads this; the mod itself does not depend on Sodium. Declared before the runs that use it.
@@ -62,6 +75,9 @@ configurations.create('sodiumRuntime')
 // Likewise the JEI and EMI compatibility rows: each loads one recipe viewer and nothing else changes.
 configurations.create('jeiRuntime')
 configurations.create('emiRuntime')
+// And the KubeJS and CC: Tweaked rows.
+configurations.create('kubejsRuntime')
+configurations.create('ccRuntime')
 
 neoForge {
     version = project.neo_version
@@ -138,6 +154,24 @@ neoForge {
             systemProperty 'create_engines.smokeAudit.requireViewer', 'emi'
         }
 
+        // KubeJS and CC: Tweaked rows: the same audit with the other mod loaded, which also checks that this mod's plugin or
+        // peripheral was found and works
+        smokeAuditKubejs {
+            client()
+            gameDirectory = file('run/smoke-client-kubejs')
+            systemProperty 'neoforge.enabledGameTestNamespaces', project.mod_id
+            systemProperty 'create_engines.smokeAudit', 'true'
+            systemProperty 'create_engines.smokeAudit.requireIntegration', 'kubejs'
+        }
+
+        smokeAuditCc {
+            client()
+            gameDirectory = file('run/smoke-client-cc')
+            systemProperty 'neoforge.enabledGameTestNamespaces', project.mod_id
+            systemProperty 'create_engines.smokeAudit', 'true'
+            systemProperty 'create_engines.smokeAudit.requireIntegration', 'computercraft'
+        }
+
         // Builds a handful of engines on stone pads and photographs them at 1920x1080 for the mod page, in a game
         // folder of its own so it neither shares nor disturbs the settings of a development client.
         showcase {
@@ -202,6 +236,15 @@ dependencies {
     compileOnly("dev.emi:emi-neoforge:${emi_version}:api") { transitive = false }
     jeiRuntime("mezz.jei:jei-${minecraft_version}-neoforge:${jei_version}")
     emiRuntime("dev.emi:emi-neoforge:${emi_version}") { transitive = false }
+
+    // The script and computer integrations likewise compile against the APIs and ship none of them
+    compileOnly("dev.latvian.mods:kubejs-neoforge:${kubejs_version}") { transitive = false }
+    compileOnly("dev.latvian.mods:rhino:${rhino_version}") { transitive = false }
+    compileOnly("cc.tweaked:cc-tweaked-${minecraft_version}-core-api:${cc_tweaked_version}") { transitive = false }
+    compileOnly("cc.tweaked:cc-tweaked-${minecraft_version}-forge-api:${cc_tweaked_version}") { transitive = false }
+    kubejsRuntime("dev.latvian.mods:kubejs-neoforge:${kubejs_version}") { transitive = false }
+    kubejsRuntime("dev.latvian.mods:rhino:${rhino_version}") { transitive = false }
+    ccRuntime("cc.tweaked:cc-tweaked-${minecraft_version}-forge:${cc_tweaked_version}") { transitive = false }
 
     // The simulation core has no Minecraft dependencies and is tested as plain Java.
     testImplementation(platform('org.junit:junit-bom:5.11.4'))
@@ -314,7 +357,9 @@ tasks.matching { it.name == 'runVisualSmokeTest' }.configureEach { finalizedBy '
 [[name: 'FlywheelOff', dir: 'run/smoke-client-flywheel-off', flywheel: 'flywheel:off'],
  [name: 'Sodium', dir: 'run/smoke-client-sodium', flywheel: null],
  [name: 'Jei', dir: 'run/smoke-client-jei', flywheel: null, mods: 'jeiRuntime'],
- [name: 'Emi', dir: 'run/smoke-client-emi', flywheel: null, mods: 'emiRuntime']].each { row ->
+ [name: 'Emi', dir: 'run/smoke-client-emi', flywheel: null, mods: 'emiRuntime'],
+ [name: 'Kubejs', dir: 'run/smoke-client-kubejs', flywheel: null, mods: 'kubejsRuntime'],
+ [name: 'Cc', dir: 'run/smoke-client-cc', flywheel: null, mods: 'ccRuntime']].each { row ->
     def rowDir = file(row.dir)
     // A recipe viewer is an ordinary mod: its jars go in the row's mods folder, which FML scans (on the classpath they are not found)
     def rowMods = row.mods ? configurations.getByName(row.mods).incoming.files : null
@@ -353,13 +398,15 @@ tasks.matching { it.name == 'runVisualSmokeTest' }.configureEach { finalizedBy '
 
 tasks.register('compatMatrix') {
     group = 'verification'
-    description = 'Runs the client audit in every compatibility-matrix row (Flywheel off, Sodium, EMI); each is verified. JEI is run by hand, see docs/COMPAT.md.'
+    description = 'Runs the client audit in every compatibility-matrix row (Flywheel off, Sodium, EMI, KubeJS, CC: Tweaked); each is verified. JEI is run by hand, see docs/COMPAT.md.'
     // The JEI row (runSmokeAuditJei) is not in this list: JEI 19.70 asks for NeoForge 21.1.238 and this build runs 21.1.219, so it
     // cannot start here (docs/COMPAT.md). Run it by hand on a NeoForge it accepts.
-    dependsOn 'runSmokeAuditFlywheelOff', 'runSmokeAuditSodium', 'runSmokeAuditEmi'
+    dependsOn 'runSmokeAuditFlywheelOff', 'runSmokeAuditSodium', 'runSmokeAuditEmi', 'runSmokeAuditKubejs', 'runSmokeAuditCc'
 }
 tasks.matching { it.name == 'runSmokeAuditSodium' }.configureEach { mustRunAfter 'runSmokeAuditFlywheelOff' }
 tasks.matching { it.name == 'runSmokeAuditEmi' }.configureEach { mustRunAfter 'runSmokeAuditSodium' }
+tasks.matching { it.name == 'runSmokeAuditKubejs' }.configureEach { mustRunAfter 'runSmokeAuditEmi' }
+tasks.matching { it.name == 'runSmokeAuditCc' }.configureEach { mustRunAfter 'runSmokeAuditKubejs' }
 
 // One command for everything unattended: unit tests, the GameTests with their log check, and the client audit.
 tasks.register('smoke') {

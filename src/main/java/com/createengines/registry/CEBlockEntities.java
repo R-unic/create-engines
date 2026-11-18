@@ -245,5 +245,9 @@ public final class CEBlockEntities {
 			CEItems.JERRY_CAN.get());
 		event.registerBlockEntity(Capabilities.ItemHandler.BLOCK, SOOT_TRAP.get(), (be, side) -> be.itemCapability());
 		event.registerBlockEntity(Capabilities.EnergyStorage.BLOCK, ALTERNATOR.get(), (be, side) -> be.energyOutput());
+		// Only named when ComputerCraft is loaded, so a game without it never touches a ComputerCraft class
+		if (net.neoforged.fml.ModList.get()
+			.isLoaded("computercraft"))
+			com.createengines.compat.computercraft.ComputerCraftCompat.register(event);
 	}
 }
