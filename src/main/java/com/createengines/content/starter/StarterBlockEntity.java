@@ -6,6 +6,7 @@ import org.jetbrains.annotations.Nullable;
 
 import com.createengines.config.CEClientConfig;
 import com.createengines.content.effects.EngineEffects;
+import com.createengines.engine.Signals;
 import com.createengines.engine.topology.EngineMember;
 import com.createengines.content.GoggleLines;
 import com.createengines.registry.CELang;
@@ -44,7 +45,7 @@ public class StarterBlockEntity extends KineticBlockEntity implements EngineMemb
 
 	/** Powered by redstone and being turned: it will push on the crank. */
 	public boolean wantsToCrank() {
-		return level != null && level.hasNeighborSignal(worldPosition) && getSpeed() != 0;
+		return level != null && Signals.hasNeighbour(level, worldPosition) && getSpeed() != 0;
 	}
 
 	/** Its share of the effort of turning the engine over, relative to a plain starter's (see {@link StarterBlock#strength()}). */

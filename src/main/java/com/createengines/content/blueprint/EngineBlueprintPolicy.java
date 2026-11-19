@@ -3,6 +3,7 @@ package com.createengines.content.blueprint;
 import org.jetbrains.annotations.Nullable;
 
 import com.createengines.CreateEngines;
+import com.createengines.engine.EngineProviders;
 import com.createengines.engine.blueprint.BlueprintPolicy;
 
 import net.minecraft.core.registries.BuiltInRegistries;
@@ -11,7 +12,8 @@ import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.properties.Property;
 
 /**
- * What a server accepts in a blueprint: blocks of this mod and of Create (never another mod's, and never vanilla's), a state
+ * What a server accepts in a blueprint: blocks of this mod and of Create, and blocks a pack or addon has claimed by registering an
+ * engine source provider that watches them (never any other mod's, and never vanilla's unless claimed), a state
  * property only if the block really has it and takes that value, and a dial only if {@link EngineDials} lists it for that
  * block and the value is inside its range.
  */
@@ -30,13 +32,20 @@ public final class EngineBlueprintPolicy implements BlueprintPolicy {
 		return namespace.equals(CreateEngines.MOD_ID) || namespace.equals(CREATE);
 	}
 
-	/** The registered block of this mod or of Create with that id, or null. */
+	/** Whether this block may be in a blueprint: of this mod or Create, or one a provider claims. */
+	public static boolean allows(Block block) {
+		return allowsNamespace(BuiltInRegistries.BLOCK.getKey(block)
+			.getNamespace()) || EngineProviders.claims(block);
+	}
+
+	/** The registered block that may be in a blueprint with that id, or null. */
 	public static @Nullable Block block(String id) {
 		ResourceLocation location = ResourceLocation.tryParse(id);
-		if (location == null || !allowsNamespace(location.getNamespace()))
+		if (location == null)
 			return null;
-		return BuiltInRegistries.BLOCK.getOptional(location)
+		Block found = BuiltInRegistries.BLOCK.getOptional(location)
 			.orElse(null);
+		return found != null && allows(found) ? found : null;
 	}
 
 	@Override

@@ -315,34 +315,65 @@ def valve():
 # --- airflow -------------------------------------------------------------------------------------------------------
 
 def air_intake():
-    textures = {"body": COPPER_CASING, "rim": IRON, "bolt": BRASS, "grille": "create_engines:block/grille",
-                "particle": COPPER_CASING}
+    """A bolted cast-iron flange at the back, a short copper neck with a cast band, and a stepped bell opening into a
+    hollow mouth: a riveted iron ring round a dark well, with a louvred grille and a cross brace set down in it. The back
+    flange is the 9 by 9 joint the pipes use; the mouth ring keeps its old 13 by 13 outline."""
+    textures = {"body": COPPER_CASING, "bead": COPPER, "rim": IRON, "bolt": BRASS,
+                "grille": "create_engines:block/grille", "well": BLACK, "particle": COPPER_CASING}
     elements = [
+        # flange and collar
         box((3, 0, 3), (13, 1.5, 13), "rim"),
-        box((5, 1.5, 5), (11, 6, 11), "body"),
-        box((4, 6, 4), (12, 8, 12), "body"),
-        box((3, 8, 3), (13, 10, 13), "body"),
-        box((2, 10, 2), (14, 12, 14), "body"),
-        box((1.5, 12, 1.5), (14.5, 13, 3), "rim"),
-        box((1.5, 12, 13), (14.5, 13, 14.5), "rim"),
-        box((1.5, 12, 3), (3, 13, 13), "rim"),
-        box((13, 12, 3), (14.5, 13, 13), "rim"),
-        box((3, 12.2, 3), (13, 12.35, 13), "grille"),
+        box((4.5, 1.5, 4.5), (11.5, 3, 11.5), "rim"),
+        # neck, with a cast band round it
+        box((5.25, 3, 5.25), (10.75, 6, 10.75), "body"),
+        box((4.5, 4.25, 4.5), (11.5, 5.25, 11.5), "rim"),
+        # the bell, stepping out to the mouth
+        box((4.5, 6, 4.5), (11.5, 8, 11.5), "body"),
+        box((4.25, 6.75, 4.25), (11.75, 7.75, 11.75), "bead"),
+        box((3.5, 8, 3.5), (12.5, 10, 12.5), "body"),
+        box((3.25, 8.75, 3.25), (12.75, 9.75, 12.75), "bead"),
+        box((2.5, 10, 2.5), (13.5, 12, 13.5), "body"),
+        box((2.25, 10.75, 2.25), (13.75, 11.75, 13.75), "bead"),
+        # the dark well the grille is set above
+        box((3, 12, 3), (13, 12.1, 13), "well"),
+        # the mouth ring
+        box((1.5, 12, 1.5), (14.5, 13.5, 3), "rim"),
+        box((1.5, 12, 13), (14.5, 13.5, 14.5), "rim"),
+        box((1.5, 12, 3), (3, 13.5, 13), "rim"),
+        box((13, 12, 3), (14.5, 13.5, 13), "rim"),
+        # grille, and a brace across it with a boss at the middle
+        box((3, 12.7, 3), (13, 12.85, 13), "grille"),
+        box((7.25, 12.3, 2.9), (8.75, 13.1, 13.1), "rim"),
+        box((7, 13.1, 7), (9, 13.6, 9), "bolt"),
     ]
     for x in (3.5, 11.5):
         for z in (3.5, 11.5):
             elements.append(box((x, 1.5, z), (x + 1, 2.2, z + 1), "bolt"))
+    # rivets on the corners of the ring
+    for x in (2, 13):
+        for z in (2, 13):
+            elements.append(box((x, 13.5, z), (x + 1, 14, z + 1), "bolt"))
     write("air_intake/block", textures, elements, render_type="minecraft:cutout")
 
 
 def exhaust_outlet():
-    textures = {"flange": IRON, "pipe": DARK, "tip": IRON_BLOCK, "inside": BLACK, "bolt": BRASS,
+    """A bolted flange and collar, a heat-wrapped pipe with a cast clamp, a swaged shoulder, and a flared tailpipe
+    finished with a rolled steel lip. The lip is 9 by 9 pixels at y 15 to 16, where the rain cap sits, and must stay so."""
+    textures = {"flange": IRON, "pipe": DARK, "tip": IRON_BLOCK, "wrap": SMOOTH, "inside": BLACK, "bolt": BRASS,
                 "particle": DARK}
     elements = [
-        box((3, 0, 3), (13, 2, 13), "flange"),
-        box((5.5, 2, 5.5), (10.5, 13, 10.5), "pipe"),
-        box((6.5, 6.5, 6.5), (9.5, 7.2, 9.5), "tip"),
-        box((4.5, 13, 4.5), (11.5, 15, 11.5), "pipe"),
+        # flange and collar
+        box((3, 0, 3), (13, 1.5, 13), "flange"),
+        box((4.5, 1.5, 4.5), (11.5, 3, 11.5), "flange"),
+        # the pipe, wrapped low down where the gas is hottest, with a clamp at the top of the wrap
+        box((5.5, 3, 5.5), (10.5, 11, 10.5), "pipe"),
+        box((5.25, 3.5, 5.25), (10.75, 6.5, 10.75), "wrap"),
+        box((5, 6.5, 5), (11, 7.5, 11), "flange"),
+        # swaged out to the tailpipe
+        box((5, 11, 5), (11, 12, 11), "pipe"),
+        box((4.5, 12, 4.5), (11.5, 15, 11.5), "pipe"),
+        box((4, 12.5, 4), (12, 13.25, 12), "flange"),
+        # the rolled lip, with the dark bore showing inside it
         box((3.5, 15, 3.5), (12.5, 16, 5), "tip"),
         box((3.5, 15, 11), (12.5, 16, 12.5), "tip"),
         box((3.5, 15, 5), (5, 16, 11), "tip"),
@@ -351,7 +382,10 @@ def exhaust_outlet():
     ]
     for x in (3.4, 11.6):
         for z in (3.4, 11.6):
-            elements.append(box((x, 2, z), (x + 1, 2.6, z + 1), "bolt"))
+            elements.append(box((x, 1.5, z), (x + 1, 2.1, z + 1), "bolt"))
+    # a bolt head on each face of the clamp
+    elements += [box((7.25, 6.75, 4.7), (8.75, 7.25, 5), "bolt"), box((7.25, 6.75, 11), (8.75, 7.25, 11.3), "bolt"),
+                 box((4.7, 6.75, 7.25), (5, 7.25, 8.75), "bolt"), box((11, 6.75, 7.25), (11.3, 7.25, 8.75), "bolt")]
     write("exhaust_outlet/block", textures, elements)
 
 
@@ -852,35 +886,46 @@ def variable_supercharger():
 
 
 def cast_flywheel():
-    """A heavy iron disc on the shaft, along the Y axis (the block state turns it). The block model is only the bearing
-    collars either side; the disc is a separate model so it can spin with the shaft."""
+    """A spoked iron flywheel on the shaft, along the Y axis (the block state turns it). The block model is only the
+    bearing collars either side; the wheel is a separate model so it can spin with the shaft. A steel rim with stepped
+    corners, four thin cast-iron spokes with open gaps between them, and a dark hub bolted in brass. Everything stays
+    inside 4 to 12 along the axis, which is what the block's collision shape covers. The inventory item is turned so the
+    face of the wheel, not its shaft cap, is what shows."""
     textures = {"collar": CASING, "bolt": BRASS, "particle": IRON}
     collars = [box((5, 0, 5), (11, 2, 11), "collar"), box((5, 14, 5), (11, 16, 11), "collar")]
     write("cast_flywheel/block", textures, collars)
 
-    disc_textures = {"axis": AXIS, "end": AXIS_TOP, "iron": RIVETED, "rim": IRON_BLOCK, "web": DARK, "bolt": BRASS,
+    disc_textures = {"axis": AXIS, "end": AXIS_TOP, "spoke": IRON, "rim": IRON_BLOCK, "hub": DARK, "bolt": BRASS,
                      "particle": IRON}
     disc = [
         shaft((6, 0, 6), (10, 16, 10)),
-        # An octagonal body: two overlapping squares and a square turned square-on
-        box((1, 4, 4), (15, 12, 12), "iron"),
-        box((4, 4, 1), (12, 12, 15), "iron"),
-        box((2, 4, 2), (14, 12, 14), "iron"),
-        # A thicker rim all the way round, and a hub
-        box((0.5, 5, 5), (15.5, 11, 11), "rim"),
-        box((5, 5, 0.5), (11, 11, 15.5), "rim"),
-        box((1.5, 5, 1.5), (14.5, 11, 14.5), "rim"),
-        box((4.5, 3, 4.5), (11.5, 13, 11.5), "web"),
+        # The rim: four thin bars, with a corner piece a little lower and set in at each corner so it reads as eight-sided
+        box((3.5, 6, 0.5), (12.5, 10, 2.5), "rim"),
+        box((3.5, 6, 13.5), (12.5, 10, 15.5), "rim"),
+        box((0.5, 6, 3.5), (2.5, 10, 12.5), "rim"),
+        box((13.5, 6, 3.5), (15.5, 10, 12.5), "rim"),
+        box((1.5, 6.25, 1.5), (3.75, 9.75, 3.75), "spoke"),
+        box((12.25, 6.25, 1.5), (14.5, 9.75, 3.75), "spoke"),
+        box((1.5, 6.25, 12.25), (3.75, 9.75, 14.5), "spoke"),
+        box((12.25, 6.25, 12.25), (14.5, 9.75, 14.5), "spoke"),
+        # Four slim spokes into the rim, the one pair in two halves so no two top faces share a plane
+        box((2, 7, 7.25), (14, 9, 8.75), "spoke"),
+        box((7.25, 7, 2), (8.75, 9, 7.25), "spoke"),
+        box((7.25, 7, 8.75), (8.75, 9, 14), "spoke"),
+        # The hub, a boss that stands proud of the thin wheel either side
+        box((5.5, 4.5, 5.5), (10.5, 11.5, 10.5), "hub"),
     ]
-    # Lightening holes: darker squares let into each face, between the hub and the rim
-    for y in (11.95, 3.95):
-        for x, z in ((3, 3), (10, 3), (3, 10), (10, 10)):
-            disc.append(box((x, y, z), (x + 3, y + 0.1, z + 3), "web"))
-    # Bolts round the hub
-    for x, z in ((5, 5), (10, 5), (5, 10), (10, 10)):
-        disc.append(box((x, 12.9, z), (x + 1, 13.4, z + 1), "bolt"))
+    # Bolts: round the hub, and one on each corner piece
+    for x, z in ((5.9, 5.9), (9.1, 5.9), (5.9, 9.1), (9.1, 9.1)):
+        disc.append(box((x, 11.5, z), (x + 1, 11.9, z + 1), "bolt"))
+        disc.append(box((x, 4.1, z), (x + 1, 4.5, z + 1), "bolt"))
+    for x, z in ((2.1, 2.1), (12.9, 2.1), (2.1, 12.9), (12.9, 12.9)):
+        disc.append(box((x, 9.75, z), (x + 1, 10.15, z + 1), "bolt"))
+        disc.append(box((x, 5.85, z), (x + 1, 6.25, z + 1), "bolt"))
     write("cast_flywheel/disc", disc_textures, disc)
-    write("cast_flywheel/item", {**textures, **disc_textures}, collars + disc)
+    # Turned a quarter about Z in the inventory so the wheel faces the viewer; the other displays keep the block's
+    write("cast_flywheel/item", {**textures, **disc_textures}, collars + disc,
+          display={"gui": {"rotation": [30, 225, 90], "translation": [0, 0, 0], "scale": [0.625, 0.625, 0.625]}})
 
 
 def dyno():

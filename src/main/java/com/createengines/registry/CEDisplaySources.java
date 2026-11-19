@@ -2,11 +2,14 @@ package com.createengines.registry;
 
 import static com.createengines.CreateEngines.REGISTRATE;
 
+import com.createengines.content.display.BatteryDisplaySource;
+import com.createengines.content.display.EngineBoostDisplaySource;
 import com.createengines.content.display.EngineFillDisplaySource;
 import com.createengines.content.display.EngineHorsepowerDisplaySource;
 import com.createengines.content.display.EngineReadout;
 import com.createengines.content.display.EngineSpeedDisplaySource;
 import com.createengines.content.display.EngineStatusDisplaySource;
+import com.createengines.content.display.EngineTorqueDisplaySource;
 import com.createengines.content.display.SumpDisplaySource;
 import com.simibubi.create.api.behaviour.display.DisplaySource;
 import com.tterrag.registrate.util.entry.RegistryEntry;
@@ -37,6 +40,16 @@ public final class CEDisplaySources {
 			.register();
 	public static final RegistryEntry<DisplaySource, SumpDisplaySource> SUMP_LEVELS =
 		REGISTRATE.displaySource("sump_levels", SumpDisplaySource::new)
+			.register();
+
+	public static final RegistryEntry<DisplaySource, EngineBoostDisplaySource> ENGINE_BOOST =
+		REGISTRATE.displaySource("engine_boost", EngineBoostDisplaySource::new)
+			.register();
+	public static final RegistryEntry<DisplaySource, EngineTorqueDisplaySource> ENGINE_TORQUE =
+		REGISTRATE.displaySource("engine_torque", EngineTorqueDisplaySource::new)
+			.register();
+	public static final RegistryEntry<DisplaySource, BatteryDisplaySource> BATTERY_CHARGE =
+		REGISTRATE.displaySource("battery_charge", BatteryDisplaySource::new)
 			.register();
 
 	private CEDisplaySources() {

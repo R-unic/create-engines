@@ -123,6 +123,14 @@ public class PackToolsGameTests {
 	}
 
 	@GameTest(template = "empty")
+	public static void withNoPackEntryTheRotaryChamberIsUntouched(GameTestHelper helper) {
+		if (!CEDataMaps.rotaryStats()
+			.isNone())
+			helper.fail("a world with no part_stats entry for the rotor housing should not retune a rotary chamber");
+		helper.succeed();
+	}
+
+	@GameTest(template = "empty")
 	public static void thePartStatsFormatTakesWhatItNamesAndRefusesTheRest(GameTestHelper helper) {
 		var codec = CEDataMaps.PartStatsProperties.CODEC;
 		JsonObject some = new JsonObject();
@@ -310,6 +318,117 @@ public class PackToolsGameTests {
 			EngineExtensions.unregister(provider);
 			helper.fail("the added source was never stepped: " + made.size() + " made, count " + sourceCount(helper));
 		});
+	}
+
+	/**
+	 * A source a provider attaches to an engine's intake network breathes what a supercharger on that network makes, as the
+	 * engine's own cylinder does, and is not also handed the engine-wide average; a second source with no port still gets the
+	 * average and nothing written to its pressure.
+	 */
+	@GameTest(template = "empty", timeoutTicks = 1700)
+	public static void aSourceAttachedToAnIntakeNetworkBreathesTheBlowersBoost(GameTestHelper helper) {
+		BlockPos primary = helper.absolutePos(TestEngine.PRIMARY);
+		BlockPos blower = TestEngine.HEAD.east();
+		BlockPos opening = blower.east();
+		BreathingSource attached = new BreathingSource();
+		BreathingSource loose = new BreathingSource();
+		EngineSourceProvider provider = new EngineSourceProvider() {
+			@Override
+			public List<TorqueSource> sourcesFor(net.minecraft.world.level.Level level, com.createengines.api.EngineBuild build) {
+				return build.primary()
+					.equals(primary) ? List.of(attached, loose) : List.of();
+			}
+
+			@Override
+			public BlockPos intakeAt(TorqueSource source) {
+				return source == attached ? helper.absolutePos(opening) : null;
+			}
+		};
+		EngineExtensions.register(provider);
+		TestEngine.build(helper.getLevel(), helper.absolutePos(BlockPos.ZERO), true);
+		helper.setBlock(TestEngine.AIR_INTAKE, Blocks.AIR);
+		helper.setBlock(opening, CEBlocks.AIR_INTAKE.getDefaultState()
+			.setValue(com.createengines.content.airflow.PortOpeningBlock.FACING, net.minecraft.core.Direction.EAST));
+		helper.setBlock(blower, CEBlocks.SUPERCHARGER.getDefaultState()
+			.setValue(net.minecraft.world.level.block.state.properties.BlockStateProperties.AXIS, net.minecraft.core.Direction.Axis.Y));
+		helper.setBlock(blower.below(), com.simibubi.create.AllBlocks.CREATIVE_MOTOR.getDefaultState()
+			.setValue(com.simibubi.create.content.kinetics.motor.CreativeMotorBlock.FACING, net.minecraft.core.Direction.UP));
+		com.simibubi.create.content.kinetics.motor.CreativeMotorBlockEntity motor = helper.getBlockEntity(blower.below());
+		motor.generatedSpeed.setValue(128);
+		helper.runAtTickTime(300, () -> helper.setBlock(TestEngine.STARTER_POWER, Blocks.AIR));
+		helper.runAtTickTime(900, () -> {
+			EngineExtensions.unregister(provider);
+			helper.assertTrue(attached.intakePressure > 1.3, "the blower's boost should reach the attached source: " + attached.intakePressure);
+			helper.assertTrue(attached.intakeTemperature > 1, "and its heat: " + attached.intakeTemperature);
+			helper.assertTrue(attached.pressure < 0, "it is not also given the engine-wide average: " + attached.pressure);
+			helper.assertTrue(loose.pressure > 1.3, "a source with no port gets the average: " + loose.pressure);
+			helper.assertTrue(loose.intakePressure < 0, "and nothing is written to its own pressure: " + loose.intakePressure);
+			helper.succeed();
+		});
+		helper.runAtTickTime(1650, () -> {
+			EngineExtensions.unregister(provider);
+			helper.fail("the engine never reached the check");
+		});
+	}
+
+	/**
+	 * A block a provider watches, beside the engine, is part of the engine's blueprint and passes the server's rules; once the
+	 * provider is gone the same block is refused, and a new recording leaves it out.
+	 */
+	@GameTest(template = "empty", timeoutTicks = 200)
+	public static void aBlockAProviderClaimsIsRecordedInTheBlueprintAndPassesThePolicy(GameTestHelper helper) {
+		var level = helper.getLevel();
+		TestEngine.build(level, helper.absolutePos(BlockPos.ZERO), true);
+		BlockPos claimed = helper.absolutePos(TestEngine.THROW)
+			.below()
+			.north();
+		level.setBlock(claimed, Blocks.GOLD_BLOCK.defaultBlockState(), 3);
+		EngineSourceProvider provider = new EngineSourceProvider() {
+			@Override
+			public List<TorqueSource> sourcesFor(net.minecraft.world.level.Level l, com.createengines.api.EngineBuild build) {
+				return List.of();
+			}
+
+			@Override
+			public boolean watches(net.minecraft.world.level.block.state.BlockState state) {
+				return state.is(Blocks.GOLD_BLOCK);
+			}
+		};
+		com.createengines.engine.blueprint.Blueprint with;
+		try {
+			EngineExtensions.register(provider);
+			var result = com.createengines.content.blueprint.BlueprintRecorder.record(level, helper.absolutePos(TestEngine.HEAD), "n", "t");
+			if (!result.ok())
+				helper.fail("recording failed: " + result.failure());
+			with = result.blueprint();
+			boolean has = with.parts()
+				.stream()
+				.anyMatch(p -> p.block()
+					.equals("minecraft:gold_block"));
+			helper.assertTrue(has, "the claimed block should be in the blueprint");
+			try {
+				com.createengines.engine.blueprint.BlueprintRules.check(with,
+					com.createengines.content.blueprint.EngineBlueprintPolicy.INSTANCE);
+			} catch (com.createengines.engine.blueprint.BlueprintException e) {
+				helper.fail("the server should accept a claimed block: " + e);
+			}
+		} finally {
+			EngineExtensions.unregister(provider);
+		}
+		try {
+			com.createengines.engine.blueprint.BlueprintRules.check(with, com.createengines.content.blueprint.EngineBlueprintPolicy.INSTANCE);
+			helper.fail("with the provider gone the foreign block should be refused");
+		} catch (com.createengines.engine.blueprint.BlueprintException e) {
+			helper.assertTrue(e.refusal() == com.createengines.engine.blueprint.BlueprintException.Refusal.FOREIGN_BLOCK,
+				"refused as a foreign block: " + e);
+		}
+		var again = com.createengines.content.blueprint.BlueprintRecorder.record(level, helper.absolutePos(TestEngine.HEAD), "n", "t");
+		helper.assertTrue(again.ok() && again.blueprint()
+			.parts()
+			.stream()
+			.noneMatch(p -> p.block()
+				.equals("minecraft:gold_block")), "without the provider the block is left out");
+		helper.succeed();
 	}
 
 	@GameTest(template = "empty", timeoutTicks = 400)

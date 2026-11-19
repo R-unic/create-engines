@@ -275,4 +275,104 @@ class EngineNoteConcurrencyTest {
 		join(List.of(sound, game), 10_000);
 		assertNull(thrown.peek(), "a thread threw: " + thrown.peek());
 	}
+
+	private static short[] renderSynth(int seed, Params params, int samples) {
+		EngineNoteSynth synth = new EngineNoteSynth(seed);
+		synth.set(params);
+		short[] out = new short[samples];
+		for (int at = 0; at < samples; at += 1000)
+			synth.render(out, at, Math.min(1000, samples - at));
+		return out;
+	}
+
+	/**
+	 * The same voice rendered on many threads at once is the same sound as rendered alone. A scratch buffer or a
+	 * generator shared between voices, which are one per engine, would turn two engines into a crackle.
+	 */
+	@Test
+	void sameVoicesRenderedOnManyThreadsAreIdenticalToOneRenderedAlone() throws Exception {
+		int cases = 6;
+		Params[] params = new Params[cases];
+		short[][] alone = new short[cases][];
+		Random random = new Random(77);
+		for (int i = 0; i < cases; i++) {
+			params[i] = new Params(300 + random.nextInt(3000), even(1 + random.nextInt(12)), random.nextFloat(), random.nextFloat(),
+				random.nextFloat());
+			alone[i] = renderSynth(10 + i, params[i], 30_000);
+		}
+		int threads = 8;
+		CountDownLatch go = new CountDownLatch(1);
+		ConcurrentLinkedQueue<Throwable> thrown = new ConcurrentLinkedQueue<>();
+		List<Thread> workers = new ArrayList<>();
+		for (int t = 0; t < threads; t++) {
+			final int id = t;
+			Thread worker = new Thread(() -> {
+				try {
+					go.await();
+					for (int round = 0; round < 4; round++)
+						for (int k = 0; k < cases; k++) {
+							int c = (k + id) % cases;
+							short[] got = renderSynth(10 + c, params[c], 30_000);
+							for (int i = 0; i < got.length; i++)
+								if (got[i] != alone[c][i])
+									throw new AssertionError("thread " + id + " voice " + c + " sample " + i + " is " + got[i]
+										+ " where rendering it alone gave " + alone[c][i]);
+						}
+				} catch (Throwable e) {
+					thrown.add(e);
+				}
+			}, "render-" + t);
+			workers.add(worker);
+			worker.start();
+		}
+		go.countDown();
+		join(workers, 60_000);
+		assertNull(thrown.peek(), "a thread threw: " + thrown.peek());
+		boolean sound = false;
+		for (short s : alone[0])
+			sound |= s != 0;
+		assertTrue(sound, "the reference voice is silent, so the comparison proves nothing");
+	}
+
+	/** The advancement stings are streamed the same way, one per sound, from the sound thread. */
+	@Test
+	void stingsRenderedOnManyThreadsAreIdenticalToOneRenderedAlone() throws Exception {
+		short[][] alone = new short[2][];
+		for (int c = 0; c < 2; c++)
+			alone[c] = renderSting(c == 1);
+		int threads = 8;
+		CountDownLatch go = new CountDownLatch(1);
+		ConcurrentLinkedQueue<Throwable> thrown = new ConcurrentLinkedQueue<>();
+		List<Thread> workers = new ArrayList<>();
+		for (int t = 0; t < threads; t++) {
+			final int id = t;
+			Thread worker = new Thread(() -> {
+				try {
+					go.await();
+					for (int round = 0; round < 6; round++) {
+						int c = (round + id) % 2;
+						short[] got = renderSting(c == 1);
+						if (!java.util.Arrays.equals(got, alone[c]))
+							throw new AssertionError("thread " + id + " rendered the " + (c == 1 ? "challenge" : "goal") + " sting differently");
+					}
+				} catch (Throwable e) {
+					thrown.add(e);
+				}
+			}, "sting-" + t);
+			workers.add(worker);
+			worker.start();
+		}
+		go.countDown();
+		join(workers, 60_000);
+		assertNull(thrown.peek(), "a thread threw: " + thrown.peek());
+		assertTrue(alone[0].length > 0 && alone[1].length > 0, "a sting with no samples would pass this test on nothing");
+	}
+
+	private static short[] renderSting(boolean challenge) {
+		StingSynth sting = new StingSynth(challenge);
+		short[] out = new short[sting.length()];
+		for (int at = 0; at < out.length; at += 1000)
+			sting.render(out, at, Math.min(1000, out.length - at));
+		return out;
+	}
 }

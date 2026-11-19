@@ -33,6 +33,7 @@ import com.simibubi.create.foundation.fluid.CombinedTankWrapper;
 import com.simibubi.create.foundation.fluid.SmartFluidTank;
 
 import net.createmod.catnip.animation.AnimationTickHolder;
+import net.createmod.catnip.lang.LangBuilder;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.HolderLookup;
@@ -224,7 +225,7 @@ public class RotorHousingBlockEntity extends CrankshaftBlockEntity implements Ga
 			return;
 		}
 		float renderTime = AnimationTickHolder.getRenderTime(level);
-		double shaft = Math.abs(rotation(renderTime) + throwAngle());
+		double shaft = Math.abs(com.createengines.content.EnginePoses.drawnShaft(this, renderTime));
 		for (int chamber = 0; chamber < chambers.length; chamber++) {
 			CylinderStatus current = chambers[chamber];
 			double cycle = (shaft % CylinderModel.ROTARY_CYCLE) * CylinderModel.ROTARY_SCALE
@@ -323,20 +324,22 @@ public class RotorHousingBlockEntity extends CrankshaftBlockEntity implements Ga
 			faults |= CylinderFault.NO_PLUG.bit();
 
 		if (!CylinderFault.disables(faults)) {
-			for (int i = 0; i < chambers.length; i++) {
-				CylinderStatus status = chambers[i];
-				if (status == null)
-					continue;
-				CycleResult result = status.result();
-				ChatFormatting colour = result.fired() ? ChatFormatting.GREEN
-					: result == CycleResult.NONE ? ChatFormatting.GRAY
-						: ChatFormatting.RED;
-				GoggleLines.add(CELang.translate("goggles.rotor.chamber", i + 1, CELang.translate("goggles.cycle."
-						+ result.name()
-							.toLowerCase(java.util.Locale.ROOT))
-					.component())
-					.style(colour), tooltip, 1);
-			}
+			// Chambers that all report the same say it once: three identical lines said nothing the first did not
+			boolean same = true;
+			int reporting = 0;
+			for (CylinderStatus status : chambers)
+				if (status != null) {
+					reporting++;
+					same &= status.result() == first.result();
+				}
+			if (same && reporting > 1)
+				addChamber(tooltip, CELang.translate("goggles.rotor.chambers_all", resultText(first.result())), first.result());
+			else
+				for (int i = 0; i < chambers.length; i++) {
+					CylinderStatus status = chambers[i];
+					if (status != null)
+						addChamber(tooltip, CELang.translate("goggles.rotor.chamber", i + 1, resultText(status.result())), status.result());
+				}
 			if (first != null) {
 				if (first.rich())
 					GoggleLines.add(CELang.translate("goggles.cycle.rich")
@@ -386,12 +389,25 @@ public class RotorHousingBlockEntity extends CrankshaftBlockEntity implements Ga
 				GoggleLines.add(CELang.translate("goggles.head.metering.hint")
 					.style(ChatFormatting.DARK_GRAY), tooltip, 2);
 		}
-		if (oilTank().isEmpty())
+		// The oil note is a tip for someone who has not found the feature, so it waits for the sneak like the other hints
+		if (oilTank().isEmpty() && isPlayerSneaking)
 			GoggleLines.add(CELang.translate("goggles.head.oil")
 				.style(ChatFormatting.GRAY), tooltip, 1);
 		containedFluidTooltip(tooltip, isPlayerSneaking, fluidCapability());
 		super.addToGoggleTooltip(tooltip, isPlayerSneaking);
 		return true;
+	}
+
+	private static Component resultText(CycleResult result) {
+		return CELang.translate("goggles.cycle." + result.name()
+				.toLowerCase(java.util.Locale.ROOT))
+			.component();
+	}
+
+	private static void addChamber(List<Component> tooltip, LangBuilder line, CycleResult result) {
+		GoggleLines.add(line.style(result.fired() ? ChatFormatting.GREEN
+			: result == CycleResult.NONE ? ChatFormatting.GRAY
+				: ChatFormatting.RED), tooltip, 1);
 	}
 
 	/** The mixture as a plain reading: balanced, or how many times richer or leaner than balanced it is. */

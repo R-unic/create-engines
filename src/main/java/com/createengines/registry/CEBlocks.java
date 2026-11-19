@@ -407,6 +407,7 @@ public final class CEBlocks {
 		.register();
 
 	public static final BlockEntry<BatteryBlock> BATTERY = REGISTRATE.block("battery", BatteryBlock::new)
+		.transform(DisplaySource.displaySource(CEDisplaySources.BATTERY_CHARGE))
 		.initialProperties(SharedProperties::softMetal)
 		.properties(p -> part(p)
 			.mapColor(MapColor.METAL))
@@ -943,7 +944,9 @@ public final class CEBlocks {
 			.transform(DisplaySource.displaySource(CEDisplaySources.ENGINE_POWER))
 			.transform(DisplaySource.displaySource(CEDisplaySources.ENGINE_LOAD))
 			.transform(DisplaySource.displaySource(CEDisplaySources.ENGINE_TEMPERATURE))
-			.transform(DisplaySource.displaySource(CEDisplaySources.ENGINE_OIL));
+			.transform(DisplaySource.displaySource(CEDisplaySources.ENGINE_OIL))
+			.transform(DisplaySource.displaySource(CEDisplaySources.ENGINE_BOOST))
+			.transform(DisplaySource.displaySource(CEDisplaySources.ENGINE_TORQUE));
 	}
 
 	/** A pipe is a core with an arm model on each side it is connected through. */

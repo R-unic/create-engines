@@ -587,6 +587,9 @@ public final class SmokeAudit {
 		REPORT.metric("frame time worst", FRAMES.maxMillis(), "ms");
 		REPORT.metric("heap after engines (settled)", HEAP.last(), "MB");
 		REPORT.metric("direct memory after engines", DIRECT.last(), "MB");
+		REPORT.metric("heap growth over the fleet run (fitted)", HEAP.slope() * Math.max(0, HEAP.size() - 1), "MB");
+		REPORT.metric("direct memory growth over the fleet run (fitted)", DIRECT.slope() * Math.max(0, DIRECT.size() - 1), "MB");
+		REPORT.metric("heap readings", HEAP.size(), "");
 		REPORT.metric("particles at peak", PARTICLES.max(), "");
 		REPORT.metric("streaming sound voices at peak", STREAMING.max(), "");
 		REPORT.metric("static sound voices at peak", STATIC_SOUNDS.max(), "");
@@ -595,9 +598,11 @@ public final class SmokeAudit {
 			String.format(Locale.ROOT, "p95 %.1f ms", FRAMES.percentileMillis(0.95)));
 		REPORT.expect("perf", "frame time p99 stays under 250 ms", FRAMES.percentileMillis(0.99) < 250,
 			String.format(Locale.ROOT, "p99 %.1f ms", FRAMES.percentileMillis(0.99)));
-		REPORT.check("perf", "heap does not climb while engines run", !PerfSampler.climbing(HEAP, 200),
+		// Limits set from two measured runs (2026-11-19): the settled heap grew 6.5 MB over the run and direct memory fell 1.3 MB, so
+		// these are about eight and twelve times the measurement, and well under what a leak that matters (the 1.2.0 one) adds
+		REPORT.check("perf", "heap does not climb while engines run", !PerfSampler.climbing(HEAP, 50),
 			"settled heap readings (MB): " + HEAP.values());
-		REPORT.check("perf", "direct memory does not climb while engines run (the 1.2.0 sound bug)", !PerfSampler.climbing(DIRECT, 48),
+		REPORT.check("perf", "direct memory does not climb while engines run (the 1.2.0 sound bug)", !PerfSampler.climbing(DIRECT, 16),
 			"direct buffer readings (MB): " + DIRECT.values());
 		REPORT.check("perf", "particle count stays bounded", PARTICLES.max() < 12000, "peaked at " + PARTICLES.max());
 		REPORT.check("perf", "streaming sound voices do not pile up", !PerfSampler.climbing(STREAMING, 6) && STREAMING.max() <= 8,

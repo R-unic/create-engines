@@ -5,6 +5,7 @@ import org.joml.Vector3f;
 
 import net.minecraft.core.Direction;
 import net.minecraft.core.Direction.Axis;
+import net.minecraft.core.Vec3i;
 
 /**
  * Angle conventions shared by the simulation (server) and the visuals (client), so that what the topology computes
@@ -67,5 +68,18 @@ public final class CrankGeometry {
 	/** Create's own shaft angle convention: degrees turned at a given render time. */
 	public static float renderAngle(float renderTime, float speed) {
 		return (renderTime * speed * 3f / 10) % 360;
+	}
+
+	/**
+	 * The phase Create adds to every shaft and small cog on the line along {@code axis} through {@code pos}, in degrees.
+	 * It is the same all along a line and alternates between neighbouring lines, so that cogs side by side mesh. Matches
+	 * Create's {@code KineticBlockEntityVisual.rotationOffset}, which a unit test checks. A crank drawn without it is a
+	 * fixed angle out of step with the shafts and cogs beside it on half the lines.
+	 */
+	public static float createShaftPhase(Axis axis, Vec3i pos) {
+		int x = axis == Axis.X ? 0 : pos.getX();
+		int y = axis == Axis.Y ? 0 : pos.getY();
+		int z = axis == Axis.Z ? 0 : pos.getZ();
+		return (x + y + z) % 2 == 0 ? 22.5f : 0;
 	}
 }

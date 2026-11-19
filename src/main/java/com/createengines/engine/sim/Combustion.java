@@ -50,6 +50,11 @@ final class Combustion {
 		return fuelPending > CylinderModel.FUEL_EPSILON;
 	}
 
+	/** A supply's fuel as the sim may use it (see {@link FuelSpec#usable}); none stays none. */
+	static FuelSpec usable(FuelSpec fuel) {
+		return fuel == null ? null : fuel.usable();
+	}
+
 	boolean burning() {
 		return burning;
 	}
@@ -94,7 +99,7 @@ final class Combustion {
 	 * apart from one with no fuel.
 	 */
 	void inject() {
-		FuelSpec fuel = owner.fuelSupply.fuel();
+		FuelSpec fuel = usable(owner.fuelSupply.fuel());
 		double air = charge.fresh * charge.moles;
 		double shot = (fuel == null ? 0 : owner.usualShot(fuel)) * owner.rack * owner.metering * owner.fuelTrim
 			* owner.governedFuel();
@@ -161,7 +166,7 @@ final class Combustion {
 	private boolean pilotLights() {
 		if (!Tuning.pilotInjection || owner.ignition.installed())
 			return false;
-		FuelSpec pilot = owner.pilotSupply.fuel();
+		FuelSpec pilot = usable(owner.pilotSupply.fuel());
 		if (pilot == null || charge.temperature < pilot.autoignitionTemp())
 			return false;
 		double shot = CylinderModel.PILOT_SHARE * current.fuelInjected;

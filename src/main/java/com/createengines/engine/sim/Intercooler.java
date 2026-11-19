@@ -18,32 +18,33 @@ public final class Intercooler {
 	/** Share of the boost one intercooler loses to its restriction. */
 	public static final double PRESSURE_DROP = 0.04;
 
-	private final List<CylinderModel> charge;
+	private final List<Breather> charge;
 
 	/** @param charge cylinders that breathe through this intercooler */
-	public Intercooler(List<CylinderModel> charge) {
+	public Intercooler(List<? extends Breather> charge) {
 		this.charge = List.copyOf(charge);
 	}
 
-	public Intercooler copyOnto(Map<CylinderModel, CylinderModel> copies) {
-		List<CylinderModel> mapped = new ArrayList<>();
-		for (CylinderModel cylinder : charge) {
-			CylinderModel copy = copies.get(cylinder);
+	public Intercooler copyOnto(Map<? extends Breather, ? extends Breather> copies) {
+		List<Breather> mapped = new ArrayList<>();
+		for (Breather cylinder : charge) {
+			Breather copy = copies.get(cylinder);
 			if (copy != null)
 				mapped.add(copy);
 		}
 		return new Intercooler(mapped);
 	}
 
-	public List<CylinderModel> charge() {
+	public List<Breather> charge() {
 		return charge;
 	}
 
 	/** Cools the air a cylinder is about to draw in, in place. */
 	void cool() {
-		for (CylinderModel cylinder : charge) {
-			cylinder.intakeTemperature = 1 + (cylinder.intakeTemperature - 1) * (1 - EFFECTIVENESS);
-			cylinder.intakePressure = 1 + (cylinder.intakePressure - 1) * (1 - PRESSURE_DROP);
+		for (int i = 0, n = charge.size(); i < n; i++) {
+			Breather cylinder = charge.get(i);
+			cylinder.setIntakeTemperature(1 + (cylinder.intakeTemperature() - 1) * (1 - EFFECTIVENESS));
+			cylinder.setIntakePressure(1 + (cylinder.intakePressure() - 1) * (1 - PRESSURE_DROP));
 		}
 	}
 }

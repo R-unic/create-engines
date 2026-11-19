@@ -10,11 +10,13 @@ import com.createengines.content.crankshaft.CrankThrowBlock;
 import com.createengines.content.crankshaft.CrankshaftBlockEntity;
 import com.createengines.content.cylinder.CylinderBlock;
 import com.createengines.content.cylinder.CylinderBlockEntity;
+import com.createengines.content.flywheel.CastFlywheelBlockEntity;
 import com.createengines.content.head.CylinderHeadBlockEntity;
 import com.createengines.content.rotor.RotorHousingBlock;
 import com.createengines.content.rotor.RotorHousingBlockEntity;
 import com.createengines.registry.CEPartialModels;
 import com.mojang.blaze3d.vertex.PoseStack;
+import com.simibubi.create.content.kinetics.base.KineticBlockEntityRenderer;
 import com.simibubi.create.foundation.blockEntity.renderer.SafeBlockEntityRenderer;
 
 import dev.engine_room.flywheel.api.visualization.VisualizationManager;
@@ -82,6 +84,22 @@ public final class EnginePartRenderers {
 				: CEPartialModels.CRANKSHAFT;
 			draw(model, state, EnginePoses.rotatingPart(state.getValue(BlockStateProperties.AXIS),
 				EnginePoses.crankAngle(be, renderTime)), ms, buffer, light);
+		}
+	}
+
+	/** The cast flywheel's wheel and shaft, turning with the shaft. Without this Ponder and Flywheel-off show only the collars. */
+	public static class CastFlywheel extends Base<CastFlywheelBlockEntity> {
+		public CastFlywheel(BlockEntityRendererProvider.Context context) {
+			super(context);
+		}
+
+		@Override
+		protected void render(CastFlywheelBlockEntity be, float renderTime, PoseStack ms, MultiBufferSource buffer,
+							  int light) {
+			BlockState state = be.getBlockState();
+			Axis axis = state.getValue(BlockStateProperties.AXIS);
+			float degrees = (float) Math.toDegrees(KineticBlockEntityRenderer.getAngleForBe(be, be.getBlockPos(), axis));
+			draw(CEPartialModels.FLYWHEEL_DISC, state, EnginePoses.rotatingPart(axis, degrees), ms, buffer, light);
 		}
 	}
 

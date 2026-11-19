@@ -519,8 +519,8 @@ tasks.matching { it.name == 'runSmokeAuditCc' }.configureEach { mustRunAfter 'ru
 // One command for everything unattended: unit tests, the GameTests with their log check, and the client audit.
 tasks.register('smoke') {
     group = 'verification'
-    description = 'Runs unit tests, GameTests and the client audit, each verified; fails if any of them found a problem.'
-    dependsOn 'test', 'runGameTestServer', 'runSmokeAudit'
+    description = 'Runs unit tests, GameTests and the client audit, each verified, with coverage; fails if any of them found a problem or the combined coverage fell.'
+    dependsOn 'test', 'runGameTestServer', 'runSmokeAudit', 'coverageMerged'
 }
 tasks.matching { it.name == 'runGameTestServer' }.configureEach { mustRunAfter 'test' }
 tasks.matching { it.name == 'runSmokeAudit' }.configureEach { mustRunAfter 'runGameTestServer' }
@@ -534,7 +534,9 @@ idea {
 
 // Verification track item 12: coverage with a ratchet. The report is a map of code no test runs; the check fails only if
 // the total drops below the number recorded in src/smoke/coverage-floor.txt, which is raised by hand when it improves.
-// Today it measures the unit tests; the GameTests and the smoke audit run in other JVMs and are merged in later.
+// That floor measures the unit tests alone (and is what CI's `check` holds). The GameTests and the client audit run in
+// other JVMs, so they carry the JaCoCo agent too and `coverageMerged` below joins all three into one report and a second
+// ratchet, src/smoke/coverage-floor-merged.txt.
 jacoco {
     toolVersion = '0.8.12'
 }
@@ -571,6 +573,61 @@ tasks.register('coverageRatchet', JacocoCoverageVerification) {
 }
 
 tasks.named('check') { dependsOn 'coverageRatchet' }
+
+// The merged half of item 12. The GameTest server and the client audit each write build/jacoco/<task>.exec, limited to this
+// mod's own classes (the agent would otherwise instrument Minecraft and NeoForge too). The audit's harness packages are
+// left out of the measure on every side, so the number says how much of the mod runs and not how much of the test code does.
+def coverageRuns = ['test', 'runGameTestServer', 'runSmokeAudit']
+def harnessPackages = ['com/createengines/gametest/**', 'com/createengines/smoke/**', 'com/createengines/client/smoke/**',
+    'com/createengines/client/VisualSmokeTest*', 'com/createengines/client/ShowcaseRun*']
+['runGameTestServer', 'runSmokeAudit'].each { runName ->
+    tasks.matching { it.name == runName }.configureEach { runTask ->
+        jacoco.applyTo(runTask)
+        def agent = runTask.extensions.getByType(JacocoTaskExtension)
+        agent.includes = ['com.createengines.*']
+        // The agent appends to its file (Gradle 9 has no switch for it), and a run is judged by its own coverage, not by every run
+        // since the last clean: so the old file goes first. Plain java.io, as above, for the configuration cache.
+        def execFile = agent.destinationFile
+        runTask.doFirst { execFile.delete() }
+    }
+}
+def mergedExecutionData = files(coverageRuns.collect { layout.buildDirectory.file("jacoco/${it}.exec").get().asFile }).filter { it.exists() }
+def mergedClasses = files(sourceSets.main.output.classesDirs.files.collect { fileTree(dir: it, exclude: harnessPackages) })
+
+tasks.register('coverageMergedReport', JacocoReport) {
+    group = 'verification'
+    description = 'Coverage of the unit tests, the GameTests and the client audit together (build/reports/jacoco/merged).'
+    executionData.from(mergedExecutionData)
+    classDirectories.from(mergedClasses)
+    sourceDirectories.from(sourceSets.main.allJava.srcDirs)
+    reports {
+        xml.required = true
+        html.required = true
+        html.outputLocation = layout.buildDirectory.dir('reports/jacoco/merged')
+        xml.outputLocation = layout.buildDirectory.file('reports/jacoco/merged/merged.xml')
+    }
+}
+
+def mergedFloorFile = file('src/smoke/coverage-floor-merged.txt')
+
+tasks.register('coverageMerged', JacocoCoverageVerification) {
+    group = 'verification'
+    description = 'Runs the unit tests, the GameTests and the client audit with coverage and fails if their combined instruction coverage falls below src/smoke/coverage-floor-merged.txt.'
+    dependsOn 'test', 'runGameTestServer', 'runSmokeAudit'
+    finalizedBy 'coverageMergedReport'
+    executionData.from(mergedExecutionData)
+    classDirectories.from(mergedClasses)
+    sourceDirectories.from(sourceSets.main.allJava.srcDirs)
+    violationRules {
+        rule {
+            limit {
+                counter = 'INSTRUCTION'
+                value = 'COVEREDRATIO'
+                minimum = new BigDecimal(mergedFloorFile.text.trim())
+            }
+        }
+    }
+}
 
 // Verification track item 1: mutation testing of the simulation. PIT changes the code in small ways (a flipped
 // comparison, a dropped term) and reruns the tests; a mutant no test kills is an assertion that never bites.

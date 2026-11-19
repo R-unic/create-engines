@@ -2,6 +2,7 @@ package com.createengines.content.airflow;
 
 import java.util.List;
 
+import com.createengines.engine.Signals;
 import com.createengines.engine.sim.Throttle;
 import com.createengines.content.GoggleLines;
 import com.createengines.registry.CELang;
@@ -104,7 +105,7 @@ public class ThrottleBlockEntity extends SmartBlockEntity implements IHaveGoggle
 
 	/** How far open the valve is now, from the idle stop at no signal to 1 at full redstone strength. */
 	public double opening() {
-		return Throttle.opening(idleFraction(), wideFraction(), level == null ? 0 : level.getBestNeighborSignal(worldPosition));
+		return Throttle.opening(idleFraction(), wideFraction(), level == null ? 0 : Signals.bestNeighbour(level, worldPosition));
 	}
 
 	@Override

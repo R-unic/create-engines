@@ -12,6 +12,7 @@ import com.createengines.content.airflow.PortOpeningBlock;
 import com.createengines.content.airflow.ThrottleBlockEntity;
 import com.createengines.content.battery.BatteryBlockEntity;
 import com.createengines.content.camshaft.CamshaftBlockEntity;
+import com.createengines.content.EnginePoses;
 import com.createengines.content.crankshaft.CrankshaftBlockEntity;
 import com.createengines.content.cylinder.CylinderBlock;
 import com.createengines.content.cylinder.CylinderBlockEntity;
@@ -53,6 +54,7 @@ import com.createengines.registry.CEItems;
 import com.simibubi.create.AllBlocks;
 import com.tterrag.registrate.util.entry.RegistryEntry;
 import com.simibubi.create.content.kinetics.base.KineticBlockEntity;
+import com.simibubi.create.content.kinetics.base.KineticBlockEntityVisual;
 import com.simibubi.create.content.kinetics.motor.CreativeMotorBlock;
 import com.simibubi.create.content.kinetics.motor.CreativeMotorBlockEntity;
 import com.simibubi.create.content.kinetics.speedController.SpeedControllerBlockEntity;
@@ -65,6 +67,7 @@ import net.minecraft.core.Direction.Axis;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.gametest.framework.GameTest;
 import net.minecraft.gametest.framework.GameTestHelper;
+import net.minecraft.util.Mth;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.item.CreativeModeTab;
 import net.minecraft.world.item.CreativeModeTabs;
@@ -517,6 +520,49 @@ public class EngineGameTests {
 			"150 asked of 100 available is a load of 1.5");
 		var idle = new EngineSummary(EngineState.STALLED, 0f, 100f, 0f, 0f, 0f, 0, 1, 1f, 1f, false, new float[0]);
 		helper.assertTrue(com.createengines.content.display.EngineReadout.load(idle) == 0f, "Nothing asked is a load of 0");
+		helper.succeed();
+	}
+
+	/**
+	 * A Display Link can read an engine's boost and rated torque off any crankshaft block and a battery's charge off the
+	 * battery, with the same figures and units as the goggles.
+	 */
+	@GameTest(template = "empty")
+	public static void displayLinksCanReadBoostTorqueAndBatteryCharge(GameTestHelper helper) {
+		buildSingleCylinder(helper, true);
+		BlockPos batteryPos = new BlockPos(3, 1, 2);
+		helper.setBlock(batteryPos, CEBlocks.BATTERY.getDefaultState());
+		var onCrank = com.simibubi.create.api.behaviour.display.DisplaySource.getAll(helper.getLevel(),
+			helper.absolutePos(PRIMARY));
+		for (var source : java.util.List.of(com.createengines.registry.CEDisplaySources.ENGINE_BOOST,
+			com.createengines.registry.CEDisplaySources.ENGINE_TORQUE))
+			helper.assertTrue(onCrank.contains(source.get()), "A crankshaft should offer " + source.getId());
+		helper.assertTrue(com.simibubi.create.api.behaviour.display.DisplaySource
+			.getAll(helper.getLevel(), helper.absolutePos(batteryPos))
+			.contains(com.createengines.registry.CEDisplaySources.BATTERY_CHARGE.get()), "A battery should offer its charge");
+
+		// Boost reads as the goggles do, in bar over atmosphere, and never negative
+		helper.assertTrue("0.46".equals(com.createengines.content.display.EngineReadout.bar(0.456f)),
+			"A boost of 0.456 reads +0.46 bar");
+		helper.assertTrue("0.00".equals(com.createengines.content.display.EngineReadout.bar(-0.1f)), "Boost does not go below 0");
+		// Torque reads as the goggles do: one decimal below 100 SU per RPM, whole numbers from there
+		helper.assertTrue("445".equals(com.createengines.content.display.EngineReadout.torque(445.2f)),
+			"A torque of 445.2 reads 445");
+		helper.assertTrue("12.5".equals(com.createengines.content.display.EngineReadout.torque(12.5f)),
+			"A torque of 12.5 reads 12.5");
+		helper.assertTrue("0.0".equals(com.createengines.content.display.EngineReadout.torque(-3f)), "Torque does not go below 0");
+
+		// A battery's fill is its charge as a share of its capacity; anything that is not a battery reads empty
+		BatteryBlockEntity battery = helper.getBlockEntity(batteryPos);
+		helper.assertTrue(com.createengines.content.display.BatteryDisplaySource.fill(battery) == 0f, "A new battery is flat");
+		battery.charge(BatteryBlockEntity.CAPACITY / 2);
+		helper.assertTrue(Math.abs(com.createengines.content.display.BatteryDisplaySource.fill(battery) - 0.5f) < 1e-4,
+			"A half charged battery reads 0.5");
+		battery.charge(BatteryBlockEntity.CAPACITY);
+		helper.assertTrue(com.createengines.content.display.BatteryDisplaySource.fill(battery) == 1f, "A full battery reads 1");
+		helper.assertTrue(com.createengines.content.display.BatteryDisplaySource.fill(null) == 0f, "No block entity reads empty");
+		helper.assertTrue(com.createengines.content.display.BatteryDisplaySource.fill(helper.getBlockEntity(PRIMARY)) == 0f,
+			"A block entity that is not a battery reads empty");
 		helper.succeed();
 	}
 
@@ -2734,6 +2780,46 @@ public class EngineGameTests {
 			helper.assertTrue(mended.cylinders()
 				.getFirst()
 				.camLine() >= 0, "Camshaft blocks all the way along should be one camshaft again");
+			helper.succeed();
+		});
+	}
+
+	/**
+	 * Create turns the shafts and small cogs on a line by a phase that alternates between neighbouring lines. A crank's ends
+	 * are shaft-shaped, so on every one of those lines it must be drawn at the same angle as a real shaft and a real cogwheel
+	 * joined to it (a gap of a fraction of a turn shows as a crank that does not line up), and a throw is drawn that much past
+	 * the shaft by its own angle.
+	 */
+	@GameTest(template = "empty", timeoutTicks = 20)
+	public static void aCrankIsDrawnInStepWithTheShaftsAndCogsOnItsLine(GameTestHelper helper) {
+		BlockState shaft = alongX(AllBlocks.SHAFT.getDefaultState());
+		BlockState cogwheel = alongX(AllBlocks.COGWHEEL.getDefaultState());
+		// Lines along X through all four parities of the other two coordinates; the last is a throw set to 30 degrees
+		BlockPos[] cranks = { new BlockPos(2, 1, 1), new BlockPos(2, 1, 2), new BlockPos(2, 2, 1), new BlockPos(2, 2, 2) };
+		for (BlockPos crank : cranks) {
+			helper.setBlock(crank.west(), shaft);
+			helper.setBlock(crank, alongX(crank.equals(cranks[3]) ? CEBlocks.CRANK_THROW.getDefaultState()
+				: CEBlocks.CRANKSHAFT.getDefaultState()));
+			helper.setBlock(crank.east(), cogwheel);
+		}
+		((CrankshaftBlockEntity) helper.getBlockEntity(cranks[3])).throwAngle.setValue(2);
+
+		helper.runAtTickTime(2, () -> {
+			boolean offset = false;
+			boolean plain = false;
+			for (BlockPos crank : cranks) {
+				double throwTurn = crank.equals(cranks[3]) ? 2 * CrankshaftBlockEntity.THROW_ANGLE_STEP : 0;
+				double shaftPhase = KineticBlockEntityVisual.rotationOffset(shaft, Axis.X, helper.absolutePos(crank.west()));
+				double cogPhase = KineticBlockEntityVisual.rotationOffset(cogwheel, Axis.X, helper.absolutePos(crank.east()));
+				double drawn = EnginePoses.crankAngle(helper.getBlockEntity(crank), 0f) - throwTurn;
+				helper.assertTrue(Math.abs(Mth.wrapDegrees(drawn - shaftPhase)) < 1e-3,
+					"The crank at " + crank + " is drawn at " + drawn + " and the shaft beside it at " + shaftPhase);
+				helper.assertTrue(Math.abs(Mth.wrapDegrees(drawn - cogPhase)) < 1e-3,
+					"The crank at " + crank + " is drawn at " + drawn + " and the cogwheel beside it at " + cogPhase);
+				offset |= shaftPhase != 0;
+				plain |= shaftPhase == 0;
+			}
+			helper.assertTrue(offset && plain, "The four lines should include both phases Create uses");
 			helper.succeed();
 		});
 	}

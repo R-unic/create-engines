@@ -289,6 +289,7 @@ public final class CELang {
 
 		raw("goggles.rotor", "Rotor Housing");
 		raw("goggles.rotor.chamber", "Chamber %1$s: %2$s");
+		raw("goggles.rotor.chambers_all", "All chambers: %1$s");
 
 		raw("goggles.cam", "Camshaft");
 		raw("goggles.cam_ratio", "Speed ratio to crank: %1$s");
@@ -457,6 +458,9 @@ public final class CELang {
 		raw("display_source.engine_load", "Engine Load");
 		raw("display_source.engine_temperature", "Engine Temperature");
 		raw("display_source.engine_oil", "Engine Oil Condition");
+		raw("display_source.engine_boost", "Engine Boost");
+		raw("display_source.engine_torque", "Engine Rated Torque");
+		raw("display_source.battery_charge", "Battery Charge");
 		raw("display_source.sump_levels", "Oil Sump Levels");
 		raw("display.engine.none", "No engine");
 		raw("display.engine.state.stalled", "Stalled");
@@ -469,6 +473,8 @@ public final class CELang {
 		raw("display.engine.load", "Load %1$s%%");
 		raw("display.engine.temperature", "Temp %1$s%%");
 		raw("display.engine.oil", "Oil %1$s%%");
+		raw("display.engine.boost", "Boost +%1$s bar");
+		raw("display.engine.torque", "%1$s SU/RPM");
 		raw("display.sump.oil", "Oil %1$s mB");
 		raw("display.sump.used", "Used %1$s mB");
 		raw("display.sump.coolant", "Coolant %1$s mB");

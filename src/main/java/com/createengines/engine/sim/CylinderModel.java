@@ -19,7 +19,7 @@ import org.jetbrains.annotations.Nullable;
  * The piston follows the crank; the valves and injector follow the cam. Whether those two agree is entirely down to
  * how the engine was built, and every behaviour (misfires, weak cylinders, stalls, rough running) comes out of that.
  */
-public final class CylinderModel implements TorqueSource {
+public final class CylinderModel implements Breather {
 
 	static final double GAMMA = 1.3;
 	static final double FUEL_EPSILON = 1e-6;
@@ -284,6 +284,36 @@ public final class CylinderModel implements TorqueSource {
 		ports.endTick();
 	}
 
+	@Override
+	public double intakePressure() {
+		return intakePressure;
+	}
+
+	@Override
+	public void setIntakePressure(double pressure) {
+		intakePressure = pressure;
+	}
+
+	@Override
+	public double intakeTemperature() {
+		return intakeTemperature;
+	}
+
+	@Override
+	public void setIntakeTemperature(double temperature) {
+		intakeTemperature = temperature;
+	}
+
+	@Override
+	public double exhaustPressure() {
+		return exhaustPressure;
+	}
+
+	@Override
+	public void setExhaustPressure(double pressure) {
+		exhaustPressure = pressure;
+	}
+
 	/** Heat this cylinder put into its exhaust during the last whole tick. */
 	@Override
 	public double exhaustHeatLastTick() {
@@ -351,7 +381,7 @@ public final class CylinderModel implements TorqueSource {
 	public double availableWork() {
 		CycleStats last = this.last;
 		double scale = 1;
-		FuelSpec fuel = fuelSupply.fuel();
+		FuelSpec fuel = Combustion.usable(fuelSupply.fuel());
 		if (last.result.fired() && last.fuelBurned > 0 && fuel != null) {
 			double airLimit = last.freshAirAtInjection / fuel.airPerMb();
 			// A MAF sensor sets the shot from the air, up to what the injector can deliver; without one it is

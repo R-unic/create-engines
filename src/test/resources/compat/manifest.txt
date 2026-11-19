@@ -470,12 +470,15 @@ reg:blockEntity:supercharger
 reg:blockEntity:throttle
 reg:blockEntity:transmission
 reg:blockEntity:turbocharger
+reg:displaySource:battery_charge
+reg:displaySource:engine_boost
 reg:displaySource:engine_load
 reg:displaySource:engine_oil
 reg:displaySource:engine_power
 reg:displaySource:engine_speed
 reg:displaySource:engine_status
 reg:displaySource:engine_temperature
+reg:displaySource:engine_torque
 reg:displaySource:sump_levels
 reg:fluid:coolant
 reg:fluid:diesel

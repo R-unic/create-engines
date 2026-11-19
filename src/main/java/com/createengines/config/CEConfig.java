@@ -207,6 +207,19 @@ public final class CEConfig {
 		if (event instanceof ModConfigEvent.Loading)
 			ConfigFiles.carryOver(event.getConfig(), ConfigCarryOver.OLD_SERVER_FILE, ConfigCarryOver.SERVER, BY_PATH,
 				CARRIED_OVER);
+		applyTuning();
+	}
+
+	/** Every setting by its dotted path in the file ({@code balance.fuelConsumption}), in the order the file lists them. */
+	public static Map<String, ModConfigSpec.ConfigValue<?>> values() {
+		return java.util.Collections.unmodifiableMap(BY_PATH);
+	}
+
+	/**
+	 * Copies the settings as they are now to {@link Tuning}. The config event does this when the file loads or changes on
+	 * disk; a command that sets values itself calls it so the change is felt at once.
+	 */
+	public static void applyTuning() {
 		Tuning.fuelConsumption = FUEL_CONSUMPTION.get();
 		Tuning.precisionBonus = PRECISION_BONUS.get();
 		Tuning.boostStrength = BOOST_STRENGTH.get();

@@ -51,7 +51,19 @@ blueprints), and a turbo or blower cannot be paired to an added source's own por
 `StatusLineTest`, and two GameTests in `PackToolsGameTests`. Private copy: 318 GameTests pass, the log verifier is clean, pitest
 170 live (the limit, unchanged), unit suite passes but for the other session's `ArchitectureRulesTest` failure.
 
-**Not built:** narrowing the 19 files (step 3), a registry for scanner rules.
+**Built (step 3 and the rest of step 5, 2026-11-19, author's decision):** (1) *Narrowing.* `Breather extends TorqueSource` (intake and
+exhaust pressure and intake temperature, set by the engine) is what `Induction`, `Turbocharger`, `Supercharger` and `Intercooler`
+work on, in place of `CylinderModel`; `CylinderModel` implements it. 19 main files still name `CylinderModel`, because they are cylinder
+internals (`Charge`, `Combustion`, `Ports`, `Soiling`, the block entities, the renderer); nothing on the boost path does. (2) *Pairing.*
+`EngineSourceProvider.intakeAt` and `exhaustAt` put a `Breather` source on a port network (`EngineLayout.networkAt`, from the new
+`portCells` map the scanner keeps), so turbos, blowers and intercoolers on it act on the source, and
+`EngineSimulation.addAttachedSource` keeps it off the engine-wide average. (3) *Members.* A block a provider watches within reach of
+the crankshaft is recorded in blueprints and accepted by the server's blueprint policy while that provider is registered
+(`EngineProviders.claimedBlocks`, `claims`). The scanner itself is unchanged: no scanner-rule registry was built, because the
+watch-and-rebuild hook already rescans an engine when such a block changes. Tests: `BreatherTest`, GameTests
+`aSourceAttachedToAnIntakeNetworkBreathesTheBlowersBoost` and `aBlockAProviderClaimsIsRecordedInTheBlueprintAndPassesThePolicy` (each
+failed when its wiring was removed). Not done: a source cannot be a turbo's own port block, and the dynamometer copy ignores added sources
+(as before).
 
 ## What exists today (checked in the code)
 

@@ -135,7 +135,7 @@ public final class CEBlockEntities {
 		.blockEntity("cast_flywheel", CastFlywheelBlockEntity::new)
 		.visual(() -> CastFlywheelVisual::create, false)
 		.validBlocks(CEBlocks.CAST_FLYWHEEL)
-		.renderer(() -> KineticBlockEntityRenderer::new)
+		.renderer(() -> EnginePartRenderers.CastFlywheel::new)
 		.register();
 
 	public static final BlockEntityEntry<DynoBlockEntity> DYNO = REGISTRATE

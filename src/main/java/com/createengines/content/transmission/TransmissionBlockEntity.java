@@ -9,6 +9,7 @@ import com.createengines.advancement.Milestone;
 import com.createengines.advancement.Operators;
 import com.createengines.content.GoggleLines;
 import com.createengines.content.crankshaft.CrankshaftBlockEntity;
+import com.createengines.engine.Signals;
 import com.createengines.registry.CELang;
 import com.simibubi.create.content.kinetics.RotationPropagator;
 import com.simibubi.create.content.kinetics.base.KineticBlockEntity;
@@ -112,10 +113,9 @@ public class TransmissionBlockEntity extends SplitShaftBlockEntity {
 		if (level == null)
 			return -1;
 		// Reading a signal looks at every neighbour, and at a chunk's edge that would load the chunk beside it
-		for (Direction side : Direction.values())
-			if (!level.isLoaded(worldPosition.relative(side)))
-				return -1;
-		return Gears.fromSignal(level.getBestNeighborSignal(worldPosition));
+		if (!Signals.neighboursLoaded(level, worldPosition))
+			return -1;
+		return Gears.fromSignal(Signals.bestNeighbour(level, worldPosition));
 	}
 
 	/** A redstone signal selects a gear outright; with none, the panel does, and on auto the block's own choice. */

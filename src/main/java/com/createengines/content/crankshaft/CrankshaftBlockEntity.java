@@ -18,6 +18,7 @@ import com.createengines.engine.Diagnosis;
 import com.createengines.engine.EngineController;
 import com.createengines.engine.EngineState;
 import com.createengines.engine.EngineSummary;
+import com.createengines.engine.sim.FiringPattern;
 import com.createengines.engine.sim.StatusLine;
 import com.createengines.engine.GhostRotation;
 import com.createengines.engine.sim.Thermal;
@@ -327,8 +328,8 @@ public class CrankshaftBlockEntity extends GeneratingKineticBlockEntity implemen
 		if (primaryPos != null && !primaryPos.equals(worldPosition) && level != null
 			&& LoadedBlocks.blockEntity(level, primaryPos) instanceof CrankshaftBlockEntity primary
 			&& primary.getTheoreticalSpeed() * sense == speed)
-			return rotation.follow(renderTime, sense * primary.rotation.at(renderTime, primary.getTheoreticalSpeed()));
-		return rotation.at(renderTime, speed);
+			return rotation.follow(renderTime, sense * primary.rotation.alignedAt(renderTime, primary.getTheoreticalSpeed()));
+		return rotation.alignedAt(renderTime, speed);
 	}
 
 	public @Nullable BlockPos primaryPos() {
@@ -489,22 +490,9 @@ public class CrankshaftBlockEntity extends GeneratingKineticBlockEntity implemen
 		GoggleLines.add(CELang.translate("goggles.firing", engine.firing(), engine.cylinders())
 			.style(engine.firing() == engine.cylinders() ? ChatFormatting.GREEN : ChatFormatting.GOLD), tooltip, 1);
 		float[] intervals = engine.firingIntervals();
-		if (intervals.length > 0) {
-			StringBuilder text = new StringBuilder();
-			boolean even = evenIntervals(intervals);
-			if (even && intervals.length > 2)
-				text.append(Math.round(intervals[0]))
-					.append("° apart, all even");
-			else
-				for (float interval : intervals) {
-					if (!text.isEmpty())
-						text.append(" / ");
-					text.append(Math.round(interval))
-						.append("°");
-				}
-			GoggleLines.add(CELang.translate("goggles.firing_intervals", text.toString())
+		if (intervals.length > 0)
+			GoggleLines.add(CELang.translate("goggles.firing_intervals", FiringPattern.describe(intervals))
 				.style(ChatFormatting.GRAY), tooltip, 1);
-		}
 		if (engine.state() != EngineState.STALLED) {
 			int ripple = Math.round(engine.ripple() * 100);
 			GoggleLines.add(CELang.translate("goggles.ripple", ripple)
@@ -543,13 +531,6 @@ public class CrankshaftBlockEntity extends GeneratingKineticBlockEntity implemen
 					.toArray()))
 				.style(colour), tooltip, 1);
 		}
-	}
-
-	private static boolean evenIntervals(float[] intervals) {
-		for (float interval : intervals)
-			if (Math.abs(interval - intervals[0]) >= 1)
-				return false;
-		return true;
 	}
 
 	/** A grey label and its coloured value on one line, so the readout stays short. */

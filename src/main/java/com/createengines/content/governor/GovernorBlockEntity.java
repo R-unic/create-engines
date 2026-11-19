@@ -3,6 +3,7 @@ package com.createengines.content.governor;
 import java.util.List;
 
 import com.createengines.content.GoggleLines;
+import com.createengines.engine.Signals;
 import com.createengines.engine.sim.Governor;
 import com.createengines.engine.topology.EngineMember;
 import com.createengines.registry.CELang;
@@ -118,7 +119,7 @@ public class GovernorBlockEntity extends SmartBlockEntity implements IHaveGoggle
 
 	/** The redstone strength at the block, which asks for a share of the setting. */
 	public int command() {
-		return level == null ? 0 : level.getBestNeighborSignal(worldPosition);
+		return level == null ? 0 : Signals.bestNeighbour(level, worldPosition);
 	}
 
 	/** The speed it holds right now: the setting, turned down by whatever redstone signal reaches it. */

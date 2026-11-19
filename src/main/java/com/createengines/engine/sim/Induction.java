@@ -15,6 +15,11 @@ final class Induction {
 	final List<Turbocharger> turbos = new ArrayList<>();
 	final List<Supercharger> superchargers = new ArrayList<>();
 	final List<Intercooler> intercoolers = new ArrayList<>();
+	/**
+	 * Sources that are not cylinders but breathe through the engine's networks like one ({@link Breather}), and were attached
+	 * to a port: they get the same pressures a cylinder on that network does, and are not given the engine-wide average.
+	 */
+	final List<Breather> attached = new ArrayList<>();
 	/** Kept and emptied each tick rather than made new: this runs for every engine every tick. */
 	private final Parallel intake = new Parallel();
 	private final Parallel exhaust = new Parallel();
@@ -58,6 +63,12 @@ final class Induction {
 				if (density != givenDensity)
 					cylinder.intakePressure = density;
 			}
+			for (int attachedI = 0, attachedN = attached.size(); attachedI < attachedN; attachedI++) {
+				Breather source = attached.get(attachedI);
+				// Always written: a source's own starting values are its business, and there are few of these
+				source.setIntakeTemperature(cool);
+				source.setIntakePressure(density);
+			}
 			givenDensity = density;
 			return;
 		}
@@ -67,6 +78,12 @@ final class Induction {
 			givenDensity = density;
 			cylinder.intakeTemperature = 1;
 			cylinder.exhaustPressure = 1;
+		}
+		for (int attachedI = 0, attachedN = attached.size(); attachedI < attachedN; attachedI++) {
+			Breather source = attached.get(attachedI);
+			source.setIntakePressure(density);
+			source.setIntakeTemperature(1);
+			source.setExhaustPressure(1);
 		}
 		// Stages in series multiply (or add) straight onto the cylinder; stages in parallel each handle a share of the
 		// air, so the cylinder gets their average, whatever the number of them
@@ -80,21 +97,21 @@ final class Induction {
 			double pressure = 1 + turbo.boost() * strength;
 			double temperature = Tuning.blend(turbo.chargeTemperature(), strength);
 			for (int cylinderI = 0, cylinderN = turbo.compressor().size(); cylinderI < cylinderN; cylinderI++) {
-				CylinderModel cylinder = turbo.compressor().get(cylinderI);
+				Breather cylinder = turbo.compressor().get(cylinderI);
 				if (turbo.parallelCompressor)
 					intake.add(cylinder, pressure, temperature);
 				else {
-					cylinder.intakePressure *= pressure;
-					cylinder.intakeTemperature *= temperature;
+					cylinder.setIntakePressure(cylinder.intakePressure() * pressure);
+					cylinder.setIntakeTemperature(cylinder.intakeTemperature() * temperature);
 				}
 			}
 			double back = (turbo.backPressure() - 1) * turbine;
 			for (int cylinderI = 0, cylinderN = turbo.turbine().size(); cylinderI < cylinderN; cylinderI++) {
-				CylinderModel cylinder = turbo.turbine().get(cylinderI);
+				Breather cylinder = turbo.turbine().get(cylinderI);
 				if (turbo.parallelTurbine)
 					exhaust.add(cylinder, back, 0);
 				else
-					cylinder.exhaustPressure += back;
+					cylinder.setExhaustPressure(cylinder.exhaustPressure() + back);
 			}
 		}
 		for (int blowerI = 0, blowerN = superchargers.size(); blowerI < blowerN; blowerI++) {
@@ -102,20 +119,20 @@ final class Induction {
 			double pressure = 1 + blower.boost() * strength;
 			double temperature = Tuning.blend(blower.chargeTemperature(), strength);
 			for (int cylinderI = 0, cylinderN = blower.compressor().size(); cylinderI < cylinderN; cylinderI++) {
-				CylinderModel cylinder = blower.compressor().get(cylinderI);
+				Breather cylinder = blower.compressor().get(cylinderI);
 				if (blower.parallel)
 					intake.add(cylinder, pressure, temperature);
 				else {
-					cylinder.intakePressure *= pressure;
-					cylinder.intakeTemperature *= temperature;
+					cylinder.setIntakePressure(cylinder.intakePressure() * pressure);
+					cylinder.setIntakeTemperature(cylinder.intakeTemperature() * temperature);
 				}
 			}
 		}
 		intake.forEach((cylinder, pressure, temperature) -> {
-			cylinder.intakePressure *= pressure;
-			cylinder.intakeTemperature *= temperature;
+			cylinder.setIntakePressure(cylinder.intakePressure() * pressure);
+			cylinder.setIntakeTemperature(cylinder.intakeTemperature() * temperature);
 		});
-		exhaust.forEach((cylinder, back, $) -> cylinder.exhaustPressure += back);
+		exhaust.forEach((cylinder, back, $) -> cylinder.setExhaustPressure(cylinder.exhaustPressure() + back));
 		for (int coolerI = 0, coolerN = intercoolers.size(); coolerI < coolerN; coolerI++) {
 			Intercooler cooler = intercoolers.get(coolerI);
 			cooler.cool();
@@ -124,6 +141,11 @@ final class Induction {
 			for (int cylinderI = 0, cylinderN = cylinders.size(); cylinderI < cylinderN; cylinderI++) {
 				CylinderModel cylinder = cylinders.get(cylinderI);
 				cylinder.intakeTemperature *= cool;
+			}
+		if (cool != 1)
+			for (int attachedI = 0, attachedN = attached.size(); attachedI < attachedN; attachedI++) {
+				Breather source = attached.get(attachedI);
+				source.setIntakeTemperature(source.intakeTemperature() * cool);
 			}
 	}
 
@@ -162,31 +184,61 @@ final class Induction {
 		sourceTemperature = temperature * cool;
 	}
 
-	/** Running averages of what several parallel stages make for each cylinder they serve. */
+	/**
+	 * Running averages of what several parallel stages make for each cylinder they serve. The slots are kept from tick to
+	 * tick and only their sums are zeroed: an engine with stages side by side builds this every tick, and a map and an
+	 * array per cylinder made new each time was over a kilobyte of garbage per engine per tick.
+	 */
 	private static final class Parallel {
-		/** Made when the first stage in parallel is added: most engines have none, and this is built every tick. */
-		private Map<CylinderModel, double[]> sums;
+		/** Made when the first stage in parallel is added: most engines have none. */
+		private Map<Breather, Slot> slots;
+		/** The slots added to since the last {@link #clear}, in the order they were first added to. */
+		private final List<Slot> active = new ArrayList<>();
 
 		void clear() {
-			sums = null;
+			for (int i = 0, n = active.size(); i < n; i++)
+				active.get(i).count = 0;
+			active.clear();
 		}
 
-		void add(CylinderModel cylinder, double first, double second) {
-			if (sums == null)
-				sums = new IdentityHashMap<>();
-			double[] sum = sums.computeIfAbsent(cylinder, $ -> new double[3]);
-			sum[0] += first;
-			sum[1] += second;
-			sum[2]++;
+		void add(Breather cylinder, double first, double second) {
+			if (slots == null)
+				slots = new IdentityHashMap<>();
+			Slot slot = slots.get(cylinder);
+			if (slot == null) {
+				slot = new Slot(cylinder);
+				slots.put(cylinder, slot);
+			}
+			if (slot.count == 0) {
+				slot.first = 0;
+				slot.second = 0;
+				active.add(slot);
+			}
+			slot.first += first;
+			slot.second += second;
+			slot.count++;
 		}
 
 		void forEach(Average average) {
-			if (sums != null)
-				sums.forEach((cylinder, sum) -> average.accept(cylinder, sum[0] / sum[2], sum[1] / sum[2]));
+			for (int i = 0, n = active.size(); i < n; i++) {
+				Slot slot = active.get(i);
+				average.accept(slot.cylinder, slot.first / slot.count, slot.second / slot.count);
+			}
+		}
+
+		private static final class Slot {
+			final Breather cylinder;
+			double first;
+			double second;
+			int count;
+
+			Slot(Breather cylinder) {
+				this.cylinder = cylinder;
+			}
 		}
 
 		interface Average {
-			void accept(CylinderModel cylinder, double first, double second);
+			void accept(Breather cylinder, double first, double second);
 		}
 	}
 }

@@ -6,7 +6,7 @@ import com.createengines.engine.sim.StatusLine;
 import com.createengines.engine.sim.TorqueSource;
 
 /** A source that sits on the crank and does nothing: no work, no friction, no inertia. For testing what carries it. */
-final class IdleSource implements TorqueSource {
+class IdleSource implements TorqueSource {
 	int steps;
 	/** What the engine last told it about the air it breathes; negative until it has. */
 	volatile double pressure = -1;

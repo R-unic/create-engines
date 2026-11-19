@@ -14,9 +14,10 @@ Minecraft 1.21.1 · NeoForge 21.1.219 · Create 6.0.10
 > **Built with AI.** Nearly all of the code, models, textures, sounds, Ponder scenes and docs were written by an AI
 > (Claude) at my direction. I have played, tested and reworked almost all of it over many passes, and it ships with
 > unit tests and in-world GameTests. It is still a young mod, but you shouldn't have to expect things to break. If something
-> does, please report it on the issue tracker. From 1.0, block, item and fluid IDs, config keys and ranges, advancement IDs and the fuel
-> data-map format stay stable within 1.x, and a release that changes how an existing engine behaves says so in its
-> changelog.
+> does, please report it on the issue tracker. Block, item and fluid IDs, config keys and ranges, advancement IDs, the
+> data-map formats and the public API stay stable within a major version. 2.0 was the one release that renamed things
+> (advancement IDs, config files): it carries your advancements, config and casing dye across, and a release that changes how
+> an existing engine behaves says so in its changelog.
 
 ## Preview
 
@@ -40,6 +41,9 @@ Minecraft 1.21.1 · NeoForge 21.1.219 · Create 6.0.10
   and cranks geared together one to one count as separate lines. It takes from the rating only, never harms anything
 - Cam lobes that sit beside the cylinder block, so a V can run one camshaft in its valley and keep every head face
   free for pipes
+- **Breathing with diminishing returns**: each extra intake or exhaust opening on a head adds less than the last (one
+  opening per head breathes at about 90 percent, two at about 99), and openings that touch count half, so a tidy layout
+  beats a forest of mouths. The loss is mostly at the top of the rev range
 - A **Bank Builder** that lays out a whole inline, V or flat bank in one click (it fits the spark plugs you carry, and
   lays a cam line beside the bank if you carry a camshaft and cam lobes), and a **Timing Tool** that sets the
   firing order for you
@@ -93,7 +97,11 @@ Minecraft 1.21.1 · NeoForge 21.1.219 · Create 6.0.10
 - Turbochargers (stacked, twin, variable-geometry, with anti-lag), superchargers (plain and variable-drive) and intercoolers, with the sound to
   match: a turbo whistle that climbs with the wheel, a blow-off flutter when redstone dumps the boost or the throttle lifts, anti-lag
   crackle, and a supercharger whine that rises with its shaft
-- Precision cylinders, heads, pistons and injectors
+- Precision cylinders, heads, pistons and injectors, whose effects are data files a pack can retune
+- **Thin air**: above y 128 the air thins (to about 0.85 of sea level at the build limit, and less beyond it), so a
+  naturally aspirated engine loses power as it climbs and a turbocharger or supercharger earns its place. It matters most
+  for engines on Create Aeronautics aircraft. Engines at or below y 128 are unaffected, and `compat.altitudeThinning`
+  turns it off
 - Flywheels that matter: a rough engine is rated for less, and rotating mass smooths it out
 - A 13-gear transmission with an Auto mode that shifts to suit the engine, and a **Dynamometer** that draws an engine's torque and power curves
 - A **Black Box** flight recorder that keeps ten minutes of an engine's speed, load and warmth and says why it stalled
@@ -137,11 +145,39 @@ never removes blocks; they stop doing that job. The first time a world loads in 
 Fuel properties are a datapack data map (`data_maps/fluid/fuel.json`), so other mods' fluids can be made into fuels.
 
 For pack makers, three config presets ship in the jar (`config_presets/casual.toml`, `standard.toml`, `expert.toml`): copy
-their `[balance]` and `[features]` tables over the ones in the config. **Preview, may still change until 2.0:** a part stats
-data map (`data_maps/block/part_stats.json`, optional scales on a cylinder's stats, keyed by `create_engines:cylinder` or
-`create_engines:precision_cylinder`) and a public API (`com.createengines.api`: `EngineApi.viewAt` and two events,
-`EngineStateChangeEvent` and `EngineMilestoneEvent`, on `NeoForge.EVENT_BUS`). JEI and EMI show the refining routes, every
-fuel and every engine part.
+their `[balance]` and `[features]` tables over the ones in the config. **Frozen at 2.0 (API version 1.0.0, see docs/API.md):**
+parts as data (`part_effects/<part>.json` for the four precision parts, and a part stats data map,
+`data_maps/block/part_stats.json`, with optional scales on a cylinder's stats, keyed by `create_engines:cylinder`,
+`create_engines:precision_cylinder` or `create_engines:rotor_housing`), and a public API (`com.createengines.api`:
+`EngineApi.viewAt`, two events, `EngineStateChangeEvent` and `EngineMilestoneEvent`, on `NeoForge.EVENT_BUS`, and an
+extension point, `EngineSourceProvider` with `TorqueSource`, so another mod can put its own kind of engine on a crankshaft,
+with boost, goggle lines and blueprint support). JEI and EMI show the refining routes, every fuel and every engine part.
+
+## Works with other mods
+
+All optional; none is needed to play.
+
+- **Create Aeronautics**: the thin-air rule is for it. The mod's GameTests also run alongside Aeronautics 1.3.2 and Sable 2.0.6,
+  and one engine on one wheeled contraption has been tried by hand. Other contraptions have not been tried, so treat it as
+  early.
+- **Pollution of the Realms**: engines put carbon and sulfur into the air through an open exhaust outlet, in proportion to the
+  fuel they burn (more carbon when they run rich, less with a Soot Trap fitted; sulfur follows how dirty the fuel is). Nothing
+  is read back into the engine. `compat.pollution` and `compat.pollutionRate` control it.
+- **KubeJS** (server scripts) and **CC: Tweaked** (a peripheral on a crankshaft, cylinder, head or rotor housing) can watch an
+  engine, read-only: see [docs/INTEGRATIONS.md](docs/INTEGRATIONS.md).
+- **JEI** and **EMI** list every fuel, every refining route and every engine part. Sodium and Flywheel on or off are tested.
+
+## For pack makers and addon authors
+
+- **[docs/PACKS.md](docs/PACKS.md)**: the pack maker's guide: rebalance engines, add another mod's fuel, retune parts, add
+  refining routes, where the files go, and what to do when something does not work.
+- **[docs/CONFIG.md](docs/CONFIG.md)**: every setting with its default and range, the three presets side by side, and where
+  the 1.x keys went. **[docs/DATA.md](docs/DATA.md)**: every data file (fuels, part effects, part stats, refining recipes, tags).
+- **[docs/ADDONS.md](docs/ADDONS.md)**: the addon author's guide: depend on the mod, write an `EngineSourceProvider` and a
+  `TorqueSource` (a working example is built and tested with the mod), listen to engines, and what is frozen.
+  **[docs/API.md](docs/API.md)** lists the frozen surface and the API's own version.
+- In game, **`/ce`** (game master) shows what the config and the data packs are really doing: `/ce config`, `/ce fuels`,
+  `/ce parts`, `/ce api`, and `/ce preset <casual|standard|expert>` (admin) to apply a preset.
 
 ## Recommended: raise Create's RPM limit
 

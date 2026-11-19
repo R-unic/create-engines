@@ -1,6 +1,32 @@
 # version 1.0.0
 # The frozen public API, as ApiSurfaceTest reads it from the source. Never edit a line: removing or changing one
 # is a major change. A new line is a minor change (bump ApiVersion.MINOR) and is added with API_REGEN=1.
+AbstractTorqueSource :: protected AbstractTorqueSource()
+AbstractTorqueSource :: protected AbstractTorqueSource(double inertia, double frictionStatic, double frictionViscous)
+AbstractTorqueSource :: protected double airPressure()
+AbstractTorqueSource :: protected double airTemperature()
+AbstractTorqueSource :: protected double coldness()
+AbstractTorqueSource :: protected int direction()
+AbstractTorqueSource :: public abstract class AbstractTorqueSource implements TorqueSource
+AbstractTorqueSource :: public boolean fired()
+AbstractTorqueSource :: public double exhaustHeatLastTick()
+AbstractTorqueSource :: public double frictionAt(double omega, double film)
+AbstractTorqueSource :: public double frictionStatic()
+AbstractTorqueSource :: public double frictionViscous()
+AbstractTorqueSource :: public double fuelUsedLastStep()
+AbstractTorqueSource :: public double inertia()
+AbstractTorqueSource :: public double unburnedFraction()
+AbstractTorqueSource :: public void endTick()
+AbstractTorqueSource :: public void setColdness(double coldness)
+AbstractTorqueSource :: public void setDirection(int direction)
+AbstractTorqueSource :: public void setIntake(double pressure, double temperature)
+Breather :: double exhaustPressure()
+Breather :: double intakePressure()
+Breather :: double intakeTemperature()
+Breather :: public interface Breather extends TorqueSource
+Breather :: void setExhaustPressure(double pressure)
+Breather :: void setIntakePressure(double pressure)
+Breather :: void setIntakeTemperature(double temperature)
 EngineApi :: public final class EngineApi
 EngineApi :: public static Optional<EngineView> viewAt(Level level, BlockPos pos)
 EngineBuild :: public record EngineBuild(BlockPos primary, Axis axis, List<BlockPos> segments, Set<BlockPos> members)
@@ -17,6 +43,8 @@ EngineMilestoneEvent :: public Level level()
 EngineMilestoneEvent :: public String milestone()
 EngineMilestoneEvent :: public class EngineMilestoneEvent extends Event
 EngineSourceProvider :: List<TorqueSource> sourcesFor(Level level, EngineBuild build)
+EngineSourceProvider :: default BlockPos exhaustAt(TorqueSource source)
+EngineSourceProvider :: default BlockPos intakeAt(TorqueSource source)
 EngineSourceProvider :: default boolean watches(BlockState state)
 EngineSourceProvider :: default int reach()
 EngineSourceProvider :: public interface EngineSourceProvider

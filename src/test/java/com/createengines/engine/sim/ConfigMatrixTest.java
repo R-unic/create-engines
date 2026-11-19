@@ -1,6 +1,7 @@
 package com.createengines.engine.sim;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -138,6 +139,87 @@ class ConfigMatrixTest {
 			if (java.lang.reflect.Modifier.isPublic(field.getModifiers()) && java.lang.reflect.Modifier.isStatic(field.getModifiers()))
 				fields++;
 		assertEquals(fields, covered, "Tuning gained or lost a setting; add it to ConfigMatrixTest");
+	}
+
+	/**
+	 * Settings of {@code CEConfig} that are not {@link Tuning} fields, each with where its extremes are run. A setting added
+	 * to the config but to neither the matrix nor this list fails {@link #everyConfigSettingIsInTheMatrixOrNamedHere}.
+	 */
+	private static final java.util.Map<String, String> OUTSIDE_TUNING = java.util.Map.ofEntries(
+		java.util.Map.entry("journalInertia", "sim: inertiaAndFrictionAtTheConfigExtremesLeaveAnEngineSound"),
+		java.util.Map.entry("throwInertia", "sim: inertiaAndFrictionAtTheConfigExtremesLeaveAnEngineSound"),
+		java.util.Map.entry("flywheelInertia", "sim: inertiaAndFrictionAtTheConfigExtremesLeaveAnEngineSound"),
+		java.util.Map.entry("castFlywheelInertia", "sim: inertiaAndFrictionAtTheConfigExtremesLeaveAnEngineSound"),
+		java.util.Map.entry("bearingFriction", "sim: inertiaAndFrictionAtTheConfigExtremesLeaveAnEngineSound"),
+		java.util.Map.entry("stressPerTorque", "GameTest: SmokeAuditGameTests.everyConfigSettingAtItsExtremesLeavesAnEngineSane"),
+		java.util.Map.entry("maxCrankSegments", "GameTest: SmokeAuditGameTests.everyConfigSettingAtItsExtremesLeavesAnEngineSane"),
+		java.util.Map.entry("maxManifoldBlocks", "GameTest: SmokeAuditGameTests.everyConfigSettingAtItsExtremesLeavesAnEngineSane"),
+		java.util.Map.entry("maxCoupledLines", "GameTest: SmokeAuditGameTests.everyConfigSettingAtItsExtremesLeavesAnEngineSane"),
+		java.util.Map.entry("maxCouplingWalk", "GameTest: SmokeAuditGameTests.everyConfigSettingAtItsExtremesLeavesAnEngineSane"),
+		java.util.Map.entry("alternatorEnergy", "GameTest: SmokeAuditGameTests.everyConfigSettingAtItsExtremesLeavesAnEngineSane"),
+		java.util.Map.entry("pollution", "no effect on the sim: it only reports gas to another mod"),
+		java.util.Map.entry("pollutionRate", "no effect on the sim: it only reports gas to another mod"),
+		java.util.Map.entry("carriedOver", "bookkeeping of the 1.x file carry-over, ConfigCarryOverTest"));
+
+	/** The matrix is only worth anything if it covers every setting the config file offers, not just the Tuning fields. */
+	@Test
+	void everyConfigSettingIsInTheMatrixOrNamedHere() throws Exception {
+		String source = java.nio.file.Files.readString(java.nio.file.Path.of("src/main/java/com/createengines/config/CEConfig.java"));
+		var matcher = java.util.regex.Pattern.compile("\\.define(?:InRange)?\\(\"(\\w+)\"").matcher(source);
+		java.util.Set<String> inMatrix = new java.util.HashSet<>();
+		for (Knob knob : KNOBS)
+			inMatrix.add(knob.name.equals("heatRecovery") ? "heatRecoveryOutput" : knob.name);
+		for (Switch toggle : SWITCHES)
+			inMatrix.add(toggle.name.equals("heatRecoveryEnabled") ? "heatRecovery" : toggle.name);
+		List<String> unaccounted = new ArrayList<>();
+		int found = 0;
+		while (matcher.find()) {
+			found++;
+			String name = matcher.group(1);
+			if (!inMatrix.contains(name) && !OUTSIDE_TUNING.containsKey(name))
+				unaccounted.add(name);
+		}
+		assertTrue(found >= 30, "only " + found + " settings were found in the config source; the pattern no longer reads it");
+		assertEquals(List.of(), unaccounted, "settings the matrix neither runs nor names: add each to the matrix or to OUTSIDE_TUNING");
+		for (String name : OUTSIDE_TUNING.keySet())
+			assertTrue(source.contains("\"" + name + "\""), name + " is listed in OUTSIDE_TUNING but is no longer a config setting");
+	}
+
+	/**
+	 * The inertia the engine controller hands the sim is the sum of the config's per-segment and flywheel values (each 0 to
+	 * 100, over up to 1024 segments) and its friction is the bearing friction (0 to 10) per segment: so from nothing at all to
+	 * a hundred thousand, and friction from none to ten thousand. Every corner is run, with the cylinder state the dynamometer
+	 * starts from.
+	 */
+	@Test
+	void inertiaAndFrictionAtTheConfigExtremesLeaveAnEngineSound() {
+		for (double inertia : new double[] {0, 0.001, 0.15, 5, 100, 102_400})
+			for (double friction : new double[] {0, 0.01, 10, 10_240}) {
+				Tuning.reset();
+				List<CylinderModel> cylinders = new ArrayList<>();
+				Camshaft cam = new Camshaft();
+				for (int i = 0; i < 4; i++) {
+					double fire = i * 180;
+					CylinderModel c = new CylinderModel(CylinderSpec.build(true, true, true, true), CamProfile.BASIC, fire % 360, cam, fire / 2);
+					c.metering = 2;
+					c.airMatch = 1;
+					c.ignition = IgnitionSource.UNLIMITED;
+					c.fuelSupply = MixtureTest.unlimited(FuelSpec.GASOLINE);
+					cylinders.add(c);
+				}
+				EngineSimulation engine = new EngineSimulation(cylinders, inertia, friction);
+				for (CylinderModel c : cylinders)
+					c.resetGas(0);
+				String where = "inertia " + inertia + ", friction " + friction;
+				for (int i = 0; i < 160; i++) {
+					engine.tickCranked(0.5, MAX_OMEGA, EngineSimulation.rpmToOmega(i < 80 ? 32 : 0), 1);
+					double[] figures = {engine.omega(), engine.netTorque(), engine.indicatedTorque(), engine.fuelRate(),
+						engine.availableTorque(), engine.frictionTorque()};
+					for (double figure : figures)
+						assertTrue(Double.isFinite(figure), where + ": a figure is " + figure + " at tick " + i);
+					assertTrue(engine.rpm() <= 256 + 1e-6, where + ": ran to " + engine.rpm() + " RPM past the ceiling at tick " + i);
+				}
+			}
 	}
 
 	/** Reads the min and max out of CEConfig's source, so a range change in the config must be mirrored here. */

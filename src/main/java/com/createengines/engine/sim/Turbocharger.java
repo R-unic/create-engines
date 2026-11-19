@@ -64,8 +64,8 @@ public final class Turbocharger {
 	/** The strongest anti-lag setting. */
 	public static final int MAX_ANTI_LAG = 3;
 
-	private final List<CylinderModel> turbine;
-	private final List<CylinderModel> compressor;
+	private final List<Breather> turbine;
+	private final List<Breather> compressor;
 	private final double share;
 
 	/** Boost the wastegate holds, atmospheres. */
@@ -101,14 +101,14 @@ public final class Turbocharger {
 	 * @param compressor cylinders that breathe the compressor's air
 	 * @param share      how much of the exhaust heat is this turbo's, when several turbines sit on one exhaust
 	 */
-	public Turbocharger(List<CylinderModel> turbine, List<CylinderModel> compressor, double share) {
+	public Turbocharger(List<? extends Breather> turbine, List<? extends Breather> compressor, double share) {
 		this.turbine = List.copyOf(turbine);
 		this.compressor = List.copyOf(compressor);
 		this.share = share;
 	}
 
 	/** A turbo set up the same way on copies of the cylinders, to test apart from the engine; it starts at rest. */
-	public Turbocharger copyOnto(Map<CylinderModel, CylinderModel> copies) {
+	public Turbocharger copyOnto(Map<? extends Breather, ? extends Breather> copies) {
 		Turbocharger copy = new Turbocharger(mapped(turbine, copies), mapped(compressor, copies), share);
 		copy.limit = limit;
 		copy.variableGeometry = variableGeometry;
@@ -118,21 +118,21 @@ public final class Turbocharger {
 		return copy;
 	}
 
-	private static List<CylinderModel> mapped(List<CylinderModel> cylinders, Map<CylinderModel, CylinderModel> copies) {
-		List<CylinderModel> result = new ArrayList<>();
-		for (CylinderModel cylinder : cylinders) {
-			CylinderModel copy = copies.get(cylinder);
+	private static List<Breather> mapped(List<Breather> cylinders, Map<? extends Breather, ? extends Breather> copies) {
+		List<Breather> result = new ArrayList<>();
+		for (Breather cylinder : cylinders) {
+			Breather copy = copies.get(cylinder);
 			if (copy != null)
 				result.add(copy);
 		}
 		return result;
 	}
 
-	public List<CylinderModel> turbine() {
+	public List<Breather> turbine() {
 		return turbine;
 	}
 
-	public List<CylinderModel> compressor() {
+	public List<Breather> compressor() {
 		return compressor;
 	}
 
@@ -177,8 +177,8 @@ public final class Turbocharger {
 	/** Exhaust heat per second the turbine is being fed, from the last tick. */
 	public double heatRate(double dt) {
 		double heat = 0;
-		for (CylinderModel cylinder : turbine)
-			heat += cylinder.exhaustHeatLastTick();
+		for (int i = 0, n = turbine.size(); i < n; i++)
+			heat += turbine.get(i).exhaustHeatLastTick();
 		return heat * share / dt;
 	}
 

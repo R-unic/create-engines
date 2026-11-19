@@ -20,6 +20,11 @@ public class EngineFillDisplaySource extends PercentOrProgressBarDisplaySource {
 		this.reading = reading;
 	}
 
+	/** For a source that overrides {@link #getProgress} because what it reads is not an engine summary. */
+	protected EngineFillDisplaySource() {
+		this(engine -> 0);
+	}
+
 	@Override
 	protected Float getProgress(DisplayLinkContext context) {
 		EngineSummary engine = EngineReadout.summary(context);

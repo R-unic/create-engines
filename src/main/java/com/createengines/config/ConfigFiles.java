@@ -68,7 +68,7 @@ public final class ConfigFiles {
 	}
 
 	@SuppressWarnings({ "unchecked", "rawtypes" })
-	private static void setTyped(ModConfigSpec.ConfigValue value, Object raw) {
+	static void setTyped(ModConfigSpec.ConfigValue value, Object raw) {
 		if (value instanceof ModConfigSpec.DoubleValue)
 			value.set(((Number) raw).doubleValue());
 		else if (value instanceof ModConfigSpec.IntValue)
@@ -81,10 +81,15 @@ public final class ConfigFiles {
 
 	/** Every value in a TOML file, by dotted path. */
 	public static Map<String, Object> read(Path file) throws IOException {
-		Map<String, Object> flat = new LinkedHashMap<>();
 		try (Reader reader = Files.newBufferedReader(file, StandardCharsets.UTF_8)) {
-			flatten("", new TomlParser().parse(reader), flat);
+			return read(reader);
 		}
+	}
+
+	/** Every value in TOML text, by dotted path. */
+	static Map<String, Object> read(Reader reader) {
+		Map<String, Object> flat = new LinkedHashMap<>();
+		flatten("", new TomlParser().parse(reader), flat);
 		return flat;
 	}
 

@@ -14,12 +14,12 @@ Copy-paste material for the project pages. Not shipped in the jar.
 | Categories | Technology, plus the Create addon tag where the site offers one |
 | Game version | 1.21.1 |
 | Loader | NeoForge |
-| Dependencies | Create 6.0.10 (required) |
+| Dependencies | Create 6.0.10 (required). Pollution of the Realms (optional; list it as an optional dependency where the site has one). JEI, EMI, KubeJS, CC: Tweaked and Create Aeronautics are integrations, not dependencies |
 | Environment | Client and server (required on both) |
 | License | MIT |
 | Source | https://github.com/R-unic/create-engines |
 | Issues | https://github.com/R-unic/create-engines/issues |
-| Release type | Beta (0.x), switch to Release at 1.0 |
+| Release type | Release (stable since 1.0; use Beta or Alpha only for tagged pre-releases, see Publishing) |
 | AI disclosure | Yes. The "About this mod" section of the description below, plus the site's own AI-content field where it has one |
 
 Image links in the description use `raw.githubusercontent.com`, so they only work once the repository (with
@@ -51,8 +51,10 @@ your Create machines.
 | **Layouts** | Inline, V, flat and Wankel, with coupled crankshafts up to a V12 |
 | **Fuels** | Diesel, plant oil, gasoline, ethanol and biodiesel, plus other mods' fuels |
 | **Power** | Turbos, superchargers, intercoolers, flywheels and a 13-gear transmission |
-| **Tools** | Bank Builder, Timing Tool, Dynamometer, Black Box recorder, Engineer's Goggles |
+| **Tools** | Bank Builder, Timing Tool, Blueprints, Dynamometer, Black Box recorder, Engineer's Goggles |
 | **Learning** | A Ponder scene for every part, and advancement tracks |
+| **Works with** | Create Aeronautics (thin air), Pollution of the Realms, JEI, EMI, KubeJS, CC: Tweaked |
+| **For packs and addons** | Config presets, data-driven parts and fuels, a `/ce` command, and a frozen public API |
 | **Needs** | Minecraft 1.21.1, NeoForge, Create 6.0.10 (required on client and server) |
 
 ---
@@ -74,7 +76,12 @@ your Create machines.
 - **Bank Builder:** lays out a whole inline, V or flat bank in one click (it fits the spark plugs you carry, and lays a
   cam line beside the bank if you carry a camshaft and cam lobes)
 - **Timing Tool:** sets the firing order for you, and can tune every injector in one click
+- **Blueprints:** record a built engine's layout and every dial, copy the whole tune onto another engine of the same
+  build, build it from the parts you carry with the Bank Builder, export it as a Create schematic, share it as text, or hang
+  it on a wall in a Framed Blueprint
 - **Cams beside the block:** a V can run one camshaft in its valley and keep every head face free for pipes
+- **Breathing with diminishing returns:** each extra intake or exhaust opening on a head adds less than the last, and
+  openings that touch count half, so a tidy layout beats a forest of mouths
 - **Torsional flex:** past eight throws on one unbroken crankshaft an engine's rating falls a little for each extra
   throw, to at most 35 percent. A V12 or flat twelve loses nothing, and nothing is ever harmed
 
@@ -102,6 +109,9 @@ your Create machines.
 - **Forced induction:** stacked, twin and variable-geometry turbochargers (with anti-lag), plain and variable-drive
   superchargers, and intercoolers
 - **Precision parts:** precision cylinders, heads, pistons and injectors
+- **Thin air:** above y 128 the air thins, so a naturally aspirated engine loses power as it climbs and a turbo or
+  supercharger earns its place. Made for Create Aeronautics aircraft; engines at or below y 128 are unaffected, and a
+  config switch turns it off
 - **Flywheels that matter:** a rough engine is rated for less, and rotating mass smooths it out
 - **A 13-gear transmission** with an Auto mode that shifts to suit the engine
 - **Dynamometer:** draws an engine's torque and power curves, and compares a new run with the last
@@ -119,8 +129,9 @@ your Create machines.
 - **Muffler:** quiets the note, the bangs and the pops without costing any power
 - **Engine Casing:** joins into one plate and clads cylinders, pipes, cams, and Create's own shafts and cogwheels to
   hide the sprawl, in plain, riveted, louvred and window styles, and any dye
-- **Engine readouts:** a Display Link set against a crankshaft shows state, speed, load, temperature and oil on a
-  display board or nixie tubes, and a comparator reads any of an oil sump's tanks
+- **Engine readouts:** a Display Link set against a crankshaft shows state, speed, power, load, temperature, oil, boost
+  and rated torque on a display board or nixie tubes, one set against a battery shows its charge, and a comparator
+  reads any of an oil sump's tanks
 
 ## 🎓 Learn it
 
@@ -141,16 +152,43 @@ simulation is built to stay cheap at speed, and its torque rating follows the li
 
 ## 📦 For modpack makers
 
-The server config (`serverconfig/create_engines-server.toml`) has `[balance]` multipliers and `[features]` switches, so
-a pack can rebalance without code. Turning a feature off never removes blocks; they stop doing that job. The client
-config thins out engine sound and particles on a big engine. Fuel properties are a datapack data map
-(`data_maps/fluid/fuel.json`), so other mods' fluids can be made into fuels, and refining routes are a data recipe
-type, `create_engines:refining`.
+The server config (`serverconfig/create_engines-v2-server.toml`) has `[balance]` multipliers, `[features]` switches and
+`[compat]` settings, so a pack can rebalance without code. Turning a feature off never removes blocks; they stop doing that
+job. Three presets ship in the jar (casual, standard, expert), and `/ce preset <name>` applies one. The client config
+(`create_engines-v2-client.toml`) thins out engine sound and particles on a big engine. A 1.x config is read once and carried
+over, and the log says what moved.
+
+Everything else is data: fuel properties are a datapack data map (`data_maps/fluid/fuel.json`), so other mods' fluids can be
+made into fuels; the four precision parts are `part_effects/<part>.json`; a cylinder or the rotary chamber can be retuned with
+the `part_stats` data map; and refining routes are a data recipe type, `create_engines:refining`. In game, **`/ce`** (game
+master) shows what the config and the data packs are really doing: `/ce config`, `/ce fuels`, `/ce parts` and `/ce api`.
+The guides are in the repository: [PACKS.md](https://github.com/R-unic/create-engines/blob/master/docs/PACKS.md),
+[CONFIG.md](https://github.com/R-unic/create-engines/blob/master/docs/CONFIG.md) and
+[DATA.md](https://github.com/R-unic/create-engines/blob/master/docs/DATA.md).
+
+## 🧩 For addon authors
+
+A public API under its own version (1.0.0, frozen at 2.0): read any engine (`EngineApi.viewAt`), listen to its state changes
+and milestones, and register an `EngineSourceProvider` with a `TorqueSource` to put another kind of engine on a crankshaft,
+with boost, goggle lines and blueprint support. A working example is built and tested with the mod. See
+[ADDONS.md](https://github.com/R-unic/create-engines/blob/master/docs/ADDONS.md) and
+[API.md](https://github.com/R-unic/create-engines/blob/master/docs/API.md).
+
+## 🤝 Works with
+
+All optional; none is needed to play.
+
+- **Create Aeronautics:** the thin-air rule is for it. The mod's tests run alongside Aeronautics 1.3.2 and Sable 2.0.6, and
+  one engine on one wheeled contraption has been tried by hand. Other contraptions are untried, so treat it as early
+- **Pollution of the Realms:** engines put carbon and sulfur into the air through an open exhaust outlet, more when they run
+  rich and less with a Soot Trap fitted. Nothing is read back into the engine, and a setting turns it off
+- **KubeJS** and **CC: Tweaked:** read-only access to an engine's state, for scripts and computers
+- **JEI** and **EMI:** every fuel, refining route and engine part
 
 ## ✅ Requirements
 
 - Minecraft 1.21.1, NeoForge 21.1.219 or newer
-- Create 6.0.10 (all of its own requirements, Flywheel and Ponder, come with it). Use Create 6.0.10 build 257 or newer: tested on 6.0.10-257 to 6.0.10-281 and on 6.0.11-346. On the older 6.0.10 builds (217 to 256) the mod loads and runs, but in our tests the Transmission moved from Neutral to Auto did not drive the machines behind it, so update Create if you use the Transmission.
+- Create 6.0.10 (all of its own requirements, Flywheel and Ponder, come with it). Use Create 6.0.10 build 257 or newer: tested on 6.0.10-257 to 6.0.10-281 and on 6.0.11-346 (tested only: 6.0.11 is not recommended, because Create Aeronautics crashes on it, so stay on 6.0.10). On the older 6.0.10 builds (217 to 256) the mod loads and runs, but in our tests the Transmission moved from Neutral to Auto did not drive the machines behind it, so update Create if you use the Transmission.
 - Required on both the client and the server
 
 ## About this mod
@@ -159,8 +197,9 @@ Nearly all of the code, models, textures, sounds, Ponder scenes and docs were wr
 direction. I have played, tested and reworked almost all of it over many passes, and it ships with unit tests and
 in-world GameTests. If something breaks, please report it on the
 [issue tracker](https://github.com/R-unic/create-engines/issues). Block, item and fluid IDs, config keys and ranges,
-advancement IDs and the fuel data-map format stay stable within 1.x, and a release that changes how an existing engine
-behaves says so in its changelog.
+advancement IDs, the data-map formats and the public API stay stable within a major version. 2.0 was the one release that
+renamed things (advancement IDs, config files); it carries your advancements, config and casing dye across, and a release
+that changes how an existing engine behaves says so in its changelog.
 
 ## 🔗 Links
 
@@ -168,6 +207,95 @@ behaves says so in its changelog.
 - [Source and issue tracker](https://github.com/R-unic/create-engines)
 - [Design notes](https://github.com/R-unic/create-engines/blob/master/docs/DESIGN.md), how the simulation works
 ```
+
+## Changelog for 2.0.0
+
+Open Block: the mod becomes a platform (a public API, engine types from other mods, parts as data), and 2.0 is the one
+release that breaks the 1.x promise, so the cleanup that needed breaking is done here. Every world, config and advancement
+from 1.x carries over. Five things change how something that already exists behaves or is named, each below: advancement IDs,
+config files and groups, how many intake and exhaust openings an engine needs, thin air above y 128, and where casing dye is
+stored. Everything else is new.
+- Breaking, advancements: the 110 advancement IDs of 1.x are gone. The tab is regrouped into tracks and each row is
+  `<track>/<row>` (for example `builder/vee_engine`; the tab root is `root` and `chief_engineer` is unchanged): 64 rows plus the
+  root. The 46 hidden advancements are deleted, and `driveline/every_gear` is now shown. A player's progress carries over by
+  itself, silently (no toast, chat line or sting), the first time they load in 2.0. A datapack, command or other mod that names an
+  old ID breaks.
+- Breaking, config: the server file is now `create_engines-v2-server.toml` and the client file `create_engines-v2-client.toml`.
+  Server `[engine]` is split into `[calibration]` (`stressPerTorque`, the inertias, `bearingFriction`) and `[limits]` (how far the
+  scanner follows a crankshaft, a manifold or a coupling); `[balance]` and `[features]` are unchanged and `[compat]` is new.
+  Client `[effects]` keeps `particles` and `density` (were `engineParticles` and `effectDensity`) and a new `[volume]` holds
+  `bang`, `engineNote`, `mechanical` and `boost` (were `bangVolume`, `engineNoteVolume`, `mechanicalVolume` and `boostVolume`).
+  The first time a 2.0 file loads it reads the 1.x file beside it, copies every value across and logs what moved; the 1.x files
+  are left as they were. A pack's `defaultconfigs/create_engines-server.toml` no longer applies: ship the `-v2-` file. The
+  presets still copy over.
+- Changed behaviour, breathing: an engine's intake and exhaust openings now have diminishing returns (`1 - e^(-2.3 r)` for `r`
+  openings per head), and an opening that touches another counts half. One opening per head breathes at about 90 percent (was
+  100), two at about 99, and one opening for two heads at about 67 (was 100). Every engine with fewer than about two openings
+  per head makes a little less power, mostly at the top of the rev range (a six-cylinder sweep: peak torque 6.1, 7.6 and 7.9
+  with the openings at 0.2, 0.5 and 1.0). The constant is a first choice.
+- Changed behaviour, thin air: above y 128 an engine's intake charge falls with height, by a factor of e every 1200 blocks, to a
+  floor of 0.2 (about 0.85 at the build limit), so a naturally aspirated engine loses power as it climbs and boost offsets it.
+  It uses the block's height, in any world. Engines at or below y 128 are exactly as they were. `compat.altitudeThinning` turns it
+  off. The numbers are a first choice (one measurement: a four-cylinder crude engine lost 43 percent of its peak torque at a density
+  of 0.7).
+- Changed, casing dye: the dye of a clad cylinder, crankshaft, crank throw, rotor housing, camshaft, cam lobe, manifold, cased
+  shaft and cased cogwheel (all four casing styles) is no longer a block state but is kept in the part's block entity. A pipe has
+  17 times fewer block states, which is what costs memory. A world saved in 1.x keeps its dye: it is read out of the saved chunk
+  when the chunk loads. A part inside a saved moving contraption, and parts in saved structure or schematic files, lose their
+  tint (the part itself works as before). The manifolds gained a block entity that holds only the dye. Plain Engine Casing
+  blocks keep the dye as a state, as before.
+- The platform, engine types: a mod can register an `EngineSourceProvider` with a `TorqueSource` and put its own kind of engine on a
+  crankshaft, with a scanner watch on its blocks, goggle lines, and a rebuild when a watched block changes. The rotary chamber now
+  runs on the same seam, with no change in how it behaves. A source can be attached to an intake or exhaust network (`Breather`) so
+  turbochargers, superchargers and intercoolers act on it. A block a provider claims within reach of the crankshaft is recorded in
+  blueprints, and the server accepts it in a pasted blueprint while the provider is installed (never another mod's block
+  otherwise). `AbstractTorqueSource` is a base class that answers everything but the work a source does.
+- The platform, frozen API: `com.createengines.api` is version 1.0.0 under its own semantic version (`ApiVersion`, read at run time
+  so an addon sees the installed version, `isAtLeast` for later features). A guard test holds every public declaration, and
+  another holds the names a KubeJS script uses (the `CreateEnginesEvents` events, the `CreateEngines` global and the fuel and
+  `part_stats` keys). Methods that were internals (`reportFailuresTo`, `reportSourceFailure`, `blockChanged`, `sourcesFor`) moved
+  from `api.EngineExtensions` to `engine.EngineProviders`; they were for the mod and its tests. The 1.4 preview parts are frozen
+  as they were.
+- The platform, parts as data: the four precision parts (bore, head, piston, injector) are `part_effects/<part>.json`, each a set
+  of optional scales from 0.1 to 10 (`compression_ratio`, `breathing`, `ignition_delay`, `burn_duration`, `friction_static`,
+  `friction_viscous`, `inertia`, `injector_flow`). The shipped files hold the old numbers exactly. A pack changes a part by providing
+  the same path; a broken file is logged and the part keeps its built-in values. The rotary chamber is retuned through the
+  `part_stats` data map with an entry for `create_engines:rotor_housing`; with no entry nothing changes. Cam profiles are not
+  data yet, and a pack cannot yet name a third tier from a block of its own.
+- Pack makers: `/ce` (game master) with `help`, `config`, `fuels`, `parts` and `api`, and `/ce preset <casual|standard|expert>` (admin)
+  to apply a preset and save it. A data-pack fuel with an impossible number is warned about at start-up (the fuel is still used as
+  written). New guides in the repository: `PACKS.md`, `CONFIG.md` (every setting with default and range, checked against the source by a test),
+  `DATA.md` and `ADDONS.md` (its example addon is built and run with the mod).
+- Create Aeronautics: the thin-air rule above is the compat. The GameTests run with Aeronautics 1.3.2 and Sable 2.0.6. By hand (on
+  Aeronautics 1.2.1), one precision V-twin on one wheeled contraption ran, drew correctly and survived a save and reload. Other
+  engine types, propellers and flying contraptions, assembling with the engine running and multiplayer are not tried, and the
+  client audit with Aeronautics loaded is not green yet.
+- Pollution of the Realms (optional, mod id `adpother`, tested with 9.1.14.0): with it installed, a running engine puts carbon in
+  proportion to the fuel it burns, and sulfur in proportion to how dirty the fuel is, into the air in front of an open, unflooded
+  exhaust outlet. Rich-running soot that no Soot Trap caught adds carbon; a Soot Trap takes it off, so a trap visibly cleans the air.
+  `compat.pollution` (on or off) and `compat.pollutionRate` (0 to 10) control it. The fuel data map gains an optional `sulfur`
+  (missing means the fuel's soot factor, so every 1.x fuel map loads and releases what it would have). Nothing in the engine reads
+  any of it. The rates (0.5 carbon and 0.25 sulfur steps per mB) were chosen from one diesel engine at one speed; tell us if it is
+  too thick or too thin. Without the mod, none of this loads.
+- Fix: an engine coasting under water no longer lets exhaust gas out through a mouth with fluid in front of it (with Pollution of
+  the Realms installed).
+- Faster: a starter with nothing to do no longer builds a list every tick, engine parts outside the camera's view are not posed, and
+  camshaft lobes no longer allocate an array every frame. In a profile of 16 engines on a server, the mod took about 0.6 ms a tick.
+- Visual: the precision cylinder head's spark plug, injector and injector-plug models are redrawn (the plug a pixel and a half taller,
+  an injector terminal cap) so they no longer z-fight with the cam covers and bolts. Nothing else about the parts changes.
+- Under the hood: the NeoForge minimum stays 21.1.219 (the build uses 21.1.228 for Aeronautics 1.3.2 and Sable) and Create stays
+  `[6.0.10,6.1)` on build 6.0.10-281. Create 6.0.11 is not recommended, because Create Aeronautics crashes on it. A client-only
+  goggle mixin moved to its own mixin config. New tests cover the advancement migration, the config carry-over, the altitude and
+  port curves, emissions, the dye migration (a real saved chunk rewritten to the 1.x layout and loaded), the API and script surface,
+  the addon example, `/ce`, and a fuzzed blueprint decoder.
+- Known limits: JEI has not run in an automated game on this build (it needs NeoForge 21.1.238); a real 1.x world has been opened
+  by hand, a real 1.x client config has not.
+- New IDs and keys (they join the 2.x promise): the advancement IDs `<track>/<row>` in the tab above, block entity `manifold`, the
+  command `/ce`, config keys `compat.altitudeThinning`, `compat.pollution`, `compat.pollutionRate`, `calibration.*`, `limits.*`,
+  `volume.*`, `effects.particles`, `effects.density` and `meta.carriedOver` (in both files), the files `create_engines-v2-server.toml`
+  and `create_engines-v2-client.toml`, the data folder `part_effects/` with `bore`, `head`, `piston` and `injector`, the
+  `part_stats` key `create_engines:rotor_housing`, the optional fuel field `sulfur`, the optional dependency `adpother`, a mixin
+  config `create_engines.client.mixins.json`, and API version 1.0.0. Saved key: `Paint` in the block entity of each part that holds a dye.
 
 ## Changelog for 1.4.0
 

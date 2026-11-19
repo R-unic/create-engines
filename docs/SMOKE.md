@@ -48,7 +48,9 @@ look good; it says nothing is broken in ways a machine can name.
 ## Checks that run without a game
 
 `./gradlew check` also runs the architecture rules, the config matrix, the property tests and the performance budgets
-(all unit tests), then the JaCoCo coverage ratchet. The floor is `src/smoke/coverage-floor.txt`: raise it by hand when
+(all unit tests), then the JaCoCo coverage ratchet. `./gradlew coverageMerged` is the same measure across the unit tests, the GameTests and the client audit together (about
+7 minutes, needs a game window, part of `smoke`), with its own floor in `src/smoke/coverage-floor-merged.txt` and a report in
+`build/reports/jacoco/merged`. The floor is `src/smoke/coverage-floor.txt`: raise it by hand when
 coverage improves, never lower it to make a build pass. The first run needs the network once, to fetch the JaCoCo agent.
 `.github/workflows/verify.yml` runs these on every push and pull request, plus a job that fails if `runData` changes
 anything under `src/generated`.

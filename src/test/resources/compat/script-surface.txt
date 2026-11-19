@@ -1,0 +1,36 @@
+# The names a KubeJS script and a pack's data maps use, as ScriptAndDataSurfaceTest reads them from the source.
+# Never edit a line: removing or changing one is a major change. A new line is a minor change (bump
+# ApiVersion.MINOR) and is added with SURFACE_REGEN=1.
+data fuel air_per_mb required
+data fuel autoignition_temperature required
+data fuel charge_cooling optional 0.0
+data fuel cold_sensitivity optional 1.0
+data fuel energy_per_mb required
+data fuel preignition_temperature optional 0.0
+data fuel soot_factor optional 1.0
+data fuel sulfur optional
+data part_stats burn_duration optional 1.0 range 0.1..10
+data part_stats compression_ratio optional 1.0 range 0.1..10
+data part_stats displacement optional 1.0 range 0.1..10
+data part_stats exhaust_flow optional 1.0 range 0.1..10
+data part_stats friction_static optional 1.0 range 0.1..10
+data part_stats friction_viscous optional 1.0 range 0.1..10
+data part_stats ignition_delay optional 1.0 range 0.1..10
+data part_stats inertia optional 1.0 range 0.1..10
+data part_stats injector_flow optional 1.0 range 0.1..10
+data part_stats intake_flow optional 1.0 range 0.1..10
+data part_stats max_fuel_per_shot optional 1.0 range 0.1..10
+script CreateEngines.engineAt(Level level, BlockPos pos) -> EngineView
+script event group CreateEnginesEvents
+script event milestone server EngineMilestoneKubeEvent
+script event stateChanged server EngineStateKubeEvent
+script field EngineMilestoneKubeEvent.level : Level
+script field EngineMilestoneKubeEvent.milestone : String
+script field EngineMilestoneKubeEvent.pos : BlockPos
+script field EngineStateKubeEvent.from : String
+script field EngineStateKubeEvent.level : Level
+script field EngineStateKubeEvent.pos : BlockPos
+script field EngineStateKubeEvent.stalled : boolean
+script field EngineStateKubeEvent.started : boolean
+script field EngineStateKubeEvent.to : String
+script global CreateEngines
