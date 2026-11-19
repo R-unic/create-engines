@@ -36,12 +36,14 @@ public final class Emissions {
 	 * @param rate       the server's multiplier; 0 emits nothing
 	 */
 	public void add(double burnedMb, double sootMb, double sootFactor, double rate) {
-		if (!(rate > 0) || !(burnedMb > 0 || sootMb > 0))
+		if (Double.isNaN(rate) || Double.isNaN(burnedMb) || Double.isNaN(sootMb) || Double.isNaN(sootFactor))
 			return;
+		// A finite rate keeps zero fuel times an infinite rate from making a NaN
+		double scale = Math.min(1000, Math.max(0, rate));
 		double burned = Math.max(0, burnedMb);
 		double soot = Math.max(0, sootMb);
-		carbon = Math.min(MAX_HELD, carbon + (burned + soot * SOOT_CARBON) * CARBON_PER_MB * rate);
-		sulfur = Math.min(MAX_HELD, sulfur + burned * SULFUR_PER_MB * Math.max(0, sootFactor) * rate);
+		carbon = Math.min(MAX_HELD, carbon + (burned + soot * SOOT_CARBON) * CARBON_PER_MB * scale);
+		sulfur = Math.min(MAX_HELD, sulfur + burned * SULFUR_PER_MB * Math.max(0, sootFactor) * scale);
 	}
 
 	/** Whole steps of carbon ready to release; the rest stays held. */

@@ -26,8 +26,8 @@ public final class Altitude {
 
 	/** Air density at {@code y}, 1 at or below {@link #START}, never below {@link #FLOOR}. Not a number in, 1 out. */
 	public static double density(double y) {
-		if (!(y > START))
+		if (Double.isNaN(y))
 			return 1;
-		return Math.max(FLOOR, Math.exp(-(y - START) / SCALE));
+		return Math.max(FLOOR, Math.min(1, Math.exp(-(y - START) / SCALE)));
 	}
 }

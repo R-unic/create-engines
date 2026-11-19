@@ -70,7 +70,7 @@ public final class PartEffects {
 
 	/** What the part does now: a pack's file for it, or the built-in values. */
 	public static Effect of(Part part) {
-		return current.getOrDefault(part, BUILT_IN.get(part));
+		return current.get(part);
 	}
 
 	/** Replaces the effects of the parts named; any part left out goes back to its built-in values. */

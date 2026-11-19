@@ -472,6 +472,26 @@ throttle and rack) lets players write their own engine management in Lua, withou
 
 ### The platform
 
+**Status 2026-11-18 (branch `2.0-crossover`, merged with `2.0`):**
+
+- **Engine types as plug-ins:** built by the other 2.0 session (TorqueSource seam, rotary on its own drive, provider registration with
+  boost, goggle lines and rebuilds; see `docs/design/ENGINE_SEAM.md`). Not built: narrowing the 19 files that name `CylinderModel`
+  (step 3), a registry for scanner rules.
+- **Frozen public API:** `api.ApiVersion` 1.0.0 (its own semver), `ApiSurfaceTest` against `compat/api-surface.txt`, provider internals
+  moved to `engine.EngineProviders`, `docs/API.md`. Behaviour is covered by the GameTests, not the surface file.
+- **Parts as data, first piece:** the four precision parts (bore, head, piston, injector) are `part_effects/<part>.json`, read on every
+  data reload into `engine.sim.PartEffects`; the shipped files equal the old constants (pinned by test) and the baselines did not move.
+  Not yet data: the rotary chamber's stats, cam profiles, and a third tier named from a pack's own block (a pack's block would also
+  need its own cylinder block class). The `part_stats` data map still works on top.
+- **State cleanup (dye): not started, and it needs a decision.** The dye (`paint`, 17 values) multiplies a pipe's states: a pipe has
+  64 connections x 2 encased x 4 styles x 17 dyes = 8,704 states (two pipe kinds), a cylinder 6,528, and the crank, cam, cased shaft and
+  cogwheel carry it too, so folding it into a block entity or data component cuts those 17-fold (the roadmap's 440 MB of block-state
+  bookkeeping is mostly this). What it costs: a block entity on pipes (they have none), tint read from it in the block colour handler
+  (Flywheel and Sodium paths to check by eye), and the saved dye. A saved block state's unknown property is dropped on load, so an
+  existing world's paint is lost unless a chunk-NBT hook reads the old palette before that; that hook needs a 1.x fixture with painted
+  blocks to test. **Decision for the author: accept losing existing paint on the upgrade (one changelog line, simplest), or build the
+  migration.**
+
 - **Parts as data.** Cylinder, head, piston, injector and induction stats come from data. Crude and precision are
   two entries, and a pack or addon adds a third with a block, a model and a data file.
 - **Engine types as plug-ins.** Today the simulation takes a list of cylinders, and a rotary chamber is the same
@@ -528,7 +548,7 @@ registry aliases so existing worlds load. Each item needs the author's decision:
   found; the one old-save path is `Gears.fromLegacy`, which turns a 1.0 transmission's four-gear positions into the thirteen now, and
   2.0 still has to open a 1.0 world, so it stays. Removing it is a decision for the author, not a cleanup.
 - **Done 2026-11-18.** Support for older Create versions carried through 1.x under rule 7 is dropped, if a newer one is out: the
-  build is on Create 6.0.11-346 (Ponder 1.0.92, no `:slim` jar) and the range is `[6.0.11,6.1)`. Unit tests and the 317 GameTests passed on it.
+  build is on Create 6.0.11-346 (reverted the same day: Aeronautics needs 6.0.10, range back to `[6.0.10,6.1)`). Unit tests and the 317 GameTests passed on it.
 - The throttle body is **kept** (author, 2026-11-18). The basin fuel recipes are left as they are; reviewing them is still open.
 
 ### Intake and exhaust port model redesign

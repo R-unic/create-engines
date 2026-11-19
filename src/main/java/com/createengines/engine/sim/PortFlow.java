@@ -22,9 +22,9 @@ public final class PortFlow {
 
 	/** Share of full breathing for {@code openings} (a count that crowding may have made fractional) over {@code heads}. */
 	public static double factor(double openings, int heads) {
-		if (!(openings > 0) || heads <= 0)
+		if (Double.isNaN(openings) || heads <= 0)
 			return 0;
-		return Math.min(1, 1 - Math.exp(-K * openings / heads));
+		return Math.max(0, Math.min(1, 1 - Math.exp(-K * openings / heads)));
 	}
 
 	/**
@@ -32,9 +32,9 @@ public final class PortFlow {
 	 * @return {@code open} openings, each of the crowded ones counting {@link #CROWDED}
 	 */
 	public static double effective(int open, int total, int crowded) {
-		if (open <= 0 || total <= 0)
+		if (total <= 0)
 			return 0;
 		double crowdedShare = Math.min(1, Math.max(0, (double) crowded / total));
-		return open * (1 - crowdedShare * (1 - CROWDED));
+		return Math.max(0, open) * (1 - crowdedShare * (1 - CROWDED));
 	}
 }
