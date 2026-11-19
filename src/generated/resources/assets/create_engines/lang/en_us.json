@@ -483,6 +483,7 @@
   "create_engines.goggles.sensor.no_engine": "Not in the intake or exhaust of a running engine's cylinders",
   "create_engines.goggles.sensor.signal": "Redstone output: %1$s",
   "create_engines.goggles.soot_trap": "Soot Trap",
+  "create_engines.goggles.rotor.chambers_all": "All chambers: %1$s",
   "create_engines.goggles.soot_trap.full": "Full: it lets soot through until it is emptied",
   "create_engines.goggles.soot_trap.hint": "Catches the soot a rich engine would send out of the pipe. Empty it by hand, or with a hopper or funnel",
   "create_engines.goggles.soot_trap.stored": "Soot caught: %1$s of %2$s",

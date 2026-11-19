@@ -289,6 +289,7 @@ public final class CELang {
 
 		raw("goggles.rotor", "Rotor Housing");
 		raw("goggles.rotor.chamber", "Chamber %1$s: %2$s");
+		raw("goggles.rotor.chambers_all", "All chambers: %1$s");
 
 		raw("goggles.cam", "Camshaft");
 		raw("goggles.cam_ratio", "Speed ratio to crank: %1$s");
