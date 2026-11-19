@@ -10,6 +10,7 @@ import java.util.function.Consumer;
 import com.createengines.CreateEngines;
 import com.createengines.api.EngineApi;
 import com.createengines.api.EngineExtensions;
+import com.createengines.engine.EngineProviders;
 import com.createengines.api.EngineSourceProvider;
 import com.createengines.api.EngineMilestoneEvent;
 import com.createengines.api.EngineStateChangeEvent;
@@ -324,7 +325,7 @@ public class PackToolsGameTests {
 			.equals(primary) ? java.util.Arrays.asList((TorqueSource) null) : List.of();
 		List<RuntimeException> reported = new ArrayList<>();
 		// The failure is meant, so take it here: the verifier fails a run that logs an error
-		EngineExtensions.reportFailuresTo((at, e) -> {
+		EngineProviders.reportFailuresTo((at, e) -> {
 			if (at.equals(primary))
 				reported.add(e);
 		});
@@ -334,7 +335,7 @@ public class PackToolsGameTests {
 		Runnable clean = () -> {
 			EngineExtensions.unregister(bad);
 			EngineExtensions.unregister(nulls);
-			EngineExtensions.reportFailuresTo(null);
+			EngineProviders.reportFailuresTo(null);
 		};
 		helper.onEachTick(() -> {
 			if (sourceCount(helper) < 0)
@@ -418,11 +419,11 @@ public class PackToolsGameTests {
 				placed[0] = true;
 				var level = helper.getLevel();
 				// Not watched, or watched but out of reach: neither is the provider's concern
-				EngineExtensions.blockChanged(level, near, net.minecraft.world.level.block.Blocks.STONE.defaultBlockState());
-				EngineExtensions.blockChanged(level, far, net.minecraft.world.level.block.Blocks.GOLD_BLOCK.defaultBlockState());
+				EngineProviders.blockChanged(level, near, net.minecraft.world.level.block.Blocks.STONE.defaultBlockState());
+				EngineProviders.blockChanged(level, far, net.minecraft.world.level.block.Blocks.GOLD_BLOCK.defaultBlockState());
 				helper.runAfterDelay(60, () -> {
 					helper.assertTrue(made.size() == asked[0], "unwatched and far blocks asked nobody: " + made.size() + " vs " + asked[0]);
-					EngineExtensions.blockChanged(level, near, net.minecraft.world.level.block.Blocks.GOLD_BLOCK.defaultBlockState());
+					EngineProviders.blockChanged(level, near, net.minecraft.world.level.block.Blocks.GOLD_BLOCK.defaultBlockState());
 				});
 				return;
 			}

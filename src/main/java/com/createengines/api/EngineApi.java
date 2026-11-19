@@ -13,7 +13,7 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.Level;
 
 /**
- * The public, read-only way to ask about an engine. <b>Preview:</b> the API may still change until 2.0, where it is frozen
+ * The public, read-only way to ask about an engine. <b>Frozen</b> at API 1.0 (see {@link ApiVersion}): nothing here is removed or changed before the next major version, and additions are minor versions.
  * under its own version. Nothing here changes an engine.
  */
 public final class EngineApi {

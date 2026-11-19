@@ -87,12 +87,13 @@ public record CylinderSpec(double compressionRatio, double rodRatio, double inta
 		double power = Tuning.rotaryPower;
 		if (!precisionInjector && power == 1)
 			return ROTARY;
-		double delay = precisionInjector ? Tuning.blend(PRECISION_INJECTOR_DELAY, Tuning.precisionBonus) : 1;
-		double burn = precisionInjector ? Tuning.blend(PRECISION_INJECTOR_BURN, Tuning.precisionBonus) : 1;
+		PartEffects.Effect injector = PartEffects.of(PartEffects.Part.INJECTOR);
+		double delay = precisionInjector ? Tuning.blend(injector.ignitionDelay(), Tuning.precisionBonus) : 1;
+		double burn = precisionInjector ? Tuning.blend(injector.burn(), Tuning.precisionBonus) : 1;
 		return new CylinderSpec(ROTARY.compressionRatio, ROTARY.rodRatio, ROTARY.intakeFlow, ROTARY.exhaustFlow,
 			ROTARY.maxFuelPerShot * power, ROTARY.ignitionDelay * delay, ROTARY.burnDuration * burn, ROTARY.frictionStatic,
 			ROTARY.frictionViscous, ROTARY.inertia, ROTARY.displacement * power,
-			precisionInjector ? Tuning.blend(PRECISION_INJECTOR_FLOW, Tuning.precisionBonus) : 1);
+			precisionInjector ? Tuning.blend(injector.injectorFlow(), Tuning.precisionBonus) : 1);
 	}
 
 	/**
@@ -118,25 +119,22 @@ public record CylinderSpec(double compressionRatio, double rodRatio, double inta
 		double inertia = CRUDE.inertia;
 		double injectorFlow = 1;
 		double bonus = Tuning.precisionBonus;
-		if (precisionBore) {
-			compression *= Tuning.blend(PRECISION_COMPRESSION, bonus);
-			frictionStatic *= Tuning.blend(PRECISION_BORE_STATIC, bonus);
-			frictionViscous *= Tuning.blend(PRECISION_BORE_VISCOUS, bonus);
-		}
-		if (precisionHead) {
-			intake *= Tuning.blend(PRECISION_BREATHING, bonus);
-			exhaust *= Tuning.blend(PRECISION_BREATHING, bonus);
-			delay *= Tuning.blend(PRECISION_HEAD_DELAY, bonus);
-		}
-		if (precisionPiston) {
-			inertia *= Tuning.blend(PRECISION_PISTON_INERTIA, bonus);
-			frictionStatic *= Tuning.blend(PRECISION_PISTON_STATIC, bonus);
-			frictionViscous *= Tuning.blend(PRECISION_PISTON_VISCOUS, bonus);
-		}
-		if (precisionInjector) {
-			delay *= Tuning.blend(PRECISION_INJECTOR_DELAY, bonus);
-			burn *= Tuning.blend(PRECISION_INJECTOR_BURN, bonus);
-			injectorFlow = Tuning.blend(PRECISION_INJECTOR_FLOW, bonus);
+		// Each part multiplies in what its effect says (data: see PartEffects). A scale of 1 leaves the stat as it was exactly.
+		PartEffects.Part[] parts = PartEffects.Part.values();
+		boolean[] fitted = { precisionBore, precisionHead, precisionPiston, precisionInjector };
+		for (int i = 0; i < parts.length; i++) {
+			if (!fitted[i])
+				continue;
+			PartEffects.Effect effect = PartEffects.of(parts[i]);
+			compression *= Tuning.blend(effect.compression(), bonus);
+			intake *= Tuning.blend(effect.breathing(), bonus);
+			exhaust *= Tuning.blend(effect.breathing(), bonus);
+			delay *= Tuning.blend(effect.ignitionDelay(), bonus);
+			burn *= Tuning.blend(effect.burn(), bonus);
+			frictionStatic *= Tuning.blend(effect.frictionStatic(), bonus);
+			frictionViscous *= Tuning.blend(effect.frictionViscous(), bonus);
+			inertia *= Tuning.blend(effect.inertia(), bonus);
+			injectorFlow *= Tuning.blend(effect.injectorFlow(), bonus);
 		}
 		return new CylinderSpec(compression, CRUDE.rodRatio, intake, exhaust, CRUDE.maxFuelPerShot, delay, burn,
 			frictionStatic, frictionViscous, inertia, 1, injectorFlow);

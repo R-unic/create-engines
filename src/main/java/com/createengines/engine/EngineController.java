@@ -41,7 +41,7 @@ import com.createengines.engine.sim.Camshaft;
 import com.createengines.engine.sim.CoolantSupply;
 import com.createengines.engine.sim.CycleResult;
 import com.createengines.engine.sim.CycleStats;
-import com.createengines.api.EngineExtensions;
+
 import com.createengines.engine.sim.CylinderModel;
 import com.createengines.engine.sim.CylinderSpec;
 import com.createengines.engine.sim.Dynamometer;
@@ -346,7 +346,7 @@ public final class EngineController {
 		for (EngineLayout.Inline placed : layout.intercoolers())
 			sim.addIntercooler(new Intercooler(breathingOn(placed.intake())));
 		// Whatever packs and addons drive the crank with besides cylinders
-		for (TorqueSource source : EngineExtensions.sourcesFor(level, layout))
+		for (TorqueSource source : EngineProviders.sourcesFor(level, layout))
 			sim.addSource(source);
 		// A new engine starts dry, and has to be oiled; its oil is new and its block cold
 		sim.lubrication()
@@ -1204,7 +1204,7 @@ public final class EngineController {
 					if (line != null && lines.size() < StatusLine.LIMIT)
 						lines.add(line);
 			} catch (RuntimeException e) {
-				EngineExtensions.reportSourceFailure(layout.primary(), e);
+				EngineProviders.reportSourceFailure(layout.primary(), e);
 			}
 		}
 		return List.copyOf(lines);

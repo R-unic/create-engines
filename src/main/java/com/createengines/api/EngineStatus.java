@@ -1,8 +1,7 @@
 package com.createengines.api;
 
 /**
- * What an engine is doing, as the public API names it. <b>Preview:</b> the API may still change until 2.0, where it is
- * frozen under its own version. The names match the engine's own states one for one (a unit test holds that).
+ * What an engine is doing, as the public API names it. <b>Frozen</b> at API 1.0 (see {@link ApiVersion}): nothing here is removed or changed before the next major version, and additions are minor versions. under its own version. The names match the engine's own states one for one (a unit test holds that).
  */
 public enum EngineStatus {
 	STALLED,

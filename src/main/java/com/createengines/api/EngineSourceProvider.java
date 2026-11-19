@@ -9,7 +9,7 @@ import net.minecraft.world.level.block.state.BlockState;
 
 /**
  * How a pack or an addon puts something besides cylinders on an engine's crank, such as a turbine. Register one with
- * {@link EngineExtensions#register}. <b>Preview:</b> the API may still change until 2.0, where it is frozen.
+ * {@link EngineExtensions#register}. <b>Frozen</b> at API 1.0 (see {@link ApiVersion}): nothing here is removed or changed before the next major version, and additions are minor versions.
  * <p>
  * The mod ships no provider of its own. A provider is asked once whenever an engine is built or rebuilt, on the server
  * thread, and again when {@link EngineExtensions#rebuild} is called for a block of the engine. It looks at the world

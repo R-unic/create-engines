@@ -1,0 +1,5 @@
+{
+  "ignition_delay": 0.8,
+  "burn_duration": 0.7,
+  "injector_flow": 1.3
+}

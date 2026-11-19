@@ -225,4 +225,30 @@ public class CrossoverGameTests {
 		return new com.createengines.engine.topology.EngineLayout.PortNetwork(com.createengines.content.airflow.PortKind.INTAKE,
 			outlets.size(), 0, heads, outlets, none, none, none, none, none, java.util.Set.of(), none, none);
 	}
+
+	/** Parts as data: the loader read the shipped files, and a broken file is refused with a message instead of crashing a reload. */
+	@GameTest(template = "empty")
+	public static void thePartEffectFilesWereLoadedAndABrokenOneIsRefused(GameTestHelper helper) {
+		for (var part : com.createengines.engine.sim.PartEffects.Part.values())
+			if (!com.createengines.engine.sim.PartEffects.of(part)
+				.equals(com.createengines.engine.sim.PartEffects.BUILT_IN.get(part)))
+				helper.fail(part + " is not the built-in effect, although the shipped file says it is");
+		com.google.gson.JsonObject bad = new com.google.gson.JsonObject();
+		bad.addProperty("breathing", "fast");
+		for (com.google.gson.JsonElement broken : new com.google.gson.JsonElement[] { bad, new com.google.gson.JsonArray(),
+			com.google.gson.JsonNull.INSTANCE, new com.google.gson.JsonPrimitive(3) }) {
+			try {
+				com.createengines.engine.PartEffectLoader.parse(broken);
+				helper.fail("a broken part effect file was accepted: " + broken);
+			} catch (IllegalArgumentException expected) {
+				// logged by the loader, which then keeps the built-in values
+			}
+		}
+		com.google.gson.JsonObject good = new com.google.gson.JsonObject();
+		good.addProperty("breathing", 2);
+		if (com.createengines.engine.PartEffectLoader.parse(good)
+			.breathing() != 2)
+			helper.fail("a good file was not read");
+		helper.succeed();
+	}
 }

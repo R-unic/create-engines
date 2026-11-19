@@ -9,7 +9,7 @@ import net.neoforged.bus.api.Event;
  * waits for (a first running engine, a twelve-cylinder, a redline). It may be posted again for the same milestone after the
  * engine is rebuilt or the world is reloaded. The names are the milestone names in lower case; new ones may be added, and
  * a listener should ignore a name it does not know. A notification only, and a listener that throws is logged and ignored.
- * <b>Preview:</b> the API may still change until 2.0.
+ * <b>Frozen</b> at API 1.0 (see {@link ApiVersion}): nothing here is removed or changed before the next major version, and additions are minor versions.
  */
 public class EngineMilestoneEvent extends Event {
 

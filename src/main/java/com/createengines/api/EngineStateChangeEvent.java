@@ -7,8 +7,7 @@ import net.neoforged.bus.api.Event;
 /**
  * Posted on {@code NeoForge.EVENT_BUS}, on the server thread, when an engine changes what it is doing: a start is a change
  * to {@link EngineStatus#RUNNING}, a stall one to {@link EngineStatus#STALLED}. It is a notification only and cannot be
- * cancelled. A listener that throws is logged and ignored, never allowed to stop the engine's tick. <b>Preview:</b> the API
- * may still change until 2.0.
+ * cancelled. A listener that throws is logged and ignored, never allowed to stop the engine's tick. <b>Frozen</b> at API 1.0 (see {@link ApiVersion}): nothing here is removed or changed before the next major version, and additions are minor versions.
  */
 public class EngineStateChangeEvent extends Event {
 

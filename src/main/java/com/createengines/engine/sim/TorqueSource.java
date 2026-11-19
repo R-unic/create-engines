@@ -11,7 +11,7 @@ import java.util.List;
  * burning, and answers only the questions the crank has to ask. It is stepped from one thread, so it needs no locking.
  * Nothing here may allocate in {@link #advance}: it runs for every source on every crank-angle step.
  * <p>
- * Pure Java, like the rest of the package. This interface is part of the 2.0 public API once that is frozen.
+ * Pure Java, like the rest of the package. This interface is part of the public API, frozen at API 1.0 (see com.createengines.api.ApiVersion).
  */
 public interface TorqueSource {
 
