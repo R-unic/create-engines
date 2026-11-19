@@ -328,8 +328,8 @@ public class CrankshaftBlockEntity extends GeneratingKineticBlockEntity implemen
 		if (primaryPos != null && !primaryPos.equals(worldPosition) && level != null
 			&& LoadedBlocks.blockEntity(level, primaryPos) instanceof CrankshaftBlockEntity primary
 			&& primary.getTheoreticalSpeed() * sense == speed)
-			return rotation.follow(renderTime, sense * primary.rotation.at(renderTime, primary.getTheoreticalSpeed()));
-		return rotation.at(renderTime, speed);
+			return rotation.follow(renderTime, sense * primary.rotation.alignedAt(renderTime, primary.getTheoreticalSpeed()));
+		return rotation.alignedAt(renderTime, speed);
 	}
 
 	public @Nullable BlockPos primaryPos() {
@@ -493,7 +493,6 @@ public class CrankshaftBlockEntity extends GeneratingKineticBlockEntity implemen
 		if (intervals.length > 0)
 			GoggleLines.add(CELang.translate("goggles.firing_intervals", FiringPattern.describe(intervals))
 				.style(ChatFormatting.GRAY), tooltip, 1);
-		}
 		if (engine.state() != EngineState.STALLED) {
 			int ripple = Math.round(engine.ripple() * 100);
 			GoggleLines.add(CELang.translate("goggles.ripple", ripple)

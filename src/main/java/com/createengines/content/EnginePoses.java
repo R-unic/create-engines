@@ -56,8 +56,19 @@ public final class EnginePoses {
 			.translate(-0.5f, -0.5f, -0.5f);
 	}
 
+	/**
+	 * How far this crank block's shaft is drawn as turned, in degrees and not wrapped: the engine's turning, the throw
+	 * angle, and the phase Create gives the shafts and cogs on this block's line, so that one joined to the crank (the
+	 * crank's ends are shaft-shaped) is drawn in step with it and not at a fixed angle to it.
+	 */
+	public static double drawnShaft(CrankshaftBlockEntity crank, float renderTime) {
+		Axis axis = crank.getBlockState()
+			.getValue(BlockStateProperties.AXIS);
+		return crank.rotation(renderTime) + crank.throwAngle() + CrankGeometry.createShaftPhase(axis, crank.getBlockPos());
+	}
+
 	public static float crankAngle(CrankshaftBlockEntity crank, float renderTime) {
-		return (float) ((crank.rotation(renderTime) + crank.throwAngle()) % 360);
+		return (float) (drawnShaft(crank, renderTime) % 360);
 	}
 
 	public static float camAngle(CamshaftBlockEntity cam, float renderTime) {
@@ -145,7 +156,7 @@ public final class EnginePoses {
 			.getValue(BlockStateProperties.AXIS);
 		// The rotor is three turns of the shaft round, not one, so its angle must not wrap with the shaft's: a rotor a third
 		// of the way round from where it was is a different picture, whatever the three corners look like
-		float angle = (float) ((housing.rotation(renderTime) + housing.throwAngle()) % (3 * 360));
+		float angle = (float) (drawnShaft(housing, renderTime) % (3 * 360));
 		Vector3f pin = CrankGeometry.featureDirection(axis, angle)
 			.mul(ROTOR_ECCENTRICITY);
 		return new Matrix4f().translate(0.5f, 0.5f, 0.5f)

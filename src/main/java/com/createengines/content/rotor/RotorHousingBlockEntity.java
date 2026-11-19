@@ -225,7 +225,7 @@ public class RotorHousingBlockEntity extends CrankshaftBlockEntity implements Ga
 			return;
 		}
 		float renderTime = AnimationTickHolder.getRenderTime(level);
-		double shaft = Math.abs(rotation(renderTime) + throwAngle());
+		double shaft = Math.abs(com.createengines.content.EnginePoses.drawnShaft(this, renderTime));
 		for (int chamber = 0; chamber < chambers.length; chamber++) {
 			CylinderStatus current = chambers[chamber];
 			double cycle = (shaft % CylinderModel.ROTARY_CYCLE) * CylinderModel.ROTARY_SCALE

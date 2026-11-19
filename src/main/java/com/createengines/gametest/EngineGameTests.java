@@ -12,6 +12,7 @@ import com.createengines.content.airflow.PortOpeningBlock;
 import com.createengines.content.airflow.ThrottleBlockEntity;
 import com.createengines.content.battery.BatteryBlockEntity;
 import com.createengines.content.camshaft.CamshaftBlockEntity;
+import com.createengines.content.EnginePoses;
 import com.createengines.content.crankshaft.CrankshaftBlockEntity;
 import com.createengines.content.cylinder.CylinderBlock;
 import com.createengines.content.cylinder.CylinderBlockEntity;
@@ -53,6 +54,7 @@ import com.createengines.registry.CEItems;
 import com.simibubi.create.AllBlocks;
 import com.tterrag.registrate.util.entry.RegistryEntry;
 import com.simibubi.create.content.kinetics.base.KineticBlockEntity;
+import com.simibubi.create.content.kinetics.base.KineticBlockEntityVisual;
 import com.simibubi.create.content.kinetics.motor.CreativeMotorBlock;
 import com.simibubi.create.content.kinetics.motor.CreativeMotorBlockEntity;
 import com.simibubi.create.content.kinetics.speedController.SpeedControllerBlockEntity;
@@ -65,6 +67,7 @@ import net.minecraft.core.Direction.Axis;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.gametest.framework.GameTest;
 import net.minecraft.gametest.framework.GameTestHelper;
+import net.minecraft.util.Mth;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.item.CreativeModeTab;
 import net.minecraft.world.item.CreativeModeTabs;
@@ -520,9 +523,6 @@ public class EngineGameTests {
 		helper.succeed();
 	}
 
-	/** A boiler reads an exhaust heat exchanger as it reads a blaze burner: kindled is one level, seething two, cold none. */
-	@GameTest(template = "empty")
-	public static void aBoilerReadsTheHeatExchangerLikeABlazeBurner(GameTestHelper helper) {
 	/**
 	 * A Display Link can read an engine's boost and rated torque off any crankshaft block and a battery's charge off the
 	 * battery, with the same figures and units as the goggles.
@@ -566,6 +566,9 @@ public class EngineGameTests {
 		helper.succeed();
 	}
 
+	/** A boiler reads an exhaust heat exchanger as it reads a blaze burner: kindled is one level, seething two, cold none. */
+	@GameTest(template = "empty")
+	public static void aBoilerReadsTheHeatExchangerLikeABlazeBurner(GameTestHelper helper) {
 		BlockPos pos = new BlockPos(2, 1, 2);
 		BlockPos absolute = helper.absolutePos(pos);
 		for (var level : java.util.Map.of(com.simibubi.create.content.processing.burner.BlazeBurnerBlock.HeatLevel.NONE, -1f,
@@ -2777,6 +2780,46 @@ public class EngineGameTests {
 			helper.assertTrue(mended.cylinders()
 				.getFirst()
 				.camLine() >= 0, "Camshaft blocks all the way along should be one camshaft again");
+			helper.succeed();
+		});
+	}
+
+	/**
+	 * Create turns the shafts and small cogs on a line by a phase that alternates between neighbouring lines. A crank's ends
+	 * are shaft-shaped, so on every one of those lines it must be drawn at the same angle as a real shaft and a real cogwheel
+	 * joined to it (a gap of a fraction of a turn shows as a crank that does not line up), and a throw is drawn that much past
+	 * the shaft by its own angle.
+	 */
+	@GameTest(template = "empty", timeoutTicks = 20)
+	public static void aCrankIsDrawnInStepWithTheShaftsAndCogsOnItsLine(GameTestHelper helper) {
+		BlockState shaft = alongX(AllBlocks.SHAFT.getDefaultState());
+		BlockState cogwheel = alongX(AllBlocks.COGWHEEL.getDefaultState());
+		// Lines along X through all four parities of the other two coordinates; the last is a throw set to 30 degrees
+		BlockPos[] cranks = { new BlockPos(2, 1, 1), new BlockPos(2, 1, 2), new BlockPos(2, 2, 1), new BlockPos(2, 2, 2) };
+		for (BlockPos crank : cranks) {
+			helper.setBlock(crank.west(), shaft);
+			helper.setBlock(crank, alongX(crank.equals(cranks[3]) ? CEBlocks.CRANK_THROW.getDefaultState()
+				: CEBlocks.CRANKSHAFT.getDefaultState()));
+			helper.setBlock(crank.east(), cogwheel);
+		}
+		((CrankshaftBlockEntity) helper.getBlockEntity(cranks[3])).throwAngle.setValue(2);
+
+		helper.runAtTickTime(2, () -> {
+			boolean offset = false;
+			boolean plain = false;
+			for (BlockPos crank : cranks) {
+				double throwTurn = crank.equals(cranks[3]) ? 2 * CrankshaftBlockEntity.THROW_ANGLE_STEP : 0;
+				double shaftPhase = KineticBlockEntityVisual.rotationOffset(shaft, Axis.X, helper.absolutePos(crank.west()));
+				double cogPhase = KineticBlockEntityVisual.rotationOffset(cogwheel, Axis.X, helper.absolutePos(crank.east()));
+				double drawn = EnginePoses.crankAngle(helper.getBlockEntity(crank), 0f) - throwTurn;
+				helper.assertTrue(Math.abs(Mth.wrapDegrees(drawn - shaftPhase)) < 1e-3,
+					"The crank at " + crank + " is drawn at " + drawn + " and the shaft beside it at " + shaftPhase);
+				helper.assertTrue(Math.abs(Mth.wrapDegrees(drawn - cogPhase)) < 1e-3,
+					"The crank at " + crank + " is drawn at " + drawn + " and the cogwheel beside it at " + cogPhase);
+				offset |= shaftPhase != 0;
+				plain |= shaftPhase == 0;
+			}
+			helper.assertTrue(offset && plain, "The four lines should include both phases Create uses");
 			helper.succeed();
 		});
 	}
