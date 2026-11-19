@@ -1,7 +1,9 @@
 package com.createengines.engine;
 
+import java.util.ArrayList;
 import java.util.EnumMap;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import com.createengines.CreateEngines;
@@ -34,9 +36,17 @@ public final class PartEffectLoader extends SimpleJsonResourceReloadListener {
 		event.addListener(new PartEffectLoader());
 	}
 
+	private static volatile List<String> report = List.of();
+
+	/** What the last data reload made of each {@code part_effects} file, one line apiece, for {@code /ce parts}. */
+	public static List<String> lastReport() {
+		return report;
+	}
+
 	@Override
 	protected void apply(Map<ResourceLocation, JsonElement> files, ResourceManager manager, ProfilerFiller profiler) {
 		Map<PartEffects.Part, PartEffects.Effect> found = new EnumMap<>(PartEffects.Part.class);
+		List<String> lines = new ArrayList<>();
 		for (Map.Entry<ResourceLocation, JsonElement> file : files.entrySet()) {
 			ResourceLocation id = file.getKey();
 			if (!id.getNamespace()
@@ -46,16 +56,21 @@ public final class PartEffectLoader extends SimpleJsonResourceReloadListener {
 			if (part == null) {
 				CreateEngines.LOGGER.warn("part_effects/{}.json is not a part this version knows (bore, head, piston, injector)",
 					id.getPath());
+				lines.add("part_effects/" + id.getPath() + ".json: ignored, not a part this version knows (bore, head, piston, injector)");
 				continue;
 			}
 			try {
 				found.put(part, parse(file.getValue()));
+				lines.add("part_effects/" + id.getPath() + ".json: used");
 			} catch (RuntimeException e) {
 				CreateEngines.LOGGER.warn("part_effects/{}.json was not used, so the built-in {} stays: {}", id.getPath(),
 					part.fileName(), e.getMessage());
+				lines.add("part_effects/" + id.getPath() + ".json: NOT used, the built-in " + part.fileName() + " stays: " + e.getMessage());
 			}
 		}
 		PartEffects.set(found);
+		lines.sort(null);
+		report = List.copyOf(lines);
 	}
 
 	private static PartEffects.Part partNamed(String name) {
