@@ -71,6 +71,16 @@ public final class EngineReadout {
 		return horsepower >= 100 ? String.format(Locale.ROOT, "%.0f", horsepower) : String.format(Locale.ROOT, "%.1f", horsepower);
 	}
 
+	/** A boost as the goggles show it: bar over atmosphere, two decimals. */
+	public static String bar(float boost) {
+		return String.format(Locale.ROOT, "%.2f", Math.max(0f, boost));
+	}
+
+	/** A torque in SU per RPM as the goggles show it: whole numbers from 100 up, one decimal below. */
+	public static String torque(float suPerRpm) {
+		return CrankshaftBlockEntity.format(Math.max(0f, suPerRpm));
+	}
+
 	/** Share of what the engine can give that the network is asking for: 1 is flat out, above 1 is overloaded. */
 	public static float load(EngineSummary engine) {
 		if (engine.availableTorque() <= 0)

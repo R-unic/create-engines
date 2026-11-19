@@ -523,6 +523,49 @@ public class EngineGameTests {
 	/** A boiler reads an exhaust heat exchanger as it reads a blaze burner: kindled is one level, seething two, cold none. */
 	@GameTest(template = "empty")
 	public static void aBoilerReadsTheHeatExchangerLikeABlazeBurner(GameTestHelper helper) {
+	/**
+	 * A Display Link can read an engine's boost and rated torque off any crankshaft block and a battery's charge off the
+	 * battery, with the same figures and units as the goggles.
+	 */
+	@GameTest(template = "empty")
+	public static void displayLinksCanReadBoostTorqueAndBatteryCharge(GameTestHelper helper) {
+		buildSingleCylinder(helper, true);
+		BlockPos batteryPos = new BlockPos(3, 1, 2);
+		helper.setBlock(batteryPos, CEBlocks.BATTERY.getDefaultState());
+		var onCrank = com.simibubi.create.api.behaviour.display.DisplaySource.getAll(helper.getLevel(),
+			helper.absolutePos(PRIMARY));
+		for (var source : java.util.List.of(com.createengines.registry.CEDisplaySources.ENGINE_BOOST,
+			com.createengines.registry.CEDisplaySources.ENGINE_TORQUE))
+			helper.assertTrue(onCrank.contains(source.get()), "A crankshaft should offer " + source.getId());
+		helper.assertTrue(com.simibubi.create.api.behaviour.display.DisplaySource
+			.getAll(helper.getLevel(), helper.absolutePos(batteryPos))
+			.contains(com.createengines.registry.CEDisplaySources.BATTERY_CHARGE.get()), "A battery should offer its charge");
+
+		// Boost reads as the goggles do, in bar over atmosphere, and never negative
+		helper.assertTrue("0.46".equals(com.createengines.content.display.EngineReadout.bar(0.456f)),
+			"A boost of 0.456 reads +0.46 bar");
+		helper.assertTrue("0.00".equals(com.createengines.content.display.EngineReadout.bar(-0.1f)), "Boost does not go below 0");
+		// Torque reads as the goggles do: one decimal below 100 SU per RPM, whole numbers from there
+		helper.assertTrue("445".equals(com.createengines.content.display.EngineReadout.torque(445.2f)),
+			"A torque of 445.2 reads 445");
+		helper.assertTrue("12.5".equals(com.createengines.content.display.EngineReadout.torque(12.5f)),
+			"A torque of 12.5 reads 12.5");
+		helper.assertTrue("0.0".equals(com.createengines.content.display.EngineReadout.torque(-3f)), "Torque does not go below 0");
+
+		// A battery's fill is its charge as a share of its capacity; anything that is not a battery reads empty
+		BatteryBlockEntity battery = helper.getBlockEntity(batteryPos);
+		helper.assertTrue(com.createengines.content.display.BatteryDisplaySource.fill(battery) == 0f, "A new battery is flat");
+		battery.charge(BatteryBlockEntity.CAPACITY / 2);
+		helper.assertTrue(Math.abs(com.createengines.content.display.BatteryDisplaySource.fill(battery) - 0.5f) < 1e-4,
+			"A half charged battery reads 0.5");
+		battery.charge(BatteryBlockEntity.CAPACITY);
+		helper.assertTrue(com.createengines.content.display.BatteryDisplaySource.fill(battery) == 1f, "A full battery reads 1");
+		helper.assertTrue(com.createengines.content.display.BatteryDisplaySource.fill(null) == 0f, "No block entity reads empty");
+		helper.assertTrue(com.createengines.content.display.BatteryDisplaySource.fill(helper.getBlockEntity(PRIMARY)) == 0f,
+			"A block entity that is not a battery reads empty");
+		helper.succeed();
+	}
+
 		BlockPos pos = new BlockPos(2, 1, 2);
 		BlockPos absolute = helper.absolutePos(pos);
 		for (var level : java.util.Map.of(com.simibubi.create.content.processing.burner.BlazeBurnerBlock.HeatLevel.NONE, -1f,
