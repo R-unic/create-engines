@@ -6,7 +6,7 @@ An addon for [Create](https://github.com/Creators-of-Create/Create) that lets yo
 engines out of individual parts and turn them into Create rotational force. Start with a crude single cylinder, finish
 with a boosted, precision-built V12.
 
-Minecraft 1.21.1 · NeoForge 21.1.219 · Create 6.0.11
+Minecraft 1.21.1 · NeoForge 21.1.219 · Create 6.0.10
 
 [Discord](https://discord.gg/QYVpy2dqGE)
 
