@@ -45,6 +45,7 @@ import com.createengines.engine.sim.CylinderModel;
 import com.createengines.engine.sim.CylinderSpec;
 import com.createengines.engine.sim.Dynamometer;
 import com.createengines.engine.sim.EngineSimulation;
+import com.createengines.engine.sim.StatusLine;
 import com.createengines.engine.sim.TorqueSource;
 import com.createengines.engine.sim.FuelSpec;
 import com.createengines.engine.sim.Governor;
@@ -1161,7 +1162,34 @@ public final class EngineController {
 			(float) sim.thermal()
 				.coolantRate(),
 			pilotLit(), filtered, (float) Torsion.scaled(flexLoss), longestLine, report.health(), report.cause(), muffling(),
-				inductionBoost());
+				inductionBoost(), sourceLines());
+	}
+
+	/**
+	 * What the sources packs and addons added say about themselves, capped so a careless one cannot flood the sync. A
+	 * source that throws is left out of the readout, and reported like a provider that fails.
+	 */
+	private List<StatusLine> sourceLines() {
+		List<TorqueSource> all = sim.sources();
+		int first = sim.cylinders()
+			.size();
+		if (all.size() == first)
+			return List.of();
+		List<StatusLine> lines = new ArrayList<>();
+		for (int i = first; i < all.size() && lines.size() < StatusLine.LIMIT; i++) {
+			try {
+				List<StatusLine> given = all.get(i)
+					.status();
+				if (given == null)
+					continue;
+				for (StatusLine line : given)
+					if (line != null && lines.size() < StatusLine.LIMIT)
+						lines.add(line);
+			} catch (RuntimeException e) {
+				EngineExtensions.reportSourceFailure(layout.primary(), e);
+			}
+		}
+		return List.copyOf(lines);
 	}
 
 	/** The hardest any turbo or blower is pushing, for the roar at the intake. */

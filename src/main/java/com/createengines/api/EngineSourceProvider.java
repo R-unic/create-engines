@@ -5,6 +5,7 @@ import java.util.List;
 import com.createengines.engine.sim.TorqueSource;
 
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.state.BlockState;
 
 /**
  * How a pack or an addon puts something besides cylinders on an engine's crank, such as a turbine. Register one with
@@ -21,4 +22,18 @@ public interface EngineSourceProvider {
 
 	/** The sources to add to the engine described by {@code build}; empty for most engines. */
 	List<TorqueSource> sourcesFor(Level level, EngineBuild build);
+
+	/**
+	 * Whether {@code state} is one of this provider's blocks. When one is placed or broken within {@link #reach} of an
+	 * engine's crankshaft, that engine is rebuilt and this provider is asked again, so the pack never has to call
+	 * {@link EngineExtensions#rebuild} for its own blocks. The default watches nothing.
+	 */
+	default boolean watches(BlockState state) {
+		return false;
+	}
+
+	/** How far, in blocks along each axis from any crank segment, a watched block counts as touching the engine. */
+	default int reach() {
+		return 2;
+	}
 }

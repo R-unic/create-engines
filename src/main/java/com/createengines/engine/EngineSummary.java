@@ -1,8 +1,14 @@
 package com.createengines.engine;
 
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
+
+import com.createengines.engine.sim.StatusLine;
 
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.ListTag;
+import net.minecraft.nbt.StringTag;
 
 /**
  * What the engine looks like from outside: the figures goggles show on any of its crankshaft blocks. Computed on
@@ -28,22 +34,24 @@ import net.minecraft.nbt.CompoundTag;
  * @param cause            the one thing most responsible for it, or NONE
  * @param muffling         how much of the engine's exhaust goes through a muffler, 0 to 1 (see Muffling): only how
  *                         loud it sounds, never how it runs
+ * @param sourceLines      goggle lines from sources that packs or addons added to the engine (see StatusLine)
  */
 public record EngineSummary(EngineState state, float rpm, float availableTorque, float loadTorque,
 							float fuelPerMinute, float ripple, int firing, int cylinders, float inertia, float lubrication,
 							boolean starterEngaged, float[] firingAngles, int lines, float thinning, float roughness,
 							float condition, float temperature, float coolantRate, boolean pilot, boolean filtered,
-							float flex, int longestLine, Diagnosis.Health health, Diagnosis.Cause cause, float muffling, float boost) {
+							float flex, int longestLine, Diagnosis.Health health, Diagnosis.Cause cause, float muffling, float boost,
+								List<StatusLine> sourceLines) {
 
 	public static final EngineSummary EMPTY =
 		new EngineSummary(EngineState.STALLED, 0, 0, 0, 0, 0, 0, 0, 0, 0, false, new float[0], 1, 0, 0, 1, 0, 0,
-			false, false, 0, 0, Diagnosis.Health.HEALTHY, Diagnosis.Cause.NONE, 0, 0);
+			false, false, 0, 0, Diagnosis.Health.HEALTHY, Diagnosis.Cause.NONE, 0, 0, List.of());
 
 	public EngineSummary(EngineState state, float rpm, float availableTorque, float loadTorque, float fuelPerMinute,
 						 float ripple, int firing, int cylinders, float inertia, float lubrication,
 						 boolean starterEngaged, float[] firingAngles) {
 		this(state, rpm, availableTorque, loadTorque, fuelPerMinute, ripple, firing, cylinders, inertia, lubrication,
-			starterEngaged, firingAngles, 1, 0, 0, 1, 0, 0, false, false, 0, 0, Diagnosis.Health.HEALTHY, Diagnosis.Cause.NONE, 0, 0);
+			starterEngaged, firingAngles, 1, 0, 0, 1, 0, 0, false, false, 0, 0, Diagnosis.Health.HEALTHY, Diagnosis.Cause.NONE, 0, 0, List.of());
 	}
 
 	/** Whether the block is still giving up its heat with the crank stopped. */
@@ -81,6 +89,20 @@ public record EngineSummary(EngineState state, float rpm, float availableTorque,
 		tag.putInt("Lines", lines);
 		tag.putBoolean("Starter", starterEngaged);
 		tag.putIntArray("Firings", FiringAngles.toTenths(firingAngles));
+		if (!sourceLines.isEmpty()) {
+			ListTag lines = new ListTag();
+			for (StatusLine line : sourceLines) {
+				CompoundTag entry = new CompoundTag();
+				entry.putString("Key", line.key());
+				entry.putInt("Tone", line.tone().ordinal());
+				ListTag args = new ListTag();
+				for (String arg : line.args())
+					args.add(StringTag.valueOf(arg));
+				entry.put("Args", args);
+				lines.add(entry);
+			}
+			tag.put("Sources", lines);
+		}
 		return tag;
 	}
 
@@ -97,7 +119,26 @@ public record EngineSummary(EngineState state, float rpm, float availableTorque,
 			tag.contains("Condition") ? tag.getFloat("Condition") : 1, tag.getFloat("Temperature"),
 			tag.getFloat("Coolant"), tag.getBoolean("Pilot"), tag.getBoolean("Filtered"), tag.getFloat("Flex"),
 			tag.getInt("LongestLine"), healths[Math.clamp(tag.getInt("Health"), 0, healths.length - 1)],
-			causes[Math.clamp(tag.getInt("Cause"), 0, causes.length - 1)], tag.getFloat("Muffling"), tag.getFloat("Boost"));
+			causes[Math.clamp(tag.getInt("Cause"), 0, causes.length - 1)], tag.getFloat("Muffling"), tag.getFloat("Boost"),
+			readSourceLines(tag));
+	}
+
+	private static List<StatusLine> readSourceLines(CompoundTag tag) {
+		ListTag lines = tag.getList("Sources", 10);
+		if (lines.isEmpty())
+			return List.of();
+		StatusLine.Tone[] tones = StatusLine.Tone.values();
+		List<StatusLine> read = new ArrayList<>();
+		for (int i = 0; i < Math.min(lines.size(), StatusLine.LIMIT); i++) {
+			CompoundTag entry = lines.getCompound(i);
+			List<String> args = new ArrayList<>();
+			ListTag given = entry.getList("Args", 8);
+			for (int a = 0; a < Math.min(given.size(), StatusLine.MAX_ARGS); a++)
+				args.add(given.getString(a));
+			read.add(new StatusLine(entry.getString("Key"), args,
+				tones[Math.clamp(entry.getInt("Tone"), 0, tones.length - 1)]));
+		}
+		return List.copyOf(read);
 	}
 
 	/** Gaps between consecutive firings around the 720° cycle. */
@@ -124,7 +165,7 @@ public record EngineSummary(EngineState state, float rpm, float availableTorque,
 			|| Math.abs(coolantRate - other.coolantRate) >= 0.1 || pilot != other.pilot || filtered != other.filtered
 			|| Math.abs(flex - other.flex) >= 0.01 || longestLine != other.longestLine || health != other.health
 			|| cause != other.cause || Math.abs(muffling - other.muffling) >= 0.02
-			|| !Arrays.equals(firingAngles, other.firingAngles);
+			|| !Arrays.equals(firingAngles, other.firingAngles) || !sourceLines.equals(other.sourceLines);
 	}
 
 	private static boolean relativeChange(float a, float b) {

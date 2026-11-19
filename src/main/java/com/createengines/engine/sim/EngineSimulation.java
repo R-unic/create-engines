@@ -237,6 +237,14 @@ public final class EngineSimulation {
 		for (int i = 0; i < sources.size(); i++)
 			sources.get(i).setColdness(cold);
 		induction.tick(rpm(), cylinders, thermal.chargeFactor());
+		// Sources that are not cylinders breathe the engine's air as a whole; a plain engine skips this
+		int first = cylinders.size();
+		if (sources.size() == first)
+			return;
+		induction.airForSources(cylinders, thermal.chargeFactor());
+		for (int i = first; i < sources.size(); i++)
+			sources.get(i)
+				.setIntake(induction.sourcePressure, induction.sourceTemperature);
 	}
 
 	/** Whether unburned fuel thins the oil as it runs. A dynamometer measures the oil as it is and leaves it alone. */

@@ -1,5 +1,7 @@
 package com.createengines.engine.sim;
 
+import java.util.List;
+
 /**
  * Anything that puts work on the crank: the one seam between {@link EngineSimulation} and what drives it. A piston
  * cylinder ({@link CylinderModel}) and a rotary chamber are the two this mod ships; a pack or an addon can supply
@@ -65,4 +67,21 @@ public interface TorqueSource {
 	 * say returns what it did last cycle.
 	 */
 	double availableWork();
+
+	/**
+	 * The air this source breathes, once a tick, after the engine's turbochargers and superchargers have set it: pressure
+	 * as a multiple of the atmosphere (1 is none, 2 is a full extra atmosphere) and temperature relative to ambient. It is
+	 * the average of what the engine's cylinders draw, or, on an engine with none, what its compressors make in series;
+	 * a source decides for itself what to do with it. The default ignores it.
+	 */
+	default void setIntake(double pressure, double temperature) {
+	}
+
+	/**
+	 * Lines for the goggle readout on the engine's crankshaft, read on the server about once a second. Return a short,
+	 * new or cached list: at most {@link StatusLine#LIMIT} lines are shown across all the engine's sources.
+	 */
+	default List<StatusLine> status() {
+		return List.of();
+	}
 }

@@ -1,10 +1,16 @@
 package com.createengines.gametest;
 
+import java.util.List;
+
+import com.createengines.engine.sim.StatusLine;
 import com.createengines.engine.sim.TorqueSource;
 
 /** A source that sits on the crank and does nothing: no work, no friction, no inertia. For testing what carries it. */
 final class IdleSource implements TorqueSource {
 	int steps;
+	/** What the engine last told it about the air it breathes; negative until it has. */
+	volatile double pressure = -1;
+	volatile double temperature = -1;
 
 	@Override
 	public double inertia() {
@@ -67,5 +73,16 @@ final class IdleSource implements TorqueSource {
 	@Override
 	public double availableWork() {
 		return 0;
+	}
+
+	@Override
+	public void setIntake(double pressure, double temperature) {
+		this.pressure = pressure;
+		this.temperature = temperature;
+	}
+
+	@Override
+	public List<StatusLine> status() {
+		return List.of(StatusLine.of("test.idle.spool", StatusLine.Tone.WARN, "80"), StatusLine.of("test.idle.ok", StatusLine.Tone.GOOD));
 	}
 }

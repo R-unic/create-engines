@@ -119,6 +119,41 @@ final class Induction {
 			}
 	}
 
+	/** What {@link #airForSources} last worked out, for the sources that are not cylinders. */
+	double sourcePressure = 1;
+	double sourceTemperature = 1;
+
+	/**
+	 * Works out the air for sources that are not cylinders, which have no intake of their own: the average of what the
+	 * cylinders were just given, or, on an engine with no cylinders, what its blowers make in series. A turbo has nothing to
+	 * spool it without cylinders' exhaust, and parallel and intercooler settings are about cylinders' ports.
+	 */
+	void airForSources(List<CylinderModel> cylinders, double cool) {
+		int count = cylinders.size();
+		if (count > 0) {
+			double pressure = 0;
+			double temperature = 0;
+			for (int cylinderI = 0; cylinderI < count; cylinderI++) {
+				CylinderModel cylinder = cylinders.get(cylinderI);
+				pressure += cylinder.intakePressure;
+				temperature += cylinder.intakeTemperature;
+			}
+			sourcePressure = pressure / count;
+			sourceTemperature = temperature / count;
+			return;
+		}
+		double strength = Tuning.forcedInduction ? Tuning.boostStrength : 0;
+		double pressure = 1;
+		double temperature = 1;
+		for (int blowerI = 0, blowerN = superchargers.size(); blowerI < blowerN; blowerI++) {
+			Supercharger blower = superchargers.get(blowerI);
+			pressure *= 1 + blower.boost() * strength;
+			temperature *= Tuning.blend(blower.chargeTemperature(), strength);
+		}
+		sourcePressure = pressure;
+		sourceTemperature = temperature * cool;
+	}
+
 	/** Running averages of what several parallel stages make for each cylinder they serve. */
 	private static final class Parallel {
 		/** Made when the first stage in parallel is added: most engines have none, and this is built every tick. */

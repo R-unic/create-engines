@@ -38,6 +38,9 @@ class TorqueSourceTest {
 		double lastAngle = -1;
 		double lastRotaryAngle = -1;
 		double fuelPerStep;
+		double lastPressure = -1;
+		double lastTemperature = -1;
+		int intakeCalls;
 
 		Motor(double torque, double inertia, double friction, double heat) {
 			this.torque = torque;
@@ -108,6 +111,13 @@ class TorqueSourceTest {
 		@Override
 		public boolean fired() {
 			return fires;
+		}
+
+		@Override
+		public void setIntake(double pressure, double temperature) {
+			intakeCalls++;
+			lastPressure = pressure;
+			lastTemperature = temperature;
 		}
 
 		@Override
@@ -235,6 +245,101 @@ class TorqueSourceTest {
 		assertSame(cylinder, sim.sources().get(0));
 		assertSame(cylinder, sim.cylinders().get(0));
 		assertFalse(sim.cylinders().contains(sim.sources().get(1)));
+	}
+
+	@Test
+	void aSourceOnAnEngineWithNoCylindersBreathesWhatTheBlowerMakes() {
+		EngineSimulation sim = bare();
+		Motor motor = new Motor(1, 0, 0, 0);
+		sim.addSource(motor);
+		Supercharger blower = new Supercharger(List.of());
+		blower.rpm = Supercharger.DESIGN_RPM;
+		blower.limit = Supercharger.MAX_LIMIT;
+		sim.addSupercharger(blower);
+		sim.restore(0, EngineSimulation.rpmToOmega(40), 1);
+		run(sim, 200);
+		assertTrue(blower.boost() > 0.2, "the blower built boost: " + blower.boost());
+		assertEquals(1 + blower.boost(), motor.lastPressure, 1e-9);
+		assertEquals(blower.chargeTemperature(), motor.lastTemperature, 1e-9);
+	}
+
+	@Test
+	void theServersBoostStrengthScalesWhatASourceBreathes() {
+		EngineSimulation sim = bare();
+		Motor motor = new Motor(1, 0, 0, 0);
+		sim.addSource(motor);
+		Supercharger blower = new Supercharger(List.of());
+		blower.rpm = Supercharger.DESIGN_RPM;
+		blower.limit = Supercharger.MAX_LIMIT;
+		sim.addSupercharger(blower);
+		Tuning.boostStrength = 2;
+		sim.restore(0, EngineSimulation.rpmToOmega(40), 1);
+		run(sim, 200);
+		assertEquals(1 + blower.boost() * 2, motor.lastPressure, 1e-9);
+		assertEquals(Tuning.blend(blower.chargeTemperature(), 2), motor.lastTemperature, 1e-9);
+		Tuning.forcedInduction = false;
+		run(sim, 1);
+		assertEquals(1, motor.lastPressure, 1e-9, "the server can switch forced induction off");
+	}
+
+	@Test
+	void aColdBlockGivesASourceDenserAirToo() {
+		EngineSimulation sim = bare();
+		Motor motor = new Motor(1, 0, 0, 0);
+		sim.addSource(motor);
+		Supercharger blower = new Supercharger(List.of());
+		blower.rpm = Supercharger.DESIGN_RPM;
+		blower.limit = Supercharger.MAX_LIMIT;
+		sim.addSupercharger(blower);
+		sim.thermal().setTemperature((Thermal.COLD_BELOW + Thermal.COOL_NONE) / 2);
+		double cool = sim.thermal().chargeFactor();
+		assertTrue(cool < 1, "the block is cool enough to matter: " + cool);
+		sim.restore(0, EngineSimulation.rpmToOmega(40), 1);
+		run(sim, 200);
+		assertEquals(blower.chargeTemperature() * cool, motor.lastTemperature, 1e-9);
+	}
+
+	@Test
+	void aSourceAlongsideCylindersBreathesTheirAverageAir() {
+		CylinderModel one = new CylinderModel(CylinderSpec.CRUDE, CamProfile.BASIC, 0, null, 0);
+		CylinderModel two = new CylinderModel(CylinderSpec.CRUDE, CamProfile.BASIC, 0, null, 0);
+		EngineSimulation sim = new EngineSimulation(List.of(one, two), 1, 0.1);
+		Supercharger blower = new Supercharger(List.of(one));
+		blower.rpm = Supercharger.DESIGN_RPM;
+		blower.limit = Supercharger.MAX_LIMIT;
+		sim.addSupercharger(blower);
+		Motor motor = new Motor(1, 0, 0, 0);
+		sim.addSource(motor);
+		sim.restore(0, EngineSimulation.rpmToOmega(40), 1);
+		run(sim, 200);
+		assertTrue(one.intakePressure > two.intakePressure, "only the first cylinder is boosted");
+		assertEquals((one.intakePressure + two.intakePressure) / 2, motor.lastPressure, 1e-9);
+		assertEquals((one.intakeTemperature + two.intakeTemperature) / 2, motor.lastTemperature, 1e-9);
+	}
+
+	@Test
+	void anEngineWithOnlyCylindersNeverCallsForTheIntakeOfSources() {
+		CylinderModel cylinder = new CylinderModel(CylinderSpec.CRUDE, CamProfile.BASIC, 0, null, 0);
+		EngineSimulation sim = new EngineSimulation(List.of(cylinder), 1, 0.1);
+		sim.restore(0, EngineSimulation.rpmToOmega(40), 1);
+		run(sim, 5);
+		assertEquals(1, sim.sources().size());
+	}
+
+	@Test
+	void theIntakeIsSetOnceATickNotOnceAStep() {
+		EngineSimulation sim = bare();
+		Motor motor = new Motor(1, 0, 0, 0);
+		sim.addSource(motor);
+		sim.restore(0, EngineSimulation.rpmToOmega(40), 1);
+		run(sim, 7);
+		assertEquals(7, motor.intakeCalls);
+		assertEquals(1, motor.lastPressure, 1e-9, "no compressors: atmospheric");
+	}
+
+	@Test
+	void aSourceSaysNothingToTheGogglesUnlessItOverridesStatus() {
+		assertTrue(new Motor(1, 0, 0, 0).status().isEmpty());
 	}
 
 	@Test

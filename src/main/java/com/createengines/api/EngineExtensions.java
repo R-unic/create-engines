@@ -11,9 +11,11 @@ import com.createengines.content.crankshaft.CrankshaftBlockEntity;
 import com.createengines.engine.sim.TorqueSource;
 import com.createengines.engine.topology.EngineLayout;
 import com.createengines.engine.topology.EngineScanner;
+import com.createengines.engine.topology.EngineTopology;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.state.BlockState;
 
 /**
  * Where packs and addons plug in what drives an engine. <b>Preview:</b> the API may still change until 2.0.
@@ -67,6 +69,32 @@ public final class EngineExtensions {
 			.next());
 		if (layout != null && level.getBlockEntity(layout.primary()) instanceof CrankshaftBlockEntity crank)
 			crank.rebuildEngine();
+	}
+
+	/** Not for callers: reports a source that failed while the engine was reading it, the way a failed provider is. */
+	public static void reportSourceFailure(BlockPos primary, RuntimeException e) {
+		failures.accept(primary, e);
+	}
+
+	/**
+	 * Not for callers: a block was placed or broken at {@code pos}. If a provider watches it, the engines it could touch
+	 * are rebuilt at the end of the tick (the block is already gone by then, when it was a break), so the provider sees the
+	 * world as it is.
+	 */
+	public static void blockChanged(Level level, BlockPos pos, BlockState state) {
+		if (level.isClientSide() || PROVIDERS.isEmpty())
+			return;
+		int reach = -1;
+		for (EngineSourceProvider provider : PROVIDERS) {
+			try {
+				if (provider.watches(state))
+					reach = Math.max(reach, provider.reach());
+			} catch (RuntimeException e) {
+				failures.accept(pos, e);
+			}
+		}
+		if (reach >= 0)
+			EngineTopology.rebuildNear(level, pos, reach);
 	}
 
 	/** Not for callers: gathers what every provider adds to an engine as it is built. */

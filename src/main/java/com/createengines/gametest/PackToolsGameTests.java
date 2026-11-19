@@ -17,6 +17,7 @@ import com.createengines.api.EngineStatus;
 import com.createengines.api.EngineView;
 import com.createengines.config.CEConfig;
 import com.createengines.content.crankshaft.CrankshaftBlockEntity;
+import com.createengines.engine.EngineSummary;
 import com.createengines.engine.sim.TorqueSource;
 import com.createengines.engine.sim.PartStats;
 import com.createengines.registry.CEBlocks;
@@ -347,6 +348,92 @@ public class PackToolsGameTests {
 		helper.runAtTickTime(380, () -> {
 			clean.run();
 			helper.fail("an engine with a failing provider never built");
+		});
+	}
+
+	@GameTest(template = "empty", timeoutTicks = 600)
+	public static void anAddedSourceBreathesTheEnginesAirAndReportsGoggleLinesThatSurviveTheSync(GameTestHelper helper) {
+		BlockPos primary = helper.absolutePos(TestEngine.PRIMARY);
+		List<IdleSource> made = new ArrayList<>();
+		EngineSourceProvider provider = providerFor(primary, made);
+		EngineExtensions.register(provider);
+		TestEngine.build(helper.getLevel(), helper.absolutePos(BlockPos.ZERO), true);
+		helper.onEachTick(() -> {
+			if (!(helper.getLevel()
+				.getBlockEntity(primary) instanceof CrankshaftBlockEntity crank) || crank.summary() == null
+				|| made.isEmpty() || made.get(made.size() - 1).pressure < 0 || crank.summary()
+					.sourceLines()
+					.isEmpty())
+				return;
+			EngineExtensions.unregister(provider);
+			IdleSource source = made.get(made.size() - 1);
+			helper.assertTrue(Math.abs(source.pressure - 1) < 1e-9, "an unboosted engine is atmospheric: " + source.pressure);
+			helper.assertTrue(source.temperature > 0, "and has a temperature: " + source.temperature);
+			EngineSummary summary = crank.summary();
+			helper.assertTrue(summary.sourceLines()
+				.equals(source.status()), "the summary carries the source's lines: " + summary.sourceLines());
+			EngineSummary synced = EngineSummary.read(summary.write());
+			helper.assertTrue(synced.sourceLines()
+				.equals(summary.sourceLines()), "the lines survive the sync: " + synced.sourceLines());
+			helper.assertTrue(synced.differsFrom(new EngineSummary(synced.state(), synced.rpm(), synced.availableTorque(),
+				synced.loadTorque(), synced.fuelPerMinute(), synced.ripple(), synced.firing(), synced.cylinders(), synced.inertia(),
+				synced.lubrication(), synced.starterEngaged(), synced.firingAngles())), "a change in the lines is worth syncing");
+			helper.succeed();
+		});
+		helper.runAtTickTime(580, () -> {
+			EngineExtensions.unregister(provider);
+			helper.fail("the added source got no intake or no lines: " + made.size());
+		});
+	}
+
+	@GameTest(template = "empty", timeoutTicks = 800)
+	public static void aWatchedBlockPlacedNearTheEngineMakesItAskTheProvidersAgain(GameTestHelper helper) {
+		BlockPos primary = helper.absolutePos(TestEngine.PRIMARY);
+		List<IdleSource> made = new ArrayList<>();
+		EngineSourceProvider watching = new EngineSourceProvider() {
+			@Override
+			public List<TorqueSource> sourcesFor(net.minecraft.world.level.Level level, com.createengines.api.EngineBuild build) {
+				return providerFor(primary, made).sourcesFor(level, build);
+			}
+
+			@Override
+			public boolean watches(net.minecraft.world.level.block.state.BlockState state) {
+				return state.is(net.minecraft.world.level.block.Blocks.GOLD_BLOCK);
+			}
+		};
+		EngineExtensions.register(watching);
+		TestEngine.build(helper.getLevel(), helper.absolutePos(BlockPos.ZERO), true);
+		BlockPos near = helper.absolutePos(TestEngine.THROW)
+			.above();
+		BlockPos far = near.offset(40, 0, 0);
+		int[] asked = {0};
+		boolean[] placed = {false};
+		helper.onEachTick(() -> {
+			int count = sourceCount(helper);
+			if (count < 0 || made.isEmpty())
+				return;
+			if (asked[0] == 0)
+				asked[0] = made.size();
+			if (!placed[0]) {
+				placed[0] = true;
+				var level = helper.getLevel();
+				// Not watched, or watched but out of reach: neither is the provider's concern
+				EngineExtensions.blockChanged(level, near, net.minecraft.world.level.block.Blocks.STONE.defaultBlockState());
+				EngineExtensions.blockChanged(level, far, net.minecraft.world.level.block.Blocks.GOLD_BLOCK.defaultBlockState());
+				helper.runAfterDelay(60, () -> {
+					helper.assertTrue(made.size() == asked[0], "unwatched and far blocks asked nobody: " + made.size() + " vs " + asked[0]);
+					EngineExtensions.blockChanged(level, near, net.minecraft.world.level.block.Blocks.GOLD_BLOCK.defaultBlockState());
+				});
+				return;
+			}
+			if (made.size() > asked[0]) {
+				EngineExtensions.unregister(watching);
+				helper.succeed();
+			}
+		});
+		helper.runAtTickTime(780, () -> {
+			EngineExtensions.unregister(watching);
+			helper.fail("a watched block near the engine never rebuilt it: " + made.size() + " vs " + asked[0]);
 		});
 	}
 

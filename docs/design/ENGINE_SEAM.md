@@ -35,7 +35,23 @@ skipped and reported, `rebuild` asks again. All 316 GameTests pass in a private 
 added block is not a scanner member, so it does not trigger a rescan by itself (the pack calls `rebuild`), is not in
 blueprints, and has no goggle lines; added sources get no boost (Induction reads cylinders only).
 
-**Not built:** narrowing the 19 files (step 3), boost for added sources, any registry.
+**Built (step 5, boost, goggle lines, rescan; committed with this line):** the limits above are closed. (1) *Boost:*
+`TorqueSource.setIntake(pressure, temperature)` is called once a tick with the engine's air as a whole: the average of what
+its cylinders draw, or, with no cylinders, what its blowers make in series (a turbo has no cylinder exhaust to spool it;
+ports, parallel and intercooler settings stay a cylinder matter). Server boost strength and the forced-induction switch
+apply. (2) *Goggles:* `TorqueSource.status()` returns `StatusLine`s (translation key from the pack's own lang file, up to 4
+text args, a tone), capped at 8 across the engine and 96 characters each; they ride in `EngineSummary.sourceLines`, are
+synced with it, and are drawn on any crankshaft block; an engine whose only drive is an added source is no longer
+reported as having no cylinders. A source that throws from `status()` is reported like a failed provider and left out.
+(3) *Rescan:* `EngineSourceProvider.watches(state)` and `reach()` (default: watch nothing, 2 blocks); placing or
+breaking a watched block within reach of a crank segment rebuilds that engine at the end of the tick (`EngineTopology`
+queues it, since the block is still there during a break event). A plain rescan would not do, because an engine whose
+layout came back unchanged keeps its controller. Still not true: added blocks are not scanner members (so not in
+blueprints), and a turbo or blower cannot be paired to an added source's own ports. Tests: `TorqueSourceTest`,
+`StatusLineTest`, and two GameTests in `PackToolsGameTests`. Private copy: 318 GameTests pass, the log verifier is clean, pitest
+170 live (the limit, unchanged), unit suite passes but for the other session's `ArchitectureRulesTest` failure.
+
+**Not built:** narrowing the 19 files (step 3), a registry for scanner rules.
 
 ## What exists today (checked in the code)
 
