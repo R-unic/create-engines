@@ -1,4 +1,4 @@
-# Advancement redesign (draft, before 2.0)
+# Advancement redesign (built for 2.0)
 
 Status: **approved 2026-11-16. Step 1 (the 1.x half) shipped. Step 2 is built on the `2.0` line, 2026-11-18: the IDs are `<track>/<row>` (`builder/vee_engine`; the root is `root`), the 46 hidden rows are deleted, the tab is regrouped into seven tracks, `driveline/every_gear` is shown (the table above always said so; 1.x never showed it), and `AdvancementMigration` maps every one of the 110 1.x IDs. A mixin on `PlayerAdvancements.load` (`LegacyProgress`) reads the player's saved file while it loads and credits the new rows silently: no toast, chat line, sting or reward. Capstones keep every milestone they had earned, and a hidden row that only fed a capstone credits that milestone to it. A hidden row with nothing to move to credits nothing. Tests: `AdvancementMigrationTest` (every 1.x ID has an entry, every credit lands on a real row and criterion), `AdvancementTabTest`, and the GameTest `aPlayersOneDotXAdvancementFileLoadsOntoTheNewRowsSilently` (a real `PlayerAdvancements` loading a 1.x file). Not tried: a real player logging in on a world saved by 1.x, and the toast and sting being absent on screen.**
 
@@ -36,7 +36,8 @@ a checklist, not a tutorial, and never a telling-off.
 64 rows shown, up from 54: none of the earlier shown rows left, and ten were added. 46 stay hidden (and are
 migrated, then deleted, in 2.0). ● announces in chat, ○ is toast-only (an insignificant stepping stone or minor discovery).
 **NEW** is a row that is hidden today. 😬 marks a mistake row. ✦ marks a goal or challenge that gets the sting.
-IDs below are today's; 2.0 may rename them.
+The row names below are the 1.x names; in 2.0 the IDs are `<track>/<row>` (for example `builder/vee_engine`) and the 46 hidden
+rows are deleted (see the status above and "2.0 and IDs").
 
 | Track | Rows |
 |---|---|
@@ -96,5 +97,4 @@ row when any of its old rows was earned; capstones credit per milestone, as they
   stamped as the builder.
 - Tests: `AdvancementTabTest` (quiet and loud rows, mistakes shown, the keepsake only on Chief Engineer), `StingSynthTest`
   (bounded, fades, deterministic whatever the read size, one reused buffer, hostile read sizes) and `StingGateTest`.
-- Not done: the tab layout still hangs from today's parents; regrouping the tree by track is part of the 2.0 renaming, and the
-  sting has not been heard in a running client.
+- Regrouping the tree by track was done in 2.0. Not done: the sting has not been heard in a running client.

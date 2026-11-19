@@ -2,8 +2,11 @@
 
 Create: Engine Engineer can be watched from a ComputerCraft computer and from KubeJS server scripts. Both are **read-only**:
 they look at an engine and tell you what it is doing. Neither can change an engine, and neither is needed to play. Without the
-other mod nothing here loads. Both sit on the public API (`com.createengines.api`, still a preview until 2.0), so they report
+other mod nothing here loads. Both sit on the public API (`com.createengines.api`, frozen at 2.0, see API.md), so they report
 the same thing the Display Link and the advancement checks do.
+
+Changing engines rather than watching them is done with data and config ([PACKS.md](PACKS.md)) or, in Java, with the
+extension point ([ADDONS.md](ADDONS.md)).
 
 ## CC: Tweaked
 

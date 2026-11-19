@@ -266,7 +266,7 @@ When one lands, move its item out of Part 3 into Part 2 so it ticks automaticall
 | Datagen has no diff (2.3) | 11, datagen idempotence |
 | Metrics compared by eye (2.1) | 7, performance budgets |
 | Sound and look judged by ear and eye (3.2) | 13, golden checks (what changed by accident only; taste stays manual) |
-| 60-minute unattended soak (2.4), not built | to be queued in the verification track |
+| 60-minute unattended soak (2.4), not built | listed under "Not started" in the roadmap's verification track |
 | Hostile play and churn inside the soak (2.4) | 3, monkey GameTest |
 | Network or sound-thread races | 6, concurrency tests; 8, network and codec fuzz |
 | Test quality (1.1) | 1, mutation testing; 2, property tests |

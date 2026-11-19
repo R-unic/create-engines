@@ -665,7 +665,10 @@ Variable-Drive Supercharger = Variable-Geometry Turbocharger.**
   Engine Speed (one RPM line for a nixie tube) and Engine Load, Temperature and Oil Condition (a percentage or progress
   bar, chosen the way Create's fill level source is). Load is the network's torque over what the engine can give
   (above 100 is overloaded); temperature is the block's heat over a warm engine's, so 100 is warm; oil is the
-  condition, 100 new. The oil sump offers Oil Sump Levels, one tank to a line. Every source refreshes every second
+  condition, 100 new. Engine Boost (`+0.45 bar`, the highest boost any compressor puts on the intake, the figure the
+  turbo goggles show) and Engine Rated Torque (`445 SU/RPM`, the goggles' rated torque) are one nixie-tube line each.
+  A battery offers Battery Charge (`BatteryDisplaySource`, a percentage or progress bar like the fill sources, from
+  the battery's charge over its capacity; it does not credit Instrument Panel). The oil sump offers Oil Sump Levels, one tank to a line. Every source refreshes every second
   (`EngineReadout.REFRESH_TICKS`). The figures come from the synced `EngineSummary`, so they cost the engine nothing.
   Advancement: Instrument Panel (`ENGINE_DISPLAYED`, a link reading a running engine). A Display Link has not been set up
   through its screen in play: the GameTest checks that every source is attached to the right blocks.
@@ -789,7 +792,7 @@ list of IDs are in each release's record (`docs/releases/`) and changelog (`docs
   `FramedBlueprintRenderer`. The common code reaches the screens only through `BlueprintViewer` hooks the client sets. The
   `api` package (`EngineApi`, `EngineView`, two events posted from `EngineController` through a guarded `EngineEvents`) and
   `PartStats` with the `part_stats` data map (applied where `EngineController` builds a cylinder's spec, one line, identity when no
-  pack names it) are previews. The recipe viewer fuel and part pages are in `client.compat`, with `ViewerEntries` shared by both
+  pack names it) were previews in 1.4 and are frozen at 2.0 (docs/API.md). The recipe viewer fuel and part pages are in `client.compat`, with `ViewerEntries` shared by both
   viewers. Details and the reasons for each limit are in `docs/ROADMAP.md`, 1.4.
 - **Guards added along the way:** the compatibility guards in `docs/COMPATIBILITY.md`, the stability contract in
   `docs/STABILITY.md`, the smoke harness in `docs/SMOKE.md`, and the architecture rules, config matrix, property tests and
@@ -1176,6 +1179,14 @@ piston, linkage and connector `TransformedInstance`s every frame from the shaft'
   *accumulated* angle shared by all parts of one engine, and only downstream Create shafts would jump.
   **As built:** play-testing showed the jumps clearly, so engine parts use `RenderRotation`, an accumulated angle. The
   primary crankshaft owns it, the other crank blocks follow it, and phase-locked camshafts take exactly half of it.
+  **Lining up with Create's shafts:** a crank's ends are shaft-shaped, and the real shafts and cogs joined to it are
+  drawn at Create's angle, so two things have to agree. Create adds a fixed phase to every shaft on a line (22.5° on a
+  line whose two other coordinates sum to an even number, 0 on the next one over); `CrankGeometry.createShaftPhase` is
+  that rule and `EnginePoses.drawnShaft` adds it to the crank, its pistons and a rotor's eccentric, the sim being
+  untouched. And since the real shafts jump at every speed change where the accumulated angle does not,
+  `RenderRotation.alignedAt` eases the crank's angle back toward Create's, to the nearest quarter turn (a shaft looks
+  the same every 90°), by at most half a degree a tick, so an engine that has settled to a speed is square with the
+  shafts around it and one that is changing speed is never seen to jump. Camshafts are not aligned this way.
 
 The server sim's Θ and the client's render angle are **not** the same number, by design. The server is authoritative
 for torque and fuel; the client is authoritative for what looks right. The status flags tie them together qualitatively.
