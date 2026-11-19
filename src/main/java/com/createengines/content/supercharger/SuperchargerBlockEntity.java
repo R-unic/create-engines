@@ -8,6 +8,7 @@ import org.jetbrains.annotations.Nullable;
 import com.createengines.content.GoggleLines;
 import com.createengines.content.LoopSource;
 import com.createengines.content.MachineLoopSound;
+import com.createengines.engine.Signals;
 import com.createengines.engine.sim.Supercharger;
 import com.createengines.engine.topology.EngineMember;
 import com.createengines.registry.CELang;
@@ -81,7 +82,7 @@ public class SuperchargerBlockEntity extends KineticBlockEntity implements Engin
 
 	/** A redstone signal opens the bypass fully, dumping the boost. */
 	public boolean dumping() {
-		return level != null && level.hasNeighborSignal(worldPosition);
+		return level != null && Signals.hasNeighbour(level, worldPosition);
 	}
 
 	/** Whether the engine has told this blower that it feeds some of its cylinders. */

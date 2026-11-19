@@ -11,6 +11,7 @@ import com.createengines.content.LoopSource;
 import com.createengines.content.MachineLoopSound;
 import com.createengines.content.effects.EngineEffects;
 import com.createengines.content.effects.GasParticleOptions;
+import com.createengines.engine.Signals;
 import com.createengines.engine.TurboStatus;
 import com.createengines.engine.sim.Turbocharger;
 import com.createengines.engine.topology.EngineMember;
@@ -151,7 +152,7 @@ public class TurbochargerBlockEntity extends SmartBlockEntity
 
 	/** A redstone signal opens the wastegate fully, dumping the boost like a blow-off valve. */
 	public boolean dumping() {
-		return level != null && level.hasNeighborSignal(worldPosition);
+		return level != null && Signals.hasNeighbour(level, worldPosition);
 	}
 
 	public @Nullable TurboStatus status() {

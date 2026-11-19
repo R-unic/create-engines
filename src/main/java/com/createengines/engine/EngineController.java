@@ -171,6 +171,9 @@ public final class EngineController {
 	private double[] rippleCurve = new double[Dynamometer.SPEEDS.length];
 	private @Nullable List<Object> ratingKey;
 	/** The torque curve being measured, a speed a tick, and whether {@link #torqueCurve} has ever been a whole one. */
+	/** The list the next {@link #ratingKey} is built in: the one before it, once it is out of date. */
+	private @Nullable List<Object> ratingSpare;
+	private float @Nullable [] firingScratch;
 	private Dynamometer.@Nullable Measurement rating;
 	private boolean rated;
 	private boolean cranking;
@@ -713,7 +716,7 @@ public final class EngineController {
 			for (BlockPos pos : layout.camLines()
 				.get(i)
 				.segments())
-				signal = Math.max(signal, level.getBestNeighborSignal(pos));
+				signal = Math.max(signal, Signals.bestNeighbour(level, pos));
 			racks[i] = 1 - signal / 15d;
 		}
 		for (int i = 0; i < models.size(); i++) {
@@ -985,7 +988,9 @@ public final class EngineController {
 	 * engine is.
 	 */
 	private void updateRating() {
-		List<Object> key = new ArrayList<>();
+		// Two lists swap places each time the key changes, so a steady engine builds its key in the same one every second
+		List<Object> key = ratingSpare != null ? ratingSpare : new ArrayList<>();
+		key.clear();
 		key.add((int) Math.round(sim.lubrication()
 			.effective() * 5));
 		// Spent oil and a cold or cool block change what the engine can deliver, in steps coarse enough not to re-rate it constantly
@@ -1019,7 +1024,8 @@ public final class EngineController {
 		// The curve runs as fast as the network is allowed to turn, so a raised limit has to be measured for
 		float maxRpm = AllConfigs.server().kinetics.maxRotationSpeed.get();
 		key.add(maxRpm);
-		if (key.equals(ratingKey))
+		if (key.equals(ratingKey)) {
+			ratingSpare = key;
 			return;
 		ratingKey = key;
 		rating = new Dynamometer.Measurement(sim, maxRpm);
@@ -1055,6 +1061,8 @@ public final class EngineController {
 	 * @param complete the whole curve has been measured
 	 */
 	public record Curve(float[] rpm, float[] torque, float current, float rated, boolean complete) {
+		}
+		ratingSpare = ratingKey;
 	}
 
 	/** What a dynamometer block shows; asking for it counts as a dynamometer reading this engine. */
@@ -1137,7 +1145,8 @@ public final class EngineController {
 	private EngineSummary summary(EngineState state, double torqueScale) {
 		int firing = 0;
 		int working = 0;
-		List<Float> firingAngles = new ArrayList<>();
+		float[] listed = firingScratch();
+		int listedCount = 0;
 		for (CylinderModel model : models) {
 			if (model == null)
 				continue;
@@ -1529,11 +1538,14 @@ public final class EngineController {
 		return charge;
 	}
 
-	private static float[] toArray(List<Float> values) {
-		float[] array = new float[values.size()];
-		for (int i = 0; i < array.length; i++)
-			array[i] = values.get(i);
-		return array;
+	/**
+	 * Room for every firing angle an engine can list: one for each cylinder on a cam, and two for each rotor's first chamber.
+	 * Kept and filled again each time, since the sync that fills it runs for every engine every half second.
+	 */
+	private float[] firingScratch() {
+		if (firingScratch == null)
+			firingScratch = new float[Math.max(1, 2 * models.size())];
+		return firingScratch;
 	}
 
 	/** Credits the engine's operator with anything notable it is doing, no more than once every ten seconds. */
@@ -1546,7 +1558,8 @@ public final class EngineController {
 		boolean precision = true;
 		int firing = 0;
 		int cylinders = 0;
-		List<Float> firingAngles = new ArrayList<>();
+		float[] firingAngles = firingScratch();
+		int firingAngleCount = 0;
 		for (int i = 0; i < models.size(); i++) {
 			CylinderModel model = models.get(i);
 			cylinders++;
