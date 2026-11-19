@@ -48,7 +48,7 @@ Set by the author on 2026-11-14:
 | 1.2 | Dress Parts | Cosmetic build variety | Small | Shipped as v1.2.0 (v1.2.1 fixed the sound-thread memory leak) |
 | 1.3 | Refinery | A refinery multiblock for the fuels that already exist | Large | Shipped as v1.3.0, 2026-11-17 |
 | 1.4 | Drawing Office | Blueprints, pack-maker tools, Aeronautics and other addons | Large | **In progress** (see its section) |
-| 2.0 | Open Block | The platform, and the one breaking cleanup | Large | **In progress** on branch `2.0`: the breaking cleanup and the two crossovers are built (see their sections); the platform items are not |
+| 2.0 | Open Block | The platform, and the one breaking cleanup | Large | **In progress**, merged to master 2026-11-19 (not tagged): the breaking cleanup, both crossovers, the port curve, altitude, the frozen API and the dye cleanup are built; platform items partly (see its section); optimization pass partly |
 
 ## 1.0.x Shakedown
 
@@ -432,7 +432,7 @@ recipe have not been seen; Ponder page, goggle lines and the drafting sheet are 
   mod's blocks, every setting inside its range. A bad string is refused with a message. Building from a blueprint
   places blocks as the player, so claims and protection mods apply.
 
-**Engines that move: first piece built 2026-11-18, and blocked from running.** `compat.sable.SableCompat` (Sable's own small companion library, compiled against, one bridge class) projects a block out of its moving structure's plot, and `EngineController` now uses the block's height in the world for the thin-air check and re-reads it every 20 ticks, so a climbing aircraft thins as it rises. Without Sable nothing changes. `SableGameTests` (assemble an engine into a structure at y 2000, check the reported height and density) and the `runGameTestServerSable` run exist, but **that run cannot start**: Aeronautics 1.2.1, the newest the build's NeoForge 21.1.219 accepts, is built for Create 6.0.10, and its Simulated mixin into `NixieTubeBlock.getPower` fails to apply on Create 6.0.11 (this build's floor since today); 1.3.2 asks for NeoForge 21.1.228 or newer. Running it needs a NeoForge bump to 21.1.228+, or the Aeronautics row stays red. Not done: weights, sound and particle positions, scanner and water check on a structure, the Ponder page. None of it has been seen running.
+**Engines that move: first piece built 2026-11-18. Update 2026-11-19: the `runGameTestServerSable` run now starts (Aeronautics 1.3.2 and Sable 2.0.6 on NeoForge 21.1.228) and all GameTests pass in it, per the v2.0.0 record; the text below about it being unable to start is out of date.** `compat.sable.SableCompat` (Sable's own small companion library, compiled against, one bridge class) projects a block out of its moving structure's plot, and `EngineController` now uses the block's height in the world for the thin-air check and re-reads it every 20 ticks, so a climbing aircraft thins as it rises. Without Sable nothing changes. `SableGameTests` (assemble an engine into a structure at y 2000, check the reported height and density) and the `runGameTestServerSable` run exist, but **that run cannot start**: Aeronautics 1.2.1, the newest the build's NeoForge 21.1.219 accepts, is built for Create 6.0.10, and its Simulated mixin into `NixieTubeBlock.getPower` fails to apply on Create 6.0.11 (this build's floor since today); 1.3.2 asks for NeoForge 21.1.228 or newer. Running it needs a NeoForge bump to 21.1.228+, or the Aeronautics row stays red. Not done: weights, sound and particle positions, scanner and water check on a structure, the Ponder page. None of it has been seen running.
 
 **Engines that move: Create Aeronautics**
 
@@ -475,13 +475,16 @@ throttle and rack) lets players write their own engine management in Lua, withou
 **Status 2026-11-18 (branch `2.0-crossover`, merged with `2.0`):**
 
 - **Engine types as plug-ins:** built by the other 2.0 session (TorqueSource seam, rotary on its own drive, provider registration with
-  boost, goggle lines and rebuilds; see `docs/design/ENGINE_SEAM.md`). Not built: narrowing the 19 files that name `CylinderModel`
-  (step 3), a registry for scanner rules.
+  boost, goggle lines and rebuilds; see `docs/design/ENGINE_SEAM.md`). **Finished 2026-11-19 (author's decision):** the
+  boost path is narrowed to `Breather` (19 files still name `CylinderModel`, all cylinder internals), a source can be attached to an intake
+  or exhaust network so turbos, blowers and intercoolers act on it, and a provider's watched blocks are recorded in blueprints and accepted
+  by the server. No scanner-rule registry: the watch-and-rebuild hook already rescans. See the end of `docs/design/ENGINE_SEAM.md`.
 - **Frozen public API:** `api.ApiVersion` 1.0.0 (its own semver), `ApiSurfaceTest` against `compat/api-surface.txt`, provider internals
   moved to `engine.EngineProviders`, `docs/API.md`. Behaviour is covered by the GameTests, not the surface file.
 - **Parts as data, first piece:** the four precision parts (bore, head, piston, injector) are `part_effects/<part>.json`, read on every
   data reload into `engine.sim.PartEffects`; the shipped files equal the old constants (pinned by test) and the baselines did not move.
-  Not yet data: the rotary chamber's stats, cam profiles, and a third tier named from a pack's own block (a pack's block would also
+  The rotary chamber is retuned through the same `part_stats` map (key `create_engines:rotor_housing`, built 2026-11-19, `CEDataMaps.rotaryStats`).
+  Not yet data: cam profiles, and a third tier named from a pack's own block (a pack's block would also
   need its own cylinder block class). The `part_stats` data map still works on top.
 - **State cleanup (dye): built 2026-11-19, with a migration.** The dye (`paint`, 17 values) multiplied a pipe's states (64 connections
   x 2 encased x 4 styles x 17 dyes = 8,704 per pipe kind, a cylinder 6,528, and the crank, cam, cased shaft and cogwheel too). It now
@@ -560,13 +563,20 @@ registry aliases so existing worlds load. Each item needs the author's decision:
 - **Advancement redesign, step 2: built 2026-11-18, see docs/ADVANCEMENTS.md.** Step 1 shipped in 1.x. 2.0 does the rest:
   rename the IDs and regroup the tab tree by track, delete the hidden advancements, and write the migration table (every 1.x ID,
   shown or hidden, maps to its new ID or IDs; old progress is credited silently, with no toast and no sting; a test checks
-  every 1.x ID has an entry). Nothing of step 2 is started, and no 1.x release should rename or delete an advancement.
+  every 1.x ID has an entry). **Built 2026-11-18, checked in the code on master 2026-11-19:** `AdvancementMigration` and `LegacyProgress`
+exist, `compat/advancements-1x.txt` lists all 110 old IDs, `AdvancementMigrationTest` pins that each has an entry and lands on a real
+row, and the generated tab has 66 files (root, 64 rows, `chief_engineer`). The hidden rows are gone. Not looked at by the author: the
+tab layout, and that no toast plays for carried-over progress.
 - Legacy manifold handling and other old-save code paths. **Looked at 2026-11-18 and left:** no manifold-specific legacy code was
   found; the one old-save path is `Gears.fromLegacy`, which turns a 1.0 transmission's four-gear positions into the thirteen now, and
   2.0 still has to open a 1.0 world, so it stays. Removing it is a decision for the author, not a cleanup.
-- **Done 2026-11-18.** Support for older Create versions carried through 1.x under rule 7 is dropped, if a newer one is out: the
-  build is on Create 6.0.11-346 (reverted the same day: Aeronautics needs 6.0.10, range back to `[6.0.10,6.1)`). Unit tests and the 317 GameTests passed on it.
-- The throttle body is **kept** (author, 2026-11-18). The basin fuel recipes are left as they are; reviewing them is still open.
+- **Settled 2026-11-19 (author): the Create floor stays at 6.0.10 and is not revisited in 2.0.** (Tried 2026-11-18 and reverted the same day.) Dropping older Create versions: the build moved to Create 6.0.11-346, but
+  Aeronautics 1.2.1 and 1.3.2 crash on 6.0.11, so the range is back to `[6.0.10,6.1)` and the build is on 6.0.10-281. Open until
+  Aeronautics runs on a newer Create.
+- The throttle body is **kept** (author, 2026-11-18). **Basin fuel recipes reviewed 2026-11-19 and left as they are.** The review is `docs/REFINING_BALANCE.md`, whose numbers
+  `RefiningBalanceTest` and `ProgressionBalanceTest` hold: a basin still makes every fuel, it is the worse route (a column makes the same bucket
+  from about a tenth less feed and a quarter of the catalyst), and the two ethanol recipes were already cut in 1.3.0. Changing a basin
+  recipe in 2.0 would move what an existing factory makes, so nothing changes unless the author asks for a specific recipe.
 
 ### Port count: diminishing returns (breaking, 2.0 only)
 
@@ -616,7 +626,69 @@ Queued 2026-11-17, author's decision: held for 2.0 so 1.x builds keep their numb
   only when Aeronautics is loaded or a config option is on.
 - **Do not ship in 1.x**, not even behind a default-off option, unless the author says otherwise.
 
+### Battery depth (2.0)
+
+Queued 2026-11-19, author's decision: for 2.0, not 1.x. Today a battery is one 200-spark bucket
+(`BatteryBlockEntity.CAPACITY`): each plug firing draws one spark (`BatteryIgnition`), an alternator refills it, and the
+goggles show a percentage. Five additions. Because this is 2.0, a new behaviour may be on by default; any that moves
+guarded numbers (`compat/behaviour.txt`, `compat/trajectories.txt`) is regenerated by hand in the 2.0 change with the diff
+shown, and listed under Exceptions in the 2.0 release record. Each item ships with its tests, lang entries, goggle lines
+and a Ponder mention.
+
+| # | What | Notes |
+| --- | --- | --- |
+| 1 | **Cold-weather charge.** A cold engine block makes each spark cost more charge, and a battery in a cold biome or beside an unheated block gives less of its capacity. A heat source (the block heater, the heat exchanger) is then worth fitting for the battery's sake too. | Reuses the block heat and `PREHEATED` already modelled. `SPARK_COST` is 1 today; whether the new cost is on by default is for the author to decide. |
+| 2 | **Cranking draw.** The starter draws charge while it cranks, not only the plugs while they fire, so a weak battery cranks slowly and gives up partway: hand-crank it or charge it from another engine. | **Needs the author's call before it is built.** The Declined list rules out new failure modes, and rule 3 says no release adds a new punishment. A flat battery already stops a spark engine, so this is a gentler version of that consequence, but it is the item closest to the line. Check first how the starter and the alternator-on-the-crank-line cranking work today. |
+| 3 | **Comparator output.** A battery reads out its charge level (0 to 15) to a comparator, like the sump, for low-charge alarms and auto-start logic. | New `getAnalogOutputSignal`. Comparator only, following the engine-management rule: no redstone input. |
+| 4 | **Charge gauge.** The goggles gain a draw rate and an estimate of sparks left at the current rate, and the block shows its charge on the model (a gauge or a lamp strip), so it can be read without goggles. | Model and texture built from Create's own. The charge is already synced to the client (`SYNC_INTERVAL`), so no new data. |
+| 5 | **Pooled battery banks.** Batteries that touch join into one bank, like Create's tanks: capacity is the sum, and charging and drawing share across it, so capacity scales with the size of the build. | A new connected-block structure, so the most testing: joining and splitting as blocks are placed and broken, save and reload, an engine touching any one member, chunk borders. A lone battery is a bank of one with today's numbers. A bank must record and rebuild through blueprints and the Bank Builder. |
+
+Considered and left out for now: battery tiers (dry cell, large bank), jump leads, aging and sulphation, a tapered
+alternator curve, and non-engine consumers. Aging and the taper change how existing batteries behave, which 2.0 allows,
+so they could be added later if wanted.
+
+### Part depth (2.0)
+
+Queued 2026-11-19, author's decision: for 2.0. More to do and more to read on parts that already exist, plus one new
+wearable. Nothing here adds a failure mode (the Declined list stands). Each item ships with its tests, lang entries, goggle
+lines where there is something to read, and a Ponder mention where there is something to explain. Anything that moves
+guarded numbers is regenerated by hand with the diff shown and listed under Exceptions in the 2.0 release record.
+
+| # | What | Notes |
+| --- | --- | --- |
+| 1 | **Starter: hand-crank assist.** A stuck or flat engine can be turned over by an outside shaft (a water wheel, a windmill, a hand crank), so a dead battery is something to work around, not a dead end. | Check first what the starter accepts today (`StarterBlockEntity`) and how the alternator-on-the-crank-line cranking works; this may mostly be letting one more source count. Pairs with battery depth item 2. |
+| 2 | **Alternator: output readout.** The goggles show charge made per second and the share of the engine's torque it is taking, not only whether it is loaded. | Information only; the numbers already exist in `AlternatorBlockEntity` (`CHARGE_PER_RPM`, the stress it adds). |
+| 3 | **Alternator: several on one engine.** Alternators on the same engine or bank share the charging between them, and the readout says how each contributes. | An alternator already fills the batteries touching it and those of its engine. The work is how two or more split the load and what each reads out, and the test that the total stress is what the sum should be. Pairs with pooled battery banks. |
+| 4 | **Turbo and supercharger: compressor readout.** The goggles show where on its efficiency range the compressor is working, so the limit and anti-lag dials can be set by reading, not by guessing. | Information only. Check what `TurbochargerBlockEntity` and `SuperchargerBlockEntity` already hold; if there is no efficiency figure, the readout is built from the numbers that exist, not invented ones. |
+| 5 | **Turbo and supercharger: wastegate and blow-off parts.** A small cosmetic part on the compressor shows and sounds the wastegate chatter and the blow-off. The blow-off sound already exists (redstone, and throttle lift) and moves to the part. | Cosmetic only: never changes an engine's rating (rule 4). The part is optional; without it the compressor sounds as it does now. |
+| 6 | **Cast flywheel redesign.** A new look for the cast flywheel (`CastFlywheelBlock`): model, texture and the visual that spins it. **Status 2026-11-19: built and seen in the smoke screenshots (Ponder, in world, inventory icon).** `tools/generate_models.py` `cast_flywheel()` draws a thin spoked wheel with the existing textures, so no new texture was needed; the collision shape did not need to change. Ponder and Flywheel-off had never drawn the wheel (the fallback renderer drew only a shaft); `EnginePartRenderers.CastFlywheel` now does. Still to do: look at it in motion and with Flywheel off and Sodium, and the author's approval. | **Scope is the look, unless the author says otherwise.** The mass it adds and its place on the crank line stay as they are, since changing them moves existing engines' numbers. Chunky, built from Create's own textures (rule 5). A new shape means a new shape for the collision box, goggles and Ponder, and the same block ID stays. |
+| 7 | **Noise-cancelling headphones.** A wearable that muffles everything the wearer hears from the world, not only this mod's sounds: quieter and duller, like hearing the world through ear defenders, never silent. **The game's music is not muffled** (author's decision 2026-11-19), and neither are menu and interface sounds: only sounds that come from the world. Worn like Create's goggles: in the head slot, and in a Curios slot when Curios is installed. | A new item, so new IDs that join the promise at 2.0. Client-side only. **Muffled, not muted** (author's decision 2026-11-19): the sound is rolled off at the top (a low-pass filter) as well as turned down, and every sound, warnings and stings included, is still heard, just dulled. It covers all sounds, so it cannot sit only in this mod's own loop code (`EngineNoteSound`, `MachineLoopSound`, `LoopSource`); it needs a hook on the game's sound engine. **Checked 2026-11-19, feasible without a mixin.** Minecraft 1.21.1 never uses OpenAL's filter extension itself, but its OpenAL (LWJGL 3.3.3, OpenAL Soft 1.23.1) offers it: a standalone probe on the author's machine got `ALC_EXT_EFX`, made a low-pass filter, set its gain and high-frequency gain, attached it to a source as the direct filter and detached it, with no OpenAL errors. OpenAL has no listener-wide filter, so it is one filter attached to every source. The route: NeoForge's `PlaySoundSourceEvent` (sounds that load whole) and `PlayStreamingSourceEvent` (streamed ones: this mod's engine note, music) hand over the sound's `Channel` on the sound thread right after it starts, so a muffle is attached there, but only to sounds from the world. The event also gives the `SoundInstance`, whose sound category (`SoundSource`) decides: the Music category (the game's music) and Master (menu and interface clicks) are left alone, and so is Voice, so a voice-chat mod stays clear; Blocks (this mod's engine and machine sounds), Ambient, Weather, Hostile, Neutral and Players are muffled. **Records** (a jukebox or a note block) sit in the world, so they are muffled too unless the author says otherwise. A mod that plays its own music under another category would be muffled; the category list is the one place to change that. A list of live channels is kept so putting the headphones on or off changes sounds already playing (run on the sound thread, since the engine's own channels are only touched there; skip a channel once it stops, because Minecraft destroys the channel when a sound ends). `Channel` keeps its OpenAL source number private, so this needs an access transformer on that field (and on the sound engine's executor field, for the thread hop), a file the mod does not have yet; or reflection. A filter made on one OpenAL context is not valid on another, so it is made again when the sound engine restarts (resource reload, output device change). If the device lacks the extension, the headphones fall back to a volume cut only, and the goggle-style tooltip says so. **Still to check by ear:** the right filter numbers (the probe used 0.5 gain and 0.05 high-frequency gain, untuned), and that the streamed engine note and music muffle without clicks when the filter is attached mid-sound. Curios stays optional: the compatibility goes in `compat`, nothing in the mod names a Curios class when it is absent, and it gets a row in the compatibility matrix like KubeJS and CC. Needs a model, a texture and an armour or accessory render, a recipe, a Ponder page, and tests that a worn pair muffles and lowers every world sound, leaves music and interface sounds untouched, an unworn pair changes nothing, a muffled sound is never silent, and the Curios slot works. |
+| 8 | **Transmission: Auto shift behaviour.** The Auto mode gets a shift profile (for example economy, normal and sport) that changes where it downshifts, climbs and how long it waits. | `AutoGearbox` today has one set of numbers: downshift above 0.9, fit under 0.8, climb to 0.7, dwell 10 and 30 ticks. Normal keeps exactly those, so existing builds shift the same. **Needs the author's call:** the profile is a new setting on the block, and rule 4 says no new tuning dial unless it replaces an old one. It would also join `EngineDials` for blueprints. Needs tests that each profile settles and does not hunt. |
+| 9 | **Black Box: replay.** Scrub back through a recorded run to see what the engine was doing before a stall: speed, load, faults. | Information only, on the existing recorder (`BlackBoxBlockEntity`). Check how much it already keeps. |
+| 10 | **Display Link: more fields.** More engine facts out to Create's displays. Today there are fill, horsepower, speed, status, the sump and, added 2026-11-19, boost, rated torque and battery charge. | Chosen from what `EngineReadout` already works out. **Still open:** gear and the active fault. Each is a new display source with its own test and lang entry. |
+
 ### Optimization pass
+
+**Status 2026-11-19: partly done.** Built: no per-tick starter list or carried-motion capture when nothing changed, engine parts skip
+posing outside the view frustum, camshaft lobes pose without a per-frame array. Everything else below, including animation level of
+detail, sync-on-change, sound voice caps and the per-item measurements, is not done. **Measured 2026-11-19 (`PerfBudgetTest`, this machine):** the
+simulation costs 0.021 to 0.106 ms a tick for a 16-cylinder turbo engine (64 to 4096 RPM) and 0.002 to 0.026 ms for a 4-cylinder one, with
+no allocation on the hot path, and engine sync already runs every 10 ticks. **Server profile, 2026-11-19:** JFR on `runGameTestServer` (3632 server-thread samples, 346 tests). In the steady 16-engine crowd the
+mod's wall time is 0.62 ms a server tick (0.04 ms an engine, about 1% of the 50 ms budget for sixteen), and within it `CylinderModel.step`
+and `EngineSimulation.advance` are nearly all of it: the physics, already table-driven with no allocation. The rest of the mod's samples across
+the whole run are start, stop and rebuild work that the tests cause (Create's rotation propagation behind `publishSpeed`, which is already
+rate-limited; `CrankCoupling` at scan time; `governedAir` and `pilotLights` are tiny per-step methods whose share is sampling skew). Nothing to
+change without changing the simulation's results, which the baselines forbid.
+
+**Client profile, 2026-11-19:** Java Flight Recorder on `runSmokeAudit` (99 s, 1395 CPU samples, 15014 allocation samples; frame p50 8.35 /
+p95 10.67 / p99 12.69 ms, 6681 frames). Shipped mod code is about 7% of the main thread's samples, 16% of the server thread's and 70% of the
+sound thread's (which is 64 samples, under 2% of one core): the rest is Minecraft's own biome lookup, chunk access, lighting and
+world generation. Inside the mod the largest item is `EngineNoteSynth.next` (37 samples, the engine note, on its own thread and required),
+then `CylinderModel.step` and `TurbochargerRenderer.renderSafe` (8 each) and `CrankshaftBlockEntity.publishSpeed` (4). Allocation: the mod is
+1.7% of what was sampled (0.27 of 16 GB); the largest items are a one-off class-load (`reportInduction`, 41 MB of ASM frames), Create's own
+`updateGeneratedRotation` called from `publishSpeed` (BlockPos, 17 MB; it already skips when the speed is unchanged) and `SharedCasingModels.digest`
+(13 MB, at model bake). **No change was made: nothing in the mod's own code is a cost worth the risk.** The remaining items (animation level of
+detail, voice caps, sync deltas) have no profile behind them, so they are not built; if the author wants one anyway it is a taste decision.
 
 Queued 2026-11-16. Make the mod cheaper to run on both sides, so large engine banks and busy servers cost less.
 Behaviour does not change: the same engine produces the same torque, fuel use, heat and readouts before and after.
@@ -663,9 +735,16 @@ Behaviour does not change: the same engine produces the same torque, fuel use, h
 
 ### Getting there safely
 
-- The last 1.x release logs a warning for everything 2.0 removes or renames.
-- Before 2.0 ships, a world saved on 1.0 and one saved on the last 1.x are both opened in it.
-- The preview formats from 1.4 (the `api` package, KubeJS bindings, part stats) are frozen here.
+Status 2026-11-19, checked against the code:
+
+- ~~The last 1.x release logs a warning for everything 2.0 removes or renames.~~ **Dropped 2026-11-19 (author).** 1.4.0 shipped without it, and
+  2.0 migrates advancements, config and dye itself.
+- Before 2.0 ships, a world saved on 1.0 and one saved on the last 1.x are both opened in it. **Not done by hand**; the legacy-world
+  GameTests cover the 1.0 to 1.3 fixtures, and the author reports opening one real 1.x world (not recorded which).
+- The preview formats from 1.4 are frozen here. **Done 2026-11-19:** the `api` package (`ApiVersion` 1.0.0, `ApiSurfaceTest`, `docs/API.md`), and now the
+  KubeJS names (the `CreateEngines` global, `engineAt`, the two script events and what an event gives a script) and the keys of the `fuel`
+  and `part_stats` data maps, read from the source by `ScriptAndDataSurfaceTest` against `compat/script-surface.txt` (append only; a new name
+  needs `SURFACE_REGEN=1` and a bump of `ApiVersion.MINOR`).
 
 ## Verification track (no release of its own)
 
@@ -676,8 +755,14 @@ looks and feels. Tests only guard against those changing by accident.
 **Done 2026-11-16 (unit-test level, in `./gradlew check`, CI in `.github/workflows/verify.yml`):**
 
 - Item 2, in part: `SimPropertyTest` (replay on another thread, no fuel means no power, fuel conserved, identical twins).
-  `SimStressTest` already held the finite and bounded invariants. Not done: step-size independence, which needs the
-  step size to be a parameter of the sim.
+  `SimStressTest` already held the finite and bounded invariants. Step-size independence is `StepIndependenceTest`: the
+  step policy is a parameter of the sim (`useStepSizes`, package-private, defaulting to the live constants) and the same
+  engines are driven at the live steps, at the calibrated 4 degrees and at 1 degree. The gas work agrees to under half a
+  percent of the engine's output at every speed from 256 to 8192 RPM; net torque and fuel rate agree up to 1024 RPM. **Not
+  step independent, found by it:** above about 1500 RPM the per-cycle net torque and fuel rate move with the step (a 4
+  cylinder spark engine's net torque at 2048 RPM is -4.3 at the live steps and -9.9 at 4 degrees; an 8 cylinder turbo
+  diesel's fuel rate at 8192 RPM is 53.8, 24.0 and 15.3 at the live steps, 4 and 1 degree). Create's own limit is 256 RPM,
+  so nothing shipped is near it, but the high-RPM optimization pass should look at the cycle bookkeeping.
 - Item 5, the architecture rules, as `ArchitectureRulesTest` (reads imports, no ArchUnit): the sim and the smoke core
   import nothing from the game, and the 14 common classes that touch client code are a fixed list that may only shrink.
   Not done: the dedicated-server and packaged-jar boot.
@@ -685,13 +770,25 @@ looks and feels. Tests only guard against those changing by accident.
   bytes allocated; budgets are about 7x that. Not done: the fleet numbers from the smoke harness as build limits.
 - Item 9, the sim's share: `ConfigMatrixTest` runs every `Tuning` setting at its config minimum and maximum, alone and
   in six combined patterns, and fails if the ranges in `CEConfig` or the set of settings drift from the matrix. Not
-  done: the matrix through the GameTests and the smoke audit.
-- Item 11: the `datagen-idempotence` job in `verify.yml`. Not yet run on GitHub, and `runData` has not been run in CI.
-- Item 12, in part: JaCoCo on the unit tests, floor in `src/smoke/coverage-floor.txt` (15%, measured 15.4%). Merging the
-  GameTest and smoke audit coverage is not done.
+  done: the matrix through the GameTests and the smoke audit. **Widened 2026-11-19:** the sim-facing settings that are not
+  `Tuning` fields (the inertias, bearing friction) run in
+  `ConfigMatrixTest.inertiaAndFrictionAtTheConfigExtremesLeaveAnEngineSound`;
+  `everyConfigSettingIsInTheMatrixOrNamedHere` fails for a setting added to `CEConfig` that is in neither the matrix nor a
+  list saying where its extremes are run; and the GameTest `SmokeAuditGameTests.everyConfigSettingAtItsExtremesLeavesAnEngineSane`
+  runs the stress scale, the inertias, bearing friction, the four scan limits and the alternator at both ends and in three
+  combinations with an engine running (75 checks, all passing). Not done: the matrix through the client audit's fleet,
+  whose checks (an engine that runs, a full tank) are not meant for a fuel rate of twenty times.
+- Item 11: the `datagen-idempotence` job in `verify.yml`. It runs on every push and has caught a real stale file (1.3.0's advancement files, fixed in the commit after); it passed on master on 2026-11-17 and 2026-11-18.
+- Item 12: JaCoCo on the unit tests, floor in `src/smoke/coverage-floor.txt` (15%, measured 15.4%; that is what CI's
+  `check` holds). **Merged 2026-11-19:** the GameTest server and the client audit carry the JaCoCo agent too (limited to this
+  mod's classes), and `./gradlew coverageMerged` (also a part of `smoke`) runs the unit tests, the GameTests and the audit,
+  joins their data into `build/reports/jacoco/merged`, and holds a second floor, `src/smoke/coverage-floor-merged.txt`
+  (84%, measured 84.4%). The measure leaves out the harness packages (GameTests, smoke audit, showcase), so it says how
+  much of the mod runs: `engine/sim` 99.7%, `engine/topology` 98%, `ponder` 100%, `registry` 74%, `content/tool` 63%,
+  `client` 62%. It is not run on GitHub (it needs a game window); the floors are raised by hand when they improve.
 - Item 1: `./gradlew pitest` (about 6 minutes, not part of `check`) runs PIT through its command line, because the Gradle
   plugin does not work with Gradle 9. First report: 1854 mutants in `engine/sim`, 1521 killed, 294 survived, 23 reached
-  by no test. The ratchet `src/smoke/mutation-ratchet.txt` was 317 and may only go down. It is now 177 (1,721 of 1,898 killed, 91%), after the `*ExactTest` classes, `SimTrajectoryTest` and the refactor below. Survivors were clustered in
+  by no test. The ratchet `src/smoke/mutation-ratchet.txt` was 317 and may only go down. It was 177 after the `*ExactTest` classes, `SimTrajectoryTest` and the refactor below, 170 at 2.0, and is now 134 (2,029 of 2,178 mutants killed, 93%) after `BoundaryEdgesTest`, which pins the exact edge of the comparisons in the stall speed, the step, the heat levels, `FuelCheck` and the oil. Most of what is left is mutants that cannot be killed: a `x * 1` against `x / 1` (`Roughness`, `FuelSpec.preignitionLoss` at their shipped constants) or a `<` against `<=` at a point where both sides of a continuous function agree (`Mixture`). `tools/pit_survivors.py` lists what is live by class and line. Survivors were clustered in
   `EngineSimulation` (81), `CylinderModel` (59), `ColumnShape` (33), `Thermal` (24) and `Governor` (20); killing them is
   the follow-up work. The slow fuzz tests are excluded from the mutant runs.
 - Refactor of the simulation core (behaviour-preserving, guarded by `behaviour.txt`, `trajectories.txt`, `PerfBudgetTest`
@@ -709,6 +806,14 @@ looks and feels. Tests only guard against those changing by accident.
   almost nothing; direct memory returns to its start after 9000 voices of churn; a voice replaced mid-read finishes.
   Put the 1.2.0 per-read `allocateDirect` back and two of the four fail. Not covered: the sim itself under threads
   (it is single-threaded by design), and the real sound engine.
+  **Expanded 2026-11-19** to the state the sim and the logic around it share between threads: `SharedStateConcurrencyTest`
+  (a config reload rewrites every `Tuning` field and a data reload swaps `PartEffects` while engines on other threads are
+  built and run; the cylinder and cam tables, emptied and asked for by eight threads at once, must come back as one shared
+  table; the same seeds on eight threads at once must give the one answer a single thread gives, which a shared scratch
+  buffer would break), `StingGateConcurrencyTest` (twelve asks at the same instant let at most one goal and one challenge
+  through) and, in `EngineNoteConcurrencyTest`, the engine note and the advancement stings rendered on eight threads at
+  once, identical to rendered alone. Still not covered: the real sound engine, and the client's render thread against the
+  server tick.
 - Item 3: `MonkeyGameTests`, three seeds (plus `CE_MONKEY_SEED`), about 1,185 random actions each around two running
   engines (place, break, right-click with random items including the wrench, sneak, redstone, neighbour updates, random
   ticks, save and load round trips), then clear the area, assert no block entity is left and that a fresh engine still
@@ -717,7 +822,21 @@ looks and feels. Tests only guard against those changing by accident.
 - Item 8: `CodecFuzzGameTests`: the sting packet, both particle codecs, the jerry can fluid and the refining recipe
   round-trip to the same bytes, then take every truncation, 400 mutations and 400 garbage inputs each, and their JSON
   forms take 1,500 malformed documents each. A planted write/read mismatch produced 80 failures. Only this mod's own
-  codecs are covered; Create's and NeoForge's are theirs.
+  codecs are covered; Create's and NeoForge's are theirs. **Expanded 2026-11-19:** the fuel data map (its sync packet and its
+  JSON), the part stats data map and the advancement trigger's JSON join the GameTest; `BlueprintCodecFuzzTest` fuzzes the
+  blueprint text a player pastes or a client sends (every truncation, 3,000 damaged strings, garbage, damaged compressed
+  bytes with a decompression bomb, and 6,000 damaged bodies that reach the part reader, each refused with a
+  `BlueprintException` or read back cleanly); `HostileFuelTest` and `PartEffectsExtremesTest` follow the data past the
+  codec into a running engine, which is where the two defects below were found. Hostile block-entity saves were already
+  covered by `StressGameTests`.
+  **Two defects found and fixed 2026-11-19:** a fuel with a non-finite number (or `air_per_mb` of 0, or `energy_per_mb`
+  of the largest double) made an engine's figures NaN, and part effects whose compression scales multiply a cylinder's
+  compression ratio below 1 (two parts at 0.1, three at 0.3, four at 0.5) made its gas work NaN. `FuelSpec.usable()` now
+  stands between a pack's fuel and the sim (it replaces only the four figures that did this, returns every sound fuel
+  itself, and leaves the record alone so `FuelCheck` still reports what the pack wrote), and `CylinderSpec.build` holds the
+  ratio at `PartStats.MIN_COMPRESSION`, the floor a part_stats retuning already had. No shipped fuel or cylinder is touched;
+  `compat/behaviour.txt` and `compat/trajectories.txt` did not move. Both are now plain assertions in `HostileFuelTest`,
+  `FuelSpecUsableTest` and `PartEffectsExtremesTest`.
 - Item 4: nine fixtures from the real releases (diesel, spark and rotary engines from 1.0.0, 1.1.0 and 1.2.0) in
   `src/test/resources/compat/world`, recorded by `scripts/record-corpus.ps1` from each tag's own source, and loaded by
   `LegacyWorldGameTests`. Each must load, keep every saved key and keep running. They are block and block-entity saves,
@@ -727,15 +846,21 @@ looks and feels. Tests only guard against those changing by accident.
   checks the mixin config, filled-in metadata and resources. It found nothing beyond Registrate's renderer lambdas in
   `CEBlockEntities`, which are listed with the reason. A dedicated server booted from the jar is not done (the build
   makes no NeoForge server install); the GameTest server is the server-only run.
-- Item 7: the GameTest fleet budget is 2 ms for 16 engines (measured 0.4 ms), five times the baseline.
+- Item 7: the GameTest fleet budget is 2 ms for 16 engines (measured 0.4 ms), five times the baseline. **Added
+  2026-11-19:** the same crowd test measures what the server thread allocates per tick (45 KB for 16 engines, the whole
+  tick) and fails above 256 KB; and the client audit's leak trends, which already failed the build, were far looser than
+  anything measured (200 MB of heap growth, 48 MB of direct memory), so they are now 50 MB and 16 MB, set from two runs that
+  grew the settled heap by 6.5 and 2.5 MB and shrank direct memory by 1.3 MB (the audit now reports the fitted growth as a
+  metric). After changing these audit checks the ten-break mutation script (`scripts/smoke-mutations.ps1`) was not re-run.
 - Item 9: the GameTest matrix also runs four combined patterns (all minimum, all maximum, two seeded mixes).
 - Item 10, in part: `./gradlew compatMatrix` runs the client audit with Flywheel off and with Sodium 0.8.13; both
-  green (see `docs/COMPAT.md`). Open: Create Aeronautics and other addons, which need the author's list and the 1.4
-  work; there is one supported Create version today.
+  green (see `docs/COMPAT.md`). The matrix has since grown rows for EMI, KubeJS and CC: Tweaked (all in `compatMatrix`), a
+  JEI row run by hand (JEI wants a newer NeoForge than this build) and an Aeronautics row that is not in `compatMatrix`
+  while it is red (`build.gradle` and `docs/COMPAT.md` say why); there is one supported Create version today.
 
-**Not started:** 13 (goldens, set aside by request). Still open inside done items: step-size independence (item 2),
-fleet leak and allocation limits as build failures (item 7), merged GameTest and audit coverage (item 12), a server
-booted from the jar (item 5), and killing PIT survivors (item 1).
+**Not started:** 13 (goldens, set aside by request), and the 60-minute unattended soak of `STABILITY.md` 2.4. Still open
+inside done items: a server booted from the jar (item 5), the config matrix through the client audit's fleet (item 9), the
+PIT survivors that are not equivalent mutants (item 1, 134 live), and the engine figures that move with the step above 1500 RPM (item 2).
 
 1. **Mutation testing (PIT) on `engine/sim`.** Small changes to the code (a flipped comparison, a dropped term) must make
    a test fail. Survivors show assertions that never bite. The sim is pure Java, so it is cheap to set up. Report first,
