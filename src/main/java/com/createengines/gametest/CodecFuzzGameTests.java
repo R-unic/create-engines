@@ -15,6 +15,7 @@ import com.createengines.advancement.AdvancementSting;
 import com.createengines.content.effects.GasParticleOptions;
 import com.createengines.content.effects.GlowParticleOptions;
 import com.createengines.content.refinery.RefiningRecipe;
+import com.createengines.registry.CEDataMaps;
 import com.createengines.registry.CERecipes;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
@@ -132,6 +133,11 @@ public class CodecFuzzGameTests {
 				new com.createengines.content.blueprint.BlueprintImport.Payload("CEBP2:AAAA"))));
 		out.add(new Subject<>("blueprint item", RecordedBlueprint.STREAM_CODEC.<RegistryFriendlyByteBuf>mapStream(buf -> buf),
 			CodecFuzzGameTests::blueprintSamples));
+		// The fuel data map is synced to every client when they join and when a pack reloads, through this codec
+		out.add(new Subject<>("fuel data map sync", net.minecraft.network.codec.ByteBufCodecs.fromCodecWithRegistries(CEDataMaps.FuelProperties.CODEC),
+			() -> List.of(new CEDataMaps.FuelProperties(36, 1.55, 1.7, 1, 0, 1, 0, Optional.empty()),
+				new CEDataMaps.FuelProperties(27, 3.4, 1.0, 1.8, 0.08, 0, 2.5, Optional.of(0.2)),
+				new CEDataMaps.FuelProperties(0, -1, 1e300, Double.POSITIVE_INFINITY, 0.0, Double.MIN_VALUE, Double.MAX_VALUE, Optional.of(-5.0)))));
 		StreamCodec<RegistryFriendlyByteBuf, RefiningRecipe> recipeCodec =
 			CERecipes.REFINING_SERIALIZER.get().streamCodec();
 		out.add(new Subject<>("refining recipe", recipeCodec, () -> helper.getLevel().getRecipeManager()
@@ -375,6 +381,38 @@ public class CodecFuzzGameTests {
 			o.add("product", product);
 			o.addProperty("heat", "heated");
 			o.addProperty("speed", 1.0);
+			return o;
+		}, problems);
+		fuzzJson("fuel data map json", CEDataMaps.FuelProperties.CODEC, random -> {
+			JsonObject o = new JsonObject();
+			o.addProperty("energy_per_mb", 36);
+			o.addProperty("autoignition_temperature", 1.55);
+			o.addProperty("air_per_mb", 1.7);
+			o.addProperty("cold_sensitivity", 1.0);
+			o.addProperty("charge_cooling", 0.0);
+			o.addProperty("soot_factor", 1.0);
+			o.addProperty("preignition_temperature", 0.0);
+			o.addProperty("sulfur", 1.0);
+			return o;
+		}, problems);
+		fuzzJson("part stats data map json", CEDataMaps.PartStatsProperties.CODEC, random -> {
+			JsonObject o = new JsonObject();
+			o.addProperty("compression_ratio", 1.1);
+			o.addProperty("intake_flow", 1.2);
+			o.addProperty("exhaust_flow", 0.9);
+			o.addProperty("max_fuel_per_shot", 1.0);
+			o.addProperty("ignition_delay", 1.0);
+			o.addProperty("burn_duration", 1.0);
+			o.addProperty("friction_static", 0.95);
+			o.addProperty("friction_viscous", 1.0);
+			o.addProperty("inertia", 1.0);
+			o.addProperty("displacement", 1.0);
+			o.addProperty("injector_flow", 1.0);
+			return o;
+		}, problems);
+		fuzzJson("advancement trigger json", com.createengines.advancement.EventTrigger.Instance.CODEC, random -> {
+			JsonObject o = new JsonObject();
+			o.addProperty("event", "first_start");
 			return o;
 		}, problems);
 		fuzzJson("jerry can fluid json", SimpleFluidContent.CODEC, null, problems);

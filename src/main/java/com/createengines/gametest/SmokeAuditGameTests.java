@@ -98,6 +98,17 @@ public class SmokeAuditGameTests {
 
 	// Crowds and long runs
 
+	/** Allocation limit for the whole server thread over a crowd tick, measured at 45 KB on 2026-11-19, so about five times that. */
+	private static final double CROWD_KB_PER_TICK_LIMIT = 256;
+
+	/** Bytes the calling thread has allocated so far, or -1 where the JVM cannot say. */
+	private static long serverThreadAllocatedBytes() {
+		if (java.lang.management.ManagementFactory.getThreadMXBean() instanceof com.sun.management.ThreadMXBean bean
+			&& bean.isThreadAllocatedMemorySupported())
+			return bean.getThreadAllocatedBytes(Thread.currentThread().threadId());
+		return -1;
+	}
+
 	private static final int CROWD_COLUMNS = 4;
 	private static final int CROWD_ROWS = 4;
 
@@ -125,11 +136,23 @@ public class SmokeAuditGameTests {
 				engines.add(at);
 			}
 		long[] startedAt = new long[1];
+		long[] allocatedAt = {-1};
 		helper.runAtTickTime(300, () -> engines.forEach(at -> level.removeBlock(at.offset(STARTER_POWER), false)));
-		helper.runAtTickTime(500, () -> startedAt[0] = System.nanoTime());
+		helper.runAtTickTime(500, () -> {
+			startedAt[0] = System.nanoTime();
+			allocatedAt[0] = serverThreadAllocatedBytes();
+		});
 		helper.runAtTickTime(900, () -> {
 			double msPerTick = (System.nanoTime() - startedAt[0]) / 400.0 / 1_000_000.0;
 			report.metric("crowd of " + engines.size() + " engines, wall time per server tick", msPerTick, "ms");
+			long allocated = serverThreadAllocatedBytes();
+			if (allocatedAt[0] >= 0 && allocated >= 0) {
+				double kbPerTick = (allocated - allocatedAt[0]) / 400.0 / 1024.0;
+				report.metric("crowd of " + engines.size() + " engines, server thread allocation per tick", kbPerTick, "KB");
+				report.check("perf", "16 engines allocate under " + CROWD_KB_PER_TICK_LIMIT + " KB a tick on the server thread",
+					kbPerTick < CROWD_KB_PER_TICK_LIMIT, String.format("%.1f KB per tick for %d engines", kbPerTick, engines.size()));
+			} else
+				report.skip("perf", "crowd allocation per tick", "this JVM cannot measure per-thread allocation");
 			// A fair budget: the GameTest server runs flat out, so this is the real cost with no sleeping in it
 			// Measured at about 0.4 ms for sixteen (2026-11-16); the limit is five times that: room for noise, not for a regression
 			report.check("perf", "16 engines cost under 2 ms a tick", msPerTick < 2,
@@ -481,5 +504,128 @@ public class SmokeAuditGameTests {
 						"speed " + crank.getSpeed() + ", capacity " + crank.publishedCapacity());
 			}
 		});
+	}
+
+	/** One config setting that is not a {@code Tuning} field, with its range and whether an engine may fail to form at its minimum. */
+	private record ConfigKnob(String name, net.neoforged.neoforge.common.ModConfigSpec.ConfigValue<? extends Number> value, double min,
+							  double max, boolean mayLoseTheEngine) {
+	}
+
+	/**
+	 * The settings the tuning sweep above does not reach: the stress scale, the inertias, bearing friction, the scan limits and
+	 * the alternator, each at both ends of its range and all of them together, with an engine running under each. The scan
+	 * limits at their minimum may stop an engine forming at all, which is fine; everything else must run, with finite figures
+	 * and finite speed and stress given to Create. Each value is put back afterwards (they live in the shared config).
+	 */
+	@GameTest(template = "empty", batch = "smoke-config", timeoutTicks = 20000)
+	public static void everyConfigSettingAtItsExtremesLeavesAnEngineSane(GameTestHelper helper) {
+		SmokeReport report = new SmokeReport("config");
+		ServerLevel level = helper.getLevel();
+		List<ConfigKnob> knobs = List.of(
+			new ConfigKnob("stressPerTorque", com.createengines.config.CEConfig.STRESS_PER_TORQUE, 1, 10000, false),
+			new ConfigKnob("journalInertia", com.createengines.config.CEConfig.JOURNAL_INERTIA, 0, 100, false),
+			new ConfigKnob("throwInertia", com.createengines.config.CEConfig.THROW_INERTIA, 0, 100, false),
+			new ConfigKnob("flywheelInertia", com.createengines.config.CEConfig.FLYWHEEL_INERTIA, 0, 100, false),
+			new ConfigKnob("castFlywheelInertia", com.createengines.config.CEConfig.CAST_FLYWHEEL_INERTIA, 0, 100, false),
+			new ConfigKnob("bearingFriction", com.createengines.config.CEConfig.BEARING_FRICTION, 0, 10, false),
+			new ConfigKnob("maxCrankSegments", com.createengines.config.CEConfig.MAX_CRANK_SEGMENTS, 1, 1024, true),
+			new ConfigKnob("maxManifoldBlocks", com.createengines.config.CEConfig.MAX_MANIFOLD_BLOCKS, 1, 4096, true),
+			new ConfigKnob("maxCoupledLines", com.createengines.config.CEConfig.MAX_COUPLED_LINES, 1, 64, true),
+			new ConfigKnob("maxCouplingWalk", com.createengines.config.CEConfig.MAX_COUPLING_WALK, 1, 8192, true),
+			new ConfigKnob("alternatorEnergy", com.createengines.config.CEConfig.ALTERNATOR_ENERGY, 0, 100, false));
+		java.util.Map<ConfigKnob, Number> originals = new java.util.LinkedHashMap<>();
+		for (ConfigKnob knob : knobs)
+			originals.put(knob, knob.value().get());
+		List<Runnable> variants = new ArrayList<>();
+		List<String> names = new ArrayList<>();
+		List<Boolean> mayLose = new ArrayList<>();
+		for (ConfigKnob knob : knobs)
+			for (double value : new double[] {knob.min(), knob.max()}) {
+				names.add(knob.name() + "=" + value);
+				mayLose.add(knob.mayLoseTheEngine() && value == knob.min());
+				variants.add(() -> {
+					restore(originals);
+					setValue(knob, value);
+				});
+			}
+		for (int pattern = 0; pattern < 3; pattern++) {
+			final int p = pattern;
+			names.add("combined pattern " + p);
+			mayLose.add(true);
+			variants.add(() -> {
+				restore(originals);
+				java.util.Random mix = new java.util.Random(p);
+				for (ConfigKnob knob : knobs)
+					setValue(knob, switch (p) {
+						case 0 -> knob.min();
+						case 1 -> knob.max();
+						default -> mix.nextBoolean() ? knob.min() : knob.max();
+					});
+			});
+		}
+		BlockPos at = helper.absolutePos(new BlockPos(0, 1, 0));
+		int perVariant = 500;
+		boolean[] done = {false};
+		helper.onEachTick(() -> {
+			long t = helper.getTick();
+			int index = (int) (t / perVariant);
+			int within = (int) (t % perVariant);
+			if (index >= variants.size()) {
+				if (!done[0]) {
+					done[0] = true;
+					restore(originals);
+					conclude(helper, report);
+				}
+				return;
+			}
+			if (within == 0) {
+				variants.get(index).run();
+				for (int x = 0; x <= 7; x++)
+					for (int y = 0; y <= 6; y++)
+						for (int z = 0; z <= 6; z++)
+							level.removeBlock(at.offset(x, y, z), false);
+				if (index % 2 == 0)
+					TestEngine.build(level, at, true);
+				else
+					TestEngine.buildSpark(level, at, true);
+			}
+			if (within == 200)
+				level.removeBlock(at.offset(STARTER_POWER), false);
+			if (within == perVariant - 1) {
+				String name = names.get(index);
+				EngineSummary summary = summaryAt(level, at);
+				if (summary == null) {
+					if (mayLose.get(index))
+						report.pass("config", name + " (no engine formed, allowed at a scan limit's minimum)");
+					else
+						report.fail("config", name, "no engine summary");
+					return;
+				}
+				boolean finite = Float.isFinite(summary.rpm()) && Float.isFinite(summary.availableTorque())
+					&& Float.isFinite(summary.loadTorque()) && Float.isFinite(summary.fuelPerMinute())
+					&& Float.isFinite(summary.temperature()) && Float.isFinite(summary.condition());
+				report.check("config", name + " keeps every figure finite", finite, summary.toString());
+				report.check("config", name + " keeps rpm in a sane range", Math.abs(summary.rpm()) < 20000, "rpm " + summary.rpm());
+				if (level.getBlockEntity(at.offset(PRIMARY)) instanceof CrankshaftBlockEntity crank)
+					report.check("config", name + " gives Create finite speed and stress", Float.isFinite(crank.getSpeed())
+						&& Float.isFinite(crank.publishedCapacity()) && crank.publishedCapacity() >= 0,
+						"speed " + crank.getSpeed() + ", capacity " + crank.publishedCapacity());
+			}
+		});
+	}
+
+	@SuppressWarnings({"unchecked", "rawtypes"})
+	private static void setValue(ConfigKnob knob, double value) {
+		var config = (net.neoforged.neoforge.common.ModConfigSpec.ConfigValue) knob.value();
+		if (knob.value() instanceof net.neoforged.neoforge.common.ModConfigSpec.IntValue)
+			config.set((int) Math.round(value));
+		else
+			config.set(value);
+	}
+
+	@SuppressWarnings({"unchecked", "rawtypes"})
+	private static void restore(java.util.Map<ConfigKnob, Number> originals) {
+		for (var entry : originals.entrySet())
+			((net.neoforged.neoforge.common.ModConfigSpec.ConfigValue) entry.getKey().value()).set(entry.getValue());
 	}
 }

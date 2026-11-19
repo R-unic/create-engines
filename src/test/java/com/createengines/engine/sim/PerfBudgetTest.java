@@ -114,4 +114,60 @@ class PerfBudgetTest {
 		System.out.printf("PERF 8 cyl allocates %d bytes/tick (budget %d)%n", worst, MAX_BYTES_PER_TICK_8_CYL);
 		assertTrue(worst < MAX_BYTES_PER_TICK_8_CYL, "an 8-cylinder tick allocates " + worst + " bytes");
 	}
+
+	/** Bytes a tick of an engine with turbos side by side may allocate: they used to build a map and an array per cylinder each tick (1.3 KB). */
+	private static final long MAX_BYTES_PER_TICK_PARALLEL = 256;
+
+	@Test
+	void turbosSideBySideAllocateNothingPerTick() {
+		var bean = ManagementFactory.getThreadMXBean();
+		if (!(bean instanceof com.sun.management.ThreadMXBean sun) || !sun.isThreadAllocatedMemorySupported()) {
+			System.out.println("PERF parallel allocation budget skipped: this JVM cannot measure per-thread allocation");
+			return;
+		}
+		List<CylinderModel> cylinders = new ArrayList<>();
+		Camshaft cam = new Camshaft();
+		for (int i = 0; i < 8; i++) {
+			double tdc = i * 720.0 / 8;
+			CylinderModel c = new CylinderModel(CylinderSpec.CRUDE, CamProfile.BASIC, tdc, cam, tdc / 2 % 180);
+			c.fuelSupply = new FuelSupply() {
+				@Override
+				public double draw(double mb) {
+					return mb;
+				}
+
+				@Override
+				public FuelSpec fuel() {
+					return FuelSpec.DIESEL;
+				}
+			};
+			cylinders.add(c);
+		}
+		EngineSimulation engine = new EngineSimulation(cylinders, 2, 0.02);
+		for (int i = 0; i < 2; i++) {
+			Turbocharger turbo = new Turbocharger(cylinders, cylinders, 0.5);
+			turbo.parallelCompressor = true;
+			turbo.parallelTurbine = true;
+			engine.addTurbo(turbo);
+		}
+		Supercharger blower = new Supercharger(cylinders);
+		blower.parallel = true;
+		engine.addSupercharger(blower);
+		engine.setThermalLive(true);
+		double omega = EngineSimulation.rpmToOmega(1024);
+		for (int i = 0; i < 500; i++)
+			engine.tickDriven(omega, 1);
+		long id = Thread.currentThread().threadId();
+		long worst = 0;
+		for (int round = 0; round < 5; round++) {
+			int ticks = 200;
+			long before = sun.getThreadAllocatedBytes(id);
+			for (int i = 0; i < ticks; i++)
+				engine.tickDriven(omega, 1);
+			worst = Math.max(worst, (sun.getThreadAllocatedBytes(id) - before) / ticks);
+		}
+		System.out.printf("PERF 8 cyl, 2 parallel turbos and a blower allocates %d bytes/tick (budget %d)%n", worst,
+			MAX_BYTES_PER_TICK_PARALLEL);
+		assertTrue(worst < MAX_BYTES_PER_TICK_PARALLEL, "parallel stages allocate " + worst + " bytes a tick");
+	}
 }
