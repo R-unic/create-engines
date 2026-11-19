@@ -53,7 +53,7 @@ public final class Supercharger {
 	private static final double VARIABLE_EFFICIENCY = 0.73;
 	private static final double HEAT_EXPONENT = 0.3 / 1.3;
 
-	private final List<CylinderModel> compressor;
+	private final List<Breather> compressor;
 
 	/** Boost the bypass valve holds, atmospheres. */
 	public double limit = DEFAULT_LIMIT;
@@ -72,15 +72,15 @@ public final class Supercharger {
 	private double boost;
 
 	/** @param compressor cylinders that breathe the blower's air */
-	public Supercharger(List<CylinderModel> compressor) {
+	public Supercharger(List<? extends Breather> compressor) {
 		this.compressor = List.copyOf(compressor);
 	}
 
 	/** A blower set up the same way on copies of the cylinders, to test apart from the engine; it turns with the crank. */
-	public Supercharger copyOnto(Map<CylinderModel, CylinderModel> copies) {
-		List<CylinderModel> mapped = new ArrayList<>();
-		for (CylinderModel cylinder : compressor) {
-			CylinderModel copy = copies.get(cylinder);
+	public Supercharger copyOnto(Map<? extends Breather, ? extends Breather> copies) {
+		List<Breather> mapped = new ArrayList<>();
+		for (Breather cylinder : compressor) {
+			Breather copy = copies.get(cylinder);
 			if (copy != null)
 				mapped.add(copy);
 		}
@@ -93,7 +93,7 @@ public final class Supercharger {
 		return copy;
 	}
 
-	public List<CylinderModel> compressor() {
+	public List<Breather> compressor() {
 		return compressor;
 	}
 

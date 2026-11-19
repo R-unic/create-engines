@@ -39,6 +39,14 @@ public final class EngineProviders {
 		PROVIDERS.remove(provider);
 	}
 
+	/** The class name of every provider registered now, for {@code /ce api}. */
+	public static List<String> registered() {
+		return PROVIDERS.stream()
+			.map(provider -> provider.getClass()
+				.getName())
+			.toList();
+	}
+
 	/**
 	 * Where a provider's failure is reported, the engine's crankshaft position and what it threw. It is logged as an error
 	 * unless this is changed; a test that fails a provider on purpose takes the report here instead of in the log. Pass
@@ -73,8 +81,58 @@ public final class EngineProviders {
 			EngineTopology.rebuildNear(level, pos, reach);
 	}
 
+	/**
+	 * Whether a provider says this block is one of its own, by watching its default state. A blueprint may then carry it and the
+	 * recorder records the ones beside an engine; any other mod's block is refused.
+	 */
+	public static boolean claims(net.minecraft.world.level.block.Block block) {
+		if (PROVIDERS.isEmpty())
+			return false;
+		BlockState state = block.defaultBlockState();
+		for (EngineSourceProvider provider : PROVIDERS) {
+			try {
+				if (provider.watches(state))
+					return true;
+			} catch (RuntimeException e) {
+				failures.accept(BlockPos.ZERO, e);
+			}
+		}
+		return false;
+	}
+
+	/**
+	 * The blocks beside this engine's crankshaft that providers watch, within each provider's reach: its added parts, which
+	 * belong in the engine's blueprint though the scanner knows nothing of them.
+	 */
+	public static java.util.Set<BlockPos> claimedBlocks(Level level, EngineLayout layout) {
+		java.util.Set<BlockPos> found = new java.util.LinkedHashSet<>();
+		if (PROVIDERS.isEmpty())
+			return found;
+		for (EngineSourceProvider provider : PROVIDERS) {
+			try {
+				int reach = Math.max(0, Math.min(provider.reach(), 8));
+				for (EngineLayout.Segment segment : layout.segments())
+					for (BlockPos pos : BlockPos.betweenClosed(segment.pos()
+						.offset(-reach, -reach, -reach), segment.pos()
+							.offset(reach, reach, reach))) {
+						if (!layout.members()
+							.contains(pos) && provider.watches(level.getBlockState(pos)))
+							found.add(pos.immutable());
+					}
+			} catch (RuntimeException e) {
+				failures.accept(layout.primary(), e);
+			}
+		}
+		return found;
+	}
+
+	/** A source a provider returned, with where it breathes (null where it does not). */
+	public record Provided(TorqueSource source, @org.jetbrains.annotations.Nullable BlockPos intakeAt,
+						   @org.jetbrains.annotations.Nullable BlockPos exhaustAt) {
+	}
+
 	/** Gathers what every provider adds to an engine as it is built. */
-		public static List<TorqueSource> sourcesFor(Level level, EngineLayout layout) {
+	public static List<Provided> sourcesFor(Level level, EngineLayout layout) {
 		if (PROVIDERS.isEmpty())
 			return List.of();
 		List<BlockPos> segments = layout.segments()
@@ -82,7 +140,7 @@ public final class EngineProviders {
 			.map(EngineLayout.Segment::pos)
 			.toList();
 		EngineBuild build = new EngineBuild(layout.primary(), layout.axis(), segments, layout.members());
-		List<TorqueSource> found = new ArrayList<>();
+		List<Provided> found = new ArrayList<>();
 		for (EngineSourceProvider provider : PROVIDERS) {
 			try {
 				List<TorqueSource> given = provider.sourcesFor(level, build);
@@ -90,7 +148,7 @@ public final class EngineProviders {
 					continue;
 				for (TorqueSource source : given)
 					if (source != null)
-						found.add(source);
+						found.add(new Provided(source, provider.intakeAt(source), provider.exhaustAt(source)));
 			} catch (RuntimeException e) {
 				failures.accept(layout.primary(), e);
 			}

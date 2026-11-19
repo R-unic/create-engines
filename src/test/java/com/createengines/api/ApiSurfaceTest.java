@@ -34,6 +34,8 @@ class ApiSurfaceTest {
 				.sorted().forEach(out::add);
 		}
 		out.add(ROOT.resolve("engine/sim/TorqueSource.java"));
+		out.add(ROOT.resolve("engine/sim/Breather.java"));
+		out.add(ROOT.resolve("engine/sim/AbstractTorqueSource.java"));
 		out.add(ROOT.resolve("engine/sim/StatusLine.java"));
 		return out;
 	}

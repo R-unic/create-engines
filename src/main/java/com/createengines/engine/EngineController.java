@@ -42,6 +42,7 @@ import com.createengines.engine.sim.CoolantSupply;
 import com.createengines.engine.sim.CycleResult;
 import com.createengines.engine.sim.CycleStats;
 
+import com.createengines.engine.sim.Breather;
 import com.createengines.engine.sim.CylinderModel;
 import com.createengines.engine.sim.CylinderSpec;
 import com.createengines.engine.sim.Dynamometer;
@@ -170,10 +171,10 @@ public final class EngineController {
 	/** The free-running speed ripple at each speed of {@link #torqueCurve}, which roughness holds the rating back by. */
 	private double[] rippleCurve = new double[Dynamometer.SPEEDS.length];
 	private @Nullable List<Object> ratingKey;
-	/** The torque curve being measured, a speed a tick, and whether {@link #torqueCurve} has ever been a whole one. */
 	/** The list the next {@link #ratingKey} is built in: the one before it, once it is out of date. */
 	private @Nullable List<Object> ratingSpare;
 	private float @Nullable [] firingScratch;
+	/** The torque curve being measured, a speed a tick, and whether {@link #torqueCurve} has ever been a whole one. */
 	private Dynamometer.@Nullable Measurement rating;
 	private boolean rated;
 	private boolean cranking;
@@ -307,9 +308,21 @@ public final class EngineController {
 		double friction = idleStatic + layout.segments()
 			.size() * CEConfig.BEARING_FRICTION.get();
 		sim = new EngineSimulation(working, inertia, friction, idleViscous);
+		// What packs and addons drive the crank with besides cylinders, and the networks any of it breathes from
+		List<EngineProviders.Provided> provided = EngineProviders.sourcesFor(level, layout);
+		int[] providedIntake = new int[provided.size()];
+		int[] providedExhaust = new int[provided.size()];
+		for (int i = 0; i < provided.size(); i++) {
+			boolean breathes = provided.get(i)
+				.source() instanceof Breather;
+			providedIntake[i] = breathes ? layout.networkAt(provided.get(i)
+				.intakeAt(), PortKind.INTAKE) : -1;
+			providedExhaust[i] = breathes ? layout.networkAt(provided.get(i)
+				.exhaustAt(), PortKind.EXHAUST) : -1;
+		}
 		for (Turbo turbo : layout.turbos()) {
-			List<CylinderModel> turbine = new ArrayList<>();
-			List<CylinderModel> compressor = new ArrayList<>();
+			List<Breather> turbine = new ArrayList<>();
+			List<Breather> compressor = new ArrayList<>();
 			for (int i = 0; i < models.size(); i++) {
 				CylinderModel model = models.get(i);
 				Cylinder cylinder = layout.cylinders()
@@ -320,6 +333,14 @@ public final class EngineController {
 					turbine.add(model);
 				if (turbo.intake() >= 0 && cylinder.intake() == turbo.intake())
 					compressor.add(model);
+			}
+			for (int i = 0; i < provided.size(); i++) {
+				if (turbo.exhaust() >= 0 && providedExhaust[i] == turbo.exhaust())
+					turbine.add((Breather) provided.get(i)
+						.source());
+				if (turbo.intake() >= 0 && providedIntake[i] == turbo.intake())
+					compressor.add((Breather) provided.get(i)
+						.source());
 			}
 			// Turbines side by side on one exhaust network split its heat between them; one the exhaust has to go
 			// through gets all of it
@@ -339,7 +360,7 @@ public final class EngineController {
 			sim.addTurbo(unit);
 		}
 		for (EngineLayout.Inline placed : layout.superchargers()) {
-			Supercharger blower = new Supercharger(breathingOn(placed.intake()));
+			Supercharger blower = new Supercharger(breathingOn(placed.intake(), provided, providedIntake));
 			blower.parallel = placed.parallel();
 			blower.variableDrive = level.getBlockState(placed.pos())
 				.getBlock() instanceof SuperchargerBlock block && block.variableDrive();
@@ -347,10 +368,15 @@ public final class EngineController {
 			sim.addSupercharger(blower);
 		}
 		for (EngineLayout.Inline placed : layout.intercoolers())
-			sim.addIntercooler(new Intercooler(breathingOn(placed.intake())));
-		// Whatever packs and addons drive the crank with besides cylinders
-		for (TorqueSource source : EngineProviders.sourcesFor(level, layout))
-			sim.addSource(source);
+			sim.addIntercooler(new Intercooler(breathingOn(placed.intake(), provided, providedIntake)));
+		for (int i = 0; i < provided.size(); i++) {
+			TorqueSource source = provided.get(i)
+				.source();
+			if (source instanceof Breather breather && (providedIntake[i] >= 0 || providedExhaust[i] >= 0))
+				sim.addAttachedSource(breather);
+			else
+				sim.addSource(source);
+		}
 		// A new engine starts dry, and has to be oiled; its oil is new and its block cold
 		sim.lubrication()
 			.setFilm(motion == null ? 0 : motion.film());
@@ -394,9 +420,13 @@ public final class EngineController {
 				.count();
 	}
 
-	/** The working cylinders that draw their air from intake network {@code port}. */
-	private List<CylinderModel> breathingOn(int port) {
-		List<CylinderModel> found = new ArrayList<>();
+	/** The working cylinders, and the sources a pack attached, that draw their air from intake network {@code port}. */
+	private List<Breather> breathingOn(int port, List<EngineProviders.Provided> provided, int[] providedIntake) {
+		List<Breather> found = new ArrayList<>();
+		for (int i = 0; i < provided.size(); i++)
+			if (providedIntake[i] == port && port >= 0)
+				found.add((Breather) provided.get(i)
+					.source());
 		for (int i = 0; i < models.size(); i++)
 			if (models.get(i) != null && layout.cylinders()
 				.get(i)
@@ -472,6 +502,8 @@ public final class EngineController {
 	}
 
 	private static final int AIR_INTERVAL = 20;
+	/** The six sides of a block, once: {@code Direction.values()} makes a new array every call. */
+	private static final Direction[] SIDES = Direction.values();
 
 	public void tick() {
 		Level level = primary.getLevel();
@@ -680,8 +712,10 @@ public final class EngineController {
 		if (turbo.turbine()
 			.isEmpty())
 			return false;
-		for (CylinderModel cylinder : turbo.turbine())
-			if (!(cylinder.rack < 0.3 || cylinder.fuelTrim < 0.3 || cylinder.governor < 0.3))
+		for (Breather source : turbo.turbine())
+			// Only a cylinder has a rack to lift off; anything else on the exhaust counts as still working
+			if (!(source instanceof CylinderModel cylinder)
+				|| !(cylinder.rack < 0.3 || cylinder.fuelTrim < 0.3 || cylinder.governor < 0.3))
 				return false;
 		return true;
 	}
@@ -1027,6 +1061,8 @@ public final class EngineController {
 		if (key.equals(ratingKey)) {
 			ratingSpare = key;
 			return;
+		}
+		ratingSpare = ratingKey;
 		ratingKey = key;
 		rating = new Dynamometer.Measurement(sim, maxRpm);
 	}
@@ -1061,8 +1097,6 @@ public final class EngineController {
 	 * @param complete the whole curve has been measured
 	 */
 	public record Curve(float[] rpm, float[] torque, float current, float rated, boolean complete) {
-		}
-		ratingSpare = ratingKey;
 	}
 
 	/** What a dynamometer block shows; asking for it counts as a dynamometer reading this engine. */
@@ -1156,7 +1190,7 @@ public final class EngineController {
 				firing++;
 			Camshaft camshaft = model.camshaft();
 			if (camshaft != null && camshaft.isPhaseLocked())
-				firingAngles.add((float) model.firingRotorAngle());
+				listed[listedCount++] = (float) model.firingRotorAngle();
 		}
 		// A rotor fires once a turn of the shaft, which in the engine's 720 degrees is twice; its three chambers are the
 		// same event, so only the first is listed
@@ -1166,13 +1200,12 @@ public final class EngineController {
 			if (models.get(i) == null || !placed.rotary() || placed.chamber() != 0)
 				continue;
 			float angle = (float) (((sim.direction() * placed.tdcAngle() + 180) % 360 + 360) % 360);
-			firingAngles.add(angle);
-			firingAngles.add(angle + 360);
+			listed[listedCount++] = angle;
+			listed[listedCount++] = angle + 360;
 		}
-		firingAngles.sort(Float::compare);
-		float[] angles = new float[firingAngles.size()];
-		for (int i = 0; i < angles.length; i++)
-			angles[i] = firingAngles.get(i);
+		// The summary keeps this array, so it is the one thing here that has to be made new; sorted as Float.compare orders them
+		float[] angles = Arrays.copyOf(listed, listedCount);
+		Arrays.sort(angles);
 		float roughness = (float) (sim.isStopped() ? 0 : Dynamometer.roughnessLoss(torqueCurve, rippleCurve, sim.rpm()));
 		Diagnosis.Report report = diagnose(state, firing, roughness);
 		return new EngineSummary(state, (float) sim.rpm(), primary.publishedCapacity(),
@@ -1533,8 +1566,8 @@ public final class EngineController {
 	/** The boost on the air a turbo's compressor feeds, all stages and coolers counted. */
 	private static double charge(Turbocharger turbo) {
 		double charge = 0;
-		for (CylinderModel cylinder : turbo.compressor())
-			charge = Math.max(charge, cylinder.intakePressure - 1);
+		for (Breather cylinder : turbo.compressor())
+			charge = Math.max(charge, cylinder.intakePressure() - 1);
 		return charge;
 	}
 
@@ -1576,7 +1609,7 @@ public final class EngineController {
 			firing++;
 			if (model.camshaft() != null && model.camshaft()
 				.isPhaseLocked())
-				firingAngles.add((float) model.firingRotorAngle());
+				firingAngles[firingAngleCount++] = (float) model.firingRotorAngle();
 			Cylinder placed = layout.cylinders()
 				.get(i);
 			pushrod |= placed.lobe() != null && placed.lobe()
@@ -1607,7 +1640,8 @@ public final class EngineController {
 				.effective(),
 			rich, boost, dumping, fouling, firing > 0 && balanced, (float) sim.lubrication()
 				.dilution(),
-			pushrod, firingAngles.size() == cylinders && EngineMilestones.evenFiring(toArray(firingAngles)),
+			pushrod, firingAngleCount == cylinders && cylinders >= EngineMilestones.EVEN_FIRING_CYLINDERS
+				&& EngineMilestones.evenFiring(Arrays.copyOf(firingAngles, firingAngleCount)),
 			mafTrimming, mafEnriching,
 			governedTicks >= GOVERNED_TICKS, precision && cylinders >= EngineMilestones.EVEN_FIRING_CYLINDERS,
 			layout.lines() > 1);
@@ -1680,7 +1714,7 @@ public final class EngineController {
 	private int countCasings(Level level) {
 		CasingTally tally = new CasingTally(EngineMilestones.CLAD_BLOCKS);
 		for (Cylinder placed : layout.cylinders())
-			for (Direction side : Direction.values()) {
+			for (Direction side : SIDES) {
 				BlockPos beside = placed.pos()
 					.relative(side);
 				if (level.getBlockState(beside)
@@ -1703,9 +1737,10 @@ public final class EngineController {
 		}
 		float roughness = (float) (sim.isStopped() ? 0 : Dynamometer.roughnessLoss(torqueCurve, rippleCurve, sim.rpm()));
 		// Banks: firing pistons that share a throw, on sides a quarter turn apart (a vee) or opposite (flat)
-		Map<BlockPos, List<Direction>> bores = new java.util.HashMap<>();
 		int firing = 0;
 		boolean sharedLobe = false;
+		boolean vee = false;
+		boolean flat = false;
 		for (int i = 0; i < models.size(); i++) {
 			CylinderModel model = models.get(i);
 			Cylinder placed = layout.cylinders()
@@ -1715,20 +1750,20 @@ public final class EngineController {
 			firing++;
 			// A cylinder on a shared lobe is timed at an offset from the cylinder the lobe's angle sets
 			sharedLobe |= !Double.isNaN(placed.lobeLeaderTdc()) && model.lobeShift() > 0.5;
-			bores.computeIfAbsent(placed.throwPos(), $ -> new ArrayList<>())
-				.add(placed.bore());
+			// Paired with every earlier firing piston on the same throw: the same pairs a list of bores per throw would give
+			for (int j = 0; j < i; j++) {
+				Cylinder other = layout.cylinders()
+					.get(j);
+				if (other.rotary() || !firedLast(j) || !other.throwPos()
+					.equals(placed.throwPos()))
+					continue;
+				flat |= other.bore() == placed.bore()
+					.getOpposite();
+				vee |= other.bore()
+					.getAxis() != placed.bore()
+						.getAxis();
+			}
 		}
-		boolean vee = false;
-		boolean flat = false;
-		for (List<Direction> sides : bores.values())
-			for (int a = 0; a < sides.size(); a++)
-				for (int b = a + 1; b < sides.size(); b++) {
-					flat |= sides.get(a) == sides.get(b)
-						.getOpposite();
-					vee |= sides.get(a)
-						.getAxis() != sides.get(b)
-							.getAxis();
-				}
 		award(level, EngineMilestones.reachedMechanics(new EngineMilestones.Mechanics(state == EngineState.RUNNING,
 			(float) sim.rpm(), layout.flywheelInertia(), roughness, vaneBoost, antiLagBoost, firing, vee, flat,
 			ticks - dynoReadTick < 2 * SYNC_INTERVAL && rated && rating == null, sharedLobe)));
@@ -1795,35 +1830,66 @@ public final class EngineController {
 
 	/** Credits the operator with a running rotary engine, a high-revving one, and one with several rotors. */
 	private void reportRotary(Level level, EngineState state) {
-		Set<BlockPos> firing = new HashSet<>();
+		// Housings with a chamber that fired, each counted once however many of its three chambers did: a chamber counts if
+		// no earlier one of the same housing did
+		int firing = 0;
 		for (int i = 0; i < models.size(); i++) {
-			CylinderModel model = models.get(i);
 			Cylinder placed = layout.cylinders()
 				.get(i);
-			if (model != null && placed.rotary() && model.lastCycle().result.fired())
-				firing.add(placed.pos());
+			if (!placed.rotary() || !firedLast(i))
+				continue;
+			boolean counted = false;
+			for (int j = 0; j < i && !counted; j++)
+				counted = layout.cylinders()
+					.get(j)
+					.rotary() && firedLast(j) && layout.cylinders()
+						.get(j)
+						.pos()
+						.equals(placed.pos());
+			if (!counted)
+				firing++;
 		}
 		award(level, EngineMilestones.reachedRotary(
-			new EngineMilestones.Rotary(state == EngineState.RUNNING, (float) sim.rpm(), firing.size())));
+			new EngineMilestones.Rotary(state == EngineState.RUNNING, (float) sim.rpm(), firing)));
+	}
+
+	/** Whether the working cylinder at {@code index} fired on its last cycle. */
+	private boolean firedLast(int index) {
+		CylinderModel model = models.get(index);
+		return model != null && model.lastCycle().result.fired();
+	}
+
+	/** Whether a source on a network just lit its charge: a cylinder says from its last cycle, anything else from {@link Breather#fired}. */
+	private static boolean fired(Breather source) {
+		return source instanceof CylinderModel cylinder ? cylinder.lastCycle().result.fired() : source.fired();
 	}
 
 	/** Credits the operator with boost from superchargers, stacked stages and intercoolers. */
 	private void reportInduction(Level level, EngineState state) {
-		Map<CylinderModel, int[]> stages = new IdentityHashMap<>();
+		// Made only once a stage is working: most engines have no forced induction, and this runs for every engine every half second
+		Map<Breather, int[]> stages = null;
 		// Per cylinder: turbos in series, blowers, turbos side by side
 		for (Turbocharger turbo : turbos)
 			if (turbo.boost() >= EngineMilestones.STAGE_BOOST)
-				for (CylinderModel cylinder : turbo.compressor())
+				for (Breather cylinder : turbo.compressor()) {
+					if (stages == null)
+						stages = new IdentityHashMap<>();
 					stages.computeIfAbsent(cylinder, $ -> new int[3])[turbo.parallelCompressor ? 2 : 0]++;
+				}
 		float blowerBoost = 0;
 		float overdriven = 0;
 		for (Supercharger blower : blowers) {
 			if (blower.boost() >= EngineMilestones.STAGE_BOOST)
-				for (CylinderModel cylinder : blower.compressor())
+				for (Breather cylinder : blower.compressor()) {
+					if (stages == null)
+						stages = new IdentityHashMap<>();
 					stages.computeIfAbsent(cylinder, $ -> new int[3])[1]++;
-			if (blower.compressor()
-				.stream()
-				.anyMatch(cylinder -> cylinder.lastCycle().result.fired())) {
+				}
+			boolean anyFired = false;
+			List<Breather> breathing = blower.compressor();
+			for (int i = 0, n = breathing.size(); i < n && !anyFired; i++)
+				anyFired = fired(breathing.get(i));
+			if (anyFired) {
 				blowerBoost = Math.max(blowerBoost, (float) blower.boost());
 				if (blower.variableDrive && blower.overdrive() >= EngineMilestones.OVERDRIVE_ACTIVE)
 					overdriven = Math.max(overdriven, (float) blower.boost());
@@ -1832,20 +1898,21 @@ public final class EngineController {
 		int turboStages = 0;
 		int blowerStages = 0;
 		int twinStages = 0;
-		for (int[] count : stages.values()) {
-			turboStages = Math.max(turboStages, count[0]);
-			blowerStages = Math.max(blowerStages, count[1]);
-			twinStages = Math.max(twinStages, count[2]);
-			if (count[0] + count[2] >= 1 && count[1] >= 1) {
-				turboStages = Math.max(turboStages, 1);
-				blowerStages = Math.max(blowerStages, 1);
+		if (stages != null)
+			for (int[] count : stages.values()) {
+				turboStages = Math.max(turboStages, count[0]);
+				blowerStages = Math.max(blowerStages, count[1]);
+				twinStages = Math.max(twinStages, count[2]);
+				if (count[0] + count[2] >= 1 && count[1] >= 1) {
+					turboStages = Math.max(turboStages, 1);
+					blowerStages = Math.max(blowerStages, 1);
+				}
 			}
-		}
 		float cooled = 0;
 		for (Intercooler cooler : sim.intercoolers())
-			for (CylinderModel cylinder : cooler.charge())
-				if (cylinder.lastCycle().result.fired())
-					cooled = Math.max(cooled, (float) (cylinder.intakePressure - 1));
+			for (Breather cylinder : cooler.charge())
+				if (fired(cylinder))
+					cooled = Math.max(cooled, (float) (cylinder.intakePressure() - 1));
 		award(level, EngineMilestones.reachedInduction(new EngineMilestones.Induction(
 			state == EngineState.RUNNING, blowerBoost, turboStages, blowerStages, twinStages, cooled, overdriven)));
 	}

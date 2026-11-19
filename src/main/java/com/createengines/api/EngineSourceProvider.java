@@ -2,7 +2,11 @@ package com.createengines.api;
 
 import java.util.List;
 
+import org.jetbrains.annotations.Nullable;
+
 import com.createengines.engine.sim.TorqueSource;
+
+import net.minecraft.core.BlockPos;
 
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
@@ -30,6 +34,26 @@ public interface EngineSourceProvider {
 	 */
 	default boolean watches(BlockState state) {
 		return false;
+	}
+
+	/**
+	 * Where a source this provider returned draws its air: a block that is in, or touches, one of the engine's intake pipes or
+	 * openings, or null if it does not breathe through them. The source must be a {@link com.createengines.engine.sim.Breather}
+	 * to use this. It then sits in that network like a cylinder: the engine's turbochargers, superchargers and intercoolers on
+	 * it set its intake pressure and temperature, and a cold engine's denser charge reaches it. Asked once when the engine is built.
+	 * The default is null.
+	 */
+	default @Nullable BlockPos intakeAt(TorqueSource source) {
+		return null;
+	}
+
+	/**
+	 * Where a source this provider returned blows its exhaust, in the same terms as {@link #intakeAt}: a turbocharger on that
+	 * exhaust network is driven by this source's exhaust heat and holds its exhaust up with its back-pressure.
+	 * The default is null.
+	 */
+	default @Nullable BlockPos exhaustAt(TorqueSource source) {
+		return null;
 	}
 
 	/** How far, in blocks along each axis from any crank segment, a watched block counts as touching the engine. */

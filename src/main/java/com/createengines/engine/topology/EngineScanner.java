@@ -262,7 +262,15 @@ public final class EngineScanner {
 		return new EngineLayout(first.start, first.axis, List.copyOf(segments), List.copyOf(cylinders),
 			List.copyOf(ports), List.copyOf(camLines), List.copyOf(starters), List.copyOf(batteries),
 			List.copyOf(alternators), List.copyOf(sumps), List.copyOf(governors), List.copyOf(heads),
-			turbos(), inlines(true), inlines(false), flywheelInertia, lines.size(), Set.copyOf(members), incomplete, brokenCrank);
+			turbos(), inlines(true), inlines(false), flywheelInertia, lines.size(), Set.copyOf(members), portCells(), incomplete, brokenCrank);
+	}
+
+	/** Every pipe and opening of every port network found, by the network's index. */
+	private Map<BlockPos, Integer> portCells() {
+		Map<BlockPos, Integer> cells = new HashMap<>();
+		for (Map<BlockPos, Integer> index : portIndex.values())
+			cells.putAll(index);
+		return Map.copyOf(cells);
 	}
 
 	/** Every supercharger (or, if not {@code superchargers}, intercooler) on one of this engine's intake networks. */

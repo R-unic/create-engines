@@ -12,6 +12,7 @@ import org.jetbrains.annotations.Nullable;
 import com.createengines.config.CEConfig;
 import com.createengines.content.plate.MakerPlateBlock;
 import com.createengines.content.plate.MakerPlateBlockEntity;
+import com.createengines.engine.EngineProviders;
 import com.createengines.engine.blueprint.Blueprint;
 import com.createengines.engine.blueprint.Blueprint.Limits;
 import com.createengines.engine.topology.EngineGearing;
@@ -98,6 +99,10 @@ public final class BlueprintRecorder {
 			if (!layout.members()
 				.contains(pos))
 				members.add(pos);
+		// Parts a pack or addon added beside the crankshaft, which the scanner does not know
+		for (BlockPos pos : EngineProviders.claimedBlocks(level, layout))
+			if (!members.contains(pos))
+				members.add(pos);
 		members.sort(Comparator.<BlockPos>comparingInt(p -> p.getY())
 			.thenComparingInt(p -> p.getZ())
 			.thenComparingInt(p -> p.getX()));
@@ -107,7 +112,7 @@ public final class BlueprintRecorder {
 			BlockState state = level.getBlockState(pos);
 			ResourceLocation key = BuiltInRegistries.BLOCK.getKey(state.getBlock());
 			String id = key.toString();
-			if (!EngineBlueprintPolicy.allowsNamespace(key.getNamespace())) {
+			if (!EngineBlueprintPolicy.allows(state.getBlock())) {
 				skipped++;
 				continue;
 			}

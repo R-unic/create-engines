@@ -28,6 +28,8 @@ import net.minecraft.core.Direction.Axis;
  * @param lines      how many crank lines the engine has; more than one where cranks are geared together one to one, in
  *                   which case {@link #segments()} lists them all, the first line's first
  * @param members    every block whose change should trigger a rescan of this engine
+ * @param portCells  every cell of every port network (pipes and openings) with the index into {@link #ports()} of the network it is
+ *                   in, so a block beside a pipe can be told which network it breathes from ({@link #networkAt})
  * @param incomplete part of the engine is in an unloaded chunk, so it is not run
  * @param broken     a plain shaft sits between two blocks of the crankshaft, which has to be one unbroken line, so
  *                   it is not run
@@ -37,8 +39,26 @@ public record EngineLayout(BlockPos primary, Axis axis, List<Segment> segments, 
 						   List<BlockPos> batteries, List<BlockPos> alternators, List<BlockPos> sumps,
 						   List<BlockPos> governors, List<BlockPos> heads,
 						   List<Turbo> turbos, List<Inline> superchargers, List<Inline> intercoolers, double flywheelInertia,
-							   int lines, Set<BlockPos> members, boolean incomplete,
+							   int lines, Set<BlockPos> members, java.util.Map<BlockPos, Integer> portCells, boolean incomplete,
 							   boolean broken) {
+
+	/**
+	 * The index into {@link #ports()} of the network of the given kind that {@code pos} is in or touches (a face of it is
+	 * enough), or -1 if there is none. It is how a source a pack added is joined to the engine's air.
+	 */
+	public int networkAt(@Nullable BlockPos pos, PortKind kind) {
+		if (pos == null)
+			return -1;
+		Integer here = portCells.get(pos);
+		if (here != null && ports.get(here).kind() == kind)
+			return here;
+		for (Direction side : Direction.values()) {
+			Integer next = portCells.get(pos.relative(side));
+			if (next != null && ports.get(next).kind() == kind)
+				return next;
+		}
+		return -1;
+	}
 
 	/**
 	 * A turbocharger joining one of this engine's exhaust networks (its turbine) to one of its intake networks (its

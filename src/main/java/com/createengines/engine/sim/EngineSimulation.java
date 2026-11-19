@@ -267,9 +267,12 @@ public final class EngineSimulation {
 		if (sources.size() == first)
 			return;
 		induction.airForSources(cylinders, thermal.chargeFactor());
-		for (int i = first; i < sources.size(); i++)
-			sources.get(i)
-				.setIntake(induction.sourcePressure, induction.sourceTemperature);
+		for (int i = first; i < sources.size(); i++) {
+			TorqueSource source = sources.get(i);
+			// One attached to a port breathes what that network gives it, not the engine's average
+			if (!(source instanceof Breather breather && induction.attached.contains(breather)))
+				source.setIntake(induction.sourcePressure, induction.sourceTemperature);
+		}
 	}
 
 	/**
@@ -527,6 +530,16 @@ public final class EngineSimulation {
 	public void addSource(TorqueSource source) {
 		sources.add(Objects.requireNonNull(source));
 		inertia += source.inertia();
+	}
+
+	/**
+	 * Adds a source that breathes through the engine's own networks, like a cylinder: build the turbochargers,
+	 * superchargers and intercoolers on the same networks with it in their lists, and it gets their pressures. It is added
+	 * to the crank as {@link #addSource} does.
+	 */
+	public void addAttachedSource(Breather source) {
+		addSource(source);
+		induction.attached.add(source);
 	}
 
 	/** Every source on the crank: the cylinders, then any added ones. */
