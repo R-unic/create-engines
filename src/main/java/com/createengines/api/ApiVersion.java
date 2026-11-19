@@ -15,13 +15,28 @@ package com.createengines.api;
  */
 public final class ApiVersion {
 
-	public static final int MAJOR = 1;
-	public static final int MINOR = 0;
-	public static final int PATCH = 0;
+	// These are deliberately not compile-time constants. javac copies a constant's value into the class that reads it, so an
+	// addon compiled against API 1.2 would carry "2" for ever and never see the version actually installed. Going through a
+	// method keeps the read at run time, which is the only time an addon wants to know.
+	public static final int MAJOR = of(1);
+	public static final int MINOR = of(0);
+	public static final int PATCH = of(0);
 
 	/** {@code MAJOR.MINOR.PATCH}. */
 	public static final String VERSION = MAJOR + "." + MINOR + "." + PATCH;
 
 	private ApiVersion() {
+	}
+
+	private static int of(int value) {
+		return value;
+	}
+
+	/**
+	 * Whether the installed API is at least {@code major.minor}: the same major version and a minor version that is not
+	 * older. An addon that can do without a feature added in a later minor version asks this before using it.
+	 */
+	public static boolean isAtLeast(int major, int minor) {
+		return MAJOR == major && MINOR >= minor;
 	}
 }
