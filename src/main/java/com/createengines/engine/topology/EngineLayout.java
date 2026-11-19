@@ -6,6 +6,7 @@ import java.util.Set;
 import org.jetbrains.annotations.Nullable;
 
 import com.createengines.content.airflow.PortKind;
+import com.createengines.engine.sim.PortFlow;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -113,11 +114,28 @@ public record EngineLayout(BlockPos primary, Axis axis, List<Segment> segments, 
 							  List<BlockPos> throttles, List<BlockPos> sensors, List<BlockPos> turbos,
 							  List<BlockPos> superchargers, List<BlockPos> intercoolers, Set<BlockPos> parallel,
 							  List<BlockPos> mufflers, List<BlockPos> traps) {
-		/** Share of full breathing each head gets: an opening comfortably serves two cylinders. */
+		/** Share of full breathing each head gets: diminishing returns per opening, crowded openings worth half ({@link PortFlow}). */
 		public double flowFactor() {
 			if (openings == 0 || heads == 0)
 				return 0;
-			return Math.min(1, 2.0 * openings / heads);
+			return PortFlow.factor(PortFlow.effective(openings, outlets.size(), crowdedOutlets()), heads);
+		}
+
+		/** How many of the openings have another one right beside them (touching, corners included). */
+		public int crowdedOutlets() {
+			int crowded = 0;
+			for (int i = 0; i < outlets.size(); i++) {
+				BlockPos a = outlets.get(i);
+				for (int j = 0; j < outlets.size(); j++) {
+					BlockPos b = outlets.get(j);
+					if (i != j && Math.abs(a.getX() - b.getX()) <= 1 && Math.abs(a.getY() - b.getY()) <= 1
+						&& Math.abs(a.getZ() - b.getZ()) <= 1) {
+						crowded++;
+						break;
+					}
+				}
+			}
+			return crowded;
 		}
 	}
 

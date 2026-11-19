@@ -1,0 +1,30 @@
+{
+  "parent": "create_engines:builder/four_cylinders",
+  "criteria": {
+    "builder/flat_engine": {
+      "conditions": {
+        "event": "flat_engine"
+      },
+      "trigger": "create_engines:event"
+    }
+  },
+  "display": {
+    "description": {
+      "translate": "advancement.create_engines.builder.flat_engine.desc"
+    },
+    "frame": "goal",
+    "icon": {
+      "count": 1,
+      "id": "create_engines:bank_builder"
+    },
+    "title": {
+      "translate": "advancement.create_engines.builder.flat_engine"
+    }
+  },
+  "requirements": [
+    [
+      "builder/flat_engine"
+    ]
+  ],
+  "sends_telemetry_event": true
+}

@@ -1,0 +1,5 @@
+{
+  "inertia": 0.7,
+  "friction_static": 0.8,
+  "friction_viscous": 0.7
+}

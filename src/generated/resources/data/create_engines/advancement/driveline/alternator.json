@@ -1,0 +1,30 @@
+{
+  "parent": "create_engines:fuel/spark_plug",
+  "criteria": {
+    "driveline/alternator": {
+      "conditions": {
+        "event": "alternator_charging"
+      },
+      "trigger": "create_engines:event"
+    }
+  },
+  "display": {
+    "announce_to_chat": false,
+    "description": {
+      "translate": "advancement.create_engines.driveline.alternator.desc"
+    },
+    "icon": {
+      "count": 1,
+      "id": "create_engines:alternator"
+    },
+    "title": {
+      "translate": "advancement.create_engines.driveline.alternator"
+    }
+  },
+  "requirements": [
+    [
+      "driveline/alternator"
+    ]
+  ],
+  "sends_telemetry_event": true
+}

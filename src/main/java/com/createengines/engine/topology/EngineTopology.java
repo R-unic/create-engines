@@ -10,7 +10,7 @@ import java.util.Set;
 
 import org.jetbrains.annotations.Nullable;
 
-import com.createengines.api.EngineExtensions;
+import com.createengines.engine.EngineProviders;
 import com.createengines.content.EngineGlow;
 import com.createengines.content.crankshaft.CrankshaftBlockEntity;
 import com.createengines.engine.EngineController;
@@ -98,13 +98,13 @@ public final class EngineTopology {
 	 */
 	public static void onBlockPlaced(BlockEvent.EntityPlaceEvent event) {
 		if (event.getLevel() instanceof Level level)
-			EngineExtensions.blockChanged(level, event.getPos(), event.getPlacedBlock());
+			EngineProviders.blockChanged(level, event.getPos(), event.getPlacedBlock());
 		gearingChanged(event.getLevel(), event.getPos(), event.getPlacedBlock());
 	}
 
 	public static void onBlockBroken(BlockEvent.BreakEvent event) {
 		if (event.getLevel() instanceof Level level)
-			EngineExtensions.blockChanged(level, event.getPos(), event.getState());
+			EngineProviders.blockChanged(level, event.getPos(), event.getState());
 		gearingChanged(event.getLevel(), event.getPos(), event.getState());
 	}
 

@@ -7,8 +7,7 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction.Axis;
 
 /**
- * What an {@link EngineSourceProvider} is told about an engine that is being built. <b>Preview:</b> the API may still
- * change until 2.0.
+ * What an {@link EngineSourceProvider} is told about an engine that is being built. <b>Frozen</b> at API 1.0 (see {@link ApiVersion}): nothing here is removed or changed before the next major version, and additions are minor versions.
  *
  * @param primary  the crankshaft block that hosts the engine
  * @param axis     the axis the crankshaft runs along

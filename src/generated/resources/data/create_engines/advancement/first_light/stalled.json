@@ -1,0 +1,29 @@
+{
+  "parent": "create_engines:first_light/alive",
+  "criteria": {
+    "first_light/stalled": {
+      "conditions": {
+        "event": "stalled"
+      },
+      "trigger": "create_engines:event"
+    }
+  },
+  "display": {
+    "description": {
+      "translate": "advancement.create_engines.first_light.stalled.desc"
+    },
+    "icon": {
+      "count": 1,
+      "id": "create_engines:starter"
+    },
+    "title": {
+      "translate": "advancement.create_engines.first_light.stalled"
+    }
+  },
+  "requirements": [
+    [
+      "first_light/stalled"
+    ]
+  ],
+  "sends_telemetry_event": true
+}

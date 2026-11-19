@@ -1,0 +1,30 @@
+{
+  "parent": "create_engines:first_light/alive",
+  "criteria": {
+    "driveline/flywheel": {
+      "conditions": {
+        "event": "flywheel_smooth"
+      },
+      "trigger": "create_engines:event"
+    }
+  },
+  "display": {
+    "announce_to_chat": false,
+    "description": {
+      "translate": "advancement.create_engines.driveline.flywheel.desc"
+    },
+    "icon": {
+      "count": 1,
+      "id": "create_engines:cast_flywheel"
+    },
+    "title": {
+      "translate": "advancement.create_engines.driveline.flywheel"
+    }
+  },
+  "requirements": [
+    [
+      "driveline/flywheel"
+    ]
+  ],
+  "sends_telemetry_event": true
+}

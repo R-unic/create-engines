@@ -81,7 +81,7 @@ public class CylinderBlock extends DirectionalBlock
 
 	@Override
 	protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {
-		builder.add(FACING, HAS_PISTON, FORGED_PISTON, HAS_ROD, Encasing.ENCASED, Encasing.PAINT, Encasing.STYLE);
+		builder.add(FACING, HAS_PISTON, FORGED_PISTON, HAS_ROD, Encasing.ENCASED, Encasing.STYLE);
 	}
 
 	@Override

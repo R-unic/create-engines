@@ -1,0 +1,30 @@
+{
+  "parent": "create_engines:tuning/engine_display",
+  "criteria": {
+    "tuning/stampede": {
+      "conditions": {
+        "event": "stampede"
+      },
+      "trigger": "create_engines:event"
+    }
+  },
+  "display": {
+    "description": {
+      "translate": "advancement.create_engines.tuning.stampede.desc"
+    },
+    "frame": "goal",
+    "icon": {
+      "count": 1,
+      "id": "create:display_link"
+    },
+    "title": {
+      "translate": "advancement.create_engines.tuning.stampede"
+    }
+  },
+  "requirements": [
+    [
+      "tuning/stampede"
+    ]
+  ],
+  "sends_telemetry_event": true
+}

@@ -1,0 +1,30 @@
+{
+  "parent": "create_engines:builder/twelve_cylinders",
+  "criteria": {
+    "builder/sixteen_cylinders": {
+      "conditions": {
+        "event": "sixteen_cylinders"
+      },
+      "trigger": "create_engines:event"
+    }
+  },
+  "display": {
+    "description": {
+      "translate": "advancement.create_engines.builder.sixteen_cylinders.desc"
+    },
+    "frame": "challenge",
+    "icon": {
+      "count": 1,
+      "id": "create_engines:crank_throw"
+    },
+    "title": {
+      "translate": "advancement.create_engines.builder.sixteen_cylinders"
+    }
+  },
+  "requirements": [
+    [
+      "builder/sixteen_cylinders"
+    ]
+  ],
+  "sends_telemetry_event": true
+}

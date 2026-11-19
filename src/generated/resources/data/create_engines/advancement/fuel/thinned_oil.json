@@ -1,0 +1,30 @@
+{
+  "parent": "create_engines:fuel/smoke_signals",
+  "criteria": {
+    "fuel/thinned_oil": {
+      "conditions": {
+        "event": "thinned_oil"
+      },
+      "trigger": "create_engines:event"
+    }
+  },
+  "display": {
+    "announce_to_chat": false,
+    "description": {
+      "translate": "advancement.create_engines.fuel.thinned_oil.desc"
+    },
+    "icon": {
+      "count": 1,
+      "id": "create_engines:engine_oil_bucket"
+    },
+    "title": {
+      "translate": "advancement.create_engines.fuel.thinned_oil"
+    }
+  },
+  "requirements": [
+    [
+      "fuel/thinned_oil"
+    ]
+  ],
+  "sends_telemetry_event": true
+}

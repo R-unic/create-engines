@@ -1,0 +1,30 @@
+{
+  "parent": "create_engines:builder/four_cylinders",
+  "criteria": {
+    "builder/coupled_cranks": {
+      "conditions": {
+        "event": "coupled_cranks"
+      },
+      "trigger": "create_engines:event"
+    }
+  },
+  "display": {
+    "description": {
+      "translate": "advancement.create_engines.builder.coupled_cranks.desc"
+    },
+    "frame": "goal",
+    "icon": {
+      "count": 1,
+      "id": "create_engines:crankshaft"
+    },
+    "title": {
+      "translate": "advancement.create_engines.builder.coupled_cranks"
+    }
+  },
+  "requirements": [
+    [
+      "builder/coupled_cranks"
+    ]
+  ],
+  "sends_telemetry_event": true
+}

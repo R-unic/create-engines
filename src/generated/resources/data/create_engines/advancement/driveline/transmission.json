@@ -1,0 +1,30 @@
+{
+  "parent": "create_engines:first_light/crankshaft",
+  "criteria": {
+    "driveline/transmission": {
+      "conditions": {
+        "event": "shifted"
+      },
+      "trigger": "create_engines:event"
+    }
+  },
+  "display": {
+    "announce_to_chat": false,
+    "description": {
+      "translate": "advancement.create_engines.driveline.transmission.desc"
+    },
+    "icon": {
+      "count": 1,
+      "id": "create_engines:transmission"
+    },
+    "title": {
+      "translate": "advancement.create_engines.driveline.transmission"
+    }
+  },
+  "requirements": [
+    [
+      "driveline/transmission"
+    ]
+  ],
+  "sends_telemetry_event": true
+}

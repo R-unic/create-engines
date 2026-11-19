@@ -34,6 +34,27 @@ class SootCollectorTest {
 	}
 
 	@Test
+	void aTrapKeepsOutWhatItIsGivenUnlessItIsFull() {
+		assertEquals(30, SootCollector.caught(30, false), 0);
+		assertEquals(0, SootCollector.caught(30, true), 0, "a full trap lets it all through");
+		assertEquals(0, SootCollector.caught(-5, false), 0);
+		assertEquals(0, SootCollector.caught(Double.NaN, false), 0);
+		assertEquals(0, SootCollector.caught(Double.POSITIVE_INFINITY, false), 0);
+	}
+
+	@Test
+	void whatEscapesIsWhatWasMadeLessWhatWasCaughtAndNeverNegative() {
+		assertEquals(100, SootCollector.escaped(100, 0), 0, "no trap, all of it goes out");
+		assertEquals(40, SootCollector.escaped(100, 60), 1e-12);
+		assertEquals(0, SootCollector.escaped(100, 100), 0, "a trap every path goes through leaves nothing");
+		assertEquals(0, SootCollector.escaped(100, 250), 0, "more caught than made cannot go below nothing");
+		assertEquals(100, SootCollector.escaped(100, -5), 0);
+		assertEquals(100, SootCollector.escaped(100, Double.NaN), 0);
+		assertEquals(0, SootCollector.escaped(Double.NaN, 5), 0);
+		assertEquals(0, SootCollector.escaped(-3, 0), 0);
+	}
+
+	@Test
 	void takingMoreThanIsThereOrNegativeGivesWhatIsThere() {
 		SootCollector trap = new SootCollector();
 		trap.add(125);

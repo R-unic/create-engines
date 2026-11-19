@@ -85,6 +85,18 @@ configurations.create('kubejsRuntime')
 configurations.create('ccRuntime')
 // And the Create Aeronautics row (with Sable, which it needs).
 configurations.create('aeronauticsRuntime')
+// And the Pollution of the Realms GameTest run (with the library it needs).
+configurations.create('pollutionRuntime')
+// And the GameTest run with Create Aeronautics and Sable loaded (engines on a moving structure).
+def sableJar = configurations.getByName('aeronauticsRuntime')
+tasks.register('extractSableCompanion', Copy) {
+    from({ zipTree(sableJar.incoming.files.filter { it.name.startsWith('sable') }.singleFile) }) {
+        include 'META-INF/jarjar/sable-companion*.jar'
+        eachFile { it.path = 'sable-companion.jar' }
+        includeEmptyDirs = false
+    }
+    into layout.buildDirectory.dir('sable')
+}
 
 neoForge {
     version = project.neo_version
@@ -229,6 +241,21 @@ neoForge {
             systemProperty 'neoforge.enabledGameTestNamespaces', project.mod_id
         }
 
+        // The GameTests again with Pollution of the Realms loaded, for the tests that only run with it; its jars are put in the
+        // game folder's mods folder by the doFirst below
+        gameTestServerPollution {
+            type = 'gameTestServer'
+            gameDirectory = file('run/gametest-pollution')
+            systemProperty 'neoforge.enabledGameTestNamespaces', project.mod_id
+        }
+
+        // The GameTests with Create Aeronautics and Sable loaded, for the tests that need a moving structure
+        gameTestServerSable {
+            type = 'gameTestServer'
+            gameDirectory = file('run/gametest-sable')
+            systemProperty 'neoforge.enabledGameTestNamespaces', project.mod_id
+        }
+
         data {
             data()
             programArguments.addAll '--mod', project.mod_id, '--all',
@@ -280,6 +307,14 @@ dependencies {
     ccRuntime("cc.tweaked:cc-tweaked-${minecraft_version}-forge:${cc_tweaked_version}") { transitive = false }
     aeronauticsRuntime("maven.modrinth:create-aeronautics:${aeronautics_version}") { transitive = false }
     aeronauticsRuntime("maven.modrinth:sable:${sable_version}") { transitive = false }
+    // Pollution of the Realms has no API: its classes are compiled against (never shipped) and only one bridge class names them
+    compileOnly("maven.modrinth:pollution-of-the-realms:${pollution_version}") { transitive = false }
+    compileOnly("maven.modrinth:forgeendertech:${endertech_version}") { transitive = false }
+    pollutionRuntime("maven.modrinth:pollution-of-the-realms:${pollution_version}") { transitive = false }
+    pollutionRuntime("maven.modrinth:forgeendertech:${endertech_version}") { transitive = false }
+    // Sable's small companion library (nested inside its jar) is compiled against, never shipped; only SableBridge names it
+    compileOnly(files(layout.buildDirectory.file('sable/sable-companion.jar')).builtBy('extractSableCompanion'))
+    compileOnly("maven.modrinth:sable:${sable_version}") { transitive = false }
 
     // The simulation core has no Minecraft dependencies and is tested as plain Java.
     testImplementation(platform('org.junit:junit-bom:5.11.4'))
@@ -305,6 +340,7 @@ var generateModMetadata = tasks.register('generateModMetadata', ProcessResources
             minecraft_version      : minecraft_version,
             minecraft_version_range: minecraft_version_range,
             neo_version            : neo_version,
+            neo_min_version        : neo_min_version,
             loader_version_range   : loader_version_range,
             create_version_range   : create_version_range,
             mod_id                 : mod_id,
@@ -453,6 +489,26 @@ def aeroShowcaseMods = configurations.getByName('aeronauticsRuntime').incoming.f
             modsDir.mkdirs()
             aeroShowcaseMods.files.each { jar -> new File(modsDir, jar.name).bytes = jar.bytes }
         }
+    }
+}
+def pollutionMods = configurations.getByName('pollutionRuntime').incoming.files
+def pollutionDir = file('run/gametest-pollution')
+tasks.matching { it.name == 'runGameTestServerPollution' }.configureEach {
+    doFirst {
+        def modsDir = new File(pollutionDir, 'mods')
+        modsDir.deleteDir()
+        modsDir.mkdirs()
+        pollutionMods.files.each { jar -> new File(modsDir, jar.name).bytes = jar.bytes }
+    }
+}
+def sableMods = configurations.getByName('aeronauticsRuntime').incoming.files
+def sableDir = file('run/gametest-sable')
+tasks.matching { it.name == 'runGameTestServerSable' }.configureEach {
+    doFirst {
+        def modsDir = new File(sableDir, 'mods')
+        modsDir.deleteDir()
+        modsDir.mkdirs()
+        sableMods.files.each { jar -> new File(modsDir, jar.name).bytes = jar.bytes }
     }
 }
 tasks.matching { it.name == 'runSmokeAuditSodium' }.configureEach { mustRunAfter 'runSmokeAuditFlywheelOff' }

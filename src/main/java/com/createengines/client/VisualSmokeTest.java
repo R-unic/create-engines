@@ -971,28 +971,21 @@ public final class VisualSmokeTest {
 						.getDefaultState()
 						.setValue(EngineCasingBlock.PAINT, paints.get(column)), 3);
 			// And below them, casing clad onto a part, in a dye each (the shaft parts run along the wall)
-			var red = CasingPaint.RED;
-			var blue = CasingPaint.BLUE;
 			var clad = com.createengines.content.Encasing.ENCASED;
-			var paint = EngineCasingBlock.PAINT;
-			level.setBlock(origin.offset(0, 5, 0), CEBlocks.CYLINDER.getDefaultState()
-				.setValue(clad, true)
-				.setValue(paint, red), 3);
-			level.setBlock(origin.offset(1, 5, 0), TestEngine.axisX(CEBlocks.CRANKSHAFT.getDefaultState())
-				.setValue(clad, true)
-				.setValue(paint, blue), 3);
-			level.setBlock(origin.offset(2, 5, 0), TestEngine.axisX(CEBlocks.CAMSHAFT.getDefaultState())
-				.setValue(clad, true)
-				.setValue(paint, CasingPaint.LIME), 3);
-			level.setBlock(origin.offset(3, 5, 0), CEBlocks.INTAKE_MANIFOLD.getDefaultState()
-				.setValue(clad, true)
-				.setValue(paint, CasingPaint.YELLOW), 3);
-			level.setBlock(origin.offset(4, 5, 0), TestEngine.axisX(CEBlocks.ENGINE_CASED_SHAFT.getDefaultState())
-				.setValue(paint, CasingPaint.PURPLE), 3);
-			level.setBlock(origin.offset(5, 5, 0), TestEngine.axisX(CEBlocks.ENGINE_CASED_COGWHEEL.getDefaultState())
-				.setValue(paint, CasingPaint.ORANGE), 3);
-			level.setBlock(origin.offset(6, 5, 0), TestEngine.axisX(CEBlocks.ENGINE_CASED_LARGE_COGWHEEL.getDefaultState())
-				.setValue(paint, CasingPaint.CYAN), 3);
+			dyed(level, origin.offset(0, 5, 0), CEBlocks.CYLINDER.getDefaultState()
+				.setValue(clad, true), CasingPaint.RED);
+			dyed(level, origin.offset(1, 5, 0), TestEngine.axisX(CEBlocks.CRANKSHAFT.getDefaultState())
+				.setValue(clad, true), CasingPaint.BLUE);
+			dyed(level, origin.offset(2, 5, 0), TestEngine.axisX(CEBlocks.CAMSHAFT.getDefaultState())
+				.setValue(clad, true), CasingPaint.LIME);
+			dyed(level, origin.offset(3, 5, 0), CEBlocks.INTAKE_MANIFOLD.getDefaultState()
+				.setValue(clad, true), CasingPaint.YELLOW);
+			dyed(level, origin.offset(4, 5, 0), TestEngine.axisX(CEBlocks.ENGINE_CASED_SHAFT.getDefaultState()),
+				CasingPaint.PURPLE);
+			dyed(level, origin.offset(5, 5, 0), TestEngine.axisX(CEBlocks.ENGINE_CASED_COGWHEEL.getDefaultState()),
+				CasingPaint.ORANGE);
+			dyed(level, origin.offset(6, 5, 0), TestEngine.axisX(CEBlocks.ENGINE_CASED_LARGE_COGWHEEL.getDefaultState()),
+				CasingPaint.CYAN);
 		})));
 		STEPS.add(new Step(start + 60, () -> view(4.5, 6.5, 7, 180, 0)));
 		for (int i = 0; i < 3; i++) {
@@ -1001,6 +994,14 @@ public final class VisualSmokeTest {
 		}
 		STEPS.add(new Step(start + 120, () -> Minecraft.getInstance()
 			.stop()));
+	}
+
+	/** Places a part and dyes its casing, which a clad part holds in its block entity. */
+	private static void dyed(net.minecraft.server.level.ServerLevel level, net.minecraft.core.BlockPos pos,
+		net.minecraft.world.level.block.state.BlockState state, CasingPaint paint) {
+		level.setBlock(pos, state, 3);
+		if (level.getBlockEntity(pos) instanceof com.createengines.content.PaintedBlockEntity held)
+			held.setCasingPaint(paint);
 	}
 
 	/**

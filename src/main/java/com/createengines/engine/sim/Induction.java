@@ -18,6 +18,10 @@ final class Induction {
 	/** Kept and emptied each tick rather than made new: this runs for every engine every tick. */
 	private final Parallel intake = new Parallel();
 	private final Parallel exhaust = new Parallel();
+	/** Ambient air density, 1 at sea level: what every cylinder's intake pressure starts from. */
+	double density = 1;
+	/** The density the cylinders were last given with no compressor to set their pressure, so an unchanged one is left alone. */
+	private double givenDensity = 1;
 
 	/**
 	 * Lets each turbo spool and each blower turn on this tick, then sets every cylinder's air. They spin down even while
@@ -51,12 +55,16 @@ final class Induction {
 			for (int cylinderI = 0, cylinderN = cylinders.size(); cylinderI < cylinderN; cylinderI++) {
 				CylinderModel cylinder = cylinders.get(cylinderI);
 				cylinder.intakeTemperature = cool;
+				if (density != givenDensity)
+					cylinder.intakePressure = density;
 			}
+			givenDensity = density;
 			return;
 		}
 		for (int cylinderI = 0, cylinderN = cylinders.size(); cylinderI < cylinderN; cylinderI++) {
 			CylinderModel cylinder = cylinders.get(cylinderI);
-			cylinder.intakePressure = 1;
+			cylinder.intakePressure = density;
+			givenDensity = density;
 			cylinder.intakeTemperature = 1;
 			cylinder.exhaustPressure = 1;
 		}

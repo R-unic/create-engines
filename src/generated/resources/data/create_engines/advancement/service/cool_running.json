@@ -1,0 +1,30 @@
+{
+  "parent": "create_engines:first_light/warmed_up",
+  "criteria": {
+    "service/cool_running": {
+      "conditions": {
+        "event": "cool_running"
+      },
+      "trigger": "create_engines:event"
+    }
+  },
+  "display": {
+    "description": {
+      "translate": "advancement.create_engines.service.cool_running.desc"
+    },
+    "frame": "goal",
+    "icon": {
+      "count": 1,
+      "id": "create_engines:coolant_bucket"
+    },
+    "title": {
+      "translate": "advancement.create_engines.service.cool_running"
+    }
+  },
+  "requirements": [
+    [
+      "service/cool_running"
+    ]
+  ],
+  "sends_telemetry_event": true
+}

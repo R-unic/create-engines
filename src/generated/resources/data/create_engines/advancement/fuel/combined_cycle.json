@@ -1,0 +1,30 @@
+{
+  "parent": "create_engines:fuel/heat_exchanger",
+  "criteria": {
+    "fuel/combined_cycle": {
+      "conditions": {
+        "event": "combined_cycle"
+      },
+      "trigger": "create_engines:event"
+    }
+  },
+  "display": {
+    "description": {
+      "translate": "advancement.create_engines.fuel.combined_cycle.desc"
+    },
+    "frame": "goal",
+    "icon": {
+      "count": 1,
+      "id": "create:steam_engine"
+    },
+    "title": {
+      "translate": "advancement.create_engines.fuel.combined_cycle"
+    }
+  },
+  "requirements": [
+    [
+      "fuel/combined_cycle"
+    ]
+  ],
+  "sends_telemetry_event": true
+}

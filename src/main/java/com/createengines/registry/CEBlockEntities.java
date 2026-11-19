@@ -203,28 +203,34 @@ public final class CEBlockEntities {
 		.register();
 
 	/** The blocks Create puts in its own casings, as ours: a shaft or cog clad in Engine Casing. */
-	public static final BlockEntityEntry<KineticBlockEntity> ENCASED_SHAFT = REGISTRATE
-		.blockEntity("engine_cased_shaft", KineticBlockEntity::new)
+	public static final BlockEntityEntry<com.createengines.content.PaintedShaftBlockEntity> ENCASED_SHAFT = REGISTRATE
+		.blockEntity("engine_cased_shaft", com.createengines.content.PaintedShaftBlockEntity::new)
 		.visual(() -> ShaftVisual::new, false)
 		.validBlocks(CEBlocks.ENGINE_CASED_SHAFT, CEBlocks.ENGINE_RIVETED_CASED_SHAFT, CEBlocks.ENGINE_LOUVRED_CASED_SHAFT,
 			CEBlocks.ENGINE_WINDOW_CASED_SHAFT)
 		.renderer(() -> ShaftRenderer::new)
 		.register();
 
-	public static final BlockEntityEntry<SimpleKineticBlockEntity> ENCASED_COGWHEEL = REGISTRATE
-		.blockEntity("engine_cased_cogwheel", SimpleKineticBlockEntity::new)
+	public static final BlockEntityEntry<com.createengines.content.PaintedCogBlockEntity> ENCASED_COGWHEEL = REGISTRATE
+		.blockEntity("engine_cased_cogwheel", com.createengines.content.PaintedCogBlockEntity::new)
 		.visual(() -> EncasedCogVisual::small, false)
 		.validBlocks(CEBlocks.ENGINE_CASED_COGWHEEL, CEBlocks.ENGINE_RIVETED_CASED_COGWHEEL,
 			CEBlocks.ENGINE_LOUVRED_CASED_COGWHEEL, CEBlocks.ENGINE_WINDOW_CASED_COGWHEEL)
 		.renderer(() -> EncasedCogRenderer::small)
 		.register();
 
-	public static final BlockEntityEntry<SimpleKineticBlockEntity> ENCASED_LARGE_COGWHEEL = REGISTRATE
-		.blockEntity("engine_cased_large_cogwheel", SimpleKineticBlockEntity::new)
+	public static final BlockEntityEntry<com.createengines.content.PaintedCogBlockEntity> ENCASED_LARGE_COGWHEEL = REGISTRATE
+		.blockEntity("engine_cased_large_cogwheel", com.createengines.content.PaintedCogBlockEntity::new)
 		.visual(() -> EncasedCogVisual::large, false)
 		.validBlocks(CEBlocks.ENGINE_CASED_LARGE_COGWHEEL, CEBlocks.ENGINE_RIVETED_CASED_LARGE_COGWHEEL,
 			CEBlocks.ENGINE_LOUVRED_CASED_LARGE_COGWHEEL, CEBlocks.ENGINE_WINDOW_CASED_LARGE_COGWHEEL)
 		.renderer(() -> EncasedCogRenderer::large)
+		.register();
+
+	/** Holds only the dye of the casing on a plain manifold; see {@link com.createengines.content.airflow.PlainManifoldBlock}. */
+	public static final BlockEntityEntry<com.createengines.content.airflow.ManifoldBlockEntity> MANIFOLD = REGISTRATE
+		.blockEntity("manifold", com.createengines.content.airflow.ManifoldBlockEntity::new)
+		.validBlocks(CEBlocks.INTAKE_MANIFOLD, CEBlocks.EXHAUST_MANIFOLD)
 		.register();
 
 	private CEBlockEntities() {

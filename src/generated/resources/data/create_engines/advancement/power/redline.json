@@ -1,0 +1,30 @@
+{
+  "parent": "create_engines:first_light/alive",
+  "criteria": {
+    "power/redline": {
+      "conditions": {
+        "event": "redline"
+      },
+      "trigger": "create_engines:event"
+    }
+  },
+  "display": {
+    "description": {
+      "translate": "advancement.create_engines.power.redline.desc"
+    },
+    "frame": "goal",
+    "icon": {
+      "count": 1,
+      "id": "create_engines:camshaft"
+    },
+    "title": {
+      "translate": "advancement.create_engines.power.redline"
+    }
+  },
+  "requirements": [
+    [
+      "power/redline"
+    ]
+  ],
+  "sends_telemetry_event": true
+}

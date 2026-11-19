@@ -31,7 +31,8 @@ import net.neoforged.neoforge.client.model.DynamicFluidContainerModel;
 public class CreateEnginesClient {
 
 	public CreateEnginesClient(IEventBus modEventBus, ModContainer modContainer) {
-		modContainer.registerConfig(ModConfig.Type.CLIENT, CEClientConfig.SPEC);
+		modContainer.registerConfig(ModConfig.Type.CLIENT, CEClientConfig.SPEC, CEClientConfig.FILE);
+		modEventBus.addListener(CEClientConfig::onConfig);
 		com.createengines.content.CESpriteShifts.STYLED_CASING_BEHAVIOUR = com.createengines.client.StyledCasingCTBehaviour::new;
 		CEPartialModels.init();
 		com.createengines.content.blueprint.BlueprintViewer.opener = com.createengines.client.BlueprintScreen::open;
@@ -82,13 +83,17 @@ public class CreateEnginesClient {
 		com.createengines.client.RainCaps.clear();
 	}
 
-	/** Dyed Engine Casing: the plate is grey steel and the block's paint tints it. */
+	/**
+	 * Dyed Engine Casing: the plate is grey steel and the dye tints it. The plain casing blocks hold the dye in their state;
+	 * the parts casing is clad onto (cylinders, cranks, cams, manifolds, cased shafts and cogs) hold it in their block entity,
+	 * which is also what a moving contraption's render world keeps for them.
+	 */
 	private static void registerCasingColours(RegisterColorHandlersEvent.Block event) {
-		// Every block that carries paint: the three casings, and the parts casing is clad onto
-		event.register((state, level, pos, tintIndex) -> state.getValue(EngineCasingBlock.PAINT)
-			.tint(), net.minecraft.core.registries.BuiltInRegistries.BLOCK.stream()
-				.filter(block -> block.defaultBlockState()
-					.hasProperty(EngineCasingBlock.PAINT))
+		event.register((state, level, pos, tintIndex) -> (state.hasProperty(EngineCasingBlock.PAINT)
+			? state.getValue(EngineCasingBlock.PAINT)
+			: com.createengines.content.PaintedBlockEntity.at(level, pos)).tint(),
+			net.minecraft.core.registries.BuiltInRegistries.BLOCK.stream()
+				.filter(com.createengines.content.CasingPaint::isDyed)
 				.toArray(net.minecraft.world.level.block.Block[]::new));
 	}
 

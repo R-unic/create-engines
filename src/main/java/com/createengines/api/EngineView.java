@@ -1,7 +1,7 @@
 package com.createengines.api;
 
 /**
- * A read-only look at one engine. <b>Preview:</b> the API may still change until 2.0.
+ * A read-only look at one engine. <b>Frozen</b> at API 1.0 (see {@link ApiVersion}): nothing here is removed or changed before the next major version, and additions are minor versions.
  *
  * @param status          what the engine is doing
  * @param rpm             crank speed

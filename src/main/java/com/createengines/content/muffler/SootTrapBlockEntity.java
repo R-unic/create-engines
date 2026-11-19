@@ -47,8 +47,9 @@ public class SootTrapBlockEntity extends SmartBlockEntity implements IHaveGoggle
 		return collector.full();
 	}
 
-	/** Catches soot, in mB of unburned fuel. A full trap lets it through. */
-	public void catchSoot(double mb) {
+	/** Catches soot, in mB of unburned fuel. A full trap lets it through. Returns how much it kept out of the exhaust. */
+	public double catchSoot(double mb) {
+		double caught = SootCollector.caught(mb, collector.full());
 		int before = collector.stored();
 		collector.add(mb);
 		if (collector.stored() != before) {
@@ -61,6 +62,7 @@ public class SootTrapBlockEntity extends SmartBlockEntity implements IHaveGoggle
 				sendData();
 			}
 		}
+		return caught;
 	}
 
 	/** Takes every lump out as one stack (or none). */

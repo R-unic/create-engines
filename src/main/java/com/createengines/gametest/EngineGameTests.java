@@ -3552,7 +3552,8 @@ public class EngineGameTests {
 			EngineSummary summary = summary(helper);
 			helper.assertTrue(summary.state() == EngineState.RUNNING, "Engine should run through the turbo: " + summary);
 			TurbochargerBlockEntity be = helper.getBlockEntity(EXHAUST);
-			helper.assertTrue(be.status() != null && be.status().vanes() > 0.2f,
+			helper.assertTrue(be.status() != null && be.status().vanes() > 0.15f, // 2.0 port curve: one opening per head is 90 percent breathing, vanes 0.177 (was above 0.2); see v2.0.0 Exceptions
+
 				"One cylinder exhaust is thin, so the vanes close: " + be.status());
 			helper.succeed();
 		});
@@ -3794,13 +3795,11 @@ public class EngineGameTests {
 			helper.setBlock(pos, clad[i]);
 			net.minecraft.world.item.ItemStack dye = new net.minecraft.world.item.ItemStack(net.minecraft.world.item.Items.BLUE_DYE, 2);
 			dye(helper, player, pos, dye);
-			helper.assertTrue(helper.getBlockState(pos)
-				.getValue(com.createengines.content.EngineCasingBlock.PAINT) == com.createengines.content.CasingPaint.BLUE,
+			helper.assertTrue(dyeOf(helper, pos) == com.createengines.content.CasingPaint.BLUE,
 				"Blue dye should tint the casing on " + clad[i]);
 			helper.assertTrue(dye.getCount() == 1, "One dye is used up on " + clad[i]);
 			dye(helper, player, pos, new net.minecraft.world.item.ItemStack(net.minecraft.world.item.Items.WATER_BUCKET));
-			helper.assertTrue(helper.getBlockState(pos)
-				.getValue(com.createengines.content.EngineCasingBlock.PAINT) == com.createengines.content.CasingPaint.NONE,
+			helper.assertTrue(dyeOf(helper, pos) == com.createengines.content.CasingPaint.NONE,
 				"Water should wash " + clad[i]);
 		}
 		// A bare cylinder has no casing to colour, and the dye is not wasted
@@ -3808,8 +3807,7 @@ public class EngineGameTests {
 		helper.setBlock(bare, CEBlocks.CYLINDER.getDefaultState());
 		net.minecraft.world.item.ItemStack dye = new net.minecraft.world.item.ItemStack(net.minecraft.world.item.Items.BLUE_DYE, 2);
 		dye(helper, player, bare, dye);
-		helper.assertTrue(helper.getBlockState(bare)
-			.getValue(com.createengines.content.EngineCasingBlock.PAINT) == com.createengines.content.CasingPaint.NONE
+		helper.assertTrue(dyeOf(helper, bare) == com.createengines.content.CasingPaint.NONE
 			&& dye.getCount() == 2, "A bare cylinder takes no dye");
 		helper.succeed();
 	}
@@ -3933,8 +3931,7 @@ public class EngineGameTests {
 			helper.assertTrue(com.createengines.content.Encasing.casingStack(state)
 				.is(CEBlocks.ENGINE_WINDOW_CASING.asItem()), "It gives the window casing back");
 			dye(helper, player, pos, new net.minecraft.world.item.ItemStack(net.minecraft.world.item.Items.GREEN_DYE));
-			helper.assertTrue(helper.getBlockState(pos)
-				.getValue(com.createengines.content.EngineCasingBlock.PAINT) == com.createengines.content.CasingPaint.GREEN,
+			helper.assertTrue(dyeOf(helper, pos) == com.createengines.content.CasingPaint.GREEN,
 				"A windowed part takes a dye too");
 		}
 		// Plain casing on a crank is not windowed, and returns plain casing
@@ -3994,8 +3991,7 @@ public class EngineGameTests {
 						.asItem()), "It gives its own casing back, not the plain one");
 				helper.assertTrue(com.createengines.content.Encasing.styleOf(state) == plate.getKey(), "styleOf reads it back");
 				dye(helper, player, pos, new net.minecraft.world.item.ItemStack(net.minecraft.world.item.Items.GREEN_DYE));
-				helper.assertTrue(helper.getBlockState(pos)
-					.getValue(com.createengines.content.EngineCasingBlock.PAINT) == com.createengines.content.CasingPaint.GREEN
+				helper.assertTrue(dyeOf(helper, pos) == com.createengines.content.CasingPaint.GREEN
 					&& helper.getBlockState(pos)
 						.getValue(style) == plate.getKey(), "Painting a clad part keeps its plate");
 			}
@@ -4042,5 +4038,13 @@ public class EngineGameTests {
 			helper.absolutePos(pos), false);
 		helper.getBlockState(pos)
 			.useItemOn(stack, helper.getLevel(), player, net.minecraft.world.InteractionHand.MAIN_HAND, hit);
+	}
+
+	/** The dye on whatever is at a position: a casing holds it in its state, a clad part in its block entity. */
+	private static com.createengines.content.CasingPaint dyeOf(GameTestHelper helper, BlockPos pos) {
+		BlockState state = helper.getBlockState(pos);
+		return state.hasProperty(com.createengines.content.EngineCasingBlock.PAINT)
+			? state.getValue(com.createengines.content.EngineCasingBlock.PAINT)
+			: com.createengines.content.PaintedBlockEntity.at(helper.getLevel(), helper.absolutePos(pos));
 	}
 }

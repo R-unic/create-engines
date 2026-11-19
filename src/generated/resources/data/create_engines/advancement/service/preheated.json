@@ -1,0 +1,30 @@
+{
+  "parent": "create_engines:first_light/warmed_up",
+  "criteria": {
+    "service/preheated": {
+      "conditions": {
+        "event": "preheated"
+      },
+      "trigger": "create_engines:event"
+    }
+  },
+  "display": {
+    "announce_to_chat": false,
+    "description": {
+      "translate": "advancement.create_engines.service.preheated.desc"
+    },
+    "icon": {
+      "count": 1,
+      "id": "minecraft:blaze_powder"
+    },
+    "title": {
+      "translate": "advancement.create_engines.service.preheated"
+    }
+  },
+  "requirements": [
+    [
+      "service/preheated"
+    ]
+  ],
+  "sends_telemetry_event": true
+}

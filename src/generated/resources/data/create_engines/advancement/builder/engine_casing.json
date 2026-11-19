@@ -1,0 +1,30 @@
+{
+  "parent": "create_engines:first_light/alive",
+  "criteria": {
+    "builder/engine_casing": {
+      "conditions": {
+        "event": "clad"
+      },
+      "trigger": "create_engines:event"
+    }
+  },
+  "display": {
+    "announce_to_chat": false,
+    "description": {
+      "translate": "advancement.create_engines.builder.engine_casing.desc"
+    },
+    "icon": {
+      "count": 1,
+      "id": "create_engines:engine_casing"
+    },
+    "title": {
+      "translate": "advancement.create_engines.builder.engine_casing"
+    }
+  },
+  "requirements": [
+    [
+      "builder/engine_casing"
+    ]
+  ],
+  "sends_telemetry_event": true
+}

@@ -33,6 +33,8 @@ public final class Tuning {
 	public static volatile boolean pilotInjection = true;
 	public static volatile boolean rotaryEngines = true;
 	public static volatile boolean heatRecoveryEnabled = true;
+	/** Whether the air thins with height, see {@link Altitude}. */
+	public static volatile boolean altitudeThinning = true;
 
 	private Tuning() {
 	}
@@ -59,5 +61,6 @@ public final class Tuning {
 		pilotInjection = true;
 		rotaryEngines = true;
 		heatRecoveryEnabled = true;
+		altitudeThinning = true;
 	}
 }

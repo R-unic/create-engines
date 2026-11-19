@@ -1,0 +1,30 @@
+{
+  "parent": "create_engines:power/turbocharger",
+  "criteria": {
+    "power/anti_lag": {
+      "conditions": {
+        "event": "anti_lag"
+      },
+      "trigger": "create_engines:event"
+    }
+  },
+  "display": {
+    "description": {
+      "translate": "advancement.create_engines.power.anti_lag.desc"
+    },
+    "frame": "goal",
+    "icon": {
+      "count": 1,
+      "id": "create_engines:turbocharger"
+    },
+    "title": {
+      "translate": "advancement.create_engines.power.anti_lag"
+    }
+  },
+  "requirements": [
+    [
+      "power/anti_lag"
+    ]
+  ],
+  "sends_telemetry_event": true
+}

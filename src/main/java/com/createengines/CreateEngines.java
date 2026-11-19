@@ -65,8 +65,10 @@ public class CreateEngines {
 		modEventBus.addListener(CEBlockEntities::registerCapabilities);
 		modEventBus.addListener(CEConfig::onConfig);
 		modEventBus.addListener(AdvancementSting::register);
-		modContainer.registerConfig(ModConfig.Type.SERVER, CEConfig.SPEC);
+		modContainer.registerConfig(ModConfig.Type.SERVER, CEConfig.SPEC, CEConfig.FILE);
 
+		NeoForge.EVENT_BUS.addListener(com.createengines.engine.PartEffectLoader::onAddListeners);
+		NeoForge.EVENT_BUS.addListener(com.createengines.content.PaintMigration::onChunkLoad);
 		NeoForge.EVENT_BUS.addListener(EngineTopology::onLevelTick);
 		NeoForge.EVENT_BUS.addListener(EngineTopology::onLevelUnload);
 		NeoForge.EVENT_BUS.addListener(EngineTopology::onBlockPlaced);

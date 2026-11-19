@@ -1,0 +1,29 @@
+{
+  "parent": "create_engines:first_light/cylinder",
+  "criteria": {
+    "fuel/diesel": {
+      "conditions": {
+        "event": "diesel_burned"
+      },
+      "trigger": "create_engines:event"
+    }
+  },
+  "display": {
+    "description": {
+      "translate": "advancement.create_engines.fuel.diesel.desc"
+    },
+    "icon": {
+      "count": 1,
+      "id": "create_engines:diesel_bucket"
+    },
+    "title": {
+      "translate": "advancement.create_engines.fuel.diesel"
+    }
+  },
+  "requirements": [
+    [
+      "fuel/diesel"
+    ]
+  ],
+  "sends_telemetry_event": true
+}

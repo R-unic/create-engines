@@ -1,0 +1,30 @@
+{
+  "parent": "create_engines:first_light/crankshaft",
+  "criteria": {
+    "builder/bank_builder": {
+      "conditions": {
+        "event": "bank_built"
+      },
+      "trigger": "create_engines:event"
+    }
+  },
+  "display": {
+    "announce_to_chat": false,
+    "description": {
+      "translate": "advancement.create_engines.builder.bank_builder.desc"
+    },
+    "icon": {
+      "count": 1,
+      "id": "create_engines:bank_builder"
+    },
+    "title": {
+      "translate": "advancement.create_engines.builder.bank_builder"
+    }
+  },
+  "requirements": [
+    [
+      "builder/bank_builder"
+    ]
+  ],
+  "sends_telemetry_event": true
+}

@@ -1,5 +1,7 @@
 package com.createengines.content.camshaft;
 
+import com.createengines.content.CasingPaint;
+import com.createengines.content.PaintedBlockEntity;
 import java.util.List;
 
 import org.jetbrains.annotations.Nullable;
@@ -25,7 +27,22 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
 
-public class CamshaftBlockEntity extends KineticBlockEntity implements EngineMember {
+public class CamshaftBlockEntity extends KineticBlockEntity implements EngineMember, PaintedBlockEntity {
+	/** The dye on this part's casing, which a state property used to hold (see {@link PaintedBlockEntity}). */
+	private final PaintedBlockEntity.Cell paint = new PaintedBlockEntity.Cell();
+
+	@Override
+	public CasingPaint casingPaint() {
+		return paint.get();
+	}
+
+	@Override
+	public void setCasingPaint(CasingPaint dye) {
+		paint.set(dye);
+		setChanged();
+		sendData();
+	}
+
 
 	public static final double LOBE_ANGLE_STEP = 7.5;
 
@@ -118,6 +135,7 @@ public class CamshaftBlockEntity extends KineticBlockEntity implements EngineMem
 	@Override
 	protected void write(CompoundTag tag, HolderLookup.Provider registries, boolean clientPacket) {
 		super.write(tag, registries, clientPacket);
+		paint.write(tag);
 		if (!clientPacket || primaryPos == null)
 			return;
 		tag.put("Primary", NbtUtils.writeBlockPos(primaryPos));
@@ -131,6 +149,7 @@ public class CamshaftBlockEntity extends KineticBlockEntity implements EngineMem
 	@Override
 	protected void read(CompoundTag tag, HolderLookup.Provider registries, boolean clientPacket) {
 		super.read(tag, registries, clientPacket);
+		paint.read(tag, level, worldPosition, getBlockState());
 		if (!clientPacket)
 			return;
 		primaryPos = NbtUtils.readBlockPos(tag, "Primary")

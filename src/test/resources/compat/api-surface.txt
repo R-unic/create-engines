@@ -1,0 +1,55 @@
+# version 1.0.0
+# The frozen public API, as ApiSurfaceTest reads it from the source. Never edit a line: removing or changing one
+# is a major change. A new line is a minor change (bump ApiVersion.MINOR) and is added with API_REGEN=1.
+EngineApi :: public final class EngineApi
+EngineApi :: public static Optional<EngineView> viewAt(Level level, BlockPos pos)
+EngineBuild :: public record EngineBuild(BlockPos primary, Axis axis, List<BlockPos> segments, Set<BlockPos> members)
+EngineEvents :: public final class EngineEvents
+EngineEvents :: public static void milestone(Level level, BlockPos primary, String milestone)
+EngineEvents :: public static void stateChanged(Level level, BlockPos primary, EngineState from, EngineState to)
+EngineExtensions :: public final class EngineExtensions
+EngineExtensions :: public static void rebuild(Level level, BlockPos pos)
+EngineExtensions :: public static void register(EngineSourceProvider provider)
+EngineExtensions :: public static void unregister(EngineSourceProvider provider)
+EngineMilestoneEvent :: public BlockPos primary()
+EngineMilestoneEvent :: public EngineMilestoneEvent(Level level, BlockPos primary, String milestone)
+EngineMilestoneEvent :: public Level level()
+EngineMilestoneEvent :: public String milestone()
+EngineMilestoneEvent :: public class EngineMilestoneEvent extends Event
+EngineSourceProvider :: List<TorqueSource> sourcesFor(Level level, EngineBuild build)
+EngineSourceProvider :: default boolean watches(BlockState state)
+EngineSourceProvider :: default int reach()
+EngineSourceProvider :: public interface EngineSourceProvider
+EngineStateChangeEvent :: public BlockPos primary()
+EngineStateChangeEvent :: public EngineStateChangeEvent(Level level, BlockPos primary, EngineStatus from, EngineStatus to)
+EngineStateChangeEvent :: public EngineStatus from()
+EngineStateChangeEvent :: public EngineStatus to()
+EngineStateChangeEvent :: public Level level()
+EngineStateChangeEvent :: public boolean stalled()
+EngineStateChangeEvent :: public boolean started()
+EngineStateChangeEvent :: public class EngineStateChangeEvent extends Event
+EngineStatus :: public enum EngineStatus
+EngineView :: public record EngineView(EngineStatus status, float rpm, float availableTorque, float loadTorque, int cylinders, int firing, float temperature, float oilCondition, float boost, String health, String cause)
+StatusLine :: public StatusLine
+StatusLine :: public enum Tone
+StatusLine :: public record StatusLine(String key, List<String> args, Tone tone)
+StatusLine :: public static StatusLine of(String key, Tone tone, String... args)
+StatusLine :: public static final int LIMIT = 8
+StatusLine :: public static final int MAX_ARGS = 4
+StatusLine :: public static final int MAX_TEXT = 96
+TorqueSource :: boolean fired()
+TorqueSource :: default List<StatusLine> status()
+TorqueSource :: default void setIntake(double pressure, double temperature)
+TorqueSource :: double advance(double angle, double rotaryAngle, int direction, double delta, double dt)
+TorqueSource :: double availableWork()
+TorqueSource :: double exhaustHeatLastTick()
+TorqueSource :: double frictionAt(double omega, double film)
+TorqueSource :: double frictionStatic()
+TorqueSource :: double frictionViscous()
+TorqueSource :: double fuelUsedLastStep()
+TorqueSource :: double inertia()
+TorqueSource :: double unburnedFraction()
+TorqueSource :: public interface TorqueSource
+TorqueSource :: void endTick()
+TorqueSource :: void setColdness(double coldness)
+TorqueSource :: void setDirection(int direction)

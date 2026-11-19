@@ -1,0 +1,29 @@
+{
+  "parent": "create_engines:power/turbocharger",
+  "criteria": {
+    "power/supercharger": {
+      "conditions": {
+        "event": "supercharged"
+      },
+      "trigger": "create_engines:event"
+    }
+  },
+  "display": {
+    "description": {
+      "translate": "advancement.create_engines.power.supercharger.desc"
+    },
+    "icon": {
+      "count": 1,
+      "id": "create_engines:supercharger"
+    },
+    "title": {
+      "translate": "advancement.create_engines.power.supercharger"
+    }
+  },
+  "requirements": [
+    [
+      "power/supercharger"
+    ]
+  ],
+  "sends_telemetry_event": true
+}

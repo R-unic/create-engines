@@ -1,0 +1,29 @@
+{
+  "parent": "create_engines:fuel/diesel",
+  "criteria": {
+    "fuel/gasoline": {
+      "conditions": {
+        "event": "gasoline_burned"
+      },
+      "trigger": "create_engines:event"
+    }
+  },
+  "display": {
+    "description": {
+      "translate": "advancement.create_engines.fuel.gasoline.desc"
+    },
+    "icon": {
+      "count": 1,
+      "id": "create_engines:gasoline_bucket"
+    },
+    "title": {
+      "translate": "advancement.create_engines.fuel.gasoline"
+    }
+  },
+  "requirements": [
+    [
+      "fuel/gasoline"
+    ]
+  ],
+  "sends_telemetry_event": true
+}

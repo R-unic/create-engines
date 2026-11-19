@@ -1,0 +1,29 @@
+{
+  "parent": "create_engines:builder/pipework",
+  "criteria": {
+    "power/turbocharger": {
+      "conditions": {
+        "event": "boost"
+      },
+      "trigger": "create_engines:event"
+    }
+  },
+  "display": {
+    "description": {
+      "translate": "advancement.create_engines.power.turbocharger.desc"
+    },
+    "icon": {
+      "count": 1,
+      "id": "create_engines:turbocharger"
+    },
+    "title": {
+      "translate": "advancement.create_engines.power.turbocharger"
+    }
+  },
+  "requirements": [
+    [
+      "power/turbocharger"
+    ]
+  ],
+  "sends_telemetry_event": true
+}

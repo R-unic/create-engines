@@ -1,0 +1,29 @@
+{
+  "parent": "create_engines:tuning/engine_display",
+  "criteria": {
+    "tuning/dyno_run": {
+      "conditions": {
+        "event": "dyno_run"
+      },
+      "trigger": "create_engines:event"
+    }
+  },
+  "display": {
+    "description": {
+      "translate": "advancement.create_engines.tuning.dyno_run.desc"
+    },
+    "icon": {
+      "count": 1,
+      "id": "create_engines:dyno"
+    },
+    "title": {
+      "translate": "advancement.create_engines.tuning.dyno_run"
+    }
+  },
+  "requirements": [
+    [
+      "tuning/dyno_run"
+    ]
+  ],
+  "sends_telemetry_event": true
+}

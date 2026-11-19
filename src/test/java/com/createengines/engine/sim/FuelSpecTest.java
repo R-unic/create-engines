@@ -21,6 +21,25 @@ class FuelSpecTest {
 	}
 
 	@Test
+	void sulfurDefaultsToTheSootFactorSoEveryOldFuelReleasesWhatItDid() {
+		assertEquals(1, new FuelSpec(10, 2, 1.2).sulfur(), 0);
+		assertEquals(0.4, new FuelSpec(10, 2, 1.2, 1, 0, 0.4, 2).sulfur(), 0, "the seven-argument form is how 1.x fuels were built");
+		for (FuelSpec fuel : new FuelSpec[] {FuelSpec.PLANT_OIL, FuelSpec.DIESEL, FuelSpec.GASOLINE, FuelSpec.ETHANOL})
+			assertEquals(fuel.sootFactor(), fuel.sulfur(), 0, "built-in fuels keep their sulfur at their soot factor");
+		assertEquals(0, FuelSpec.ETHANOL.sulfur(), 0);
+	}
+
+	@Test
+	void sulfurCanBeSetApartFromTheSootFactor() {
+		FuelSpec lowSulfurSooty = new FuelSpec(10, 2, 1.2, 1, 0, 1, 2, 0.1);
+		assertEquals(1, lowSulfurSooty.sootFactor(), 0);
+		assertEquals(0.1, lowSulfurSooty.sulfur(), 0);
+		FuelSpec cleanSulfurous = new FuelSpec(10, 2, 1.2, 1, 0, 0, 2, 1.5);
+		assertEquals(0, cleanSulfurous.sootFactor(), 0);
+		assertEquals(1.5, cleanSulfurous.sulfur(), 0);
+	}
+
+	@Test
 	void gasolineAndDieselAreTheReferenceForInjectorSizing() {
 		assertEquals(1, FuelSpec.GASOLINE.injectorFlow(), 1e-12);
 		assertEquals(1, FuelSpec.DIESEL.injectorFlow(), 1e-12);

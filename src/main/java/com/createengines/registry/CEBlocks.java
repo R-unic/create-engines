@@ -235,8 +235,8 @@ public final class CEBlocks {
 		.transform(ModelGen.customItemModel())
 		.register();
 
-	public static final BlockEntry<ManifoldBlock> INTAKE_MANIFOLD =
-		REGISTRATE.block("intake_manifold", p -> new ManifoldBlock(p, PortKind.INTAKE))
+	public static final BlockEntry<com.createengines.content.airflow.PlainManifoldBlock> INTAKE_MANIFOLD =
+		REGISTRATE.block("intake_manifold", p -> new com.createengines.content.airflow.PlainManifoldBlock(p, PortKind.INTAKE))
 				.transform(CEBlocks::casedPart)
 			.initialProperties(SharedProperties::copperMetal)
 			.properties(p -> part(p)
@@ -294,8 +294,8 @@ public final class CEBlocks {
 			.transform(ModelGen.customItemModel())
 			.register();
 
-	public static final BlockEntry<ManifoldBlock> EXHAUST_MANIFOLD =
-		REGISTRATE.block("exhaust_manifold", p -> new ManifoldBlock(p, PortKind.EXHAUST))
+	public static final BlockEntry<com.createengines.content.airflow.PlainManifoldBlock> EXHAUST_MANIFOLD =
+		REGISTRATE.block("exhaust_manifold", p -> new com.createengines.content.airflow.PlainManifoldBlock(p, PortKind.EXHAUST))
 				.transform(CEBlocks::casedPart)
 			.initialProperties(SharedProperties::softMetal)
 			.properties(p -> part(p)
@@ -791,15 +791,17 @@ public final class CEBlocks {
 	}
 
 	/**
-	 * Create's axis blockstate, without a variant for every dye: the paint of a clad part is a tint and changes no
-	 * model, so listing it would make seventeen copies of each variant.
+	 * Create's axis blockstate, without a variant for every dye a block carries as state: the paint is a tint and changes
+	 * no model, so listing it would make seventeen copies of each variant. A clad part keeps its dye in a block entity and
+	 * has no such property, so for it this is Create's blockstate unchanged.
 	 */
 	private static <T extends Block> void axisIgnoringPaint(DataGenContext<Block, T> c, RegistrateBlockstateProvider p,
 		java.util.function.Function<BlockState, net.neoforged.neoforge.client.model.generators.ModelFile> model,
 		net.minecraft.world.level.block.state.properties.Property<?>... alsoIgnored) {
 		var ignored = new java.util.ArrayList<net.minecraft.world.level.block.state.properties.Property<?>>(
 			java.util.List.of(alsoIgnored));
-		ignored.add(Encasing.PAINT);
+		if (c.get().defaultBlockState().hasProperty(Encasing.PAINT))
+			ignored.add(Encasing.PAINT);
 		p.getVariantBuilder(c.get())
 			.forAllStatesExcept(state -> {
 				Direction.Axis axis = state.getValue(RotatedPillarKineticBlock.AXIS);
@@ -818,7 +820,7 @@ public final class CEBlocks {
 		p.getVariantBuilder(c.get())
 			.forAllStatesExcept(state -> net.neoforged.neoforge.client.model.generators.ConfiguredModel.builder()
 				.modelFile(model.apply(state))
-				.build(), Encasing.PAINT);
+				.build(), paintIgnored(c.get()));
 	}
 
 	/** Create's directional blockstate, without a variant for every dye (see {@link #axisIgnoringPaint}). */
@@ -834,7 +836,14 @@ public final class CEBlocks {
 					.rotationY(facing.getAxis()
 						.isVertical() ? 0 : (((int) facing.toYRot()) + 180) % 360)
 					.build();
-			}, Encasing.PAINT);
+			}, paintIgnored(c.get()));
+	}
+
+	/** The dye property when a block carries it as state (the plain casings do), else nothing to ignore. */
+	private static net.minecraft.world.level.block.state.properties.Property<?>[] paintIgnored(Block block) {
+		return block.defaultBlockState().hasProperty(Encasing.PAINT)
+			? new net.minecraft.world.level.block.state.properties.Property<?>[] { Encasing.PAINT }
+			: new net.minecraft.world.level.block.state.properties.Property<?>[0];
 	}
 
 	/** The model a cylinder shows: its own, or a plain casing cube once clad. */

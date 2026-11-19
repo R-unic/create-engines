@@ -15,9 +15,17 @@ package com.createengines.engine.sim;
  *                          for a fuel that burns clean however rich it runs
  * @param preignitionTemp   charge temperature past which a boosted spark engine's charge lights itself early and loses
  *                          power (see {@link #preignitionLoss}); the autoignition point for every fuel but ethanol
+ * @param sulfur            how sulfurous the fuel's exhaust is, for the pollution compat only: 1 for the usual, 0 for a fuel
+ *                          with none. Nothing in the simulation reads it. A fuel that does not set it takes its soot factor
  */
 public record FuelSpec(double energyPerMb, double autoignitionTemp, double airPerMb, double coldSensitivity,
-					   double chargeCooling, double sootFactor, double preignitionTemp) {
+					   double chargeCooling, double sootFactor, double preignitionTemp, double sulfur) {
+
+	/** A fuel whose sulfur is its soot factor: how every fuel behaved before the field existed. */
+	public FuelSpec(double energyPerMb, double autoignitionTemp, double airPerMb, double coldSensitivity,
+					double chargeCooling, double sootFactor, double preignitionTemp) {
+		this(energyPerMb, autoignitionTemp, airPerMb, coldSensitivity, chargeCooling, sootFactor, preignitionTemp, sootFactor);
+	}
 
 	/** A fuel whose charge pre-ignites at the temperature it would compression-ignite at. */
 	public FuelSpec(double energyPerMb, double autoignitionTemp, double airPerMb, double coldSensitivity,
