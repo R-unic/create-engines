@@ -234,6 +234,19 @@ public final class EngineSimulation {
 		induction.tick(rpm(), cylinders, thermal.chargeFactor());
 	}
 
+	/**
+	 * How thick the air this engine breathes is, 1 at sea level (see {@link Altitude}). It scales every cylinder's intake
+	 * pressure before the compressors multiply it, so boost offsets thin air.
+	 */
+	public void setAmbientDensity(double density) {
+		induction.density = Double.isNaN(density) ? 1 : Math.max(Altitude.FLOOR, Math.min(1, density));
+	}
+
+	/** How thick the air this engine breathes is, see {@link #setAmbientDensity}. */
+	public double ambientDensity() {
+		return induction.density;
+	}
+
 	/** Whether unburned fuel thins the oil as it runs. A dynamometer measures the oil as it is and leaves it alone. */
 	public void setWashesOil(boolean washesOil) {
 		this.washesOil = washesOil;

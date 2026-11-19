@@ -1,0 +1,30 @@
+{
+  "parent": "create_engines:first_light/starter",
+  "criteria": {
+    "first_light/alive": {
+      "conditions": {
+        "event": "engine_running"
+      },
+      "trigger": "create_engines:event"
+    }
+  },
+  "display": {
+    "description": {
+      "translate": "advancement.create_engines.first_light.alive.desc"
+    },
+    "frame": "goal",
+    "icon": {
+      "count": 1,
+      "id": "create_engines:cylinder"
+    },
+    "title": {
+      "translate": "advancement.create_engines.first_light.alive"
+    }
+  },
+  "requirements": [
+    [
+      "first_light/alive"
+    ]
+  ],
+  "sends_telemetry_event": true
+}

@@ -1,8 +1,8 @@
 # Create: Engine Engineer, preset "Expert": thirstier engines, a longer crank costs more rating, precision parts matter a little
 # more, and the exhaust heat exchanger gives less. Everything that can go wrong in the default balance still can.
 #
-# How to use a preset: stop the game, open the world's serverconfig/create_engines-server.toml, and copy the [balance] and
-# [features] tables from here over the ones there (leave [engine], the calibration, alone). A modpack can ship the same
+# How to use a preset: stop the game, open the world's serverconfig/create_engines-v2-server.toml, and copy the [balance] and
+# [features] tables from here over the ones there (leave [calibration] and [limits] alone). A modpack can ship the same
 # tables in its defaultconfigs folder. Every key here is an existing setting: a preset adds no dial of its own.
 
 [balance]

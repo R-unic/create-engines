@@ -1,0 +1,30 @@
+{
+  "parent": "create_engines:first_light/alive",
+  "criteria": {
+    "first_light/warmed_up": {
+      "conditions": {
+        "event": "warmed_up"
+      },
+      "trigger": "create_engines:event"
+    }
+  },
+  "display": {
+    "announce_to_chat": false,
+    "description": {
+      "translate": "advancement.create_engines.first_light.warmed_up.desc"
+    },
+    "icon": {
+      "count": 1,
+      "id": "create_engines:cylinder"
+    },
+    "title": {
+      "translate": "advancement.create_engines.first_light.warmed_up"
+    }
+  },
+  "requirements": [
+    [
+      "first_light/warmed_up"
+    ]
+  ],
+  "sends_telemetry_event": true
+}

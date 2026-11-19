@@ -1,0 +1,30 @@
+{
+  "parent": "create_engines:builder/four_cylinders",
+  "criteria": {
+    "builder/vee_engine": {
+      "conditions": {
+        "event": "vee_engine"
+      },
+      "trigger": "create_engines:event"
+    }
+  },
+  "display": {
+    "description": {
+      "translate": "advancement.create_engines.builder.vee_engine.desc"
+    },
+    "frame": "goal",
+    "icon": {
+      "count": 1,
+      "id": "create_engines:bank_builder"
+    },
+    "title": {
+      "translate": "advancement.create_engines.builder.vee_engine"
+    }
+  },
+  "requirements": [
+    [
+      "builder/vee_engine"
+    ]
+  ],
+  "sends_telemetry_event": true
+}

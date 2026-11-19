@@ -6,6 +6,9 @@
   "injectors": {
     "defaultRequire": 0
   },
+  "mixins": [
+    "PlayerAdvancementsMixin"
+  ],
   "client": [
     "BasinGoggleMixin"
   ]

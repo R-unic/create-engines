@@ -1,0 +1,30 @@
+{
+  "parent": "create_engines:first_light/alive",
+  "criteria": {
+    "builder/rotary_engine": {
+      "conditions": {
+        "event": "rotary_engine"
+      },
+      "trigger": "create_engines:event"
+    }
+  },
+  "display": {
+    "description": {
+      "translate": "advancement.create_engines.builder.rotary_engine.desc"
+    },
+    "frame": "goal",
+    "icon": {
+      "count": 1,
+      "id": "create_engines:rotor"
+    },
+    "title": {
+      "translate": "advancement.create_engines.builder.rotary_engine"
+    }
+  },
+  "requirements": [
+    [
+      "builder/rotary_engine"
+    ]
+  ],
+  "sends_telemetry_event": true
+}

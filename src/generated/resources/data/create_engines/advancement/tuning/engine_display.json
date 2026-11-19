@@ -1,0 +1,30 @@
+{
+  "parent": "create_engines:first_light/alive",
+  "criteria": {
+    "tuning/engine_display": {
+      "conditions": {
+        "event": "engine_displayed"
+      },
+      "trigger": "create_engines:event"
+    }
+  },
+  "display": {
+    "announce_to_chat": false,
+    "description": {
+      "translate": "advancement.create_engines.tuning.engine_display.desc"
+    },
+    "icon": {
+      "count": 1,
+      "id": "create:display_link"
+    },
+    "title": {
+      "translate": "advancement.create_engines.tuning.engine_display"
+    }
+  },
+  "requirements": [
+    [
+      "tuning/engine_display"
+    ]
+  ],
+  "sends_telemetry_event": true
+}

@@ -1,0 +1,29 @@
+{
+  "parent": "create_engines:first_light/starter",
+  "criteria": {
+    "first_light/flooded": {
+      "conditions": {
+        "event": "flooded"
+      },
+      "trigger": "create_engines:event"
+    }
+  },
+  "display": {
+    "description": {
+      "translate": "advancement.create_engines.first_light.flooded.desc"
+    },
+    "icon": {
+      "count": 1,
+      "id": "create_engines:air_intake"
+    },
+    "title": {
+      "translate": "advancement.create_engines.first_light.flooded"
+    }
+  },
+  "requirements": [
+    [
+      "first_light/flooded"
+    ]
+  ],
+  "sends_telemetry_event": true
+}

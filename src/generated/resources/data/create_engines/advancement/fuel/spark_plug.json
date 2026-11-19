@@ -1,0 +1,30 @@
+{
+  "parent": "create_engines:fuel/diesel",
+  "criteria": {
+    "fuel/spark_plug": {
+      "conditions": {
+        "event": "spark_engine"
+      },
+      "trigger": "create_engines:event"
+    }
+  },
+  "display": {
+    "announce_to_chat": false,
+    "description": {
+      "translate": "advancement.create_engines.fuel.spark_plug.desc"
+    },
+    "icon": {
+      "count": 1,
+      "id": "create_engines:spark_plug"
+    },
+    "title": {
+      "translate": "advancement.create_engines.fuel.spark_plug"
+    }
+  },
+  "requirements": [
+    [
+      "fuel/spark_plug"
+    ]
+  ],
+  "sends_telemetry_event": true
+}

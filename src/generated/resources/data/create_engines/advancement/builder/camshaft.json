@@ -1,0 +1,30 @@
+{
+  "parent": "create_engines:first_light/cylinder",
+  "criteria": {
+    "builder/camshaft": {
+      "conditions": {
+        "event": "camshaft_timed"
+      },
+      "trigger": "create_engines:event"
+    }
+  },
+  "display": {
+    "announce_to_chat": false,
+    "description": {
+      "translate": "advancement.create_engines.builder.camshaft.desc"
+    },
+    "icon": {
+      "count": 1,
+      "id": "create_engines:camshaft"
+    },
+    "title": {
+      "translate": "advancement.create_engines.builder.camshaft"
+    }
+  },
+  "requirements": [
+    [
+      "builder/camshaft"
+    ]
+  ],
+  "sends_telemetry_event": true
+}

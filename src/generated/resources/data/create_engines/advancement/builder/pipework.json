@@ -1,0 +1,30 @@
+{
+  "parent": "create_engines:builder/camshaft",
+  "criteria": {
+    "builder/pipework": {
+      "conditions": {
+        "event": "piped_engine"
+      },
+      "trigger": "create_engines:event"
+    }
+  },
+  "display": {
+    "announce_to_chat": false,
+    "description": {
+      "translate": "advancement.create_engines.builder.pipework.desc"
+    },
+    "icon": {
+      "count": 1,
+      "id": "create_engines:intake_manifold"
+    },
+    "title": {
+      "translate": "advancement.create_engines.builder.pipework"
+    }
+  },
+  "requirements": [
+    [
+      "builder/pipework"
+    ]
+  ],
+  "sends_telemetry_event": true
+}

@@ -38,3 +38,10 @@ type="required"
 versionRange="${create_version_range}"
 ordering="AFTER"
 side="BOTH"
+
+[[dependencies.${mod_id}]]
+modId="adpother"
+type="optional"
+versionRange="[9.1,)"
+ordering="AFTER"
+side="BOTH"

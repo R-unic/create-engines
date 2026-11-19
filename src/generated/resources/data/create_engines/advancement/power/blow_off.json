@@ -1,0 +1,30 @@
+{
+  "parent": "create_engines:power/turbocharger",
+  "criteria": {
+    "power/blow_off": {
+      "conditions": {
+        "event": "blow_off"
+      },
+      "trigger": "create_engines:event"
+    }
+  },
+  "display": {
+    "announce_to_chat": false,
+    "description": {
+      "translate": "advancement.create_engines.power.blow_off.desc"
+    },
+    "icon": {
+      "count": 1,
+      "id": "create_engines:turbocharger"
+    },
+    "title": {
+      "translate": "advancement.create_engines.power.blow_off"
+    }
+  },
+  "requirements": [
+    [
+      "power/blow_off"
+    ]
+  ],
+  "sends_telemetry_event": true
+}

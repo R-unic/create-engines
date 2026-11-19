@@ -1,9 +1,16 @@
 package com.createengines.config;
 
+import java.util.LinkedHashMap;
+import java.util.Map;
+
+import net.neoforged.fml.event.config.ModConfigEvent;
 import net.neoforged.neoforge.common.ModConfigSpec;
 
 /** Per-player effects: what an engine looks and sounds like, which costs a player's frame rate and nobody else's. */
 public final class CEClientConfig {
+
+	/** The 2.0 file. The 1.x one is {@link ConfigCarryOver#OLD_CLIENT_FILE}. */
+	public static final String FILE = "create_engines-v2-client.toml";
 
 	public static final ModConfigSpec SPEC;
 	public static final ModConfigSpec.BooleanValue PARTICLES;
@@ -13,26 +20,48 @@ public final class CEClientConfig {
 	public static final ModConfigSpec.DoubleValue ENGINE_NOTE_VOLUME;
 	public static final ModConfigSpec.DoubleValue MECHANICAL_VOLUME;
 
+	private static final ModConfigSpec.BooleanValue CARRIED_OVER;
+
+	private static final Map<String, ModConfigSpec.ConfigValue<?>> BY_PATH = new LinkedHashMap<>();
+
 	static {
 		ModConfigSpec.Builder builder = new ModConfigSpec.Builder();
 		builder.push("effects");
-		PARTICLES = builder.comment("Flame, sparks, smoke, steam and the gas drawn through a cylinder. Off, engines run without particles.")
-			.define("engineParticles", true);
-		BANG_VOLUME = builder.comment("Volume of a cylinder's firing bang. 0 mutes it.")
-			.defineInRange("bangVolume", 1.0, 0.0, 2.0);
-		ENGINE_NOTE_VOLUME = builder.comment("Volume of the engine's exhaust note, made up from its speed and firing order as it runs.",
-				"0 mutes it, and each cylinder's bang plays at full volume instead.")
-			.defineInRange("engineNoteVolume", 1.0, 0.0, 2.0);
-		MECHANICAL_VOLUME = builder.comment("Volume of an engine's own noises besides its exhaust: the tick of its valve gear, the squeal of",
-				"dry bearings, the cough as it catches and dies, and hot metal ticking as it cools. 0 mutes them.")
-			.defineInRange("mechanicalVolume", 1.0, 0.0, 2.0);
-		BOOST_VOLUME = builder.comment("Volume of turbocharger whistle and blow-off and the supercharger whine. 0 mutes them.")
-			.defineInRange("boostVolume", 1.0, 0.0, 2.0);
-		EFFECT_DENSITY = builder.comment("How often each cylinder may bang and puff, against the default. Below 1 thins the",
+		PARTICLES = value("effects.particles", builder.comment("Flame, sparks, smoke, steam and the gas drawn through a cylinder. Off, engines run without particles.")
+			.define("particles", true));
+		EFFECT_DENSITY = value("effects.density", builder.comment("How often each cylinder may bang and puff, against the default. Below 1 thins the",
 				"effects out (kind to frame rate on a big engine), above 1 allows more.")
-			.defineInRange("effectDensity", 1.0, 0.1, 4.0);
+			.defineInRange("density", 1.0, 0.1, 4.0));
+		builder.pop();
+		builder.push("volume");
+		BANG_VOLUME = value("volume.bang", builder.comment("Volume of a cylinder's firing bang. 0 mutes it.")
+			.defineInRange("bang", 1.0, 0.0, 2.0));
+		ENGINE_NOTE_VOLUME = value("volume.engineNote", builder.comment("Volume of the engine's exhaust note, made up from its speed and firing order as it runs.",
+				"0 mutes it, and each cylinder's bang plays at full volume instead.")
+			.defineInRange("engineNote", 1.0, 0.0, 2.0));
+		MECHANICAL_VOLUME = value("volume.mechanical", builder.comment("Volume of an engine's own noises besides its exhaust: the tick of its valve gear, the squeal of",
+				"dry bearings, the cough as it catches and dies, and hot metal ticking as it cools. 0 mutes them.")
+			.defineInRange("mechanical", 1.0, 0.0, 2.0));
+		BOOST_VOLUME = value("volume.boost", builder.comment("Volume of turbocharger whistle and blow-off and the supercharger whine. 0 mutes them.")
+			.defineInRange("boost", 1.0, 0.0, 2.0));
+		builder.pop();
+		builder.comment("Set once the 1.x file has been read. Leave it alone.")
+			.push("meta");
+		CARRIED_OVER = builder.define("carriedOver", false);
 		builder.pop();
 		SPEC = builder.build();
+	}
+
+	private static <T extends ModConfigSpec.ConfigValue<?>> T value(String path, T value) {
+		BY_PATH.put(path, value);
+		return value;
+	}
+
+	/** The first time the 2.0 file loads, carries every value over from the 1.x file beside it. */
+	public static void onConfig(ModConfigEvent event) {
+		if (event.getConfig().getSpec() == SPEC && event instanceof ModConfigEvent.Loading)
+			ConfigFiles.carryOver(event.getConfig(), ConfigCarryOver.OLD_CLIENT_FILE, ConfigCarryOver.CLIENT, BY_PATH,
+				CARRIED_OVER);
 	}
 
 	private CEClientConfig() {

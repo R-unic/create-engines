@@ -31,7 +31,8 @@ import net.neoforged.neoforge.client.model.DynamicFluidContainerModel;
 public class CreateEnginesClient {
 
 	public CreateEnginesClient(IEventBus modEventBus, ModContainer modContainer) {
-		modContainer.registerConfig(ModConfig.Type.CLIENT, CEClientConfig.SPEC);
+		modContainer.registerConfig(ModConfig.Type.CLIENT, CEClientConfig.SPEC, CEClientConfig.FILE);
+		modEventBus.addListener(CEClientConfig::onConfig);
 		com.createengines.content.CESpriteShifts.STYLED_CASING_BEHAVIOUR = com.createengines.client.StyledCasingCTBehaviour::new;
 		CEPartialModels.init();
 		com.createengines.content.blueprint.BlueprintViewer.opener = com.createengines.client.BlueprintScreen::open;

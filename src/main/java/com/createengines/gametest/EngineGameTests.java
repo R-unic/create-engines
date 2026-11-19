@@ -3552,7 +3552,8 @@ public class EngineGameTests {
 			EngineSummary summary = summary(helper);
 			helper.assertTrue(summary.state() == EngineState.RUNNING, "Engine should run through the turbo: " + summary);
 			TurbochargerBlockEntity be = helper.getBlockEntity(EXHAUST);
-			helper.assertTrue(be.status() != null && be.status().vanes() > 0.2f,
+			helper.assertTrue(be.status() != null && be.status().vanes() > 0.15f, // 2.0 port curve: one opening per head is 90 percent breathing, vanes 0.177 (was above 0.2); see v2.0.0 Exceptions
+
 				"One cylinder exhaust is thin, so the vanes close: " + be.status());
 			helper.succeed();
 		});

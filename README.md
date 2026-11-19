@@ -6,7 +6,7 @@ An addon for [Create](https://github.com/Creators-of-Create/Create) that lets yo
 engines out of individual parts and turn them into Create rotational force. Start with a crude single cylinder, finish
 with a boosted, precision-built V12.
 
-Minecraft 1.21.1 · NeoForge 21.1.219 · Create 6.0.10
+Minecraft 1.21.1 · NeoForge 21.1.219 · Create 6.0.11
 
 [Discord](https://discord.gg/QYVpy2dqGE)
 
@@ -124,14 +124,16 @@ Minecraft 1.21.1 · NeoForge 21.1.219 · Create 6.0.10
 
 ## Configuration
 
-The server config (`serverconfig/create_engines-server.toml` in the world) carries the engine calibration (`[engine]`:
-`stressPerTorque`, the inertia and friction values, and the limits on how far the scanner follows a crankshaft, a manifold
-or a coupling) plus
-`[balance]` multipliers (`fuelConsumption`, `precisionBonus`, `boostStrength`, `rotaryPower`, `heatRecoveryOutput`, `coolingBonus`, `torsionalFlex`, `alternatorEnergy`)
-and `[features]` switches (`forcedInduction`, `sparkFouling`, `oilDilution`, `oilAgeing`, `engineTemperature`,
-`pilotInjection`, `rotaryEngines`, `heatRecovery`), so a
-modpack can rebalance without code. Turning a feature off never removes blocks; they stop doing that job. The client
-config (`engineParticles`, `bangVolume`, `engineNoteVolume`, `mechanicalVolume`, `boostVolume`, `effectDensity`) thins out engine sound and particles on a big engine.
+The server config (`serverconfig/create_engines-v2-server.toml` in the world) is grouped into `[calibration]`
+(`stressPerTorque`, the inertia and friction values), `[limits]` (how far the scanner follows a crankshaft, a manifold or a
+coupling), `[balance]` multipliers (`fuelConsumption`, `precisionBonus`, `boostStrength`, `rotaryPower`, `heatRecoveryOutput`,
+`coolingBonus`, `torsionalFlex`, `alternatorEnergy`), `[features]` switches (`forcedInduction`, `sparkFouling`, `oilDilution`,
+`oilAgeing`, `engineTemperature`, `pilotInjection`, `rotaryEngines`, `heatRecovery`) and `[compat]` (`altitudeThinning`, and
+`pollution` and `pollutionRate` for Pollution of the Realms), so a modpack can rebalance without code. Turning a feature off
+never removes blocks; they stop doing that job. The first time a world loads in 2.0 it reads the 1.x file
+(`create_engines-server.toml`) beside it and carries every value over, and the log says what moved. The client config
+(`create_engines-v2-client.toml`: `[effects]` `particles` and `density`, `[volume]` `bang`, `engineNote`, `mechanical` and
+`boost`) thins out engine sound and particles on a big engine, and carries its values over the same way.
 Fuel properties are a datapack data map (`data_maps/fluid/fuel.json`), so other mods' fluids can be made into fuels.
 
 For pack makers, three config presets ship in the jar (`config_presets/casual.toml`, `standard.toml`, `expert.toml`): copy

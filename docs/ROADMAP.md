@@ -48,7 +48,7 @@ Set by the author on 2026-11-14:
 | 1.2 | Dress Parts | Cosmetic build variety | Small | Shipped as v1.2.0 (v1.2.1 fixed the sound-thread memory leak) |
 | 1.3 | Refinery | A refinery multiblock for the fuels that already exist | Large | Shipped as v1.3.0, 2026-11-17 |
 | 1.4 | Drawing Office | Blueprints, pack-maker tools, Aeronautics and other addons | Large | **In progress** (see its section) |
-| 2.0 | Open Block | The platform, and the one breaking cleanup | Large | Not started |
+| 2.0 | Open Block | The platform, and the one breaking cleanup | Large | **In progress** on branch `2.0`: the breaking cleanup and the two crossovers are built (see their sections); the platform items are not |
 
 ## 1.0.x Shakedown
 
@@ -432,6 +432,8 @@ recipe have not been seen; Ponder page, goggle lines and the drafting sheet are 
   mod's blocks, every setting inside its range. A bad string is refused with a message. Building from a blueprint
   places blocks as the player, so claims and protection mods apply.
 
+**Engines that move: first piece built 2026-11-18, and blocked from running.** `compat.sable.SableCompat` (Sable's own small companion library, compiled against, one bridge class) projects a block out of its moving structure's plot, and `EngineController` now uses the block's height in the world for the thin-air check and re-reads it every 20 ticks, so a climbing aircraft thins as it rises. Without Sable nothing changes. `SableGameTests` (assemble an engine into a structure at y 2000, check the reported height and density) and the `runGameTestServerSable` run exist, but **that run cannot start**: Aeronautics 1.2.1, the newest the build's NeoForge 21.1.219 accepts, is built for Create 6.0.10, and its Simulated mixin into `NixieTubeBlock.getPower` fails to apply on Create 6.0.11 (this build's floor since today); 1.3.2 asks for NeoForge 21.1.228 or newer. Running it needs a NeoForge bump to 21.1.228+, or the Aeronautics row stays red. Not done: weights, sound and particle positions, scanner and water check on a structure, the Ponder page. None of it has been seen running.
+
 **Engines that move: Create Aeronautics**
 
 Mod listings say Aeronautics is out for 1.21.1 on NeoForge with Create 6.0.10 (to be confirmed on its own page in
@@ -479,7 +481,8 @@ throttle and rack) lets players write their own engine management in Lua, withou
 - **Fuels stay data.** Fuel data maps and column recipes written for 1.x keep loading. Any field 2.0 adds is
   optional.
 - **A frozen public API** under its own semver: read-only engine views, events, registries.
-- **Pollution compatibility: Pollution of the Realms** (mod id `adpother`, queued 2026-11-16, nothing built). Engines
+- **Pollution compatibility: Pollution of the Realms** (mod id `adpother`, queued 2026-11-16, **built 2026-11-18**: `compat.pollution`, `engine.sim.Emissions`,
+  `EngineController.emitPollution`, `runGameTestServerPollution`; the release rates are untuned and the engine-level hook has no GameTest, only the outlet release does). Engines
   put carbon and sulfur into the world through their exhaust outlets when that mod is installed.
   - *What was found.* The mod has no public API and no datapack hooks, but its classes can be compiled against.
     `Pollutants.BuiltIn.CARBON.get().pump(level, pos, steps)` puts gas density into one cell and returns how many steps
@@ -511,14 +514,22 @@ registry aliases so existing worlds load. Each item needs the author's decision:
 - The throttle body: keep, fold into the intake, or remove.
 - ~~The Transmission~~: kept (2026-11-16), as the car-like gearbox beside Create's Rotation Speed Controller.
 - The basin fuel recipes: kept through 1.x as the worse route, and reviewed here.
-- Config keys regrouped once, after two rounds of growth. On first start 2.0 reads the old config file, carries
-  each value over to its new key and logs what moved, so nobody's settings reset.
-- **Advancement redesign, step 2 (2.0 owns this).** Step 1 shipped in 1.x (see docs/ADVANCEMENTS.md). 2.0 does the rest:
+- **Built 2026-11-18.** Config keys regrouped once, after two rounds of growth. On first start 2.0 reads the old config file, carries
+  each value over to its new key and logs what moved, so nobody's settings reset. Server: `[engine]` became `[calibration]` and
+  `[limits]`, `[balance]` and `[features]` are unchanged, `[compat]` is new. Client: `[effects]` (`particles`, `density`) and
+  `[volume]`. The 2.0 files are `create_engines-v2-server.toml` and `create_engines-v2-client.toml`, because NeoForge deletes keys a spec
+  does not know before any code can read them; the 1.x files are read once and left as they were (`config.ConfigCarryOver`,
+  `ConfigCarryOverTest`, a GameTest on the TOML reader). Not tried: a real world with a 1.x file in a client.
+- **Advancement redesign, step 2: built 2026-11-18, see docs/ADVANCEMENTS.md.** Step 1 shipped in 1.x. 2.0 does the rest:
   rename the IDs and regroup the tab tree by track, delete the hidden advancements, and write the migration table (every 1.x ID,
   shown or hidden, maps to its new ID or IDs; old progress is credited silently, with no toast and no sting; a test checks
   every 1.x ID has an entry). Nothing of step 2 is started, and no 1.x release should rename or delete an advancement.
-- Legacy manifold handling and other old-save code paths.
-- Support for older Create versions carried through 1.x under rule 7 is dropped, if a newer one is out.
+- Legacy manifold handling and other old-save code paths. **Looked at 2026-11-18 and left:** no manifold-specific legacy code was
+  found; the one old-save path is `Gears.fromLegacy`, which turns a 1.0 transmission's four-gear positions into the thirteen now, and
+  2.0 still has to open a 1.0 world, so it stays. Removing it is a decision for the author, not a cleanup.
+- **Done 2026-11-18.** Support for older Create versions carried through 1.x under rule 7 is dropped, if a newer one is out: the
+  build is on Create 6.0.11-346 (Ponder 1.0.92, no `:slim` jar) and the range is `[6.0.11,6.1)`. Unit tests and the 317 GameTests passed on it.
+- The throttle body is **kept** (author, 2026-11-18). The basin fuel recipes are left as they are; reviewing them is still open.
 
 ### Intake and exhaust port model redesign
 
@@ -539,10 +550,18 @@ better and match the finished look of the rest of the engine.
 
 ### Port count: diminishing returns (breaking, 2.0 only)
 
+**Built 2026-11-18** (`engine.sim.PortFlow`, used by `PortNetwork.flowFactor()`): `1 - e^(-2.3 * r)` for `r` openings per head, and an
+opening touching another (corners included) counts half. One opening per head is about 90 percent, two about 99 percent, one for two
+heads about 67 percent (1.x counted that as full). The dyno sweep (6 cylinders, intake and exhaust factor 0.2 to 1.0) gave peak torque
+6.1, 7.6 and 7.9 at 0.2, 0.5 and 1.0, so the loss is mostly at the top of the rev range, not the peak; the constant 2.3 is a first choice
+from that. Every real engine with fewer than about two openings per head now breathes a little less. The simulation baselines did not move
+(they set the factor directly); the one GameTest that moved is under Exceptions in `docs/releases/v2.0.0.md`. The description below is the
+original brief, and it misstates 1.x: full breathing needed half an opening per head, not two.
+
 Queued 2026-11-16, author's decision: applies to every engine, held for 2.0 so 1.x builds keep their numbers.
 
-- **Why.** `PortNetwork.flowFactor()` is `min(1, 2 * openings / heads)`, so full breathing, and the top of the rev range
-  with it, needs two openings per head. The best engine is the one with the most mouths bolted on, which looks bad and is
+- **Why.** `PortNetwork.flowFactor()` was `min(1, 2 * openings / heads)`, so full breathing, and the top of the rev range
+  with it, needed (as briefed) two openings per head. The best engine is the one with the most mouths bolted on, which looks bad and is
   dull to build.
 - **Direction.** Openings still matter, but each extra one per head adds much less than the last, and a head is close to
   full breathing with about one opening each. Crowding openings on the same pipe run is penalised, so a tidy layout beats a
@@ -555,6 +574,13 @@ Queued 2026-11-16, author's decision: applies to every engine, held for 2.0 so 1
 - **Do not ship in 1.x**, not even behind a default-off option, unless the author says otherwise.
 
 ### Altitude-dependent intake (Aeronautics compat, breaking, 2.0 only)
+
+**Built 2026-11-18** (`engine.sim.Altitude`, `EngineSimulation.setAmbientDensity`, `compat.altitudeThinning`, default on). Density is 1 up to
+y 128, then falls by a factor of e every 1200 blocks to a floor of 0.2 (0.85 at the vanilla build limit). It starts every cylinder's
+intake pressure, so a compressor multiplies what reaches it. The numbers are a first choice: the one measurement taken was a
+four-cylinder crude engine losing 43 percent of its net peak torque at density 0.7. It uses the block's Y, not Aeronautics' altitude, and
+applies in vanilla worlds too (answering the open question with the config switch). `compat/behaviour.txt` and
+`compat/trajectories.txt` did not move: the simulation's default is sea level. In-world, an engine above y 128 is the only thing it changes.
 
 Queued 2026-11-17, author's decision: held for 2.0 so 1.x builds keep their numbers.
 

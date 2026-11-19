@@ -35,6 +35,7 @@ import com.createengines.content.supercharger.SuperchargerBlock;
 import com.createengines.content.supercharger.SuperchargerBlockEntity;
 import com.createengines.content.turbo.TurbochargerBlock;
 import com.createengines.content.turbo.TurbochargerBlockEntity;
+import com.createengines.engine.sim.Altitude;
 import com.createengines.engine.sim.CamProfile;
 import com.createengines.engine.sim.Camshaft;
 import com.createengines.engine.sim.CoolantSupply;
@@ -347,6 +348,7 @@ public final class EngineController {
 			.setTemperature(motion == null ? 0 : motion.temperature());
 		sim.setCoolant(coolant);
 		sim.setThermalLive(true);
+		sim.setAmbientDensity(airDensity());
 		if (motion != null) {
 			sim.restore(motion.angle(), motion.omega(), motion.direction());
 			heldOmega = motion.omega();
@@ -443,11 +445,27 @@ public final class EngineController {
 			this);
 	}
 
+	/**
+	 * How thick the air is where this engine really is. On a moving structure (Sable) that is its height in the world, not its
+	 * plot's, and it changes as the structure climbs, so it is read again every {@link #AIR_INTERVAL} ticks.
+	 */
+	private double airDensity() {
+		if (!com.createengines.engine.sim.Tuning.altitudeThinning)
+			return 1;
+		Level level = primary.getLevel();
+		return Altitude.density(level == null ? primary.getBlockPos()
+			.getY() : com.createengines.compat.sable.SableCompat.worldY(level, primary.getBlockPos()));
+	}
+
+	private static final int AIR_INTERVAL = 20;
+
 	public void tick() {
 		Level level = primary.getLevel();
 		if (level == null)
 			return;
 		ticks++;
+		if (ticks % AIR_INTERVAL == 0 && com.createengines.compat.sable.SableCompat.installed())
+			sim.setAmbientDensity(airDensity());
 		double torqueScale = CEConfig.STRESS_PER_TORQUE.get();
 
 		if (layout.incomplete() || layout.broken()) {
@@ -1205,6 +1223,7 @@ public final class EngineController {
 		for (CylinderModel model : models)
 			if (model != null)
 				soot += model.takeSoot();
+		sootSinceEmission += soot;
 		if (!(soot > 0))
 			return;
 		if (trapRuns == null) {
@@ -1239,6 +1258,60 @@ public final class EngineController {
 				if (LoadedBlocks.blockEntity(level, pos) instanceof SootTrapBlockEntity trap)
 					trap.catchSoot(each);
 		}
+	}
+
+	/** Fuel that left the exhaust unburned since the last round of emissions, in mB. */
+	private double sootSinceEmission;
+	private long lastEmissionTick = -1;
+	private final com.createengines.engine.sim.Emissions emissions = new com.createengines.engine.sim.Emissions();
+
+	/**
+	 * With Pollution of the Realms installed, puts the gas of the stretch since the last round through the engine's open
+	 * exhaust outlets. The fuel burned is what each cylinder's last cycle burned, for the cycles it has turned in the time;
+	 * nothing is read back, so the engine runs the same with or without the other mod.
+	 */
+	private void emitPollution(Level level, EngineState state) {
+		long now = level.getGameTime();
+		double soot = sootSinceEmission;
+		sootSinceEmission = 0;
+		long last = lastEmissionTick;
+		lastEmissionTick = now;
+		if (!com.createengines.compat.pollution.PollutionCompat.active())
+			return;
+		if (last < 0 || state != EngineState.RUNNING && state != EngineState.OVERLOADED) {
+			emissions.clear();
+			return;
+		}
+		double seconds = Math.min(5, (now - last) / 20.0);
+		double cycles = Math.abs(sim.rpm()) / 120 * seconds;
+		double burned = 0;
+		double dirt = 0;
+		int fuels = 0;
+		for (CylinderModel model : models) {
+			if (model == null)
+				continue;
+			burned += Math.max(0, model.lastCycle().fuelBurned) * cycles;
+			FuelSpec fuel = model.fuelSupply.fuel();
+			if (fuel != null) {
+				dirt += fuel.sootFactor();
+				fuels++;
+			}
+		}
+		emissions.add(burned, soot, fuels == 0 ? 1 : dirt / fuels, com.createengines.config.CEConfig.POLLUTION_RATE.get());
+		int carbon = emissions.takeCarbon();
+		int sulfur = emissions.takeSulfur();
+		if (carbon <= 0 && sulfur <= 0)
+			return;
+		java.util.List<BlockPos> outlets = new java.util.ArrayList<>();
+		for (EngineLayout.PortNetwork network : layout.ports())
+			if (network.kind() == com.createengines.content.airflow.PortKind.EXHAUST)
+				outlets.addAll(network.outlets());
+		if (outlets.isEmpty())
+			return;
+		for (BlockPos outlet : outlets)
+			com.createengines.compat.pollution.PollutionCompat.release(level, outlet, carbon / outlets.size()
+				+ (outlet.equals(outlets.get(0)) ? carbon % outlets.size() : 0), sulfur / outlets.size()
+					+ (outlet.equals(outlets.get(0)) ? sulfur % outlets.size() : 0));
 	}
 
 	/**
@@ -1280,6 +1353,7 @@ public final class EngineController {
 		syncTurbos(level);
 		syncSuperchargers(level);
 		catchSoot(level);
+		emitPollution(level, state);
 
 		for (EngineLayout.Segment segment : layout.segments())
 			if (LoadedBlocks.blockEntity(level, segment.pos()) instanceof CrankshaftBlockEntity crank)

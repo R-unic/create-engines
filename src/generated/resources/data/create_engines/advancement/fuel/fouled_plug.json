@@ -1,0 +1,30 @@
+{
+  "parent": "create_engines:fuel/spark_plug",
+  "criteria": {
+    "fuel/fouled_plug": {
+      "conditions": {
+        "event": "fouled_plug"
+      },
+      "trigger": "create_engines:event"
+    }
+  },
+  "display": {
+    "announce_to_chat": false,
+    "description": {
+      "translate": "advancement.create_engines.fuel.fouled_plug.desc"
+    },
+    "icon": {
+      "count": 1,
+      "id": "create_engines:spark_plug"
+    },
+    "title": {
+      "translate": "advancement.create_engines.fuel.fouled_plug"
+    }
+  },
+  "requirements": [
+    [
+      "fuel/fouled_plug"
+    ]
+  ],
+  "sends_telemetry_event": true
+}

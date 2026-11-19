@@ -1,0 +1,34 @@
+{
+  "parent": "create_engines:first_light/crankshaft",
+  "criteria": {
+    "first_light/cylinder": {
+      "conditions": {
+        "items": [
+          {
+            "items": "create_engines:cylinder"
+          }
+        ]
+      },
+      "trigger": "minecraft:inventory_changed"
+    }
+  },
+  "display": {
+    "announce_to_chat": false,
+    "description": {
+      "translate": "advancement.create_engines.first_light.cylinder.desc"
+    },
+    "icon": {
+      "count": 1,
+      "id": "create_engines:cylinder"
+    },
+    "title": {
+      "translate": "advancement.create_engines.first_light.cylinder"
+    }
+  },
+  "requirements": [
+    [
+      "first_light/cylinder"
+    ]
+  ],
+  "sends_telemetry_event": true
+}

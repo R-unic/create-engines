@@ -1,0 +1,30 @@
+{
+  "parent": "create_engines:tuning/dialed_in",
+  "criteria": {
+    "tuning/governed": {
+      "conditions": {
+        "event": "governed"
+      },
+      "trigger": "create_engines:event"
+    }
+  },
+  "display": {
+    "description": {
+      "translate": "advancement.create_engines.tuning.governed.desc"
+    },
+    "frame": "goal",
+    "icon": {
+      "count": 1,
+      "id": "create_engines:governor"
+    },
+    "title": {
+      "translate": "advancement.create_engines.tuning.governed"
+    }
+  },
+  "requirements": [
+    [
+      "tuning/governed"
+    ]
+  ],
+  "sends_telemetry_event": true
+}

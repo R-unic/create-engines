@@ -1,0 +1,30 @@
+{
+  "parent": "create_engines:first_light/alive",
+  "criteria": {
+    "first_light/sump": {
+      "conditions": {
+        "event": "sump_oiling"
+      },
+      "trigger": "create_engines:event"
+    }
+  },
+  "display": {
+    "announce_to_chat": false,
+    "description": {
+      "translate": "advancement.create_engines.first_light.sump.desc"
+    },
+    "icon": {
+      "count": 1,
+      "id": "create_engines:sump"
+    },
+    "title": {
+      "translate": "advancement.create_engines.first_light.sump"
+    }
+  },
+  "requirements": [
+    [
+      "first_light/sump"
+    ]
+  ],
+  "sends_telemetry_event": true
+}
