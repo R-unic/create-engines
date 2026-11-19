@@ -56,6 +56,14 @@ public final class EngineSimulation {
 	/** Measures how unevenly a driven engine turns the crank; see {@link #trackSwing()}. Null unless asked for. */
 	private SwingTracker swing;
 
+	/**
+	 * How a tick is cut into steps: the constants above in a live engine. A test sets finer ones through
+	 * {@link #useStepSizes} to check that a result does not depend on how coarsely the sim looked at it.
+	 */
+	private double minStepDegrees = MIN_STEP_DEGREES;
+	private double maxStepDegrees = MAX_STEP_DEGREES;
+	private double stepsPerTick = STEPS_PER_TICK;
+
 	private double inertia;
 	/** Friction torque not tied to speed, and per rad/s, at the oil the tick began with; see {@link #measureFriction()}. */
 	private double stepFriction;
@@ -164,7 +172,7 @@ public final class EngineSimulation {
 		}
 		double remaining = TICK;
 		while (remaining > 1e-9 && omega > STALL_OMEGA) {
-			double delta = Math.min(stepLimit(omega), Math.toDegrees(omega * remaining));
+			double delta = Math.min(stepLimit(omega, minStepDegrees, maxStepDegrees, stepsPerTick), Math.toDegrees(omega * remaining));
 			double radians = Math.toRadians(delta);
 			double dt = radians / omega;
 			double gasWork = advance(delta, dt);
@@ -191,8 +199,25 @@ public final class EngineSimulation {
 
 	/** The most crank degrees one step may cover at {@code omega}; see {@link #MIN_STEP_DEGREES}. */
 	static double stepLimit(double omega) {
-		double perStep = Math.toDegrees(omega * TICK) / STEPS_PER_TICK;
-		return Math.max(MIN_STEP_DEGREES, Math.min(MAX_STEP_DEGREES, perStep));
+		return stepLimit(omega, MIN_STEP_DEGREES, MAX_STEP_DEGREES, STEPS_PER_TICK);
+	}
+
+	private static double stepLimit(double omega, double min, double max, double perTick) {
+		double perStep = Math.toDegrees(omega * TICK) / perTick;
+		return Math.max(min, Math.min(max, perStep));
+	}
+
+	/**
+	 * Cuts every following tick into steps of at most these degrees instead of the live ones, for tests that compare a
+	 * result at two resolutions. {@code stepsPerTick} is how many steps a tick may take before the step grows past
+	 * {@code minDegrees}, as {@link #STEPS_PER_TICK} is for the live engine.
+	 */
+	void useStepSizes(double minDegrees, double maxDegrees, double stepsPerTick) {
+		if (!(minDegrees > 0) || maxDegrees < minDegrees || !(stepsPerTick > 0))
+			throw new IllegalArgumentException("steps " + minDegrees + ".." + maxDegrees + " per tick " + stepsPerTick);
+		this.minStepDegrees = minDegrees;
+		this.maxStepDegrees = maxDegrees;
+		this.stepsPerTick = stepsPerTick;
 	}
 
 	/** Mean torque the cranking clutch supplied during the last tick (0 if the engine was outrunning it). */
@@ -208,7 +233,7 @@ public final class EngineSimulation {
 			measureFriction();
 			double remaining = TICK;
 			while (remaining > 1e-9) {
-				double delta = Math.min(stepLimit(omega), Math.toDegrees(omega * remaining));
+				double delta = Math.min(stepLimit(omega, minStepDegrees, maxStepDegrees, stepsPerTick), Math.toDegrees(omega * remaining));
 				double dt = Math.toRadians(delta) / omega;
 				double gasWork = advance(delta, dt);
 				double friction = stepFrictionTorque() * Math.toRadians(delta);
