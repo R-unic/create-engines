@@ -276,7 +276,7 @@ public final class EngineController {
 			Camshaft camshaft = cylinder.camLine() >= 0 ? camshafts.get(cylinder.camLine()) : null;
 			// A rotor's ports are cut in its housing, so it needs no camshaft to time them
 			CylinderModel model = cylinder.rotary()
-				? CylinderModel.rotary(PrecisionParts.rotarySpec(cylinder.precision()), CamProfile.ROTARY,
+				? CylinderModel.rotary(CEDataMaps.rotaryStats().apply(PrecisionParts.rotarySpec(cylinder.precision())), CamProfile.ROTARY,
 					cylinder.tdcAngle(), cylinder.chamber())
 				: new CylinderModel(CEDataMaps.partStats(PrecisionParts.has(cylinder.precision(), PrecisionParts.BORE))
 						.apply(PrecisionParts.spec(cylinder.precision())), CamProfile.BASIC, cylinder.tdcAngle(),

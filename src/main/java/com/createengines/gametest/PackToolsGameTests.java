@@ -123,6 +123,14 @@ public class PackToolsGameTests {
 	}
 
 	@GameTest(template = "empty")
+	public static void withNoPackEntryTheRotaryChamberIsUntouched(GameTestHelper helper) {
+		if (!CEDataMaps.rotaryStats()
+			.isNone())
+			helper.fail("a world with no part_stats entry for the rotor housing should not retune a rotary chamber");
+		helper.succeed();
+	}
+
+	@GameTest(template = "empty")
 	public static void thePartStatsFormatTakesWhatItNamesAndRefusesTheRest(GameTestHelper helper) {
 		var codec = CEDataMaps.PartStatsProperties.CODEC;
 		JsonObject some = new JsonObject();

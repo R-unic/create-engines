@@ -49,6 +49,23 @@ class PartStatsTest {
 	}
 
 	@Test
+	void aRotaryChamberTakesTheScalesOnTopOfItsInjectorAndPowerSetting() {
+		Tuning.reset();
+		try {
+			Tuning.rotaryPower = 2;
+			CylinderSpec built = CylinderSpec.buildRotary(true);
+			CylinderSpec tuned = new PartStats(1, 1.25, 1, 1, 1, 0.5, 1, 1, 1, 1, 1).apply(built);
+			assertEquals(built.intakeFlow() * 1.25, tuned.intakeFlow(), 1e-12);
+			assertEquals(built.burnDuration() * 0.5, tuned.burnDuration(), 1e-12);
+			assertEquals(built.displacement(), tuned.displacement(), 0);
+			assertEquals(built.rodRatio(), tuned.rodRatio(), 0);
+			assertSame(built, PartStats.NONE.apply(built));
+		} finally {
+			Tuning.reset();
+		}
+	}
+
+	@Test
 	void compressionCannotBeScaledBelowARunningEngine() {
 		CylinderSpec tuned = new PartStats(PartStats.MIN_SCALE, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1).apply(CylinderSpec.CRUDE);
 		assertEquals(PartStats.MIN_COMPRESSION, tuned.compressionRatio(), 0);

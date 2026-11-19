@@ -2,7 +2,7 @@ package com.createengines.engine.sim;
 
 /**
  * A pack maker's retuning of one kind of cylinder, as scales on the stats the built-in tiers give it (a data map, see
- * {@code CEDataMaps.PART_STATS}; a <b>preview</b> format that may still change until 2.0). 1 leaves a stat as it is, so an
+ * {@code CEDataMaps.PART_STATS}; a format frozen at 2.0). 1 leaves a stat as it is, so an
  * entry names only what it changes, and with no entry at all {@link #apply} hands back the very spec it was given: a pack
  * that does not use this sees exactly what it saw before. Plain Java so the arithmetic is tested without a game.
  *

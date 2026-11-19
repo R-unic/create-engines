@@ -61,10 +61,10 @@ public final class CEDataMaps {
 			.build();
 
 	/**
-	 * <b>Preview.</b> A retuning of the cylinders built in one block, as scales on the stats the built-in tiers give them:
-	 * {@code data/<namespace>/data_maps/block/part_stats.json}, keyed by {@code create_engines:cylinder} or
-	 * {@code create_engines:precision_cylinder}. Every field is optional and 1 changes nothing. The format may still change
-	 * before 2.0, where parts as data replaces it and keeps reading it.
+	 * <b>Frozen at 2.0</b> (names pinned by {@code ScriptAndDataSurfaceTest}). A retuning of the cylinders built in one block, as scales on the stats the built-in tiers give them:
+	 * {@code data/<namespace>/data_maps/block/part_stats.json}, keyed by {@code create_engines:cylinder},
+	 * {@code create_engines:precision_cylinder} or {@code create_engines:rotor_housing} (a rotary chamber). Every field is optional and 1 changes nothing. Parts as data
+	 * ({@code part_effects}) sits beside it and this still applies on top.
 	 */
 	public record PartStatsProperties(double compressionRatio, double intakeFlow, double exhaustFlow, double maxFuelPerShot,
 									  double ignitionDelay, double burnDuration, double frictionStatic, double frictionViscous,
@@ -105,6 +105,18 @@ public final class CEDataMaps {
 	public static PartStats partStats(boolean precisionBore) {
 		Block block = (precisionBore ? CEBlocks.PRECISION_CYLINDER : CEBlocks.CYLINDER).get();
 		PartStatsProperties properties = block.builtInRegistryHolder()
+			.getData(PART_STATS);
+		return properties == null ? PartStats.NONE : properties.toStats();
+	}
+
+	/**
+	 * The retuning of a rotary chamber: the entry a pack gives {@code create_engines:rotor_housing} in the same
+	 * {@code part_stats} data map ({@link PartStats#NONE} if none). The scales apply to the built-in chamber, after the
+	 * injector and the server's rotary power setting.
+	 */
+	public static PartStats rotaryStats() {
+		PartStatsProperties properties = CEBlocks.ROTOR_HOUSING.get()
+			.builtInRegistryHolder()
 			.getData(PART_STATS);
 		return properties == null ? PartStats.NONE : properties.toStats();
 	}
