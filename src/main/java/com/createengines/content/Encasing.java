@@ -40,7 +40,10 @@ public final class Encasing {
 	 */
 	public static final EnumProperty<CasingStyle> STYLE = EnumProperty.create("casing_style", CasingStyle.class,
 		CasingStyle.PLAIN, CasingStyle.RIVETED, CasingStyle.LOUVRED);
-	/** The dye on a clad part's casing, the same property Engine Casing blocks carry. */
+	/**
+	 * The dye on an Engine Casing block. A clad part holds its dye in a {@link PaintedBlockEntity} instead, so the dye
+	 * does not multiply the part's block states.
+	 */
 	public static final EnumProperty<CasingPaint> PAINT = EngineCasingBlock.PAINT;
 
 	private Encasing() {
@@ -86,8 +89,11 @@ public final class Encasing {
 		BlockPos pos = context.getClickedPos();
 		if (!level.isClientSide) {
 			BlockState bare = state.setValue(ENCASED, false)
-				.setValue(PAINT, CasingPaint.NONE)
 				.setValue(STYLE, CasingStyle.PLAIN);
+			if (state.hasProperty(PAINT))
+				bare = bare.setValue(PAINT, CasingPaint.NONE);
+			else if (level.getBlockEntity(pos) instanceof PaintedBlockEntity held)
+				held.setCasingPaint(CasingPaint.NONE);
 			level.setBlock(pos, state.hasProperty(WINDOWED) ? bare.setValue(WINDOWED, false) : bare, Block.UPDATE_ALL);
 			level.playSound(null, pos, state.getSoundType()
 				.getBreakSound(), net.minecraft.sounds.SoundSource.BLOCKS, 0.8f, 1.1f);

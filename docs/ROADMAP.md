@@ -483,14 +483,13 @@ throttle and rack) lets players write their own engine management in Lua, withou
   data reload into `engine.sim.PartEffects`; the shipped files equal the old constants (pinned by test) and the baselines did not move.
   Not yet data: the rotary chamber's stats, cam profiles, and a third tier named from a pack's own block (a pack's block would also
   need its own cylinder block class). The `part_stats` data map still works on top.
-- **State cleanup (dye): not started, and it needs a decision.** The dye (`paint`, 17 values) multiplies a pipe's states: a pipe has
-  64 connections x 2 encased x 4 styles x 17 dyes = 8,704 states (two pipe kinds), a cylinder 6,528, and the crank, cam, cased shaft and
-  cogwheel carry it too, so folding it into a block entity or data component cuts those 17-fold (the roadmap's 440 MB of block-state
-  bookkeeping is mostly this). What it costs: a block entity on pipes (they have none), tint read from it in the block colour handler
-  (Flywheel and Sodium paths to check by eye), and the saved dye. A saved block state's unknown property is dropped on load, so an
-  existing world's paint is lost unless a chunk-NBT hook reads the old palette before that; that hook needs a 1.x fixture with painted
-  blocks to test. **Decision for the author: accept losing existing paint on the upgrade (one changelog line, simplest), or build the
-  migration.**
+- **State cleanup (dye): built 2026-11-19, with a migration.** The dye (`paint`, 17 values) multiplied a pipe's states (64 connections
+  x 2 encased x 4 styles x 17 dyes = 8,704 per pipe kind, a cylinder 6,528, and the crank, cam, cased shaft and cogwheel too). It now
+  lives in the block entity of those parts (`PaintedBlockEntity`; the manifolds gained a block entity that holds only it), and the
+  plain Engine Casing blocks keep it as state (a handful of states, and no block entity per wall block). The author chose to build the
+  migration: `PaintMigration` reads a 1.x chunk's saved `paint` out of the raw palette when the chunk loads, before the game drops it,
+  and writes it into the part's block entity data. Left out: parts inside a saved moving contraption and in saved structure files lose
+  their tint. Still to check by eye: the tint in the plain, Flywheel, Sodium and contraption render paths.
 
 - **Parts as data.** Cylinder, head, piston, injector and induction stats come from data. Crude and precision are
   two entries, and a pack or addon adds a third with a block, a model and a data file.

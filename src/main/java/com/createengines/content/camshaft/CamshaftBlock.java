@@ -46,7 +46,7 @@ public class CamshaftBlock extends RotatedPillarKineticBlock implements IBE<Cams
 	@Override
 	protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {
 		super.createBlockStateDefinition(builder);
-		builder.add(Encasing.ENCASED, Encasing.PAINT, Encasing.WINDOWED, Encasing.STYLE);
+		builder.add(Encasing.ENCASED, Encasing.WINDOWED, Encasing.STYLE);
 	}
 
 	@Override

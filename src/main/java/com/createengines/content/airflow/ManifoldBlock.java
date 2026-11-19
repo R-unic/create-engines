@@ -97,7 +97,7 @@ public class ManifoldBlock extends Block implements AirflowPort, IWrenchable {
 	protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {
 		CONNECTIONS.values()
 			.forEach(builder::add);
-		builder.add(Encasing.ENCASED, Encasing.PAINT, Encasing.STYLE);
+		builder.add(Encasing.ENCASED, Encasing.STYLE);
 	}
 
 	@Override
@@ -151,7 +151,7 @@ public class ManifoldBlock extends Block implements AirflowPort, IWrenchable {
 	@Override
 	protected ItemInteractionResult useItemOn(ItemStack stack, BlockState state, Level level, BlockPos pos,
 											  Player player, InteractionHand hand, BlockHitResult hit) {
-		if (getClass() != ManifoldBlock.class)
+		if (!(this instanceof PlainManifoldBlock))
 			return super.useItemOn(stack, state, level, pos, player, hand, hit);
 		ItemInteractionResult result = Encasing.encase(stack, state, level, pos, player);
 		return result == ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION

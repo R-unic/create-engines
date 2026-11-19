@@ -31,9 +31,29 @@ public enum CasingPaint implements StringRepresentable {
 	}
 
 	/**
-	 * A dye, or a bucket of water, used on a block that carries {@link EngineCasingBlock#PAINT}: the dye tints it and is
-	 * used up outside creative, the water washes it and is kept. Passes for anything else, and for paint that is
-	 * already on.
+	 * Whether a block can carry a dye: a plain casing (which holds it as state) or a part casing is clad onto (which holds it
+	 * in a {@link PaintedBlockEntity}).
+	 */
+	public static boolean isDyed(Block block) {
+		return block.defaultBlockState().hasProperty(EngineCasingBlock.PAINT) || block instanceof EngineCasedShaftBlock
+			|| block instanceof EngineCasedCogwheelBlock || block instanceof com.createengines.content.airflow.PlainManifoldBlock
+			|| block instanceof com.createengines.content.cylinder.CylinderBlock
+			|| block instanceof com.createengines.content.crankshaft.CrankshaftBlock
+			|| block instanceof com.createengines.content.camshaft.CamshaftBlock;
+	}
+
+	/** The paint with a serialised name, or {@link #NONE} for a name this version does not know. */
+	public static CasingPaint byName(String name) {
+		for (CasingPaint paint : values())
+			if (paint.name.equals(name))
+				return paint;
+		return NONE;
+	}
+
+	/**
+	 * A dye, or a bucket of water, used on a block that holds paint, either as {@link EngineCasingBlock#PAINT} (the plain
+	 * casing blocks) or in a {@link PaintedBlockEntity} (the parts casing is clad onto): the dye tints it and is used up
+	 * outside creative, the water washes it and is kept. Passes for anything else, and for paint that is already on.
 	 */
 	public static ItemInteractionResult apply(ItemStack stack, BlockState state, Level level, BlockPos pos, Player player) {
 		CasingPaint paint;
@@ -43,10 +63,15 @@ public enum CasingPaint implements StringRepresentable {
 			paint = NONE;
 		else
 			return ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION;
-		if (!state.hasProperty(EngineCasingBlock.PAINT) || state.getValue(EngineCasingBlock.PAINT) == paint)
+		boolean inState = state.hasProperty(EngineCasingBlock.PAINT);
+		PaintedBlockEntity held = level.getBlockEntity(pos) instanceof PaintedBlockEntity painted ? painted : null;
+		if (!inState && held == null || (inState ? state.getValue(EngineCasingBlock.PAINT) : held.casingPaint()) == paint)
 			return ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION;
 		if (!level.isClientSide) {
-			level.setBlock(pos, state.setValue(EngineCasingBlock.PAINT, paint), Block.UPDATE_ALL);
+			if (inState)
+				level.setBlock(pos, state.setValue(EngineCasingBlock.PAINT, paint), Block.UPDATE_ALL);
+			else
+				held.setCasingPaint(paint);
 			level.playSound(null, pos, paint == NONE ? SoundEvents.BUCKET_EMPTY : SoundEvents.DYE_USE,
 				SoundSource.BLOCKS, 1, 1);
 			if (paint != NONE && !player.isCreative())

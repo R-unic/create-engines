@@ -34,12 +34,6 @@ public class EngineCasedCogwheelBlock extends EncasedCogwheelBlock {
 			Achievements.award(level, List.of(pos), Milestone.ENCASED);
 	}
 
-	@Override
-	protected void createBlockStateDefinition(net.minecraft.world.level.block.state.StateDefinition.Builder<Block, BlockState> builder) {
-		super.createBlockStateDefinition(builder);
-		builder.add(EngineCasingBlock.PAINT);
-	}
-
 	/** A dye tints the casing and a bucket of water washes it; anything else is left to Create. */
 	@Override
 	protected net.minecraft.world.ItemInteractionResult useItemOn(ItemStack stack, BlockState state, Level level,

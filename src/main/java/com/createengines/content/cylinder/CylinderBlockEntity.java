@@ -1,5 +1,7 @@
 package com.createengines.content.cylinder;
 
+import com.createengines.content.CasingPaint;
+import com.createengines.content.PaintedBlockEntity;
 import java.util.List;
 
 import org.jetbrains.annotations.Nullable;
@@ -51,7 +53,22 @@ import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.Vec3;
 
-public class CylinderBlockEntity extends SmartBlockEntity implements IHaveGoggleInformation, EngineMember {
+public class CylinderBlockEntity extends SmartBlockEntity implements IHaveGoggleInformation, EngineMember, PaintedBlockEntity {
+	/** The dye on this part's casing, which a state property used to hold (see {@link PaintedBlockEntity}). */
+	private final PaintedBlockEntity.Cell paint = new PaintedBlockEntity.Cell();
+
+	@Override
+	public CasingPaint casingPaint() {
+		return paint.get();
+	}
+
+	@Override
+	public void setCasingPaint(CasingPaint dye) {
+		paint.set(dye);
+		setChanged();
+		sendData();
+	}
+
 
 	/** Where the cam says the charge fires: the top of the compression stroke. */
 	private static final double FIRING_CYCLE_ANGLE = 360;
@@ -418,6 +435,7 @@ public class CylinderBlockEntity extends SmartBlockEntity implements IHaveGoggle
 	@Override
 	protected void write(CompoundTag tag, HolderLookup.Provider registries, boolean clientPacket) {
 		super.write(tag, registries, clientPacket);
+		paint.write(tag);
 		if (clientPacket && status != null)
 			tag.put("Status", status.write());
 	}
@@ -425,6 +443,7 @@ public class CylinderBlockEntity extends SmartBlockEntity implements IHaveGoggle
 	@Override
 	protected void read(CompoundTag tag, HolderLookup.Provider registries, boolean clientPacket) {
 		super.read(tag, registries, clientPacket);
+		paint.read(tag, level, worldPosition, getBlockState());
 		if (clientPacket)
 			status = tag.contains("Status") ? CylinderStatus.read(tag.getCompound("Status")) : null;
 	}

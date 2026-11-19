@@ -1,5 +1,7 @@
 package com.createengines.content.crankshaft;
 
+import com.createengines.content.CasingPaint;
+import com.createengines.content.PaintedBlockEntity;
 import java.util.List;
 
 import org.jetbrains.annotations.Nullable;
@@ -46,7 +48,22 @@ import net.minecraft.world.phys.Vec3;
  * to its ends. One of them per engine, the primary (lowest along the axis), is the engine's generator and runs its
  * {@link EngineController}. The others just carry rotation and show the engine's figures.
  */
-public class CrankshaftBlockEntity extends GeneratingKineticBlockEntity implements EngineMember {
+public class CrankshaftBlockEntity extends GeneratingKineticBlockEntity implements EngineMember, PaintedBlockEntity {
+	/** The dye on this part's casing, which a state property used to hold (see {@link PaintedBlockEntity}). */
+	private final PaintedBlockEntity.Cell paint = new PaintedBlockEntity.Cell();
+
+	@Override
+	public CasingPaint casingPaint() {
+		return paint.get();
+	}
+
+	@Override
+	public void setCasingPaint(CasingPaint dye) {
+		paint.set(dye);
+		setChanged();
+		sendData();
+	}
+
 
 	public static final int THROW_ANGLE_STEP = 15;
 
@@ -326,6 +343,7 @@ public class CrankshaftBlockEntity extends GeneratingKineticBlockEntity implemen
 
 	@Override
 	protected void write(CompoundTag tag, HolderLookup.Provider registries, boolean clientPacket) {
+		paint.write(tag);
 		tag.putFloat("EngineSpeed", publishedSpeed);
 		tag.putFloat("EngineCapacity", publishedCapacity);
 		if (primaryPos != null)
@@ -354,6 +372,7 @@ public class CrankshaftBlockEntity extends GeneratingKineticBlockEntity implemen
 
 	@Override
 	protected void read(CompoundTag tag, HolderLookup.Provider registries, boolean clientPacket) {
+		paint.read(tag, level, worldPosition, getBlockState());
 		publishedSpeed = tag.getFloat("EngineSpeed");
 		publishedCapacity = tag.getFloat("EngineCapacity");
 		primaryPos = NbtUtils.readBlockPos(tag, "Primary")

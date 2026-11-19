@@ -45,7 +45,7 @@ public class CrankshaftBlock extends RotatedPillarKineticBlock implements IBE<Cr
 	@Override
 	protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {
 		super.createBlockStateDefinition(builder);
-		builder.add(Encasing.ENCASED, Encasing.PAINT, Encasing.WINDOWED, Encasing.STYLE);
+		builder.add(Encasing.ENCASED, Encasing.WINDOWED, Encasing.STYLE);
 	}
 
 	@Override

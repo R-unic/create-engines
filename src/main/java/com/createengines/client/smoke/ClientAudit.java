@@ -52,7 +52,7 @@ public final class ClientAudit {
 
 	public static void run(SmokeReport report) {
 		ServerAudit.guard(report, "models", "blocks", () -> blockModels(report));
-		ServerAudit.guard(report, "models", "painted states share their model", () -> paintedModels(report));
+		ServerAudit.guard(report, "models", "multipart states share their model", () -> paintedModels(report));
 		ServerAudit.guard(report, "models", "items", () -> itemModels(report));
 		ServerAudit.guard(report, "models", "partial models", () -> partialModels(report));
 		ServerAudit.guard(report, "lang", "names", () -> names(report));
@@ -234,44 +234,13 @@ public final class ClientAudit {
 	}
 
 	/**
-	 * Painted states of the multipart parts (the pipes above all) must point at the baked model of the same state unpainted,
-	 * which is what keeps about 440 MB of heap from the 17 dye values (see {@link com.createengines.client.SharedCasingModels}),
-	 * and must still draw exactly what their own model would have.
+	 * Every state of the mod's multipart parts (the pipes above all) must point at the one baked model of its block, which is
+	 * what keeps the heap down (see {@link com.createengines.client.SharedCasingModels}), and must still draw exactly what
+	 * its own model would have. The dye used to multiply those states by seventeen and is now held in a block entity.
 	 */
 	private static void paintedModels(SmokeReport report) {
 		var dispatcher = Minecraft.getInstance()
 			.getBlockRenderer();
-		int multipart = 0, notShared = 0, differ = 0;
-		String example = "";
-		RandomSource random = RandomSource.create(7);
-		for (Block block : ServerAudit.blocks()) {
-			if (!block.getStateDefinition()
-				.getProperties()
-				.contains(com.createengines.content.Encasing.PAINT))
-				continue;
-			List<BlockState> states = block.getStateDefinition()
-				.getPossibleStates();
-			for (int i = 0; i < states.size(); i += Math.max(1, states.size() / 300)) {
-				BlockState painted = states.get(i);
-				BakedModel model = dispatcher.getBlockModel(painted);
-				if (!(model instanceof net.minecraft.client.resources.model.MultiPartBakedModel))
-					continue;
-				multipart++;
-				BlockState bare = painted.setValue(com.createengines.content.Encasing.PAINT, com.createengines.content.CasingPaint.NONE);
-				if (dispatcher.getBlockModel(bare) != model) {
-					notShared++;
-					example = painted.toString();
-				}
-				for (Direction face : Direction.values())
-					if (model.getQuads(painted, face, random, ModelData.EMPTY, null)
-						.size() != dispatcher.getBlockModel(bare)
-							.getQuads(bare, face, random, ModelData.EMPTY, null)
-							.size()) {
-						differ++;
-						example = painted.toString();
-					}
-			}
-		}
 		// Every state that was sampled before sharing must draw exactly what it drew then
 		int sampledDiffer = 0, sampledNotShared = 0;
 		String sampledExample = "";
@@ -295,11 +264,6 @@ public final class ClientAudit {
 			sampledDiffer + " of " + com.createengines.client.SharedCasingModels.BEFORE.size() + " differ, e.g. " + sampledExample);
 		report.check("models", "every multipart state of the mod shares its block's one baked model", sampledNotShared == 0,
 			sampledNotShared + " sampled states hold their own copy, e.g. " + sampledExample);
-		report.metric("painted multipart states checked", multipart, "");
-		report.check("models", "painted multipart states share the unpainted baked model", multipart > 0 && notShared == 0,
-			notShared + " of " + multipart + " painted states still hold their own copy, e.g. " + example);
-		report.check("models", "a painted state draws what its unpainted twin draws", differ == 0,
-			differ + " faces differ, e.g. " + example);
 	}
 
 	private static boolean hasRenderer(net.minecraft.world.level.block.entity.BlockEntity entity) {
