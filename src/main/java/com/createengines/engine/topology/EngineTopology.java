@@ -10,6 +10,7 @@ import java.util.Set;
 
 import org.jetbrains.annotations.Nullable;
 
+import com.createengines.api.EngineExtensions;
 import com.createengines.content.EngineGlow;
 import com.createengines.content.crankshaft.CrankshaftBlockEntity;
 import com.createengines.engine.EngineController;
@@ -46,6 +47,8 @@ public final class EngineTopology {
 	private static final int GEARING_REACH = 64;
 
 	private final Set<BlockPos> dirty = new HashSet<>();
+	/** Crank blocks of engines whose added sources are to be asked again at the end of the tick; see {@link #rebuildNear}. */
+	private final Set<BlockPos> rebuilds = new HashSet<>();
 	private final Map<BlockPos, Set<BlockPos>> enginesByMember = new HashMap<>();
 	private final Map<BlockPos, EngineLayout> layouts = new HashMap<>();
 	private int ticks;
@@ -68,14 +71,40 @@ public final class EngineTopology {
 	}
 
 	/**
+	 * A block that an engine source provider watches was placed or broken at {@code pos}: every engine with a crank
+	 * segment within {@code reach} blocks of it is rebuilt at the end of the tick, so its providers are asked again. A
+	 * plain rescan would not do it, because an engine whose layout came back unchanged keeps its controller.
+	 */
+	public static void rebuildNear(Level level, BlockPos pos, int reach) {
+		if (level.isClientSide())
+			return;
+		EngineTopology topology = TOPOLOGIES.get(level);
+		for (EngineLayout layout : topology.layouts.values())
+			for (EngineLayout.Segment segment : layout.segments())
+				if (Math.abs(segment.pos()
+					.getX() - pos.getX()) <= reach
+					&& Math.abs(segment.pos()
+						.getY() - pos.getY()) <= reach
+					&& Math.abs(segment.pos()
+						.getZ() - pos.getZ()) <= reach) {
+					topology.rebuilds.add(layout.primary());
+					break;
+				}
+	}
+
+	/**
 	 * Placing or breaking a block of Create's kinetic network changes what a crankshaft is geared to, and Create's blocks
 	 * never say so: every engine near it looks at its gearing again at once rather than at the next revalidation.
 	 */
 	public static void onBlockPlaced(BlockEvent.EntityPlaceEvent event) {
+		if (event.getLevel() instanceof Level level)
+			EngineExtensions.blockChanged(level, event.getPos(), event.getPlacedBlock());
 		gearingChanged(event.getLevel(), event.getPos(), event.getPlacedBlock());
 	}
 
 	public static void onBlockBroken(BlockEvent.BreakEvent event) {
+		if (event.getLevel() instanceof Level level)
+			EngineExtensions.blockChanged(level, event.getPos(), event.getState());
 		gearingChanged(event.getLevel(), event.getPos(), event.getState());
 	}
 
@@ -100,6 +129,13 @@ public final class EngineTopology {
 	}
 
 	private void tick(ServerLevel level) {
+		if (!rebuilds.isEmpty()) {
+			Set<BlockPos> due = new HashSet<>(rebuilds);
+			rebuilds.clear();
+			for (BlockPos primary : due)
+				if (LoadedBlocks.blockEntity(level, primary) instanceof CrankshaftBlockEntity crank && crank.controller() != null)
+					crank.rebuildEngine();
+		}
 		// Each engine is revalidated once per interval, on its own tick, so many engines never rescan in the same tick
 		int phase = ++ticks % REVALIDATE_INTERVAL;
 		for (BlockPos primary : layouts.keySet())
