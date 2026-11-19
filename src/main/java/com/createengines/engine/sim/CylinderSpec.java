@@ -136,6 +136,9 @@ public record CylinderSpec(double compressionRatio, double rodRatio, double inta
 			inertia *= Tuning.blend(effect.inertia(), bonus);
 			injectorFlow *= Tuning.blend(effect.injectorFlow(), bonus);
 		}
+		// Every part's scale is range-checked alone, but they multiply, and a ratio near or under 1 has no clearance volume to
+		// compress into (the sim's gas work goes NaN). The same floor a part_stats retuning has; no shipped cylinder is near it.
+		compression = Math.max(PartStats.MIN_COMPRESSION, compression);
 		return new CylinderSpec(compression, CRUDE.rodRatio, intake, exhaust, CRUDE.maxFuelPerShot, delay, burn,
 			frictionStatic, frictionViscous, inertia, 1, injectorFlow);
 	}

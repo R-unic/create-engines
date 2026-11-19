@@ -351,7 +351,7 @@ public final class CylinderModel implements TorqueSource {
 	public double availableWork() {
 		CycleStats last = this.last;
 		double scale = 1;
-		FuelSpec fuel = fuelSupply.fuel();
+		FuelSpec fuel = Combustion.usable(fuelSupply.fuel());
 		if (last.result.fired() && last.fuelBurned > 0 && fuel != null) {
 			double airLimit = last.freshAirAtInjection / fuel.airPerMb();
 			// A MAF sensor sets the shot from the air, up to what the injector can deliver; without one it is

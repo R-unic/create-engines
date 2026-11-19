@@ -50,6 +50,34 @@ public record FuelSpec(double energyPerMb, double autoignitionTemp, double airPe
 	/** Most of a spark engine's heat release a charge that lights itself early can cost. */
 	public static final double PREIGNITION_MAX_LOSS = 0.35;
 
+	/** The most energy per mB the sim will take from a fuel: a larger finite number overflows to infinity inside a burn. */
+	public static final double MAX_USABLE_ENERGY = 1e300;
+	/** What an air figure of 0 (or one that is not a number) becomes: a charge that needs next to no air, never a division by zero. */
+	public static final double MIN_USABLE_AIR = 1e-300;
+
+	/**
+	 * This fuel as the simulation may use it. The {@code fuel} data map accepts any number and {@link FuelCheck} only reports
+	 * a bad one, so a pack's fuel reaches a running engine as written; four of the figures turn an engine's figures to NaN
+	 * when they are not numbers (or, for the air, are zero, or, for the energy, overflow): those are replaced here with the
+	 * nearest value that cannot, and a fuel that has none of them is returned itself, so every fuel that ever ran runs the
+	 * same. The record is not changed, so {@code FuelCheck} still sees what the pack wrote.
+	 * <ul>
+	 *     <li>energy: not a number or infinite becomes 0, an engine that cannot run on it; above {@link #MAX_USABLE_ENERGY}
+	 *     is held there;</li>
+	 *     <li>air: not a number, minus infinity or 0 becomes {@link #MIN_USABLE_AIR};</li>
+	 *     <li>cold sensitivity and charge cooling: not a number or infinite becomes 0, no effect.</li>
+	 * </ul>
+	 */
+	public FuelSpec usable() {
+		double energy = Double.isFinite(energyPerMb) ? Math.min(energyPerMb, MAX_USABLE_ENERGY) : 0;
+		double air = Double.isNaN(airPerMb) || airPerMb == 0 || airPerMb == Double.NEGATIVE_INFINITY ? MIN_USABLE_AIR : airPerMb;
+		double cold = Double.isFinite(coldSensitivity) ? coldSensitivity : 0;
+		double cooling = Double.isFinite(chargeCooling) ? chargeCooling : 0;
+		if (energy == energyPerMb && air == airPerMb && cold == coldSensitivity && cooling == chargeCooling)
+			return this;
+		return new FuelSpec(energy, autoignitionTemp, air, cold, cooling, sootFactor, preignitionTemp, sulfur);
+	}
+
 	/**
 	 * How much more fuel by volume than the usual shot this fuel needs to match the same air: 1 for gasoline, diesel and
 	 * plant oil, and a half again for ethanol, which carries less energy to the mB. The fuel metering dial and the most an
