@@ -188,4 +188,41 @@ public class CrossoverGameTests {
 			helper.succeed();
 		});
 	}
+
+	/** The port curve on a real, scanned engine and on layouts built by hand, so the numbers are pinned where the game reads them. */
+	@GameTest(template = "empty")
+	public static void aScannedEnginesBreathingFollowsThePortCurve(GameTestHelper helper) {
+		TestEngine.build(helper.getLevel(), helper.absolutePos(BlockPos.ZERO), true);
+		com.createengines.engine.topology.EngineLayout layout = com.createengines.engine.topology.EngineScanner
+			.scan(helper.getLevel(), helper.absolutePos(TestEngine.PRIMARY));
+		if (layout == null || layout.ports().isEmpty())
+			helper.fail("the test engine did not scan");
+		for (var port : layout.ports())
+			if (Math.abs(port.flowFactor() - com.createengines.engine.sim.PortFlow.factor(1, 1)) > 1e-9)
+				helper.fail("one opening for one head should breathe at " + com.createengines.engine.sim.PortFlow.factor(1, 1)
+					+ " but " + port.kind() + " gave " + port.flowFactor());
+		helper.succeed();
+	}
+
+	@GameTest(template = "empty")
+	public static void openingsBesideEachOtherBreatheLessThanOnesApart(GameTestHelper helper) {
+		java.util.List<BlockPos> apart = java.util.List.of(new BlockPos(0, 0, 0), new BlockPos(5, 0, 0), new BlockPos(0, 0, 5));
+		java.util.List<BlockPos> crowded = java.util.List.of(new BlockPos(0, 0, 0), new BlockPos(1, 0, 0), new BlockPos(1, 1, 1));
+		double spread = network(apart, 3).flowFactor();
+		double bunched = network(crowded, 3).flowFactor();
+		if (!(bunched < spread))
+			helper.fail("three crowded openings (" + bunched + ") must breathe less than three apart (" + spread + ")");
+		if (Math.abs(spread - com.createengines.engine.sim.PortFlow.factor(3, 3)) > 1e-9)
+			helper.fail("openings apart are worth one each: " + spread);
+		if (network(java.util.List.of(), 3).flowFactor() != 0)
+			helper.fail("no openings, no breathing");
+		helper.succeed();
+	}
+
+	private static com.createengines.engine.topology.EngineLayout.PortNetwork network(java.util.List<BlockPos> outlets,
+		int heads) {
+		java.util.List<BlockPos> none = java.util.List.of();
+		return new com.createengines.engine.topology.EngineLayout.PortNetwork(com.createengines.content.airflow.PortKind.INTAKE,
+			outlets.size(), 0, heads, outlets, none, none, none, none, none, java.util.Set.of(), none, none);
+	}
 }

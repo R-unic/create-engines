@@ -107,11 +107,31 @@ class BehaviourBaselineTest {
 								+ (spark ? ":spark" : ":compression");
 							out.put(label, curve(fuel.getValue(), spec.getValue(), cylinders, boost, spark));
 						}
+		// 2.0 additions, appended: the air thins with height, and an engine breathes by how many openings it has per head.
+		for (int y : new int[] {0, 128, 129, 200, 320, 1000, 5000})
+			out.put("altitude:density:" + y, String.format(java.util.Locale.ROOT, "%.6f", Altitude.density(y)));
+		for (int heads : new int[] {1, 2, 4, 6})
+			for (int openings : new int[] {1, 2, 3, 6})
+				for (int crowded : new int[] {0, openings})
+					out.put("portflow:" + heads + "heads:" + openings + "open:" + crowded + "crowded", String.format(
+						java.util.Locale.ROOT, "%.6f", PortFlow.factor(PortFlow.effective(openings, openings, crowded), heads)));
+		for (double density : new double[] {0.85, 0.5, 0.2})
+			for (String boost : new String[] {"none", "turbo"})
+				out.put("run:GASOLINE:crude:6cyl:" + boost + ":spark:density" + density, curve(FuelSpec.GASOLINE,
+					CylinderSpec.CRUDE, 6, boost, true, density, 1));
+		for (double breathing : new double[] {0.9, 0.67, 0.5})
+			out.put("run:GASOLINE:crude:6cyl:none:spark:breath" + breathing, curve(FuelSpec.GASOLINE, CylinderSpec.CRUDE, 6,
+				"none", true, 1, breathing));
 		return out;
 	}
 
 	/** The torque curve at Create's usual speeds, as the dynamometer measures it, rounded for the file. */
 	private static String curve(FuelSpec fuel, CylinderSpec spec, int cylinders, String boost, boolean spark) {
+		return curve(fuel, spec, cylinders, boost, spark, 1, 1);
+	}
+
+	private static String curve(FuelSpec fuel, CylinderSpec spec, int cylinders, String boost, boolean spark, double density,
+								 double breathing) {
 		Camshaft cam = new Camshaft();
 		List<CylinderModel> models = new ArrayList<>();
 		double step = 720d / cylinders;
@@ -122,11 +142,14 @@ class BehaviourBaselineTest {
 			model.metering = 2;
 			model.airMatch = 1;
 			model.ignition = spark ? IgnitionSource.UNLIMITED : IgnitionSource.NONE;
+			model.intakeFactor = breathing;
+			model.exhaustFactor = breathing;
 			models.add(model);
 		}
 		EngineSimulation sim = new EngineSimulation(models, cylinders * 0.35 + 1, (cylinders * 2 + 1) * 0.01);
 		for (CylinderModel model : models)
 			model.resetGas(0);
+		sim.setAmbientDensity(density);
 		int turbos = boost.startsWith("turbo3") ? 3 : boost.startsWith("turbo") ? 1 : 0;
 		for (int t = 0; t < turbos; t++) {
 			Turbocharger unit = new Turbocharger(models, models, 1);
