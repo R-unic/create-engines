@@ -29,7 +29,7 @@ class PrecisionHeadZFightTest {
 	private static final double EPS = 1e-6;
 	private static final String[] FACES = {"north", "south", "east", "west", "up", "down"};
 
-	private record Box(double[] from, double[] to) {
+	record Box(double[] from, double[] to) {
 	}
 
 	private static double[] numbers(JsonArray a) {
@@ -73,7 +73,7 @@ class PrecisionHeadZFightTest {
 		return out;
 	}
 
-	private static List<Box> read(Path file) throws IOException {
+	static List<Box> read(Path file) throws IOException {
 		try (Reader r = Files.newBufferedReader(file, StandardCharsets.UTF_8)) {
 			JsonObject model = JsonParser.parseReader(r).getAsJsonObject();
 			List<Box> boxes = new ArrayList<>();
