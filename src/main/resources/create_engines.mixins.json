@@ -10,7 +10,6 @@
     "PlayerAdvancementsMixin"
   ],
   "client": [
-    "BasinGoggleMixin",
-    "GoggleOverlayMixin"
+    "BasinGoggleMixin"
   ]
 }

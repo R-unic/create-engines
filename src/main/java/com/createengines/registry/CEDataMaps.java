@@ -27,11 +27,12 @@ import net.neoforged.neoforge.registries.datamaps.RegisterDataMapTypesEvent;
 public final class CEDataMaps {
 
 	/**
-	 * The last four are optional: a fuel that leaves them out is an ordinary one in a cold block, cools its charge no
+	 * The last five are optional (sulfur, for the pollution compat only, defaults to the soot factor): a fuel that leaves them out is an ordinary one in a cold block, cools its charge no
 	 * more than any other fuel and fouls a plug like any other and pre-ignites under boost at its autoignition point.
 	 */
 	public record FuelProperties(double energyPerMb, double autoignitionTemp, double airPerMb, double coldSensitivity,
-								 double chargeCooling, double sootFactor, double preignitionTemp) {
+								 double chargeCooling, double sootFactor, double preignitionTemp,
+								 java.util.Optional<Double> sulfur) {
 		public static final Codec<FuelProperties> CODEC = RecordCodecBuilder.create(i -> i.group(
 				Codec.DOUBLE.fieldOf("energy_per_mb").forGetter(FuelProperties::energyPerMb),
 				Codec.DOUBLE.fieldOf("autoignition_temperature").forGetter(FuelProperties::autoignitionTemp),
@@ -39,12 +40,18 @@ public final class CEDataMaps {
 				Codec.DOUBLE.optionalFieldOf("cold_sensitivity", 1.0).forGetter(FuelProperties::coldSensitivity),
 				Codec.DOUBLE.optionalFieldOf("charge_cooling", 0.0).forGetter(FuelProperties::chargeCooling),
 				Codec.DOUBLE.optionalFieldOf("soot_factor", 1.0).forGetter(FuelProperties::sootFactor),
-				Codec.DOUBLE.optionalFieldOf("preignition_temperature", 0.0).forGetter(FuelProperties::preignitionTemp))
+				Codec.DOUBLE.optionalFieldOf("preignition_temperature", 0.0).forGetter(FuelProperties::preignitionTemp),
+				Codec.DOUBLE.optionalFieldOf("sulfur").forGetter(FuelProperties::sulfur))
 			.apply(i, FuelProperties::new));
+
+		/** The sulfur a fuel that does not set one gives off: its soot factor, as before the field existed. */
+		public double effectiveSulfur() {
+			return sulfur.orElse(sootFactor);
+		}
 
 		public FuelSpec toSpec() {
 			return new FuelSpec(energyPerMb, autoignitionTemp, airPerMb, coldSensitivity, chargeCooling, sootFactor,
-				preignitionTemp > 0 ? preignitionTemp : autoignitionTemp);
+				preignitionTemp > 0 ? preignitionTemp : autoignitionTemp, effectiveSulfur());
 		}
 	}
 

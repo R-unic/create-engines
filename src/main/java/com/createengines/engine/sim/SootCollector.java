@@ -48,6 +48,22 @@ public final class SootCollector {
 		return Double.isFinite(share) ? share : 0;
 	}
 
+	/** A number as the arithmetic may use it: nothing for NaN, infinity or a negative. */
+	private static double usable(double value) {
+		return Double.isFinite(value) ? Math.max(0, value) : 0;
+	}
+
+	/** What a trap takes out of the exhaust when offered {@code mb}: all of it, or nothing for a full trap or a nonsense amount. */
+	public static double caught(double mb, boolean trapFull) {
+		return trapFull ? 0 : usable(mb);
+	}
+
+	/** What of {@code soot} is left in the exhaust once traps kept out {@code caught}: never negative, never more than made. */
+	public static double escaped(double soot, double caught) {
+		double made = usable(soot);
+		return made - Math.min(usable(caught), made);
+	}
+
 	/** Lumps waiting in the trap. */
 	public int stored() {
 		return stored;

@@ -39,7 +39,7 @@ public final class PollutionCompat {
 			.isLoaded(MOD_ID);
 	}
 
-	/** Releases the gas through one outlet, if it is open and not under water. A failure turns the integration off. */
+	/** Releases the gas through one outlet, if it is open and neither under water nor facing it. A failure turns the integration off. */
 	public static void release(Level level, BlockPos outlet, int carbon, int sulfur) {
 		if (!(level instanceof ServerLevel) || (carbon <= 0 && sulfur <= 0))
 			return;
@@ -48,6 +48,10 @@ public final class PollutionCompat {
 			.isEmpty())
 			return;
 		Direction facing = state.getValue(PortOpeningBlock.FACING);
+		// A mouth with fluid in front of it is as shut as one under it: no gas goes through the water to the air beyond
+		if (!level.getFluidState(outlet.relative(facing))
+			.isEmpty())
+			return;
 		try {
 			PollutionBridge.release(level, outlet, facing, carbon, sulfur);
 		} catch (LinkageError | RuntimeException e) {

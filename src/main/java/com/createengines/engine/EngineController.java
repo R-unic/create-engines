@@ -1282,6 +1282,7 @@ public final class EngineController {
 		if (runs.isEmpty())
 			return;
 		int totalHeads = exhaustHeads;
+		double caught = 0;
 		for (EngineLayout.PortNetwork run : runs) {
 			boolean series = run.traps()
 				.stream()
@@ -1294,11 +1295,13 @@ public final class EngineController {
 				continue;
 			for (BlockPos pos : run.traps())
 				if (LoadedBlocks.blockEntity(level, pos) instanceof SootTrapBlockEntity trap)
-					trap.catchSoot(each);
+					caught += trap.catchSoot(each);
 		}
+		// What a trap kept out of the exhaust is not released as the extra carbon of a rich run
+		sootSinceEmission -= soot - SootCollector.escaped(soot, caught);
 	}
 
-	/** Fuel that left the exhaust unburned since the last round of emissions, in mB. */
+	/** Fuel that left the exhaust unburned and past every trap since the last round of emissions, in mB. */
 	private double sootSinceEmission;
 	private long lastEmissionTick = -1;
 	private final com.createengines.engine.sim.Emissions emissions = new com.createengines.engine.sim.Emissions();
@@ -1331,7 +1334,7 @@ public final class EngineController {
 			burned += Math.max(0, model.lastCycle().fuelBurned) * cycles;
 			FuelSpec fuel = model.fuelSupply.fuel();
 			if (fuel != null) {
-				dirt += fuel.sootFactor();
+				dirt += fuel.sulfur();
 				fuels++;
 			}
 		}

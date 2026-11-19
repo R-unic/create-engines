@@ -189,6 +189,53 @@ public class CrossoverGameTests {
 		});
 	}
 
+	private static com.createengines.registry.CEDataMaps.FuelProperties fuel(String extra) {
+		String json = "{\"energy_per_mb\": 36, \"autoignition_temperature\": 1.55, \"air_per_mb\": 1.7" + extra + "}";
+		return com.createengines.registry.CEDataMaps.FuelProperties.CODEC
+			.parse(com.mojang.serialization.JsonOps.INSTANCE, com.google.gson.JsonParser.parseString(json))
+			.getOrThrow();
+	}
+
+	/** The optional sulfur of a fuel file: a 1.x file (no field) keeps what its soot factor gave, and a set value is its own. */
+	@GameTest(template = "empty")
+	public static void aFuelFilesSulfurIsOptionalAndFallsBackToItsSootFactor(GameTestHelper helper) {
+		var plain = fuel("");
+		if (plain.sulfur().isPresent() || plain.toSpec().sulfur() != 1)
+			helper.fail("a fuel with no soot factor and no sulfur should give off the usual 1, got " + plain.toSpec().sulfur());
+		var clean = fuel(", \"soot_factor\": 0.0");
+		if (clean.toSpec().sulfur() != 0)
+			helper.fail("a clean-burning 1.x fuel should stay sulfur free, got " + clean.toSpec().sulfur());
+		var partial = fuel(", \"soot_factor\": 0.3");
+		if (partial.toSpec().sulfur() != 0.3)
+			helper.fail("sulfur should follow a soot factor of 0.3, got " + partial.toSpec().sulfur());
+		var own = fuel(", \"soot_factor\": 1.0, \"sulfur\": 0.25");
+		if (own.toSpec().sulfur() != 0.25 || own.toSpec().sootFactor() != 1.0)
+			helper.fail("an explicit sulfur should be its own value and leave the soot factor alone");
+		var cleanButSulfurous = fuel(", \"soot_factor\": 0.0, \"sulfur\": 2.0");
+		if (cleanButSulfurous.toSpec().sulfur() != 2.0 || cleanButSulfurous.toSpec().sootFactor() != 0)
+			helper.fail("a clean-burning fuel can still be sulfurous");
+		helper.succeed();
+	}
+
+	/** Every fuel the mod ships sets no sulfur, so each keeps the value its soot factor gave before the field existed. */
+	@GameTest(template = "empty")
+	public static void everyShippedFuelKeepsItsOldSulfur(GameTestHelper helper) {
+		int seen = 0;
+		for (var fluid : net.minecraft.core.registries.BuiltInRegistries.FLUID) {
+			var props = fluid.builtInRegistryHolder()
+				.getData(com.createengines.registry.CEDataMaps.FUEL);
+			if (props == null)
+				continue;
+			seen++;
+			if (props.toSpec().sulfur() != props.sootFactor())
+				helper.fail(net.minecraft.core.registries.BuiltInRegistries.FLUID.getKey(fluid) + " sulfur "
+					+ props.toSpec().sulfur() + " differs from its soot factor " + props.sootFactor());
+		}
+		if (seen == 0)
+			helper.fail("no fuels found in the data map");
+		helper.succeed();
+	}
+
 	/** The port curve on a real, scanned engine and on layouts built by hand, so the numbers are pinned where the game reads them. */
 	@GameTest(template = "empty")
 	public static void aScannedEnginesBreathingFollowsThePortCurve(GameTestHelper helper) {

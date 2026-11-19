@@ -144,18 +144,20 @@ class PackagedJarTest {
 	@Test
 	void everyMixinNamedInTheConfigIsInTheJar() throws IOException {
 		try (JarFile file = new JarFile(jar.toFile())) {
-			var config = file.getEntry("create_engines.mixins.json");
-			assertNotNull(config, "the mixin config is not in the jar");
-			String text = new String(file.getInputStream(config).readAllBytes(), StandardCharsets.UTF_8);
-			var json = com.google.gson.JsonParser.parseString(text).getAsJsonObject();
-			String pkg = json.get("package").getAsString().replace('.', '/');
-			List<String> names = new ArrayList<>();
-			for (String key : List.of("mixins", "client", "server"))
-				if (json.has(key))
-					json.getAsJsonArray(key).forEach(e -> names.add(e.getAsString()));
-			assertTrue(!names.isEmpty(), "the mixin config names no mixins");
-			for (String name : names)
-				assertNotNull(file.getEntry(pkg + "/" + name + ".class"), "mixin " + name + " is named in the config but not in the jar");
+			for (String configName : List.of("create_engines.mixins.json", "create_engines.client.mixins.json")) {
+				var config = file.getEntry(configName);
+				assertNotNull(config, configName + " is not in the jar");
+				String text = new String(file.getInputStream(config).readAllBytes(), StandardCharsets.UTF_8);
+				var json = com.google.gson.JsonParser.parseString(text).getAsJsonObject();
+				String pkg = json.get("package").getAsString().replace('.', '/');
+				List<String> names = new ArrayList<>();
+				for (String key : List.of("mixins", "client", "server"))
+					if (json.has(key))
+						json.getAsJsonArray(key).forEach(e -> names.add(e.getAsString()));
+				assertTrue(!names.isEmpty(), configName + " names no mixins");
+				for (String name : names)
+					assertNotNull(file.getEntry(pkg + "/" + name + ".class"), "mixin " + name + " is named in " + configName + " but not in the jar");
+			}
 		}
 	}
 

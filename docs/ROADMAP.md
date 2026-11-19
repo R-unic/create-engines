@@ -501,7 +501,7 @@ throttle and rack) lets players write their own engine management in Lua, withou
   optional.
 - **A frozen public API** under its own semver: read-only engine views, events, registries.
 - **Pollution compatibility: Pollution of the Realms** (mod id `adpother`, queued 2026-11-16, **built 2026-11-18**: `compat.pollution`, `engine.sim.Emissions`,
-  `EngineController.emitPollution`, `runGameTestServerPollution`; the release rates are untuned and the engine-level hook has no GameTest, only the outlet release does). Engines
+  `EngineController.emitPollution`, `runGameTestServerPollution`; rates tuned 2026-11-19 and the engine hook covered by `PollutionGameTests`, see the decisions below). Engines
   put carbon and sulfur into the world through their exhaust outlets when that mod is installed.
   - *What was found.* The mod has no public API and no datapack hooks, but its classes can be compiled against.
     `Pollutants.BuiltIn.CARBON.get().pump(level, pos, steps)` puts gas density into one cell and returns how many steps
@@ -518,12 +518,30 @@ throttle and rack) lets players write their own engine management in Lua, withou
     cap is in the way. Held fractions carry over so a slow engine still releases a step now and then. Nothing is read
     back into the simulation, so engine behaviour does not change.
   - *Settings.* An on/off switch and a rate multiplier under a new `compat` config group.
-  - *Still to decide.* Whether a fuel gets its own optional `sulfur` field in the fuel data map, instead of
-    borrowing the soot factor. The release rates are untuned, because the mod's units were not worked out; they are
-    set with the second GameTest run, against how fast gas builds up around a running engine. Whether the Soot Trap's
-    caught soot should count for anything on the mod's side.
-  - *Tests.* Unit tests for the emission numbers, and a GameTest that runs only with the mod and checks gas appears
-    at a running engine's outlet and not at a stopped one or a shut outlet.
+  - *Decided 2026-11-19 (author), built 2026-11-19.*
+    - **Sulfur is its own optional fuel field.** A fuel data map may set `sulfur` (`FuelSpec.sulfur()`, read only by the
+      emissions); when it is missing the value falls back to the soot factor, so every 1.x fuel map loads and releases what
+      it would have. No built-in fuel sets one, because the soot factor is a fair stand-in for all four.
+    - **The Soot Trap counts.** Soot a trap keeps out of the exhaust (`SootTrapBlockEntity.catchSoot` now returns what it
+      kept; a full trap keeps none) is taken off the extra rich-running carbon, so a trap visibly cleans the air. It does not
+      touch the base carbon from burning fuel or the sulfur, and nothing in the simulation reads it.
+    - **Release rates are left to the builder (Claude's call), set 2026-11-19 by measuring.** The mod's gas cell holds only 3
+      steps, and the first guess (0.02 carbon and 0.01 sulfur steps per mB) left about 2 steps in the air after 2400 ticks of a
+      running one-cylinder diesel at about 145 RPM, with the outlet cell empty most of the time. Both were raised 25-fold, to
+      `CARBON_PER_MB` 0.5 and `SULFUR_PER_MB` 0.25 (still 2 to 1): the same engine then adds about a carbon step every 40 ticks,
+      and the cell at its outlet holds 1 to 3 steps, a visible haze that spreads and lingers. A bigger or faster engine burns
+      proportionally more, and a full cell turns away what it cannot hold, so a bank saturates its surroundings rather than
+      growing without limit. The `compat.pollutionRate` multiplier is the only dial. Chosen from one engine at one speed, not a
+      sweep: tune again if packs report it is too thick or too thin, and re-run `measureTheReleaseRates`.
+    - **A bug the measuring found.** The mod keeps one gas per cell, so sulfur pumped into the cell the carbon had just filled
+      was refused and almost none reached the air (1 step to 49 of carbon). `PollutionBridge` now puts each gas into the first
+      cell in reach that takes it and carries what a full cell cannot hold on to the next.
+  - *Tests.* Unit tests for the emission numbers, the sulfur fallback and the trap arithmetic. `PollutionGameTests`, which
+    only do anything in `runGameTestServerPollution`: a running diesel engine puts carbon and sulfur in the air, an ethanol one
+    carbon only, a merely cranked one nothing, and one with `compat.pollution` off nothing. Each looks every 100 ticks and judges
+    the most gas ever seen, because the gas drifts. Not covered: a Soot Trap's effect on a running engine (its arithmetic is
+    unit tested and the controller wiring is two lines, but no GameTest runs a rich engine through a trap) and a shut or
+    flooded outlet on a running engine (`CrossoverGameTests` covers the release call on one).
 
 ### The one breaking cleanup
 
@@ -549,23 +567,6 @@ registry aliases so existing worlds load. Each item needs the author's decision:
 - **Done 2026-11-18.** Support for older Create versions carried through 1.x under rule 7 is dropped, if a newer one is out: the
   build is on Create 6.0.11-346 (reverted the same day: Aeronautics needs 6.0.10, range back to `[6.0.10,6.1)`). Unit tests and the 317 GameTests passed on it.
 - The throttle body is **kept** (author, 2026-11-18). The basin fuel recipes are left as they are; reviewing them is still open.
-
-### Intake and exhaust port model redesign
-
-Queued 2026-11-16. Redraw the models of the intake and exhaust ports (the mouths on the head, and the muffler) so they read
-better and match the finished look of the rest of the engine.
-
-- **Models and textures only.** Same block IDs, same block states, same behaviour, same ports and connections, so
-  existing worlds load unchanged and nothing in the simulation moves. If a redesign needs a new state or a different
-  collision shape, it is raised as a decision first.
-- **Art direction holds:** chunky, reads as Create, textures built from Create's own pieces (see the art direction
-  rule). No 3D pixel art.
-- **This is a redraw, not new parts.** It does not reopen the declined list: no intake dress parts and no exhaust tips
-  other than the rain cap. The intake roar and the exhaust note keep coming from the same positions, so the redesign
-  must not move the mouths.
-- **In scope: the head ports and the muffler.** Manifolds are not part of this redesign and keep their current models.
-- **Still to decide before work starts:** whether the casing connected-texture clad still wraps the redrawn parts.
-- Checked with the showcase screenshot harness, the Ponder sweep and the smoke audit's client checks.
 
 ### Port count: diminishing returns (breaking, 2.0 only)
 
@@ -789,7 +790,7 @@ booted from the jar (item 5), and killing PIT survivors (item 1).
       smoke client) or has to be the stream hand-off before the mixer. The hand-off is the fallback and still catches
       the streaming and engine-state bugs. Determinism matters, so scenarios run on fixed engine states and a fixed
       tick count, and a flaky capture is fixed or dropped, never given a looser tolerance to make it pass.
-    - The planned port-model redraw and other deliberate art changes update their goldens as part of the change.
+    - Deliberate art changes update their goldens as part of the change.
 
 ## Not on this roadmap
 

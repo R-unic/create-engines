@@ -6,6 +6,9 @@ issueTrackerURL="https://github.com/R-unic/create-engines/issues"
 [[mixins]]
 config="create_engines.mixins.json"
 
+[[mixins]]
+config="create_engines.client.mixins.json"
+
 [[mods]]
 modId="${mod_id}"
 version="${mod_version}"
@@ -21,7 +24,7 @@ piece by piece; the layout you build decides whether the engine runs and how wel
 [[dependencies.${mod_id}]]
 modId="neoforge"
 type="required"
-versionRange="[${neo_version},)"
+versionRange="[${neo_min_version},)"
 ordering="NONE"
 side="BOTH"
 

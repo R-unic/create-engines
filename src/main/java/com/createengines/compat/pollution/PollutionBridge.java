@@ -21,19 +21,23 @@ final class PollutionBridge {
 	private PollutionBridge() {
 	}
 
-	/** Puts steps of carbon and sulfur into the first cell in front of {@code outlet} that takes gas. */
+	/**
+	 * Puts steps of carbon and sulfur into the cells in front of {@code outlet}. A cell holds one gas, so each gas goes into the
+	 * first cell that takes it, and what a full cell cannot hold carries on to the next one in reach.
+	 */
 	static void release(Level level, BlockPos outlet, Direction facing, int carbon, int sulfur) {
+		PollutionProbe.record(outlet, true, carbon);
+		PollutionProbe.record(outlet, false, sulfur);
+		pump(Pollutants.BuiltIn.CARBON.get(), level, outlet, facing, carbon);
+		pump(Pollutants.BuiltIn.SULFUR.get(), level, outlet, facing, sulfur);
+	}
+
+	private static void pump(Pollutant<?> gas, Level level, BlockPos outlet, Direction facing, int steps) {
 		BlockPos cell = outlet.relative(facing);
-		for (int reach = 0; reach < REACH; reach++, cell = cell.relative(facing)) {
-			Pollutant<?> probe = Pollutants.BuiltIn.CARBON.get();
-			if (!probe.canStateBePumped(level.getBlockState(cell)))
+		for (int reach = 0; reach < REACH && steps > 0; reach++, cell = cell.relative(facing)) {
+			if (!gas.canStateBePumped(level.getBlockState(cell)))
 				continue;
-			if (carbon > 0)
-				probe.pump(level, cell, carbon);
-			if (sulfur > 0)
-				Pollutants.BuiltIn.SULFUR.get()
-					.pump(level, cell, sulfur);
-			return;
+			steps -= Math.max(0, gas.pump(level, cell, steps));
 		}
 	}
 }

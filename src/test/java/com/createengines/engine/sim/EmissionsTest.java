@@ -10,16 +10,16 @@ class EmissionsTest {
 	@Test
 	void carbonFollowsTheFuelBurned() {
 		Emissions emissions = new Emissions();
-		emissions.add(1000, 0, 1, 1);
-		assertEquals((int) (1000 * Emissions.CARBON_PER_MB), emissions.takeCarbon());
+		emissions.add(100, 0, 1, 1);
+		assertEquals((int) (100 * Emissions.CARBON_PER_MB), emissions.takeCarbon());
 	}
 
 	@Test
 	void sulfurFollowsHowDirtyTheFuelIs() {
 		Emissions crude = new Emissions();
 		Emissions clean = new Emissions();
-		crude.add(1000, 0, 1, 1);
-		clean.add(1000, 0, 0, 1);
+		crude.add(100, 0, 1, 1);
+		clean.add(100, 0, 0, 1);
 		assertTrue(crude.takeSulfur() > 0);
 		assertEquals(0, clean.takeSulfur(), "ethanol is not sulfurous");
 		assertTrue(clean.takeCarbon() > 0, "but it still makes carbon");
@@ -29,9 +29,34 @@ class EmissionsTest {
 	void richRunsThatLetSootEscapeMakeMoreCarbon() {
 		Emissions tidy = new Emissions();
 		Emissions sooty = new Emissions();
-		tidy.add(500, 0, 1, 1);
-		sooty.add(500, 100, 1, 1);
+		tidy.add(20, 0, 1, 1);
+		sooty.add(20, 5, 1, 1);
 		assertTrue(sooty.takeCarbon() > tidy.takeCarbon());
+	}
+
+	@Test
+	void aTrapThatCatchesTheSootTakesTheExtraCarbonOffButNotTheRest() {
+		double burned = 20;
+		double made = 5;
+		Emissions uncaught = new Emissions();
+		Emissions trapped = new Emissions();
+		Emissions bare = new Emissions();
+		uncaught.add(burned, SootCollector.escaped(made, 0), 1, 1);
+		trapped.add(burned, SootCollector.escaped(made, made), 1, 1);
+		bare.add(burned, 0, 1, 1);
+		assertEquals((int) ((burned + made * Emissions.SOOT_CARBON) * Emissions.CARBON_PER_MB), uncaught.takeCarbon());
+		assertEquals(bare.takeCarbon(), trapped.takeCarbon(), "a trap that catches it all leaves only the carbon of burning");
+		assertEquals(uncaught.takeSulfur(), trapped.takeSulfur(), "the trap does not touch sulfur");
+	}
+
+	@Test
+	void sulfurFollowsTheFuelsOwnValueNotItsSoot() {
+		Emissions lowSulfur = new Emissions();
+		Emissions highSulfur = new Emissions();
+		lowSulfur.add(40, 0, new FuelSpec(10, 2, 1.2, 1, 0, 1, 2, 0.2).sulfur(), 1);
+		highSulfur.add(40, 0, new FuelSpec(10, 2, 1.2, 1, 0, 0, 2, 2).sulfur(), 1);
+		assertEquals(2, lowSulfur.takeSulfur());
+		assertEquals(20, highSulfur.takeSulfur(), "a clean-burning fuel can still be sulfurous");
 	}
 
 	@Test
@@ -72,26 +97,26 @@ class EmissionsTest {
 	@Test
 	void theAmountsAreExactlyTheConstantsTimesTheFuel() {
 		Emissions burned = new Emissions();
-		burned.add(150, 0, 1, 1);
+		burned.add(6, 0, 1, 1);
 		assertEquals(3, burned.takeCarbon());
-		assertEquals(1, burned.takeSulfur());
+		assertEquals(1, burned.takeSulfur(), "6 x 0.25 is 1.5, and the half stays held");
 		Emissions soot = new Emissions();
-		soot.add(0, 55, 1, 1);
-		assertEquals(4, soot.takeCarbon(), "unburned fuel counts SOOT_CARBON times as much carbon, 55 x 4 x 0.02 = 4.4");
+		soot.add(0, 2.2, 1, 1);
+		assertEquals(4, soot.takeCarbon(), "unburned fuel counts SOOT_CARBON times as much carbon, 2.2 x 4 x 0.5 = 4.4");
 		assertEquals(0, soot.takeSulfur(), "and no sulfur: only burned fuel carries it");
 		Emissions dirty = new Emissions();
-		dirty.add(300, 0, 2, 1);
+		dirty.add(12, 0, 2, 1);
 		assertEquals(6, dirty.takeSulfur(), "sulfur scales with the soot factor");
 	}
 
 	@Test
 	void theRateScalesBothGases() {
 		Emissions half = new Emissions();
-		half.add(300, 0, 1, 0.5);
+		half.add(12, 0, 1, 0.5);
 		assertEquals(3, half.takeCarbon());
 		assertEquals(1, half.takeSulfur());
 		Emissions double_ = new Emissions();
-		double_.add(300, 0, 1, 2);
+		double_.add(12, 0, 1, 2);
 		assertEquals(12, double_.takeCarbon());
 		assertEquals(6, double_.takeSulfur());
 	}
@@ -99,10 +124,10 @@ class EmissionsTest {
 	@Test
 	void whatIsNotWholeStaysHeldAndIsNeverReleasedTwice() {
 		Emissions emissions = new Emissions();
-		emissions.add(150, 0, 1, 1);
+		emissions.add(6, 0, 1, 1);
 		assertEquals(1, emissions.takeSulfur());
 		assertEquals(0, emissions.takeSulfur(), "taking it again gives nothing");
-		emissions.add(60, 0, 1, 1);
+		emissions.add(2.4, 0, 1, 1);
 		assertEquals(1, emissions.takeSulfur(), "the half held back plus 0.6 is 1.1");
 		assertEquals(0, emissions.takeSulfur());
 		assertEquals(3 + 1, emissions.takeCarbon(), "carbon held 3.0 and 1.2 more is 4.2, taken once");

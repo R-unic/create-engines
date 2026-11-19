@@ -6,17 +6,19 @@ package com.createengines.engine.sim;
  * anything listens.
  * <p>
  * Carbon comes in proportion to the fuel burned, and a good deal more from fuel a rich run threw out unburned (soot no trap
- * caught). Sulfur comes in proportion to how dirty the fuel is, its soot factor: crude is sulfurous and ethanol is not. The
+ * caught; what a Soot Trap holds is not released). Sulfur comes in proportion to how sulfurous the fuel is, the optional
+ * {@code sulfur} of its fuel data (its soot factor when it sets none): crude is sulfurous and ethanol is not. A trap does not
+ * touch the base carbon or the sulfur. The
  * rates are a first choice, not measured. The part of a step not yet whole is held, so a slow engine still releases one now and
  * then.
  */
 public final class Emissions {
 
 	/** Steps of carbon for each mB of fuel burned. */
-	public static final double CARBON_PER_MB = 0.02;
+	public static final double CARBON_PER_MB = 0.5;
 
 	/** Steps of sulfur for each mB of fuel burned, at a soot factor of 1. */
-	public static final double SULFUR_PER_MB = 0.01;
+	public static final double SULFUR_PER_MB = 0.25;
 
 	/** How many times as much carbon a mB of unburned, soot-forming fuel makes as a mB burned. */
 	public static final double SOOT_CARBON = 4;
@@ -31,8 +33,8 @@ public final class Emissions {
 	 * Adds a stretch of running.
 	 *
 	 * @param burnedMb   fuel burned, in mB
-	 * @param sootMb     fuel that left the exhaust unburned, in mB
-	 * @param sootFactor the fuel's soot factor (1 usual, 0 clean)
+	 * @param sootMb     fuel that left the exhaust unburned and that no trap caught, in mB
+	 * @param sootFactor the fuel's sulfur (1 usual, 0 none)
 	 * @param rate       the server's multiplier; 0 emits nothing
 	 */
 	public void add(double burnedMb, double sootMb, double sootFactor, double rate) {

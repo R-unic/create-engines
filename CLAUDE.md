@@ -46,6 +46,5 @@ Sometimes the change is the point (a balance pass, a retuned sound, a redrawn mo
 
 When the visual and audio goldens exist they follow the same rules. A diff nobody meant is a bug. A diff somebody
 meant is updated with one command (`./gradlew updateGoldens`), the git diff of the images and numbers is the review,
-and the commit is the approval; the planned port-model redraw and any other deliberate art or sound change update their
-goldens as part of that change. Never widen a tolerance to make one pass; a flaky capture is fixed or dropped. When
+and the commit is the approval; any deliberate art or sound change updates its goldens as part of that change. Never widen a tolerance to make one pass; a flaky capture is fixed or dropped. When
 they are built, put the exact commands in [docs/SMOKE.md](docs/SMOKE.md) and keep this section true.
