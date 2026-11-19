@@ -16,6 +16,7 @@ import com.createengines.engine.Diagnosis;
 import com.createengines.engine.EngineController;
 import com.createengines.engine.EngineState;
 import com.createengines.engine.EngineSummary;
+import com.createengines.engine.sim.StatusLine;
 import com.createengines.engine.GhostRotation;
 import com.createengines.engine.sim.Thermal;
 import com.createengines.engine.sim.Torsion;
@@ -186,6 +187,17 @@ public class CrankshaftBlockEntity extends GeneratingKineticBlockEntity implemen
 			: savedMotion;
 		savedMotion = null;
 		controller = new EngineController(this, layout, motion);
+		setPrimary(worldPosition, 1);
+	}
+
+	/**
+	 * Builds this engine again from the layout it has, carrying its speed, oil and heat over, so that whatever is asked
+	 * when an engine is built (the sources packs and addons add) is asked again.
+	 */
+	public void rebuildEngine() {
+		if (controller == null)
+			return;
+		controller = new EngineController(this, controller.layout(), controller.motion());
 		setPrimary(worldPosition, 1);
 	}
 
@@ -433,7 +445,9 @@ public class CrankshaftBlockEntity extends GeneratingKineticBlockEntity implemen
 						.style(ChatFormatting.DARK_GRAY), tooltip, 2);
 			}
 		}
-		if (engine.cylinders() == 0) {
+		// An engine whose only drive is a pack's own source has no cylinders to count and is not an empty one
+		if (engine.cylinders() == 0 && engine.sourceLines()
+			.isEmpty()) {
 			GoggleLines.add(CELang.translate("goggles.no_cylinders")
 				.style(ChatFormatting.GRAY), tooltip, 1);
 			return;
@@ -446,6 +460,12 @@ public class CrankshaftBlockEntity extends GeneratingKineticBlockEntity implemen
 			pair(tooltip, "goggles.horsepower", engine.loadTorque() > engine.availableTorque() ? ChatFormatting.GOLD : ChatFormatting.AQUA,
 				CELang.translate("goggles.hp", EngineReadout.hp(EngineReadout.output(engine)), EngineReadout.hp(EngineReadout.capacity(engine))));
 			pair(tooltip, "goggles.fuel_use", ChatFormatting.AQUA, CELang.translate("goggles.mb_per_minute", format(engine.fuelPerMinute())));
+		}
+		addSourceLines(tooltip, engine);
+		if (engine.cylinders() == 0) {
+			GoggleLines.add(CELang.translate("goggles.inertia", format(engine.inertia()))
+				.style(ChatFormatting.DARK_GRAY), tooltip, 1);
+			return;
 		}
 		GoggleLines.add(CELang.translate("goggles.firing", engine.firing(), engine.cylinders())
 			.style(engine.firing() == engine.cylinders() ? ChatFormatting.GREEN : ChatFormatting.GOLD), tooltip, 1);
@@ -488,6 +508,22 @@ public class CrankshaftBlockEntity extends GeneratingKineticBlockEntity implemen
 		if (engine.starterEngaged())
 			GoggleLines.add(CELang.translate("goggles.starter_engaged")
 				.style(ChatFormatting.YELLOW), tooltip, 1);
+	}
+
+	/** The lines sources added by packs and addons give for themselves, coloured by how they say things are. */
+	private static void addSourceLines(List<Component> tooltip, EngineSummary engine) {
+		for (StatusLine line : engine.sourceLines()) {
+			ChatFormatting colour = switch (line.tone()) {
+				case NOTE -> ChatFormatting.GRAY;
+				case GOOD -> ChatFormatting.GREEN;
+				case WARN -> ChatFormatting.GOLD;
+				case BAD -> ChatFormatting.RED;
+			};
+			GoggleLines.add(CELang.builder()
+				.add(Component.translatable(line.key(), line.args()
+					.toArray()))
+				.style(colour), tooltip, 1);
+		}
 	}
 
 	private static boolean evenIntervals(float[] intervals) {

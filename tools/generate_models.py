@@ -1284,13 +1284,29 @@ def precision_head_base():
     return elements
 
 
+def precision_injector_elements():
+    """Sunk 0.2 into the cam cover and clear of its edges, so no face lies in the same plane as a cover or bolt face
+    (the standard head's injector does, which z-fights on this head). It stands taller than the bolt it swallows."""
+    return [box((10.5, 17.3, 2), (13, 18.6, 5), "injector"), box((11, 18.6, 2.5), (12.5, 19.2, 4.5), "terminal")]
+
+
+def precision_plug_elements():
+    """Same rule as the injector: a collar sunk into the cover with the bolt inside it, ceramic standing on that."""
+    return [
+        box((3, 17.3, 11), (6, 18.3, 14), "terminal"),
+        box((3.5, 18, 11.5), (5.5, 20.5, 13.5), "ceramic"),
+        box((4, 20.5, 12), (5, 22, 13), "terminal"),
+    ]
+
+
 def precision_head():
     base = precision_head_base()
     textures = PRECISION_HEAD_TEXTURES
+    injector, plug = precision_injector_elements(), precision_plug_elements()
     write("precision_cylinder_head/block", textures, base)
-    write("precision_cylinder_head/block_injector", textures, base + injector_elements())
-    write("precision_cylinder_head/block_plug", textures, base + plug_elements())
-    write("precision_cylinder_head/block_injector_plug", textures, base + injector_elements() + plug_elements())
+    write("precision_cylinder_head/block_injector", textures, base + injector)
+    write("precision_cylinder_head/block_plug", textures, base + plug)
+    write("precision_cylinder_head/block_injector_plug", textures, base + injector + plug)
     write_item("precision_cylinder_head/item", "precision_cylinder_head/block")
 
 

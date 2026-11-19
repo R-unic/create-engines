@@ -20,7 +20,8 @@ public class CamshaftVisual extends RotatingPartVisual<CamshaftBlockEntity> {
 	/** A lobe set's intake, exhaust and injector lobes, each turned on its own; empty for a plain camshaft. */
 	private final TransformedInstance[] lobes;
 	private boolean lobesPosed;
-	private float[] lastLobeAngles;
+	private float[] lastLobeAngles = new float[3];
+	private float[] scratchLobeAngles = new float[3];
 
 	public CamshaftVisual(VisualizationContext context, CamshaftBlockEntity blockEntity, float partialTick) {
 		super(context, blockEntity, partialTick, blockEntity.getBlockState()
@@ -46,6 +47,8 @@ public class CamshaftVisual extends RotatingPartVisual<CamshaftBlockEntity> {
 
 	@Override
 	public void beginFrame(DynamicVisual.Context context) {
+		if (!isVisible(context.frustum()))
+			return;
 		super.beginFrame(context);
 		poseLobes();
 	}
@@ -54,10 +57,15 @@ public class CamshaftVisual extends RotatingPartVisual<CamshaftBlockEntity> {
 		if (lobes.length == 0)
 			return;
 		EnginePoses.LobeAngles angles = EnginePoses.lobeAngles(blockEntity, AnimationTickHolder.getRenderTime(level));
-		float[] each = {angles.intake(), angles.exhaust(), angles.injector()};
+		// Two arrays traded back and forth, so a frame allocates nothing
+		float[] each = scratchLobeAngles;
+		each[0] = angles.intake();
+		each[1] = angles.exhaust();
+		each[2] = angles.injector();
 		if (lobesPosed && java.util.Arrays.equals(each, lastLobeAngles))
 			return;
 		lobesPosed = true;
+		scratchLobeAngles = lastLobeAngles;
 		lastLobeAngles = each;
 		for (int i = 0; i < lobes.length; i++)
 			lobes[i].setIdentityTransform()

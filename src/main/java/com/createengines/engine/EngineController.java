@@ -40,10 +40,13 @@ import com.createengines.engine.sim.Camshaft;
 import com.createengines.engine.sim.CoolantSupply;
 import com.createengines.engine.sim.CycleResult;
 import com.createengines.engine.sim.CycleStats;
+import com.createengines.api.EngineExtensions;
 import com.createengines.engine.sim.CylinderModel;
 import com.createengines.engine.sim.CylinderSpec;
 import com.createengines.engine.sim.Dynamometer;
 import com.createengines.engine.sim.EngineSimulation;
+import com.createengines.engine.sim.StatusLine;
+import com.createengines.engine.sim.TorqueSource;
 import com.createengines.engine.sim.FuelSpec;
 import com.createengines.engine.sim.Governor;
 import com.createengines.engine.sim.FuelSupply;
@@ -195,6 +198,11 @@ public final class EngineController {
 	private boolean warmStart;
 	private boolean hardStart;
 
+	/** Everything on this engine's crank: its cylinders, then whatever packs and addons added. */
+	public List<TorqueSource> sources() {
+		return sim.sources();
+	}
+
 	public EngineController(CrankshaftBlockEntity primary, EngineLayout layout, @Nullable Motion motion) {
 		this.primary = primary;
 		this.layout = layout;
@@ -336,6 +344,9 @@ public final class EngineController {
 		}
 		for (EngineLayout.Inline placed : layout.intercoolers())
 			sim.addIntercooler(new Intercooler(breathingOn(placed.intake())));
+		// Whatever packs and addons drive the crank with besides cylinders
+		for (TorqueSource source : EngineExtensions.sourcesFor(level, layout))
+			sim.addSource(source);
 		// A new engine starts dry, and has to be oiled; its oil is new and its block cold
 		sim.lubrication()
 			.setFilm(motion == null ? 0 : motion.film());
@@ -516,7 +527,7 @@ public final class EngineController {
 		// Starters turning the crank the same way as the one that sets the pace all push on it, so a big engine can be
 		// cranked by several drives, each feeling its share of the effort. One much slower than the leader would just
 		// be overrun by its clutch, so it sits out.
-		List<BlockPos> pushing = new ArrayList<>();
+		List<BlockPos> pushing = activeStarter == null ? List.of() : new ArrayList<>();
 		if (activeStarter != null)
 			for (BlockPos pos : layout.starters())
 				if (LoadedBlocks.blockEntity(level, pos) instanceof StarterBlockEntity starter && starter.wantsToCrank()
@@ -1151,7 +1162,34 @@ public final class EngineController {
 			(float) sim.thermal()
 				.coolantRate(),
 			pilotLit(), filtered, (float) Torsion.scaled(flexLoss), longestLine, report.health(), report.cause(), muffling(),
-				inductionBoost());
+				inductionBoost(), sourceLines());
+	}
+
+	/**
+	 * What the sources packs and addons added say about themselves, capped so a careless one cannot flood the sync. A
+	 * source that throws is left out of the readout, and reported like a provider that fails.
+	 */
+	private List<StatusLine> sourceLines() {
+		List<TorqueSource> all = sim.sources();
+		int first = sim.cylinders()
+			.size();
+		if (all.size() == first)
+			return List.of();
+		List<StatusLine> lines = new ArrayList<>();
+		for (int i = first; i < all.size() && lines.size() < StatusLine.LIMIT; i++) {
+			try {
+				List<StatusLine> given = all.get(i)
+					.status();
+				if (given == null)
+					continue;
+				for (StatusLine line : given)
+					if (line != null && lines.size() < StatusLine.LIMIT)
+						lines.add(line);
+			} catch (RuntimeException e) {
+				EngineExtensions.reportSourceFailure(layout.primary(), e);
+			}
+		}
+		return List.copyOf(lines);
 	}
 
 	/** The hardest any turbo or blower is pushing, for the roar at the intake. */

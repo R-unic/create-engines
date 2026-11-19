@@ -19,7 +19,7 @@ import org.jetbrains.annotations.Nullable;
  * The piston follows the crank; the valves and injector follow the cam. Whether those two agree is entirely down to
  * how the engine was built, and every behaviour (misfires, weak cylinders, stalls, rough running) comes out of that.
  */
-public final class CylinderModel {
+public final class CylinderModel implements TorqueSource {
 
 	static final double GAMMA = 1.3;
 	static final double FUEL_EPSILON = 1e-6;
@@ -63,13 +63,10 @@ public final class CylinderModel {
 	private double reverseShift;
 	private int turning = 1;
 	/**
-	 * A rotary chamber has no cam: the housing's ports are cut at fixed places, so its valves and its injection follow
-	 * its own cycle angle. {@link #angleScale} turns shaft degrees into that angle.
+	 * How the crank sets this cylinder's place in its cycle and steps it. A rotary chamber has no cam: the housing's ports
+	 * are cut at fixed places, so its valves and its injection follow its own cycle angle (see {@link CycleDrive}).
 	 */
-	private final boolean ported;
-	private final double angleScale;
-	/** Which of the rotor's chambers this is: its cycle runs this far ahead of the first one's, in cycle degrees. */
-	private final double cycleOffset;
+	private final CycleDrive drive;
 
 	// Inputs, refreshed by the owner every tick
 	public double rack = 1;
@@ -123,11 +120,11 @@ public final class CylinderModel {
 
 	public CylinderModel(CylinderSpec spec, CamProfile profile, double tdcCrankAngle, @Nullable Camshaft camshaft,
 						 double lobeAngle) {
-		this(spec, profile, tdcCrankAngle, camshaft, lobeAngle, false, 1, 0);
+		this(spec, profile, tdcCrankAngle, camshaft, lobeAngle, CycleDrive.PISTON);
 	}
 
 	private CylinderModel(CylinderSpec spec, CamProfile profile, double tdcCrankAngle, @Nullable Camshaft camshaft,
-						  double lobeAngle, boolean ported, double angleScale, double cycleOffset) {
+						  double lobeAngle, CycleDrive drive) {
 		this.spec = spec;
 		this.geometry = spec.geometry();
 		this.profile = profile;
@@ -137,9 +134,7 @@ public final class CylinderModel {
 		this.camshaft = camshaft;
 		this.dialAngle = lobeAngle;
 		this.lobeAngle = lobeAngle;
-		this.ported = ported;
-		this.angleScale = angleScale;
-		this.cycleOffset = cycleOffset;
+		this.drive = drive;
 		resetGas();
 	}
 
@@ -148,8 +143,8 @@ public final class CylinderModel {
 	 * housing's reference mark, and {@code chamber} (0 to 2) which of the rotor's three faces this is.
 	 */
 	public static CylinderModel rotary(CylinderSpec spec, CamProfile profile, double eccentricTdc, int chamber) {
-		return new CylinderModel(spec, profile, eccentricTdc, null, 0, true, ROTARY_SCALE,
-			chamber * ROTARY_CHAMBER_SPACING * ROTARY_SCALE);
+		return new CylinderModel(spec, profile, eccentricTdc, null, 0,
+			new CycleDrive.RotaryDrive(chamber * ROTARY_CHAMBER_SPACING * ROTARY_SCALE));
 	}
 
 	/** Crank angle of this piston past its top dead centre, for a rotor angle travelling in {@code direction}. */
@@ -163,35 +158,32 @@ public final class CylinderModel {
 	 * three times to its once.
 	 */
 	public double pistonAngle(double rotorAngle, double rotaryAngle, int direction) {
-		if (!ported)
-			return SimMath.wrap(rotorAngle - direction * tdcCrankAngle);
-		double shaft = SimMath.wrap(rotaryAngle - direction * tdcCrankAngle, ROTARY_CYCLE);
-		return SimMath.wrap(shaft * angleScale + cycleOffset);
+		return drive.cycleAngle(rotorAngle, rotaryAngle, direction, tdcCrankAngle);
 	}
 
 	/** Whether this chamber's valves and injection follow its own cycle rather than a camshaft's. */
 	public boolean ported() {
-		return ported;
+		return drive.ported();
 	}
 
 	/** How many degrees of this cylinder's own cycle go by for each degree the shaft turns. */
 	public double angleScale() {
-		return angleScale;
+		return drive.scale();
 	}
 
 	/** Whether something fixes when its valves open and its injector fires: a cam, or a rotary housing's ports. */
 	private boolean timed() {
-		return ported || camshaft != null;
+		return drive.timed(camshaft);
 	}
 
 	/** Shaft degrees one four-stroke cycle of this cylinder takes: two turns for a piston, three for a rotary chamber. */
 	public double cycleDegrees() {
-		return ported ? ROTARY_CYCLE : SimMath.CYCLE;
+		return drive.cycleDegrees();
 	}
 
 	/** Whether valve timing is locked to the shaft: a cam geared 1:2, or fixed ports. */
 	public boolean isTimed() {
-		return ported || camshaft != null && camshaft.isPhaseLocked();
+		return drive.phaseLocked(camshaft);
 	}
 
 	/** Where the cam says this cylinder is in its cycle (0 = intake TDC, 360 = firing TDC). */
@@ -248,7 +240,8 @@ public final class CylinderModel {
 	}
 
 	/** Tells a cylinder on a shared lobe which way the crank turns. */
-	void setDirection(int direction) {
+	@Override
+	public void setDirection(int direction) {
 		if (direction == turning)
 			return;
 		turning = direction;
@@ -262,7 +255,7 @@ public final class CylinderModel {
 	/** A fresh cylinder built the same way on {@code camshaft}, to test apart from the engine. */
 	public CylinderModel copyOnto(@Nullable Camshaft camshaft) {
 		CylinderModel copy =
-			new CylinderModel(spec, profile, tdcCrankAngle, camshaft, dialAngle, ported, angleScale, cycleOffset);
+			new CylinderModel(spec, profile, tdcCrankAngle, camshaft, dialAngle, drive);
 		copy.lobeAngle = lobeAngle;
 		copy.forwardShift = forwardShift;
 		copy.reverseShift = reverseShift;
@@ -286,13 +279,90 @@ public final class CylinderModel {
 	 * Closes a tick's accounting of the heat this cylinder sent out of its exhaust valve, in moles of gas times how far
 	 * hotter than ambient it was. That is what a turbine has to work with: gas that was never heated carries nothing.
 	 */
-	void endTick() {
+	@Override
+	public void endTick() {
 		ports.endTick();
 	}
 
 	/** Heat this cylinder put into its exhaust during the last whole tick. */
+	@Override
 	public double exhaustHeatLastTick() {
 		return ports.exhaustHeatLastTick();
+	}
+
+	// --- TorqueSource: what the crank asks of a cylinder ---
+
+	/** Fuel the last {@link #advance} took in. */
+	private double stepFuel;
+
+	@Override
+	public double inertia() {
+		return spec.inertia();
+	}
+
+	@Override
+	public double frictionStatic() {
+		return spec.frictionStatic();
+	}
+
+	@Override
+	public double frictionViscous() {
+		return spec.frictionViscous();
+	}
+
+	@Override
+	public double frictionAt(double omega, double film) {
+		return spec.frictionAt(omega, film);
+	}
+
+	@Override
+	public double advance(double angle, double rotaryAngle, int direction, double delta, double dt) {
+		double before = current.fuelInjected;
+		double work = drive.advance(this, angle, rotaryAngle, direction, delta, dt);
+		stepFuel = Math.max(0, current.fuelInjected - before);
+		return work;
+	}
+
+	@Override
+	public double fuelUsedLastStep() {
+		return stepFuel;
+	}
+
+	@Override
+	public void setColdness(double coldness) {
+		this.coldness = coldness;
+	}
+
+	@Override
+	public double unburnedFraction() {
+		return last.fuelInjected <= 0 ? -1 : last.unburnedFraction();
+	}
+
+	@Override
+	public boolean fired() {
+		return last.result.fired();
+	}
+
+	/**
+	 * Work per crank cycle at full rack. Work from a cylinder that fired scales with the fuel it burned, up to the air it
+	 * had; everything else (pumping and friction losses) is what it is.
+	 */
+	@Override
+	public double availableWork() {
+		CycleStats last = this.last;
+		double scale = 1;
+		FuelSpec fuel = fuelSupply.fuel();
+		if (last.result.fired() && last.fuelBurned > 0 && fuel != null) {
+			double airLimit = last.freshAirAtInjection / fuel.airPerMb();
+			// A MAF sensor sets the shot from the air, up to what the injector can deliver; without one it is
+			// whatever Fuel Metering says
+			double fullShot = airMatch > 0
+				? Math.min(airLimit * airMatch, injectorLimit(fuel))
+				: usualShot(fuel) * metering * fuelTrim;
+			scale = Math.max(1, Math.min(fullShot, airLimit) / last.fuelBurned);
+		}
+		// A rotary chamber takes a turn and a half of the shaft to do what a piston does in two
+		return last.work * scale * SimMath.CYCLE / cycleDegrees();
 	}
 
 	public void resetGas() {
