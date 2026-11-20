@@ -891,6 +891,24 @@ public final class EngineScenes {
 		scene.overlay()
 			.showText(110)
 			.attachKeyFrame()
+			.text("Batteries that touch are one bank: capacity adds up, and anything touching one of them reaches all of them. The lamps on a lid show its charge, and a Comparator reads the whole bank.")
+			.pointAt(util.vector()
+				.topOf(1, 2, 3))
+			.placeNearTarget();
+		scene.idle(120);
+
+		scene.overlay()
+			.showText(120)
+			.colored(PonderPalette.BLUE)
+			.text("Cold costs charge. In a cold biome a battery gives only part of what it holds, and a cold engine makes each spark cost more. A heat source beside it, like a Blaze Burner, warms it. A starter draws on the batteries as it cranks a spark engine, and turns it more slowly as they run low.")
+			.pointAt(util.vector()
+				.topOf(1, 2, 3))
+			.placeNearTarget();
+		scene.idle(130);
+
+		scene.overlay()
+			.showText(110)
+			.attachKeyFrame()
 			.colored(PonderPalette.RED)
 			.text("Each head's injector is metered by hand. A cylinder breathes less air as it speeds up, so a setting that is right at one speed is rich above it: fuel wasted, black smoke, less power. Too little runs lean.")
 			.pointAt(util.vector()
@@ -2267,6 +2285,16 @@ public final class EngineScenes {
 				.blockSurface(boxPos, Direction.NORTH))
 			.placeNearTarget();
 		scene.idle(140);
+
+		scene.overlay()
+			.showText(130)
+			.attachKeyFrame()
+			.colored(PonderPalette.GREEN)
+			.text("A second panel on the face sets how eager Auto is. Normal is the usual behaviour. Economy climbs early and sits in a tall gear, working the engine harder at low revs. Sport drops early and holds a low gear, keeping the revs up with torque in hand.")
+			.pointAt(util.vector()
+				.blockSurface(boxPos, Direction.NORTH))
+			.placeNearTarget();
+		scene.idle(140);
 		scene.markAsFinished();
 	}
 
@@ -3015,6 +3043,15 @@ public final class EngineScenes {
 				.blockSurface(boxPos, Direction.SOUTH))
 			.placeNearTarget();
 		scene.idle(100);
+
+		scene.overlay()
+			.showText(130)
+			.colored(PonderPalette.BLUE)
+			.text("Turn the Replay dial on its side to step back along the tape. Goggles then show what the engine was doing at that moment and what it blamed, and the moment holds still while the tape runs on.")
+			.pointAt(util.vector()
+				.blockSurface(boxPos, Direction.WEST))
+			.placeNearTarget();
+		scene.idle(140);
 		scene.markAsFinished();
 	}
 

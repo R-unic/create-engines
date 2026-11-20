@@ -10,7 +10,9 @@ import org.jetbrains.annotations.Nullable;
 import com.createengines.advancement.Achievements;
 import com.createengines.advancement.Milestone;
 import com.createengines.config.CEConfig;
+import com.createengines.content.battery.BatteryBank;
 import com.createengines.content.battery.BatteryBlockEntity;
+import com.createengines.content.crankshaft.CrankshaftBlockEntity;
 import com.createengines.engine.GhostRotation;
 import com.createengines.engine.topology.EngineMember;
 import com.createengines.content.GoggleLines;
@@ -30,7 +32,7 @@ import net.neoforged.neoforge.capabilities.Capabilities;
 import net.neoforged.neoforge.energy.IEnergyStorage;
 
 /**
- * Charges batteries while its shaft turns: those touching it, and those of the engine it touches. The charge it makes
+ * Charges batteries while its shaft turns: those touching it (and the rest of their banks), and those of the engine it touches. The charge it makes
  * is shared out between them, and it only puts stress on its shaft while there is a battery to fill.
  * <p>
  * It also makes Forge Energy for whatever else wants it, so an engine can run other mods' machines: a small buffer
@@ -53,6 +55,10 @@ public class AlternatorBlockEntity extends KineticBlockEntity implements EngineM
 	 * out of a full battery every time a plug fires, so without this the load would switch on and off with every firing.
 	 */
 	private static final int CHARGE_GRACE = 20;
+	/** How quickly the charge rate follows what was put in last tick: about the last second. */
+	private static final float RATE_SMOOTHING = 0.05f;
+	/** Ticks between working out the share of the engine's torque and what the other alternators make. */
+	private static final int READOUT_INTERVAL = 10;
 
 	private @Nullable BlockPos primaryPos;
 	/** Batteries of the engine this alternator touches, set by the engine. */
@@ -66,22 +72,54 @@ public class AlternatorBlockEntity extends KineticBlockEntity implements EngineM
 	private int idleTicks = SUPPLY_GRACE;
 	private int chargeHold;
 	private final GhostRotation ghost = new GhostRotation();
+	/** Alternators of the engine this one touches (this one included), set by the engine. */
+	private List<BlockPos> engineAlternators = List.of();
+	/** Charge actually put into batteries a tick, smoothed over about a second: worked out on the server, sent to the client. */
+	private float chargeRate;
+	/** Its stress as a share of the engine's rated torque, 0 to 1. */
+	private float engineShare;
+	/** How many alternators the engine has charging, and the charge they make together a tick. */
+	private int fellows = 1;
+	private float fellowRate;
+	private int ticks;
 
 	public AlternatorBlockEntity(BlockEntityType<?> type, BlockPos pos, BlockState state) {
 		super(type, pos, state);
 	}
 
-	public void attachToEngine(BlockPos primary, List<BlockPos> batteries) {
-		if (primary.equals(primaryPos) && batteries.equals(engineBatteries))
+	public void attachToEngine(BlockPos primary, List<BlockPos> batteries, List<BlockPos> alternators) {
+		if (primary.equals(primaryPos) && batteries.equals(engineBatteries) && alternators.equals(engineAlternators))
 			return;
 		primaryPos = primary;
 		engineBatteries = List.copyOf(batteries);
+		engineAlternators = List.copyOf(alternators);
+	}
+
+	/** The stress this alternator puts on its shaft as a share of the engine's rated torque, 0 to 1 (0 with no engine running). */
+	public float engineShare() {
+		return engineShare;
+	}
+
+	/** How many alternators the engine has, this one included. */
+	public int fellowCount() {
+		return fellows;
+	}
+
+	/** The charge all the engine's alternators make together, in sparks a tick lately. */
+	public float fellowRate() {
+		return fellowRate;
+	}
+
+	/** Sparks of charge this alternator has been putting into batteries a tick lately. */
+	public float chargeRate() {
+		return chargeRate;
 	}
 
 	@Override
 	public void detachFromEngine() {
 		primaryPos = null;
 		engineBatteries = List.of();
+		engineAlternators = List.of();
 	}
 
 	/** The Forge Energy this alternator offers on every face: take only, nothing can be put in. */
@@ -100,11 +138,12 @@ public class AlternatorBlockEntity extends KineticBlockEntity implements EngineM
 		for (Direction direction : Direction.values())
 			positions.add(worldPosition.relative(direction));
 		positions.addAll(engineBatteries);
-		List<BatteryBlockEntity> found = new ArrayList<>();
+		// A battery touching the alternator brings its whole bank with it
+		Set<BatteryBlockEntity> found = new LinkedHashSet<>();
 		for (BlockPos pos : positions)
 			if (level.isLoaded(pos) && level.getBlockEntity(pos) instanceof BatteryBlockEntity battery)
-				found.add(battery);
-		return found;
+				found.addAll(battery.bank());
+		return new ArrayList<>(found);
 	}
 
 	@Override
@@ -117,12 +156,16 @@ public class AlternatorBlockEntity extends KineticBlockEntity implements EngineM
 		List<BatteryBlockEntity> batteries = turning ? batteries() : List.of();
 		float budget = turning ? Math.abs(getSpeed()) * CHARGE_PER_RPM : 0;
 		boolean wanted = false;
-		for (BatteryBlockEntity battery : batteries) {
-			if (battery.isFull())
-				continue;
-			wanted = true;
-			budget -= battery.charge(budget);
-		}
+		for (BatteryBlockEntity battery : batteries)
+			if (!battery.isFull()) {
+				wanted = true;
+				break;
+			}
+		// The charge is shared out in proportion to the room each has, so a bank fills evenly
+		float put = wanted ? BatteryBank.fill(batteries, budget) : 0;
+		chargeRate += (put - chargeRate) * RATE_SMOOTHING;
+		if (Math.abs(chargeRate) < 1e-3f)
+			chargeRate = 0;
 		batteriesFound = batteries.size();
 		// An overstressed shaft reads as stopped, but the grace runs down through it instead of resetting: dropping the load
 		// the moment the network overstresses, then restoring it the next tick, flipped the whole crank line between
@@ -132,6 +175,8 @@ public class AlternatorBlockEntity extends KineticBlockEntity implements EngineM
 
 		boolean drawing = supplyEnergy(turning);
 		boolean changed = wanted != charging || drawing != supplying;
+		if (ticks++ % READOUT_INTERVAL == 0)
+			changed |= updateReadout();
 		if (wanted != charging && wanted)
 			Achievements.award(level, List.of(worldPosition), Milestone.ALTERNATOR_CHARGING);
 		if (drawing && !supplying)
@@ -144,6 +189,37 @@ public class AlternatorBlockEntity extends KineticBlockEntity implements EngineM
 			sendData();
 		}
 	}
+
+	/**
+	 * Works out what the goggles say about this alternator's part in the engine: its stress as a share of the engine's rated torque,
+	 * and how much of what all the engine's alternators make is its own. Returns whether anything a player would see changed.
+	 */
+	private boolean updateReadout() {
+		float share = 0;
+		if (primaryPos != null && level.isLoaded(primaryPos) && level.getBlockEntity(primaryPos) instanceof CrankshaftBlockEntity crank
+			&& crank.publishedCapacity() > 0)
+			share = Math.min(1, CHARGING_STRESS / crank.publishedCapacity());
+		int count = 0;
+		float total = 0;
+		for (BlockPos pos : engineAlternators)
+			if (level.isLoaded(pos) && level.getBlockEntity(pos) instanceof AlternatorBlockEntity other) {
+				count++;
+				total += other.chargeRate;
+			}
+		if (count == 0) {
+			count = 1;
+			total = chargeRate;
+		}
+		boolean changed = Math.round(share * 100) != Math.round(engineShare * 100) || count != fellows
+			|| Math.round(total * 200) != Math.round(fellowRate * 200) || Math.round(chargeRate * 200) != Math.round(syncedRate * 200);
+		engineShare = share;
+		fellows = count;
+		fellowRate = total;
+		syncedRate = chargeRate;
+		return changed;
+	}
+
+	private float syncedRate;
 
 	/**
 	 * Tops the buffer up from the shaft and pushes it into neighbours that take energy. Returns whether energy has been
@@ -175,6 +251,10 @@ public class AlternatorBlockEntity extends KineticBlockEntity implements EngineM
 		return turning && idleTicks < SUPPLY_GRACE;
 	}
 
+	private static float finite(float value) {
+		return Float.isFinite(value) ? value : 0;
+	}
+
 	private int capacity() {
 		return (int) Math.max(1000, Math.min(Integer.MAX_VALUE / 2d, CEConfig.ALTERNATOR_ENERGY.get() * FASTEST_RPM * BUFFER_TICKS));
 	}
@@ -185,6 +265,10 @@ public class AlternatorBlockEntity extends KineticBlockEntity implements EngineM
 		tag.putBoolean("Charging", charging);
 		tag.putBoolean("Supplying", supplying);
 		tag.putInt("Batteries", batteriesFound);
+		tag.putFloat("ChargeRate", chargeRate);
+		tag.putFloat("EngineShare", engineShare);
+		tag.putInt("Fellows", fellows);
+		tag.putFloat("FellowRate", fellowRate);
 	}
 
 	@Override
@@ -193,6 +277,12 @@ public class AlternatorBlockEntity extends KineticBlockEntity implements EngineM
 		charging = tag.getBoolean("Charging");
 		supplying = tag.getBoolean("Supplying");
 		batteriesFound = tag.getInt("Batteries");
+		if (clientPacket) {
+			chargeRate = finite(tag.getFloat("ChargeRate"));
+			engineShare = Math.clamp(finite(tag.getFloat("EngineShare")), 0, 1);
+			fellows = Math.clamp(tag.getInt("Fellows"), 1, 64);
+			fellowRate = finite(tag.getFloat("FellowRate"));
+		}
 	}
 
 	@Override
@@ -219,6 +309,15 @@ public class AlternatorBlockEntity extends KineticBlockEntity implements EngineM
 				.style(ChatFormatting.GREEN), tooltip, 1);
 		GoggleLines.add(CELang.translate(key)
 			.style(colour), tooltip, 1);
+		if (charging && chargeRate > 0)
+			GoggleLines.add(CELang.translate("goggles.alternator.rate", String.format(java.util.Locale.ROOT, "%.1f", chargeRate * 20))
+				.style(ChatFormatting.DARK_GREEN), tooltip, 1);
+		if (fellows > 1 && fellowRate > 0)
+			GoggleLines.add(CELang.translate("goggles.alternator.fellows", fellows, Math.round(chargeRate / fellowRate * 100))
+				.style(ChatFormatting.GRAY), tooltip, 1);
+		if ((charging || supplying) && engineShare > 0)
+			GoggleLines.add(CELang.translate("goggles.alternator.share", Math.max(1, Math.round(engineShare * 100)))
+				.style(ChatFormatting.GOLD), tooltip, 1);
 		if (supplying)
 			GoggleLines.add(CELang.translate("goggles.alternator.energy",
 					Math.round(Math.abs(getSpeed()) * CEConfig.ALTERNATOR_ENERGY.get()))

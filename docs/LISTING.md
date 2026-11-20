@@ -129,9 +129,9 @@ your Create machines.
 - **Muffler:** quiets the note, the bangs and the pops without costing any power
 - **Engine Casing:** joins into one plate and clads cylinders, pipes, cams, and Create's own shafts and cogwheels to
   hide the sprawl, in plain, riveted, louvred and window styles, and any dye
-- **Engine readouts:** a Display Link set against a crankshaft shows state, speed, power, load, temperature, oil, boost
-  and rated torque on a display board or nixie tubes, one set against a battery shows its charge, and a comparator
-  reads any of an oil sump's tanks
+- **Engine readouts:** a Display Link set against a crankshaft shows state, speed, power, load, temperature, oil, boost,
+  rated torque and the engine's fault on a display board or nixie tubes, one set against a battery shows its charge, one
+  set against a transmission shows its gear, and a comparator reads any of an oil sump's tanks
 
 ## 🎓 Learn it
 

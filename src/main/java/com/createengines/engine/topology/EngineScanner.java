@@ -309,11 +309,32 @@ public final class EngineScanner {
 		for (Direction direction : Direction.values()) {
 			BlockPos neighbour = pos.relative(direction);
 			Block block = state(neighbour).getBlock();
-			if (block instanceof BatteryBlock && batteries.add(neighbour.immutable())
-				|| block instanceof AlternatorBlock && alternators.add(neighbour.immutable())
+			if (block instanceof BatteryBlock && batteries.add(neighbour.immutable())) {
+				members.add(neighbour.immutable());
+				addBank(neighbour, batteries);
+			} else if (block instanceof AlternatorBlock && alternators.add(neighbour.immutable())
 				|| block instanceof SumpBlock && sumps.add(neighbour.immutable())
 				|| block instanceof GovernorBlock && governors.add(neighbour.immutable()))
 				members.add(neighbour.immutable());
+		}
+	}
+
+	/**
+	 * Batteries that touch one the engine reaches are one bank, and the engine reaches all of it: capacity is the sum. A bank
+	 * member in an unloaded chunk is left out rather than stopping the engine, as {@code BatteryBank} leaves it out.
+	 */
+	private void addBank(BlockPos start, Set<BlockPos> batteries) {
+		Deque<BlockPos> queue = new ArrayDeque<>();
+		queue.add(start.immutable());
+		while (!queue.isEmpty()) {
+			BlockPos at = queue.poll();
+			for (Direction direction : Direction.values()) {
+				BlockPos next = at.relative(direction);
+				if (!(loadedState(level, next).getBlock() instanceof BatteryBlock) || !batteries.add(next.immutable()))
+					continue;
+				members.add(next.immutable());
+				queue.add(next.immutable());
+			}
 		}
 	}
 
@@ -358,10 +379,22 @@ public final class EngineScanner {
 		int sense;
 		double lobeLeaderTdc = Double.NaN;
 		int chamber = -1;
+		/** Part effects of a pack's or an addon's own blocks in this cylinder, each once (see {@link #addEffect}). */
+		List<String> effects = List.of();
+
+		/** Notes the part effect a block names in the {@code part_effect} data map, if it names one this cylinder does not have yet. */
+		void addEffect(Block block) {
+			String effect = com.createengines.registry.CEDataMaps.partEffect(block);
+			if (effect == null || effects.contains(effect))
+				return;
+			if (effects.isEmpty())
+				effects = new ArrayList<>(2);
+			effects.add(effect);
+		}
 
 		Cylinder build() {
 			return new Cylinder(pos, throwPos, bore, tdcAngle, head, lobe, camLine, lobeAngle, intake, exhaust,
-				faults, sparkPlug, precision, sense, lobeLeaderTdc, chamber);
+				faults, sparkPlug, precision, sense, lobeLeaderTdc, chamber, List.copyOf(effects));
 		}
 
 		CylinderDraft copyAsChamber(int chamber) {
@@ -381,6 +414,7 @@ public final class EngineScanner {
 			copy.precision = precision;
 			copy.sense = sense;
 			copy.chamber = chamber;
+			copy.effects = effects;
 			return copy;
 		}
 	}
@@ -451,6 +485,7 @@ public final class EngineScanner {
 			draft.faults |= CylinderFault.NO_ROD.bit();
 		if (((CylinderBlock) state.getBlock()).precision())
 			draft.precision |= PrecisionParts.BORE;
+		draft.addEffect(state.getBlock());
 		if (state.getValue(CylinderBlock.FORGED_PISTON))
 			draft.precision |= PrecisionParts.PISTON;
 
@@ -467,6 +502,7 @@ public final class EngineScanner {
 		draft.sparkPlug = head.getValue(CylinderHeadBlock.HAS_SPARK_PLUG);
 		if (((CylinderHeadBlock) head.getBlock()).precision())
 			draft.precision |= PrecisionParts.HEAD;
+		draft.addEffect(head.getBlock());
 		if (head.getValue(CylinderHeadBlock.FINE_INJECTOR))
 			draft.precision |= PrecisionParts.INJECTOR;
 
@@ -513,7 +549,8 @@ public final class EngineScanner {
 			if (!state(pos.relative(side)).getFluidState()
 				.isEmpty())
 				return true;
-		return false;
+		// On a moving structure the sea is not in the plot: the world where the structure is decides
+		return com.createengines.compat.sable.SableCompat.wetInWorld(level, pos);
 	}
 
 	/**
@@ -786,7 +823,24 @@ public final class EngineScanner {
 					cursor = cursor.relative(direction);
 				}
 			}
-		} else if (block instanceof BatteryBlock || block instanceof AlternatorBlock || block instanceof SumpBlock
+		} else if (block instanceof BatteryBlock) {
+			// A bank: any battery in it may be the one an engine touches
+			Set<BlockPos> bank = new HashSet<>();
+			Deque<BlockPos> queue = new ArrayDeque<>();
+			bank.add(pos.immutable());
+			queue.add(pos.immutable());
+			while (!queue.isEmpty()) {
+				BlockPos at = queue.poll();
+				for (Direction direction : Direction.values()) {
+					BlockPos next = at.relative(direction);
+					BlockState nextState = loadedState(level, next);
+					addHeadSeed(level, next, nextState, seeds);
+					addIfCrank(level, next, seeds);
+					if (nextState.getBlock() instanceof BatteryBlock && bank.add(next.immutable()))
+						queue.add(next.immutable());
+				}
+			}
+		} else if (block instanceof AlternatorBlock || block instanceof SumpBlock
 			|| block instanceof GovernorBlock) {
 			for (Direction direction : Direction.values())
 				addHeadSeed(level, pos.relative(direction), loadedState(level, pos.relative(direction)), seeds);

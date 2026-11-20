@@ -1,0 +1,7 @@
+{
+	"selector": "#create_engines:weight/medium",
+
+	"properties": {
+		"sable:mass": 1.5
+	}
+}

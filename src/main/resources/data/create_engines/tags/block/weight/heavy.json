@@ -1,0 +1,15 @@
+{
+	"replace": false,
+	"values": [
+		"create_engines:crankshaft",
+		"create_engines:cylinder",
+		"create_engines:turbocharger",
+		"create_engines:variable_turbocharger",
+		"create_engines:supercharger",
+		"create_engines:variable_supercharger",
+		"create_engines:heat_exchanger",
+		"create_engines:battery",
+		"create_engines:heavy_starter",
+		"create_engines:transmission"
+	]
+}

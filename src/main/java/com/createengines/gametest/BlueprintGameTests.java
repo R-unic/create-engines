@@ -1246,6 +1246,97 @@ public class BlueprintGameTests {
 		helper.succeed();
 	}
 
+	/** A wrench used on the frame at {@code at}, as a player right-clicking it with one. */
+	private static net.minecraft.world.InteractionResult wrench(GameTestHelper helper, BlockPos at) {
+		Player player = helper.makeMockPlayer(net.minecraft.world.level.GameType.SURVIVAL);
+		ItemStack wrench = com.simibubi.create.AllItems.WRENCH.asStack();
+		player.setItemInHand(net.minecraft.world.InteractionHand.MAIN_HAND, wrench);
+		var context = new net.minecraft.world.item.context.UseOnContext(helper.getLevel(), player,
+			net.minecraft.world.InteractionHand.MAIN_HAND, wrench, hitOf(helper, at));
+		BlockState state = helper.getBlockState(at);
+		return ((FramedBlueprintBlock) state.getBlock()).onWrenched(state, context);
+	}
+
+	@GameTest(template = "empty")
+	public static void aWrenchTurnsTheDrawingOnAFrameAQuarterAtATimeAndAnEmptyOneIsLeftAlone(GameTestHelper helper) throws BlueprintException {
+		BlockPos at = wallFrame(helper);
+		FramedBlueprintBlockEntity frame = helper.getBlockEntity(at);
+		Direction facing = helper.getBlockState(at)
+			.getValue(FramedBlueprintBlock.FACING);
+		wrench(helper, at);
+		if (frame.turn() != 0)
+			helper.fail("an empty frame has no drawing to turn");
+		frame.hang(recordedTestEngineSmall(helper));
+		for (int expected : new int[] {1, 2, 3, 0, 1}) {
+			var result = wrench(helper, at);
+			if (!result.consumesAction())
+				helper.fail("the wrench should be used on a frame that holds a drawing: " + result);
+			if (frame.turn() != expected)
+				helper.fail("the drawing should be turned " + expected + " quarters, but is " + frame.turn());
+		}
+		if (helper.getBlockState(at)
+			.getValue(FramedBlueprintBlock.FACING) != facing)
+			helper.fail("turning the drawing must not turn the frame itself");
+		// Taking the blueprint out sends the turn with it: the next one hung is upright
+		frame.take();
+		if (frame.turn() != 0)
+			helper.fail("an emptied frame should be upright again");
+		helper.succeed();
+	}
+
+	@GameTest(template = "empty")
+	public static void theTurnOfADrawingIsSavedAndAFrameSavedBeforeItIsUpright(GameTestHelper helper) throws BlueprintException {
+		BlockPos at = wallFrame(helper);
+		FramedBlueprintBlockEntity frame = helper.getBlockEntity(at);
+		frame.hang(recordedTestEngineSmall(helper));
+		wrench(helper, at);
+		wrench(helper, at);
+		wrench(helper, at);
+		var registries = helper.getLevel()
+			.registryAccess();
+		net.minecraft.nbt.CompoundTag saved = frame.saveWithoutMetadata(registries);
+		FramedBlueprintBlockEntity copy = new FramedBlueprintBlockEntity(frame.getType(), frame.getBlockPos(), frame.getBlockState());
+		copy.loadWithComponents(saved, registries);
+		if (copy.turn() != 3)
+			helper.fail("the turn should survive a save and a load, but is " + copy.turn());
+		// A frame saved by a version that could not turn its drawing has no Turn key
+		saved.remove("Turn");
+		copy.loadWithComponents(saved, registries);
+		if (copy.turn() != 0)
+			helper.fail("a frame saved without a turn should be upright, but is " + copy.turn());
+		// Saved data may hold anything
+		saved.putByte("Turn", (byte) 77);
+		copy.loadWithComponents(saved, registries);
+		if (copy.turn() != 1)
+			helper.fail("a turn out of range should be read as the same turn in range, but is " + copy.turn());
+		saved.putByte("Turn", (byte) -3);
+		copy.loadWithComponents(saved, registries);
+		if (copy.turn() != 1)
+			helper.fail("a negative turn should be read in range, but is " + copy.turn());
+		helper.succeed();
+	}
+
+	@GameTest(template = "empty_large")
+	public static void aWrenchOnAnyFrameOfASheetTurnsTheDrawingOfTheFrameThatShowsIt(GameTestHelper helper) throws BlueprintException {
+		BlockPos origin = new BlockPos(8, 6, 8);
+		Direction facing = Direction.NORTH;
+		for (int u = 0; u < 2; u++)
+			hangFrame(helper, frameCell(origin, facing, u, 0), facing);
+		BlockPos left = frameCell(origin, facing, 0, 0);
+		BlockPos right = frameCell(origin, facing, 1, 0);
+		// The blueprint is in the right-hand frame, which is the source of the sheet: the other draws nothing
+		((FramedBlueprintBlockEntity) helper.getBlockEntity(right)).hang(recordedTestEngineSmall(helper));
+		wrench(helper, left);
+		if (((FramedBlueprintBlockEntity) helper.getBlockEntity(right)).turn() != 1)
+			helper.fail("a wrench on the empty half of a sheet should turn the drawing of the half that holds it");
+		if (((FramedBlueprintBlockEntity) helper.getBlockEntity(left)).turn() != 0)
+			helper.fail("the frame that holds nothing has no turn of its own");
+		wrench(helper, right);
+		if (((FramedBlueprintBlockEntity) helper.getBlockEntity(right)).turn() != 2)
+			helper.fail("a wrench on the frame that holds the drawing turns it too");
+		helper.succeed();
+	}
+
 	private static BlockState frameFacing(Direction facing) {
 		return CEBlocks.FRAMED_BLUEPRINT.getDefaultState()
 			.setValue(net.minecraft.world.level.block.state.properties.BlockStateProperties.FACING, facing);

@@ -45,6 +45,17 @@ class GearsTest {
 	}
 
 	@Test
+	void aDisplayLinkNamesNeutralAndReverseAndNumbersTheRest() {
+		assertEquals("display.transmission.neutral", Gears.displayKey(Gears.NEUTRAL));
+		assertEquals("display.transmission.reverse", Gears.displayKey(Gears.REVERSE));
+		for (int gear = Gears.FIRST; gear <= Gears.TOP; gear++)
+			assertEquals("display.transmission.gear", Gears.displayKey(gear));
+		// A position past the end is kept in range like every other use of one
+		assertEquals("display.transmission.reverse", Gears.displayKey(99));
+		assertEquals("display.transmission.neutral", Gears.displayKey(-3));
+	}
+
+	@Test
 	void redstoneStrengthOneIsNeutralAndFifteenIsReverse() {
 		assertEquals(-1, Gears.fromSignal(0));
 		assertEquals(Gears.NEUTRAL, Gears.fromSignal(1));

@@ -75,6 +75,8 @@ Balance multipliers. 1.0 is the shipped balance.
 | `oilDilution` | `true` | on or off | Unburned fuel thins an engine's oil when it runs rich. |
 | `oilAgeing` | `true` | on or off | Engine oil goes off with use and drags a little more until it is changed. Off, oil stays new for ever and the oil exchange setting does nothing useful. |
 | `engineTemperature` | `true` | on or off | Engines warm up and cool down: a cold engine drags, a cooled one breathes better. |
+| `batteryCold` | `true` | on or off | A battery in a cold biome gives less of its charge, and a cold engine makes each spark cost more of it. A heat source beside the battery, or a warm engine, takes the cold away. Off, charge is the same in any weather. |
+| `crankingDraw` | `true` | on or off | A starter draws charge from the engine's batteries while it turns a spark engine over, and turns it more slowly as they run down. Compression engines, and spark engines with no battery, are not affected. Off, cranking is free. |
 | `pilotInjection` | `true` | on or off | A compression engine can inject a pilot shot of diesel (from an oil pan's pilot tank) to light gasoline or ethanol that compression alone could not. |
 | `rotaryEngines` | `true` | on or off | Rotor housings run. Off, they sit inert and say so in the goggles. |
 | `heatRecovery` | `true` | on or off | Exhaust Heat Exchangers take heat from the exhaust and warm basins. |
@@ -128,6 +130,8 @@ Three presets ship in the jar (`config_presets/casual.toml`, `standard.toml` and
 | `oilDilution` | `false` | `true` | `true` |
 | `oilAgeing` | `false` | `true` | `true` |
 | `engineTemperature` | `true` | `true` | `true` |
+| `batteryCold` | `false` | `true` | `true` |
+| `crankingDraw` | `false` | `true` | `true` |
 | `pilotInjection` | `true` | `true` | `true` |
 | `rotaryEngines` | `true` | `true` | `true` |
 | `heatRecovery` | `true` | `true` | `true` |

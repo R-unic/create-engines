@@ -80,6 +80,11 @@ public final class CELang {
 		raw("tool.bank_builder.hint", "Use on a crank throw to set a cylinder and head on that face of every throw of the crankshaft, with the pistons, rods, injectors and spark plugs you carry, and a cam line beside the bank if you carry Camshafts and Cam Lobes. Sneak-use to change layout, and then between standard and precision parts: a precision build swaps precision parts in for standard ones too");
 		raw("tool.bank_builder.cams", "Laid %1$s cam block(s) beside the bank. Gear the line to half the crank's speed, then time the lobes with a Timing Tool");
 		raw("tool.bank_builder.no_crank", "Use it on a crankshaft throw");
+
+		raw("tooltip.headphones.muffles", "Muffles every sound from the world, quieter and duller but never silent");
+		raw("tooltip.headphones.exempt", "Music, menu sounds and voice chat are not muffled");
+		raw("tooltip.headphones.worn", "Worn on the head, or in a Curios head slot");
+		raw("tooltip.headphones.no_filter", "This sound device cannot filter sound, so world sounds are only capped in loudness");
 		raw("tool.bank_builder.no_throws", "That crankshaft has no throw to build on");
 		raw("tool.bank_builder.built", "Placed %1$s cylinder(s) and %2$s head(s) on %3$s throw(s)");
 		raw("tool.bank_builder.blocked", "%1$s place(s) were blocked by something else");
@@ -157,6 +162,13 @@ public final class CELang {
 		raw("goggles.recorder.event", "%1$s ago: %2$s to %3$s");
 		raw("goggles.recorder.event_cause", "%1$s ago: %2$s to %3$s, %4$s");
 		raw("goggles.recorder.hint", "Dots are stalled, light shading cranking, medium coasting, solid running and dark overloaded. Warmth is against the 0.7 a warm engine settles at, so a long way under 100 is a cold engine");
+		raw("value.replay", "Replay");
+		raw("value.replay.live", "Live");
+		raw("value.replay.back", "%1$s back");
+		raw("goggles.recorder.replay", "Replaying %1$s ago");
+		raw("goggles.recorder.replay.figures", "Then: %1$s, %2$s RPM, load %3$s%%, warmth %4$s%%");
+		raw("goggles.recorder.replay.fault", "The engine's fault then: %1$s");
+		raw("goggles.recorder.replay.hint", "Turn the dial on the box to replay an earlier moment: what the engine was doing then, and what was wrong with it. Live shows the latest");
 		raw("goggles.recorder.state.stalled", "stalled");
 		raw("goggles.recorder.state.cranking", "cranking");
 		raw("goggles.recorder.state.coasting", "coasting");
@@ -202,7 +214,12 @@ public final class CELang {
 		raw("goggles.transmission.neutral", "Neutral: no drive reaches the output");
 		raw("goggles.transmission.gear", "Gear %1$s: %2$s turns of the input to one of the output");
 		raw("goggles.transmission.auto", "Auto, in gear %1$s: %2$s turns of the input to one of the output");
-		raw("goggles.transmission.reverse", "Reverse: %1$s turns of the input to one of the output, backwards");
+		raw("goggles.transmission.profile", "Shift profile: %1$s");
+		raw("value.shift_profile", "Auto Shift Profile");
+		raw("value.shift_profile.0", "Economy");
+		raw("value.shift_profile.1", "Normal");
+		raw("value.shift_profile.2", "Sport");
+		raw("goggles.transmission.reverse","Reverse: %1$s turns of the input to one of the output, backwards");
 		raw("goggles.transmission.hint",
 			"The panel sets the gear: neutral, thirteen forward gears, reverse, or Auto. Auto takes the tallest gear the engine can pull without overloading, down to a lower one when the load is too heavy and up again when there is room. A redstone signal picks a gear instead: 1 neutral, 2 to 14 first to thirteenth, 15 reverse. A low gear lets the engine carry a heavier load at a slower output");
 
@@ -302,9 +319,11 @@ public final class CELang {
 		raw("goggles.starter", "Starter");
 		raw("goggles.starter.idle", "Idle: needs a redstone signal and input rotation");
 		raw("goggles.starter.cranking", "Cranking the engine");
+		raw("goggles.starter.by_hand", "Cranking the engine by hand: no redstone needed");
 		raw("goggles.starter.overrun", "Engaged, engine outrunning it");
 		raw("goggles.starter.warming", "Cranking and choking a cold engine");
 		raw("goggles.starter.no_engine", "Not touching a crankshaft");
+		raw("goggles.starter.weak", "Batteries nearly flat: charge them, or an alternator on the crank line will as it turns");
 
 		raw("goggles.head", "Cylinder Head");
 		raw("goggles.head.no_injector", "Right-click with a Fuel Injector to install");
@@ -409,6 +428,13 @@ public final class CELang {
 		REGISTRATE.addRawLang("tag.fluid.c.plantoil", "Plant Oil");
 		REGISTRATE.addRawLang("tag.fluid.create_engines.poor_lubricants", "Poor Lubricants");
 		REGISTRATE.addRawLang("tag.item.create_engines.ferments_mash", "Mash Ingredients");
+		// The weights engine blocks have on a moving structure (Create Aeronautics, through Sable): data/sable/physics_block_properties
+		REGISTRATE.addRawLang("tag.block.create_engines.weight.flywheel", "Flywheel Weight Blocks");
+		REGISTRATE.addRawLang("tag.block.create_engines.weight.heavy", "Heavy Engine Blocks");
+		REGISTRATE.addRawLang("tag.block.create_engines.weight.medium", "Medium Engine Blocks");
+		REGISTRATE.addRawLang("tag.block.create_engines.weight.light", "Light Engine Blocks");
+		// Curios' own tag, which the headphones join to fit its head slot (data/curios/tags/item/head.json)
+		REGISTRATE.addRawLang("tag.item.curios.head", "Head Curios");
 		raw("goggles.column.rate", "Making %1$s mB of product a second");
 		raw("goggles.column.limit.none", "Running");
 		raw("goggles.column.limit.no_feed", "Idle: no feed");
@@ -461,6 +487,29 @@ public final class CELang {
 		raw("display_source.engine_boost", "Engine Boost");
 		raw("display_source.engine_torque", "Engine Rated Torque");
 		raw("display_source.battery_charge", "Battery Charge");
+		raw("display_source.engine_fault", "Engine Fault");
+		raw("display_source.transmission_gear", "Transmission Gear");
+		raw("display.engine.fault.none", "No fault");
+		raw("display.engine.fault.build", "Missing part");
+		raw("display.engine.fault.water", "Underwater");
+		raw("display.engine.fault.no_air", "No air");
+		raw("display.engine.fault.no_cam", "No cam");
+		raw("display.engine.fault.no_fuel", "No fuel");
+		raw("display.engine.fault.no_spark", "No spark");
+		raw("display.engine.fault.no_plug", "No plug");
+		raw("display.engine.fault.no_exhaust", "No exhaust");
+		raw("display.engine.fault.no_ignition", "No ignition");
+		raw("display.engine.fault.too_lean", "Too lean");
+		raw("display.engine.fault.too_rich", "Too rich");
+		raw("display.engine.fault.fouled", "Fouled plug");
+		raw("display.engine.fault.dry_oil", "Dry oil");
+		raw("display.engine.fault.uneven", "Uneven firing");
+		raw("display.engine.fault.cold", "Cold block");
+		raw("display.transmission.gear", "Gear %1$s");
+		raw("display.transmission.neutral", "Neutral");
+		raw("display.transmission.reverse", "Reverse");
+		raw("display.transmission.auto", " (auto)");
+		raw("display.transmission.none", "No transmission");
 		raw("display_source.sump_levels", "Oil Sump Levels");
 		raw("display.engine.none", "No engine");
 		raw("display.engine.state.stalled", "Stalled");
@@ -532,11 +581,21 @@ public final class CELang {
 		raw("goggles.battery", "Battery");
 		raw("goggles.battery.charge", "Charge: %1$s%%");
 		raw("goggles.battery.flat", "Flat: an alternator has to charge it");
+		raw("goggles.battery.bank", "Bank of %1$s batteries: %2$s of %3$s sparks");
+		raw("goggles.battery.draining", "Draining %1$s sparks a second: about %2$s left");
+		raw("goggles.battery.charging", "Charging %1$s sparks a second: full in about %2$s");
+		raw("goggles.battery.cold", "Cold: it can give only %1$s%% of its capacity");
+		raw("goggles.battery.cold_hint", "A heat source beside it, such as a blaze burner, warms it and gives the rest back.");
 
 		raw("goggles.alternator", "Alternator");
 		raw("goggles.alternator.charging", "Charging batteries from its shaft");
 		raw("goggles.alternator.supplying", "Supplying Forge Energy from its shaft");
 		raw("goggles.alternator.energy", "Up to %1$s FE a tick");
+		raw("goggles.turbo.working", "Working at %1$s%% of its boost limit");
+		raw("goggles.supercharger.working", "Working at %1$s%% of its boost limit");
+		raw("goggles.alternator.rate", "Making %1$s sparks of charge a second");
+		raw("goggles.alternator.share", "Taking %1$s%% of the engine's rated torque");
+		raw("goggles.alternator.fellows", "%1$s alternators on this engine: this one makes %2$s%% of the charge");
 		raw("goggles.alternator.no_battery", "No battery touching it or its engine to charge");
 		raw("goggles.alternator.idle", "Idle: needs a turning shaft and a battery that isn't full");
 		raw("goggles.battery.no_engine", "Not touching an engine's crankshaft or cylinder head");

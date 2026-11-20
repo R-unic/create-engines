@@ -288,8 +288,10 @@ run:PLANT_OIL:precise:6cyl:turbo3:spark	6.88978,5.25927,5.02229,4.88786,4.76207,
 run:PLANT_OIL:precise:6cyl:turbo:compression	7.54743,7.12744,7.07780,6.66873,6.26730,5.99757,5.55753,5.21079,4.82676,4.38842,4.07675,3.66726,3.15137,2.82003,2.42705,2.14000
 run:PLANT_OIL:precise:6cyl:turbo:spark	6.68704,4.98809,4.21715,3.81883,3.62977,3.46517,3.15619,2.92362,2.68669,2.40378,2.17376,1.90886,1.67178,1.44006,1.19590,0.97939
 tuning:altitudeThinning	true
+tuning:batteryCold	true
 tuning:boostStrength	1.0
 tuning:coolingBonus	1.0
+tuning:crankingDraw	true
 tuning:engineTemperature	true
 tuning:forcedInduction	true
 tuning:fuelConsumption	1.0

@@ -75,15 +75,32 @@ public final class PartEffects {
 
 	/** Replaces the effects of the parts named; any part left out goes back to its built-in values. */
 	public static void set(Map<Part, Effect> effects) {
+		set(effects, Map.of());
+	}
+
+	/**
+	 * As {@link #set(Map)}, with the effects of parts that are a pack's or an addon's own, by the id of their file
+	 * ({@code namespace:name}). These have no built-in values: a part with no file here has no effect.
+	 */
+	public static void set(Map<Part, Effect> effects, Map<String, Effect> own) {
 		Map<Part, Effect> merged = new EnumMap<>(Part.class);
 		merged.putAll(BUILT_IN);
 		merged.putAll(effects);
 		current = Map.copyOf(merged);
+		custom = Map.copyOf(own);
 	}
 
-	/** Back to the built-in values. */
+	/** Back to the built-in values, and no part of anyone else's. */
 	public static void reset() {
 		current = BUILT_IN;
+		custom = Map.of();
+	}
+
+	private static volatile Map<String, Effect> custom = Map.of();
+
+	/** The effect of a part that is a pack's or an addon's own, or {@link Effect#NONE} if no file by that id was read. */
+	public static Effect ofCustom(String id) {
+		return custom.getOrDefault(id, Effect.NONE);
 	}
 
 	/** The data file's keys, each an optional scale. */

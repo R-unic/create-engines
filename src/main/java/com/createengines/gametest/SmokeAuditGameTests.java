@@ -423,6 +423,8 @@ public class SmokeAuditGameTests {
 			new Knob("oilDilution", v -> Tuning.oilDilution = v > 0, 0, 1),
 			new Knob("oilAgeing", v -> Tuning.oilAgeing = v > 0, 0, 1),
 			new Knob("engineTemperature", v -> Tuning.engineTemperature = v > 0, 0, 1),
+			new Knob("batteryCold", v -> Tuning.batteryCold = v > 0, 0, 1),
+			new Knob("crankingDraw", v -> Tuning.crankingDraw = v > 0, 0, 1),
 			new Knob("pilotInjection", v -> Tuning.pilotInjection = v > 0, 0, 1),
 			new Knob("rotaryEngines", v -> Tuning.rotaryEngines = v > 0, 0, 1),
 			new Knob("heatRecoveryEnabled", v -> Tuning.heatRecoveryEnabled = v > 0, 0, 1));

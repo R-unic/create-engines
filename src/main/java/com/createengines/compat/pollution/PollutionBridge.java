@@ -33,9 +33,12 @@ final class PollutionBridge {
 	}
 
 	private static void pump(Pollutant<?> gas, Level level, BlockPos outlet, Direction facing, int steps) {
-		BlockPos cell = outlet.relative(facing);
-		for (int reach = 0; reach < REACH && steps > 0; reach++, cell = cell.relative(facing)) {
-			if (!gas.canStateBePumped(level.getBlockState(cell)))
+		BlockPos along = outlet.relative(facing);
+		for (int reach = 0; reach < REACH && steps > 0; reach++, along = along.relative(facing)) {
+			// An outlet on a moving structure (Sable) is in a plot, where no one breathes: the gas goes into the world cell the
+			// mouth points at. Everywhere else this is the cell itself.
+			BlockPos cell = com.createengines.compat.sable.SableCompat.worldBlockPos(level, along);
+			if (!level.isLoaded(cell) || !gas.canStateBePumped(level.getBlockState(cell)))
 				continue;
 			steps -= Math.max(0, gas.pump(level, cell, steps));
 		}

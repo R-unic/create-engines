@@ -36,12 +36,13 @@ import com.createengines.content.supercharger.SuperchargerBlockEntity;
 import com.createengines.content.turbo.TurbochargerBlock;
 import com.createengines.content.turbo.TurbochargerBlockEntity;
 import com.createengines.engine.sim.Altitude;
-import com.createengines.engine.sim.CamProfile;
+import com.createengines.engine.sim.CamProfiles;
 import com.createengines.engine.sim.Camshaft;
 import com.createengines.engine.sim.CoolantSupply;
 import com.createengines.engine.sim.CycleResult;
 import com.createengines.engine.sim.CycleStats;
 
+import com.createengines.engine.sim.BatteryChemistry;
 import com.createengines.engine.sim.Breather;
 import com.createengines.engine.sim.CylinderModel;
 import com.createengines.engine.sim.CylinderSpec;
@@ -181,6 +182,10 @@ public final class EngineController {
 	/** Ticks left that a heavy starter is still choking the engine; full strength until {@link #COLD_ASSIST_FADE} remain. */
 	private int coldAssistTicks;
 	private @Nullable BlockPos activeStarter;
+	/** What the spark plugs draw from, told how cold the engine is each tick and drawn on by a starter; null before the first build. */
+	private @Nullable BatteryIgnition ignitionSupply;
+	/** Whether a working cylinder has a spark plug: only a spark engine's starter draws on the batteries. */
+	private boolean sparkEngine;
 	private EngineState previousState = EngineState.STALLED;
 	private final Governor governor = new Governor();
 	/** Whether the governor has been handed the rack position its block saved, once since it was last taken off. */
@@ -248,7 +253,11 @@ public final class EngineController {
 			}
 		};
 
-		IgnitionSource plugs = new BatteryIgnition(level, layout.batteries());
+		BatteryIgnition plugs = new BatteryIgnition(level, layout.batteries());
+		ignitionSupply = plugs;
+		sparkEngine = layout.cylinders()
+			.stream()
+			.anyMatch(cylinder -> cylinder.sparkPlug() && !CylinderFault.disables(cylinder.faults()));
 		// The oil pans also hold the engine's coolant and its pilot fuel
 		CoolantSupply coolant = layout.sumps()
 			.isEmpty() ? CoolantSupply.NONE : new SumpCoolantSupply(level, layout.sumps());
@@ -277,10 +286,10 @@ public final class EngineController {
 			Camshaft camshaft = cylinder.camLine() >= 0 ? camshafts.get(cylinder.camLine()) : null;
 			// A rotor's ports are cut in its housing, so it needs no camshaft to time them
 			CylinderModel model = cylinder.rotary()
-				? CylinderModel.rotary(CEDataMaps.rotaryStats().apply(PrecisionParts.rotarySpec(cylinder.precision())), CamProfile.ROTARY,
+				? CylinderModel.rotary(CEDataMaps.rotaryStats().apply(PrecisionParts.rotarySpec(cylinder.precision())), CamProfiles.rotary(),
 					cylinder.tdcAngle(), cylinder.chamber())
 				: new CylinderModel(CEDataMaps.partStats(PrecisionParts.has(cylinder.precision(), PrecisionParts.BORE))
-						.apply(PrecisionParts.spec(cylinder.precision())), CamProfile.BASIC, cylinder.tdcAngle(),
+						.apply(PrecisionParts.spec(cylinder.precision(), cylinder.effects())), CamProfiles.basic(), cylinder.tdcAngle(),
 					camshaft, cylinder.lobeAngle());
 			model.fuelSupply = CylinderFault.NO_INJECTOR.in(cylinder.faults()) ? FuelSupply.NONE : fuelGallery;
 			model.ignition = cylinder.sparkPlug() ? plugs : IgnitionSource.NONE;
@@ -501,6 +510,43 @@ public final class EngineController {
 			.getY() : com.createengines.compat.sable.SableCompat.worldY(level, primary.getBlockPos()));
 	}
 
+	/** What {@link #worldWater} read last, and whether it has read at all; see {@link #watchWorldWater}. */
+	private int lastWorldWater;
+	private boolean worldWaterKnown;
+
+	/**
+	 * An engine on a moving structure (Sable) is under water when the world around the structure says so, which no block
+	 * update tells it as the structure moves. Every {@link #AIR_INTERVAL} ticks it reads which of its cylinders, heads and
+	 * outlets are in a real fluid, and when that changes it asks for a rescan, which makes the same check the scanner makes for
+	 * any engine. Off a structure this costs one check.
+	 */
+	private void watchWorldWater(Level level) {
+		if (!com.createengines.compat.sable.SableCompat.onStructure(level, primary.getBlockPos())) {
+			worldWaterKnown = false;
+			return;
+		}
+		int now = worldWater(level);
+		if (worldWaterKnown && now != lastWorldWater)
+			com.createengines.engine.topology.EngineTopology.markDirty(level, primary.getBlockPos());
+		lastWorldWater = now;
+		worldWaterKnown = true;
+	}
+
+	private int worldWater(Level level) {
+		int hash = 1;
+		for (Cylinder cylinder : layout.cylinders()) {
+			hash = 31 * hash + (com.createengines.compat.sable.SableCompat.wetInWorld(level, cylinder.pos())
+				|| cylinder.head() != null && com.createengines.compat.sable.SableCompat.wetInWorld(level, cylinder.head()) ? 1 : 0);
+		}
+		for (var network : layout.ports())
+			for (BlockPos outlet : network.outlets()) {
+				var state = level.getBlockState(outlet);
+				hash = 31 * hash + (state.getBlock() instanceof com.createengines.content.airflow.PortOpeningBlock
+					&& com.createengines.content.airflow.PortOpeningBlock.isFlooded(level, outlet, state) ? 1 : 0);
+			}
+		return hash;
+	}
+
 	private static final int AIR_INTERVAL = 20;
 	/** The six sides of a block, once: {@code Direction.values()} makes a new array every call. */
 	private static final Direction[] SIDES = Direction.values();
@@ -510,8 +556,10 @@ public final class EngineController {
 		if (level == null)
 			return;
 		ticks++;
-		if (ticks % AIR_INTERVAL == 0 && com.createengines.compat.sable.SableCompat.installed())
+		if (ticks % AIR_INTERVAL == 0 && com.createengines.compat.sable.SableCompat.installed()) {
 			sim.setAmbientDensity(airDensity());
+			watchWorldWater(level);
+		}
 		double torqueScale = CEConfig.STRESS_PER_TORQUE.get();
 
 		if (layout.incomplete() || layout.broken()) {
@@ -564,6 +612,13 @@ public final class EngineController {
 			floorDirection = (int) Math.signum(crankSpeed);
 		}
 		activeStarter = null;
+		// A cold engine makes each spark cost more of the battery. A starter turning a spark engine over draws on the same batteries
+		boolean drawsBattery = false;
+		if (ignitionSupply != null) {
+			ignitionSupply.setEngineCold(sim.thermal()
+				.felt());
+			drawsBattery = com.createengines.engine.sim.Tuning.crankingDraw && sparkEngine && ignitionSupply.hasBatteries();
+		}
 		double starterTop = 0;
 		for (BlockPos pos : layout.starters()) {
 			if (!(LoadedBlocks.blockEntity(level, pos) instanceof StarterBlockEntity starter) || !starter.wantsToCrank())
@@ -605,6 +660,8 @@ public final class EngineController {
 			.update(sim.revolutionsLastTick(), EngineSimulation.TICK, oilParts, oilSupply);
 		serviceOil(level);
 		cranking = floor > 0 && !sim.isSustaining();
+		if (drawsBattery && cranking && activeStarter != null)
+			ignitionSupply.drawCranking();
 		readSensors(level);
 
 		// The starter feels the effort of turning the engine as stress on its own input shaft
@@ -620,6 +677,7 @@ public final class EngineController {
 			if (LoadedBlocks.blockEntity(level, pos) instanceof StarterBlockEntity starter) {
 				boolean active = pushing.contains(pos);
 				starter.updateCranking(layout.primary(), active ? share : 0, active);
+					starter.setBatteryWeak(drawsBattery && BatteryChemistry.isLow(ignitionSupply.deliverableShare()) && starter.wantsToCrank());
 			}
 
 		publishSpeed();
@@ -1478,7 +1536,7 @@ public final class EngineController {
 				sump.attachToEngine(layout.primary());
 		for (BlockPos pos : layout.alternators())
 			if (LoadedBlocks.blockEntity(level, pos) instanceof AlternatorBlockEntity alternator)
-				alternator.attachToEngine(layout.primary(), layout.batteries());
+				alternator.attachToEngine(layout.primary(), layout.batteries(), layout.alternators());
 
 		for (int line = 0; line < camshafts.size(); line++) {
 			Camshaft camshaft = camshafts.get(line);

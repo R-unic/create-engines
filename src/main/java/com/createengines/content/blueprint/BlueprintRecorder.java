@@ -11,6 +11,7 @@ import org.jetbrains.annotations.Nullable;
 
 import com.createengines.config.CEConfig;
 import com.createengines.content.plate.MakerPlateBlock;
+import com.createengines.content.battery.BatteryBlock;
 import com.createengines.content.plate.MakerPlateBlockEntity;
 import com.createengines.engine.EngineProviders;
 import com.createengines.engine.blueprint.Blueprint;
@@ -156,7 +157,8 @@ public final class BlueprintRecorder {
 		BlockState standard = block.defaultBlockState();
 		Map<String, String> changed = new TreeMap<>();
 		for (Property<?> property : state.getProperties())
-			if (!state.getValue(property)
+			// A battery's lamp strip shows what it holds, and its joins what touches it: a blueprint carries neither
+			if (!BatteryBlock.isOnlyForLooks(state, property) && !state.getValue(property)
 				.equals(standard.getValue(property)))
 				changed.put(property.getName(), valueName(state, property));
 		return changed;

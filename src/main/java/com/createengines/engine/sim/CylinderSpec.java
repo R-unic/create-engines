@@ -1,7 +1,6 @@
 package com.createengines.engine.sim;
 
 import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Physical description of one cylinder tier.
@@ -109,6 +108,15 @@ public record CylinderSpec(double compressionRatio, double rodRatio, double inta
 	 */
 	public static CylinderSpec build(boolean precisionBore, boolean precisionHead, boolean precisionPiston,
 									 boolean precisionInjector) {
+		return build(precisionBore, precisionHead, precisionPiston, precisionInjector, java.util.List.of());
+	}
+
+	/**
+	 * As above, with the effects of parts that are a pack's or an addon's own multiplied in after this mod's (by the ids of their
+	 * {@code part_effects} files, see {@link PartEffects#ofCustom}). With none, this is exactly the cylinder above.
+	 */
+	public static CylinderSpec build(boolean precisionBore, boolean precisionHead, boolean precisionPiston,
+									 boolean precisionInjector, java.util.List<String> own) {
 		double compression = CRUDE.compressionRatio;
 		double intake = CRUDE.intakeFlow;
 		double exhaust = CRUDE.exhaustFlow;
@@ -122,10 +130,10 @@ public record CylinderSpec(double compressionRatio, double rodRatio, double inta
 		// Each part multiplies in what its effect says (data: see PartEffects). A scale of 1 leaves the stat as it was exactly.
 		PartEffects.Part[] parts = PartEffects.Part.values();
 		boolean[] fitted = { precisionBore, precisionHead, precisionPiston, precisionInjector };
-		for (int i = 0; i < parts.length; i++) {
-			if (!fitted[i])
+		for (int i = 0; i < parts.length + own.size(); i++) {
+			if (i < parts.length && !fitted[i])
 				continue;
-			PartEffects.Effect effect = PartEffects.of(parts[i]);
+			PartEffects.Effect effect = i < parts.length ? PartEffects.of(parts[i]) : PartEffects.ofCustom(own.get(i - parts.length));
 			compression *= Tuning.blend(effect.compression(), bonus);
 			intake *= Tuning.blend(effect.breathing(), bonus);
 			exhaust *= Tuning.blend(effect.breathing(), bonus);
@@ -174,7 +182,8 @@ public record CylinderSpec(double compressionRatio, double rodRatio, double inta
 		return GEOMETRIES.computeIfAbsent(this, Geometry::new);
 	}
 
-	private static final Map<CylinderSpec, Geometry> GEOMETRIES = new ConcurrentHashMap<>();
+	/** The tables built so far, the {@link TableCache#LIMIT} most recently asked for (every distinct shape makes its own). */
+	private static final Map<CylinderSpec, Geometry> GEOMETRIES = TableCache.create();
 
 	/**
 	 * {@link #volumeAt} and the heating a volume change gives gas, read from tables. A running engine asks for them

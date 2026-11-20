@@ -446,6 +446,39 @@ public final class SmokeAudit {
 			view(FLEET.get(5).getX() - 1.5, 4.0, -2.0, -18, 5);
 		if (t == 760)
 			capture("fleet_supercharged", true);
+		// The noise-cancelling headphones, on the real sound card with the fleet's sounds playing: on, checked, off, checked
+		if (t == 770)
+			HeadphonesAudit.wear(true);
+		if (t == 772)
+			HeadphonesAudit.frontView(true);
+		if (t == 780)
+			HeadphonesAudit.shoot("headphones_worn");
+		if (t == 790)
+			HeadphonesAudit.checkWorn(REPORT);
+		if (t == 792) {
+			HeadphonesAudit.wear(false);
+			HeadphonesAudit.frontView(false);
+		}
+		if (t == 799)
+			HeadphonesAudit.checkRemoved(REPORT);
+		// Curios row only: the headphones in a Curios head slot, in steps a few ticks apart so the client sees each change
+		if (t == 801)
+			IntegrationAudit.curios(REPORT, 0);
+		if (net.neoforged.fml.ModList.get()
+			.isLoaded("curios")) {
+			if (t == 802)
+				HeadphonesAudit.frontView(true);
+			if (t == 808)
+				HeadphonesAudit.shoot("headphones_curios");
+		}
+		if (t == 810)
+			IntegrationAudit.curios(REPORT, 1);
+		if (t == 812) {
+			IntegrationAudit.curios(REPORT, 2);
+			HeadphonesAudit.frontView(false);
+		}
+		if (t == 818)
+			IntegrationAudit.curios(REPORT, 3);
 		if (t == 800) {
 			checkEngines("before walking away");
 			// KubeJS and CC: Tweaked rows only: the other mod found this mod's plugin or peripheral and they work together

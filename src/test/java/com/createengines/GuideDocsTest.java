@@ -100,6 +100,22 @@ class GuideDocsTest {
 				missing.add("part_effects." + key.group(1));
 		}
 		assertEquals(8, count, "the scan of the part effect keys read " + count);
+		// The cam profile files' keys, and the data map an addon's own part names its effect file by
+		Matcher camKeys = Pattern.compile("Set\\.of\\(([^;]*?)\\);", Pattern.DOTALL)
+			.matcher(text(Path.of("src/main/java/com/createengines/engine/sim/CamProfiles.java")).substring(
+				text(Path.of("src/main/java/com/createengines/engine/sim/CamProfiles.java")).indexOf("KEYS")));
+		assertTrue(camKeys.find(), "CamProfiles.KEYS not found");
+		Matcher camKey = Pattern.compile("\"(\\w+)\"")
+			.matcher(camKeys.group(1));
+		int camCount = 0;
+		while (camKey.find()) {
+			camCount++;
+			if (!doc.contains("`" + camKey.group(1) + "`"))
+				missing.add("cam_profiles." + camKey.group(1));
+		}
+		assertEquals(6, camCount, "the scan of the cam profile keys read " + camCount);
+		if (!doc.contains("`part_effect`") || !doc.contains("`effect`"))
+			missing.add("part_effect.effect");
 		assertEquals(new TreeSet<String>(), missing, "docs/DATA.md does not name these keys");
 	}
 

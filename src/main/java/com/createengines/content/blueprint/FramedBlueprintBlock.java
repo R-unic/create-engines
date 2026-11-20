@@ -28,6 +28,7 @@ import net.minecraft.world.ItemInteractionResult;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.context.BlockPlaceContext;
+import net.minecraft.world.item.context.UseOnContext;
 import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.LevelReader;
@@ -238,6 +239,25 @@ public class FramedBlueprintBlock extends DirectionalBlock implements IWrenchabl
 				.add(back))
 				player.drop(back, false);
 			level.playSound(null, pos, SoundEvents.ITEM_FRAME_REMOVE_ITEM, SoundSource.BLOCKS, 0.8f, 1.0f);
+		}
+		return InteractionResult.sidedSuccess(level.isClientSide);
+	}
+
+	/**
+	 * A wrench turns the drawing a quarter turn, on a frame that holds a blueprint or belongs to a sheet that shows one (the
+	 * turn is kept by the frame that draws the sheet). A frame with nothing to show is turned as it always was.
+	 */
+	@Override
+	public InteractionResult onWrenched(BlockState state, UseOnContext context) {
+		Level level = context.getLevel();
+		if (!(level.getBlockEntity(context.getClickedPos()) instanceof FramedBlueprintBlockEntity frame))
+			return IWrenchable.super.onWrenched(state, context);
+		FramedBlueprintBlockEntity source = frame.sheetSource();
+		if (source == null)
+			return IWrenchable.super.onWrenched(state, context);
+		if (!level.isClientSide) {
+			source.turnDisplay();
+			IWrenchable.playRotateSound(level, context.getClickedPos());
 		}
 		return InteractionResult.sidedSuccess(level.isClientSide);
 	}

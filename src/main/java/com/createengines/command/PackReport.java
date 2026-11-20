@@ -149,6 +149,14 @@ public final class PackReport {
 		out.add(loaded.isEmpty() ? "  no part_effects files were read since the server started" : "Files read at the last data reload:");
 		for (String line : loaded)
 			out.add("  " + line);
+		out.add("Cam profiles (data/create_engines/cam_profiles, when each valve opens and shuts, in cycle degrees):");
+		for (com.createengines.engine.sim.CamProfiles.Kind kind : com.createengines.engine.sim.CamProfiles.Kind.values()) {
+			com.createengines.engine.sim.CamProfile now = com.createengines.engine.sim.CamProfiles.of(kind);
+			out.add("  " + kind.fileName() + ": " + (now.equals(kind.builtIn()) ? "built-in angles" : "CHANGED by a pack") + "   intake "
+				+ now.intakeOpen() + " to " + now.intakeClose() + ", exhaust " + now.exhaustOpen() + " to " + now.exhaustClose());
+		}
+		for (String line : com.createengines.engine.CamProfileLoader.lastReport())
+			out.add("  " + line);
 		out.add("Part stats (data_maps/block/part_stats.json, scales over a whole kind of cylinder):");
 		out.add("  create_engines:cylinder: " + stats(CEDataMaps.partStats(false)));
 		out.add("  create_engines:precision_cylinder: " + stats(CEDataMaps.partStats(true)));

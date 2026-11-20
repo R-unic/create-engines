@@ -1,16 +1,28 @@
 package com.createengines.content.battery;
 
+import java.util.concurrent.atomic.AtomicInteger;
+
+import com.createengines.engine.sim.BatteryChemistry;
 import com.createengines.engine.topology.EngineTopology;
 import com.createengines.registry.CEBlockEntities;
 import com.simibubi.create.content.equipment.wrench.IWrenchable;
 import com.simibubi.create.foundation.block.IBE;
 
+import org.jetbrains.annotations.Nullable;
+
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
+import net.minecraft.world.item.context.BlockPlaceContext;
 import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.LevelAccessor;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.block.state.StateDefinition;
+import net.minecraft.world.level.block.state.properties.BlockStateProperties;
+import net.minecraft.world.level.block.state.properties.BooleanProperty;
+import net.minecraft.world.level.block.state.properties.IntegerProperty;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.VoxelShape;
 
@@ -19,30 +31,156 @@ import net.minecraft.world.phys.shapes.VoxelShape;
  * spark plug on that engine fires from it. It makes no charge of its own: an
  * {@link com.createengines.content.alternator.AlternatorBlock alternator} touching it, or touching the same engine,
  * fills it.
+ * <p>
+ * Batteries that touch join into one {@link BatteryBank bank}: its capacity is the sum, an engine or alternator touching
+ * any one of them reaches all of them, and a comparator on any one reads the bank's charge. The lamp strip on the lid shows
+ * this battery's own charge ({@link #CHARGE}).
+ * <p>
+ * Batteries that touch also look joined, as Create's tanks and item vaults do: the body, the band and the lid run on into the
+ * neighbour with no seam between, and a battery with another on top has no terminals of its own (they stay on the top of the
+ * stack). There is no rule about shape: any run, wall, L or block of batteries joins wherever two of them touch. The join is
+ * the {@link #NORTH}, {@link #EAST}, {@link #SOUTH}, {@link #WEST} and {@link #UP} properties, kept by the block from its
+ * neighbours; it changes nothing about the bank.
  */
 public class BatteryBlock extends Block implements IWrenchable, IBE<BatteryBlockEntity> {
 
-	private static final VoxelShape SHAPE = Block.box(2, 0, 2, 14, 16, 14);
+	/** The lamp strip: 0 (flat, every lamp dark) to {@link BatteryChemistry#GAUGE_STAGES} (full). Set by the block entity from its charge. */
+	public static final IntegerProperty CHARGE = IntegerProperty.create("charge", 0, BatteryChemistry.GAUGE_STAGES);
+
+	/** True where another battery touches that side. Down is not kept: nothing about the model depends on it. */
+	public static final BooleanProperty NORTH = BlockStateProperties.NORTH;
+	public static final BooleanProperty EAST = BlockStateProperties.EAST;
+	public static final BooleanProperty SOUTH = BlockStateProperties.SOUTH;
+	public static final BooleanProperty WEST = BlockStateProperties.WEST;
+	public static final BooleanProperty UP = BlockStateProperties.UP;
+
+	/** The join property for the way a neighbour lies, or null for down, which has none. */
+	public static @Nullable BooleanProperty joinFor(Direction direction) {
+		return switch (direction) {
+			case NORTH -> NORTH;
+			case EAST -> EAST;
+			case SOUTH -> SOUTH;
+			case WEST -> WEST;
+			case UP -> UP;
+			case DOWN -> null;
+		};
+	}
+
+	/**
+	 * True for a property of a battery that only changes how it looks (its lamp strip and its joins), which nothing else should record
+	 * or compare. The joins are vanilla's own properties, which pipes and other blocks use for something that matters, so the block
+	 * is part of the question.
+	 */
+	public static boolean isOnlyForLooks(BlockState state, net.minecraft.world.level.block.state.properties.Property<?> property) {
+		return state.getBlock() instanceof BatteryBlock
+			&& (property == CHARGE || property == NORTH || property == EAST || property == SOUTH || property == WEST || property == UP);
+	}
+
+	/**
+	 * Bumped whenever a battery is placed or removed, so a battery that has worked out its bank knows to do it again. Shared by
+	 * every level and both sides: a change anywhere only costs the banks elsewhere one more search.
+	 */
+	static final AtomicInteger TOPOLOGY = new AtomicInteger();
+
+	/** How many times a battery has been placed or removed since the game started, for the tests. */
+	public static int topologyForTests() {
+		return TOPOLOGY.get();
+	}
+
+	/** The shape by which of the four sides are joined (north 1, east 2, south 4, west 8): a joined side fills out to the edge of the block. */
+	private static final VoxelShape[] SHAPES = new VoxelShape[16];
+
+	static {
+		for (int mask = 0; mask < 16; mask++)
+			SHAPES[mask] = Block.box((mask & 8) != 0 ? 0 : 2, 0, (mask & 1) != 0 ? 0 : 2, (mask & 2) != 0 ? 16 : 14, 16,
+				(mask & 4) != 0 ? 16 : 14);
+	}
 
 	public BatteryBlock(Properties properties) {
 		super(properties);
+		registerDefaultState(defaultBlockState().setValue(CHARGE, 0)
+			.setValue(NORTH, false)
+			.setValue(EAST, false)
+			.setValue(SOUTH, false)
+			.setValue(WEST, false)
+			.setValue(UP, false));
+	}
+
+	@Override
+	protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {
+		super.createBlockStateDefinition(builder);
+		builder.add(CHARGE, NORTH, EAST, SOUTH, WEST, UP);
+	}
+
+	@Override
+	public BlockState getStateForPlacement(BlockPlaceContext context) {
+		return joined(defaultBlockState(), context.getLevel(), context.getClickedPos());
+	}
+
+	@Override
+	protected BlockState updateShape(BlockState state, Direction direction, BlockState neighbourState, LevelAccessor level,
+									 BlockPos pos, BlockPos neighbourPos) {
+		BooleanProperty join = joinFor(direction);
+		if (join == null)
+			return super.updateShape(state, direction, neighbourState, level, pos, neighbourPos);
+		return state.setValue(join, neighbourState.getBlock() instanceof BatteryBlock);
+	}
+
+	/**
+	 * {@code state} with its join properties set from the batteries that touch {@code pos}. A side in a chunk that is not loaded
+	 * is left as it was: asking for its block would load the chunk.
+	 */
+	public static BlockState joined(BlockState state, Level level, BlockPos pos) {
+		for (Direction direction : Direction.values()) {
+			BooleanProperty join = joinFor(direction);
+			if (join == null || !state.hasProperty(join))
+				continue;
+			BlockPos beside = pos.relative(direction);
+			if (level.isLoaded(beside))
+				state = state.setValue(join, level.getBlockState(beside)
+					.getBlock() instanceof BatteryBlock);
+		}
+		return state;
+	}
+
+	/** The collision and outline shape of a battery joined on those sides: {@code true} where another battery touches. */
+	public static VoxelShape shapeOf(boolean north, boolean east, boolean south, boolean west) {
+		return SHAPES[(north ? 1 : 0) | (east ? 2 : 0) | (south ? 4 : 0) | (west ? 8 : 0)];
 	}
 
 	@Override
 	protected VoxelShape getShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext context) {
-		return SHAPE;
+		return shapeOf(state.getValue(NORTH), state.getValue(EAST), state.getValue(SOUTH), state.getValue(WEST));
 	}
 
 	@Override
 	protected void onPlace(BlockState state, Level level, BlockPos pos, BlockState oldState, boolean movedByPiston) {
 		super.onPlace(state, level, pos, oldState, movedByPiston);
+		// The lamp strip changes the state of a battery already there, which is no change to the engine or the bank
+		if (oldState.is(state.getBlock()))
+			return;
+		TOPOLOGY.incrementAndGet();
 		EngineTopology.markDirty(level, pos);
 	}
 
 	@Override
 	protected void onRemove(BlockState state, Level level, BlockPos pos, BlockState newState, boolean movedByPiston) {
 		IBE.onRemove(state, level, pos, newState);
+		if (newState.is(state.getBlock()))
+			return;
+		TOPOLOGY.incrementAndGet();
 		EngineTopology.markDirty(level, pos);
+	}
+
+	@Override
+	protected boolean hasAnalogOutputSignal(BlockState state) {
+		return true;
+	}
+
+	/** The charge of the whole bank this battery is in, 0 to 15 ({@link BatteryChemistry#signal}): for a low-charge alarm or an auto-start. */
+	@Override
+	protected int getAnalogOutputSignal(BlockState state, Level level, BlockPos pos) {
+		return level.getBlockEntity(pos) instanceof BatteryBlockEntity battery ? battery.bankSignal() : 0;
 	}
 
 	@Override

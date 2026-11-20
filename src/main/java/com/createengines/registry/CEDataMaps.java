@@ -99,6 +99,40 @@ public final class CEDataMaps {
 			.build();
 
 	/**
+	 * Names the part effect a block adds to the cylinder it is part of. The block is a cylinder block or a cylinder head block
+	 * (a pack cannot make one, an addon registers one of this mod's block classes under its own name), and the effect is a
+	 * {@code part_effects} file of the pack or addon: {@code data/<namespace>/part_effects/<name>.json}, with the same keys
+	 * and ranges as the files for this mod's four precision parts. That is a third tier of cylinder, or a fifth part, with its
+	 * own model and its own numbers, and nothing in this mod to change.
+	 *
+	 * @param effect the file's id, such as {@code mymod:racing_bore}
+	 */
+	public record PartEffectProperties(ResourceLocation effect) {
+
+		public static final Codec<PartEffectProperties> CODEC = RecordCodecBuilder.create(i -> i
+			.group(ResourceLocation.CODEC.fieldOf("effect").forGetter(PartEffectProperties::effect))
+			.apply(i, PartEffectProperties::new));
+	}
+
+	public static final DataMapType<Block, PartEffectProperties> PART_EFFECT =
+		DataMapType.builder(CreateEngines.asResource("part_effect"), Registries.BLOCK, PartEffectProperties.CODEC)
+			.build();
+
+	/** What to answer in place of the data map, for the GameTests, which cannot add an entry to one. Null in play. */
+	public static volatile @Nullable java.util.function.Function<Block, String> partEffectOverride;
+
+	/** The id of the part effect the block adds to its cylinder, or null for every block that names none (all of this mod's). */
+	public static @Nullable String partEffect(Block block) {
+		java.util.function.Function<Block, String> forced = partEffectOverride;
+		if (forced != null)
+			return forced.apply(block);
+		PartEffectProperties properties = block.builtInRegistryHolder()
+			.getData(PART_EFFECT);
+		return properties == null ? null : properties.effect()
+			.toString();
+	}
+
+	/**
 	 * The retuning of the cylinders built in the plain or the precision cylinder block ({@link PartStats#NONE} if no pack
 	 * names it, which is the case in every world that has not used the data map).
 	 */
@@ -127,6 +161,7 @@ public final class CEDataMaps {
 	public static void register(RegisterDataMapTypesEvent event) {
 		event.register(FUEL);
 		event.register(PART_STATS);
+		event.register(PART_EFFECT);
 	}
 
 	private static TagKey<Fluid> common(String name) {

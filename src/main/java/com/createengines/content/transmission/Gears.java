@@ -72,6 +72,15 @@ public final class Gears {
 		};
 	}
 
+	/** The lang key a Display Link uses to say a position: neutral, reverse, or a numbered gear (which takes {@link #label}). */
+	public static String displayKey(int position) {
+		return switch (clamp(position)) {
+			case NEUTRAL -> "display.transmission.neutral";
+			case REVERSE -> "display.transmission.reverse";
+			default -> "display.transmission.gear";
+		};
+	}
+
 	/** A position, kept between neutral and reverse. */
 	public static int clamp(int position) {
 		return Math.max(0, Math.min(POSITIONS - 1, position));

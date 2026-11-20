@@ -1,0 +1,8 @@
+{
+  "intake_open": 710,
+  "intake_close": 220,
+  "exhaust_open": 500,
+  "exhaust_close": 10,
+  "injection": 345,
+  "spark": 350
+}

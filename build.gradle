@@ -68,6 +68,11 @@ repositories {
         url = 'https://maven.squiddev.cc'
         content { includeGroup 'cc.tweaked' }
     }
+    maven { // Curios, for the headphones' Curios slot and its compatibility row
+        name = 'Illusive Soulworks'
+        url = 'https://maven.theillusivec4.top/'
+        content { includeGroup 'top.theillusivec4.curios' }
+    }
     maven { // Create Aeronautics and Sable, for the compatibility matrix only (Modrinth's maven, version ids)
         name = 'Modrinth'
         url = 'https://api.modrinth.com/maven'
@@ -83,6 +88,8 @@ configurations.create('emiRuntime')
 // And the KubeJS and CC: Tweaked rows.
 configurations.create('kubejsRuntime')
 configurations.create('ccRuntime')
+// And the Curios row (the headphones in a Curios head slot).
+configurations.create('curiosRuntime')
 // And the Create Aeronautics row (with Sable, which it needs).
 configurations.create('aeronauticsRuntime')
 // And the Pollution of the Realms GameTest run (with the library it needs).
@@ -189,6 +196,16 @@ neoForge {
             systemProperty 'neoforge.enabledGameTestNamespaces', project.mod_id
             systemProperty 'create_engines.smokeAudit', 'true'
             systemProperty 'create_engines.smokeAudit.requireIntegration', 'computercraft'
+        }
+
+        // Curios row: the same audit with Curios loaded, which also puts the headphones in its head slot and checks that they
+        // count as worn and muffle
+        smokeAuditCurios {
+            client()
+            gameDirectory = file('run/smoke-client-curios')
+            systemProperty 'neoforge.enabledGameTestNamespaces', project.mod_id
+            systemProperty 'create_engines.smokeAudit', 'true'
+            systemProperty 'create_engines.smokeAudit.requireIntegration', 'curios'
         }
 
         // Create Aeronautics row: the same audit with Aeronautics (and Sable) loaded
@@ -305,6 +322,8 @@ dependencies {
     kubejsRuntime("dev.latvian.mods:kubejs-neoforge:${kubejs_version}") { transitive = false }
     kubejsRuntime("dev.latvian.mods:rhino:${rhino_version}") { transitive = false }
     ccRuntime("cc.tweaked:cc-tweaked-${minecraft_version}-forge:${cc_tweaked_version}") { transitive = false }
+    compileOnly("top.theillusivec4.curios:curios-neoforge:${curios_version}:api") { transitive = false }
+    curiosRuntime("top.theillusivec4.curios:curios-neoforge:${curios_version}") { transitive = false }
     aeronauticsRuntime("maven.modrinth:create-aeronautics:${aeronautics_version}") { transitive = false }
     aeronauticsRuntime("maven.modrinth:sable:${sable_version}") { transitive = false }
     // Pollution of the Realms has no API: its classes are compiled against (never shipped) and only one bridge class names them
@@ -431,6 +450,7 @@ tasks.matching { it.name == 'runVisualSmokeTest' }.configureEach { finalizedBy '
  [name: 'Emi', dir: 'run/smoke-client-emi', flywheel: null, mods: 'emiRuntime'],
  [name: 'Kubejs', dir: 'run/smoke-client-kubejs', flywheel: null, mods: 'kubejsRuntime'],
  [name: 'Cc', dir: 'run/smoke-client-cc', flywheel: null, mods: 'ccRuntime'],
+ [name: 'Curios', dir: 'run/smoke-client-curios', flywheel: null, mods: 'curiosRuntime'],
  [name: 'Aeronautics', dir: 'run/smoke-client-aeronautics', flywheel: null, mods: 'aeronauticsRuntime']].each { row ->
     def rowDir = file(row.dir)
     // A recipe viewer is an ordinary mod: its jars go in the row's mods folder, which FML scans (on the classpath they are not found)
@@ -470,10 +490,11 @@ tasks.matching { it.name == 'runVisualSmokeTest' }.configureEach { finalizedBy '
 
 tasks.register('compatMatrix') {
     group = 'verification'
-    description = 'Runs the client audit in every compatibility-matrix row (Flywheel off, Sodium, EMI, KubeJS, CC: Tweaked); each is verified. JEI is run by hand, see docs/COMPAT.md.'
+    description = 'Runs the client audit in every compatibility-matrix row (Flywheel off, Sodium, EMI, KubeJS, CC: Tweaked, Curios); each is verified. JEI is run by hand, see docs/COMPAT.md.'
     // The JEI row (runSmokeAuditJei) is not in this list: JEI 19.70 asks for NeoForge 21.1.238 and this build runs 21.1.219, so it
     // cannot start here (docs/COMPAT.md). Run it by hand on a NeoForge it accepts.
-    dependsOn 'runSmokeAuditFlywheelOff', 'runSmokeAuditSodium', 'runSmokeAuditEmi', 'runSmokeAuditKubejs', 'runSmokeAuditCc'
+    dependsOn 'runSmokeAuditFlywheelOff', 'runSmokeAuditSodium', 'runSmokeAuditEmi', 'runSmokeAuditKubejs', 'runSmokeAuditCc',
+        'runSmokeAuditCurios'
     // runSmokeAuditAeronautics is not in this list while its row is red (docs/COMPAT.md): it fails the log check on an error
     // Simulated logs about its own model, and the showcase shows wrong textures on this mod's small parts with it loaded
 }
@@ -515,6 +536,7 @@ tasks.matching { it.name == 'runSmokeAuditSodium' }.configureEach { mustRunAfter
 tasks.matching { it.name == 'runSmokeAuditEmi' }.configureEach { mustRunAfter 'runSmokeAuditSodium' }
 tasks.matching { it.name == 'runSmokeAuditKubejs' }.configureEach { mustRunAfter 'runSmokeAuditEmi' }
 tasks.matching { it.name == 'runSmokeAuditCc' }.configureEach { mustRunAfter 'runSmokeAuditKubejs' }
+tasks.matching { it.name == 'runSmokeAuditCurios' }.configureEach { mustRunAfter 'runSmokeAuditCc' }
 
 // One command for everything unattended: unit tests, the GameTests with their log check, and the client audit.
 tasks.register('smoke') {

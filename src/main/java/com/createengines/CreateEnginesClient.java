@@ -47,6 +47,14 @@ public class CreateEnginesClient {
 		NeoForge.EVENT_BUS.addListener(FuelTooltips::onTooltip);
 		NeoForge.EVENT_BUS.addListener(com.createengines.client.BuildPreview::onRender);
 		NeoForge.EVENT_BUS.addListener(CreateEnginesClient::onLoggingOut);
+		// The headphones: muffle on the sound card, and the tooltip's word on whether the card can
+		com.createengines.content.headphones.HeadphonesItem.filterAvailable = com.createengines.client.HeadphoneMuffle::filtering;
+		modEventBus.addListener(com.createengines.client.HeadphoneMuffle::onSoundEngineLoad);
+		modEventBus.addListener(CreateEnginesClient::onClientSetup);
+		NeoForge.EVENT_BUS.addListener(com.createengines.client.HeadphoneMuffle::onPlaySource);
+		NeoForge.EVENT_BUS.addListener(com.createengines.client.HeadphoneMuffle::onPlayStreaming);
+		NeoForge.EVENT_BUS.addListener(com.createengines.client.HeadphoneMuffle::onClientTick);
+		NeoForge.EVENT_BUS.addListener(com.createengines.client.HeadphoneMuffle::onLoggingOut);
 		PonderIndex.addPlugin(new CEPonderPlugin());
 		registerDevelopmentHarnesses();
 	}
@@ -73,6 +81,12 @@ public class CreateEnginesClient {
 				throw new IllegalStateException("The development harness " + name + " could not register", e);
 			}
 		}
+	}
+
+	/** Curios draws what is in its slots itself, so the headphones tell it how to draw them. Only when Curios is there. */
+	private static void onClientSetup(net.neoforged.fml.event.lifecycle.FMLClientSetupEvent event) {
+		if (com.createengines.compat.curios.CuriosCompat.installed())
+			event.enqueueWork(com.createengines.client.compat.CuriosClient::register);
 	}
 
 	/** The sound engine drops every voice when the world closes; forget ours too, or they keep that world's machines alive. */

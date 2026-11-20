@@ -11,6 +11,7 @@ import com.createengines.engine.topology.EngineMember;
 import com.createengines.content.GoggleLines;
 import com.createengines.registry.CELang;
 import com.simibubi.create.content.kinetics.base.KineticBlockEntity;
+import com.simibubi.create.content.kinetics.crank.HandCrankBlockEntity;
 
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
@@ -37,15 +38,26 @@ public class StarterBlockEntity extends KineticBlockEntity implements EngineMemb
 	private float smoothedDrag;
 	private boolean cranking;
 	private boolean turning;
+	/** Wanted to crank but the batteries behind it are nearly flat: it draws less from them, and says so. */
+	private boolean batteryWeak;
 	private int idleTicks;
 
 	public StarterBlockEntity(BlockEntityType<?> type, BlockPos pos, BlockState state) {
 		super(type, pos, state);
 	}
 
-	/** Powered by redstone and being turned: it will push on the crank. */
+	/**
+	 * Being turned, and either powered by redstone or turned by hand: it will push on the crank. A hand crank on its input needs no
+	 * redstone, since someone standing there turning it has made their wish plain, and that is what lets a flat or stuck engine
+	 * be turned over with nothing else running.
+	 */
 	public boolean wantsToCrank() {
-		return level != null && Signals.hasNeighbour(level, worldPosition) && getSpeed() != 0;
+		return level != null && getSpeed() != 0 && (Signals.hasNeighbour(level, worldPosition) || isHandCranked());
+	}
+
+	/** Whether the shaft driving this starter gets its rotation from a hand crank. */
+	public boolean isHandCranked() {
+		return level != null && source != null && level.isLoaded(source) && level.getBlockEntity(source) instanceof HandCrankBlockEntity;
 	}
 
 	/** Its share of the effort of turning the engine over, relative to a plain starter's (see {@link StarterBlock#strength()}). */
@@ -87,6 +99,19 @@ public class StarterBlockEntity extends KineticBlockEntity implements EngineMemb
 		}
 		if (changed)
 			sendData();
+	}
+
+	/** Whether the batteries behind it are nearly flat. */
+	public boolean isBatteryWeak() {
+		return batteryWeak;
+	}
+
+	/** Said by the engine each tick: whether the batteries behind this starter are nearly flat. */
+	public void setBatteryWeak(boolean weak) {
+		if (weak == batteryWeak)
+			return;
+		batteryWeak = weak;
+		sendData();
 	}
 
 	/** Whether the clutch is really turning the engine over: false once the engine outruns the starter. */
@@ -139,6 +164,7 @@ public class StarterBlockEntity extends KineticBlockEntity implements EngineMemb
 		tag.putFloat("Drag", drag);
 		tag.putBoolean("Cranking", cranking);
 		tag.putBoolean("Turning", turning);
+		tag.putBoolean("BatteryWeak", batteryWeak);
 		if (primaryPos != null)
 			tag.put("Primary", NbtUtils.writeBlockPos(primaryPos));
 	}
@@ -150,6 +176,7 @@ public class StarterBlockEntity extends KineticBlockEntity implements EngineMemb
 		smoothedDrag = drag;
 		cranking = tag.getBoolean("Cranking");
 		turning = tag.getBoolean("Turning");
+		batteryWeak = tag.getBoolean("BatteryWeak");
 		primaryPos = NbtUtils.readBlockPos(tag, "Primary")
 			.orElse(null);
 	}
@@ -163,6 +190,12 @@ public class StarterBlockEntity extends KineticBlockEntity implements EngineMemb
 		if (primaryPos == null) {
 			key = "goggles.starter.no_engine";
 			colour = ChatFormatting.RED;
+		} else if (batteryWeak && wantsToCrank()) {
+			key = "goggles.starter.weak";
+			colour = ChatFormatting.GOLD;
+		} else if (cranking && isHandCranked() && !Signals.hasNeighbour(level, worldPosition)) {
+			key = "goggles.starter.by_hand";
+			colour = ChatFormatting.YELLOW;
 		} else if (cranking && warmsColdEngines()) {
 			key = "goggles.starter.warming";
 			colour = ChatFormatting.GOLD;

@@ -4,6 +4,7 @@ import static com.createengines.CreateEngines.REGISTRATE;
 
 import com.createengines.content.display.BatteryDisplaySource;
 import com.createengines.content.display.EngineBoostDisplaySource;
+import com.createengines.content.display.EngineFaultDisplaySource;
 import com.createengines.content.display.EngineFillDisplaySource;
 import com.createengines.content.display.EngineHorsepowerDisplaySource;
 import com.createengines.content.display.EngineReadout;
@@ -11,6 +12,7 @@ import com.createengines.content.display.EngineSpeedDisplaySource;
 import com.createengines.content.display.EngineStatusDisplaySource;
 import com.createengines.content.display.EngineTorqueDisplaySource;
 import com.createengines.content.display.SumpDisplaySource;
+import com.createengines.content.display.TransmissionGearDisplaySource;
 import com.simibubi.create.api.behaviour.display.DisplaySource;
 import com.tterrag.registrate.util.entry.RegistryEntry;
 
@@ -50,6 +52,13 @@ public final class CEDisplaySources {
 			.register();
 	public static final RegistryEntry<DisplaySource, BatteryDisplaySource> BATTERY_CHARGE =
 		REGISTRATE.displaySource("battery_charge", BatteryDisplaySource::new)
+			.register();
+
+	public static final RegistryEntry<DisplaySource, EngineFaultDisplaySource> ENGINE_FAULT =
+		REGISTRATE.displaySource("engine_fault", EngineFaultDisplaySource::new)
+			.register();
+	public static final RegistryEntry<DisplaySource, TransmissionGearDisplaySource> TRANSMISSION_GEAR =
+		REGISTRATE.displaySource("transmission_gear", TransmissionGearDisplaySource::new)
 			.register();
 
 	private CEDisplaySources() {

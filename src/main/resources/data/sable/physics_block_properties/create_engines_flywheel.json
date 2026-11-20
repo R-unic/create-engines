@@ -1,0 +1,7 @@
+{
+	"selector": "#create_engines:weight/flywheel",
+
+	"properties": {
+		"sable:mass": 4.0
+	}
+}

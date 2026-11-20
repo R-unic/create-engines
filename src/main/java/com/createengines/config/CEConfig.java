@@ -46,6 +46,8 @@ public final class CEConfig {
 	public static final ModConfigSpec.BooleanValue OIL_DILUTION;
 	public static final ModConfigSpec.BooleanValue OIL_AGEING;
 	public static final ModConfigSpec.BooleanValue ENGINE_TEMPERATURE;
+	public static final ModConfigSpec.BooleanValue BATTERY_COLD;
+	public static final ModConfigSpec.BooleanValue CRANKING_DRAW;
 	public static final ModConfigSpec.BooleanValue PILOT_INJECTION;
 	public static final ModConfigSpec.BooleanValue ROTARY_ENGINES;
 	public static final ModConfigSpec.BooleanValue HEAT_RECOVERY_ENABLED;
@@ -155,6 +157,14 @@ public final class CEConfig {
 		ENGINE_TEMPERATURE = value("features.engineTemperature",
 			builder.comment("Engines warm up and cool down: a cold engine drags, a cooled one breathes better.")
 				.define("engineTemperature", true));
+		BATTERY_COLD = value("features.batteryCold", builder.comment(
+				"A battery in a cold biome gives less of its charge, and a cold engine makes each spark cost more of it.",
+				"A heat source beside the battery, or a warm engine, takes the cold away. Off, charge is the same in any weather.")
+			.define("batteryCold", true));
+		CRANKING_DRAW = value("features.crankingDraw", builder.comment(
+				"A starter draws charge from the engine's batteries while it turns a spark engine over, and turns it more slowly",
+				"as they run down. Compression engines, and spark engines with no battery, are not affected. Off, cranking is free.")
+			.define("crankingDraw", true));
 		PILOT_INJECTION = value("features.pilotInjection", builder.comment(
 				"A compression engine can inject a pilot shot of diesel (from an oil pan's pilot tank)",
 				"to light gasoline or ethanol that compression alone could not.")
@@ -232,6 +242,8 @@ public final class CEConfig {
 		Tuning.oilDilution = OIL_DILUTION.get();
 		Tuning.oilAgeing = OIL_AGEING.get();
 		Tuning.engineTemperature = ENGINE_TEMPERATURE.get();
+		Tuning.batteryCold = BATTERY_COLD.get();
+		Tuning.crankingDraw = CRANKING_DRAW.get();
 		Tuning.pilotInjection = PILOT_INJECTION.get();
 		Tuning.rotaryEngines = ROTARY_ENGINES.get();
 		Tuning.heatRecoveryEnabled = HEAT_RECOVERY_ENABLED.get();

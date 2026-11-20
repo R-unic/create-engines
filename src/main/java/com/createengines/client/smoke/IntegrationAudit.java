@@ -37,6 +37,17 @@ final class IntegrationAudit {
 			Cc.check(report, engine);
 	}
 
+	/**
+	 * The headphones in a Curios head slot, in four steps a few ticks apart so the client has time to see each change: 0 puts
+	 * them in the slot, 1 checks that they count as worn and muffle, 2 takes them out, 3 checks that they no longer do. Does
+	 * nothing without Curios.
+	 */
+	static void curios(SmokeReport report, int step) {
+		if (ModList.get()
+			.isLoaded("curios"))
+			Curios.step(report, step);
+	}
+
 	/** Runs on the integrated server thread and waits for it, which is safe from the render thread. */
 	private static <T> T onServer(java.util.function.Supplier<T> job) throws Exception {
 		var server = Minecraft.getInstance()
@@ -96,6 +107,52 @@ final class IntegrationAudit {
 			} finally {
 				handler.clear(dev.latvian.mods.kubejs.script.ScriptType.SERVER);
 				milestone.clear(dev.latvian.mods.kubejs.script.ScriptType.SERVER);
+			}
+		}
+	}
+
+	private static final class Curios {
+
+		static void step(SmokeReport report, int step) {
+			try {
+				switch (step) {
+					case 0, 2 -> {
+						boolean on = step == 0;
+						String problem = onServer(() -> {
+							var player = Minecraft.getInstance()
+								.getSingleplayerServer()
+								.getPlayerList()
+								.getPlayers()
+								.get(0);
+							var inventory = top.theillusivec4.curios.api.CuriosApi.getCuriosInventory(player);
+							if (inventory.isEmpty())
+								return "the player has no Curios inventory";
+							inventory.get()
+								.setEquippedCurio("head", 0, on ? new net.minecraft.world.item.ItemStack(com.createengines.registry.CEItems.HEADPHONES.get())
+									: net.minecraft.world.item.ItemStack.EMPTY);
+							return "";
+						});
+						report.check("compat", "Curios takes the headphones " + (on ? "into" : "out of") + " its head slot", problem.isEmpty(), problem);
+					}
+					case 1, 3 -> {
+						boolean on = step == 1;
+						var player = Minecraft.getInstance().player;
+						report.check("compat", "Curios: the headphones " + (on ? "in" : "out of") + " a Curios head slot " + (on ? "count as worn" : "no longer count"),
+							com.createengines.content.headphones.HeadphoneWear.isWorn(player) == on,
+							"the client sees them " + (on ? "not worn" : "still worn") + " (the head slot holds " + player.getItemBySlot(net.minecraft.world.entity.EquipmentSlot.HEAD) + ")");
+						report.check("compat", "Curios: the head slot itself is empty, so it is the Curios slot that counts",
+							player.getItemBySlot(net.minecraft.world.entity.EquipmentSlot.HEAD)
+								.isEmpty(), "the game's head slot holds " + player.getItemBySlot(net.minecraft.world.entity.EquipmentSlot.HEAD));
+						var audit = com.createengines.client.HeadphoneMuffle.audit();
+						report.check("compat", "Curios: world sounds are " + (on ? "muffled" : "not muffled") + " (" + audit.muffledNow() + " of " + audit.muffled() + ")",
+							on ? audit.muffled() > 0 && audit.muffledNow() == audit.muffled() : audit.muffledNow() == 0,
+							audit.muffledNow() + " of " + audit.muffled() + " world sounds are muffled");
+					}
+					default -> {
+					}
+				}
+			} catch (Exception e) {
+				report.check("compat", "Curios integration runs (step " + step + ")", false, e.toString());
 			}
 		}
 	}
