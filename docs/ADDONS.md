@@ -278,11 +278,30 @@ A listener that throws is logged and ignored; it never stops an engine's tick. M
 new ones may be added (ignore a name you do not know), and one may be posted again for the same milestone after a rebuild or a
 reload.
 
+## A cylinder of your own
+
+A third tier of cylinder (or a head) is a block, a model and two data files, and no simulation code:
+
+1. Register a block of this mod's `CylinderBlock` (or `CylinderHeadBlock`) class under your own id, with your own model and texture.
+   The scanner treats it as it treats ours: it takes a crank throw, a head, ports and a cam lobe the same way. The block has to be
+   one of the valid blocks of the block entity type, which NeoForge's `BlockEntityTypeAddBlocksEvent` adds it to (this mod's
+   `CEBlockEntities.CYLINDER` and `CYLINDER_HEAD`).
+2. Write `data/<yourmod>/part_effects/<name>.json`: the same keys and ranges as the four precision parts in [DATA.md](DATA.md).
+3. Point the block at it in `data/create_engines/data_maps/block/part_effect.json`:
+   `{ "values": { "yourmod:racing_cylinder": { "effect": "yourmod:racing_bore" } } }`.
+
+The effect is multiplied in after the precision parts (the server's `precisionBonus` blends it as it blends them), so a racing
+cylinder that also has a forged piston has both. **The catch:** `CylinderBlock` and `CylinderHeadBlock` are internal classes (see
+below), so a block that extends them is pinned to the versions of this mod it was built against; the data files are not. A block
+that cannot extend them needs the source provider route in "A provider and a source", which can add a whole new engine type. The
+timing of the valves can be changed for every engine, not for one block, with `data/create_engines/cam_profiles/` (DATA.md).
+This path is tested with the effect named through the data map's test hook, not with a block from a real addon.
+
 ## What you can rely on
 
 | | |
 |---|---|
-| **Frozen** (API 1.0.0, in 2.x only added to) | `com.createengines.api.*`, `engine.sim.TorqueSource`, `AbstractTorqueSource`, `Breather`, `StatusLine`; the `fuel`, `part_stats` and `part_effects` data formats; the KubeJS and CC names |
+| **Frozen** (API 1.0.0, in 2.x only added to) | `com.createengines.api.*`, `engine.sim.TorqueSource`, `AbstractTorqueSource`, `Breather`, `StatusLine`; the `fuel`, `part_stats`, `part_effect` data maps and the `part_effects` and `cam_profiles` data formats; the KubeJS and CC names |
 | **Internal** | everything else: `engine.*`, `content.*`, the registries and the config classes. They may change in any release |
 
 `ApiSurfaceTest` reads every public declaration of the frozen types from the source and fails the build if one disappears or

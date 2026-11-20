@@ -1,7 +1,6 @@
 package com.createengines.engine.sim;
 
 import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * The shape of a cam lobe set: when, relative to the lobe's firing mark, it opens each valve and triggers the
@@ -27,7 +26,8 @@ public record CamProfile(double intakeOpen, double intakeClose, double exhaustOp
 	 */
 	public static final CamProfile ROTARY = new CamProfile(700, 230, 500, 20, 340, 350);
 
-	private static final Map<CamProfile, Curve[]> CURVES = new ConcurrentHashMap<>();
+	/** The tables built so far, the {@link TableCache#LIMIT} most recently asked for (every distinct profile makes its own). */
+	private static final Map<CamProfile, Curve[]> CURVES = TableCache.create();
 
 	/** The intake valve's lift, read from a table; see {@link Curve}. */
 	public Curve intakeCurve() {

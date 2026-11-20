@@ -64,6 +64,17 @@ public final class Turbocharger {
 	/** The strongest anti-lag setting. */
 	public static final int MAX_ANTI_LAG = 3;
 
+	/**
+	 * Where a compressor is working against the boost limit set on it, as a whole percent from 0 (making none) to 100 (at the limit
+	 * or beyond): what the goggles show so that the limit dial can be set by reading. Made only of the two figures the block already
+	 * holds. A limit that is not above zero, or a boost that is not a number, reads 0.
+	 */
+	public static int limitPercent(double boost, double limit) {
+		if (!(limit > 0))
+			return 0;
+		return (int) Math.round(Math.clamp(boost / limit, 0, 1) * 100);
+	}
+
 	private final List<Breather> turbine;
 	private final List<Breather> compressor;
 	private final double share;

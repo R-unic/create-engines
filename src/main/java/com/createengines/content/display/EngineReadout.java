@@ -119,6 +119,17 @@ public final class EngineReadout {
 				.component());
 	}
 
+	/**
+	 * The lang key of the fault line: the short name of the cause the engine's health line blames, "No fault" when there is
+	 * none, and "No engine" for a crankshaft that is not part of a built engine.
+	 */
+	public static String faultKey(@Nullable EngineSummary engine) {
+		if (engine == null || engine.state() == EngineState.INCOMPLETE || engine.state() == EngineState.BROKEN)
+			return "display.engine.none";
+		return engine.cause()
+			.displayKey();
+	}
+
 	public static int percent(float share) {
 		return Math.round(share * 100);
 	}

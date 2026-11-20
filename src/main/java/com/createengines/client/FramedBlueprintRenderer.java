@@ -10,6 +10,7 @@ import com.createengines.content.blueprint.FramedBlueprintBlockEntity;
 import com.createengines.content.plate.MakerPlateBlockEntity;
 import com.createengines.engine.blueprint.Blueprint;
 import com.createengines.engine.blueprint.FrameSheet;
+import com.createengines.engine.blueprint.PaperTurn;
 import com.createengines.engine.sim.PlateFigures;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
@@ -74,8 +75,10 @@ public class FramedBlueprintRenderer extends SafeBlockEntityRenderer<FramedBluep
 		float pitch = 1f / SCALE;
 		float cx = (sheet.minU() + (sheet.width() - 1) / 2f) * pitch;
 		float cy = (sheet.minV() + (sheet.height() - 1) / 2f) * pitch;
-		float spanX = (sheet.width() - 1) * pitch / 2f;
-		float spanY = (sheet.height() - 1) * pitch / 2f;
+		// A drawing turned on its side is laid out across the sheet as if the sheet were turned, then turned about its centre
+		int turn = be.turn();
+		float spanX = (PaperTurn.layoutWidth(sheet.width(), sheet.height(), turn) - 1) * pitch / 2f;
+		float spanY = (PaperTurn.layoutHeight(sheet.width(), sheet.height(), turn) - 1) * pitch / 2f;
 		float textScale = Math.max(1, Math.min(sheet.width(), sheet.height()));
 		ms.pushPose();
 		ms.last()
@@ -84,6 +87,11 @@ public class FramedBlueprintRenderer extends SafeBlockEntityRenderer<FramedBluep
 		ms.last()
 			.normal()
 			.mul(new Matrix3f(pose).normal());
+		if (turn != 0) {
+			ms.translate(cx, cy, 0);
+			ms.mulPose(new org.joml.Quaternionf().rotateZ(PaperTurn.radians(turn)));
+			ms.translate(-cx, -cy, 0);
+		}
 		drawPlan(ms, buffer, blueprint, be.partsByHeight(), cx, cy, spanX + HALF, spanY + HALF_HEIGHT, textScale, 8f * Math.max(sheet.width(), sheet.height()));
 		drawText(ms, buffer, blueprint, light, cx, cy, spanX + HALF, spanY + HALF_HEIGHT, textScale);
 		ms.popPose();

@@ -8,6 +8,7 @@ import com.createengines.engine.blueprint.Blueprint;
 import com.createengines.engine.blueprint.BlueprintCodec;
 import com.createengines.engine.blueprint.BlueprintException;
 import com.createengines.engine.blueprint.FrameSheet;
+import com.createengines.engine.blueprint.PaperTurn;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -32,6 +33,8 @@ public class FramedBlueprintBlockEntity extends BlockEntity {
 
 	private @Nullable RecordedBlueprint plan;
 	private @Nullable Blueprint drawing;
+	/** Quarter turns the drawing is turned on the paper ({@link PaperTurn}): kept by the frame that draws the sheet. */
+	private int turn;
 	private static final int SHEET_REFRESH_TICKS = 20;
 	private FrameSheet.Sheet sheet;
 	private List<Blueprint.Part> byHeight = List.of();
@@ -51,6 +54,27 @@ public class FramedBlueprintBlockEntity extends BlockEntity {
 	/** What is hung in the frame, or null if it is empty. */
 	public @Nullable RecordedBlueprint plan() {
 		return plan;
+	}
+
+	/** How far the drawing is turned on the paper, in quarter turns, 0 to 3. */
+	public int turn() {
+		return turn;
+	}
+
+	/** The frame of this one's sheet that holds the drawing the sheet shows, or null if none of them holds one. */
+	public @Nullable FramedBlueprintBlockEntity sheetSource() {
+		FrameSheet.Cell cell = refreshSheet().source();
+		if (cell == null || level == null)
+			return null;
+		Direction facing = getBlockState().getValue(FramedBlueprintBlock.FACING);
+		BlockPos at = cell(worldPosition, FramedBlueprintBlock.paperRight(facing), FramedBlueprintBlock.paperDown(facing), cell);
+		return level.getBlockEntity(at) instanceof FramedBlueprintBlockEntity source && source.drawing() != null ? source : null;
+	}
+
+	/** Turns the drawing a quarter turn more, and tells the clients. */
+	public void turnDisplay() {
+		turn = PaperTurn.next(turn);
+		changed();
 	}
 
 	/** The decoded blueprint, for drawing. Null if the frame is empty or what it holds cannot be read. */
@@ -108,6 +132,8 @@ public class FramedBlueprintBlockEntity extends BlockEntity {
 	/** Empties the frame and gives back the blueprint item it held. */
 	public ItemStack take() {
 		ItemStack out = plan == null ? ItemStack.EMPTY : FramedBlueprintBlock.blueprintItem(plan);
+		// The next blueprint hung here starts upright
+		turn = 0;
 		set(null);
 		changed();
 		return out;
@@ -143,6 +169,8 @@ public class FramedBlueprintBlockEntity extends BlockEntity {
 			RecordedBlueprint.CODEC.encodeStart(NbtOps.INSTANCE, plan)
 				.result()
 				.ifPresent(encoded -> tag.put("Plan", encoded));
+		if (turn != 0)
+			tag.putByte("Turn", (byte) turn);
 	}
 
 	@Override
@@ -154,6 +182,8 @@ public class FramedBlueprintBlockEntity extends BlockEntity {
 				.result()
 				.orElse(null);
 		set(read);
+		// A frame saved before the drawing could be turned has no turn: it reads as upright
+		turn = tag.contains("Turn") ? PaperTurn.normalise(tag.getByte("Turn")) : 0;
 	}
 
 	@Override

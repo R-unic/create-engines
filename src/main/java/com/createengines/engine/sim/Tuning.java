@@ -29,6 +29,10 @@ public final class Tuning {
 	public static volatile boolean oilAgeing = true;
 	/** Whether an engine has a temperature: off, it never warms up or cools and neither penalty nor bonus applies. */
 	public static volatile boolean engineTemperature = true;
+	/** Whether a cold battery gives less and a cold engine makes each spark cost more, see {@link BatteryChemistry}. */
+	public static volatile boolean batteryCold = true;
+	/** Whether a starter draws charge from the engine's batteries while it turns a spark engine over, see {@link BatteryChemistry}. */
+	public static volatile boolean crankingDraw = true;
 	/** Whether a pilot injection can light fuels compression alone can't. */
 	public static volatile boolean pilotInjection = true;
 	public static volatile boolean rotaryEngines = true;
@@ -58,6 +62,8 @@ public final class Tuning {
 		oilDilution = true;
 		oilAgeing = true;
 		engineTemperature = true;
+		batteryCold = true;
+		crankingDraw = true;
 		pilotInjection = true;
 		rotaryEngines = true;
 		heatRecoveryEnabled = true;

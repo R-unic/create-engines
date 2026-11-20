@@ -47,7 +47,14 @@ public class TransmissionBlockEntity extends SplitShaftBlockEntity {
 	/** The farthest it follows the drive back along the network to find the engine. */
 	private static final int MAX_WALK = 64;
 
+	private static final BehaviourType<ScrollValueBehaviour> PROFILE_TYPE = new BehaviourType<>("transmission_shift_profile");
+	/** Where the profile's value box sits on a face, below the gear's (voxels up from the face's bottom). */
+	private static final double SHIFT_PROFILE_Y = 2.5;
+	private static final double GEAR_Y = 8;
+
 	public ScrollValueBehaviour panel;
+	/** Auto's shift profile, see {@link AutoGearbox.Profile}. */
+	public ScrollValueBehaviour shiftProfile;
 
 	private int gear = Gears.NEUTRAL;
 	/** The gear auto has chosen; kept while another setting is selected so it can pick up where it was. */
@@ -97,6 +104,19 @@ public class TransmissionBlockEntity extends SplitShaftBlockEntity {
 		panel.withFormatter(Gears::label);
 		panel.withCallback(value -> updateGear());
 		behaviours.add(panel);
+
+		shiftProfile = new ProfileDial(CELang.translate("value.shift_profile")
+			.component(), this, new ValueBox(SHIFT_PROFILE_Y));
+		shiftProfile.between(0, AutoGearbox.Profile.values().length - 1);
+		shiftProfile.value = AutoGearbox.Profile.NORMAL.setting();
+		shiftProfile.withFormatter(v -> CELang.translate("value.shift_profile." + v)
+			.string());
+		behaviours.add(shiftProfile);
+	}
+
+	/** How eager auto is to shift: economy, normal (the original, and the default) or sport. */
+	public AutoGearbox.Profile profile() {
+		return shiftProfile == null ? AutoGearbox.Profile.NORMAL : AutoGearbox.Profile.fromSetting(shiftProfile.getValue());
 	}
 
 	/** The gear in use now. */
@@ -209,7 +229,7 @@ public class TransmissionBlockEntity extends SplitShaftBlockEntity {
 		if (speed < 1 || capacity <= 0)
 			return;
 		double utilization = engine.networkStress() / (speed * capacity);
-		int next = AutoGearbox.next(autoGear, utilization, (int) Math.min(Integer.MAX_VALUE, level.getGameTime() - lastShift));
+		int next = AutoGearbox.next(profile(), autoGear, utilization, (int) Math.min(Integer.MAX_VALUE, level.getGameTime() - lastShift));
 		if (next != autoGear) {
 			autoGear = next;
 			updateGear();
@@ -294,6 +314,10 @@ public class TransmissionBlockEntity extends SplitShaftBlockEntity {
 			GoggleLines.add(CELang.translate(auto ? "goggles.transmission.auto" : "goggles.transmission.gear",
 					Gears.label(gear), Gears.ratio(gear))
 				.style(ChatFormatting.AQUA), tooltip, 1);
+		if (auto)
+			GoggleLines.add(CELang.translate("goggles.transmission.profile",
+					CELang.translate("value.shift_profile." + profile().setting()).string())
+				.style(ChatFormatting.DARK_AQUA), tooltip, 1);
 		if (isPlayerSneaking)
 			GoggleLines.add(CELang.translate("goggles.transmission.hint")
 				.style(ChatFormatting.DARK_GRAY), tooltip, 2);
@@ -301,12 +325,55 @@ public class TransmissionBlockEntity extends SplitShaftBlockEntity {
 		return true;
 	}
 
+	/**
+	 * The shift profile. It saves under its own key and never touches the shared "ScrollValue" the gear panel uses, so a
+	 * transmission saved before profiles existed reads as normal and the gear is never overwritten.
+	 */
+	private static final class ProfileDial extends ScrollValueBehaviour {
+
+		ProfileDial(Component label, TransmissionBlockEntity be, ValueBoxTransform slot) {
+			super(label, be, slot);
+		}
+
+		@Override
+		public BehaviourType<?> getType() {
+			return PROFILE_TYPE;
+		}
+
+		@Override
+		public void setValueSettings(Player player, ValueSettings settings, boolean ctrlDown) {
+			Operators.record(getWorld(), getPos(), player);
+			super.setValueSettings(player, settings, ctrlDown);
+		}
+
+		@Override
+		public void write(CompoundTag tag, HolderLookup.Provider registries, boolean clientPacket) {
+			tag.putInt("ShiftProfile", value);
+		}
+
+		@Override
+		public void read(CompoundTag tag, HolderLookup.Provider registries, boolean clientPacket) {
+			value = tag.contains("ShiftProfile") ? Math.max(0, Math.min(AutoGearbox.Profile.values().length - 1, tag.getInt("ShiftProfile")))
+				: AutoGearbox.Profile.NORMAL.setting();
+		}
+	}
+
 	/** A value box on any face the shaft does not run out of. */
 	private static class ValueBox extends ValueBoxTransform.Sided {
 
+		private final double y;
+
+		ValueBox() {
+			this(GEAR_Y);
+		}
+
+		ValueBox(double y) {
+			this.y = y;
+		}
+
 		@Override
 		protected Vec3 getSouthLocation() {
-			return VecHelper.voxelSpace(8, 8, 15.5);
+			return VecHelper.voxelSpace(8, y, 15.5);
 		}
 
 		@Override

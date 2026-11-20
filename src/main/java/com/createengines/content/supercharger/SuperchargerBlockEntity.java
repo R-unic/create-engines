@@ -10,6 +10,7 @@ import com.createengines.content.LoopSource;
 import com.createengines.content.MachineLoopSound;
 import com.createengines.engine.Signals;
 import com.createengines.engine.sim.Supercharger;
+import com.createengines.engine.sim.Turbocharger;
 import com.createengines.engine.topology.EngineMember;
 import com.createengines.registry.CELang;
 import com.createengines.registry.CESounds;
@@ -218,6 +219,11 @@ public class SuperchargerBlockEntity extends KineticBlockEntity implements Engin
 		else {
 			GoggleLines.add(CELang.translate("goggles.supercharger.boost", String.format(Locale.ROOT, "%.2f", boost))
 				.style(boost > 0.05f ? ChatFormatting.AQUA : ChatFormatting.GRAY), tooltip, 1);
+			if (boost > 0.05f) {
+				int working = Turbocharger.limitPercent(boost, boostLimit());
+				GoggleLines.add(CELang.translate("goggles.supercharger.working", working)
+					.style(working >= 95 ? ChatFormatting.GOLD : ChatFormatting.DARK_AQUA), tooltip, 1);
+			}
 			GoggleLines.add(CELang.translate("goggles.supercharger.speed", Math.round(shaftRpm()))
 				.style(ChatFormatting.GRAY), tooltip, 1);
 			if (bypass > 0.05f)

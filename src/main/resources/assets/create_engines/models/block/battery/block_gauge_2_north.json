@@ -1,0 +1,75 @@
+{
+  "parent": "block/block",
+  "ambientocclusion": false,
+  "textures": {
+    "body": "create:block/zinc_block",
+    "band": "create_engines:block/brass",
+    "cap": "create:block/andesite_casing",
+    "pole": "create_engines:block/cast_iron",
+    "lid": "create_engines:block/black_oxide",
+    "vent": "create_engines:block/steel",
+    "dark": "create_engines:block/screen",
+    "particle": "create:block/zinc_block",
+    "lit": "create_engines:block/heat_kindled"
+  },
+  "elements": [
+    {
+      "from": [
+        3.4,
+        12.4,
+        1.3
+      ],
+      "to": [
+        5.6,
+        13.1,
+        1.5
+      ],
+      "faces": {
+        "north": {
+          "texture": "#lit"
+        },
+        "east": {
+          "texture": "#lit"
+        },
+        "west": {
+          "texture": "#lit"
+        },
+        "up": {
+          "texture": "#lit"
+        },
+        "down": {
+          "texture": "#lit"
+        }
+      }
+    },
+    {
+      "from": [
+        5.9,
+        12.4,
+        1.3
+      ],
+      "to": [
+        8.1,
+        13.1,
+        1.5
+      ],
+      "faces": {
+        "north": {
+          "texture": "#lit"
+        },
+        "east": {
+          "texture": "#lit"
+        },
+        "west": {
+          "texture": "#lit"
+        },
+        "up": {
+          "texture": "#lit"
+        },
+        "down": {
+          "texture": "#lit"
+        }
+      }
+    }
+  ]
+}

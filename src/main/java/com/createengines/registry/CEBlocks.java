@@ -20,6 +20,7 @@ import com.createengines.content.airflow.PortOpeningBlock;
 import com.createengines.content.airflow.ThrottleBlock;
 import com.createengines.content.alternator.AlternatorBlock;
 import com.createengines.content.battery.BatteryBlock;
+import com.createengines.engine.sim.BatteryChemistry;
 import com.createengines.content.camshaft.CamLobeBlock;
 import com.createengines.content.camshaft.CamshaftBlock;
 import com.createengines.content.crankshaft.CrankThrowBlock;
@@ -68,6 +69,7 @@ import net.minecraft.core.Direction;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockBehaviour;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.block.state.properties.BooleanProperty;
 import net.minecraft.world.level.material.MapColor;
 import net.neoforged.neoforge.client.model.generators.ConfiguredModel;
 import net.neoforged.neoforge.client.model.generators.ModelFile;
@@ -412,7 +414,7 @@ public final class CEBlocks {
 		.properties(p -> part(p)
 			.mapColor(MapColor.METAL))
 		.transform(TagGen.pickaxeOnly())
-		.blockstate((c, p) -> BlockStateGen.simpleBlock(c, p, s -> AssetLookup.partialBaseModel(c, p)))
+		.blockstate(CEBlocks::batteryBlockstate)
 		.item()
 		.transform(ModelGen.customItemModel())
 		.register();
@@ -779,6 +781,7 @@ public final class CEBlocks {
 
 	public static final BlockEntry<TransmissionBlock> TRANSMISSION =
 		REGISTRATE.block("transmission", TransmissionBlock::new)
+			.transform(DisplaySource.displaySource(CEDisplaySources.TRANSMISSION_GEAR))
 			.initialProperties(SharedProperties::softMetal)
 			.properties(p -> part(p)
 				.mapColor(MapColor.METAL))
@@ -946,7 +949,8 @@ public final class CEBlocks {
 			.transform(DisplaySource.displaySource(CEDisplaySources.ENGINE_TEMPERATURE))
 			.transform(DisplaySource.displaySource(CEDisplaySources.ENGINE_OIL))
 			.transform(DisplaySource.displaySource(CEDisplaySources.ENGINE_BOOST))
-			.transform(DisplaySource.displaySource(CEDisplaySources.ENGINE_TORQUE));
+			.transform(DisplaySource.displaySource(CEDisplaySources.ENGINE_TORQUE))
+			.transform(DisplaySource.displaySource(CEDisplaySources.ENGINE_FAULT));
 	}
 
 	/** A pipe is a core with an arm model on each side it is connected through. */
@@ -986,6 +990,42 @@ public final class CEBlocks {
 				.condition(ManifoldBlock.CONNECTIONS.get(direction), true)
 				.condition(Encasing.ENCASED, false)
 				.end();
+	}
+
+	/**
+	 * The battery: the model for the way its neighbours join it (one of 32, {@code block_jNESWU} with a 1 for each joined side),
+	 * and over it the lamp strip on each side's lid, dark and lit to the blockstate's charge. A side that is joined to another
+	 * battery has no lid face, so it has no lamps.
+	 */
+	private static void batteryBlockstate(DataGenContext<Block, BatteryBlock> context, RegistrateBlockstateProvider provider) {
+		var builder = provider.getMultipartBuilder(context.get());
+		BooleanProperty[] joins = { BatteryBlock.NORTH, BatteryBlock.EAST, BatteryBlock.SOUTH, BatteryBlock.WEST, BatteryBlock.UP };
+		for (int bits = 0; bits < 32; bits++) {
+			StringBuilder name = new StringBuilder("j");
+			for (int i = 0; i < joins.length; i++)
+				name.append((bits >> i & 1) != 0 ? '1' : '0');
+			var part = builder.part()
+				.modelFile(AssetLookup.partialBaseModel(context, provider, name.toString()))
+				.addModel();
+			for (int i = 0; i < joins.length; i++)
+				part.condition(joins[i], (bits >> i & 1) != 0);
+			part.end();
+		}
+		String[] directions = { "north", "east", "south", "west" };
+		for (int i = 0; i < 4; i++) {
+			builder.part()
+				.modelFile(AssetLookup.partialBaseModel(context, provider, "dark", directions[i]))
+				.addModel()
+				.condition(joins[i], false)
+				.end();
+			for (int stage = 1; stage <= BatteryChemistry.GAUGE_STAGES; stage++)
+				builder.part()
+					.modelFile(AssetLookup.partialBaseModel(context, provider, "gauge", String.valueOf(stage), directions[i]))
+					.addModel()
+					.condition(joins[i], false)
+					.condition(BatteryBlock.CHARGE, stage)
+					.end();
+		}
 	}
 
 	/** A pipe that also glows by its heat level: an overlay of hot metal over the fins at kindled and at seething. */

@@ -3,6 +3,7 @@ package com.createengines.registry;
 import static com.createengines.CreateEngines.REGISTRATE;
 
 import com.createengines.content.blueprint.BlueprintItem;
+import com.createengines.content.headphones.HeadphonesItem;
 import com.createengines.content.jerrycan.JerryCanItem;
 import com.createengines.content.tool.BankBuilderItem;
 import com.createengines.content.tool.TimingToolItem;
@@ -78,6 +79,16 @@ public final class CEItems {
 	public static final ItemEntry<BlueprintItem> BLUEPRINT = REGISTRATE.item("blueprint", BlueprintItem::new)
 		.properties(p -> p.stacksTo(1))
 		.model((c, p) -> p.generated(c, p.modLoc("item/blueprint")))
+		.register();
+
+	/**
+	 * Worn on the head, or in a Curios head slot, they muffle every sound from the world for the wearer (not music, menus or
+	 * voices), never silence it. The muffling is client side: see client.HeadphoneMuffle.
+	 */
+	public static final ItemEntry<HeadphonesItem> HEADPHONES = REGISTRATE.item("headphones", HeadphonesItem::new)
+		.properties(p -> p.stacksTo(1))
+		.lang("Noise-Cancelling Headphones")
+		.model((c, p) -> p.withExistingParent(c.getName(), p.modLoc("block/headphones/item")))
 		.register();
 
 	private CEItems() {

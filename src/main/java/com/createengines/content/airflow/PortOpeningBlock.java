@@ -61,8 +61,11 @@ public class PortOpeningBlock extends DirectionalBlock implements AirflowPort, I
 	 * all: see {@code CylinderFault.SUBMERGED}.)
 	 */
 	public static boolean isFlooded(BlockGetter level, BlockPos pos, BlockState state) {
-		return !level.getFluidState(pos.relative(state.getValue(FACING)))
-			.isEmpty();
+		BlockPos front = pos.relative(state.getValue(FACING));
+		return !level.getFluidState(front)
+			.isEmpty()
+			// On a moving structure, the sea the mouth is in is in the world and not in the plot
+			|| level instanceof net.minecraft.world.level.Level world && com.createengines.compat.sable.SableCompat.fluidInWorldAt(world, front);
 	}
 
 	@Override

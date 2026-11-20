@@ -45,6 +45,8 @@ class ConfigMatrixTest {
 		new Switch("oilDilution", v -> Tuning.oilDilution = v),
 		new Switch("oilAgeing", v -> Tuning.oilAgeing = v),
 		new Switch("engineTemperature", v -> Tuning.engineTemperature = v),
+		new Switch("batteryCold", v -> Tuning.batteryCold = v),
+		new Switch("crankingDraw", v -> Tuning.crankingDraw = v),
 		new Switch("pilotInjection", v -> Tuning.pilotInjection = v),
 		new Switch("rotaryEngines", v -> Tuning.rotaryEngines = v),
 		new Switch("heatRecoveryEnabled", v -> Tuning.heatRecoveryEnabled = v),

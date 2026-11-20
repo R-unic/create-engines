@@ -62,6 +62,16 @@ class DiagnosisTest {
 	}
 
 	@Test
+	void everyCauseHasADisplayKeyAndTheyAreAllDifferent() {
+		java.util.Set<String> seen = new java.util.HashSet<>();
+		for (Cause cause : Cause.values()) {
+			assertEquals("display.engine.fault." + cause.name().toLowerCase(java.util.Locale.ROOT), cause.displayKey());
+			org.junit.jupiter.api.Assertions.assertTrue(seen.add(cause.displayKey()), "Two causes share " + cause.displayKey());
+		}
+		assertEquals("display.engine.fault.none", Cause.NONE.displayKey());
+	}
+
+	@Test
 	void aSoundEngineIsHealthy() {
 		assertEquals(Diagnosis.Report.HEALTHY, Diagnosis.assess(true, 4, 4, causes(), 0.01, 1, 0));
 		assertEquals(Diagnosis.Report.HEALTHY, Diagnosis.assess(false, 4, 0, causes(), 0, 1, 1));

@@ -4,7 +4,7 @@ Every data file a data pack, a mod's resources or a script can supply to Create:
 goes, every key, its range and what the key does. Settings in the TOML config files are in [CONFIG.md](CONFIG.md); how to do
 common jobs with these files is in [PACKS.md](PACKS.md).
 
-Names, keys, defaults and ranges of the `fuel` and `part_stats` data maps and the `part_effects` files are **frozen at 2.0**
+Names, keys, defaults and ranges of the `fuel`, `part_stats` and `part_effect` data maps and the `part_effects` and `cam_profiles` files are **frozen at 2.0**
 (API version 1.0.0, see [API.md](API.md)): a key is never removed or renamed in 2.x, only added. A test
 (`ScriptAndDataSurfaceTest`) fails the build if one changes, and `GuideDocsTest` fails it if this page stops naming one.
 
@@ -13,6 +13,8 @@ Names, keys, defaults and ranges of the `fuel` and `part_stats` data maps and th
 | [`fuel`](#fuels-the-fuel-data-map) data map | `data/create_engines/data_maps/fluid/fuel.json` | which fluids an engine burns, and how |
 | [fuel tags](#fuel-tags) | `data/c/tags/fluid/<name>.json` | the shortcut: a fluid in a fuel tag is a fuel with that fuel's numbers |
 | [`part_effects`](#part-effects-the-four-precision-parts) | `data/create_engines/part_effects/<part>.json` | what each precision part does to a cylinder |
+| [`part_effect`](#a-part-of-your-own-the-part-effect-data-map) data map | `data/create_engines/data_maps/block/part_effect.json` | names the effect file an addon's own cylinder or head block adds |
+| [`cam_profiles`](#cam-profiles-when-the-valves-open) | `data/create_engines/cam_profiles/<kind>.json` | when the valves of a piston cylinder, and the ports of a rotor, open and shut |
 | [`part_stats`](#part-stats-retuning-a-whole-kind-of-cylinder) data map | `data/create_engines/data_maps/block/part_stats.json` | scales over a whole kind of cylinder or rotor chamber |
 | [refining recipes](#refining-recipes) | `data/<namespace>/recipe/refining/<name>.json` | a route a refining column can run |
 | [other tags](#other-tags-and-recipes) | `data/create_engines/tags/...` | what lubricates badly, what ferments |
@@ -139,6 +141,47 @@ A file that is broken (not a JSON object, a value that is not a number or is out
 part keeps its built-in values**; nothing stops a world loading. `/ce parts` lists the files read at the last reload and
 which part is using a pack's values. The files reload with the data packs (`/reload`); an engine already built keeps the values
 it was built with until it next rebuilds. Tooltips, Ponder pages and the JEI and EMI pages still show the built-in figures.
+
+### A part of your own: the part effect data map
+
+A third tier of cylinder, or a fifth kind of part, is a block of your own that names a `part_effects` file of your own. The block
+is a Cylinder or a Cylinder Head: a data pack cannot make one, an addon registers a block of this mod's
+`CylinderBlock` or `CylinderHeadBlock` class under its own name (with its own model and texture), and a data pack or the addon's
+own resources then points it at a file:
+
+```json
+{ "values": { "mymod:racing_cylinder": { "effect": "mymod:racing_bore" } } }
+```
+
+at `data/create_engines/data_maps/block/part_effect.json` (the one key, `effect`, is required and is the id of the file), and the effect itself in `data/mymod/part_effects/racing_bore.json`,
+with the same keys, ranges and blend rule as the four above. It is multiplied in **after** the built-in parts, so a racing
+cylinder that is also bored and forged has all of them. A cylinder block and a head that name the same file count it once. A
+block that names a file that was not read has no effect, and a part effect file of a namespace other than `create_engines` that no
+block names does nothing. Any block of this mod that names one would change engines built before 2.0, so a test holds that none
+does. `/ce parts` lists the files read.
+
+## Cam profiles: when the valves open
+
+Each cylinder's valves open and shut at fixed angles of its cycle, and a rotor's ports at the angles of its own. The mod ships them
+as `data/create_engines/cam_profiles/basic.json` (every piston cylinder) and `rotary.json` (every rotor), holding the built-in
+values, and a test pins them to the code. A pack changes one by providing the **same path**. Angles are in cycle degrees,
+0 up to (not including) 720, where 0 starts the intake stroke and 360 is firing top dead centre.
+
+| Key | Is |
+|---|---|
+| `intake_open` | the angle at which the intake valve (or port) opens |
+| `intake_close` | the angle at which it shuts |
+| `exhaust_open` | the angle at which the exhaust valve (or port) opens |
+| `exhaust_close` | the angle at which it shuts |
+| `injection` | the angle at which the injector fires |
+| `spark` | the angle at which a spark plug fires |
+
+Every key is optional and a key a file leaves out keeps the built-in angle (basic: 710, 220, 500, 10, 345 and 350; rotary: 700, 230, 500,
+20, 340 and 350). Each valve must be open for between 40 and 400 degrees. A file that is broken (not a JSON object, a value that is
+not a number, an angle out of range, a valve open too short or too long, an unknown key) is **logged and that profile keeps its
+built-in angles**. The profile times the simulation, which is on the server: the valves drawn on a client keep the built-in shape.
+`/ce parts` lists the files read and whether a profile is the pack's. The files reload with the data packs; an engine already running
+keeps the profile it was built with until it next rebuilds.
 
 ## Part stats: retuning a whole kind of cylinder
 

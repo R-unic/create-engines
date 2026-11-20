@@ -1,6 +1,13 @@
 # The names a KubeJS script and a pack's data maps use, as ScriptAndDataSurfaceTest reads them from the source.
 # Never edit a line: removing or changing one is a major change. A new line is a minor change (bump
 # ApiVersion.MINOR) and is added with SURFACE_REGEN=1.
+data cam_profiles exhaust_close optional range 0..720
+data cam_profiles exhaust_open optional range 0..720
+data cam_profiles injection optional range 0..720
+data cam_profiles intake_close optional range 0..720
+data cam_profiles intake_open optional range 0..720
+data cam_profiles spark optional range 0..720
+data cam_profiles valve duration 40..400
 data fuel air_per_mb required
 data fuel autoignition_temperature required
 data fuel charge_cooling optional 0.0
@@ -9,6 +16,15 @@ data fuel energy_per_mb required
 data fuel preignition_temperature optional 0.0
 data fuel soot_factor optional 1.0
 data fuel sulfur optional
+data part_effect effect required
+data part_effects breathing optional 1.0 range 0.1..10
+data part_effects burn_duration optional 1.0 range 0.1..10
+data part_effects compression_ratio optional 1.0 range 0.1..10
+data part_effects friction_static optional 1.0 range 0.1..10
+data part_effects friction_viscous optional 1.0 range 0.1..10
+data part_effects ignition_delay optional 1.0 range 0.1..10
+data part_effects inertia optional 1.0 range 0.1..10
+data part_effects injector_flow optional 1.0 range 0.1..10
 data part_stats burn_duration optional 1.0 range 0.1..10
 data part_stats compression_ratio optional 1.0 range 0.1..10
 data part_stats displacement optional 1.0 range 0.1..10

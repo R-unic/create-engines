@@ -46,12 +46,22 @@ public final class PartEffectLoader extends SimpleJsonResourceReloadListener {
 	@Override
 	protected void apply(Map<ResourceLocation, JsonElement> files, ResourceManager manager, ProfilerFiller profiler) {
 		Map<PartEffects.Part, PartEffects.Effect> found = new EnumMap<>(PartEffects.Part.class);
+		Map<String, PartEffects.Effect> own = new HashMap<>();
 		List<String> lines = new ArrayList<>();
 		for (Map.Entry<ResourceLocation, JsonElement> file : files.entrySet()) {
 			ResourceLocation id = file.getKey();
 			if (!id.getNamespace()
-				.equals(CreateEngines.MOD_ID))
+				.equals(CreateEngines.MOD_ID)) {
+				// A part of a pack's or an addon's own, named by a block through the part_effect data map
+				try {
+					own.put(id.toString(), parse(file.getValue()));
+					lines.add("part_effects/" + id + ".json: used (a part of its own)");
+				} catch (RuntimeException e) {
+					CreateEngines.LOGGER.warn("part_effects of {} was not used, so a block that names it has no effect: {}", id, e.getMessage());
+					lines.add("part_effects/" + id + ".json: NOT used, a block that names it has no effect: " + e.getMessage());
+				}
 				continue;
+			}
 			PartEffects.Part part = partNamed(id.getPath());
 			if (part == null) {
 				CreateEngines.LOGGER.warn("part_effects/{}.json is not a part this version knows (bore, head, piston, injector)",
@@ -68,7 +78,7 @@ public final class PartEffectLoader extends SimpleJsonResourceReloadListener {
 				lines.add("part_effects/" + id.getPath() + ".json: NOT used, the built-in " + part.fileName() + " stays: " + e.getMessage());
 			}
 		}
-		PartEffects.set(found);
+		PartEffects.set(found, own);
 		lines.sort(null);
 		report = List.copyOf(lines);
 	}

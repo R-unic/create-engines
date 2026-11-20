@@ -11,6 +11,7 @@ import com.createengines.content.LoopSource;
 import com.createengines.content.MachineLoopSound;
 import com.createengines.content.effects.EngineEffects;
 import com.createengines.content.effects.GasParticleOptions;
+import com.createengines.content.effects.VentJet;
 import com.createengines.engine.Signals;
 import com.createengines.engine.TurboStatus;
 import com.createengines.engine.sim.Turbocharger;
@@ -71,6 +72,10 @@ public class TurbochargerBlockEntity extends SmartBlockEntity
 	/** Client only: whether the engine was off the throttle at the last tick; true while there is no status to go on. */
 	private boolean wasLifted = true;
 	private float heldBoost;
+	/** Client only: the blow-off jet still to be thrown, in ticks, out of how many it started with, and the boost it carries. */
+	private int ventLeft;
+	private int ventTotal;
+	private float ventBoost;
 	private final EffectRate popRate = new EffectRate(EffectRate.BANG_INTERVAL * 2);
 	/** The valve opens at most about once a second on a throttle lift, however the driver blips it. */
 	private final EffectRate liftRate = new EffectRate(20);
@@ -186,6 +191,7 @@ public class TurbochargerBlockEntity extends SmartBlockEntity
 			if (loopLevel() > 0.02f)
 				MachineLoopSound.ensurePlaying(this, worldPosition, CESounds.TURBO_WHISTLE.get(), 0.09f, this);
 			blowOff();
+			ventJet();
 		}
 	}
 
@@ -234,6 +240,8 @@ public class TurbochargerBlockEntity extends SmartBlockEntity
 		boolean regulating = status != null && status.wastegate() > 0.5f && !dumping();
 		boolean chuffs = !opens && regulating && !wasRegulating && boost >= 0.25f && chuffRate.allow(level);
 		wasRegulating = regulating;
+		if (chuffs && CEClientConfig.particles())
+			wastegateChuff(boost);
 		if (chuffs && CEClientConfig.boostVolume() > 0)
 			level.playLocalSound(worldPosition, CESounds.TURBO_BLOWOFF.get(), SoundSource.BLOCKS,
 				Math.min(0.9f, 0.3f + boost * 0.5f) * CEClientConfig.boostVolume(), 1.15f + level.random.nextFloat() * 0.1f,
@@ -249,7 +257,10 @@ public class TurbochargerBlockEntity extends SmartBlockEntity
 		wasVenting = venting;
 	}
 
-	/** The dumped charge, seen: a burst of cold white air off the compressor end, bigger for more boost. */
+	/**
+	 * The dumped charge, seen: a burst of cold white air off the compressor end, bigger for more boost, which then goes on
+	 * as a jet for a few ticks ({@link #ventJet}) so the blow-off is a rush of air and not a single puff.
+	 */
 	private void ventCharge(float boost) {
 		Vec3 out = Vec3.atLowerCornerOf(getBlockState().getValue(TurbochargerBlock.FACING)
 			.getNormal());
@@ -257,10 +268,57 @@ public class TurbochargerBlockEntity extends SmartBlockEntity
 			.add(out.scale(0.6));
 		var random = level.random;
 		GasParticleOptions air = new GasParticleOptions(0.92f, 0.94f, 0.97f, 0.5f, 0.55f, 0.1f, 12);
-		int puffs = 5 + Math.round(4 * Math.min(1.5f, boost));
+		int puffs = VentJet.burst(boost);
 		for (int i = 0; i < puffs; i++)
-			level.addParticle(air, at.x, at.y, at.z, out.x * 0.1 + (random.nextDouble() - 0.5) * 0.3,
-				out.y * 0.1 + (random.nextDouble() - 0.5) * 0.3, out.z * 0.1 + (random.nextDouble() - 0.5) * 0.3);
+			level.addParticle(air, at.x, at.y, at.z, out.x * 0.14 + (random.nextDouble() - 0.5) * 0.3,
+				out.y * 0.14 + (random.nextDouble() - 0.5) * 0.3, out.z * 0.14 + (random.nextDouble() - 0.5) * 0.3);
+		ventTotal = VentJet.duration(boost);
+		ventLeft = ventTotal;
+		ventBoost = boost;
+	}
+
+	/**
+	 * The rest of the blow-off: a narrow jet of air out of the compressor end, quick at first and thinning to nothing over
+	 * the duration {@link VentJet} gives for the boost that was dumped. Fewer puffs at a lower effect density.
+	 */
+	private void ventJet() {
+		if (ventLeft <= 0)
+			return;
+		int count = VentJet.perTick(ventLeft, ventTotal);
+		float strength = VentJet.strength(ventLeft, ventTotal);
+		ventLeft--;
+		if (!CEClientConfig.particles())
+			return;
+		Vec3 out = Vec3.atLowerCornerOf(getBlockState().getValue(TurbochargerBlock.FACING)
+			.getNormal());
+		Vec3 at = Vec3.atCenterOf(worldPosition)
+			.add(out.scale(0.6));
+		var random = level.random;
+		GasParticleOptions air = new GasParticleOptions(0.92f, 0.94f, 0.97f, 0.35f + 0.2f * strength, 0.3f + 0.3f * strength, 0.05f, 10);
+		double speed = 0.08 + 0.12 * strength * Math.min(1.5f, ventBoost);
+		for (int i = 0; i < count; i++)
+			if (random.nextDouble() < CEClientConfig.effectDensity())
+				level.addParticle(air, at.x, at.y, at.z, out.x * speed + (random.nextDouble() - 0.5) * 0.06,
+					out.y * speed + (random.nextDouble() - 0.5) * 0.06, out.z * speed + (random.nextDouble() - 0.5) * 0.06);
+	}
+
+	/**
+	 * The wastegate swinging open to hold the limit, seen: a small grey puff or two off the turbine end, where it lets
+	 * exhaust round the wheel. Softer and dirtier than the blow-off's white air.
+	 */
+	private void wastegateChuff(float boost) {
+		Vec3 out = Vec3.atLowerCornerOf(getBlockState().getValue(TurbochargerBlock.FACING)
+			.getOpposite()
+			.getNormal());
+		Vec3 at = Vec3.atCenterOf(worldPosition)
+			.add(out.scale(0.6));
+		var random = level.random;
+		GasParticleOptions puff = new GasParticleOptions(0.62f, 0.62f, 0.64f, 0.3f, 0.4f, 0.2f, 14);
+		int puffs = VentJet.chuff(boost);
+		for (int i = 0; i < puffs; i++)
+			if (random.nextDouble() < CEClientConfig.effectDensity())
+				level.addParticle(puff, at.x, at.y, at.z, out.x * 0.05 + (random.nextDouble() - 0.5) * 0.08,
+					0.03 + random.nextDouble() * 0.03, out.z * 0.05 + (random.nextDouble() - 0.5) * 0.08);
 	}
 
 	/**
@@ -320,6 +378,11 @@ public class TurbochargerBlockEntity extends SmartBlockEntity
 		else {
 			GoggleLines.add(CELang.translate("goggles.turbo.boost", String.format(Locale.ROOT, "%.2f", current.boost()))
 				.style(current.boost() > 0.05f ? ChatFormatting.AQUA : ChatFormatting.GRAY), tooltip, 1);
+			if (current.compressor() && current.boost() > 0.05f) {
+				int working = Turbocharger.limitPercent(current.boost(), boostLimit());
+				GoggleLines.add(CELang.translate("goggles.turbo.working", working)
+					.style(working >= 95 ? ChatFormatting.GOLD : ChatFormatting.DARK_AQUA), tooltip, 1);
+			}
 			if (current.compressor() && Math.abs(current.charge() - current.boost()) >= 0.02f)
 				GoggleLines.add(CELang.translate("goggles.turbo.charge", String.format(Locale.ROOT, "%.2f", current.charge()))
 					.style(ChatFormatting.DARK_AQUA), tooltip, 1);

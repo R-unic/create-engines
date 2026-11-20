@@ -368,7 +368,8 @@ public final class EngineEffects {
 		double x = block.getX() + 0.15 + random.nextDouble() * 0.7;
 		double y = block.getY() + 1.03;
 		double z = block.getZ() + 0.15 + random.nextDouble() * 0.7;
-		if (level.isRainingAt(above)) {
+		// Rain falls where the engine is in the world, which on a moving structure is not where its plot is
+		if (level.isRainingAt(com.createengines.compat.sable.SableCompat.worldBlockPos(level, above))) {
 			if (random.nextFloat() >= 0.9f * heat)
 				return;
 			level.addParticle(new GasParticleOptions(0.95f, 0.95f, 0.96f, 0.6f, 0.6f, 0.22f, 18), x, y, z,

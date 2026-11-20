@@ -84,6 +84,108 @@ class AutoGearboxTest {
 			}
 	}
 
+	// Shift profiles
+
+	@Test
+	void theNormalProfileIsTheOriginalBehaviourExactly() {
+		AutoGearbox.Profile normal = AutoGearbox.Profile.NORMAL;
+		assertEquals(AutoGearbox.DOWNSHIFT_ABOVE, normal.downshiftAbove);
+		assertEquals(AutoGearbox.FIT, normal.fit);
+		assertEquals(AutoGearbox.CLIMB_TO, normal.climbTo);
+		assertEquals(AutoGearbox.DOWN_DWELL, normal.downDwell);
+		assertEquals(AutoGearbox.UP_DWELL, normal.upDwell);
+		for (int gear = Gears.FIRST; gear <= Gears.TOP; gear++)
+			for (double u = 0; u < 3; u += 0.013)
+				for (int ticks : new int[] {0, 9, 10, 29, 30, LONG})
+					assertEquals(AutoGearbox.next(gear, u, ticks), AutoGearbox.next(normal, gear, u, ticks),
+						"gear " + gear + " load " + u + " ticks " + ticks);
+	}
+
+	@Test
+	void everyProfileKeepsItsThresholdsInOrderSoItSettles() {
+		for (AutoGearbox.Profile p : AutoGearbox.Profile.values()) {
+			assertTrue(p.climbTo <= p.fit, p + ": a downshift must not land where it would climb straight back");
+			assertTrue(p.fit < p.downshiftAbove, p + ": a downshift must land under where it downshifts");
+			assertTrue(p.downDwell > 0 && p.upDwell > 0, p + ": waits are real");
+		}
+	}
+
+	@Test
+	void theProfilesAreOrderedFromTallToLowInTheirEagernessToClimb() {
+		AutoGearbox.Profile eco = AutoGearbox.Profile.ECONOMY;
+		AutoGearbox.Profile normal = AutoGearbox.Profile.NORMAL;
+		AutoGearbox.Profile sport = AutoGearbox.Profile.SPORT;
+		assertTrue(eco.climbTo > normal.climbTo && normal.climbTo > sport.climbTo);
+		assertTrue(eco.downshiftAbove > normal.downshiftAbove && normal.downshiftAbove > sport.downshiftAbove);
+		assertTrue(eco.upDwell < normal.upDwell && normal.upDwell < sport.upDwell);
+	}
+
+	@Test
+	void everyProfileSettlesInsteadOfHuntingAtEveryLoad() {
+		for (AutoGearbox.Profile profile : AutoGearbox.Profile.values())
+			for (double demandInFirst = 0.01; demandInFirst < 0.9; demandInFirst += 0.01) {
+				int gear = Gears.FIRST;
+				int last = gear;
+				int shifts = 0;
+				for (int i = 0; i < 600; i++) {
+					double utilization = demandInFirst * Gears.ratio(Gears.FIRST) / Gears.ratio(gear);
+					gear = AutoGearbox.next(profile, gear, utilization, LONG);
+					if (gear != last) {
+						shifts++;
+						last = gear;
+					}
+				}
+				assertTrue(shifts <= Gears.TOP, profile + " shifted " + shifts + " times at " + demandInFirst);
+				// and at rest it is not about to shift again
+				double settled = demandInFirst * Gears.ratio(Gears.FIRST) / Gears.ratio(gear);
+				assertEquals(gear, AutoGearbox.next(profile, gear, settled, LONG), profile + " not at rest at " + demandInFirst);
+			}
+	}
+
+	@Test
+	void aClimbNeverLandsWhereTheProfileWouldDropOutAgain() {
+		for (AutoGearbox.Profile profile : AutoGearbox.Profile.values())
+			for (double u = 0.01; u < 1.2; u += 0.01)
+				for (int gear = Gears.FIRST; gear < Gears.TOP; gear++) {
+					if (AutoGearbox.next(profile, gear, u, LONG) != gear + 1)
+						continue;
+					double there = AutoGearbox.predicted(u, gear, gear + 1);
+					assertTrue(there <= profile.climbTo, profile + " climbed into " + there);
+					assertTrue(AutoGearbox.next(profile, gear + 1, there, LONG) >= gear + 1, profile + " hunts at " + u);
+				}
+	}
+
+	@Test
+	void sportDropsAtALoadNormalHoldsAndEconomyClimbsWhereNormalWaits() {
+		// 0.8 in gear 7: normal holds (under 0.9) but sport (over 0.75) drops
+		assertEquals(7, AutoGearbox.next(AutoGearbox.Profile.NORMAL, 7, 0.8, LONG));
+		assertTrue(AutoGearbox.next(AutoGearbox.Profile.SPORT, 7, 0.8, LONG) < 7);
+		// A load so that gear 8 would sit at 0.75: normal will not climb (over 0.7), economy will (under 0.8)
+		double u = 0.75 * Gears.ratio(8) / Gears.ratio(7);
+		assertEquals(7, AutoGearbox.next(AutoGearbox.Profile.NORMAL, 7, u, LONG));
+		assertEquals(8, AutoGearbox.next(AutoGearbox.Profile.ECONOMY, 7, u, LONG));
+	}
+
+	@Test
+	void eachProfileKeepsItsOwnWaits() {
+		for (AutoGearbox.Profile p : AutoGearbox.Profile.values()) {
+			assertEquals(5, AutoGearbox.next(p, 5, 1.5, p.downDwell - 1), p + " downshifts too soon");
+			assertTrue(AutoGearbox.next(p, 5, 1.5, p.downDwell) < 5, p + " will not downshift after its wait");
+			assertEquals(5, AutoGearbox.next(p, 5, 0.01, p.upDwell - 1), p + " climbs too soon");
+			assertEquals(6, AutoGearbox.next(p, 5, 0.01, p.upDwell), p + " will not climb after its wait");
+		}
+	}
+
+	@Test
+	void theDialValueMapsToAProfileAndAnythingElseIsNormal() {
+		for (AutoGearbox.Profile p : AutoGearbox.Profile.values())
+			assertEquals(p, AutoGearbox.Profile.fromSetting(p.setting()));
+		assertEquals(AutoGearbox.Profile.NORMAL, AutoGearbox.Profile.fromSetting(-1));
+		assertEquals(AutoGearbox.Profile.NORMAL, AutoGearbox.Profile.fromSetting(3));
+		assertEquals(AutoGearbox.Profile.NORMAL, AutoGearbox.Profile.fromSetting(Integer.MAX_VALUE));
+		assertEquals(1, AutoGearbox.Profile.NORMAL.setting(), "The default dial value of 1 must be the normal profile");
+	}
+
 	@Test
 	void neutralOrReverseStartsFromFirst() {
 		assertEquals(Gears.FIRST, AutoGearbox.next(Gears.NEUTRAL, 0.3, LONG));

@@ -1,0 +1,24 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "equipment",
+  "key": {
+    "I": {
+      "item": "create:iron_sheet"
+    },
+    "B": {
+      "item": "create:brass_sheet"
+    },
+    "W": {
+      "tag": "minecraft:wool"
+    }
+  },
+  "pattern": [
+    "III",
+    "B B",
+    "W W"
+  ],
+  "result": {
+    "count": 1,
+    "id": "create_engines:headphones"
+  }
+}

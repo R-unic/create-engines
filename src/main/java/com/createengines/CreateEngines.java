@@ -68,6 +68,7 @@ public class CreateEngines {
 		modContainer.registerConfig(ModConfig.Type.SERVER, CEConfig.SPEC, CEConfig.FILE);
 
 		NeoForge.EVENT_BUS.addListener(com.createengines.engine.PartEffectLoader::onAddListeners);
+		NeoForge.EVENT_BUS.addListener(com.createengines.engine.CamProfileLoader::onAddListeners);
 		NeoForge.EVENT_BUS.addListener(com.createengines.command.CeCommand::register);
 		NeoForge.EVENT_BUS.addListener(com.createengines.command.CeCommand::onServerStarted);
 		NeoForge.EVENT_BUS.addListener(com.createengines.content.PaintMigration::onChunkLoad);

@@ -98,6 +98,7 @@ data:data/create_engines/recipe/framed_blueprint.json	950126846ddc44734880b16404
 data:data/create_engines/recipe/fuel_injector.json	5d631f71a80570577c85f37e906de2711fbbf65c
 data:data/create_engines/recipe/governor.json	6ed1870bc03bcccd8dd961d899c6868cb4260b4c
 data:data/create_engines/recipe/gray_dye_from_soot.json	93786b6d66421c7497d65d2ccc0033dd7c0d4a1c
+data:data/create_engines/recipe/headphones.json	0d1e437f7a545a0ea34e6a6df527a83b30ba2d76
 data:data/create_engines/recipe/heat_exchanger.json	804cf6ffb809adb2c0a29a0fd01164bf529daa98
 data:data/create_engines/recipe/heavy_starter.json	ccc4d22ab03e041add5c8e9e2f78ffdb677af937
 data:data/create_engines/recipe/intake_manifold.json	3b9dbab62da90b2f6cc0494c3831d64e2c538e9d
@@ -142,6 +143,10 @@ data:data/create_engines/recipe/transmission.json	70740f27dc53ed3dfb41e02b9aa224
 data:data/create_engines/recipe/turbocharger.json	a3afd0032c177ee755e99fc91d07ec6f06e6faca
 data:data/create_engines/recipe/variable_supercharger.json	c6cb4cef88276cb23e7ad2d328b15891aaa97f8c
 data:data/create_engines/recipe/variable_turbocharger.json	0ffd4f113d7be04dfd7658a53434b44ff724d077
+data:data/create_engines/tags/block/weight/flywheel.json
+data:data/create_engines/tags/block/weight/heavy.json
+data:data/create_engines/tags/block/weight/light.json
+data:data/create_engines/tags/block/weight/medium.json
 data:data/create_engines/tags/fluid/poor_lubricants.json
 data:data/create_engines/tags/item/ferments_mash.json
 enumvalue:CasingPaint:black
@@ -170,22 +175,34 @@ enumvalue:ColumnSectionBlock:lean_down
 enumvalue:ColumnSectionBlock:lean_up
 enumvalue:ColumnSectionBlock:tint
 nbt:AlternatorBlockEntity:Batteries
+nbt:AlternatorBlockEntity:ChargeRate
 nbt:AlternatorBlockEntity:Charging
+nbt:AlternatorBlockEntity:EngineShare
+nbt:AlternatorBlockEntity:FellowRate
+nbt:AlternatorBlockEntity:Fellows
 nbt:AlternatorBlockEntity:Supplying
 nbt:BatteryBlockEntity:Charge
+nbt:BatteryBlockEntity:Cold
 nbt:BatteryBlockEntity:Primary
+nbt:BatteryBlockEntity:Rate
+nbt:BlackBoxBlockEntity:Ago
 nbt:BlackBoxBlockEntity:Awarded
 nbt:BlackBoxBlockEntity:Changes
 nbt:BlackBoxBlockEntity:Engine
 nbt:BlackBoxBlockEntity:Events
+nbt:BlackBoxBlockEntity:Fault
+nbt:BlackBoxBlockEntity:Faults
 nbt:BlackBoxBlockEntity:Load
+nbt:BlackBoxBlockEntity:Moment
 nbt:BlackBoxBlockEntity:Readout
 nbt:BlackBoxBlockEntity:Rpm
 nbt:BlackBoxBlockEntity:Span
+nbt:BlackBoxBlockEntity:State
 nbt:BlackBoxBlockEntity:States
 nbt:BlackBoxBlockEntity:Tape
 nbt:BlackBoxBlockEntity:Warmth
 nbt:BlueprintGameTests:Plan
+nbt:BlueprintGameTests:Turn
 nbt:BlueprintGameTests:axis
 nbt:BlueprintGameTests:blocks
 nbt:BlueprintGameTests:name
@@ -220,6 +237,7 @@ nbt:ColumnPortBlockEntity:Limit
 nbt:ColumnPortBlockEntity:Rate
 nbt:ColumnPortBlockEntity:Size
 nbt:ColumnPortBlockEntity:Width
+nbt:ColumnPortBlockEntity:WrongCatalyst
 nbt:CrankshaftBlockEntity:Angle
 nbt:CrankshaftBlockEntity:Condition
 nbt:CrankshaftBlockEntity:Dilution
@@ -261,6 +279,7 @@ nbt:DynoBlockEntity:Torque
 nbt:EngineGameTests:OilExchange
 nbt:EngineGameTests:ScrollValue
 nbt:EngineGameTests:SumpSignal
+nbt:EngineSummary:Args
 nbt:EngineSummary:Boost
 nbt:EngineSummary:Cause
 nbt:EngineSummary:Condition
@@ -273,6 +292,7 @@ nbt:EngineSummary:Flex
 nbt:EngineSummary:Fuel
 nbt:EngineSummary:Health
 nbt:EngineSummary:Inertia
+nbt:EngineSummary:Key
 nbt:EngineSummary:Lines
 nbt:EngineSummary:Load
 nbt:EngineSummary:LongestLine
@@ -282,12 +302,15 @@ nbt:EngineSummary:Pilot
 nbt:EngineSummary:Ripple
 nbt:EngineSummary:Roughness
 nbt:EngineSummary:Rpm
+nbt:EngineSummary:Sources
 nbt:EngineSummary:Starter
 nbt:EngineSummary:State
 nbt:EngineSummary:Temperature
 nbt:EngineSummary:Thinning
+nbt:EngineSummary:Tone
 nbt:EngineSummary:Torque
 nbt:FramedBlueprintBlockEntity:Plan
+nbt:FramedBlueprintBlockEntity:Turn
 nbt:GovernorBlockEntity:Held
 nbt:GovernorBlockEntity:OnEngine
 nbt:GovernorBlockEntity:Position
@@ -313,6 +336,32 @@ nbt:Operators:Entries
 nbt:Operators:Player
 nbt:Operators:Pos
 nbt:Operators:Time
+nbt:PaintMigration:Name
+nbt:PaintMigration:Properties
+nbt:PaintMigration:Y
+nbt:PaintMigration:block_entities
+nbt:PaintMigration:block_states
+nbt:PaintMigration:data
+nbt:PaintMigration:id
+nbt:PaintMigration:paint
+nbt:PaintMigration:palette
+nbt:PaintMigration:sections
+nbt:PaintMigration:x
+nbt:PaintMigration:y
+nbt:PaintMigration:z
+nbt:PaintMigrationGameTests:Name
+nbt:PaintMigrationGameTests:Properties
+nbt:PaintMigrationGameTests:block_entities
+nbt:PaintMigrationGameTests:block_states
+nbt:PaintMigrationGameTests:data
+nbt:PaintMigrationGameTests:id
+nbt:PaintMigrationGameTests:manifold
+nbt:PaintMigrationGameTests:paint
+nbt:PaintMigrationGameTests:palette
+nbt:PaintMigrationGameTests:sections
+nbt:PaintMigrationGameTests:x
+nbt:PaintMigrationGameTests:y
+nbt:PaintMigrationGameTests:z
 nbt:RotorHousingBlockEntity:Chamber
 nbt:RotorHousingBlockEntity:ScrollValue
 nbt:SensorBlockEntity:Signal
@@ -322,6 +371,7 @@ nbt:SootAndCanGameTests:Gathered
 nbt:SootAndCanGameTests:Stored
 nbt:SootTrapBlockEntity:Gathered
 nbt:SootTrapBlockEntity:Stored
+nbt:StarterBlockEntity:BatteryWeak
 nbt:StarterBlockEntity:Cranking
 nbt:StarterBlockEntity:Drag
 nbt:StarterBlockEntity:Primary
@@ -338,6 +388,7 @@ nbt:TransmissionBlockEntity:AutoGear
 nbt:TransmissionBlockEntity:Gear
 nbt:TransmissionBlockEntity:GearsUsed
 nbt:TransmissionBlockEntity:InputFace
+nbt:TransmissionBlockEntity:ShiftProfile
 nbt:TransmissionBlockEntity:ThirteenGears
 nbt:TurboStatus:AntiLag
 nbt:TurboStatus:BackPressure
@@ -352,6 +403,7 @@ nbt:TurboStatus:Vanes
 nbt:TurboStatus:Wastegate
 nbt:TurbochargerBlockEntity:ScrollValue
 nbt:TurbochargerBlockEntity:Status
+prop:BatteryBlock:charge
 prop:ColumnSectionBlock:active
 prop:ColumnSectionBlock:lean_down
 prop:ColumnSectionBlock:lean_up
@@ -367,6 +419,10 @@ prop:Encasing:encased
 prop:Encasing:windowed
 prop:EngineCasingBlock:paint
 prop:FlareStackBlock:lit
+prop:FramedBlueprintBlock:join_down
+prop:FramedBlueprintBlock:join_left
+prop:FramedBlueprintBlock:join_right
+prop:FramedBlueprintBlock:join_up
 prop:RotorHousingBlock:fine_injector
 prop:RotorHousingBlock:injector
 prop:RotorHousingBlock:rotor
@@ -461,6 +517,7 @@ reg:blockEntity:governor
 reg:blockEntity:heat_exchanger
 reg:blockEntity:maf_sensor
 reg:blockEntity:maker_plate
+reg:blockEntity:manifold
 reg:blockEntity:rain_cap
 reg:blockEntity:rotor_housing
 reg:blockEntity:soot_trap
@@ -472,6 +529,7 @@ reg:blockEntity:transmission
 reg:blockEntity:turbocharger
 reg:displaySource:battery_charge
 reg:displaySource:engine_boost
+reg:displaySource:engine_fault
 reg:displaySource:engine_load
 reg:displaySource:engine_oil
 reg:displaySource:engine_power
@@ -480,6 +538,7 @@ reg:displaySource:engine_status
 reg:displaySource:engine_temperature
 reg:displaySource:engine_torque
 reg:displaySource:sump_levels
+reg:displaySource:transmission_gear
 reg:fluid:coolant
 reg:fluid:diesel
 reg:fluid:engine_oil
@@ -494,6 +553,7 @@ reg:item:blueprint
 reg:item:connecting_rod
 reg:item:forged_piston
 reg:item:fuel_injector
+reg:item:headphones
 reg:item:jerry_can
 reg:item:oil_filter
 reg:item:piston

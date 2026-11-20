@@ -39,4 +39,9 @@ public final class PrecisionParts {
 	public static CylinderSpec spec(int parts) {
 		return CylinderSpec.build(has(parts, BORE), has(parts, HEAD), has(parts, PISTON), has(parts, INJECTOR));
 	}
+
+	/** As {@link #spec(int)}, with the part effects of a pack's or an addon's own blocks added (ids of {@code part_effects} files). */
+	public static CylinderSpec spec(int parts, java.util.List<String> own) {
+		return CylinderSpec.build(has(parts, BORE), has(parts, HEAD), has(parts, PISTON), has(parts, INJECTOR), own);
+	}
 }

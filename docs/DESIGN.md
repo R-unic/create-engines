@@ -667,6 +667,7 @@ Variable-Drive Supercharger = Variable-Geometry Turbocharger.**
   (above 100 is overloaded); temperature is the block's heat over a warm engine's, so 100 is warm; oil is the
   condition, 100 new. Engine Boost (`+0.45 bar`, the highest boost any compressor puts on the intake, the figure the
   turbo goggles show) and Engine Rated Torque (`445 SU/RPM`, the goggles' rated torque) are one nixie-tube line each.
+  Engine Fault (the health line's cause, a few words) is on the crankshaft blocks and Transmission Gear on the transmission (see "Part depth, Black Box replay and the last two display fields").
   A battery offers Battery Charge (`BatteryDisplaySource`, a percentage or progress bar like the fill sources, from
   the battery's charge over its capacity; it does not credit Instrument Panel). The oil sump offers Oil Sump Levels, one tank to a line. Every source refreshes every second
   (`EngineReadout.REFRESH_TICKS`). The figures come from the synced `EngineSummary`, so they cost the engine nothing.
@@ -798,7 +799,177 @@ list of IDs are in each release's record (`docs/releases/`) and changelog (`docs
   `docs/STABILITY.md`, the smoke harness in `docs/SMOKE.md`, and the architecture rules, config matrix, property tests and
   performance budgets that `./gradlew check` runs.
 
+### Battery depth (2.0, 2026-11-19)
+
+The author's roadmap item "Battery depth": five additions to the battery, all for 2.0. A plain battery is still 200 sparks, drawn
+one per plug firing and refilled by an alternator; what changed is below. The numbers are in `BatteryChemistry` (no Minecraft types,
+`BatteryChemistryTest`); `BatteryBlockEntity`, `BatteryBank`, `BatteryIgnition` and `EngineController` apply them.
+
+- **Banks.** Batteries that touch are one bank (`BatteryBank`): capacity is the sum, charging and drawing are shared out in proportion
+  (a draw in proportion to what each can deliver, a charge in proportion to the room each has), so a bank runs down and fills evenly.
+  Nothing about a bank is stored: it is found by walking over touching batteries, cached for a second per battery and looked for again
+  whenever a battery is placed or removed (`BatteryBlock.TOPOLOGY`). An engine or alternator touching one member reaches all of them:
+  the scanner adds the whole bank to `layout.batteries()` and to the engine's members, so a blueprint records it and a change to any
+  member rescans the engine. A member in an unloaded chunk is left out until it loads rather than stopping the engine. A lone battery
+  is a bank of one, with the numbers it always had.
+- **Cold.** A battery's coldness is its biome's temperature (nothing at 0.5 and above, all of it at 0 and below) less the warmth of a
+  heat source beside it (a blaze burner, heat exchanger or lit campfire, by Create's heat level: 0.4, 0.8, 1 of the cold taken off),
+  looked at every two seconds. A cold battery keeps its charge but delivers at most half of its capacity when as cold as it gets, and
+  gets it back when warmed. A cold engine (`Thermal.felt`, which a warming starter reduces) makes each spark cost up to twice as much.
+  `features.batteryCold` turns both off.
+- **Cranking draw.** A starter turning a spark engine over (an engine with a working spark plug and a battery; compression engines are
+  not touched) takes 0.15 sparks a tick from the bank, up to twice that in a cold engine, falling in proportion once the bank is under
+  10% and to nothing from an empty one. The starter's goggles say when the batteries are that low. **The roadmap also said a weak battery
+  should crank slowly and give up partway; that part was built and dropped.** The starter is driven by a shaft, and a spark engine
+  started from the flat battery it is placed with (an alternator on the crank line charges it by cranking) did not catch at a reduced
+  cranking speed: seven existing GameTests failed (two gasoline engines, a rotary, two ethanol engines, the flooded plug and the drained battery),
+  the rotary one still cranking at 50 RPM after five seconds. A starter that gave up at an empty bank would have left every such engine
+  dead from the moment it was built. The draw falls with the bank for the same reason: a draw that did not would take all of the little an
+  alternator makes in the ticks its shaft is not overstressed, and the engine would never start. `features.crankingDraw` turns it off.
+- **Comparator.** `getAnalogOutputSignal` on every battery reads its whole bank, 0 only when empty and 15 only when full. The battery
+  tells its comparators when the reading changes (checked every half second). Output only: no redstone input.
+- **Gauge.** The goggles show the bank's charge and size, the rate it is gaining or losing and the time that gives, and the cold.
+  On the block, four lamps on each face of the lid light by the battery's own charge (`BatteryBlock.CHARGE`, 0 to 4, set by the block
+  entity with a small hysteresis so a boundary does not flicker; the block is the same block, so nothing about its ID or saved data
+  changes, and a world saved without the property loads with it at 0 and fixes itself within half a second).
+  The block entity's lamp-strip changes do not count as placing or removing it (`BatteryBlock.onPlace`/`onRemove` ignore a
+  state change of the same block), which would otherwise rebuild the engine each time.
+- **Display Link.** Battery Charge reads the bank, not the single battery.
+- **Saved data.** `BatteryBlockEntity` gained `Cold` (read back clamped to 0 to 1); `Charge` is now clamped to 0 to 200 and a NaN
+  reads as 0. The starter gained `BatteryWeak`. Nothing was removed or renamed.
+
+### Part depth, first four items (2.0, 2026-11-19)
+
+From the roadmap's "Part depth (2.0)": the items that needed no new block and no author call. Each is listed with what was checked first.
+
+- **Alternator readout (item 2).** The goggles say how fast it is putting charge into batteries (`goggles.alternator.rate`, sparks a second, a one-second
+  smoothing of what `BatteryBank.fill` actually took) and what share of the engine's rated torque its stress takes (`goggles.alternator.share`:
+  its 2 SU a RPM over the crankshaft's `publishedCapacity`, shown only while it is charging or supplying). Information only: nothing it does changed.
+- **Several alternators (item 3).** Checked first: they already add up, each filling the bank in proportion to the room and each putting its own 2 SU a RPM on
+  the shaft only while it has something to fill, so the total stress is the sum (`theStressOfTwoChargingAlternatorsIsTheSumOfTheirs`). Nothing needed to be
+  split. What was missing was the readout: the engine now tells each alternator which alternators it has (`attachToEngine` gained the list), and each says
+  how many there are and what share of the charge made is its own (`goggles.alternator.fellows`).
+- **Compressor readout (item 4).** Checked first: there is no efficiency figure to show (the turbocharger's 0.7 is one constant, not a range), so none was
+  invented. The new line is made of two figures the block already holds: boost against the limit set on it (`Turbocharger.limitPercent`, "Working at
+  83% of its boost limit", gold at 95 and over), on both turbochargers and superchargers, so the limit dial can be set by reading.
+- **Hand-crank assist (item 1).** Checked first: a crank line already turns from outside (`drivenFromOutside`) and an alternator on it charges a battery by
+  turning, so a flat battery is no dead end once something turns the crank; what stopped a person doing it was that the starter wants a redstone signal.
+  A starter whose shaft is turned by a Create hand crank (`source` is a `HandCrankBlockEntity`) now engages without one, and says so in its goggles. A
+  starter on a motor or a water wheel still needs redstone, as every existing build has it. It is the only one-more-source change: water wheels and
+  windmills already drive the crank line directly.
+
+Not started here: item 5 (wastegate and blow-off parts; later done as particles only, below), item 7 (headphones, a sound-engine hook and an access transformer), item 8
+(Auto shift profile, needed the author's call on a new dial; **approved and built 2026-11-20**, see the v2.0.0 record and the ROADMAP row) and item 9 (Black Box replay). Item 6 (cast flywheel) was done earlier; item 10 is partly done.
+Items 9 and 10 were finished next, below.
+
+### Part depth, Black Box replay and the last two display fields (2.0, 2026-11-20)
+
+- **Display Link: gear and fault (item 10, finished).** Two more sources, each one line (`SingleLineDisplaySource`, so a board or a nixie tube
+  both take it, with a label if wanted). *Engine Fault* is on every crankshaft block and shows the one thing the health line blames, as a few words
+  (`Diagnosis.Cause.displayKey`, `display.engine.fault.*`: "No spark", "Dry oil", "Cold block"; "No fault" when healthy; "No engine" off a built
+  engine). It reads `EngineSummary.cause`, the same cause the goggles' health line gives, so the two cannot disagree; the goggles' long advice
+  strings stayed as they were. *Transmission Gear* is on the transmission block ("Gear 7", "Neutral", "Reverse"; "(auto)" after a numbered gear
+  the block picked itself). It shows the gear in use, not the panel setting, so on auto a board shows what the engine is really pulling in. The
+  roadmap's "gear" could have been read off a crankshaft, but the gear lives on the transmission (a crank line can have none, or several in a
+  network), so the source is on the box. Nothing in the simulation changed.
+- **Black Box replay (item 9).** Checked first: the tape already keeps speed, load, warmth and the state of every second for ten minutes, so scrubbing
+  needed no new sampling, only a way to point at one second of it. The one thing it did not keep was the fault the engine had at the time, so
+  `FlightRecorder.Sample` gained `fault` (the health line's cause), one byte a second in the ring (`Faults` in the saved tape, additive: a tape
+  saved before reads as blaming nothing, a damaged fault number is clamped). The box gained a **Replay dial** (a value box on its side faces, 0 live
+  and each notch `FlightRecorder.REPLAY_STEP` = 5 seconds further back, 120 notches for the whole tape). Turning it pins a **moment** by its
+  sample number (`FlightRecorder.sampleBack` and `momentAt`), so the figures stay on one second while the tape runs on and the "seconds ago" grows;
+  a moment that falls off the oldest end holds at the oldest sample. The server works out the moment and sends it with the readout (`Moment` in
+  the client packet; the tape itself still never goes to clients). Goggles then show "Replaying 2 min ago", the state, speed, load and warmth then,
+  and the fault then. The dial is also in the blueprint dial table (`EngineDials`, name `replay`), which the table-of-dials GameTest requires of any
+  dial on a block; the pinned moment is not saved, so a loaded block pins its dial's distance back from the newest sample again. Information only: no
+  engine number reads it. The dial is a viewing aid and not a tuning setting (rule 4 of the Declined list is about tuning dials).
+- **Blow-off particles (item 5, changed to particles only at the author's say).** A fitted part was proposed and declined. The turbocharger's blow-off
+  (`TurbochargerBlockEntity.ventCharge`) used to be one burst of 5 to 11 white puffs; it is now a burst of 8 to 17 followed by a jet off the compressor end that
+  thins out over 6 to 18 ticks (`ventJet`, numbers in the pure `VentJet`: more boost, more puffs and longer, never more than 1.5 bar's worth), and the wastegate chuff
+  (opening to hold the limit, which had only a sound) puffs 2 to 4 soft grey particles off the turbine end (`wastegateChuff`). Client only, gated by the particles
+  setting, and the jet and chuff are thinned by the effect density setting. No sound, block or item changed, and the supercharger is untouched. Not seen in game.
+- **Tests.** `FlightRecorderTest` (six: moments, edges, pinning, falling off the tape, saved faults with an old and a damaged tape, the dial covering the
+  tape), `DiagnosisTest` (display keys), `GearsTest` (display keys); GameTests in `PartDepthGameTests` (sources offered on the right blocks, the gear line on
+  manual and auto, a live gearbox, the fault line for a missing battery, and a recorder replay that holds a moment, saves and goes back to live).
+  `compat/manifest.txt` gained 2 `reg:displaySource` and 5 `nbt:BlackBoxBlockEntity` lines (Ago, Fault, Faults, Moment, State), appended in order.
+  `compat/behaviour.txt` and `compat/trajectories.txt` untouched.
+
 ---
+
+### Noise-cancelling headphones (item 7, 2026-11-20)
+
+What was built, against the plan in `docs/ROADMAP.md` (Part depth, item 7, which has the author's decisions: muffled not muted, music and interface
+sounds untouched, records muffled, worn like Create's goggles). **Heard by no one yet: the filter numbers are the probe's untuned ones, and whether a
+streamed sound clicks when the filter goes on mid-sound is still to be listened for.**
+
+- **The item.** `HeadphonesItem` (`create_engines:headphones`, stack of one) is `Equipable` for the head slot, so using it puts it on (and it can be swapped
+  in the inventory like a helmet). The model is `block/headphones/item`, drawn in `tools/generate_models.py` `headphones()` to sit on the 10-pixel head the
+  game draws a head-slot item at (a steel band over the crown, a padded cup over each ear, a brass plate and a red lamp on the left cup), with a `head`
+  display transform and the usual inventory, ground and hand ones. It uses the mod's own metal textures and vanilla grey wool: no new texture file.
+  Recipe: 3 iron sheets, 2 brass sheets and 2 wool (any colour), `data/create_engines/recipe/headphones.json`. Not balanced against anything.
+- **Wearing.** `HeadphoneWear.isWorn(entity)` is true when the head slot holds the headphones, or, with Curios installed, any Curios slot does.
+  Curios is fitted by data: `data/curios/tags/item/head.json` lists the item in `curios:head`, which is all Curios needs to offer its head slot. The
+  Curios API is named in one class (`compat.curios.CuriosBridge`) and the renderer in one (`client.compat.CuriosClient`); `CuriosCompat.installed()`
+  guards both, and a failure of the Curios call turns the Curios count off for the session with a warning (as `SableCompat` does). The renderer draws
+  the item as the game draws a head-slot item, on the model's head. The build compiles against the Curios API (`curios_version`, compile only) and
+  `neoforge.mods.toml` lists Curios as an optional dependency.
+- **The muffle.** `client.HeadphoneMuffle`. While worn, every sound from the world has an OpenAL low-pass filter attached as its source's direct filter
+  (`ALC_EXT_EFX`, one filter object per OpenAL context, made on first use and again after `SoundEngineLoadEvent`). A sound that starts while they are
+  worn gets it from `PlaySoundSourceEvent` and `PlayStreamingSourceEvent` (the sound thread, right after setup); putting them on or off walks
+  `SoundEngine.instanceToChannel` on the client thread, as the engine's own category volume change does, and changes each source through its handle
+  (`ChannelHandle.execute`, which runs on the sound thread and does nothing once the sound has ended, so a source Minecraft has destroyed is never
+  touched). The change is noticed by a client tick comparing `HeadphoneWear.isWorn(player)` with the last answer. `Muffle` (plain Java, unit tested)
+  holds the rules: master (menu and interface), music and voice are exempt, everything else (records, weather, blocks, hostile, neutral, players, ambient)
+  is muffled; 0.5 overall and 0.05 at the top (the probe's numbers). **It never mutes:** the gains are above zero by test. A sound card without the
+  extension, or one that errors, gets `AL_MAX_GAIN` capped at 0.35 on each world source instead (a cut at the loud end, not a proportional one), and
+  the tooltip says "cannot filter sound". After every change the source's OpenAL error is read and counted, so an error is never left for the sound
+  engine's own check to report as its own.
+- **Access transformer.** `META-INF/accesstransformer.cfg`, three lines, the first the mod has: `Channel.source` (the OpenAL source number, private),
+  `SoundEngine.instanceToChannel` and `SoundManager.soundEngine`. No mixin.
+- **Not done, on purpose.** No config option (the numbers are constants until someone has heard them); no advancement (the tab is crowded); no
+  cosmetic variants; the tooltip's filter line is only known after the first muffled sound has played.
+- **Tests.** `MuffleTest` (7); GameTests `HeadphonesGameTests` (5: worn only on the head, equippable in the head slot, in `curios:head`, craftable, and
+  every `SoundSource` the game has is decided by `Muffle`, so a new vanilla category stops the build until someone chooses); in the client audit
+  (`HeadphonesAudit`, fleet phase) the headphones are put on the server's player with engines running, a picture is kept of them on the head, and every
+  playing source is checked: every world sound has had the muffle put on it, no exempt one has, and no call left an OpenAL error; then the same after
+  taking them off; in the Curios compatibility row (`runSmokeAuditCurios`) the same through a Curios head slot with the game's own head slot empty.
+  **What that does not prove:** OpenAL cannot be asked what filter a source has (reading `AL_DIRECT_FILTER` back raised an invalid-enum error in the first
+  run, which is why the muffled sources are kept in a set as they are changed), so the audit shows the calls were made on every source and the card took
+  each without an error, not what is heard. The first audit run found the hook was right and the read-back was wrong; no run has heard it.
+
+### Joined batteries, a turnable blueprint frame and two model fixes (2.0, 2026-11-20)
+
+Four things the author asked for after looking at the tree in game.
+
+- **Batteries join, as tanks and item vaults do.** Batteries that touch were already one bank (`BatteryBank`); now they also *look* like one.
+  `BatteryBlock` keeps five boolean block state properties, `north`, `east`, `south`, `west` and `up` (vanilla's own, `BlockStateProperties`),
+  true where another battery touches that side. There is no `down`: nothing in the model depends on it. They are set by `getStateForPlacement`
+  and `updateShape` from the neighbour's block alone, and a battery saved before they existed looks at its neighbours itself in the lamp-strip
+  check that runs every ten ticks (`BatteryBlock.joined`, which asks only about loaded neighbours, since asking for the block of an unloaded
+  chunk loads it). **No rule about shape**, unlike a tank or a vault: any run, wall, L, ring or block of batteries joins wherever two of them
+  touch, diagonals do not. Nothing about the bank changed: it is still found by walking over touching batteries, and the joins change no
+  number. The collision shape fills out to the edge of the block on a joined side (`BatteryBlock.shapeOf`).
+  *Models.* `tools/generate_models.py` writes one shell for each of the 32 ways the sides and the top can be joined (`battery/block_jNESWU`,
+  a 1 for each joined side). On a joined side the body, band and lid run to the block's edge and leave out the faces that look into the
+  neighbour; on a joined top the body runs up to the next battery, the terminals, caps and vents are left off (they stay on top of the stack)
+  and the lid ring stays, so each cell of a stack still reads as a cell. The hold-down straps are only on a side that is not joined. The body is
+  cut round the band and the lid (three lengths) so no face of one lies in the plane of a face of another. The lamp strip is a separate model per
+  side (`block_dark_<side>`, `block_gauge_<stage>_<side>`), laid over the shell by the blockstate only on a side that is not joined, so a
+  wall of batteries has its lamps on the outer faces only. The blockstate is `CEBlocks.batteryBlockstate`, a multipart of the 32 shells and the
+  lamp pieces. **Blueprints do not record the joins or the lamp strip** (`BatteryBlock.isOnlyForLooks`): they depend on what stands next to a
+  battery, which a blueprint does not carry, and a recorded join would make an engine built beside another battery a different build.
+- **The purple on the dark lamps.** The dark lamp cells named a texture (`#dark`) that the model never defined, so they drew the purple and
+  black of a missing texture. The generator now defines it (`create_engines:block/screen`). `BatteryModelsTest` checks that every face of every
+  battery model names a texture the model defines.
+- **Z-fighting on the cast flywheel's shaft.** The wheel model carries a full-length shaft so it turns with the axle; its end caps lay in the
+  planes of the collars in the block model (y 0 and y 16) and fought them. The shaft has no cap faces now (they are inside the collars).
+  `CastFlywheelModelTest` checks the two models against each other, which the earlier check of each on its own could not.
+- **A wrench turns the drawing on a framed blueprint.** A quarter turn each use (`PaperTurn`, plain Java): the whole drawing, plan and text,
+  turns about the middle of the sheet, and a drawing on its side is laid out across a sheet as if the sheet were turned too (a three by two
+  sheet lays a two by three drawing out and then turns it). The turn is saved by the frame that draws the sheet, as `Turn` (a byte; a frame
+  saved before has none and is upright, and a value out of range is read in range). A wrench on any frame of a joined sheet turns the drawing of
+  the sheet's source frame (`FramedBlueprintBlockEntity.sheetSource`). A frame with nothing to show is wrenched as it always was. Taking the
+  blueprint out sets the turn back to upright, and it is not part of the blueprint item.
 
 ## 1. The one idea everything hangs on
 

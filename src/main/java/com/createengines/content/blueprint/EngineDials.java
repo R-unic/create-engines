@@ -10,6 +10,7 @@ import org.jetbrains.annotations.Nullable;
 
 import com.createengines.content.airflow.MafSensorBlockEntity;
 import com.createengines.content.airflow.ThrottleBlockEntity;
+import com.createengines.content.blackbox.BlackBoxBlockEntity;
 import com.createengines.content.camshaft.CamshaftBlockEntity;
 import com.createengines.content.crankshaft.CrankshaftBlockEntity;
 import com.createengines.content.governor.GovernorBlockEntity;
@@ -17,9 +18,11 @@ import com.createengines.content.head.CylinderHeadBlockEntity;
 import com.createengines.content.rotor.RotorHousingBlockEntity;
 import com.createengines.content.sump.SumpBlockEntity;
 import com.createengines.content.supercharger.SuperchargerBlockEntity;
+import com.createengines.content.transmission.AutoGearbox;
 import com.createengines.content.transmission.Gears;
 import com.createengines.content.transmission.TransmissionBlockEntity;
 import com.createengines.content.turbo.TurbochargerBlockEntity;
+import com.createengines.engine.FlightRecorder;
 import com.createengines.engine.sim.Turbocharger;
 import com.createengines.registry.CEBlocks;
 import com.simibubi.create.foundation.blockEntity.behaviour.scrollValue.ScrollValueBehaviour;
@@ -109,10 +112,13 @@ public final class EngineDials {
 		add(t, CEBlocks.SUPERCHARGER, blowerLimit);
 		add(t, CEBlocks.VARIABLE_SUPERCHARGER, blowerLimit);
 		add(t, CEBlocks.TRANSMISSION,
-			new Dial("gear", Gears.NEUTRAL, Gears.AUTO, e -> ((TransmissionBlockEntity) e).panel));
+			new Dial("gear", Gears.NEUTRAL, Gears.AUTO, e -> ((TransmissionBlockEntity) e).panel),
+			new Dial("shift_profile", 0, AutoGearbox.Profile.values().length - 1, e -> ((TransmissionBlockEntity) e).shiftProfile));
 		add(t, CEBlocks.SUMP,
 			new Dial("oil_exchange", 0, SumpBlockEntity.EXCHANGE_RATES.length - 1, e -> ((SumpBlockEntity) e).exchange),
 			new Dial("signal_tank", 0, SumpBlockEntity.SIGNAL_TANKS - 1, e -> ((SumpBlockEntity) e).signalTank));
+		add(t, CEBlocks.BLACK_BOX,
+			new Dial("replay", 0, FlightRecorder.REPLAY_STEPS, e -> ((BlackBoxBlockEntity) e).replay));
 		table = t;
 		return t;
 	}

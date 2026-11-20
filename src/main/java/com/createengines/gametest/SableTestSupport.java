@@ -22,6 +22,11 @@ final class SableTestSupport {
 	private SableTestSupport() {
 	}
 
+	/** The mass Sable gives a block, as it would use it for the structure's weight. */
+	static double mass(ServerLevel level, BlockPos pos, net.minecraft.world.level.block.state.BlockState state) {
+		return dev.ryanhcode.sable.physics.config.block_properties.PhysicsBlockPropertyHelper.getMass(level, pos, state);
+	}
+
 	/** Lifts every block in the box into a moving structure and puts that structure at {@code worldY}. */
 	static Held assemble(ServerLevel level, BlockPos min, BlockPos max, double worldY) {
 		List<BlockPos> blocks = new ArrayList<>();

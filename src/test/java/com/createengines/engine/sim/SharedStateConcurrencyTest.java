@@ -90,9 +90,9 @@ class SharedStateConcurrencyTest {
 				go.await();
 				while (!stop.get()) {
 					// Every value is one the config allows, at its edges as often as in between: a reload is a player's edit
-					Tuning.precisionBonus = edge(random, 0, 2);
+					Tuning.precisionBonus = fromPool(random, 0, 2);
 					Tuning.boostStrength = edge(random, 0, 2);
-					Tuning.rotaryPower = edge(random, 0.25, 2);
+					Tuning.rotaryPower = fromPool(random, 0.25, 2);
 					Tuning.fuelConsumption = edge(random, 0.05, 20);
 					Tuning.torsionalFlex = edge(random, 0, 2);
 					Tuning.coolingBonus = edge(random, 0, 3);
@@ -120,6 +120,20 @@ class SharedStateConcurrencyTest {
 		join(threads, 15_000);
 		assertNull(thrown.peek(), "a thread threw: " + thrown.peek());
 		assertTrue(ticks.get() > 1000, "only " + ticks.get() + " ticks ran in the whole test; the sim threads were starved");
+	}
+
+	/**
+	 * The two settings a cylinder's shape is made from (precision bonus, rotary power) come from a few set values, the edges
+	 * of the range among them, and not from anywhere in it: every distinct value makes new cylinder shapes, and the table for
+	 * each shape is kept for good, so a value picked anew thousands of times a second filled the heap (it ran a mutant test
+	 * run out of memory). Every other setting here still takes any value in its range.
+	 */
+	private static double fromPool(Random random, double min, double max) {
+		return switch (random.nextInt(3)) {
+			case 0 -> min;
+			case 1 -> max;
+			default -> min + (max - min) * (1 + random.nextInt(5)) / 6;
+		};
 	}
 
 	private static double edge(Random random, double min, double max) {

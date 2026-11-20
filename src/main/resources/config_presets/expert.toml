@@ -21,6 +21,8 @@
 	oilDilution = true
 	oilAgeing = true
 	engineTemperature = true
+	batteryCold = true
+	crankingDraw = true
 	pilotInjection = true
 	rotaryEngines = true
 	heatRecovery = true

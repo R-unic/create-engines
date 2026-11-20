@@ -19,6 +19,10 @@ public final class FlightRecorder {
 
 	/** Samples kept: ten minutes at one a second. */
 	public static final int CAPACITY = 600;
+	/** Seconds one notch of a replay dial moves back along the tape. */
+	public static final int REPLAY_STEP = 5;
+	/** Notches a replay dial has past live: the whole tape in {@link #REPLAY_STEP}-second steps. */
+	public static final int REPLAY_STEPS = CAPACITY / REPLAY_STEP;
 	/** Columns a readout is boiled down to. */
 	public static final int COLUMNS = 40;
 	/** The most state changes kept; the oldest go first. */
@@ -43,12 +47,29 @@ public final class FlightRecorder {
 	 * @param lubrication how well oiled it is, 0 to 1
 	 */
 	public record Sample(EngineState state, float rpm, float load, float capacity, float temperature, float fuel,
-						 float lubrication) {
+						 float lubrication, Diagnosis.Cause fault) {
+
+		/** A sample that blames nothing, for the places that only have the figures. */
+		public Sample(EngineState state, float rpm, float load, float capacity, float temperature, float fuel,
+					  float lubrication) {
+			this(state, rpm, load, capacity, temperature, fuel, lubrication, Diagnosis.Cause.NONE);
+		}
 
 		public static Sample of(EngineSummary summary) {
 			return new Sample(summary.state(), summary.rpm(), summary.loadTorque(), summary.availableTorque(),
-				summary.temperature(), summary.fuelPerMinute(), summary.lubrication());
+				summary.temperature(), summary.fuelPerMinute(), summary.lubrication(), summary.cause());
 		}
+	}
+
+	/**
+	 * What the engine was doing at one second of the tape, for a replay.
+	 *
+	 * @param secondsAgo how long before the newest sample it was taken
+	 * @param load       percent of what the engine could give that the network asked for
+	 * @param warmth     percent of the 0.7 a warm engine sits at
+	 * @param fault      the one thing the engine's health line blamed at the time, or NONE
+	 */
+	public record Moment(int secondsAgo, EngineState state, int rpm, int load, int warmth, Diagnosis.Cause fault) {
 	}
 
 	/**
@@ -121,6 +142,7 @@ public final class FlightRecorder {
 	private final float[] load = new float[CAPACITY];
 	private final float[] warmth = new float[CAPACITY];
 	private final byte[] states = new byte[CAPACITY];
+	private final byte[] faults = new byte[CAPACITY];
 	/** Samples taken since the recorder began. */
 	private long count;
 	private final Deque<Change> changes = new ArrayDeque<>();
@@ -144,6 +166,7 @@ public final class FlightRecorder {
 		load[slot] = sample.capacity > 0 ? sample.load / sample.capacity : 0;
 		warmth[slot] = sample.temperature;
 		states[slot] = (byte) sample.state.ordinal();
+		faults[slot] = (byte) sample.fault.ordinal();
 		count++;
 		last = sample;
 	}
@@ -175,6 +198,39 @@ public final class FlightRecorder {
 				|| change.from == EngineState.OVERLOADED || change.from == EngineState.COASTING))
 				return true;
 		return false;
+	}
+
+	/** Samples taken since the recorder began: the number the next sample will have. A moment is named by its sample number. */
+	public long total() {
+		return count;
+	}
+
+	/** The number of the oldest sample still held. */
+	public long oldest() {
+		return count - size();
+	}
+
+	/** The number of the sample taken this many seconds before the newest, kept to what is held. */
+	public long sampleBack(int secondsBack) {
+		return Math.max(oldest(), count - 1 - Math.max(0, secondsBack));
+	}
+
+	/**
+	 * What the engine was doing when the {@code sampleNumber}th sample was taken, or null when nothing is held. A number
+	 * past the newest reads the newest and one older than the tape reads the oldest, so a replay pinned to a moment that has
+	 * since fallen off the tape holds at the start of it.
+	 */
+	public @Nullable Moment momentAt(long sampleNumber) {
+		int size = size();
+		if (size == 0)
+			return null;
+		long number = Math.clamp(sampleNumber, count - size, count - 1);
+		int slot = slot(number);
+		EngineState[] values = EngineState.values();
+		Diagnosis.Cause[] causes = Diagnosis.Cause.values();
+		return new Moment((int) (count - 1 - number), values[Math.clamp(states[slot], 0, values.length - 1)],
+			Math.round(rpm[slot]), Math.round(load[slot] * 100), Math.round(warmth[slot] / 0.7f * 100),
+			causes[Math.clamp(faults[slot], 0, causes.length - 1)]);
 	}
 
 	/** Where in the arrays the {@code sampleNumber}th sample since the recorder began is kept. */
@@ -220,7 +276,12 @@ public final class FlightRecorder {
 	// Saving
 
 	/** Everything the recorder holds, as plain arrays: samples oldest first, and the changes as four numbers each. */
-	public record Saved(int[] rpm, int[] load, int[] warmth, int[] states, int[] changes) {
+	public record Saved(int[] rpm, int[] load, int[] warmth, int[] states, int[] changes, int[] faults) {
+
+		/** A tape saved before faults were kept: it blames nothing. */
+		public Saved(int[] rpm, int[] load, int[] warmth, int[] states, int[] changes) {
+			this(rpm, load, warmth, states, changes, new int[0]);
+		}
 	}
 
 	public Saved save() {
@@ -229,6 +290,7 @@ public final class FlightRecorder {
 		int[] savedLoad = new int[size];
 		int[] savedWarmth = new int[size];
 		int[] savedStates = new int[size];
+		int[] savedFaults = new int[size];
 		long first = count - size;
 		for (int i = 0; i < size; i++) {
 			int slot = slot(first + i);
@@ -236,6 +298,7 @@ public final class FlightRecorder {
 			savedLoad[i] = Math.round(load[slot] * 1000);
 			savedWarmth[i] = Math.round(warmth[slot] * 1000);
 			savedStates[i] = states[slot];
+			savedFaults[i] = faults[slot];
 		}
 		int[] flat = new int[changes.size() * 4];
 		int i = 0;
@@ -245,7 +308,7 @@ public final class FlightRecorder {
 			flat[i++] = change.to.ordinal();
 			flat[i++] = change.cause.ordinal();
 		}
-		return new Saved(savedRpm, savedLoad, savedWarmth, savedStates, flat);
+		return new Saved(savedRpm, savedLoad, savedWarmth, savedStates, flat, savedFaults);
 	}
 
 	public void restore(Saved saved) {
@@ -260,6 +323,7 @@ public final class FlightRecorder {
 			load[i] = saved.load[i] / 1000f;
 			warmth[i] = saved.warmth[i] / 1000f;
 			states[i] = (byte) Math.clamp(saved.states[i], 0, values.length - 1);
+			faults[i] = (byte) (i < saved.faults.length ? Math.clamp(saved.faults[i], 0, Diagnosis.Cause.values().length - 1) : 0);
 		}
 		count = size;
 		Cause[] causes = Cause.values();

@@ -182,4 +182,86 @@ class FlightRecorderTest {
 				.get(0)
 				.cause());
 	}
+
+	private static Sample faulty(float rpm, Diagnosis.Cause fault) {
+		return new Sample(EngineState.RUNNING, rpm, 2, 4, 0.35f, 30, 1, fault);
+	}
+
+	@Test
+	void aMomentReadsWhatTheEngineWasDoingAtThatSecond() {
+		FlightRecorder recorder = new FlightRecorder();
+		recorder.record(running(100));
+		recorder.record(faulty(200, Diagnosis.Cause.NO_SPARK));
+		recorder.record(running(300));
+		FlightRecorder.Moment then = recorder.momentAt(recorder.sampleBack(1));
+		assertEquals(1, then.secondsAgo());
+		assertEquals(200, then.rpm());
+		assertEquals(50, then.load(), "Two asked of four available is 50 percent");
+		assertEquals(50, then.warmth(), "0.35 against the 0.7 of a warm engine is half");
+		assertEquals(EngineState.RUNNING, then.state());
+		assertEquals(Diagnosis.Cause.NO_SPARK, then.fault());
+		assertEquals(Diagnosis.Cause.NONE, recorder.momentAt(recorder.sampleBack(0)).fault());
+	}
+
+	@Test
+	void anEmptyTapeHasNoMomentAndAPastTheEndOneHoldsAtTheEnds() {
+		FlightRecorder recorder = new FlightRecorder();
+		assertEquals(null, recorder.momentAt(recorder.sampleBack(10)));
+		for (int i = 0; i < 5; i++)
+			recorder.record(running(100 + i));
+		assertEquals(100, recorder.momentAt(recorder.sampleBack(500)).rpm(), "Further back than the tape holds is the oldest");
+		assertEquals(104, recorder.momentAt(recorder.sampleBack(-5)).rpm(), "A negative distance is the newest");
+		assertEquals(104, recorder.momentAt(recorder.total() + 50).rpm());
+	}
+
+	@Test
+	void aMomentPinnedByItsNumberStaysPutWhileTheTapeRunsOn() {
+		FlightRecorder recorder = new FlightRecorder();
+		for (int i = 0; i < 20; i++)
+			recorder.record(running(100 + i));
+		long pin = recorder.sampleBack(10);
+		int rpm = recorder.momentAt(pin).rpm();
+		for (int i = 0; i < 7; i++)
+			recorder.record(running(500));
+		assertEquals(rpm, recorder.momentAt(pin).rpm(), "The pinned moment is the same one");
+		assertEquals(17, recorder.momentAt(pin).secondsAgo(), "and it is further back now");
+	}
+
+	@Test
+	void aMomentThatFellOffTheTapeHoldsAtItsStart() {
+		FlightRecorder recorder = new FlightRecorder();
+		recorder.record(running(1));
+		long pin = recorder.sampleBack(0);
+		for (int i = 0; i < FlightRecorder.CAPACITY + 10; i++)
+			recorder.record(running(9));
+		assertEquals(9, recorder.momentAt(pin).rpm());
+		assertEquals(FlightRecorder.CAPACITY - 1, recorder.momentAt(pin).secondsAgo());
+	}
+
+	@Test
+	void theFaultsSurviveBeingSavedAndATapeWithoutThemBlamesNothing() {
+		FlightRecorder recorder = new FlightRecorder();
+		recorder.record(faulty(100, Diagnosis.Cause.DRY_OIL));
+		recorder.record(running(110));
+		FlightRecorder loaded = new FlightRecorder();
+		loaded.restore(recorder.save());
+		assertEquals(Diagnosis.Cause.DRY_OIL, loaded.momentAt(loaded.sampleBack(1)).fault());
+		FlightRecorder.Saved saved = recorder.save();
+		FlightRecorder old = new FlightRecorder();
+		old.restore(new FlightRecorder.Saved(saved.rpm(), saved.load(), saved.warmth(), saved.states(), saved.changes()));
+		assertEquals(Diagnosis.Cause.NONE, old.momentAt(old.sampleBack(1)).fault(), "a tape saved before faults were kept");
+		assertEquals(100, old.momentAt(old.sampleBack(1)).rpm());
+		// A fault number from a newer or damaged save is kept in range
+		FlightRecorder damaged = new FlightRecorder();
+		damaged.restore(new FlightRecorder.Saved(saved.rpm(), saved.load(), saved.warmth(), saved.states(), saved.changes(),
+			new int[] {999, -4}));
+		assertEquals(Diagnosis.Cause.values()[Diagnosis.Cause.values().length - 1], damaged.momentAt(0).fault());
+		assertEquals(Diagnosis.Cause.NONE, damaged.momentAt(1).fault());
+	}
+
+	@Test
+	void theReplayDialCoversTheWholeTapeInWholeSteps() {
+		assertEquals(0, FlightRecorder.CAPACITY % FlightRecorder.REPLAY_STEP);
+		assertEquals(FlightRecorder.CAPACITY, FlightRecorder.REPLAY_STEPS * FlightRecorder.REPLAY_STEP);
+	}
 }

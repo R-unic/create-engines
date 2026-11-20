@@ -85,7 +85,31 @@ class ScriptAndDataSurfaceTest {
 		Matcher scale = Pattern.compile("scale\\(\\)\\.optionalFieldOf\\(\"(\\w+)\", ([\\d.]+)\\)").matcher(stats);
 		while (scale.find())
 			out.add("data part_stats " + scale.group(1) + " optional " + scale.group(2) + " range " + min + ".." + max);
+
+		// The part_effect data map (an addon block's own effect file), the part_effects files and the cam_profiles files
+		Matcher effect = Pattern.compile("ResourceLocation\\.CODEC\\.fieldOf\\(\"(\\w+)\"\\)").matcher(stats);
+		while (effect.find())
+			out.add("data part_effect " + effect.group(1) + " required");
+		for (String key : keys("engine/sim/PartEffects.java"))
+			out.add("data part_effects " + key + " optional 1.0 range " + min + ".." + max);
+		String camSource = readKeepingStrings("engine/sim/CamProfiles.java");
+		for (String key : keys("engine/sim/CamProfiles.java"))
+			out.add("data cam_profiles " + key + " optional range 0..720");
+		out.add("data cam_profiles valve duration " + number(camSource, "MIN_DURATION") + ".." + number(camSource, "MAX_DURATION"));
 		return out;
+	}
+
+	/** The strings of the {@code KEYS = Set.of(...)} a data file's reader holds, in the order written. */
+	private static List<String> keys(String relative) throws IOException {
+		String source = readKeepingStrings(relative);
+		Matcher set = Pattern.compile("KEYS\\s*=\\s*Set\\.of\\(([^;]*?)\\);", Pattern.DOTALL).matcher(source);
+		assertTrue(set.find(), relative + " has no KEYS");
+		List<String> keys = new ArrayList<>();
+		Matcher key = Pattern.compile("\"(\\w+)\"").matcher(set.group(1));
+		while (key.find())
+			keys.add(key.group(1));
+		assertTrue(keys.size() >= 6, relative + " KEYS read as " + keys);
+		return keys;
 	}
 
 	private static String number(String source, String constant) {
@@ -115,6 +139,10 @@ class ScriptAndDataSurfaceTest {
 		assertTrue(now.contains("data part_stats inertia optional 1.0 range 0.1..10"), "" + now);
 		assertEquals(11, now.stream().filter(l -> l.startsWith("data part_stats ")).count());
 		assertEquals(8, now.stream().filter(l -> l.startsWith("data fuel ")).count());
+		assertEquals(8, now.stream().filter(l -> l.startsWith("data part_effects ")).count());
+		assertEquals(6, now.stream().filter(l -> l.startsWith("data cam_profiles ") && l.contains(" optional ")).count());
+		assertTrue(now.contains("data part_effect effect required"), "" + now);
+		assertTrue(now.contains("data cam_profiles valve duration 40..400"), "" + now);
 	}
 
 	@Test

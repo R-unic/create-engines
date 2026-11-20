@@ -117,12 +117,6 @@
         },
         "west": {
           "texture": "#axis"
-        },
-        "up": {
-          "texture": "#end"
-        },
-        "down": {
-          "texture": "#end"
         }
       }
     },

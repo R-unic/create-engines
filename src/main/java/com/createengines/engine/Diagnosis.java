@@ -48,6 +48,11 @@ public final class Diagnosis {
 		public String langKey() {
 			return "goggles.cause." + name().toLowerCase(Locale.ROOT);
 		}
+
+		/** The short name a Display Link shows for this cause: a few words that fit a nixie row, not the goggles' advice. */
+		public String displayKey() {
+			return "display.engine.fault." + name().toLowerCase(Locale.ROOT);
+		}
 	}
 
 	/** How the engine is running overall. */

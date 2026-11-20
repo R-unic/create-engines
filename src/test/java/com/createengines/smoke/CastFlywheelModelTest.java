@@ -54,6 +54,61 @@ class CastFlywheelModelTest {
 		}
 	}
 
+	/**
+	 * The block model (the collars) and the wheel model (which turns with the shaft) are drawn together, so faces that share
+	 * a plane across the two fight just as faces within one do. The shaft's end caps once lay in the collars' outer planes.
+	 * The check counts only the faces an element really has, since the shaft has no caps.
+	 */
+	@Test
+	void theCollarsAndTheWheelDoNotShareAPlaneBetweenThem() throws IOException {
+		{
+			List<String> found = new ArrayList<>();
+			var collars = elementsWithFaces("block");
+			var disc = elementsWithFaces("disc");
+			String[] faces = {"north", "south", "east", "west", "up", "down"};
+			for (String face : faces) {
+				int a = face.equals("east") || face.equals("west") ? 0 : face.equals("up") || face.equals("down") ? 1 : 2;
+				boolean positive = face.equals("east") || face.equals("up") || face.equals("south");
+				int u = (a + 1) % 3, v = (a + 2) % 3;
+				for (var p : collars)
+					for (var q : disc) {
+						if (!p.faces.contains(face) || !q.faces.contains(face))
+							continue;
+						double pp = positive ? p.box.to()[a] : p.box.from()[a];
+						double qp = positive ? q.box.to()[a] : q.box.from()[a];
+						if (Math.abs(pp - qp) > EPS)
+							continue;
+						double ou = Math.min(p.box.to()[u], q.box.to()[u]) - Math.max(p.box.from()[u], q.box.from()[u]);
+						double ov = Math.min(p.box.to()[v], q.box.to()[v]) - Math.max(p.box.from()[v], q.box.from()[v]);
+						if (ou > EPS && ov > EPS)
+							found.add(face + " at " + pp);
+					}
+			}
+			assertTrue(found.isEmpty(), "the collars and the wheel model share planes: " + found);
+		}
+		// The inventory model is the two put together, so it is free of them too
+		assertEquals(elementsWithFaces("block").size() + elementsWithFaces("disc").size(), elementsWithFaces("item").size());
+	}
+
+	private record Faced(Box box, java.util.Set<String> faces) {
+	}
+
+	private static List<Faced> elementsWithFaces(String model) throws IOException {
+		List<Faced> out = new ArrayList<>();
+		try (var reader = java.nio.file.Files.newBufferedReader(DIR.resolve(model + ".json"))) {
+			for (var e : com.google.gson.JsonParser.parseReader(reader).getAsJsonObject().getAsJsonArray("elements")) {
+				var o = e.getAsJsonObject();
+				double[] from = new double[3], to = new double[3];
+				for (int i = 0; i < 3; i++) {
+					from[i] = o.getAsJsonArray("from").get(i).getAsDouble();
+					to[i] = o.getAsJsonArray("to").get(i).getAsDouble();
+				}
+				out.add(new Faced(new Box(from, to), new java.util.HashSet<>(o.getAsJsonObject("faces").keySet())));
+			}
+		}
+		return out;
+	}
+
 	@Test
 	void theWheelStaysInsideTheBlockAndItsCollisionThickness() throws IOException {
 		for (Box b : body()) {

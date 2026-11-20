@@ -1,0 +1,7 @@
+{
+	"selector": "#create_engines:weight/light",
+
+	"properties": {
+		"sable:mass": 0.5
+	}
+}
