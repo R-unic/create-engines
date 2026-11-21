@@ -1,8 +1,11 @@
 package com.createengines.engine;
 
+import java.util.function.Predicate;
+
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.state.BlockState;
 
 /**
  * Redstone reads at a block's six neighbours that make no positions to do it. Vanilla's {@code getBestNeighborSignal} and
@@ -26,6 +29,26 @@ public final class Signals {
 		int best = 0;
 		for (Direction side : SIDES) {
 			int signal = level.getSignal(probe.setWithOffset(pos, side), side);
+			if (signal >= 15)
+				return 15;
+			if (signal > best)
+				best = signal;
+		}
+		return best;
+	}
+
+	/**
+	 * {@link #bestNeighbour}, leaving out any neighbour whose block is {@code ignored}: what the strongest of the others
+	 * gives. With nothing ignored it reads exactly what {@link #bestNeighbour} does.
+	 */
+	public static int bestNeighbourIgnoring(Level level, BlockPos pos, Predicate<BlockState> ignored) {
+		BlockPos.MutableBlockPos probe = PROBE.get();
+		int best = 0;
+		for (Direction side : SIDES) {
+			probe.setWithOffset(pos, side);
+			if (ignored.test(level.getBlockState(probe)))
+				continue;
+			int signal = level.getSignal(probe, side);
 			if (signal >= 15)
 				return 15;
 			if (signal > best)

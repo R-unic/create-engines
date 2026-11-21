@@ -35,6 +35,7 @@ import com.createengines.content.supercharger.SuperchargerBlock;
 import com.createengines.content.supercharger.SuperchargerBlockEntity;
 import com.createengines.content.turbo.TurbochargerBlock;
 import com.createengines.content.turbo.TurbochargerBlockEntity;
+import com.createengines.engine.Signals;
 import com.createengines.engine.TurboStatus;
 import com.createengines.content.airflow.PortKind;
 import com.createengines.engine.CrankGeometry;
@@ -1391,6 +1392,36 @@ public class EngineGameTests {
 				.getSignal(helper.absolutePos(intake), Direction.NORTH) == maf.signal(),
 				"Its signal should reach the blocks around it");
 
+			helper.succeed();
+		});
+	}
+
+	/**
+	 * A MAF sensor puts its reading out as redstone on every side. Beside a camshaft that signal used to close the fuel
+	 * rack (1 - signal/15), so the engine ran as lean as the signal was strong while the sensor read it as balanced. A
+	 * sensor's output no longer counts for the rack; a redstone block there still does.
+	 */
+	@GameTest(template = "empty", timeoutTicks = 1300)
+	public static void aMafSensorBesideTheCamshaftDoesNotCloseTheRack(GameTestHelper helper) {
+		buildSingleCylinder(helper, true);
+		BlockPos sensor = new BlockPos(3, 4, 2);
+		BlockPos cam = new BlockPos(3, 4, 3);
+		helper.setBlock(TestEngine.AIR_INTAKE, Blocks.AIR);
+		helper.setBlock(sensor, placePipe(helper, CEBlocks.MAF_SENSOR.get(), sensor));
+		helper.setBlock(sensor.east(), CEBlocks.AIR_INTAKE.getDefaultState()
+			.setValue(PortOpeningBlock.FACING, Direction.EAST));
+		helper.runAtTickTime(300, () -> helper.setBlock(STARTER_POWER, Blocks.AIR));
+		helper.runAtTickTime(900, () -> {
+			MafSensorBlockEntity maf = helper.getBlockEntity(sensor);
+			helper.assertTrue(maf.onEngine(), "The sensor should be on the engine's intake: " + summary(helper));
+			helper.assertTrue(maf.signal() > 0, "It should be putting out a signal");
+			helper.assertTrue(Signals.bestNeighbour(helper.getLevel(), helper.absolutePos(cam)) > 0,
+				"The camshaft should have the sensor's signal beside it, or this proves nothing");
+			CylinderStatus status = cylinder(helper);
+			helper.assertTrue(status.result() == CycleResult.FIRED,
+				"The engine should run with the sensor beside the camshaft: " + status + ", " + summary(helper));
+			helper.assertTrue(status.mixture() > 0.6f && status.mixture() < 1.3f,
+				"The sensor's signal must not starve the engine: " + status);
 			helper.succeed();
 		});
 	}

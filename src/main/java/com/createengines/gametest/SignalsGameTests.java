@@ -92,6 +92,38 @@ public class SignalsGameTests {
 		helper.succeed();
 	}
 
+	/** Ignoring nothing reads what the plain read does, and ignoring a block leaves out only what that block gives. */
+	@GameTest(template = "empty", timeoutTicks = 200)
+	public static void ignoringABlockLeavesOutOnlyItsSignal(GameTestHelper helper) {
+		Level level = helper.getLevel();
+		BlockPos centre = helper.absolutePos(new BlockPos(3, 2, 3));
+		RandomSource random = RandomSource.create(20261120);
+		for (int round = 0; round < 500; round++) {
+			List<BlockState> choices = neighbours(random);
+			for (Direction side : Direction.values())
+				level.setBlock(centre.relative(side), choices.get(random.nextInt(choices.size())), Block.UPDATE_CLIENTS | Block.UPDATE_KNOWN_SHAPE);
+			helper.assertTrue(Signals.bestNeighbourIgnoring(level, centre, state -> false) == Signals.bestNeighbour(level, centre),
+				"Round " + round + ": ignoring nothing should read what the plain read does");
+		}
+		for (Direction side : Direction.values())
+			level.setBlock(centre.relative(side), Blocks.AIR.defaultBlockState(), Block.UPDATE_CLIENTS | Block.UPDATE_KNOWN_SHAPE);
+		level.setBlock(centre.east(), Blocks.REDSTONE_BLOCK.defaultBlockState(), Block.UPDATE_CLIENTS | Block.UPDATE_KNOWN_SHAPE);
+		helper.assertTrue(Signals.bestNeighbourIgnoring(level, centre, state -> state.is(Blocks.REDSTONE_BLOCK)) == 0,
+			"A redstone block that is ignored gives nothing");
+		level.setBlock(centre.west(), Blocks.REDSTONE_TORCH.defaultBlockState()
+			.setValue(BlockStateProperties.LIT, true), Block.UPDATE_CLIENTS | Block.UPDATE_KNOWN_SHAPE);
+		helper.assertTrue(Signals.bestNeighbourIgnoring(level, centre, state -> state.is(Blocks.REDSTONE_BLOCK)) == 15,
+			"The torch still counts when the redstone block is ignored");
+		helper.assertTrue(Signals.bestNeighbourIgnoring(level, centre, state -> state.is(Blocks.REDSTONE_TORCH)) == 15,
+			"The redstone block still counts when the torch is ignored");
+		helper.assertTrue(Signals.bestNeighbourIgnoring(level, centre,
+			state -> state.is(Blocks.REDSTONE_TORCH) || state.is(Blocks.REDSTONE_BLOCK)) == 0,
+			"With both ignored nothing is left");
+		level.setBlock(centre.east(), Blocks.AIR.defaultBlockState(), Block.UPDATE_ALL);
+		level.setBlock(centre.west(), Blocks.AIR.defaultBlockState(), Block.UPDATE_ALL);
+		helper.succeed();
+	}
+
 	/** A reading must not leave the shared position pointing anywhere that matters, or two readers on one thread would cross. */
 	@GameTest(template = "empty", timeoutTicks = 200)
 	public static void readsDoNotDisturbEachOther(GameTestHelper helper) {

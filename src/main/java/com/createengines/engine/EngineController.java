@@ -802,13 +802,17 @@ public final class EngineController {
 	 * A redstone signal anywhere on a camshaft closes its fuel rack, as on an inline injection pump. The metering
 	 * each injector is set to is read here too.
 	 */
+	private static final java.util.function.Predicate<net.minecraft.world.level.block.state.BlockState> SENSOR_OUTPUT =
+		state -> state.getBlock() instanceof com.createengines.content.airflow.SensorBlock<?>;
+
 	private void readFuelRacks(Level level) {
 		for (int i = 0; i < racks.length; i++) {
 			int signal = 0;
 			for (BlockPos pos : layout.camLines()
 				.get(i)
 				.segments())
-				signal = Math.max(signal, Signals.bestNeighbour(level, pos));
+				// A sensor's own reading is not a command: a MAF sensor beside the cam would otherwise close the rack it is trimming
+				signal = Math.max(signal, Signals.bestNeighbourIgnoring(level, pos, SENSOR_OUTPUT));
 			racks[i] = 1 - signal / 15d;
 		}
 		for (int i = 0; i < models.size(); i++) {
