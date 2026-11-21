@@ -208,10 +208,10 @@ that changes how an existing engine behaves says so in its changelog.
 - [Design notes](https://github.com/R-unic/create-engines/blob/master/docs/DESIGN.md), how the simulation works
 ```
 
-## Changelog for 2.0.0: Open Throttle
+## Changelog for 2.0.0
 
-Methanol and kerosene to burn, and a public API for addons to build their own engines and parts. Open Throttle is the release
-where the mod becomes a platform (a public API, engine types from other mods, parts as data), and 2.0 is the one
+**Open Throttle.** Methanol and kerosene to burn, and a public API for addons to build their own engines and parts. It is the
+release where the mod becomes a platform (a public API, engine types from other mods, parts as data), and 2.0 is the one
 release that breaks the 1.x promise, so the cleanup that needed breaking is done here. Every world, config and advancement
 from 1.x carries over. These change how something that already exists behaves or is named, each marked "Breaking" or "Changed"
 below: advancement IDs, config files and groups, how many intake and exhaust openings an engine needs, thin air above y 128,
