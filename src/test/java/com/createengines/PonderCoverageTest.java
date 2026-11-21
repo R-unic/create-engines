@@ -73,6 +73,14 @@ class PonderCoverageTest {
 		assertTrue(missing.isEmpty(), "Ponder pages that no longer say what is new: " + missing);
 	}
 
+	/** The Heavy Starter has its own page, and it carries the strength share, the cold choke and the shared-crank rule. */
+	@Test
+	void theHeavyStarterPageSaysWhatItDoes() throws IOException {
+		List<String> missing = new ArrayList<>();
+		says(lang(), "heavy_starter", missing, "two and a half times", "chokes a cold engine", "share the crank", "one-way clutch");
+		assertTrue(missing.isEmpty(), "The Heavy Starter page no longer says: " + missing);
+	}
+
 	/**
 	 * The slow-crank half of cranking draw was built and dropped (a starter slowed by a flat battery stopped engines that start from
 	 * the flat battery they are placed with), so a page must not promise it.

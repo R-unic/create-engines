@@ -27,13 +27,12 @@ final class PonderAudit {
 
 	/**
 	 * Blocks that are variants of a block that has a page, or are cased onto one, and so need none of their own: the
-	 * three casing plates and the encased shaft and cogwheels are explained by the Engine Casing page's casing, and the
-	 * heavy starter is the starter's upgrade. Anything else without a page is reported, so adding a block without one
+	 * three casing plates and the encased shaft and cogwheels are explained by the Engine Casing page's casing. Anything else without a page is reported, so adding a block without one
 	 * is a decision rather than an oversight.
 	 */
 	private static final java.util.Set<String> NO_PAGE_NEEDED = java.util.stream.Stream
 		.of("engine_cased_shaft", "engine_cased_cogwheel", "engine_cased_large_cogwheel", "engine_riveted_casing",
-			"engine_louvred_casing", "engine_window_casing", "heavy_starter")
+			"engine_louvred_casing", "engine_window_casing")
 		.flatMap(name -> name.contains("_cased_") ? java.util.stream.Stream.concat(java.util.stream.Stream.of(name),
 			java.util.stream.Stream.of("riveted", "louvred", "window")
 				.map(plate -> name.replace("engine_", "engine_" + plate + "_"))) : java.util.stream.Stream.of(name))

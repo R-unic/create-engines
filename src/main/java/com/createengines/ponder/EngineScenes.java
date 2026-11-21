@@ -2669,6 +2669,99 @@ public final class EngineScenes {
 		scene.markAsFinished();
 	}
 
+	public static void heavyStarter(SceneBuilder builder, SceneBuildingUtil util) {
+		CreateSceneBuilder scene = new CreateSceneBuilder(builder);
+		scene.title("heavy_starter", "The Heavy Starter");
+		scene.configureBasePlate(0, 0, 5);
+		scene.world()
+			.showSection(util.select()
+				.layer(0), Direction.UP);
+
+		BlockPos starter = util.grid()
+			.at(1, 2, 2);
+		Selection starterSelection = util.select()
+			.position(starter);
+		Selection engine = util.select()
+			.fromTo(1, 2, 3, 3, 4, 3);
+		Selection input = util.select()
+			.fromTo(1, 2, 0, 1, 2, 1);
+		Selection power = util.select()
+			.position(0, 2, 2);
+
+		// The page reuses the Starter's setup, with the Starter swapped for the heavy one before anything is shown
+		scene.world()
+			.replaceBlocks(starterSelection, CEBlocks.HEAVY_STARTER.getDefaultState()
+				.setValue(BlockStateProperties.FACING, Direction.SOUTH), false);
+		scene.world()
+			.showSection(engine, Direction.DOWN);
+		scene.idle(10);
+		scene.world()
+			.showSection(starterSelection, Direction.SOUTH);
+		scene.idle(15);
+		scene.overlay()
+			.showText(90)
+			.attachKeyFrame()
+			.text("The Heavy Starter is a Starter with reduction gearing. It is placed, fed and switched exactly like one, and cranks the crankshaft block it faces.")
+			.pointAt(util.vector()
+				.blockSurface(starter, Direction.UP))
+			.placeNearTarget();
+		scene.idle(100);
+
+		scene.world()
+			.showSection(input, Direction.SOUTH);
+		scene.world()
+			.showSection(power, Direction.DOWN);
+		scene.world()
+			.setKineticSpeed(input, 64);
+		scene.world()
+			.setKineticSpeed(starterSelection, 64);
+		scene.world()
+			.setKineticSpeed(util.select()
+				.fromTo(1, 2, 3, 3, 2, 3), 64);
+		scene.effects()
+			.indicateRedstone(util.grid()
+				.at(0, 2, 2));
+		scene.idle(10);
+		scene.overlay()
+			.showText(110)
+			.attachKeyFrame()
+			.text("It takes on two and a half times the effort of a plain Starter, so it puts that much less stress on its own input. A big engine that would stall a weak source can be turned over by one.")
+			.pointAt(util.vector()
+				.topOf(1, 2, 1))
+			.placeNearTarget();
+		scene.idle(120);
+
+		scene.overlay()
+			.showText(110)
+			.attachKeyFrame()
+			.text("Starters working together share the crank by strength. Two Heavy Starters on one engine feel a fifth of a plain Starter's effort each.")
+			.pointAt(util.vector()
+				.blockSurface(starter, Direction.WEST))
+			.placeNearTarget();
+		scene.idle(120);
+
+		scene.world()
+			.setKineticSpeed(util.select()
+				.fromTo(1, 2, 3, 3, 2, 3), 96);
+		scene.overlay()
+			.showText(120)
+			.attachKeyFrame()
+			.text("It also chokes a cold engine while it cranks, so the cold does not hold the engine back from catching. It keeps choking for a few seconds after it lets go, so the engine can settle.")
+			.pointAt(util.vector()
+				.topOf(2, 4, 3))
+			.placeNearTarget();
+		scene.idle(130);
+
+		scene.overlay()
+			.showText(90)
+			.text("Like a plain Starter, a one-way clutch lets go once the engine outruns it, and a Hand Crank on its shaft engages it with no signal.")
+			.pointAt(util.vector()
+				.topOf(1, 2, 1))
+			.placeNearTarget();
+		scene.idle(100);
+		scene.markAsFinished();
+	}
+
 	public static void flywheel(SceneBuilder builder, SceneBuildingUtil util) {
 		CreateSceneBuilder scene = new CreateSceneBuilder(builder);
 		scene.title("flywheel", "Flywheels and Rough Running");
