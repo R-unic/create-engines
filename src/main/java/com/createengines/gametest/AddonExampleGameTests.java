@@ -27,7 +27,8 @@ public class AddonExampleGameTests {
 				: -1;
 	}
 
-	@GameTest(template = "empty", timeoutTicks = 600)
+	/** Each of these registers a provider every engine in the world is asked about, so each runs alone in its own batch. */
+	@GameTest(template = "empty", timeoutTicks = 600, batch = "addon-example-join")
 	public static void theExampleAssistMotorJoinsAnEngineWhenPlacedAndLeavesWhenBroken(GameTestHelper helper) {
 		ExampleAssist.AssistProvider provider = new ExampleAssist.AssistProvider(Blocks.GOLD_BLOCK);
 		EngineExtensions.register(provider);
@@ -68,7 +69,7 @@ public class AddonExampleGameTests {
 		});
 	}
 
-	@GameTest(template = "empty", timeoutTicks = 800)
+	@GameTest(template = "empty", timeoutTicks = 800, batch = "addon-example-goggles")
 	public static void theExampleAssistMotorAddsAGoggleLineToARunningEngine(GameTestHelper helper) {
 		ExampleAssist.AssistProvider provider = new ExampleAssist.AssistProvider(Blocks.GOLD_BLOCK);
 		EngineExtensions.register(provider);
