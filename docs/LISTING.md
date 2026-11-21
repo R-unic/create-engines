@@ -53,7 +53,7 @@ your Create machines.
 | **Power** | Turbos, superchargers, intercoolers, flywheels and a 13-gear transmission |
 | **Tools** | Bank Builder, Timing Tool, Blueprints, Dynamometer, Black Box recorder, Engineer's Goggles |
 | **Learning** | A Ponder scene for every part, and advancement tracks |
-| **Works with** | Create Aeronautics (thin air), Pollution of the Realms, JEI, EMI, KubeJS, CC: Tweaked |
+| **Works with** | Create Aeronautics (thin air), Create: Diesel Generators (fuels), Pollution of the Realms, JEI, EMI, KubeJS, CC: Tweaked |
 | **For packs and addons** | Config presets, data-driven parts and fuels, a `/ce` command, and a frozen public API |
 | **Needs** | Minecraft 1.21.1, NeoForge, Create 6.0.10 (required on client and server) |
 
@@ -178,10 +178,11 @@ with boost, goggle lines and blueprint support. A working example is built and t
 
 All optional; none is needed to play.
 
-- **Create Aeronautics:** the thin-air rule is for it. The mod's tests run alongside Aeronautics 1.3.2 and Sable 2.0.6, and
+- **Create Aeronautics:** the thin-air rule is for it, using Sable's own air pressure where Sable is installed. The mod's tests run alongside Aeronautics 1.3.2 and Sable 2.0.6, and
   one engine on one wheeled contraption has been tried by hand. Other contraptions are untried, so treat it as early
 - **Pollution of the Realms:** engines put carbon and sulfur into the air through an open exhaust outlet, more when they run
   rich and less with a Soot Trap fitted. Nothing is read back into the engine, and a setting turns it off
+- **Create: Diesel Generators:** its diesel, biodiesel, gasoline, ethanol and plant oil burn in these engines
 - **KubeJS** and **CC: Tweaked:** read-only access to an engine's state, for scripts and computers
 - **JEI** and **EMI:** every fuel, refining route and engine part
 
@@ -207,6 +208,37 @@ that changes how an existing engine behaves says so in its changelog.
 - [Source and issue tracker](https://github.com/R-unic/create-engines)
 - [Design notes](https://github.com/R-unic/create-engines/blob/master/docs/DESIGN.md), how the simulation works
 ```
+
+## Changelog for 2.0.1
+
+A patch for 2.0.0: Create Aeronautics fixes, finer control of thin air and pollution, Create: Diesel Generators fuels, and a
+Heavy Starter Ponder page. No ID, key or saved format is renamed or removed. Two defaults move, listed first.
+- Changed behaviour, thin air: the thinnest air an engine is given is now a quarter of sea level (was a fifth). Engines below
+  about y 1800 are exactly as they were; above that they get a little more air than in 2.0.0 (the baseline sweep of a six-cylinder
+  spark engine in the thinnest air starts at 0.48, was 0.08). This is `compat.altitudeFloor`, which can be set back to 0.2.
+- Changed behaviour, pollution: the default `compat.pollutionRate` is 0.5 (was 1.0), so a new config puts out half the gas.
+  A config file that already holds a value keeps it. The rate's meaning is unchanged: 1 is the full amount.
+- New, Create Aeronautics: with Sable installed, the air an engine breathes is Sable's own air pressure at its height, so a
+  datapack that changes the dimension's pressure curve changes the engine. If Sable does not answer, the height curve is used
+  and one warning is logged. `compat.sableAirPressure` (default on) turns it off.
+- New config, `[compat]`: `sableAirPressure`, `altitudeStart` (128, -64 to 100000), `altitudeScale` (1200, 1 to 100000),
+  `altitudeFloor` (0.25, 0.01 to 1), `carbonRate` and `sulfurRate` (1.0, 0 to 10, each on top of `pollutionRate`).
+  The defaults leave the height curve as it was in 2.0.0, apart from the floor above.
+- Fix, Create Aeronautics: the pistons, rods, cams and rotor of an engine on a moving structure froze while its shaft kept
+  turning. Flywheel tested the part's position in the structure's plot, millions of blocks from where it is drawn; on a
+  structure the part is now tested where it really is.
+- Fix, crank and shaft alignment: the crank is turned from Flywheel's clock, which Create's shafts use, instead of Create's
+  animation clock, which differs by however many ticks passed before the world was joined. The crank now stays lined up with
+  the shafts around it at high speed. This is drawing only; no engine's numbers move. It needs a new access transformer for
+  `LevelRenderer.ticks`.
+- Fuels: Create: Diesel Generators' diesel, biodiesel, gasoline, ethanol and plant oil (and their flowing forms) are added to
+  the `c:diesel`, `c:gasoline`, `c:ethanol` and `c:plantoil` fluid tags as optional entries, so they burn in these engines and
+  the tags still load without that mod. Only the tags were checked; a game with that mod has not been run.
+- New Ponder page for the Heavy Starter (it had none).
+- Tests added: air pressure and curve (`AltitudeTest`), config extremes for the new settings (`ConfigMatrixTest`,
+  `SharedStateConcurrencyTest`), gas rates (`EmissionsTest`), crank phase (`RenderRotationTest`), the Heavy Starter page
+  (`PonderCoverageTest`), the optional fuel tags (`DieselGeneratorsFuelTagsTest`) and two Sable GameTests (pressure falls with
+  height; a part on a structure is in view where the structure is). `compat/behaviour.txt` changed on three lines (the altitude at 5000 and two thin-air sweeps), all from the floor.
 
 ## Changelog for 2.0.0
 

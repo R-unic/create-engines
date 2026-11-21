@@ -109,8 +109,9 @@ Minecraft 1.21.1 · NeoForge 21.1.219 · Create 6.0.10
 - Precision cylinders, heads, pistons and injectors, whose effects are data files a pack can retune
 - **Thin air**: above y 128 the air thins (to about 0.85 of sea level at the build limit, and less beyond it), so a
   naturally aspirated engine loses power as it climbs and a turbocharger or supercharger earns its place. It matters most
-  for engines on Create Aeronautics aircraft. Engines at or below y 128 are unaffected, and `compat.altitudeThinning`
-  turns it off
+  for engines on Create Aeronautics aircraft, where the air is Sable's own air pressure at the engine's height. Without Sable,
+  engines at or below y 128 are unaffected. The thinnest air an engine is given is a quarter of sea level. `compat.altitudeThinning`
+  turns it off, and `sableAirPressure`, `altitudeStart`, `altitudeScale` and `altitudeFloor` tune it
 - Flywheels that matter: a rough engine is rated for less, and rotating mass smooths it out
 - A 13-gear transmission with an Auto mode that shifts to suit the engine, and a **Dynamometer** that draws an engine's torque and power curves
 - A **Black Box** flight recorder that keeps ten minutes of an engine's speed, load and warmth and says why it stalled
@@ -145,8 +146,8 @@ The server config (`serverconfig/create_engines-v2-server.toml` in the world) is
 (`stressPerTorque`, the inertia and friction values), `[limits]` (how far the scanner follows a crankshaft, a manifold or a
 coupling), `[balance]` multipliers (`fuelConsumption`, `precisionBonus`, `boostStrength`, `rotaryPower`, `heatRecoveryOutput`,
 `coolingBonus`, `torsionalFlex`, `alternatorEnergy`), `[features]` switches (`forcedInduction`, `sparkFouling`, `oilDilution`,
-`oilAgeing`, `engineTemperature`, `pilotInjection`, `rotaryEngines`, `heatRecovery`, `batteryCold`, `crankingDraw`) and `[compat]` (`altitudeThinning`, and
-`pollution` and `pollutionRate` for Pollution of the Realms), so a modpack can rebalance without code. Turning a feature off
+`oilAgeing`, `engineTemperature`, `pilotInjection`, `rotaryEngines`, `heatRecovery`, `batteryCold`, `crankingDraw`) and `[compat]` (`altitudeThinning`, `sableAirPressure`, `altitudeStart`, `altitudeScale`, `altitudeFloor`, and
+`pollution`, `pollutionRate`, `carbonRate` and `sulfurRate` for Pollution of the Realms), so a modpack can rebalance without code. Turning a feature off
 never removes blocks; they stop doing that job. The first time a world loads in 2.0 it reads the 1.x file
 (`create_engines-server.toml`) beside it and carries every value over, and the log says what moved. The client config
 (`create_engines-v2-client.toml`: `[effects]` `particles`, `density` and `photosensitive`, `[volume]` `bang`, `engineNote`, `mechanical` and
@@ -167,12 +168,14 @@ with boost, goggle lines and blueprint support). JEI and EMI show the refining r
 
 All optional; none is needed to play.
 
-- **Create Aeronautics**: the thin-air rule is for it. The mod's GameTests also run alongside Aeronautics 1.3.2 and Sable 2.0.6,
+- **Create Aeronautics**: the thin-air rule is for it, and with Sable installed the air an engine breathes is Sable's own air pressure. The mod's GameTests also run alongside Aeronautics 1.3.2 and Sable 2.0.6,
   and one engine on one wheeled contraption has been tried by hand. Other contraptions have not been tried, so treat it as
   early.
 - **Pollution of the Realms**: engines put carbon and sulfur into the air through an open exhaust outlet, in proportion to the
   fuel they burn (more carbon when they run rich, less with a Soot Trap fitted; sulfur follows how dirty the fuel is). Nothing
-  is read back into the engine. `compat.pollution` and `compat.pollutionRate` control it.
+  is read back into the engine. `compat.pollution`, `pollutionRate` (half of the full amount by default), `carbonRate` and `sulfurRate` control it.
+- **Create: Diesel Generators**: its diesel, biodiesel, gasoline, ethanol and plant oil are listed in the common fuel tags, so
+  they burn in these engines. This is only the tags (each entry optional); a game with that mod installed has not been run.
 - **KubeJS** (server scripts) and **CC: Tweaked** (a peripheral on a crankshaft, cylinder, head or rotor housing) can watch an
   engine, read-only: see [docs/INTEGRATIONS.md](docs/INTEGRATIONS.md).
 - **Jade** shows an engine's state when you look at its crankshaft, cylinder, head or rotor housing.
