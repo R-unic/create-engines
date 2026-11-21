@@ -4,6 +4,14 @@
     {
       "id": "create_engines:flowing_ethanol",
       "required": false
+    },
+    {
+      "id": "createdieselgenerators:ethanol",
+      "required": false
+    },
+    {
+      "id": "createdieselgenerators:flowing_ethanol",
+      "required": false
     }
   ]
 }

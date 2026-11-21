@@ -4,6 +4,14 @@
     {
       "id": "create_engines:flowing_gasoline",
       "required": false
+    },
+    {
+      "id": "createdieselgenerators:gasoline",
+      "required": false
+    },
+    {
+      "id": "createdieselgenerators:flowing_gasoline",
+      "required": false
     }
   ]
 }

@@ -4,6 +4,22 @@
     {
       "id": "create_engines:flowing_diesel",
       "required": false
+    },
+    {
+      "id": "createdieselgenerators:diesel",
+      "required": false
+    },
+    {
+      "id": "createdieselgenerators:flowing_diesel",
+      "required": false
+    },
+    {
+      "id": "createdieselgenerators:biodiesel",
+      "required": false
+    },
+    {
+      "id": "createdieselgenerators:flowing_biodiesel",
+      "required": false
     }
   ]
 }
