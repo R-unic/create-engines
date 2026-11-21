@@ -150,6 +150,7 @@ refused, never clamped, and the command says which.
 |---|---|---|---|
 | `particles` | `true` | on or off | Flame, sparks, smoke, steam and the gas drawn through a cylinder. Off, engines run without particles. |
 | `density` | `1.0` | 0.1 to 4.0 | How often each cylinder may bang and puff, against the default. Below 1 thins the effects out (kind to frame rate on a big engine), above 1 allows more. |
+| `photosensitive` | `false` | on or off | Photosensitive mode. Takes out everything that flashes or flickers: the flash and fireball of a firing, flame and sparks at the exhaust and intake, and the glowing gas and flame tongues drawn inside each cylinder. Smoke, steam, sound and the rest of the effects are unchanged. |
 
 ### `[volume]`
 

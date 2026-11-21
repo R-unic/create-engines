@@ -14,6 +14,7 @@ public final class CEClientConfig {
 
 	public static final ModConfigSpec SPEC;
 	public static final ModConfigSpec.BooleanValue PARTICLES;
+	public static final ModConfigSpec.BooleanValue PHOTOSENSITIVE;
 	public static final ModConfigSpec.DoubleValue BANG_VOLUME;
 	public static final ModConfigSpec.DoubleValue EFFECT_DENSITY;
 	public static final ModConfigSpec.DoubleValue BOOST_VOLUME;
@@ -32,6 +33,10 @@ public final class CEClientConfig {
 		EFFECT_DENSITY = value("effects.density", builder.comment("How often each cylinder may bang and puff, against the default. Below 1 thins the",
 				"effects out (kind to frame rate on a big engine), above 1 allows more.")
 			.defineInRange("density", 1.0, 0.1, 4.0));
+		PHOTOSENSITIVE = value("effects.photosensitive", builder.comment("Photosensitive mode. Takes out everything that flashes or flickers: the flash and fireball of a",
+				"firing, flame and sparks at the exhaust and intake, and the glowing gas and flame tongues drawn inside each",
+				"cylinder. Smoke, steam, sound and the rest of the effects are unchanged.")
+			.define("photosensitive", false));
 		builder.pop();
 		builder.push("volume");
 		BANG_VOLUME = value("volume.bang", builder.comment("Volume of a cylinder's firing bang. 0 mutes it.")
@@ -69,6 +74,11 @@ public final class CEClientConfig {
 
 	public static boolean particles() {
 		return PARTICLES.get();
+	}
+
+	/** Whether flashing and flickering effects are left out; see the setting's comment. */
+	public static boolean photosensitive() {
+		return PHOTOSENSITIVE.get();
 	}
 
 	public static float bangVolume() {

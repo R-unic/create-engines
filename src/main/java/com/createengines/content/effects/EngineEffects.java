@@ -186,6 +186,8 @@ public final class EngineEffects {
 
 	/** Tongues of flame out along {@code normal}. */
 	public static void flames(Level level, Vec3 at, Vec3 normal, int count, double speed) {
+		if (CEClientConfig.photosensitive())
+			return;
 		RandomSource random = level.random;
 		for (int i = 0; i < count; i++) {
 			Vec3 velocity = normal.scale(speed * (0.7 + random.nextDouble() * 0.6))
@@ -197,6 +199,8 @@ public final class EngineEffects {
 
 	/** Sparks thrown from {@code at}, {@code push} their common velocity and {@code scatter} how far each strays from it. */
 	public static void sparks(Level level, Vec3 at, Vec3 push, int count, double scatter) {
+		if (CEClientConfig.photosensitive())
+			return;
 		RandomSource random = level.random;
 		for (int i = 0; i < count; i++) {
 			Vec3 velocity = push.add(jitter(random, scatter * 2));

@@ -144,6 +144,8 @@ class ConfigDocsTest {
 		assertTrue(blocks.get("server-settings").contains("| `stressPerTorque` | `78.7` | 1.0 to 10000.0 |"), blocks.get("server-settings"));
 		assertTrue(blocks.get("server-settings").contains("| `forcedInduction` | `true` | on or off |"), blocks.get("server-settings"));
 		assertTrue(blocks.get("client-settings").contains("| `density` | `1.0` | 0.1 to 4.0 |"), blocks.get("client-settings"));
+		// Photosensitive mode is opt-in: a player who never touched it sees the effects they always saw
+		assertTrue(blocks.get("client-settings").contains("| `photosensitive` | `false` | on or off |"), blocks.get("client-settings"));
 		assertTrue(blocks.get("presets").contains("| `fuelConsumption` | `0.6`"), blocks.get("presets"));
 	}
 

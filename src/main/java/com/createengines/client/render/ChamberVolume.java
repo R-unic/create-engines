@@ -3,6 +3,7 @@ package com.createengines.client.render;
 import org.joml.Matrix4f;
 import org.joml.Vector3f;
 
+import com.createengines.config.CEClientConfig;
 import com.createengines.content.cylinder.CylinderBlock;
 import com.createengines.content.cylinder.CylinderBlockEntity;
 import com.createengines.content.effects.ExhaustLook;
@@ -73,7 +74,8 @@ public final class ChamberVolume {
 		if (look == null)
 			return;
 		boolean haze = look.hazeAlpha > 0.01f;
-		boolean glow = look.glowAlpha > 0.01f;
+		// Photosensitive mode draws the haze but never the glow, core or flame tongues, which brighten and flicker
+		boolean glow = look.glowAlpha > 0.01f && !CEClientConfig.photosensitive();
 		if (!haze && !glow)
 			return;
 

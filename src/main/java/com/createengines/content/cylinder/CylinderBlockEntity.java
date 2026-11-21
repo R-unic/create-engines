@@ -259,7 +259,8 @@ public class CylinderBlockEntity extends SmartBlockEntity implements IHaveGoggle
 		if (volume > 0 && !inTheNote)
 			level.playLocalSound(worldPosition, CESounds.CYLINDER_FIRE.get(), SoundSource.BLOCKS, volume,
 				0.92f + random.nextFloat() * 0.16f, false);
-		if (!CEClientConfig.particles())
+		// Photosensitive mode: the bang is heard, but the flash it comes with is left out
+		if (!CEClientConfig.particles() || CEClientConfig.photosensitive())
 			return;
 		Direction bore = getBlockState().getValue(CylinderBlock.FACING);
 		Vec3 along = Vec3.atLowerCornerOf(bore.getNormal());
@@ -340,14 +341,16 @@ public class CylinderBlockEntity extends SmartBlockEntity implements IHaveGoggle
 			int count = 1 + (int) (squeeze * 3);
 			int cold = blend(0x9CCBFF, 0xFFA040, squeeze);
 			int warm = blend(0x5C8CD0, 0xC0300C, squeeze);
-			for (int i = 0; i < count; i++) {
+			for (int i = 0; i < count && !CEClientConfig.photosensitive(); i++) {
 				Vec3 at = chamberPoint(bore, crown + random.nextDouble() * depth);
 				Vec3 v = swirl(at, along, 0.02 + 0.03 * squeeze);
 				level.addParticle(GlowParticleOptions.fire(cold, warm, 0.07f + 0.05f * squeeze, 0.18f + 0.4f * squeeze, 1.1f, 7),
 					at.x, at.y, at.z, v.x, v.y, v.z);
 			}
 		} else if (cycle < 540) {
-			if (fired && cycle < 450) {
+			if (CEClientConfig.photosensitive() && fired) {
+				// Nothing glows in photosensitive mode: the burn and the cooling gas are left out
+			} else if (fired && cycle < 450) {
 				// The burn: a churning white-yellow to red fireball filling the space the piston is leaving
 				float burn = (float) (cycle - 360) / 90;
 				for (int i = 0; i < 4; i++) {
@@ -379,7 +382,7 @@ public class CylinderBlockEntity extends SmartBlockEntity implements IHaveGoggle
 				level.addParticle(GlowParticleOptions.mist(smoke, blend(smoke, 0x202020, 0.5f), 0.09f, 0.45f, 1.3f, 8),
 					at.x, at.y, at.z, v.x, v.y, v.z);
 			}
-			if (fired && random.nextInt(3) == 0) {
+			if (fired && random.nextInt(3) == 0 && !CEClientConfig.photosensitive()) {
 				Vec3 at = chamberPoint(bore, crown + random.nextDouble() * 0.15);
 				level.addParticle(GlowParticleOptions.fire(0xFF8A30, 0x501408, 0.05f, 0.5f, 0.8f, 7), at.x, at.y, at.z,
 					along.x * 0.05, along.y * 0.05, along.z * 0.05);

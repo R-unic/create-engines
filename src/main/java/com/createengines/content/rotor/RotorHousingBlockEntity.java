@@ -281,7 +281,8 @@ public class RotorHousingBlockEntity extends CrankshaftBlockEntity implements Ga
 		if (volume > 0 && !inTheNote)
 			level.playLocalSound(worldPosition, CESounds.CYLINDER_FIRE.get(), SoundSource.BLOCKS, volume,
 				1.05f + random.nextFloat() * 0.16f, false);
-		if (!CEClientConfig.particles())
+		// Photosensitive mode: the bang is heard, but the flash it comes with is left out
+		if (!CEClientConfig.particles() || CEClientConfig.photosensitive())
 			return;
 		for (int i = 0; i < 6; i++) {
 			double x = worldPosition.getX() + 0.3 + random.nextDouble() * 0.4;
