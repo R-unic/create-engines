@@ -49,8 +49,8 @@ public class TransmissionBlockEntity extends SplitShaftBlockEntity {
 
 	private static final BehaviourType<ScrollValueBehaviour> PROFILE_TYPE = new BehaviourType<>("transmission_shift_profile");
 	/** Where the profile's value box sits on a face, below the gear's (voxels up from the face's bottom). */
-	private static final double SHIFT_PROFILE_Y = 2.5;
-	private static final double GEAR_Y = 8;
+	private static final double SHIFT_PROFILE_Y = 4.5;
+	private static final double GEAR_Y = 11.5;
 
 	public ScrollValueBehaviour panel;
 	/** Auto's shift profile, see {@link AutoGearbox.Profile}. */
@@ -344,6 +344,21 @@ public class TransmissionBlockEntity extends SplitShaftBlockEntity {
 		public void setValueSettings(Player player, ValueSettings settings, boolean ctrlDown) {
 			Operators.record(getWorld(), getPos(), player);
 			super.setValueSettings(player, settings, ctrlDown);
+		}
+
+		/**
+		 * Create sends a player's setting to the first value box whose network id matches. Both dials said 0, so a change
+		 * made on the shift profile went to the gear panel, which is first in line.
+		 */
+		@Override
+		public int netId() {
+			return 1;
+		}
+
+		/** Create's clipboard copies settings under this key, so each dial needs its own. */
+		@Override
+		public String getClipboardKey() {
+			return "ShiftProfile";
 		}
 
 		@Override

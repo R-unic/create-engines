@@ -3990,6 +3990,33 @@ public class EngineGameTests {
 		helper.succeed();
 	}
 
+	/**
+	 * Create sends a player's setting to the first value box whose network id matches, so two dials on a block that share
+	 * one make the second dial change the first. It has happened on the turbocharger, the throttle and the transmission.
+	 */
+	@GameTest(template = "empty")
+	public static void everyDialOnABlockHasItsOwnNetworkId(GameTestHelper helper) {
+		BlockPos pos = new BlockPos(1, 1, 1);
+		for (var block : java.util.List.of(CEBlocks.TRANSMISSION.getDefaultState(), CEBlocks.THROTTLE.getDefaultState(),
+			CEBlocks.SUMP.getDefaultState())) {
+			helper.setBlock(pos, block);
+			com.simibubi.create.foundation.blockEntity.SmartBlockEntity be = helper.getBlockEntity(pos);
+			java.util.Set<Integer> ids = new java.util.HashSet<>();
+			java.util.Set<String> keys = new java.util.HashSet<>();
+			int dials = 0;
+			for (var behaviour : be.getAllBehaviours())
+				if (behaviour instanceof com.simibubi.create.foundation.blockEntity.behaviour.scrollValue.ScrollValueBehaviour dial) {
+					dials++;
+					ids.add(dial.netId());
+					keys.add(dial.getClipboardKey());
+				}
+			helper.assertTrue(dials >= 2, block.getBlock() + " has " + dials + " dials");
+			helper.assertTrue(ids.size() == dials, block.getBlock() + " has dials sharing a network id: " + ids);
+			helper.assertTrue(keys.size() == dials, block.getBlock() + " has dials sharing a clipboard key: " + keys);
+		}
+		helper.succeed();
+	}
+
 	/** A fluid in a common fuel tag runs an engine with no datapack; our own fuels sit in those tags for other mods' machines. */
 	@GameTest(template = "empty")
 	public static void fuelsFromOtherModsRunByTheirCommonTags(GameTestHelper helper) {

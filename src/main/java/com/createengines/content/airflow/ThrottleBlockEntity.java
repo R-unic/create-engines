@@ -72,6 +72,17 @@ public class ThrottleBlockEntity extends SmartBlockEntity implements IHaveGoggle
 				return WIDE_TYPE;
 			}
 
+			/** Create sends a setting to the first box with the matching network id; both said 0, so the bore dial set the idle stop. */
+			@Override
+			public int netId() {
+				return 1;
+			}
+
+			@Override
+			public String getClipboardKey() {
+				return WIDE_KEY;
+			}
+
 			// A scroll value saves itself under one fixed key, so two on a block overwrite each other: the idle stop would
 			// come back as the bore's value and the valve would sit wide open whatever the dial or the signal said
 			@Override

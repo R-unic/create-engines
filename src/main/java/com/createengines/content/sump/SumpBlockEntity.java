@@ -107,7 +107,7 @@ public class SumpBlockEntity extends SmartBlockEntity implements IHaveGoggleInfo
 		behaviours.add(pilot);
 
 		exchange = new Dial(CELang.translate("value.oil_exchange")
-			.component(), this, new SumpValueBox(), EXCHANGE_TYPE, "OilExchange");
+			.component(), this, new SumpValueBox(), EXCHANGE_TYPE, "OilExchange", 0);
 		exchange.between(0, EXCHANGE_RATES.length - 1);
 		exchange.value = 0;
 		exchange.withFormatter(v -> CELang.translate("value.oil_exchange." + v)
@@ -115,7 +115,7 @@ public class SumpBlockEntity extends SmartBlockEntity implements IHaveGoggleInfo
 		behaviours.add(exchange);
 
 		signalTank = new Dial(CELang.translate("value.sump_signal")
-			.component(), this, new SumpSignalBox(), SIGNAL_TYPE, "SumpSignal");
+			.component(), this, new SumpSignalBox(), SIGNAL_TYPE, "SumpSignal", 1);
 		signalTank.between(0, SIGNAL_TANKS - 1);
 		signalTank.value = 0;
 		signalTank.withFormatter(v -> CELang.translate("value.sump_signal." + v)
@@ -315,11 +315,24 @@ public class SumpBlockEntity extends SmartBlockEntity implements IHaveGoggleInfo
 
 		private final BehaviourType<?> type;
 		private final String key;
+		private final int netId;
 
-		Dial(Component label, SmartBlockEntity be, ValueBoxTransform slot, BehaviourType<?> type, String key) {
+		Dial(Component label, SmartBlockEntity be, ValueBoxTransform slot, BehaviourType<?> type, String key, int netId) {
 			super(label, be, slot);
 			this.type = type;
 			this.key = key;
+			this.netId = netId;
+		}
+
+		/** Create sends a player's setting to the first box with the matching network id, so each dial needs its own. */
+		@Override
+		public int netId() {
+			return netId;
+		}
+
+		@Override
+		public String getClipboardKey() {
+			return key;
 		}
 
 		@Override
