@@ -765,12 +765,12 @@ public final class EngineScenes {
 			.showSection(exhaust, Direction.NORTH);
 		scene.idle(15);
 		scene.overlay()
-			.showText(90)
-			.text("Exhaust Manifolds do the same for an Exhaust Outlet, as pipes can bend and join like a real exhaust. Each opening comfortably serves two cylinders.")
+			.showText(150)
+			.text("Exhaust Manifolds do the same for an Exhaust Outlet, as pipes can bend and join like a real exhaust. One opening for each head gives nearly all the air it can breathe. An opening shared by two heads gives about two thirds, a second opening on a head adds little, and openings touching each other count for half.")
 			.pointAt(util.vector()
 				.topOf(3, 4, 4))
 			.placeNearTarget();
-		scene.idle(100);
+		scene.idle(160);
 		scene.overlay()
 			.showText(90)
 			.text("A Wrench cuts or restores the pipe connection on the side you click, so two runs can lie side by side without joining.")
@@ -872,13 +872,13 @@ public final class EngineScenes {
 		scene.world()
 			.setKineticSpeed(crank.add(alternator), 48);
 		scene.overlay()
-			.showText(100)
+			.showText(170)
 			.attachKeyFrame()
-			.text("A battery makes no charge itself. An Alternator charges the batteries touching it, and those of the engine it touches, while its shaft turns, for a little stress.")
+			.text("A battery makes no charge itself. An Alternator charges the batteries touching it, and those of the engine it touches, while its shaft turns, for a little stress. Its goggles say how fast it is charging and what share of the engine's rating it takes; fit several and each reads out its share of the charge made.")
 			.pointAt(util.vector()
 				.topOf(0, 1, 3))
 			.placeNearTarget();
-		scene.idle(110);
+		scene.idle(180);
 
 		scene.overlay()
 			.showText(100)
@@ -898,13 +898,13 @@ public final class EngineScenes {
 		scene.idle(120);
 
 		scene.overlay()
-			.showText(120)
+			.showText(170)
 			.colored(PonderPalette.BLUE)
-			.text("Cold costs charge. In a cold biome a battery gives only part of what it holds, and a cold engine makes each spark cost more. A heat source beside it, like a Blaze Burner, warms it. A starter draws on the batteries as it cranks a spark engine, and turns it more slowly as they run low.")
+			.text("Cold costs charge. In a cold biome a battery gives only part of what it holds, and a cold engine makes each spark cost more. A heat source beside it, like a Blaze Burner, warms it. A starter draws on the batteries as it cranks a spark engine, less as they run low and none from an empty bank. It still turns at full speed, so keep them charged or crank by hand.")
 			.pointAt(util.vector()
 				.topOf(1, 2, 3))
 			.placeNearTarget();
-		scene.idle(130);
+		scene.idle(180);
 
 		scene.overlay()
 			.showText(110)
@@ -1948,14 +1948,14 @@ public final class EngineScenes {
 			.rightClick();
 		scene.idle(10);
 		scene.overlay()
-			.showText(100)
+			.showText(150)
 			.attachKeyFrame()
 			.colored(PonderPalette.BLUE)
-			.text("Its wastegate vents exhaust round the turbine to hold the boost at the limit set on its value panel.")
+			.text("Its wastegate vents exhaust round the turbine to hold the boost at the limit set on its value panel. Its goggles show how hard it is working as a share of that limit, gold at 95 percent and over, so the limit can be set by reading it.")
 			.pointAt(util.vector()
 				.blockSurface(turboPos, Direction.NORTH))
 			.placeNearTarget();
-		scene.idle(110);
+		scene.idle(160);
 
 		scene.world()
 			.showSection(redstone, Direction.UP);
@@ -1967,12 +1967,12 @@ public final class EngineScenes {
 			.modifyBlockEntityNBT(turbo, TurbochargerBlockEntity.class,
 				nbt -> nbt.put("Status", new TurboStatus(0.1f, 0.02f, 1f, 1.01f, true, true).write()));
 		scene.overlay()
-			.showText(130)
-			.text("A redstone signal on the turbocharger opens the wastegate fully and dumps the boost, like a blow-off valve. Lifting off the throttle with boost in the pipe does the same.")
+			.showText(150)
+			.text("A redstone signal on the turbocharger opens the wastegate fully and dumps the boost, like a blow-off valve. Lifting off the throttle with boost in the pipe does the same. The vented air leaves in a burst and then a thinning jet, longer the more boost there was, and the wastegate gives a small grey puff off the turbine end.")
 			.pointAt(util.vector()
 				.blockSurface(turboPos, Direction.DOWN))
 			.placeNearTarget();
-		scene.idle(110);
+		scene.idle(160);
 
 		scene.overlay()
 			.showText(150)
@@ -2147,13 +2147,13 @@ public final class EngineScenes {
 		scene.idle(170);
 
 		scene.overlay()
-			.showText(140)
+			.showText(190)
 			.colored(PonderPalette.RED)
-			.text("It pays in stress on the shaft that turns it, and it makes only as much boost as that shaft's speed allows, so gear the shaft up for a bigger engine. Net of that stress it makes about what a Turbocharger does at the same limit, and a Variable-Drive Supercharger about what a Variable-Geometry Turbocharger does: choose by how the engine is used, not by which is better.")
+			.text("It pays in stress on the shaft that turns it, and it makes only as much boost as that shaft's speed allows, so gear the shaft up for a bigger engine. Its goggles show how hard it is working as a share of its boost limit, the same way a Turbocharger's do. Net of that stress it makes about what a Turbocharger does at the same limit, and a Variable-Drive Supercharger about what a Variable-Geometry Turbocharger does: choose by how the engine is used, not by which is better.")
 			.pointAt(util.vector()
 				.blockSurface(blowerPos, Direction.EAST))
 			.placeNearTarget();
-		scene.idle(150);
+		scene.idle(200);
 		scene.markAsFinished();
 	}
 
@@ -2660,12 +2660,12 @@ public final class EngineScenes {
 		scene.idle(110);
 
 		scene.overlay()
-			.showText(80)
-			.text("A Hand Crank on the crankshaft also works for small engines. Bigger engines need stronger starters.")
+			.showText(130)
+			.text("A Hand Crank on the crankshaft also works for small engines. So does one turning the Starter's own shaft, which engages it with no redstone signal at all, so a flat battery is never a dead end. Bigger engines need stronger starters.")
 			.pointAt(util.vector()
 				.topOf(1, 2, 3))
 			.placeNearTarget();
-		scene.idle(90);
+		scene.idle(140);
 		scene.markAsFinished();
 	}
 
@@ -3488,14 +3488,14 @@ public final class EngineScenes {
 		scene.idle(140);
 
 		scene.overlay()
-			.showText(140)
+			.showText(190)
 			.attachKeyFrame()
 			.colored(PonderPalette.BLUE)
-			.text("Engine Speed gives the RPM for a nixie tube. Engine Load, Temperature and Oil Condition each give a percentage or a progress bar. Load is how much of its rating the network asks of it, and temperature reads 100 when the block is warm.")
+			.text("Engine Speed gives the RPM for a nixie tube. Engine Load, Temperature and Oil Condition each give a percentage or a progress bar. Load is how much of its rating the network asks of it, and temperature reads 100 when the block is warm. Engine Boost, Engine Rated Torque and Battery Charge are there too, Engine Fault names what is wrong with it, and against a Transmission, Transmission Gear gives the gear.")
 			.pointAt(util.vector()
 				.blockSurface(crankPos, Direction.UP))
 			.placeNearTarget();
-		scene.idle(150);
+		scene.idle(200);
 
 		scene.world()
 			.showSection(sump, Direction.UP);

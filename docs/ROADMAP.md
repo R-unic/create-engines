@@ -489,8 +489,14 @@ throttle and rack) lets players write their own engine management in Lua, withou
   not move; the profile times the simulation on the server, the valves a client draws keep the built-in shape), and a third tier is a
   block of an addon's own that names a `part_effects` file of its own through the new `part_effect` block data map (`CEDataMaps.PART_EFFECT`,
   `Cylinder.effects`, `CylinderSpec.build(..., own)`, `PartEffects.ofCustom`); `OwnPartEffectsTest` and `OwnPartGameTests`. It needs an
-  addon to register a block of the internal `CylinderBlock` or `CylinderHeadBlock` class (a data pack cannot make a block), and has
-  only been tried through a test hook, not with a block from a real addon. The new names are recorded in `compat/script-surface.txt`
+  addon to register a block of the internal `CylinderBlock` or `CylinderHeadBlock` class (a data pack cannot make a block), and was
+  first tried only through a test hook. **Since 2026-11-21 a real addon proves it**: `examples/racing-addon` is a separate Gradle project that builds
+  against the finished jar, registers a Racing Cylinder block, names its effect through the data map and runs its own GameTests (a running engine with
+  the racing cylinder delivers more than one with the plain cylinder; with the data map entry removed the two are equal, which was the control). It
+  found one gap: the addon had to extend the internal `CylinderBlock` and name `CEBlockEntities.CYLINDER`. **Closed 2026-11-21 at the author's say:**
+  `api.PartBlocks` (cylinder and head factories, `register`, `partEffect`) and `api.EngineBuilding.timeCamLobe` are API 1.1, the example uses only
+  `com.createengines.api` and `ExampleAddonUsesOnlyTheApiTest` keeps it so. The rule going forward (the author's): an addon never needs an internal
+  class; a need is a gap in the API. The new names are recorded in `compat/script-surface.txt`
   (the `part_effects` keys too, which were not before); the API version is still 1.0.0 because 1.0.0 has not shipped. The original
   text: not yet data: cam profiles, and a third tier named from a pack's own block (a pack's block would also
   need its own cylinder block class). The `part_stats` data map still works on top.

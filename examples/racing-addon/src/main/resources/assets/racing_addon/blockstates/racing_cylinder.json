@@ -1,0 +1,5 @@
+{
+  "variants": {
+    "": { "model": "racing_addon:block/racing_cylinder" }
+  }
+}

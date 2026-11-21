@@ -123,6 +123,74 @@ public class PackCommandGameTests {
 	}
 
 	@GameTest(template = "empty")
+	public static void withNoAddonNoBlockNamesAPartOfItsOwn(GameTestHelper helper) throws Exception {
+		List<String> lines = run(helper, "ce parts", 2);
+		if (!mentions(lines, "none: no block names a part effect"))
+			helper.fail("with no addon the own-parts section should say none: " + lines);
+		helper.succeed();
+	}
+
+	/** Alone in its batch: it answers the part_effect data map for a block, as OwnPartGameTests does, and undoes it. */
+	@GameTest(template = "empty", batch = "pack-own-parts")
+	public static void aBlockThatNamesAPartOfItsOwnIsListedWithWhatThePartDoes(GameTestHelper helper) throws Exception {
+		String effect = "test:racing_bore";
+		try {
+			com.createengines.engine.sim.PartEffects.set(Map.of(), Map.of(effect, new com.createengines.engine.sim.PartEffects.Effect(1.3, 1, 1, 1, 1, 1, 1.4, 1)));
+			com.createengines.registry.CEDataMaps.partEffectOverride = block -> block == com.createengines.registry.CEBlocks.CYLINDER_HEAD.get() ? effect : null;
+			List<String> lines = run(helper, "ce parts", 2);
+			if (!mentions(lines, "create_engines:cylinder_head -> test:racing_bore   compression_ratio x1.3, inertia x1.4"))
+				helper.fail("the block, its effect and what the effect does should be listed: " + lines);
+			if (mentions(lines, "adds nothing"))
+				helper.fail("an effect that was read should not be flagged: " + lines);
+			// A block that names an effect no file supplies is flagged, since it would quietly do nothing
+			com.createengines.registry.CEDataMaps.partEffectOverride = block -> block == com.createengines.registry.CEBlocks.CYLINDER_HEAD.get() ? "test:missing" : null;
+			if (!mentions(run(helper, "ce parts", 2), "no part_effects file by that id was read"))
+				helper.fail("a block that names a missing effect should be flagged");
+		} finally {
+			com.createengines.registry.CEDataMaps.partEffectOverride = null;
+			com.createengines.engine.sim.PartEffects.reset();
+		}
+		helper.succeed();
+	}
+
+	@GameTest(template = "empty")
+	public static void theDumpWritesEveryReportAndTheModsLoadedToAFile(GameTestHelper helper) throws Exception {
+		java.nio.file.Path file = helper.getLevel()
+			.getServer()
+			.getServerDirectory()
+			.resolve(com.createengines.command.CeCommand.DUMP_FILE);
+		java.nio.file.Files.deleteIfExists(file);
+		try {
+			List<String> said = run(helper, "ce dump", 2);
+			if (!mentions(said, "Wrote ") || !mentions(said, com.createengines.command.CeCommand.DUMP_FILE))
+				helper.fail("the command should say where it wrote: " + said);
+			if (!java.nio.file.Files.exists(file))
+				helper.fail("no file was written at " + file);
+			List<String> written = java.nio.file.Files.readAllLines(file);
+			for (String expected : List.of("Create: Engine Engineer dump", "Mods loaded:", "  create_engines ", "  minecraft ", "API " + com.createengines.api.ApiVersion.VERSION,
+				"server setting", "fluids are engine fuels", "create_engines:diesel", "Part effects (", "Cam profiles (", "Parts of a pack's or an addon's own"))
+				if (!mentions(written, expected))
+					helper.fail("the dump should contain \"" + expected + "\"");
+			if (written.size() < 50)
+				helper.fail("a dump of everything should be long: " + written.size() + " lines");
+		} finally {
+			java.nio.file.Files.deleteIfExists(file);
+		}
+		helper.succeed();
+	}
+
+	@GameTest(template = "empty")
+	public static void theDumpNeedsGameMasterPermission(GameTestHelper helper) throws Exception {
+		try {
+			run(helper, "ce dump", 1);
+			helper.fail("a player below game master ran /ce dump");
+		} catch (CommandSyntaxException expected) {
+			// not an allowed command for them, as for every /ce command
+		}
+		helper.succeed();
+	}
+
+	@GameTest(template = "empty")
 	public static void theApiReportShowsTheVersionAndEveryRegisteredProvider(GameTestHelper helper) throws Exception {
 		if (!mentions(run(helper, "ce api", 2), "API " + com.createengines.api.ApiVersion.VERSION))
 			helper.fail("the API version is missing");

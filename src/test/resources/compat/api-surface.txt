@@ -1,4 +1,4 @@
-# version 1.0.0
+# version 1.1.0
 # The frozen public API, as ApiSurfaceTest reads it from the source. Never edit a line: removing or changing one
 # is a major change. A new line is a minor change (bump ApiVersion.MINOR) and is added with API_REGEN=1.
 AbstractTorqueSource :: protected AbstractTorqueSource()
@@ -30,6 +30,8 @@ Breather :: void setIntakeTemperature(double temperature)
 EngineApi :: public final class EngineApi
 EngineApi :: public static Optional<EngineView> viewAt(Level level, BlockPos pos)
 EngineBuild :: public record EngineBuild(BlockPos primary, Axis axis, List<BlockPos> segments, Set<BlockPos> members)
+EngineBuilding :: public final class EngineBuilding
+EngineBuilding :: public static boolean timeCamLobe(Level level, BlockPos lobe, Direction bore, Direction.Axis crankAxis)
 EngineEvents :: public final class EngineEvents
 EngineEvents :: public static void milestone(Level level, BlockPos primary, String milestone)
 EngineEvents :: public static void stateChanged(Level level, BlockPos primary, EngineState from, EngineState to)
@@ -58,6 +60,11 @@ EngineStateChangeEvent :: public boolean started()
 EngineStateChangeEvent :: public class EngineStateChangeEvent extends Event
 EngineStatus :: public enum EngineStatus
 EngineView :: public record EngineView(EngineStatus status, float rpm, float availableTorque, float loadTorque, int cylinders, int firing, float temperature, float oilCondition, float boost, String health, String cause)
+PartBlocks :: public final class PartBlocks
+PartBlocks :: public static Block cylinder(BlockBehaviour.Properties properties)
+PartBlocks :: public static Block cylinderHead(BlockBehaviour.Properties properties)
+PartBlocks :: public static Optional<ResourceLocation> partEffect(Block block)
+PartBlocks :: public static void register(IEventBus modBus, Supplier<? extends Block> block)
 StatusLine :: public StatusLine
 StatusLine :: public enum Tone
 StatusLine :: public record StatusLine(String key, List<String> args, Tone tone)

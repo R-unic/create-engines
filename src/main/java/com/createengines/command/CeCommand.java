@@ -44,6 +44,8 @@ public final class CeCommand {
 				.executes(context -> send(context.getSource(), PackReport.parts())))
 			.then(Commands.literal("api")
 				.executes(context -> send(context.getSource(), PackReport.api())))
+			.then(Commands.literal("dump")
+				.executes(context -> dump(context.getSource())))
 			.then(Commands.literal("preset")
 				.requires(source -> source.hasPermission(3))
 				.executes(context -> send(context.getSource(), List.of("Presets: " + String.join(", ", ConfigPresets.NAMES)
@@ -71,6 +73,24 @@ public final class CeCommand {
 			source.sendFailure(Component.literal(problem));
 		return result.changed()
 			.size();
+	}
+
+	/** The file {@code /ce dump} writes, in the folder the game runs in (the server's folder, or the game's own). */
+	public static final String DUMP_FILE = "create_engines-dump.txt";
+
+	private static int dump(CommandSourceStack source) {
+		List<String> lines = PackReport.dump();
+		java.nio.file.Path file = source.getServer()
+			.getServerDirectory()
+			.resolve(DUMP_FILE);
+		try {
+			java.nio.file.Files.write(file, lines, java.nio.charset.StandardCharsets.UTF_8);
+		} catch (java.io.IOException e) {
+			source.sendFailure(Component.literal("Could not write " + file + ": " + e.getMessage()));
+			return 0;
+		}
+		send(source, List.of("Wrote " + lines.size() + " lines to " + file.toAbsolutePath() + ". Attach it to a bug report."));
+		return lines.size();
 	}
 
 	private static int send(CommandSourceStack source, List<String> lines) {

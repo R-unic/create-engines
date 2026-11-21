@@ -16,7 +16,7 @@ import net.minecraft.world.level.block.Blocks;
 final class SableTestSupport {
 
 	/** A block inside a moving structure, and where the structure is. */
-	record Held(BlockPos inPlot, double structureY) {
+	record Held(BlockPos inPlot, BlockPos plotMax, double structureY) {
 	}
 
 	private SableTestSupport() {
@@ -31,8 +31,11 @@ final class SableTestSupport {
 	static Held assemble(ServerLevel level, BlockPos min, BlockPos max, double worldY) {
 		List<BlockPos> blocks = new ArrayList<>();
 		for (BlockPos pos : BlockPos.betweenClosed(min, max))
+			// Not the test's own structure block, which is in the box and not touching the engine: as the anchor it would be a
+			// structure of its own and the engine, joined to nothing, would be split off into another one on the next tick
 			if (!level.getBlockState(pos)
-				.is(Blocks.AIR))
+				.is(Blocks.AIR) && !level.getBlockState(pos)
+					.is(Blocks.STRUCTURE_BLOCK))
 				blocks.add(pos.immutable());
 		BoundingBox3ic bounds = BoundingBox3i.from(blocks);
 		ServerSubLevel sub = SubLevelAssemblyHelper.assembleBlocks(level, blocks.get(0), blocks, bounds);
@@ -41,6 +44,27 @@ final class SableTestSupport {
 			.y = worldY;
 		BoundingBox3ic plot = sub.getPlot()
 			.getBoundingBox();
-		return new Held(new BlockPos(plot.minX(), plot.minY(), plot.minZ()), worldY);
+		return new Held(new BlockPos(plot.minX(), plot.minY(), plot.minZ()), new BlockPos(plot.maxX(), plot.maxY(), plot.maxZ()), worldY);
+	}
+
+	/** The first block of {@code block} in the structure's plot, or null: where an assembled engine's parts ended up. */
+	static BlockPos find(ServerLevel level, Held held, net.minecraft.world.level.block.Block block) {
+		for (BlockPos pos : BlockPos.betweenClosed(held.inPlot(), held.plotMax()))
+			if (level.getBlockState(pos)
+				.is(block))
+				return pos.immutable();
+		return null;
+	}
+
+	/** What the plot holds, block by block, for a failure message: a structure that came out empty says so. */
+	static String contents(ServerLevel level, Held held) {
+		java.util.Map<String, Integer> counts = new java.util.TreeMap<>();
+		for (BlockPos pos : BlockPos.betweenClosed(held.inPlot(), held.plotMax())) {
+			var state = level.getBlockState(pos);
+			if (!state.isAir())
+				counts.merge(net.minecraft.core.registries.BuiltInRegistries.BLOCK.getKey(state.getBlock())
+					.toString(), 1, Integer::sum);
+		}
+		return counts + " between " + held.inPlot() + " and " + held.plotMax();
 	}
 }

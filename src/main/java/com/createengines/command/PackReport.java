@@ -39,8 +39,9 @@ public final class PackReport {
 			"Create: Engine Engineer, pack tools (docs/PACKS.md and docs/ADDONS.md in the mod's repository):",
 			"/ce config            every server setting, and which differ from the defaults",
 			"/ce fuels             every fluid an engine will burn, where its numbers come from, and anything wrong with them",
-			"/ce parts             what the data packs did to the cylinder parts, and any file that was refused",
+			"/ce parts             what the data packs did to the cylinder parts, which blocks name a part of their own, and any file that was refused",
 			"/ce api               the API version and the addon providers registered",
+			"/ce dump              writes every report above, and the mods loaded, to create_engines-dump.txt, for a bug report",
 			"/ce preset <name>     set the [balance] and [features] settings to a shipped preset (casual, standard, expert)");
 	}
 
@@ -157,10 +158,61 @@ public final class PackReport {
 		}
 		for (String line : com.createengines.engine.CamProfileLoader.lastReport())
 			out.add("  " + line);
+		out.addAll(ownParts());
 		out.add("Part stats (data_maps/block/part_stats.json, scales over a whole kind of cylinder):");
 		out.add("  create_engines:cylinder: " + stats(CEDataMaps.partStats(false)));
 		out.add("  create_engines:precision_cylinder: " + stats(CEDataMaps.partStats(true)));
 		out.add("  create_engines:rotor_housing: " + stats(CEDataMaps.rotaryStats()));
+		return out;
+	}
+
+	/**
+	 * The blocks of a pack's or an addon's own that name a part effect (the {@code part_effect} data map), each with the effect it
+	 * names and what that effect does. None of this mod's blocks name one.
+	 */
+	static List<String> ownParts() {
+		List<String> out = new ArrayList<>();
+		out.add("Parts of a pack's or an addon's own (data_maps/block/part_effect.json, a block that names a part_effects file):");
+		List<String> lines = new ArrayList<>();
+		BuiltInRegistries.BLOCK.entrySet()
+			.stream()
+			.sorted(java.util.Comparator.comparing(entry -> entry.getKey()
+				.location()
+				.toString()))
+			.forEach(entry -> {
+				String effect = CEDataMaps.partEffect(entry.getValue());
+				if (effect == null)
+					return;
+				PartEffects.Effect now = PartEffects.ofCustom(effect);
+				lines.add("  " + entry.getKey()
+					.location() + " -> " + effect + "   " + scales(effectScales(now)));
+				if (now.equals(PartEffects.Effect.NONE))
+					lines.add("    ! no part_effects file by that id was read, or every scale in it is 1, so this block adds nothing");
+			});
+		if (lines.isEmpty())
+			out.add("  none: no block names a part effect");
+		out.addAll(lines);
+		return out;
+	}
+
+	/**
+	 * Every report in one list, with the mods that are loaded, for a bug report: what a person helping would otherwise ask for one
+	 * command at a time. Read on the server thread (it reads the config and the data packs).
+	 */
+	public static List<String> dump() {
+		List<String> out = new ArrayList<>();
+		out.add("Create: Engine Engineer dump");
+		out.add("");
+		out.add("Mods loaded:");
+		net.neoforged.fml.ModList.get()
+			.getMods()
+			.stream()
+			.sorted(java.util.Comparator.comparing(mod -> mod.getModId()))
+			.forEach(mod -> out.add("  " + mod.getModId() + " " + mod.getVersion()));
+		for (List<String> section : List.of(api(), config(), fuels(), parts())) {
+			out.add("");
+			out.addAll(section);
+		}
 		return out;
 	}
 

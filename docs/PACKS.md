@@ -162,8 +162,9 @@ except `/ce preset`, which needs level 3.
 | `/ce help` | the list below, in game |
 | `/ce config` | every server setting with the value in use; a `*` marks each that differs from the default, and shows the default |
 | `/ce fuels` | every fluid an engine will burn, where its numbers come from (its data map entry or which fuel tag), the numbers, and `!` / `?` lines for anything that cannot be right or is far from the shipped fuels |
-| `/ce parts` | what each precision part is doing (built-in values or a pack's), each `part_effects` file read at the last reload and whether it was used, and the `part_stats` entry of each kind of cylinder |
+| `/ce parts` | what each precision part is doing (built-in values or a pack's), each `part_effects` file read at the last reload and whether it was used, which blocks of a pack's or an addon's own name a part effect (and a `!` line when the file they name was not read), and the `part_stats` entry of each kind of cylinder |
 | `/ce api` | the API version and every addon provider registered, by class |
+| `/ce dump` | writes `create_engines-dump.txt` (in the folder the game or server runs in): the mods loaded with their versions, then the API, config, fuels and parts reports, so one file answers a bug report. Needs level 2 like the rest |
 | `/ce preset <name>` | sets `[balance]` and `[features]` to `casual`, `standard` or `expert` and saves; with no name, lists them |
 
 When the server starts it also logs one warning for each fuel in a data pack with an impossible number. It is silent when there

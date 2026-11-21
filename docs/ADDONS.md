@@ -282,20 +282,19 @@ reload.
 
 A third tier of cylinder (or a head) is a block, a model and two data files, and no simulation code:
 
-1. Register a block of this mod's `CylinderBlock` (or `CylinderHeadBlock`) class under your own id, with your own model and texture.
-   The scanner treats it as it treats ours: it takes a crank throw, a head, ports and a cam lobe the same way. The block has to be
-   one of the valid blocks of the block entity type, which NeoForge's `BlockEntityTypeAddBlocksEvent` adds it to (this mod's
-   `CEBlockEntities.CYLINDER` and `CYLINDER_HEAD`).
+1. Make the block with `PartBlocks.cylinder(properties)` (or `PartBlocks.cylinderHead(properties)`), register it with the game under
+   your own id with your own model and texture, and tell the mod about it with `PartBlocks.register(modBus, () -> yourBlock)`. The
+   scanner treats it as it treats ours: it takes a crank throw, a head, ports and a cam lobe the same way. `PartBlocks` (API 1.1) is
+   all you name from this mod, so nothing depends on a class that may change.
 2. Write `data/<yourmod>/part_effects/<name>.json`: the same keys and ranges as the four precision parts in [DATA.md](DATA.md).
 3. Point the block at it in `data/create_engines/data_maps/block/part_effect.json`:
    `{ "values": { "yourmod:racing_cylinder": { "effect": "yourmod:racing_bore" } } }`.
 
 The effect is multiplied in after the precision parts (the server's `precisionBonus` blends it as it blends them), so a racing
-cylinder that also has a forged piston has both. **The catch:** `CylinderBlock` and `CylinderHeadBlock` are internal classes (see
-below), so a block that extends them is pinned to the versions of this mod it was built against; the data files are not. A block
-that cannot extend them needs the source provider route in "A provider and a source", which can add a whole new engine type. The
+cylinder that also has a forged piston has both. A block that is not a
+cylinder or a head at all needs the source provider route in "A provider and a source", which can add a whole new engine type. The
 timing of the valves can be changed for every engine, not for one block, with `data/create_engines/cam_profiles/` (DATA.md).
-This path is tested with the effect named through the data map's test hook, not with a block from a real addon.
+This path is tested twice: in this repository with the effect named through the data map's test hook (`OwnPartGameTests`), and by a real addon that depends on the finished jar and nothing else, [examples/racing-addon](../examples/racing-addon): a Racing Cylinder block, its data map entry and its part effect, with GameTests that run an engine with it beside an engine with the plain cylinder and check the racing bore can deliver more. Copy it to start your own. Running it is in its README. A test (`ExampleAddonUsesOnlyTheApiTest`) fails if it ever imports anything of this mod outside `com.createengines.api`: if an addon needs an internal class, the API is missing something, and the answer is a new public surface.
 
 ## What you can rely on
 
@@ -336,6 +335,7 @@ the JVM links it, so keep the touching code in its own class, as this mod's own 
 - **GameTests**: build a small engine, register your provider and check the engine's source list. The test helpers in this
   repository's `gametest` package (`TestEngine`, `PackToolsGameTests`, `AddonExampleGameTests`) are written for exactly this and
   are the pattern to copy.
+- **A whole addon, built and tested outside this repository**: [examples/racing-addon](../examples/racing-addon) is a separate Gradle project that loads the mod's jar the way a modpack does, registers a block and a data file and runs GameTests of its own against a real engine. It shows how to build a running engine in a test from the registry, Create's blocks and the API alone (a creative motor, a starter, a cam lobe timed with `EngineBuilding.timeCamLobe`, fuel and oil through the head's fluid capability), which the helpers in this repository's `gametest` package are not shipped to do.
 - **In game**: `/ce api` lists your provider by class, and the goggles on the crankshaft show your `status()` lines.
 
 ## Checklist

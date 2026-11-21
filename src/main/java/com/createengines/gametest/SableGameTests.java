@@ -93,6 +93,89 @@ public class SableGameTests {
 		helper.succeed();
 	}
 
+	/**
+	 * A whole engine in a structure sinks and dries with the world around it. The water is put in the world, never in the plot,
+	 * and follows the structure (it may be falling), so only the engine's own re-reading of the world can notice it: the check
+	 * every 20 ticks that asks for a rescan when what is wet changes.
+	 */
+	@GameTest(template = "empty_large", timeoutTicks = 600)
+	public static void aWholeEngineOnAStructureSinksAndDriesWithTheWorldAroundIt(GameTestHelper helper) {
+		if (!SableCompat.installed()) {
+			helper.succeed();
+			return;
+		}
+		var level = helper.getLevel();
+		BlockPos origin = helper.absolutePos(BlockPos.ZERO);
+		TestEngine.build(level, origin, true);
+		SableTestSupport.Held held = SableTestSupport.assemble(level, origin, origin.offset(7, 5, 5), 200);
+		BlockPos crankPos = SableTestSupport.find(level, held, com.createengines.registry.CEBlocks.CRANKSHAFT.get());
+		BlockPos cylinderPos = SableTestSupport.find(level, held, com.createengines.registry.CEBlocks.CYLINDER.get());
+		if (crankPos == null || cylinderPos == null) {
+			helper.fail("the engine did not move into the structure: " + SableTestSupport.contents(level, held));
+			return;
+		}
+		boolean[] flooding = {false};
+		helper.onEachTick(() -> {
+			// The water goes round wherever the structure is now, so a falling structure stays in it
+			if (flooding[0])
+				fillAround(level, SableCompat.worldBlockPos(level, cylinderPos), 4, net.minecraft.world.level.block.Blocks.WATER);
+		});
+		helper.runAtTickTime(60, () -> {
+			var crank = (com.createengines.content.crankshaft.CrankshaftBlockEntity) level.getBlockEntity(crankPos);
+			if (crank == null || crank.controller() == null) {
+				helper.fail("the engine on the structure has no controller, so it was never built there: " + SableTestSupport.contents(level, held));
+				return;
+			}
+			if (crank.controller()
+				.layout()
+				.cylinders()
+				.size() != 1)
+				helper.fail("the engine on the structure should have one cylinder: " + crank.controller()
+					.layout()
+					.cylinders());
+			if (com.createengines.engine.topology.CylinderFault.SUBMERGED.in(crank.controller()
+				.layout()
+				.cylinders()
+				.get(0)
+				.faults()))
+				helper.fail("an engine in dry air reads as underwater");
+			flooding[0] = true;
+		});
+		helper.runAtTickTime(200, () -> {
+			var crank = (com.createengines.content.crankshaft.CrankshaftBlockEntity) level.getBlockEntity(crankPos);
+			if (!com.createengines.engine.topology.CylinderFault.SUBMERGED.in(crank.controller()
+				.layout()
+				.cylinders()
+				.get(0)
+				.faults()))
+				helper.fail("the structure is in water in the world and the engine on it never noticed: " + crank.controller()
+					.layout()
+					.cylinders()
+					.get(0));
+			flooding[0] = false;
+			// Drain generously: the structure has been moving, and the water is round every cell it has been in
+			BlockPos now = SableCompat.worldBlockPos(level, cylinderPos);
+			for (int dy = -40; dy <= 8; dy++)
+				fillAround(level, now.offset(0, dy, 0), 8, net.minecraft.world.level.block.Blocks.AIR);
+		});
+		helper.succeedWhen(() -> {
+			helper.assertTrue(helper.getTick() > 260, "Not drained yet");
+			var crank = (com.createengines.content.crankshaft.CrankshaftBlockEntity) level.getBlockEntity(crankPos);
+			helper.assertFalse(com.createengines.engine.topology.CylinderFault.SUBMERGED.in(crank.controller()
+				.layout()
+				.cylinders()
+				.get(0)
+				.faults()), "the water is gone and the engine on the structure still reads as underwater");
+		});
+	}
+
+	private static void fillAround(net.minecraft.server.level.ServerLevel level, BlockPos centre, int radius, net.minecraft.world.level.block.Block block) {
+		for (BlockPos pos : BlockPos.betweenClosed(centre.offset(-radius, -radius, -radius), centre.offset(radius, radius, radius)))
+			if (level.isLoaded(pos) && level.getBlockState(pos)
+				.getBlock() != block)
+				level.setBlock(pos, block.defaultBlockState(), 2);
+	}
+
 	/** The weights ship as data for Sable; the weight an engine block really gets is what the files say. */
 	@GameTest(template = "empty")
 	public static void engineBlocksWeighWhatTheirDataFilesSay(GameTestHelper helper) {
