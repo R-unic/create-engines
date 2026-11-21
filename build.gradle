@@ -94,6 +94,13 @@ configurations.create('curiosRuntime')
 configurations.create('aeronauticsRuntime')
 // And the Pollution of the Realms GameTest run (with the library it needs).
 configurations.create('pollutionRuntime')
+// And the Jade row, the Iris row (which also loads Sodium, see below), and the two sound rows.
+configurations.create('jadeRuntime')
+configurations.create('irisRuntime')
+configurations.create('soundPhysicsRuntime')
+configurations.create('ambientSoundsRuntime')
+// And the GameTest run with other mods' energy blocks loaded: Create Crafts & Additions (Mekanism and Create: New Age were tried and left out).
+configurations.create('energyRuntime')
 // And the GameTest run with Create Aeronautics and Sable loaded (engines on a moving structure).
 def sableJar = configurations.getByName('aeronauticsRuntime')
 tasks.register('extractSableCompanion', Copy) {
@@ -208,6 +215,41 @@ neoForge {
             systemProperty 'create_engines.smokeAudit.requireIntegration', 'curios'
         }
 
+        // Jade, Iris, Sound Physics Remastered and AmbientSounds rows: the same audit with the other mod loaded
+        smokeAuditJade {
+            client()
+            gameDirectory = file('run/smoke-client-jade')
+            systemProperty 'neoforge.enabledGameTestNamespaces', project.mod_id
+            systemProperty 'create_engines.smokeAudit', 'true'
+            systemProperty 'create_engines.smokeAudit.requireIntegration', 'jade'
+        }
+
+        smokeAuditIris {
+            client()
+            gameDirectory = file('run/smoke-client-iris')
+            systemProperty 'neoforge.enabledGameTestNamespaces', project.mod_id
+            systemProperty 'create_engines.smokeAudit', 'true'
+            systemProperty 'create_engines.smokeAudit.requireIntegration', 'iris'
+            // Iris draws through Sodium, whose jar is an early service jar (see smokeAuditSodium)
+            additionalRuntimeClasspathConfiguration.extendsFrom(configurations.sodiumRuntime)
+        }
+
+        smokeAuditSoundPhysics {
+            client()
+            gameDirectory = file('run/smoke-client-sound-physics')
+            systemProperty 'neoforge.enabledGameTestNamespaces', project.mod_id
+            systemProperty 'create_engines.smokeAudit', 'true'
+            systemProperty 'create_engines.smokeAudit.requireIntegration', 'sound_physics_remastered'
+        }
+
+        smokeAuditAmbientSounds {
+            client()
+            gameDirectory = file('run/smoke-client-ambient-sounds')
+            systemProperty 'neoforge.enabledGameTestNamespaces', project.mod_id
+            systemProperty 'create_engines.smokeAudit', 'true'
+            systemProperty 'create_engines.smokeAudit.requireIntegration', 'ambientsounds'
+        }
+
         // Create Aeronautics row: the same audit with Aeronautics (and Sable) loaded
         smokeAuditAeronautics {
             client()
@@ -264,6 +306,16 @@ neoForge {
             type = 'gameTestServer'
             gameDirectory = file('run/gametest-pollution')
             systemProperty 'neoforge.enabledGameTestNamespaces', project.mod_id
+        }
+
+        // The GameTests with Create Crafts & Additions loaded (Mekanism and Create: New Age were tried and left out, see docs/COMPAT.md), for the tests that run an alternator into
+        // those mods' own energy blocks. The blocks to try are named here and put in the world by EnergyCompatGameTests.
+        gameTestServerEnergy {
+            type = 'gameTestServer'
+            gameDirectory = file('run/gametest-energy')
+            systemProperty 'neoforge.enabledGameTestNamespaces', project.mod_id
+            systemProperty 'create_engines.energySinks',
+                'createaddition:modular_accumulator,createaddition:electric_motor'
         }
 
         // The GameTests with Create Aeronautics and Sable loaded, for the tests that need a moving structure
@@ -324,6 +376,15 @@ dependencies {
     ccRuntime("cc.tweaked:cc-tweaked-${minecraft_version}-forge:${cc_tweaked_version}") { transitive = false }
     compileOnly("top.theillusivec4.curios:curios-neoforge:${curios_version}:api") { transitive = false }
     curiosRuntime("top.theillusivec4.curios:curios-neoforge:${curios_version}") { transitive = false }
+    // Jade: compiled against for the overlay (compat/jade), never shipped; the Jade row loads it
+    compileOnly("maven.modrinth:jade:${jade_version}") { transitive = false }
+    jadeRuntime("maven.modrinth:jade:${jade_version}") { transitive = false }
+    irisRuntime("maven.modrinth:iris:${iris_version}") { transitive = false }
+    soundPhysicsRuntime("maven.modrinth:sound-physics-remastered:${sound_physics_version}") { transitive = false }
+    soundPhysicsRuntime("maven.modrinth:cloth-config:${cloth_config_version}") { transitive = false }
+    ambientSoundsRuntime("maven.modrinth:ambientsounds:${ambient_sounds_version}") { transitive = false }
+    ambientSoundsRuntime("maven.modrinth:creativecore:${creative_core_version}") { transitive = false }
+    energyRuntime("maven.modrinth:createaddition:${create_additions_version}") { transitive = false }
     aeronauticsRuntime("maven.modrinth:create-aeronautics:${aeronautics_version}") { transitive = false }
     aeronauticsRuntime("maven.modrinth:sable:${sable_version}") { transitive = false }
     // Pollution of the Realms has no API: its classes are compiled against (never shipped) and only one bridge class names them
@@ -451,6 +512,10 @@ tasks.matching { it.name == 'runVisualSmokeTest' }.configureEach { finalizedBy '
  [name: 'Kubejs', dir: 'run/smoke-client-kubejs', flywheel: null, mods: 'kubejsRuntime'],
  [name: 'Cc', dir: 'run/smoke-client-cc', flywheel: null, mods: 'ccRuntime'],
  [name: 'Curios', dir: 'run/smoke-client-curios', flywheel: null, mods: 'curiosRuntime'],
+ [name: 'Jade', dir: 'run/smoke-client-jade', flywheel: null, mods: 'jadeRuntime'],
+ [name: 'Iris', dir: 'run/smoke-client-iris', flywheel: null, mods: 'irisRuntime'],
+ [name: 'SoundPhysics', dir: 'run/smoke-client-sound-physics', flywheel: null, mods: 'soundPhysicsRuntime'],
+ [name: 'AmbientSounds', dir: 'run/smoke-client-ambient-sounds', flywheel: null, mods: 'ambientSoundsRuntime'],
  [name: 'Aeronautics', dir: 'run/smoke-client-aeronautics', flywheel: null, mods: 'aeronauticsRuntime']].each { row ->
     def rowDir = file(row.dir)
     // A recipe viewer is an ordinary mod: its jars go in the row's mods folder, which FML scans (on the classpath they are not found)
@@ -494,7 +559,8 @@ tasks.register('compatMatrix') {
     // The JEI row (runSmokeAuditJei) is not in this list: JEI 19.70 asks for NeoForge 21.1.238 and this build runs 21.1.219, so it
     // cannot start here (docs/COMPAT.md). Run it by hand on a NeoForge it accepts.
     dependsOn 'runSmokeAuditFlywheelOff', 'runSmokeAuditSodium', 'runSmokeAuditEmi', 'runSmokeAuditKubejs', 'runSmokeAuditCc',
-        'runSmokeAuditCurios'
+        'runSmokeAuditCurios', 'runSmokeAuditJade', 'runSmokeAuditIris', 'runSmokeAuditSoundPhysics', 'runSmokeAuditAmbientSounds',
+        'runGameTestServerEnergy'
     // runSmokeAuditAeronautics is not in this list while its row is red (docs/COMPAT.md): it fails the log check on an error
     // Simulated logs about its own model, and the showcase shows wrong textures on this mod's small parts with it loaded
 }
@@ -537,6 +603,36 @@ tasks.matching { it.name == 'runSmokeAuditEmi' }.configureEach { mustRunAfter 'r
 tasks.matching { it.name == 'runSmokeAuditKubejs' }.configureEach { mustRunAfter 'runSmokeAuditEmi' }
 tasks.matching { it.name == 'runSmokeAuditCc' }.configureEach { mustRunAfter 'runSmokeAuditKubejs' }
 tasks.matching { it.name == 'runSmokeAuditCurios' }.configureEach { mustRunAfter 'runSmokeAuditCc' }
+tasks.matching { it.name == 'runSmokeAuditJade' }.configureEach { mustRunAfter 'runSmokeAuditCurios' }
+tasks.matching { it.name == 'runSmokeAuditIris' }.configureEach { mustRunAfter 'runSmokeAuditJade' }
+tasks.matching { it.name == 'runSmokeAuditSoundPhysics' }.configureEach { mustRunAfter 'runSmokeAuditIris' }
+tasks.matching { it.name == 'runSmokeAuditAmbientSounds' }.configureEach { mustRunAfter 'runSmokeAuditSoundPhysics' }
+tasks.matching { it.name == 'runGameTestServerEnergy' }.configureEach { mustRunAfter 'runSmokeAuditAmbientSounds' }
+
+// The energy GameTest row: other mods' jars in the game folder's mods folder, and its log and result judged like the main GameTests
+def energyMods = configurations.getByName('energyRuntime').incoming.files
+def energyDir = file('run/gametest-energy')
+tasks.register('verifyGameTestsEnergy', JavaExec) {
+    group = 'verification'
+    description = 'Fails unless the last runGameTestServerEnergy passed every test and logged no errors.'
+    classpath = verifyOutput
+    mainClass = 'com.createengines.smoke.SmokeVerify'
+    args '--run', 'gametest', '--gametest', '--log', new File(energyDir, 'logs/latest.log').path, '--allow', smokeAllowlist.path
+    dependsOn 'classes'
+}
+tasks.matching { it.name == 'runGameTestServerEnergy' }.configureEach {
+    timeout = java.time.Duration.ofMinutes(20)
+    finalizedBy 'verifyGameTestsEnergy'
+    doFirst {
+        new File(energyDir, 'smoke').deleteDir()
+        new File(energyDir, 'crash-reports').deleteDir()
+        new File(energyDir, 'logs/latest.log').delete()
+        def modsDir = new File(energyDir, 'mods')
+        modsDir.deleteDir()
+        modsDir.mkdirs()
+        energyMods.files.each { jar -> new File(modsDir, jar.name).bytes = jar.bytes }
+    }
+}
 
 // One command for everything unattended: unit tests, the GameTests with their log check, and the client audit.
 tasks.register('smoke') {

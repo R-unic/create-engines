@@ -165,7 +165,11 @@ All optional; none is needed to play.
   is read back into the engine. `compat.pollution` and `compat.pollutionRate` control it.
 - **KubeJS** (server scripts) and **CC: Tweaked** (a peripheral on a crankshaft, cylinder, head or rotor housing) can watch an
   engine, read-only: see [docs/INTEGRATIONS.md](docs/INTEGRATIONS.md).
-- **JEI** and **EMI** list every fuel, every refining route and every engine part. Sodium and Flywheel on or off are tested.
+- **Jade** shows an engine's state when you look at its crankshaft, cylinder, head or rotor housing.
+- **Create Crafts & Additions**: an Alternator's Forge Energy charges its accumulators and motors (tested). Other mods' energy
+  blocks should take it too; see [docs/INTEGRATIONS.md](docs/INTEGRATIONS.md) for which were tried.
+- **JEI** and **EMI** list every fuel, every refining route and every engine part. Sodium (also with Iris), Sound Physics
+  Remastered, AmbientSounds and Flywheel on or off are tested to start and run together; no shader pack was tried.
 
 ## For pack makers and addon authors
 

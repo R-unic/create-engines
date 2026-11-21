@@ -145,6 +145,13 @@ engine through the `create_engines_engine` peripheral. Neither can change an eng
 KubeJS can also write data pack files from a script, if you prefer to keep everything in one place; the file only has to end
 up at the paths above. See KubeJS's own documentation for its data-pack functions: this mod does not ship any script helpers for data.
 
+**CraftTweaker and Open Loader need nothing from this mod.** Everything a pack changes is an ordinary data pack file, and
+refining routes are ordinary recipes of the type `create_engines:refining`. Open Loader only loads data packs from a folder in
+`config/openloader/data`, so the files in sections 1 to 4 go there unchanged. CraftTweaker works with any recipe type through its
+recipe manager (`<recipetype:create_engines:refining>`), so it can list, remove and add routes without a plugin. Neither has been
+run against this mod; both follow from the files being plain data. Fuels, part stats and tuning are data files and config rather
+than recipes, so CraftTweaker has no function for them: write the file (or use KubeJS, which can write one from a script).
+
 ## Checking your work: `/ce`
 
 `/ce` (permission level 2, "game master") answers what a pack maker would otherwise dig through logs for. It changes nothing

@@ -35,6 +35,9 @@ final class IntegrationAudit {
 		if (ModList.get()
 			.isLoaded("computercraft"))
 			Cc.check(report, engine);
+		if (ModList.get()
+			.isLoaded("jade"))
+			Jade.check(report, engine);
 	}
 
 	/**
@@ -153,6 +156,46 @@ final class IntegrationAudit {
 				}
 			} catch (Exception e) {
 				report.check("compat", "Curios integration runs (step " + step + ")", false, e.toString());
+			}
+		}
+	}
+
+	private static final class Jade {
+
+		/**
+		 * Jade found the plugin if it handed our provider out for each of the four engine blocks (it does so only for what a plugin
+		 * registered), and what the server would send for a running engine turns into lines on the client.
+		 */
+		static void check(SmokeReport report, BlockPos engine) {
+			try {
+				var registration = snownee.jade.impl.WailaClientRegistration.instance();
+				var provider = com.createengines.compat.jade.EngineJadeProvider.INSTANCE;
+				var blocks = java.util.Map.<String, net.minecraft.world.level.block.Block>of(
+					"crankshaft", com.createengines.registry.CEBlocks.CRANKSHAFT.get(),
+					"cylinder", com.createengines.registry.CEBlocks.CYLINDER.get(),
+					"cylinder head", com.createengines.registry.CEBlocks.CYLINDER_HEAD.get(),
+					"rotor housing", com.createengines.registry.CEBlocks.ROTOR_HOUSING.get());
+				blocks.forEach((name, block) -> report.check("compat", "Jade shows the engine overlay over a " + name,
+					registration.getBlockProviders(block, p -> true)
+						.contains(provider), "Jade gave no engine provider for the " + name + " block; 0 means it never found the plugin"));
+				var dimension = Minecraft.getInstance().level.dimension();
+				var lines = onServer(() -> {
+					var level = Minecraft.getInstance()
+						.getSingleplayerServer()
+						.getLevel(dimension);
+					var data = new net.minecraft.nbt.CompoundTag();
+					com.createengines.api.EngineApi.viewAt(level, engine)
+						.ifPresent(view -> data.put(com.createengines.compat.jade.EngineTooltip.KEY, com.createengines.compat.jade.EngineTooltip.write(view)));
+					return com.createengines.compat.jade.EngineTooltip.lines(data)
+						.stream()
+						.map(net.minecraft.network.chat.Component::getString)
+						.toList();
+				});
+				report.check("compat", "Jade's tooltip for the running engine has lines (" + lines + ")", !lines.isEmpty()
+					&& !lines.get(0)
+						.contains("create_engines."), "the engine at " + engine + " gave " + lines);
+			} catch (Exception | LinkageError e) {
+				report.check("compat", "Jade integration runs", false, e.toString());
 			}
 		}
 	}

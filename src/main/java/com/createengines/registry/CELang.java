@@ -600,6 +600,10 @@ public final class CELang {
 		raw("goggles.alternator.no_battery", "No battery touching it or its engine to charge");
 		raw("goggles.alternator.idle", "Idle: needs a turning shaft and a battery that isn't full");
 		raw("goggles.battery.no_engine", "Not touching an engine's crankshaft or cylinder head");
+		// The Jade overlay (compat/jade); the two un-prefixed keys are the ones Jade itself looks up for its settings screen
+		raw("jade.engine.boost", "Boost: %1$s");
+		REGISTRATE.addRawLang("config.jade.plugin_create_engines.engine", "Engine state");
+		REGISTRATE.addRawLang("plugin_create_engines", "Create: Engine Engineer");
 	}
 
 	private static void raw(String key, String value) {

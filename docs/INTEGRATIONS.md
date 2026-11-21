@@ -62,6 +62,32 @@ if (view) console.log(view.status() + ' at ' + view.rpm() + ' rpm')
 `stalled`. `milestone` has `level`, `pos` and `milestone`; a script should ignore a milestone name it does not know, since new
 ones may be added. Neither event can be cancelled. A script that throws is logged and never stops an engine's tick.
 
+## Jade
+
+With [Jade](https://modrinth.com/mod/jade) installed, looking at a **crankshaft, cylinder, cylinder head or rotor housing** shows
+the engine's state on the overlay: running, stalled and so on, the speed, the boost when there is any, and the health when it is
+rough or failing. It says what the goggles say, in the same words, and works for anyone looking, with or without goggles. The
+engine is read through the same read-only API as the peripheral and the KubeJS global. Jade's settings screen lists it as
+"Engine state" under Create: Engine Engineer, where it can be switched off. Jade finds the plugin itself; nothing here loads
+without it. The overlay is Jade's, so WTHIT and The One Probe are not covered: they have their own plugin systems, not Jade's.
+
+## Energy: other mods' machines
+
+The **Alternator** already makes Forge Energy (FE): it fills a small buffer from its shaft, offers it on every face and pushes it
+into any neighbour that takes it. The shaft only feels stress while energy is really being drawn. That is the whole integration:
+any mod's energy block, cable or machine that offers the NeoForge energy capability takes it, with no code of ours. The rate is
+the `alternatorEnergy` setting (FE per RPM per tick). Nothing goes the other way: no other mod can feed energy into an engine
+or the Alternator. See "Checked how" for which mods were actually tried.
+
+## Sound and shader mods
+
+Iris and Sodium, Sound Physics Remastered and AmbientSounds need no integration code. They are rows in the compatibility matrix
+(COMPAT.md) so that the engine models, particles and sounds are known to start and draw with each loaded.
+
+Of the energy mods, **Create Crafts & Additions 1.6.0** is tested (its Modular Accumulator and Electric Motor are charged by an
+alternator in a GameTest). Mekanism's energy cube and Create: New Age were tried and are not claimed: see COMPAT.md. Flux Networks
+could not be tried. Other mods that offer Forge Energy should work the same way but are untested.
+
 ## Checked how
 
 Each mod has a compatibility-matrix row (`runSmokeAuditKubejs`, `runSmokeAuditCc`, see COMPAT.md): the audit runs with the mod
