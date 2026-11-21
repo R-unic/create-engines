@@ -3366,14 +3366,11 @@ public class EngineGameTests {
 				helper.assertFalse(helper.getBlockState(at).isAir(), "Block at " + at + " broke at tick " + t);
 				helper.assertTrue(helper.getLevel().getBlockEntity(helper.absolutePos(at)) != null,
 					"Block at " + at + " (" + helper.getBlockState(at) + ") lost its block entity at tick " + t);
-				if (every == 25 && t % 150 == 0 && helper.getBlockEntity(at) instanceof com.simibubi.create.content.kinetics.base.KineticBlockEntity kk)
-					System.out.println("DBGFLICK t=" + t + " at=" + at + " flick=" + kk.getFlickerScore() + " spd=" + kk.getSpeed() + " th=" + kk.getTheoreticalSpeed() + " over=" + kk.isOverStressed() + " gen=" + (kk instanceof com.simibubi.create.content.kinetics.base.GeneratingKineticBlockEntity g ? g.getGeneratedSpeed() : -1));
 				if (helper.getBlockEntity(at) instanceof com.simibubi.create.content.kinetics.base.KineticBlockEntity k)
 					worst[0] = Math.max(worst[0], k.getFlickerScore());
 			}
 		});
 		helper.runAtTickTime(3000, () -> {
-			System.out.println("DBGDRY every=" + every + " worstFlicker=" + worst[0] + " " + summary(helper));
 			helper.assertTrue(worst[0] < 64, "The rotation flickered to " + worst[0] + " of Create's limit of 128");
 			helper.succeed();
 		});
@@ -3480,14 +3477,7 @@ public class EngineGameTests {
 					worst[0] = Math.max(worst[0], k.getFlickerScore());
 			}
 		});
-		helper.runAtTickTime(380, () -> {
-			RotorHousingBlockEntity be = helper.getBlockEntity(h1);
-			KineticBlockEntity p = helper.getBlockEntity(pump);
-			System.out.println("DBGWORLD filled: h1 fuel=" + be.tank().getFluidAmount() + " pumpSpeed=" + p.getSpeed()
-				+ " boxGear=" + ((TransmissionBlockEntity) helper.getBlockEntity(box)).gear());
-		});
 		helper.runAtTickTime(2000, () -> {
-			System.out.println("DBGWORLD end worstFlicker=" + worst[0]);
 			helper.succeed();
 		});
 	}
@@ -3539,7 +3529,6 @@ public class EngineGameTests {
 			}
 		});
 		helper.runAtTickTime(1500, () -> {
-			System.out.println("DBGEND seq=" + farThenNear + " farEnd=" + farEnd + " worstFlicker=" + worst[0] + " " + summary(helper));
 			helper.succeed();
 		});
 	}
@@ -3591,7 +3580,6 @@ public class EngineGameTests {
 			}
 		});
 		helper.runAtTickTime(1200, () -> {
-			System.out.println("DBGBRIM oneDry=" + oneDry + " byHand=" + byHand + " worstFlicker=" + worst[0] + " " + summary(helper));
 			helper.succeed();
 		});
 	}
