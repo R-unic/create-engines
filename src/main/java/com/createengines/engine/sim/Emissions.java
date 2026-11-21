@@ -38,14 +38,47 @@ public final class Emissions {
 	 * @param rate       the server's multiplier; 0 emits nothing
 	 */
 	public void add(double burnedMb, double sootMb, double sootFactor, double rate) {
-		if (Double.isNaN(rate) || Double.isNaN(burnedMb) || Double.isNaN(sootMb) || Double.isNaN(sootFactor))
+		add(burnedMb, sootMb, sootFactor, rate, 1, 1);
+	}
+
+	/**
+	 * As {@link #add(double, double, double, double)}, with the server's separate multipliers for each gas, applied on top of
+	 * {@code rate}.
+	 *
+	 * @param carbonRate the server's multiplier for carbon alone; 0 emits none
+	 * @param sulfurRate the server's multiplier for sulfur alone; 0 emits none
+	 */
+	public void add(double burnedMb, double sootMb, double sootFactor, double rate, double carbonRate, double sulfurRate) {
+		add(burnedMb, sootMb, sootFactor, rate, carbonRate, sulfurRate, 0, 0);
+	}
+
+	/**
+	 * As the six-rate form, with a ceiling on what one engine may add: no more than {@code ceilingPerMinute} steps of each gas
+	 * for every minute of running, so a big engine cannot flood its surroundings however much it burns.
+	 *
+	 * @param ceilingPerMinute the most steps of each gas added per minute; 0 or less means no ceiling
+	 * @param seconds          how long the stretch being added lasted
+	 */
+	public void add(double burnedMb, double sootMb, double sootFactor, double rate, double carbonRate, double sulfurRate,
+		double ceilingPerMinute, double seconds) {
+		if (Double.isNaN(rate) || Double.isNaN(burnedMb) || Double.isNaN(sootMb) || Double.isNaN(sootFactor)
+			|| Double.isNaN(carbonRate) || Double.isNaN(sulfurRate))
 			return;
 		// A finite rate keeps zero fuel times an infinite rate from making a NaN
 		double scale = Math.min(1000, Math.max(0, rate));
+		double carbonScale = scale * Math.min(1000, Math.max(0, carbonRate));
+		double sulfurScale = scale * Math.min(1000, Math.max(0, sulfurRate));
 		double burned = Math.max(0, burnedMb);
 		double soot = Math.max(0, sootMb);
-		carbon = Math.min(MAX_HELD, carbon + (burned + soot * SOOT_CARBON) * CARBON_PER_MB * scale);
-		sulfur = Math.min(MAX_HELD, sulfur + burned * SULFUR_PER_MB * Math.max(0, sootFactor) * scale);
+		double addCarbon = (burned + soot * SOOT_CARBON) * CARBON_PER_MB * carbonScale;
+		double addSulfur = burned * SULFUR_PER_MB * Math.max(0, sootFactor) * sulfurScale;
+		if (ceilingPerMinute > 0 && !Double.isNaN(ceilingPerMinute) && !Double.isNaN(seconds)) {
+			double allowed = ceilingPerMinute * Math.max(0, seconds) / 60;
+			addCarbon = Math.min(addCarbon, allowed);
+			addSulfur = Math.min(addSulfur, allowed);
+		}
+		carbon = Math.min(MAX_HELD, carbon + addCarbon);
+		sulfur = Math.min(MAX_HELD, sulfur + addSulfur);
 	}
 
 	/** Whole steps of carbon ready to release; the rest stays held. */

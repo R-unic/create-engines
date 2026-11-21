@@ -100,6 +100,36 @@ public final class SableCompat {
 		}
 	}
 
+	private static java.lang.invoke.MethodHandle airPressure;
+	private static boolean airPressureTried;
+
+	/**
+	 * Sable's own air pressure at the block at {@code pos}, 1 at sea level, falling to 0 as Sable's dimension physics say it does,
+	 * so a datapack that changes the curve changes the engine too. Not a number when Sable is absent or does not answer, which
+	 * is the cue to use this mod's own height curve. Sable's physics class is not in its companion API, so it is reached by
+	 * name, once, and a failure is quiet and only turns this one read off.
+	 */
+	public static double airPressure(Level level, BlockPos pos) {
+		if (!installed())
+			return Double.NaN;
+		try {
+			if (!airPressureTried) {
+				airPressureTried = true;
+				Class<?> data = Class.forName("dev.ryanhcode.sable.physics.config.dimension_physics.DimensionPhysicsData");
+				airPressure = java.lang.invoke.MethodHandles.publicLookup()
+					.findStatic(data, "getAirPressure", java.lang.invoke.MethodType.methodType(double.class, Level.class, org.joml.Vector3dc.class));
+			}
+			if (airPressure == null)
+				return Double.NaN;
+			Vec3 at = worldPosition(level, pos);
+			return (double) airPressure.invoke(level, new org.joml.Vector3d(at.x, at.y, at.z));
+		} catch (Throwable e) {
+			airPressure = null;
+			LOGGER.warn("Sable did not answer what the air pressure is; engines will thin the air by height instead this session", e);
+			return Double.NaN;
+		}
+	}
+
 	/** The height in the world of the block at {@code pos}, which is {@code pos.getY()} off a moving structure. */
 	public static double worldY(Level level, BlockPos pos) {
 		return worldPosition(level, pos).y;

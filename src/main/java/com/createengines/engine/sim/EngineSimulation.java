@@ -280,7 +280,7 @@ public final class EngineSimulation {
 	 * pressure before the compressors multiply it, so boost offsets thin air.
 	 */
 	public void setAmbientDensity(double density) {
-		induction.density = Double.isNaN(density) ? 1 : Math.max(Altitude.FLOOR, Math.min(1, density));
+		induction.density = Altitude.clamp(density, Tuning.altitudeFloor);
 	}
 
 	/** How thick the air this engine breathes is, see {@link #setAmbientDensity}. */

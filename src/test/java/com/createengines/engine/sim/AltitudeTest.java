@@ -94,4 +94,37 @@ class AltitudeTest {
 		assertEquals(peak(engine(Altitude.FLOOR, 0)), peak(engine(-5, 0)), "clamped to the thinnest air there is");
 		assertEquals(peak(engine(1, 0)), peak(engine(Double.POSITIVE_INFINITY, 0)));
 	}
+
+	@Test
+	void aPressureReadFromAnotherModIsHeldBetweenTheFloorAndOne() {
+		assertEquals(0.5, Altitude.clamp(0.5, Altitude.FLOOR));
+		assertEquals(Altitude.FLOOR, Altitude.clamp(0, Altitude.FLOOR), "zero pressure still leaves an engine running");
+		assertEquals(Altitude.FLOOR, Altitude.clamp(-3, Altitude.FLOOR));
+		assertEquals(1, Altitude.clamp(7, Altitude.FLOOR), "never thicker than sea level");
+		assertEquals(1, Altitude.clamp(Double.NaN, Altitude.FLOOR), "no answer is no change");
+	}
+
+	@Test
+	void theCurveCanBeTunedAndTheDefaultsAreTheShippedOnes() {
+		assertEquals(Altitude.density(500), Altitude.density(500, Altitude.START, Altitude.SCALE, Altitude.FLOOR));
+		assertTrue(Altitude.density(500, 128, 300, 0.2) < Altitude.density(500), "a smaller scale is steeper");
+		assertEquals(0.25, Altitude.density(1_000_000, 128, 300, 0.25), "the floor given is the floor used");
+		assertEquals(1, Altitude.density(100, 200, 300, 0.2), "nothing thins below the start given");
+		assertTrue(Double.isFinite(Altitude.density(500, 128, 0, 0.2)), "a zero scale cannot divide by zero");
+	}
+
+	@Test
+	void theConfiguredFloorIsTheOneAnEngineIsGiven() {
+		try {
+			Tuning.altitudeFloor = 0.5;
+			EngineSimulation sim = engine(0.5, 0);
+			sim.setAmbientDensity(0);
+			assertEquals(0.5, sim.ambientDensity());
+		} finally {
+			Tuning.reset();
+		}
+		EngineSimulation sim = engine(1, 0);
+		sim.setAmbientDensity(0);
+		assertEquals(Altitude.FLOOR, sim.ambientDensity(), "back to the shipped floor");
+	}
 }

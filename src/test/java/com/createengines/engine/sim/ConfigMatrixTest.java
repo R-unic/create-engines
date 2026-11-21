@@ -33,7 +33,10 @@ class ConfigMatrixTest {
 		new Knob("fuelConsumption", v -> Tuning.fuelConsumption = v, 0.05, 20.0),
 		new Knob("heatRecovery", v -> Tuning.heatRecovery = v, 0.1, 10.0),
 		new Knob("coolingBonus", v -> Tuning.coolingBonus = v, 0.0, 3.0),
-		new Knob("torsionalFlex", v -> Tuning.torsionalFlex = v, 0.0, 2.0));
+		new Knob("torsionalFlex", v -> Tuning.torsionalFlex = v, 0.0, 2.0),
+		new Knob("altitudeStart", v -> Tuning.altitudeStart = v, -64.0, 100000.0),
+		new Knob("altitudeScale", v -> Tuning.altitudeScale = v, 1.0, 100000.0),
+		new Knob("altitudeFloor", v -> Tuning.altitudeFloor = v, 0.01, 1.0));
 
 	/** One switch: how to write it. Each is flipped from its default of true. */
 	private record Switch(String name, Consumer<Boolean> set) {
@@ -50,7 +53,8 @@ class ConfigMatrixTest {
 		new Switch("pilotInjection", v -> Tuning.pilotInjection = v),
 		new Switch("rotaryEngines", v -> Tuning.rotaryEngines = v),
 		new Switch("heatRecoveryEnabled", v -> Tuning.heatRecoveryEnabled = v),
-		new Switch("altitudeThinning", v -> Tuning.altitudeThinning = v));
+		new Switch("altitudeThinning", v -> Tuning.altitudeThinning = v),
+		new Switch("sableAirPressure", v -> Tuning.sableAirPressure = v));
 
 	@AfterEach
 	void resetTuning() {
@@ -161,6 +165,10 @@ class ConfigMatrixTest {
 		java.util.Map.entry("alternatorEnergy", "GameTest: SmokeAuditGameTests.everyConfigSettingAtItsExtremesLeavesAnEngineSane"),
 		java.util.Map.entry("pollution", "no effect on the sim: it only reports gas to another mod"),
 		java.util.Map.entry("pollutionRate", "no effect on the sim: it only reports gas to another mod"),
+		java.util.Map.entry("carbonRate", "no effect on the sim: it only reports gas to another mod; EmissionsTest"),
+		java.util.Map.entry("sulfurRate", "no effect on the sim: it only reports gas to another mod; EmissionsTest"),
+		java.util.Map.entry("pollutionAreaCap", "no effect on the sim: it only limits gas sent to another mod; PollutionGameTests"),
+		java.util.Map.entry("pollutionEngineCeiling", "no effect on the sim: it only reports gas to another mod; EmissionsTest"),
 		java.util.Map.entry("carriedOver", "bookkeeping of the 1.x file carry-over, ConfigCarryOverTest"));
 
 	/** The matrix is only worth anything if it covers every setting the config file offers, not just the Tuning fields. */

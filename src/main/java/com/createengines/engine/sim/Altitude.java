@@ -19,15 +19,27 @@ public final class Altitude {
 	public static final double SCALE = 1200;
 
 	/** The thinnest the air gets, so an engine far above the clouds still turns over. */
-	public static final double FLOOR = 0.2;
+	public static final double FLOOR = 0.25;
 
 	private Altitude() {
 	}
 
 	/** Air density at {@code y}, 1 at or below {@link #START}, never below {@link #FLOOR}. Not a number in, 1 out. */
 	public static double density(double y) {
+		return density(y, Tuning.altitudeStart, Tuning.altitudeScale, Tuning.altitudeFloor);
+	}
+
+	/** {@link #density(double)} with the curve given: flat to {@code start}, down by e every {@code scale} blocks, never under {@code floor}. */
+	public static double density(double y, double start, double scale, double floor) {
 		if (Double.isNaN(y))
 			return 1;
-		return Math.max(FLOOR, Math.min(1, Math.exp(-(y - START) / SCALE)));
+		return clamp(Math.exp(-(y - start) / Math.max(1e-6, scale)), floor);
+	}
+
+	/** A density (or a pressure read from another mod) held between {@code floor} and 1; not a number is 1, no change. */
+	public static double clamp(double density, double floor) {
+		if (Double.isNaN(density))
+			return 1;
+		return Math.max(floor, Math.min(1, density));
 	}
 }

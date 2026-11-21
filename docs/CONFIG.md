@@ -88,8 +88,16 @@ Other mods, and how the world around an engine answers it.
 | Setting | Default | Range | What it does |
 |---|---|---|---|
 | `altitudeThinning` | `true` | on or off | The air thins with height: past sea level an engine's intake charge falls, a little at first and more steeply near the build limit, so a naturally aspirated engine loses power as it climbs and a turbocharger or supercharger earns its place. Boost stages offset it. Off, the air is the same at every height. Nothing else about an engine changes, and it never destroys anything. |
+| `sableAirPressure` | `true` | on or off | With Sable (Create Aeronautics) installed, the air an engine breathes is Sable's own air pressure at the engine's height, so it follows the dimension's pressure curve, datapacks included. Off, or without Sable, the height curve below is used instead. |
+| `altitudeStart` | `128.0` | -64.0 to 100000.0 | The height in blocks up to which the air is as thick as at sea level. Used when Sable's pressure is not. |
+| `altitudeScale` | `1200.0` | 1.0 to 100000.0 | Blocks of climb over which the air thins by a factor of e. Smaller is steeper. Used when Sable's pressure is not. |
+| `altitudeFloor` | `0.25` | 0.01 to 1.0 | The thinnest air an engine is given, as a share of sea level, whichever source says it. Raise it to keep engines running high up, lower it to starve them; the default 0.25 is about the ceiling of a World War II piston engine. |
 | `pollution` | `true` | on or off | With Pollution of the Realms installed, engines put carbon and sulfur into the air through an open exhaust outlet in proportion to the fuel they burn. Without that mod this does nothing. Off, they stay clean. Engine behaviour is never read back from it. |
-| `pollutionRate` | `1.0` | 0.0 to 10.0 | Scales how much gas an engine puts out, against the default. 0 is the same as turning pollution off. |
+| `pollutionRate` | `0.25` | 0.0 to 10.0 | Scales how much gas an engine puts out. 1 is the full amount the engine would release; the default is a quarter of that. 0 is the same as turning pollution off. |
+| `carbonRate` | `1.0` | 0.0 to 10.0 | Scales the carbon an engine puts out, on top of pollutionRate. 0 means no carbon, only sulfur. |
+| `sulfurRate` | `1.0` | 0.0 to 10.0 | Scales the sulfur an engine puts out, on top of pollutionRate. 0 means no sulfur, only carbon. |
+| `pollutionAreaCap` | `150` | 0 to 100000 | An outlet stops releasing while the 7 by 7 by 7 block cube in front of it already holds this many steps of gas (carbon and sulfur together; a block holds 3 of a gas at most). It starts again as the gas thins or spreads. 0 turns the cap off. |
+| `pollutionEngineCeiling` | `0.0` | 0.0 to 100000.0 | The most steps of each gas one engine may release per minute of running. 0 turns the ceiling off. |
 <!-- /generated:server-settings -->
 
 `[meta] carriedOver` is a bookkeeping flag: it is set once the 1.x file has been read (see "From 1.x" below). Leave it alone.

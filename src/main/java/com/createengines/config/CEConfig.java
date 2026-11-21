@@ -53,8 +53,16 @@ public final class CEConfig {
 	public static final ModConfigSpec.BooleanValue HEAT_RECOVERY_ENABLED;
 
 	public static final ModConfigSpec.BooleanValue ALTITUDE_THINNING;
+	public static final ModConfigSpec.BooleanValue SABLE_AIR_PRESSURE;
+	public static final ModConfigSpec.DoubleValue ALTITUDE_START;
+	public static final ModConfigSpec.DoubleValue ALTITUDE_SCALE;
+	public static final ModConfigSpec.DoubleValue ALTITUDE_FLOOR;
 	public static final ModConfigSpec.BooleanValue POLLUTION;
 	public static final ModConfigSpec.DoubleValue POLLUTION_RATE;
+	public static final ModConfigSpec.IntValue POLLUTION_AREA_CAP;
+	public static final ModConfigSpec.DoubleValue POLLUTION_ENGINE_CEILING;
+	public static final ModConfigSpec.DoubleValue CARBON_RATE;
+	public static final ModConfigSpec.DoubleValue SULFUR_RATE;
 
 	private static final ModConfigSpec.BooleanValue CARRIED_OVER;
 
@@ -184,14 +192,44 @@ public final class CEConfig {
 				"turbocharger or supercharger earns its place. Boost stages offset it. Off, the air is the same at every",
 				"height. Nothing else about an engine changes, and it never destroys anything.")
 			.define("altitudeThinning", true));
+		SABLE_AIR_PRESSURE = value("compat.sableAirPressure", builder.comment(
+				"With Sable (Create Aeronautics) installed, the air an engine breathes is Sable's own air pressure at the",
+				"engine's height, so it follows the dimension's pressure curve, datapacks included. Off, or without Sable,",
+				"the height curve below is used instead.")
+			.define("sableAirPressure", true));
+		ALTITUDE_START = value("compat.altitudeStart", builder.comment(
+				"The height in blocks up to which the air is as thick as at sea level. Used when Sable's pressure is not.")
+			.defineInRange("altitudeStart", 128.0, -64.0, 100000.0));
+		ALTITUDE_SCALE = value("compat.altitudeScale", builder.comment(
+				"Blocks of climb over which the air thins by a factor of e. Smaller is steeper. Used when Sable's pressure is not.")
+			.defineInRange("altitudeScale", 1200.0, 1.0, 100000.0));
+		ALTITUDE_FLOOR = value("compat.altitudeFloor", builder.comment(
+				"The thinnest air an engine is given, as a share of sea level, whichever source says it. Raise it to keep",
+				"engines running high up, lower it to starve them; the default 0.25 is about the ceiling of a World War II piston engine.")
+			.defineInRange("altitudeFloor", 0.25, 0.01, 1.0));
 		POLLUTION = value("compat.pollution", builder.comment(
 				"With Pollution of the Realms installed, engines put carbon and sulfur into the air through an open",
 				"exhaust outlet in proportion to the fuel they burn. Without that mod this does nothing. Off, they",
 				"stay clean. Engine behaviour is never read back from it.")
 			.define("pollution", true));
 		POLLUTION_RATE = value("compat.pollutionRate", builder.comment(
-				"Scales how much gas an engine puts out, against the default. 0 is the same as turning pollution off.")
-			.defineInRange("pollutionRate", 1.0, 0.0, 10.0));
+				"Scales how much gas an engine puts out. 1 is the full amount the engine would release; the default is a quarter of that. 0 is the same as turning pollution off.")
+			.defineInRange("pollutionRate", 0.25, 0.0, 10.0));
+		CARBON_RATE = value("compat.carbonRate", builder.comment(
+				"Scales the carbon an engine puts out, on top of pollutionRate. 0 means no carbon, only sulfur.")
+			.defineInRange("carbonRate", 1.0, 0.0, 10.0));
+		SULFUR_RATE = value("compat.sulfurRate", builder.comment(
+				"Scales the sulfur an engine puts out, on top of pollutionRate. 0 means no sulfur, only carbon.")
+			.defineInRange("sulfurRate", 1.0, 0.0, 10.0));
+		POLLUTION_AREA_CAP = value("compat.pollutionAreaCap", builder.comment(
+				"An outlet stops releasing while the air in the 7 by 7 by 7 block cube in front of it already holds this many",
+				"steps of gas (carbon and sulfur together; one block holds 3 of a gas at most). It starts again as the gas",
+				"thins or spreads, so a factory stays hazy rather than growing unlivable. 0 turns the cap off.")
+			.defineInRange("pollutionAreaCap", 150, 0, 100000));
+		POLLUTION_ENGINE_CEILING = value("compat.pollutionEngineCeiling", builder.comment(
+				"The most steps of each gas one engine may release per minute of running, however much it burns. 0 turns the",
+				"ceiling off.")
+			.defineInRange("pollutionEngineCeiling", 0.0, 0.0, 100000.0));
 		builder.pop();
 
 		builder.comment("Set once the 1.x file has been read. Leave it alone.")
@@ -248,5 +286,9 @@ public final class CEConfig {
 		Tuning.rotaryEngines = ROTARY_ENGINES.get();
 		Tuning.heatRecoveryEnabled = HEAT_RECOVERY_ENABLED.get();
 		Tuning.altitudeThinning = ALTITUDE_THINNING.get();
+		Tuning.sableAirPressure = SABLE_AIR_PRESSURE.get();
+		Tuning.altitudeStart = ALTITUDE_START.get();
+		Tuning.altitudeScale = ALTITUDE_SCALE.get();
+		Tuning.altitudeFloor = ALTITUDE_FLOOR.get();
 	}
 }

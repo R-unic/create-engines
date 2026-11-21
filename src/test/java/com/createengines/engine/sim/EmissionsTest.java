@@ -122,6 +122,37 @@ class EmissionsTest {
 	}
 
 	@Test
+	void eachGasHasItsOwnRateOnTopOfTheCommonOne() {
+		Emissions noCarbon = new Emissions();
+		noCarbon.add(12, 0, 1, 1, 0, 1);
+		assertEquals(0, noCarbon.takeCarbon());
+		assertEquals(3, noCarbon.takeSulfur());
+		Emissions noSulfur = new Emissions();
+		noSulfur.add(12, 0, 1, 1, 1, 0);
+		assertEquals(6, noSulfur.takeCarbon());
+		assertEquals(0, noSulfur.takeSulfur());
+		Emissions stacked = new Emissions();
+		stacked.add(12, 0, 1, 2, 2, 0.5);
+		assertEquals(24, stacked.takeCarbon(), "common 2 times carbon 2");
+		assertEquals(3, stacked.takeSulfur(), "common 2 times sulfur 0.5");
+		Emissions defaults = new Emissions();
+		defaults.add(12, 0, 1, 1, 1, 1);
+		assertEquals(6, defaults.takeCarbon(), "rates of 1 leave the old numbers");
+		assertEquals(3, defaults.takeSulfur());
+	}
+
+	@Test
+	void hostileGasRatesAreHeldInRange() {
+		Emissions emissions = new Emissions();
+		emissions.add(1, 1, 1, 1, Double.NaN, 1);
+		emissions.add(0, 0, 1, 1, Double.POSITIVE_INFINITY, Double.POSITIVE_INFINITY);
+		assertEquals(0, emissions.takeCarbon());
+		emissions.add(1, 0, 1, 1, Double.POSITIVE_INFINITY, -5);
+		assertTrue(emissions.takeCarbon() <= Emissions.MAX_HELD);
+		assertEquals(0, emissions.takeSulfur());
+	}
+
+	@Test
 	void whatIsNotWholeStaysHeldAndIsNeverReleasedTwice() {
 		Emissions emissions = new Emissions();
 		emissions.add(6, 0, 1, 1);
@@ -141,5 +172,30 @@ class EmissionsTest {
 		assertEquals(0, emissions.takeCarbon());
 		emissions.add(1, 0, 1, Double.POSITIVE_INFINITY);
 		assertTrue(emissions.takeCarbon() <= Emissions.MAX_HELD);
+	}
+
+	@Test
+	void aCeilingLimitsWhatOneEngineAddsPerMinute() {
+		Emissions capped = new Emissions();
+		// 60 mB would make 30 carbon and 15 sulfur; a ceiling of 6 a minute over 30 seconds allows 3 of each
+		capped.add(60, 0, 1, 1, 1, 1, 6, 30);
+		assertEquals(3, capped.takeCarbon());
+		assertEquals(3, capped.takeSulfur());
+	}
+
+	@Test
+	void noCeilingLeavesTheNumbersAlone() {
+		Emissions free = new Emissions();
+		free.add(12, 0, 1, 1, 1, 1, 0, 30);
+		assertEquals(6, free.takeCarbon());
+		assertEquals(3, free.takeSulfur());
+	}
+
+	@Test
+	void aCeilingNeverRaisesWhatAnEngineMakes() {
+		Emissions slow = new Emissions();
+		slow.add(2, 0, 1, 1, 1, 1, 600, 60);
+		assertEquals(1, slow.takeCarbon());
+		assertEquals(0, slow.takeSulfur());
 	}
 }

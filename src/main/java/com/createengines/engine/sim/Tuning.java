@@ -39,6 +39,14 @@ public final class Tuning {
 	public static volatile boolean heatRecoveryEnabled = true;
 	/** Whether the air thins with height, see {@link Altitude}. */
 	public static volatile boolean altitudeThinning = true;
+	/** Whether, with Sable installed, the air's thickness is Sable's own air pressure where the engine is, see {@link Altitude}. */
+	public static volatile boolean sableAirPressure = true;
+	/** Height from which the air thins when no pressure is read from Sable, see {@link Altitude#START}. */
+	public static volatile double altitudeStart = Altitude.START;
+	/** Blocks of climb per e-fold of thinning when no pressure is read from Sable, see {@link Altitude#SCALE}. */
+	public static volatile double altitudeScale = Altitude.SCALE;
+	/** The thinnest air an engine is given, as a share of sea level, see {@link Altitude#FLOOR}. */
+	public static volatile double altitudeFloor = Altitude.FLOOR;
 
 	private Tuning() {
 	}
@@ -68,5 +76,9 @@ public final class Tuning {
 		rotaryEngines = true;
 		heatRecoveryEnabled = true;
 		altitudeThinning = true;
+		sableAirPressure = true;
+		altitudeStart = Altitude.START;
+		altitudeScale = Altitude.SCALE;
+		altitudeFloor = Altitude.FLOOR;
 	}
 }

@@ -106,6 +106,10 @@ class SharedStateConcurrencyTest {
 					Tuning.rotaryEngines = random.nextBoolean();
 					Tuning.heatRecoveryEnabled = random.nextBoolean();
 					Tuning.altitudeThinning = random.nextBoolean();
+					Tuning.sableAirPressure = random.nextBoolean();
+					Tuning.altitudeStart = edge(random, -64, 100000);
+					Tuning.altitudeScale = edge(random, 1, 100000);
+					Tuning.altitudeFloor = edge(random, 0.01, 1);
 					Thread.yield();
 				}
 			} catch (Throwable t) {

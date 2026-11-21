@@ -506,6 +506,12 @@ public final class EngineController {
 		if (!com.createengines.engine.sim.Tuning.altitudeThinning)
 			return 1;
 		Level level = primary.getLevel();
+		if (level != null && com.createengines.engine.sim.Tuning.sableAirPressure) {
+			// With Sable the air is as thick as its own pressure says where the engine is, so a plane's ceiling is Sable's
+			double pressure = com.createengines.compat.sable.SableCompat.airPressure(level, primary.getBlockPos());
+			if (!Double.isNaN(pressure))
+				return pressure;
+		}
 		return Altitude.density(level == null ? primary.getBlockPos()
 			.getY() : com.createengines.compat.sable.SableCompat.worldY(level, primary.getBlockPos()));
 	}
@@ -1452,7 +1458,9 @@ public final class EngineController {
 				fuels++;
 			}
 		}
-		emissions.add(burned, soot, fuels == 0 ? 1 : dirt / fuels, com.createengines.config.CEConfig.POLLUTION_RATE.get());
+		emissions.add(burned, soot, fuels == 0 ? 1 : dirt / fuels, com.createengines.config.CEConfig.POLLUTION_RATE.get(),
+			com.createengines.config.CEConfig.CARBON_RATE.get(), com.createengines.config.CEConfig.SULFUR_RATE.get(),
+			com.createengines.config.CEConfig.POLLUTION_ENGINE_CEILING.get(), seconds);
 		int carbon = emissions.takeCarbon();
 		int sulfur = emissions.takeSulfur();
 		if (carbon <= 0 && sulfur <= 0)
