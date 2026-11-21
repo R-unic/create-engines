@@ -169,6 +169,58 @@ public class PollutionGameTests {
 	}
 
 	/**
+	 * An outlet stops releasing into air that already holds the area cap's worth of gas, and starts again where the cap is off or
+	 * not yet reached. The gas is put in the cube in front of the mouth directly, and what the outlet is then offered to release
+	 * is counted, so nothing here waits on a running engine. It flips a server-wide setting, so it has a batch to itself.
+	 */
+	@GameTest(template = "empty", timeoutTicks = 100, batch = "pollutionAreaCap")
+	public static void anOutletReleasesNothingIntoAirThatAlreadyHoldsTheAreaCap(GameTestHelper helper) {
+		if (!PollutionCompat.active()) {
+			helper.succeed();
+			return;
+		}
+		int was = com.createengines.config.CEConfig.POLLUTION_AREA_CAP.get();
+		try {
+			TestEngine.build(helper.getLevel(), helper.absolutePos(BlockPos.ZERO), false);
+			BlockPos mouth = outlet(helper);
+			var facing = helper.getLevel()
+				.getBlockState(mouth)
+				.getValue(com.createengines.content.airflow.PortOpeningBlock.FACING);
+			BlockPos front = mouth.relative(facing);
+			int cap = 12;
+			com.createengines.config.CEConfig.POLLUTION_AREA_CAP.set(cap);
+			// Fill the cube in front of the mouth with carbon until it holds the cap, a cell at a time
+			long held = 0;
+			for (BlockPos pos : BlockPos.betweenClosed(front.offset(-3, -3, -3), front.offset(3, 3, 3))) {
+				if (held >= cap)
+					break;
+				if (!pos.equals(mouth) && helper.getLevel()
+					.getBlockState(pos)
+					.isAir())
+					held += PollutionProbe.pumpCarbon(helper.getLevel(), pos.immutable(), PollutionProbe.carbonCapacity());
+			}
+			helper.assertTrue(held >= cap, "the test could not fill the air to the cap, only " + held);
+			PollutionProbe.startCounting();
+			PollutionCompat.release(helper.getLevel(), mouth, 5, 5);
+			helper.assertTrue(PollutionProbe.carbonReleased(mouth) == 0 && PollutionProbe.sulfurReleased(mouth) == 0,
+				"air already at the cap should have turned the outlet away, it was offered " + PollutionProbe.carbonReleased(mouth)
+					+ " carbon and " + PollutionProbe.sulfurReleased(mouth) + " sulfur");
+			com.createengines.config.CEConfig.POLLUTION_AREA_CAP.set(0);
+			PollutionCompat.release(helper.getLevel(), mouth, 5, 5);
+			helper.assertTrue(PollutionProbe.carbonReleased(mouth) > 0, "with the cap off the outlet should release again");
+			PollutionProbe.stopCounting();
+			PollutionProbe.startCounting();
+			com.createengines.config.CEConfig.POLLUTION_AREA_CAP.set(100000);
+			PollutionCompat.release(helper.getLevel(), mouth, 5, 5);
+			helper.assertTrue(PollutionProbe.carbonReleased(mouth) > 0, "air far under a high cap should not stop the outlet");
+			helper.succeed();
+		} finally {
+			PollutionProbe.stopCounting();
+			com.createengines.config.CEConfig.POLLUTION_AREA_CAP.set(was);
+		}
+	}
+
+	/**
 	 * Logs how much gas a running engine has put into the air, sampled as it runs, against how much a cell of the mod holds.
 	 * It asserts nothing: it is how the release rates were chosen, and is kept so they can be chosen again.
 	 */

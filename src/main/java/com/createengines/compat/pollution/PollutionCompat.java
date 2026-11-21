@@ -53,6 +53,9 @@ public final class PollutionCompat {
 			.isEmpty())
 			return;
 		try {
+			int cap = CEConfig.POLLUTION_AREA_CAP.get();
+			if (cap > 0 && PollutionBridge.airHolds(level, outlet.relative(facing)) >= cap)
+				return;
 			PollutionBridge.release(level, outlet, facing, carbon, sulfur);
 		} catch (LinkageError | RuntimeException e) {
 			broken = true;

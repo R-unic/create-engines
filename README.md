@@ -173,7 +173,7 @@ All optional; none is needed to play.
   early.
 - **Pollution of the Realms**: engines put carbon and sulfur into the air through an open exhaust outlet, in proportion to the
   fuel they burn (more carbon when they run rich, less with a Soot Trap fitted; sulfur follows how dirty the fuel is). Nothing
-  is read back into the engine. `compat.pollution`, `pollutionRate` (half of the full amount by default), `carbonRate` and `sulfurRate` control it.
+  is read back into the engine. `compat.pollution`, `pollutionRate` (a quarter of the full amount by default), `carbonRate`, `sulfurRate`, `pollutionAreaCap` (an outlet stops releasing into air that is already thick) and `pollutionEngineCeiling` (most gas one engine may release per minute) control it.
 - **Create: Diesel Generators**: its diesel, biodiesel, gasoline, ethanol and plant oil are listed in the common fuel tags, so
   they burn in these engines. This is only the tags (each entry optional); a game with that mod installed has not been run.
 - **KubeJS** (server scripts) and **CC: Tweaked** (a peripheral on a crankshaft, cylinder, head or rotor housing) can watch an
