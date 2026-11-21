@@ -211,4 +211,64 @@ public class SableGameTests {
 			helper.fail("a block that is not on a moving structure must keep its own height");
 		helper.succeed();
 	}
+
+	/**
+	 * With Sable the air is Sable's own pressure, which this mod reaches by name: if that lookup ever stopped working the engine
+	 * would quietly use the height curve, so this asks for a real number and for the pressure to fall with height.
+	 */
+	@GameTest(template = "empty", timeoutTicks = 200)
+	public static void theAirPressureIsReadFromSableAndFallsWithHeight(GameTestHelper helper) {
+		if (!SableCompat.installed()) {
+			helper.succeed();
+			return;
+		}
+		BlockPos ground = helper.absolutePos(new BlockPos(1, 1, 1));
+		double low = SableCompat.airPressure(helper.getLevel(), ground);
+		double high = SableCompat.airPressure(helper.getLevel(), new BlockPos(ground.getX(), 2000, ground.getZ()));
+		if (Double.isNaN(low) || Double.isNaN(high))
+			helper.fail("Sable's air pressure could not be read: " + low + " at the ground, " + high + " at 2000");
+		if (low <= 0 || high < 0)
+			helper.fail("pressure cannot be zero at the bottom of the world or negative anywhere, got " + low + " and " + high);
+		if (!(high < low))
+			helper.fail("the air should be thinner at 2000 (" + high + ") than at the ground (" + low + ")");
+		helper.succeed();
+	}
+
+	/**
+	 * Parts on a structure are posed only while in view, and Flywheel tests the part's position in the plot, which is nowhere near
+	 * the camera: the pistons froze. The test must say yes for a part whose structure the camera is looking at, and no for one it
+	 * is looking away from, whatever Flywheel's own answer.
+	 */
+	@GameTest(template = "empty", timeoutTicks = 200)
+	public static void aPartOnAStructureIsInViewWhereTheStructureIsNotWhereItsPlotIs(GameTestHelper helper) {
+		if (!SableCompat.installed()) {
+			helper.succeed();
+			return;
+		}
+		BlockPos origin = helper.absolutePos(BlockPos.ZERO);
+		TestEngine.build(helper.getLevel(), origin, true);
+		SableTestSupport.Held held = SableTestSupport.assemble(helper.getLevel(), origin, origin.offset(7, 5, 5), 2000);
+		net.minecraft.world.phys.Vec3 at = SableCompat.worldPosition(helper.getLevel(), held.inPlot());
+		// Flywheel draws relative to a render origin near the camera, so the matrices are small numbers, not millions
+		BlockPos plot = held.inPlot();
+		BlockPos renderOrigin = BlockPos.containing(at);
+		BlockPos visual = plot.subtract(renderOrigin);
+		float x = (float) (at.x - renderOrigin.getX());
+		float y = (float) (at.y - renderOrigin.getY());
+		float z = (float) (at.z - renderOrigin.getZ());
+		org.joml.Matrix4f view = new org.joml.Matrix4f().lookAt(x, y, z - 10, x, y, z, 0, 1, 0);
+		org.joml.Matrix4f away = new org.joml.Matrix4f().lookAt(x, y, z - 10, x, y, z - 20, 0, 1, 0);
+		org.joml.Matrix4f projection = new org.joml.Matrix4f().perspective((float) Math.toRadians(70), 1.6f, 0.05f, 256f);
+		org.joml.FrustumIntersection looking = new org.joml.FrustumIntersection(new org.joml.Matrix4f(projection).mul(view));
+		org.joml.FrustumIntersection turned = new org.joml.FrustumIntersection(new org.joml.Matrix4f(projection).mul(away));
+		if (!com.createengines.content.StructureCulling.visible(helper.getLevel(), plot, visual, looking, false))
+			helper.fail("a part on a structure in front of the camera was called out of view because its plot is far away");
+		if (com.createengines.content.StructureCulling.visible(helper.getLevel(), plot, visual, turned, true))
+			helper.fail("a part on a structure behind the camera was called in view because Flywheel said so for its plot");
+		BlockPos ground = helper.absolutePos(new BlockPos(1, 1, 1));
+		if (!com.createengines.content.StructureCulling.visible(helper.getLevel(), ground, ground, turned, true)
+			|| com.createengines.content.StructureCulling.visible(helper.getLevel(), ground, ground, looking, false))
+			helper.fail("off a structure, Flywheel's own answer must stand");
+		helper.succeed();
+	}
 }

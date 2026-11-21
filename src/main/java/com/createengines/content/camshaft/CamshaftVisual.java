@@ -3,6 +3,7 @@ package com.createengines.content.camshaft;
 import java.util.function.Consumer;
 
 import com.createengines.content.EnginePoses;
+import com.createengines.content.StructureCulling;
 import com.createengines.content.RotatingPartVisual;
 import com.createengines.registry.CEPartialModels;
 
@@ -47,7 +48,7 @@ public class CamshaftVisual extends RotatingPartVisual<CamshaftBlockEntity> {
 
 	@Override
 	public void beginFrame(DynamicVisual.Context context) {
-		if (!isVisible(context.frustum()))
+		if (!StructureCulling.visible(level, pos, visualPos, context.frustum(), isVisible(context.frustum())))
 			return;
 		super.beginFrame(context);
 		poseLobes();

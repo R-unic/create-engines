@@ -15,9 +15,9 @@ class RenderRotationTest {
 
 	private static final float TICK = 1f;
 
-	/** Create's own angle for a shaft at this time and speed. */
+	/** The angle Flywheel's shader turns a Create shaft to at this time and speed: seconds x (rpm x 6), in float. */
 	private static double create(float time, float speed) {
-		return (time * speed * 3f / 10) % 360;
+		return (time / 20f * (speed * 6f)) % 360;
 	}
 
 	/** How far an angle is from agreeing with Create's, to the nearest quarter turn, in degrees (0 to 45). */
@@ -67,6 +67,32 @@ class RenderRotationTest {
 			// Float arithmetic on a large time x speed is coarse, so allow what one ulp of Create's own angle is
 			double slack = 0.05 + Math.ulp((float) (time * Math.abs(speed) * 0.3)) * 2;
 			assertTrue(offBy(drawn, time, speed) < slack, "speed " + speed + " off by " + offBy(drawn, time, speed));
+		}
+	}
+
+	@Test
+	void theCrankFollowsFlywheelsClockNotCreatesWhenTheyDiffer() {
+		// Flywheel turns the shafts from its own tick count, a fixed number of ticks ahead of Create's animation clock.
+		// At speed s that is a gap of shift x s x 0.3 degrees, so it grows with the speed unless the crank uses that clock
+		float shift = 7_341;
+		RenderRotation.setShaftTimeShift(shift);
+		try {
+			for (float speed : new float[] { 16, 64, 256, 1024, -512 }) {
+				RenderRotation rotation = new RenderRotation();
+				float time = 2_000;
+				rotation.alignedAt(time, speed);
+				double drawn = 0;
+				for (int i = 0; i < 300; i++) {
+					time += TICK;
+					drawn = rotation.alignedAt(time, speed);
+				}
+				float shaftTime = time + shift;
+				double slack = 0.05 + Math.ulp((float) (shaftTime * Math.abs(speed) * 0.3)) * 2;
+				assertTrue(offBy(drawn, shaftTime, speed) < slack,
+					"speed " + speed + " off by " + offBy(drawn, shaftTime, speed));
+			}
+		} finally {
+			RenderRotation.setShaftTimeShift(0);
 		}
 	}
 

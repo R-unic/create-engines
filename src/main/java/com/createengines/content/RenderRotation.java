@@ -71,7 +71,19 @@ public final class RenderRotation {
 	 * class carries no Minecraft types and unit tests can run it.
 	 */
 	private static float createAngle(float renderTime, float speed) {
-		return (renderTime * speed * 3f / 10) % 360;
+		// Create's shafts are turned by Flywheel's shader: degrees = flw_renderSeconds * (rpm * 6), in float, where the
+		// clock is Flywheel's own tick count. That count is not Create's animation clock: it is offset by however many
+		// ticks passed before the world was joined, so the same speed gives a different angle, and the gap grows with
+		// the speed. The shift is what carries one clock to the other.
+		float seconds = (renderTime + shaftTimeShift) / 20f;
+		return (seconds * (speed * 6f)) % 360;
+	}
+
+	/** Flywheel's clock minus Create's animation clock, in ticks. Set by the client each frame; 0 where there is no Flywheel. */
+	private static volatile float shaftTimeShift;
+
+	public static void setShaftTimeShift(float ticks) {
+		shaftTimeShift = ticks;
 	}
 
 	/**

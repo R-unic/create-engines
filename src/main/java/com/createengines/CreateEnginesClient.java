@@ -46,6 +46,7 @@ public class CreateEnginesClient {
 		modEventBus.addListener(com.createengines.client.SharedCasingModels::onModifyBakingResult);
 		NeoForge.EVENT_BUS.addListener(FuelTooltips::onTooltip);
 		NeoForge.EVENT_BUS.addListener(com.createengines.client.BuildPreview::onRender);
+		NeoForge.EVENT_BUS.addListener(com.createengines.client.ShaftClock::onRenderFrame);
 		NeoForge.EVENT_BUS.addListener(CreateEnginesClient::onLoggingOut);
 		// The headphones: muffle on the sound card, and the tooltip's word on whether the card can
 		com.createengines.content.headphones.HeadphonesItem.filterAvailable = com.createengines.client.HeadphoneMuffle::filtering;

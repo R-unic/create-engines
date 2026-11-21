@@ -3,6 +3,7 @@ package com.createengines.content.head;
 import java.util.function.Consumer;
 
 import com.createengines.content.EnginePoses;
+import com.createengines.content.StructureCulling;
 import com.createengines.registry.CEPartialModels;
 
 import dev.engine_room.flywheel.api.instance.Instance;
@@ -39,7 +40,7 @@ public class CylinderHeadVisual extends AbstractBlockEntityVisual<CylinderHeadBl
 	@Override
 	public void beginFrame(DynamicVisual.Context context) {
 		// Posed from the render time, so it is exact again the frame it comes back into view
-		if (!isVisible(context.frustum()))
+		if (!StructureCulling.visible(level, pos, visualPos, context.frustum(), isVisible(context.frustum())))
 			return;
 		animate();
 	}
