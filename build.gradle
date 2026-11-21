@@ -652,7 +652,7 @@ idea {
 
 // Verification track item 12: coverage with a ratchet. The report is a map of code no test runs; the check fails only if
 // the total drops below the number recorded in src/smoke/coverage-floor.txt, which is raised by hand when it improves.
-// That floor measures the unit tests alone (and is what CI's `check` holds). The GameTests and the client audit run in
+// That floor measures the unit tests alone, over the mod's own classes and not the test harness (and is what CI's `check` holds). The GameTests and the client audit run in
 // other JVMs, so they carry the JaCoCo agent too and `coverageMerged` below joins all three into one report and a second
 // ratchet, src/smoke/coverage-floor-merged.txt.
 jacoco {
@@ -670,14 +670,18 @@ tasks.named('jacocoTestReport', JacocoReport) {
     }
 }
 
+// The test harness (the GameTests, the smoke audit, the showcase and visual smoke classes) is left out of both ratchets: it is test
+// code that no unit test runs and that grows with every GameTest, so counting it made the unit floor fall as the mod was tested more.
+def harnessPackages = ['com/createengines/gametest/**', 'com/createengines/smoke/**', 'com/createengines/client/smoke/**',
+    'com/createengines/client/VisualSmokeTest*', 'com/createengines/client/ShowcaseRun*']
 def coverageFloorFile = file('src/smoke/coverage-floor.txt')
 
 tasks.register('coverageRatchet', JacocoCoverageVerification) {
     group = 'verification'
-    description = 'Fails if instruction coverage of the unit tests falls below src/smoke/coverage-floor.txt.'
+    description = 'Fails if instruction coverage of the unit tests (the mod itself, not the test harness) falls below src/smoke/coverage-floor.txt.'
     dependsOn 'test'
     executionData.from(tasks.named('test').map { it.extensions.getByType(JacocoTaskExtension).destinationFile })
-    classDirectories.from(sourceSets.main.output.classesDirs)
+    classDirectories.from(files(sourceSets.main.output.classesDirs.files.collect { fileTree(dir: it, exclude: harnessPackages) }))
     sourceDirectories.from(sourceSets.main.allJava.srcDirs)
     violationRules {
         rule {
@@ -696,8 +700,6 @@ tasks.named('check') { dependsOn 'coverageRatchet' }
 // mod's own classes (the agent would otherwise instrument Minecraft and NeoForge too). The audit's harness packages are
 // left out of the measure on every side, so the number says how much of the mod runs and not how much of the test code does.
 def coverageRuns = ['test', 'runGameTestServer', 'runSmokeAudit']
-def harnessPackages = ['com/createengines/gametest/**', 'com/createengines/smoke/**', 'com/createengines/client/smoke/**',
-    'com/createengines/client/VisualSmokeTest*', 'com/createengines/client/ShowcaseRun*']
 ['runGameTestServer', 'runSmokeAudit'].each { runName ->
     tasks.matching { it.name == runName }.configureEach { runTask ->
         jacoco.applyTo(runTask)

@@ -51,7 +51,10 @@ look good; it says nothing is broken in ways a machine can name.
 (all unit tests), then the JaCoCo coverage ratchet. `./gradlew coverageMerged` is the same measure across the unit tests, the GameTests and the client audit together (about
 7 minutes, needs a game window, part of `smoke`), with its own floor in `src/smoke/coverage-floor-merged.txt` and a report in
 `build/reports/jacoco/merged`. The floor is `src/smoke/coverage-floor.txt`: raise it by hand when
-coverage improves, never lower it to make a build pass. The first run needs the network once, to fetch the JaCoCo agent.
+coverage improves, never lower it to make a build pass. Both ratchets measure the mod itself and leave the test harness (the
+GameTests, the smoke audit, the showcase and visual smoke classes) out: it is test code no unit test runs, and counting it made
+the unit floor fall every time a GameTest was added (0.1459 against 0.15 at 2.0, with the mod's own code at 0.2133, so the
+floor was set to 0.21). The first run needs the network once, to fetch the JaCoCo agent.
 `.github/workflows/verify.yml` runs these on every push and pull request, plus a job that fails if `runData` changes
 anything under `src/generated`.
 

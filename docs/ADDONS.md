@@ -3,7 +3,7 @@
 For people writing a Java mod that adds something to Create: Engine Engineer: a turbine, a two-stroke, an electric assist, a
 block that rides an engine's crank. Pack makers who only need data and config want [PACKS.md](PACKS.md) instead.
 
-The mod gives addons two things, both frozen at 2.0 as **API 1.0.0** (the rules are in [API.md](API.md)):
+The mod gives addons two things, both frozen at 2.0 as **API 1.1.0** (the rules are in [API.md](API.md)):
 
 1. **Read an engine** and **listen to it**: `EngineApi`, `EngineView`, and two events on `NeoForge.EVENT_BUS`.
 2. **Put something on an engine's crank**: write a `TorqueSource`, return it from an `EngineSourceProvider`, and the engine
@@ -300,7 +300,7 @@ This path is tested twice: in this repository with the effect named through the 
 
 | | |
 |---|---|
-| **Frozen** (API 1.0.0, in 2.x only added to) | `com.createengines.api.*`, `engine.sim.TorqueSource`, `AbstractTorqueSource`, `Breather`, `StatusLine`; the `fuel`, `part_stats`, `part_effect` data maps and the `part_effects` and `cam_profiles` data formats; the KubeJS and CC names |
+| **Frozen** (API 1.1.0, in 2.x only added to) | `com.createengines.api.*`, `engine.sim.TorqueSource`, `AbstractTorqueSource`, `Breather`, `StatusLine`; the `fuel`, `part_stats`, `part_effect` data maps and the `part_effects` and `cam_profiles` data formats; the KubeJS and CC names |
 | **Internal** | everything else: `engine.*`, `content.*`, the registries and the config classes. They may change in any release |
 
 `ApiSurfaceTest` reads every public declaration of the frozen types from the source and fails the build if one disappears or

@@ -48,7 +48,7 @@ Set by the author on 2026-11-14:
 | 1.2 | Dress Parts | Cosmetic build variety | Small | Shipped as v1.2.0 (v1.2.1 fixed the sound-thread memory leak) |
 | 1.3 | Refinery | A refinery multiblock for the fuels that already exist | Large | Shipped as v1.3.0, 2026-11-17 |
 | 1.4 | Drawing Office | Blueprints, pack-maker tools, Aeronautics and other addons | Large | **In progress** (see its section) |
-| 2.0 | Open Block (released as "Open Throttle") | The platform, and the one breaking cleanup | Large | **In progress**, merged to master 2026-11-19 (not tagged): the breaking cleanup, both crossovers, the port curve, altitude, the frozen API and the dye cleanup are built; platform items partly (see its section); optimization pass partly |
+| 2.0 | Open Block (released as "Open Throttle") | The platform, and the one breaking cleanup | Large | **Built, not tagged** (2026-11-21): the breaking cleanup, both crossovers, the port curve, altitude, the frozen API (1.1.0) and the dye cleanup, the platform (engine types, parts as data, an example addon), battery and part depth, headphones, kerosene and methanol, Jade and the other integrations; the Part 2 gate ran on 2026-11-21 (see `docs/releases/v2.0.0.md`); the hands-on boxes and the tag are the author's |
 
 ## 1.0.x Shakedown
 
@@ -479,7 +479,7 @@ throttle and rack) lets players write their own engine management in Lua, withou
   boost path is narrowed to `Breather` (19 files still name `CylinderModel`, all cylinder internals), a source can be attached to an intake
   or exhaust network so turbos, blowers and intercoolers act on it, and a provider's watched blocks are recorded in blueprints and accepted
   by the server. No scanner-rule registry: the watch-and-rebuild hook already rescans. See the end of `docs/design/ENGINE_SEAM.md`.
-- **Frozen public API:** `api.ApiVersion` 1.0.0 (its own semver), `ApiSurfaceTest` against `compat/api-surface.txt`, provider internals
+- **Frozen public API:** `api.ApiVersion` 1.1.0 (its own semver; 1.1 added `PartBlocks` and `EngineBuilding`, 2026-11-21), `ApiSurfaceTest` against `compat/api-surface.txt`, provider internals
   moved to `engine.EngineProviders`, `docs/API.md`. Behaviour is covered by the GameTests, not the surface file.
 - **Parts as data, first piece:** the four precision parts (bore, head, piston, injector) are `part_effects/<part>.json`, read on every
   data reload into `engine.sim.PartEffects`; the shipped files equal the old constants (pinned by test) and the baselines did not move.
@@ -497,7 +497,7 @@ throttle and rack) lets players write their own engine management in Lua, withou
   `api.PartBlocks` (cylinder and head factories, `register`, `partEffect`) and `api.EngineBuilding.timeCamLobe` are API 1.1, the example uses only
   `com.createengines.api` and `ExampleAddonUsesOnlyTheApiTest` keeps it so. The rule going forward (the author's): an addon never needs an internal
   class; a need is a gap in the API. The new names are recorded in `compat/script-surface.txt`
-  (the `part_effects` keys too, which were not before); the API version is still 1.0.0 because 1.0.0 has not shipped. The original
+  (the `part_effects` keys too, which were not before); the API version is 1.1.0 (1.0 never shipped on its own). The original
   text: not yet data: cam profiles, and a third tier named from a pack's own block (a pack's block would also
   need its own cylinder block class). The `part_stats` data map still works on top.
 - **State cleanup (dye): built 2026-11-19, with a migration.** The dye (`paint`, 17 values) multiplied a pipe's states (64 connections
@@ -766,7 +766,7 @@ Status 2026-11-19, checked against the code:
   2.0 migrates advancements, config and dye itself.
 - Before 2.0 ships, a world saved on 1.0 and one saved on the last 1.x are both opened in it. **Not done by hand**; the legacy-world
   GameTests cover the 1.0 to 1.3 fixtures, and the author reports opening one real 1.x world (not recorded which).
-- The preview formats from 1.4 are frozen here. **Done 2026-11-19:** the `api` package (`ApiVersion` 1.0.0, `ApiSurfaceTest`, `docs/API.md`), and now the
+- The preview formats from 1.4 are frozen here. **Done 2026-11-19:** the `api` package (`ApiVersion` 1.1.0, `ApiSurfaceTest`, `docs/API.md`), and now the
   KubeJS names (the `CreateEngines` global, `engineAt`, the two script events and what an event gives a script) and the keys of the `fuel`
   and `part_stats` data maps, read from the source by `ScriptAndDataSurfaceTest` against `compat/script-surface.txt` (append only; a new name
   needs `SURFACE_REGEN=1` and a bump of `ApiVersion.MINOR`).
@@ -804,8 +804,11 @@ looks and feels. Tests only guard against those changing by accident.
   combinations with an engine running (75 checks, all passing). Not done: the matrix through the client audit's fleet,
   whose checks (an engine that runs, a full tank) are not meant for a fuel rate of twenty times.
 - Item 11: the `datagen-idempotence` job in `verify.yml`. It runs on every push and has caught a real stale file (1.3.0's advancement files, fixed in the commit after); it passed on master on 2026-11-17 and 2026-11-18.
-- Item 12: JaCoCo on the unit tests, floor in `src/smoke/coverage-floor.txt` (15%, measured 15.4%; that is what CI's
-  `check` holds). **Merged 2026-11-19:** the GameTest server and the client audit carry the JaCoCo agent too (limited to this
+- Item 12: JaCoCo on the unit tests, floor in `src/smoke/coverage-floor.txt` (was 15%, measured 15.4%; that is what CI's
+  `check` holds). **Changed 2026-11-21 (author):** the unit ratchet now leaves out the test harness packages, as the merged one
+  does, and the floor is 21% (measured 21.3%). With the harness counted it had fallen to 14.6% as GameTests were added (the harness
+  was 37% of the instructions counted), which `build`, and so the publish workflow, would have refused; the harness is test code
+  and no unit test can reach it. **Merged 2026-11-19:** the GameTest server and the client audit carry the JaCoCo agent too (limited to this
   mod's classes), and `./gradlew coverageMerged` (also a part of `smoke`) runs the unit tests, the GameTests and the audit,
   joins their data into `build/reports/jacoco/merged`, and holds a second floor, `src/smoke/coverage-floor-merged.txt`
   (84%, measured 84.4%). The measure leaves out the harness packages (GameTests, smoke audit, showcase), so it says how
@@ -946,7 +949,7 @@ PIT survivors that are not equivalent mutants (item 1, 134 live), and the engine
 
 **Declined, and not to be proposed again without a new reason:** knock as a mechanic, cooling blocks or radiators,
 parallel throttles, snorkels or any way to run underwater, a power cost on the Muffler, parts that wear out or break,
-new failure modes of any kind (runaway, blown gaskets, seizure, valve float), new fuels, mixins into Create's trains,
+new failure modes of any kind (runaway, blown gaskets, seizure, valve float), new fuels (kerosene and methanol were added in 2.0 at the author's say, and no more are wanted), mixins into Create's trains,
 engine classes, record boards and dyno commissions, cylinders extended or stacked for more volume (one connecting rod
 cannot serve two sizes of cylinder), heat glow on manifolds and turbos, exhaust tips other than the rain cap, intake
 dress parts, a cosmetic accessory belt drive, valve covers (the head block is already the finished head, and its
@@ -959,8 +962,8 @@ would rebuild what Aeronautics already does, so it is only worth revisiting if t
 
 **On hold:** variable valve timing (additive if it ever comes; needs a dyno sweep that shows it pays).
 
-**Offered before and not taken:** Engine Panel, Load Bank, exhaust-fed fan blasting, gas turbine, two-stroke
-cylinder, a see-through cylinder (the existing cylinders already show their insides). The 2.0 platform is what would
+**Offered before and not taken:** Engine Panel, Load Bank, exhaust-fed fan blasting, gas turbine (the author, 2026-11-21: does not fit the mod's scope), two-stroke
+cylinder (no benefit, same day), a see-through cylinder (the existing cylinders already show their insides). The 2.0 platform is what would
 let a turbine or a two-stroke arrive as an addon instead of in the core.
 
 **Not planned:** other loaders, other Minecraft versions.

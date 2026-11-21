@@ -49,21 +49,26 @@ Minecraft 1.21.1 · NeoForge 21.1.219 · Create 6.0.10
   firing order for you
 
 **Feed and tune it**
-- Air, fuel and exhaust plumbing with pipes, throttle bodies (a pedal that can also open past the plain intake, to help a big engine turn faster) and fuel metering; diesel, plant oil, gasoline and ethanol
-  with spark ignition
-- A craftable fuel chain: seeds to plant oil to diesel, sugar crops to ethanol, and biodiesel with glycerin on the
+- Air, fuel and exhaust plumbing with pipes, throttle bodies (a pedal that can also open past the plain intake, to help a big engine turn faster) and fuel metering; diesel, plant oil, gasoline, kerosene, ethanol and methanol,
+  with spark ignition for the ones that need it. Kerosene is the all-rounder between diesel and gasoline that holds out
+  against boost better than gasoline; methanol carries the least in the bucket and cools the charge most, so it is the
+  fuel to push a boosted build with, at a heavy fuel bill
+- A craftable fuel chain: seeds to plant oil to diesel, diesel to kerosene with glowstone, sugar crops to ethanol, logs and
+  water to methanol over a superheated base, and biodiesel with glycerin on the
   side, all in Create basins. The loop closes: glycerin goes into engine oil and coolant, and used oil is burned as fuel or recycled into oil or charcoal
 - A **Refining Column**, a multiblock that makes the same fuels better than a basin: a square of Reboilers (1 to 3
   wide) on a Blaze Burner or heat exchanger, layers of Column Sections (which may lean a block to the side, and glow with
-  the fluid inside), and Condensers on top. Plant oil to diesel, diesel to gasoline and sugar mash to ethanol, using a
-  little catalyst (coal, blaze powder, nether wart) a funnel can feed in. Routes are the data recipe type
+  the fluid inside), and Condensers on top. Plant oil to diesel, diesel to gasoline or kerosene, sugar mash to ethanol and
+  water to methanol, using a little catalyst (coal, blaze powder or glowstone dust, nether wart, a log) a funnel can feed in. Routes are the data recipe type
   `create_engines:refining`, so a pack can add its own, and JEI and EMI list them. A **Flare Stack** on a working
   Condenser burns a flame, a **Soot Trap** on a rich engine's exhaust catches soot for dye, gunpowder and coal, and a
   **Jerry Can** carries four buckets of a fluid. Basin ethanol is weaker than it was, since the column is the way to make it
 - An **Exhaust Heat Exchanger** that turns engine exhaust into basin heat, so an engine can cook its own fuel, and
   into boiler heat, so the exhaust can make steam for Create steam engines on top of the engine's own power
-- Oil film and lubrication, starters, batteries and alternators
-- Forge Energy out of an alternator, and other mods' fuels (anything tagged `c:diesel`, `c:gasoline`, `c:ethanol` or `c:plantoil`, or given an entry in the fuel data map) in the engines
+- Oil film and lubrication, starters, batteries and alternators. **Batteries join into banks** like tanks (capacity adds up,
+  a comparator reads the charge, lamps on the lid show it), a cold battery gives less and a cold engine costs more charge per
+  spark, and a starter cranking a spark engine draws charge (both can be switched off). A starter on a hand crank needs no redstone
+- Forge Energy out of an alternator, and other mods' fuels (anything tagged `c:diesel`, `c:gasoline`, `c:ethanol`, `c:kerosene`, `c:methanol` or `c:plantoil`, or given an entry in the fuel data map) in the engines
 - An **oil sump that is the engine's service port**: one block against the engine takes its oil, its coolant and its
   pilot fuel from any face, so the cylinder heads keep their faces for air and fuel
 - **Oil that goes off**: a spent charge drags a little more (never stops or damages anything). Set the sump's Oil
@@ -80,6 +85,10 @@ Minecraft 1.21.1 · NeoForge 21.1.219 · Create 6.0.10
   pages cover why an engine will not start and why it runs badly
 - **Dual-fuel pilot injection**: pipe diesel into the sump's pilot tank and a compression engine with no spark plug
   lights gasoline or ethanol with a small pilot shot
+- **Noise-cancelling headphones** (head slot, or Curios' head slot): everything the wearer hears from the world is muffled and
+  turned down, never silenced; music, menu sounds and voice chat are left alone. A **Transmission** shift profile dial
+  (Economy, Normal, Sport) tunes its Auto mode, the **Black Box** replays back through a recorded run, and Display Links read
+  an engine's boost, rated torque, fault and gear and a battery's charge
 - A forgiving early game: spark plug soot clears itself, goggles suggest fuel settings, and the Timing Tool can tune
   every injector in one click
 - **Blueprints**: a Blueprint records a built engine's layout and every dial, copies the whole tune onto another engine of the
@@ -136,16 +145,17 @@ The server config (`serverconfig/create_engines-v2-server.toml` in the world) is
 (`stressPerTorque`, the inertia and friction values), `[limits]` (how far the scanner follows a crankshaft, a manifold or a
 coupling), `[balance]` multipliers (`fuelConsumption`, `precisionBonus`, `boostStrength`, `rotaryPower`, `heatRecoveryOutput`,
 `coolingBonus`, `torsionalFlex`, `alternatorEnergy`), `[features]` switches (`forcedInduction`, `sparkFouling`, `oilDilution`,
-`oilAgeing`, `engineTemperature`, `pilotInjection`, `rotaryEngines`, `heatRecovery`) and `[compat]` (`altitudeThinning`, and
+`oilAgeing`, `engineTemperature`, `pilotInjection`, `rotaryEngines`, `heatRecovery`, `batteryCold`, `crankingDraw`) and `[compat]` (`altitudeThinning`, and
 `pollution` and `pollutionRate` for Pollution of the Realms), so a modpack can rebalance without code. Turning a feature off
 never removes blocks; they stop doing that job. The first time a world loads in 2.0 it reads the 1.x file
 (`create_engines-server.toml`) beside it and carries every value over, and the log says what moved. The client config
-(`create_engines-v2-client.toml`: `[effects]` `particles` and `density`, `[volume]` `bang`, `engineNote`, `mechanical` and
-`boost`) thins out engine sound and particles on a big engine, and carries its values over the same way.
+(`create_engines-v2-client.toml`: `[effects]` `particles`, `density` and `photosensitive`, `[volume]` `bang`, `engineNote`, `mechanical` and
+`boost`) thins out engine sound and particles on a big engine, and carries its values over the same way. `photosensitive`
+takes out everything that flashes or flickers (firing flashes, flame and sparks, the glowing gas inside the cylinders).
 Fuel properties are a datapack data map (`data_maps/fluid/fuel.json`), so other mods' fluids can be made into fuels.
 
 For pack makers, three config presets ship in the jar (`config_presets/casual.toml`, `standard.toml`, `expert.toml`): copy
-their `[balance]` and `[features]` tables over the ones in the config. **Frozen at 2.0 (API version 1.0.0, see docs/API.md):**
+their `[balance]` and `[features]` tables over the ones in the config. **Frozen at 2.0 (API version 1.1.0, see docs/API.md):**
 parts as data (`part_effects/<part>.json` for the four precision parts, and a part stats data map,
 `data_maps/block/part_stats.json`, with optional scales on a cylinder's stats, keyed by `create_engines:cylinder`,
 `create_engines:precision_cylinder` or `create_engines:rotor_housing`), and a public API (`com.createengines.api`:

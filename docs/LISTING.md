@@ -168,7 +168,7 @@ The guides are in the repository: [PACKS.md](https://github.com/R-unic/create-en
 
 ## 🧩 For addon authors
 
-A public API under its own version (1.0.0, frozen at 2.0): read any engine (`EngineApi.viewAt`), listen to its state changes
+A public API under its own version (1.1.0, frozen at 2.0): read any engine (`EngineApi.viewAt`), listen to its state changes
 and milestones, and register an `EngineSourceProvider` with a `TorqueSource` to put another kind of engine on a crankshaft,
 with boost, goggle lines and blueprint support. A working example is built and tested with the mod. See
 [ADDONS.md](https://github.com/R-unic/create-engines/blob/master/docs/ADDONS.md) and

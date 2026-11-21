@@ -1,4 +1,4 @@
-# Public API (frozen at 2.0, API version 1.0.0)
+# Public API (frozen at 2.0, API version 1.1.0)
 
 The API has its own version, `com.createengines.api.ApiVersion`, which follows semantic versioning and is not the mod's number.
 
