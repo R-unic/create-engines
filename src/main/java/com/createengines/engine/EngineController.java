@@ -1069,6 +1069,12 @@ public final class EngineController {
 		boolean startOrStop = target == 0 || current == 0 || Math.signum(target) != Math.signum(current);
 		boolean significant = Math.abs(target - current) >= Math.max(1, Math.abs(current) * 0.04f);
 		if (startOrStop || significant && ticksSincePublish >= PUBLISH_INTERVAL) {
+			// Create destroys a source whose speed it finds against, or faster than, the network it already belongs to: a
+			// hand crank or another engine turning this crank at a speed this engine would then overrun. Held until that stops.
+			float driven = primary.getTheoreticalSpeed();
+			if (primary.hasSource() && driven != 0 && target != 0
+				&& (Math.signum(target) != Math.signum(driven) || Math.abs(target) > Math.abs(driven)))
+				return;
 			primary.publishSpeed(target);
 			ticksSincePublish = 0;
 		}
@@ -1207,6 +1213,10 @@ public final class EngineController {
 
 	private void publishCapacity(double torqueScale) {
 		double target = ratedTorque() * torqueScale;
+		// A turning engine with no torque of its own (dry, stalled) still carries what its network asks of it, as a flywheel
+		// does: offering none while publishing a speed overstresses the line and stops it each time a drive lets go
+		if (target == 0 && !sim.isStopped())
+			target = primary.networkStress();
 		float current = primary.publishedCapacity();
 		ticksSinceCapacity++;
 		boolean dropped = target == 0 && current != 0;
