@@ -8,7 +8,8 @@ import org.junit.jupiter.api.Test;
 /**
  * A crank is drawn from an accumulated angle so a speed change never makes it jump, but the real Create shafts and cogs
  * joined to it are drawn at time x speed and do jump. {@link RenderRotation#alignedAt} must bring the crank back into
- * step with them, to the nearest quarter turn (a shaft looks the same every 90 degrees), without ever being seen to jump.
+ * step with them, to the nearest quarter turn (a shaft looks the same every 90 degrees), jumping only on the frame the
+ * speed changes, which is when the shafts jump too.
  */
 class RenderRotationTest {
 
@@ -88,12 +89,31 @@ class RenderRotationTest {
 	}
 
 	@Test
-	void aFrameNeverMovesTheAngleMoreThanItsSpeedPlusTheNudge() {
+	void theCrankIsSquareToTheShaftsInTheVeryFrameTheirSpeedChanges() {
+		RenderRotation rotation = new RenderRotation();
+		float time = 100_000;
+		float speed = 20;
+		rotation.alignedAt(time, speed);
+		float[] speeds = { 20, 21.7f, 25, 24, 40, 39, 12, 12, -12, 64 };
+		for (int i = 0; i < 400; i++) {
+			time += TICK;
+			speed = speeds[(i / 5) % speeds.length];
+			double drawn = rotation.alignedAt(time, speed);
+			// Create jumps its shafts to time x speed on the frame the speed changes, and so must the crank: a gap of any
+			// size would show as the two ends of a joint turning out of step until it eased shut
+			double slack = 0.05 + Math.ulp((float) (time * Math.abs(speed) * 0.3)) * 2;
+			assertTrue(offBy(drawn, time, speed) < slack, "frame " + i + " off by " + offBy(drawn, time, speed));
+		}
+	}
+
+	@Test
+	void aFrameNeverMovesTheAngleMoreThanItsSpeedPlusTheNudgeUnlessTheSpeedChanged() {
 		RenderRotation rotation = new RenderRotation();
 		float time = 100_000;
 		rotation.alignedAt(time, 12);
 		double last = rotation.alignedAt(time, 12);
 		float[] speeds = { 12, 12, 40, 40, 3, -15, -15, 0, 90, 90, 90 };
+		float lastSpeed = 12;
 		for (int i = 0; i < 400; i++) {
 			float speed = speeds[(i / 7) % speeds.length];
 			float before = time;
@@ -102,9 +122,12 @@ class RenderRotationTest {
 			float gap = time - before;
 			double now = rotation.alignedAt(time, speed);
 			double expected = gap * speed * 3d / 10;
-			assertTrue(Math.abs(now - last - expected) <= RenderRotation.ALIGN_MAX_PER_TICK * gap + 1e-9,
+			// A speed change jumps the crank with the shafts, by up to an eighth of a turn; every other frame is only a nudge
+			double allowed = speed != lastSpeed ? 45 : RenderRotation.ALIGN_MAX_PER_TICK * gap;
+			assertTrue(Math.abs(now - last - expected) <= allowed + 1e-9,
 				"frame " + i + " jumped " + (now - last - expected) + " beyond its speed");
 			last = now;
+			lastSpeed = speed;
 		}
 	}
 

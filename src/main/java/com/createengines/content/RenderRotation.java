@@ -8,7 +8,8 @@ package com.createengines.content;
  * instead means a speed change only changes how fast the part turns.
  * <p>
  * The shafts and cogs joined to an engine do still jump with every change, so an accumulated angle slowly falls out of
- * step with them. {@link #alignedAt} eases it back.
+ * step with them. {@link #alignedAt} brings it back: it jumps to Create's angle (to the nearest quarter turn) on the
+ * frame the speed changes, which is when the shafts jump too, and eases out any drift in between.
  */
 public final class RenderRotation {
 
@@ -24,6 +25,7 @@ public final class RenderRotation {
 
 	private double degrees = Double.NaN;
 	private float lastTime;
+	private float lastSpeed = Float.NaN;
 
 	/** Degrees turned at {@code renderTime} (not wrapped), having turned at {@code speed} RPM since the last call. */
 	public double at(float renderTime, float speed) {
@@ -47,10 +49,19 @@ public final class RenderRotation {
 			if (gap > 0) {
 				float ticks = Math.min(gap, MAX_GAP);
 				degrees += ticks * speed * 3d / 10;
-				if (align)
-					degrees += nudge(createAngle(renderTime, speed), degrees, ticks);
+				if (align) {
+					double create = createAngle(renderTime, speed);
+					// Create's shafts jump the instant the speed changes, so the crank jumps with them (to the
+					// nearest quarter turn, at most 45 degrees); easing instead leaves the two out of step for a
+					// second or more after every change, and an engine's speed changes all the time
+					if (speed != lastSpeed)
+						degrees += squareGap(create, degrees);
+					else
+						degrees += nudge(create, degrees, ticks);
+				}
 			}
 		}
+		lastSpeed = speed;
 		lastTime = renderTime;
 		return degrees;
 	}
@@ -68,10 +79,14 @@ public final class RenderRotation {
 	 * way to the nearest quarter turn of it, a fraction of the way, and never more than {@link #ALIGN_MAX_PER_TICK}.
 	 */
 	static double nudge(double target, double degrees, double ticks) {
-		double gap = ((target - degrees) % ALIGN_PERIOD + ALIGN_PERIOD * 1.5) % ALIGN_PERIOD - ALIGN_PERIOD / 2;
-		double step = gap * (1 - Math.exp(-ticks / ALIGN_TICKS));
+		double step = squareGap(target, degrees) * (1 - Math.exp(-ticks / ALIGN_TICKS));
 		double limit = ALIGN_MAX_PER_TICK * ticks;
 		return Math.max(-limit, Math.min(limit, step));
+	}
+
+	/** The shorter way, in degrees (-45 to 45), from {@code degrees} to the nearest quarter turn of {@code target}. */
+	static double squareGap(double target, double degrees) {
+		return ((target - degrees) % ALIGN_PERIOD + ALIGN_PERIOD * 1.5) % ALIGN_PERIOD - ALIGN_PERIOD / 2;
 	}
 
 	/** Takes over an angle worked out elsewhere, so that carrying on from here doesn't jump. */
