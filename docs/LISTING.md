@@ -208,13 +208,16 @@ that changes how an existing engine behaves says so in its changelog.
 - [Design notes](https://github.com/R-unic/create-engines/blob/master/docs/DESIGN.md), how the simulation works
 ```
 
-## Changelog for 2.0.0
+## Changelog for 2.0.0: Open Throttle
 
-Open Block: the mod becomes a platform (a public API, engine types from other mods, parts as data), and 2.0 is the one
+Methanol and kerosene to burn, and a public API for addons to build their own engines and parts. Open Throttle is the release
+where the mod becomes a platform (a public API, engine types from other mods, parts as data), and 2.0 is the one
 release that breaks the 1.x promise, so the cleanup that needed breaking is done here. Every world, config and advancement
-from 1.x carries over. Five things change how something that already exists behaves or is named, each below: advancement IDs,
-config files and groups, how many intake and exhaust openings an engine needs, thin air above y 128, and where casing dye is
-stored. Everything else is new.
+from 1.x carries over. These change how something that already exists behaves or is named, each marked "Breaking" or "Changed"
+below: advancement IDs, config files and groups, how many intake and exhaust openings an engine needs, thin air above y 128,
+where casing dye is stored, what a battery and a starter draw, a starter on a hand crank, a sensor beside a camshaft, the power
+a dry rotary engine offers its line, a wrench on a framed blueprint, and a refining column taking water and logs. Everything
+else is new.
 - Breaking, advancements: the 110 advancement IDs of 1.x are gone. The tab is regrouped into tracks and each row is
   `<track>/<row>` (for example `builder/vee_engine`; the tab root is `root` and `chief_engineer` is unchanged): 64 rows plus the
   root. The 46 hidden advancements are deleted, and `driveline/every_gear` is now shown. A player's progress carries over by
@@ -250,8 +253,11 @@ stored. Everything else is new.
   turbochargers, superchargers and intercoolers act on it. A block a provider claims within reach of the crankshaft is recorded in
   blueprints, and the server accepts it in a pasted blueprint while the provider is installed (never another mod's block
   otherwise). `AbstractTorqueSource` is a base class that answers everything but the work a source does.
-- The platform, frozen API: `com.createengines.api` is version 1.0.0 under its own semantic version (`ApiVersion`, read at run time
-  so an addon sees the installed version, `isAtLeast` for later features). A guard test holds every public declaration, and
+- The platform, frozen API: `com.createengines.api` is version 1.1.0 under its own semantic version (`ApiVersion`, read at run time
+  so an addon sees the installed version, `isAtLeast` for later features). 1.1 added `PartBlocks` (make and register a cylinder
+  or cylinder head block of your own, and read which part effect a block names) and `EngineBuilding` (time a cam lobe from code),
+  so an addon never has to name an internal class. `examples/racing-addon` is a separate project that builds against the jar
+  using only that package, adds a Racing Cylinder and runs its own GameTests. A guard test holds every public declaration, and
   another holds the names a KubeJS script uses (the `CreateEnginesEvents` events, the `CreateEngines` global and the fuel and
   `part_stats` keys). Methods that were internals (`reportFailuresTo`, `reportSourceFailure`, `blockChanged`, `sourcesFor`) moved
   from `api.EngineExtensions` to `engine.EngineProviders`; they were for the mod and its tests. The 1.4 preview parts are frozen
@@ -260,16 +266,25 @@ stored. Everything else is new.
   of optional scales from 0.1 to 10 (`compression_ratio`, `breathing`, `ignition_delay`, `burn_duration`, `friction_static`,
   `friction_viscous`, `inertia`, `injector_flow`). The shipped files hold the old numbers exactly. A pack changes a part by providing
   the same path; a broken file is logged and the part keeps its built-in values. The rotary chamber is retuned through the
-  `part_stats` data map with an entry for `create_engines:rotor_housing`; with no entry nothing changes. Cam profiles are not
-  data yet, and a pack cannot yet name a third tier from a block of its own.
+  `part_stats` data map with an entry for `create_engines:rotor_housing`; with no entry nothing changes. The two cam profiles are
+  data too (`cam_profiles/basic.json` and `rotary.json`, the shipped files equal the old curves; they time the simulation on
+  the server, and the valves a client draws keep the built-in shape). A third tier is a block of an addon's own that names a
+  `part_effects` file of its own through the new `part_effect` block data map (`Cylinder` takes the extra effects after the four
+  precision parts). A pack cannot make a block, so the block comes from an addon. `/ce parts` lists the cam profiles and `/ce
+  dump` writes the mods, API, config, fuels and parts reports to one file for a bug report.
 - Pack makers: `/ce` (game master) with `help`, `config`, `fuels`, `parts` and `api`, and `/ce preset <casual|standard|expert>` (admin)
   to apply a preset and save it. A data-pack fuel with an impossible number is warned about at start-up (the fuel is still used as
   written). New guides in the repository: `PACKS.md`, `CONFIG.md` (every setting with default and range, checked against the source by a test),
   `DATA.md` and `ADDONS.md` (its example addon is built and run with the mod).
-- Create Aeronautics: the thin-air rule above is the compat. The GameTests run with Aeronautics 1.3.2 and Sable 2.0.6. By hand (on
-  Aeronautics 1.2.1), one precision V-twin on one wheeled contraption ran, drew correctly and survived a save and reload. Other
-  engine types, propellers and flying contraptions, assembling with the engine running and multiplayer are not tried, and the
-  client audit with Aeronautics loaded is not green yet.
+- Create Aeronautics: the thin-air rule above is the compat. The engine blocks also weigh something on an aircraft: weights
+  for Sable are data (`sable/physics_block_properties`, over four block tags `create_engines:weight/*`: the cast flywheel 4.0;
+  cylinder, crankshaft, turbochargers, superchargers, heat exchanger, battery, heavy starter and transmission 2.0; precision
+  cylinder, rotor housing, alternator and sump 1.5; pipework 0.5). On a structure, a battery's biome cold, the rain on a hot head,
+  the water an engine stands in and the gas Pollution of the Realms is given use the world where the structure is and not its
+  plot (without Sable nothing changes). A new Ponder page, `moving_engine`, explains it. The GameTests run with Aeronautics 1.3.2
+  and Sable 2.0.6. By hand (on Aeronautics 1.2.1), one precision V-twin on one wheeled contraption ran, drew correctly and
+  survived a save and reload. Other engine types, propellers and flying contraptions, an engine sinking, assembling with the
+  engine running and multiplayer are not tried, and the client audit with Aeronautics loaded is not green yet.
 - Pollution of the Realms (optional, mod id `adpother`, tested with 9.1.14.0): with it installed, a running engine puts carbon in
   proportion to the fuel it burns, and sulfur in proportion to how dirty the fuel is, into the air in front of an open, unflooded
   exhaust outlet. Rich-running soot that no Soot Trap caught adds carbon; a Soot Trap takes it off, so a trap visibly cleans the air.
@@ -279,6 +294,89 @@ stored. Everything else is new.
   too thick or too thin. Without the mod, none of this loads.
 - Fix: an engine coasting under water no longer lets exhaust gas out through a mouth with fluid in front of it (with Pollution of
   the Realms installed).
+- New fuel, Kerosene (`kerosene`, with a bucket and the tag `c:kerosene`): the cut between diesel and gasoline. A spark fuel
+  (it needs a plug and cannot be lit by a diesel pilot shot) with 38 energy to the mB (diesel 36, gasoline 40), a touch slower
+  to warm in a cold block than gasoline, and it holds out against a hot, boosted charge better than gasoline (it lights early past
+  3.6, gasoline past 2.7). Make it in a refining column over a heated base with glowstone dust in the slot (1000 mB of diesel
+  makes 1100 mB at speed 0.85) or in a basin (250 mB of diesel and a glowstone dust over a heated blaze burner make 250 mB). A
+  column now goes the way of the catalyst in its slot, so diesel with blaze powder, or an empty slot, still makes gasoline and
+  a column that runs out of glowstone keeps its route.
+- New fuel, Methanol (`methanol`, with a bucket and the tag `c:methanol`): the boost fuel with the least in the bucket. A spark
+  fuel with 22 energy to the mB (the least of any fuel; ethanol is 27), so an injector has to pass about 1.9 times the usual flow
+  for the same air, and it is the slowest to warm in a cold block. In return it cools the charge more than any other fuel, leaves
+  no soot and no sulfur, and a hot charge will hardly light it early (past 6.5; ethanol 5.0). On a dyno rig it makes about 3
+  percent more peak power than ethanol, unboosted and on a turbo, and about the same as gasoline: a small edge for a heavy fuel bill,
+  not a power step. Make it from water and logs (any log that burns) over a superheated base, as over a big engine's Exhaust Heat
+  Exchanger: 250 mB of water and a log make 60 mB in a basin, and a column makes 264 mB from 1000 mB of water, a log to each 250 mB.
+  Neither new fuel is in the pinned `fuel.json`; they come in through their tags, so `/ce fuels` reports them "from the tag", and a
+  pack can still give either a data map entry of its own.
+- Changed, refining column: because water and logs are now a route, a column accepts water as feed and logs in its catalyst
+  slot (before, it rejected both). With no log in the slot it makes nothing and uses none of the water. A basin of plain water is
+  told no hint about a column.
+- Battery depth: batteries that touch are one bank, like tanks and item vaults. Capacity is the sum, charging and drawing share
+  across it, and an engine or alternator touching any one of them reaches all of them. A lone battery is a bank of one with the
+  numbers it had. Each battery shows what it joins to (a model for each of 32 combinations, no seam) and four lamps on each free
+  face of the lid light with that battery's own charge. A comparator on a battery reads the bank's charge, 0 to 15. The goggles show the
+  bank's size and charge, the rate it is filling or draining, the time left at that rate and whether it is cold.
+- Changed, cold battery: a battery's coldness is its biome's temperature less a heat source beside it (a block heater, a heat
+  exchanger). A cold battery keeps back up to half of what it can deliver (the charge stays in it), and a cold engine block makes
+  each spark cost up to twice as much charge. `features.batteryCold` turns it off (the casual preset does).
+- Changed, cranking draw: a starter turning a spark engine that has a battery draws 0.15 sparks a tick from it (up to twice that
+  cold), and nothing from an empty bank. Compression engines and engines with no battery are as they were. A flat battery does not
+  slow the cranking. `features.crankingDraw` turns it off (the casual preset does).
+- Changed, starter on a hand crank: a starter whose shaft is turned by a Create hand crank engages without redstone, so a flat
+  battery is a problem to work around. One on a motor still needs redstone.
+- Alternators and boost: alternator goggles show the charge made a second and the share of the engine's rated torque it takes,
+  and with several alternators on one engine each says how many there are and its share. Turbocharger and supercharger goggles
+  show "Working at N% of its boost limit", so the limit and anti-lag dials can be set by reading.
+- Turbocharger blow-off is now a burst and a thinning jet of air (longer and fuller for more boost), and the wastegate chuff
+  has a small grey puff off the turbine end. Particles only: no rating changes.
+- Transmission, Auto shift profile: a second dial under the gear's, Economy, Normal or Sport (default Normal), changes where
+  Auto downshifts and climbs and how long it waits. Normal is exactly the old behaviour, so existing transmissions shift as they did.
+- Black Box, Replay: a dial on the box (5 seconds a notch, the whole ten minutes) shows the state, speed, load, warmth and fault
+  at that moment in the goggles while the tape runs on. The tape now keeps the fault second by second.
+- Display Link: new sources Engine Boost and Engine Rated Torque (every crankshaft block), Battery Charge (a percentage or a
+  progress bar), Engine Fault (every crankshaft block) and Transmission Gear (the transmission).
+- Noise-cancelling headphones (`headphones`): worn in the head slot, or in Curios' head slot when Curios is installed. Everything
+  the wearer hears from the world, this mod's sounds included, is rolled off at the top and turned down, never silenced. The
+  game's music, menu and interface sounds and voice chat are left alone. Three iron sheets, two brass sheets and two wool make a
+  pair. It is client-side, uses OpenAL's low-pass filter (a volume cut only if the device lacks it) and has a Ponder page. The
+  filter numbers are a first choice, not tuned by ear.
+- Photosensitive mode: a client setting, `effects.photosensitive` (off by default), takes out everything that flashes or flickers:
+  the flash and fireball of a firing, the flame and sparks at the exhaust and intake, and the glowing gas and flame tongues inside
+  each cylinder. Smoke, steam and sound are unchanged.
+- Jade: with Jade installed, looking at a crankshaft, cylinder, cylinder head or rotor housing shows the engine's state, speed,
+  boost (when it has any) and whether it is running rough or failing, in the goggles' words. Optional. Compatibility rows now also
+  cover Iris, Sound Physics and AmbientSounds, and a test row can run the alternator's Forge Energy output against another mod's
+  energy blocks.
+- Visual, crank lines: a crank, its pistons and rods, a rotor's eccentric and a rotor housing's effects are now drawn in step with
+  the Create shafts and cogwheels joined to them. Create gives every shaft a phase of 22.5 degrees on half its lines and jumps the
+  instant a speed changes; the crank had neither, so it sat a quarter-step off on half the lines and was out of step for good after
+  any speed change. It now matches the phase and jumps to the nearest quarter turn with them. The simulation does not read the
+  drawn angle.
+- Visual, cast flywheel: redrawn as a thin spoked wheel (the mass and place on the crank line are unchanged), and now drawn in
+  Ponder and with Flywheel off, where only its shaft showed. Its shaft no longer flickers where it meets the collars. The air
+  intake and exhaust outlet are redrawn too.
+- Changed, framed blueprint: a wrench on a frame that holds a blueprint now turns the drawing a quarter at a time (on a joined
+  sheet too), where it used to turn the frame. A frame with nothing to show is wrenched as before. New saved key `Turn`.
+- Fix: the dials on one block no longer act as one. Create sends a setting to the first value box with a matching network id, so
+  the second dial on the throttle, the oil sump, the transmission and the rotor housing (its fuel metering and throw angle) used
+  to change the first. Each dial has its own network id and clipboard key now.
+- Changed, sensors: a sensor beside a camshaft block no longer closes that line's fuel rack. A MAF sensor puts its reading out as
+  redstone on every side, so one touching the camshaft cut the fuel to about 30 percent (an engine ran 3.7 times lean while the
+  sensor read "balanced"). Any other redstone source beside the camshaft still closes it.
+- Fix, rotary engines: a rotary line no longer destroys itself under a hand crank or a second engine. Create destroys a source it
+  finds faster than, or against, the network it is part of; an engine now holds back a speed that would overrun or run against the
+  speed it is driven at.
+- Changed, rotary capacity: a rotary or other engine that is turning but has no torque of its own (dry, stalled) now offers its
+  network the stress the network asks for, where it offered nothing. Offering a speed with no capacity overstressed the line each
+  time a hand crank let go, until Create broke a block. Nothing else about publishing changes.
+- Fix: a fuel from a data pack or a part stack with an extreme number can no longer turn an engine's figures to NaN (energy, air,
+  cold sensitivity and charge cooling are clamped where the simulation uses them; the fuel is still reported as written).
+- Under the hood, memory: the tables kept for each cylinder shape and cam profile (about 90 KB each, one per distinct value, never
+  freed) now keep the 128 most recently used of each, so a pack or config reload that makes new values no longer grows memory for good.
+  Reading redstone and building engine sync data no longer makes garbage every tick.
+- Goggles: a long list of firing intervals is summarised, and identical rotary chambers are said once.
 - Faster: a starter with nothing to do no longer builds a list every tick, engine parts outside the camera's view are not posed, and
   camshaft lobes no longer allocate an array every frame. In a profile of 16 engines on a server, the mod took about 0.6 ms a tick.
 - Visual: the precision cylinder head's spark plug, injector and injector-plug models are redrawn (the plug a pixel and a half taller,
@@ -295,7 +393,17 @@ stored. Everything else is new.
   `volume.*`, `effects.particles`, `effects.density` and `meta.carriedOver` (in both files), the files `create_engines-v2-server.toml`
   and `create_engines-v2-client.toml`, the data folder `part_effects/` with `bore`, `head`, `piston` and `injector`, the
   `part_stats` key `create_engines:rotor_housing`, the optional fuel field `sulfur`, the optional dependency `adpother`, a mixin
-  config `create_engines.client.mixins.json`, and API version 1.0.0. Saved key: `Paint` in the block entity of each part that holds a dye.
+  config `create_engines.client.mixins.json`, and API version 1.1.0 (`PartBlocks`, `EngineBuilding`). Saved key: `Paint` in the block entity of each part that holds a dye.
+  Added after that list: fluids and buckets `kerosene` and `methanol`, the tags `c:kerosene` and `c:methanol`, the recipes
+  `mixing/kerosene`, `mixing/methanol`, `refining/kerosene` and `refining/methanol`, and a sight-window tint for each; item
+  `headphones` with its recipe and Ponder page, using the Curios tag `curios:head` and an optional dependency on `curios`; the
+  Ponder page `moving_engine`; the block tags `create_engines:weight/*` and the Sable files
+  `physics_block_properties/create_engines_*`; the data folder `cam_profiles/` (`basic`, `rotary`) and the block data map
+  `part_effect`; config keys `features.batteryCold`, `features.crankingDraw` and the client `effects.photosensitive`; battery block
+  state properties `charge` (0 to 4) and `north`, `east`, `south`, `west`, `up`; the dials `shift_profile` and `replay`; the command
+  `/ce dump`; an access transformer (three lines, the first the mod has). Saved keys: `Cold` and `Rate` on the battery, `BatteryWeak`
+  on the starter, `ChargeRate`, `EngineShare`, `Fellows` and `FellowRate` on the alternator, `Faults` on the Black Box, `ShiftProfile`
+  on the transmission and `Turn` on the framed blueprint.
 
 ## Changelog for 1.4.0
 

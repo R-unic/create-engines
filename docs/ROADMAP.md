@@ -48,7 +48,7 @@ Set by the author on 2026-11-14:
 | 1.2 | Dress Parts | Cosmetic build variety | Small | Shipped as v1.2.0 (v1.2.1 fixed the sound-thread memory leak) |
 | 1.3 | Refinery | A refinery multiblock for the fuels that already exist | Large | Shipped as v1.3.0, 2026-11-17 |
 | 1.4 | Drawing Office | Blueprints, pack-maker tools, Aeronautics and other addons | Large | **In progress** (see its section) |
-| 2.0 | Open Block | The platform, and the one breaking cleanup | Large | **In progress**, merged to master 2026-11-19 (not tagged): the breaking cleanup, both crossovers, the port curve, altitude, the frozen API and the dye cleanup are built; platform items partly (see its section); optimization pass partly |
+| 2.0 | Open Block (released as "Open Throttle") | The platform, and the one breaking cleanup | Large | **In progress**, merged to master 2026-11-19 (not tagged): the breaking cleanup, both crossovers, the port curve, altitude, the frozen API and the dye cleanup are built; platform items partly (see its section); optimization pass partly |
 
 ## 1.0.x Shakedown
 

@@ -281,6 +281,35 @@ public class PackCommandGameTests {
 		helper.succeed();
 	}
 
+	/** The command itself, not just {@code ConfigPresets}: it says how many settings moved, lists each, and the config really changes. */
+	@SuppressWarnings({ "unchecked", "rawtypes" })
+	@GameTest(template = "empty")
+	public static void theCommandAppliesAPresetAndSaysWhatItChanged(GameTestHelper helper) throws Exception {
+		Map<String, Object> before = new LinkedHashMap<>();
+		CEConfig.values()
+			.forEach((path, value) -> before.put(path, value.get()));
+		try {
+			List<String> lines = run(helper, "ce preset expert", 3);
+			if (!mentions(lines, "Preset expert: "))
+				helper.fail("the command should report the preset it applied: " + lines);
+			if (!mentions(lines, "Saved to the world's server config"))
+				helper.fail("the command should say where the settings went: " + lines);
+			if (!mentions(lines, "balance.fuelConsumption"))
+				helper.fail("the command should list each setting it changed: " + lines);
+			if (CEConfig.FUEL_CONSUMPTION.get() != 1.5 || Tuning.fuelConsumption != 1.5)
+				helper.fail("expert asks for 1.5 fuel consumption, in the config and in the simulation: " + CEConfig.FUEL_CONSUMPTION.get()
+					+ ", " + Tuning.fuelConsumption);
+			List<String> again = run(helper, "ce preset expert", 3);
+			if (!mentions(again, "0 settings changed"))
+				helper.fail("the same preset twice changes nothing the second time: " + again);
+		} finally {
+			before.forEach((path, raw) -> ((ModConfigSpec.ConfigValue) CEConfig.values()
+				.get(path)).set(raw));
+			CEConfig.applyTuning();
+		}
+		helper.succeed();
+	}
+
 	@GameTest(template = "empty")
 	public static void anUnknownPresetIsRefusedAndTheListNamesTheRealOnes(GameTestHelper helper) throws Exception {
 		try {
