@@ -218,15 +218,17 @@ Heavy Starter Ponder page. No ID, key or saved format is renamed or removed. Two
   spark engine in the thinnest air starts at 0.48, was 0.08). This is `compat.altitudeFloor`, which can be set back to 0.2.
 - Changed behaviour, pollution: the default `compat.pollutionRate` is 0.25 (was 1.0), so a new config puts out a quarter of the
   gas. A config file that already holds a value keeps it. The rate's meaning is unchanged: 1 is the full amount.
-- Changed behaviour, pollution (only with Pollution of the Realms installed; nothing is read back into an engine): an outlet now
-  stops releasing while the 7 by 7 by 7 block cube in front of it already holds 150 steps of gas, and starts again as the gas
-  thins, so a factory stays hazy instead of growing unlivable (`compat.pollutionAreaCap`, 0 turns it off).
+- New, pollution (only with Pollution of the Realms installed; nothing is read back into an engine): `compat.pollutionAreaCap`,
+  off by default (0). Set above 0, an outlet stops releasing while the 7 by 7 by 7 block cube in front of it already holds that
+  many steps of carbon and sulfur together, and starts again as the gas thins, so a factory stays hazy instead of growing
+  unlivable. 150 is a starting guess (about 15 percent of the cube's capacity), not a tuned number, and the cube counts blocks,
+  not the chunks the pollution mod itself counts, so it may be reworked.
 - New, Create Aeronautics: with Sable installed, the air an engine breathes is Sable's own air pressure at its height, so a
   datapack that changes the dimension's pressure curve changes the engine. If Sable does not answer, the height curve is used
   and one warning is logged. `compat.sableAirPressure` (default on) turns it off.
 - New config, `[compat]`: `sableAirPressure`, `altitudeStart` (128, -64 to 100000), `altitudeScale` (1200, 1 to 100000),
   `altitudeFloor` (0.25, 0.01 to 1), `carbonRate` and `sulfurRate` (1.0, 0 to 10, each on top of `pollutionRate`),
-  `pollutionAreaCap` (150, 0 to 100000) and `pollutionEngineCeiling` (0, off; the most steps of each gas one engine may release per minute).
+  `pollutionAreaCap` (0, off; 0 to 100000) and `pollutionEngineCeiling` (0, off; the most steps of each gas one engine may release per minute).
   The defaults leave the height curve as it was in 2.0.0, apart from the floor above.
 - Fix, Create Aeronautics: the pistons, rods, cams and rotor of an engine on a moving structure froze while its shaft kept
   turning. Flywheel tested the part's position in the structure's plot, millions of blocks from where it is drawn; on a

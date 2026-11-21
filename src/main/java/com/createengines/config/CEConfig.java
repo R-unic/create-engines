@@ -224,8 +224,9 @@ public final class CEConfig {
 		POLLUTION_AREA_CAP = value("compat.pollutionAreaCap", builder.comment(
 				"An outlet stops releasing while the air in the 7 by 7 by 7 block cube in front of it already holds this many",
 				"steps of gas (carbon and sulfur together; one block holds 3 of a gas at most). It starts again as the gas",
-				"thins or spreads, so a factory stays hazy rather than growing unlivable. 0 turns the cap off.")
-			.defineInRange("pollutionAreaCap", 150, 0, 100000));
+				"thins or spreads, so a factory stays hazy rather than growing unlivable. 0, the default, turns the cap off; 150 is a",
+				"starting guess (about 15 percent of the cube's capacity), not a tuned figure.")
+			.defineInRange("pollutionAreaCap", 0, 0, 100000));
 		POLLUTION_ENGINE_CEILING = value("compat.pollutionEngineCeiling", builder.comment(
 				"The most steps of each gas one engine may release per minute of running, however much it burns. 0 turns the",
 				"ceiling off.")

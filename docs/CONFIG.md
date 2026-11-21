@@ -96,7 +96,7 @@ Other mods, and how the world around an engine answers it.
 | `pollutionRate` | `0.25` | 0.0 to 10.0 | Scales how much gas an engine puts out. 1 is the full amount the engine would release; the default is a quarter of that. 0 is the same as turning pollution off. |
 | `carbonRate` | `1.0` | 0.0 to 10.0 | Scales the carbon an engine puts out, on top of pollutionRate. 0 means no carbon, only sulfur. |
 | `sulfurRate` | `1.0` | 0.0 to 10.0 | Scales the sulfur an engine puts out, on top of pollutionRate. 0 means no sulfur, only carbon. |
-| `pollutionAreaCap` | `150` | 0 to 100000 | An outlet stops releasing while the air in the 7 by 7 by 7 block cube in front of it already holds this many steps of gas (carbon and sulfur together; one block holds 3 of a gas at most). It starts again as the gas thins or spreads, so a factory stays hazy rather than growing unlivable. 0 turns the cap off. |
+| `pollutionAreaCap` | `0` | 0 to 100000 | An outlet stops releasing while the air in the 7 by 7 by 7 block cube in front of it already holds this many steps of gas (carbon and sulfur together; one block holds 3 of a gas at most). It starts again as the gas thins or spreads, so a factory stays hazy rather than growing unlivable. 0 turns the cap off. |
 | `pollutionEngineCeiling` | `0.0` | 0.0 to 100000.0 | The most steps of each gas one engine may release per minute of running, however much it burns. 0 turns the ceiling off. |
 <!-- /generated:server-settings -->
 
