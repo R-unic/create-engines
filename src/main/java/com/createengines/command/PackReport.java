@@ -105,7 +105,7 @@ public final class PackReport {
 			.filter(line -> !line.startsWith("    "))
 			.count();
 		out.add(fuels + " fluids are engine fuels (" + fromData + " by a data map entry, the rest by a fuel tag).");
-		out.add("A fluid is a fuel with a data_maps/fluid/fuel.json entry, or by being in c:gasoline, c:diesel, c:biodiesel, c:ethanol or c:plantoil.");
+		out.add("A fluid is a fuel with a data_maps/fluid/fuel.json entry, or by being in c:gasoline, c:diesel, c:biodiesel, c:ethanol, c:kerosene or c:plantoil.");
 		out.addAll(lines);
 		return out;
 	}
@@ -129,7 +129,7 @@ public final class PackReport {
 
 	private static String tagName(Holder<Fluid> holder) {
 		for (TagKey<Fluid> tag : List.of(CEDataMaps.GASOLINE, CEDataMaps.DIESEL, CEDataMaps.BIODIESEL, CEDataMaps.ETHANOL,
-			CEDataMaps.PLANT_OIL))
+			CEDataMaps.KEROSENE, CEDataMaps.PLANT_OIL))
 			if (holder.is(tag))
 				return "#" + tag.location();
 		return "(none)";

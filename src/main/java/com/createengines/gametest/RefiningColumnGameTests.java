@@ -84,6 +84,34 @@ public class RefiningColumnGameTests {
 		});
 	}
 
+	/** Diesel over a heated base goes to kerosene with glowstone dust in the slot and to gasoline with blaze powder. */
+	private static void dieselColumn(GameTestHelper helper, net.minecraft.world.item.Item catalystItem, Object product) {
+		build(helper, 1, BlazeBurnerBlock.HeatLevel.KINDLED);
+		BlockPos reboiler = new BlockPos(1, BASE_Y, 1);
+		BlockPos condenser = new BlockPos(1, BASE_Y + 3, 1);
+		helper.runAfterDelay(15, () -> {
+			fluids(helper, reboiler).fill(of(CEFluids.DIESEL.getSource(), 500), IFluidHandler.FluidAction.EXECUTE);
+			helper.getLevel()
+				.getCapability(Capabilities.ItemHandler.BLOCK, helper.absolutePos(reboiler), Direction.UP)
+				.insertItem(0, new ItemStack(catalystItem, 4), false);
+		});
+		helper.succeedWhen(() -> {
+			FluidStack made = fluids(helper, condenser).getFluidInTank(0);
+			helper.assertTrue(made.getFluid() == product && made.getAmount() >= 20, "the Condenser should hold " + product + ", holds " + made);
+			helper.assertTrue(!port(helper, reboiler).wrongCatalyst(), "the catalyst for the route in use is never called wrong");
+		});
+	}
+
+	@GameTest(template = "empty", timeoutTicks = 400)
+	public static void aColumnOfDieselWithGlowstoneMakesKerosene(GameTestHelper helper) {
+		dieselColumn(helper, Items.GLOWSTONE_DUST, CEFluids.KEROSENE.getSource());
+	}
+
+	@GameTest(template = "empty", timeoutTicks = 400)
+	public static void aColumnOfDieselWithBlazePowderStillMakesGasoline(GameTestHelper helper) {
+		dieselColumn(helper, Items.BLAZE_POWDER, CEFluids.GASOLINE.getSource());
+	}
+
 	@GameTest(template = "empty_large", timeoutTicks = 400)
 	public static void theFlareAndTheWindowsBurnOnlyWhileTheColumnWorks(GameTestHelper helper) {
 		build(helper, 1, BlazeBurnerBlock.HeatLevel.KINDLED);

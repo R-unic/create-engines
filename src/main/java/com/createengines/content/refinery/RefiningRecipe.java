@@ -132,11 +132,32 @@ public final class RefiningRecipe implements Recipe<RefiningRecipe.NoInput> {
 	 * has, the one that asks for the most, since a hotter base is what that recipe is for.
 	 */
 	public static Optional<RecipeHolder<RefiningRecipe>> find(Level level, FluidStack feed, Heat baseHeat) {
+		return find(level, feed, baseHeat, ItemStack.EMPTY);
+	}
+
+	/**
+	 * As {@link #find(Level, FluidStack, Heat)}, but when the column holds a catalyst that one of those recipes takes, only the
+	 * recipes that take it are looked at: a feed with two routes at one heat (diesel to gasoline with blaze powder, or to kerosene
+	 * with glowstone) goes the way of the catalyst in the slot. A catalyst none of them takes, or none at all, changes nothing, so a
+	 * feed that has one route runs it as before. Ties are broken by the recipe's name, the earlier one first, so the same
+	 * column picks the same route every time (an empty slot over diesel is the gasoline route, as it always was).
+	 */
+	public static Optional<RecipeHolder<RefiningRecipe>> find(Level level, FluidStack feed, Heat baseHeat, ItemStack catalystHeld) {
 		List<RecipeHolder<RefiningRecipe>> all = level.getRecipeManager().getAllRecipesFor(CERecipes.REFINING.get());
-		return all.stream()
+		List<RecipeHolder<RefiningRecipe>> fits = all.stream()
 			.filter(r -> r.value().feed.ingredient().test(feed) && baseHeat.satisfies(r.value().heat))
+			.toList();
+		if (!catalystHeld.isEmpty()) {
+			List<RecipeHolder<RefiningRecipe>> taking = fits.stream()
+				.filter(r -> r.value().catalyst != null && r.value().catalyst.ingredient().test(catalystHeld))
+				.toList();
+			if (!taking.isEmpty())
+				fits = taking;
+		}
+		return fits.stream()
 			.max(Comparator.<RecipeHolder<RefiningRecipe>>comparingInt(r -> r.value().heat.ordinal())
-				.thenComparingDouble(r -> r.value().route().yield()));
+				.thenComparingDouble(r -> r.value().route().yield())
+				.thenComparing(r -> r.id().toString(), Comparator.reverseOrder()));
 	}
 
 	/** Whether any route takes this fluid as feed, at any heat. */

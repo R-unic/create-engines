@@ -4031,6 +4031,12 @@ public class EngineGameTests {
 		helper.assertTrue(tags.has(CEFluids.ETHANOL.get(), com.createengines.registry.CEDataMaps.ETHANOL), "Our ethanol is c:ethanol");
 		helper.assertTrue(tags.has(CEFluids.PLANT_OIL.get(), com.createengines.registry.CEDataMaps.PLANT_OIL),
 			"Our plant oil is c:plantoil");
+		helper.assertTrue(tags.has(CEFluids.KEROSENE.get(), com.createengines.registry.CEDataMaps.KEROSENE), "Our kerosene is c:kerosene");
+		helper.assertTrue(com.createengines.registry.CEDataMaps.fuelForTags(t -> t.equals(com.createengines.registry.CEDataMaps.KEROSENE))
+			== com.createengines.engine.sim.FuelSpec.KEROSENE, "Another mod's kerosene burns as kerosene");
+		var kerosene = com.createengines.registry.CEDataMaps.fuel(CEFluids.KEROSENE.get());
+		helper.assertTrue(kerosene == com.createengines.engine.sim.FuelSpec.KEROSENE,
+			"Kerosene has no data map entry (the shipped fuel.json is pinned): it burns as its tag says: " + kerosene);
 		helper.assertTrue(com.createengines.registry.CEDataMaps.fuelForTags(t -> t.equals(com.createengines.registry.CEDataMaps.GASOLINE))
 			== com.createengines.engine.sim.FuelSpec.GASOLINE, "Another mod's gasoline burns as gasoline");
 		helper.assertTrue(com.createengines.registry.CEDataMaps.fuelForTags(t -> t.equals(com.createengines.registry.CEDataMaps.BIODIESEL))

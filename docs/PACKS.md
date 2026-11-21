@@ -128,6 +128,11 @@ ServerEvents.recipes(event => {
 })
 ```
 
+When several routes take the same feed at the heat of the base, a column goes the way of the **catalyst in its slot**: the shipped
+diesel routes are blaze powder to gasoline and glowstone dust to kerosene, and a pack's route with its own catalyst item works the
+same way. A slot that is empty, or holds an item none of them takes, runs the route with the better yield, and on a tie the one whose
+recipe name sorts first (so diesel over an empty slot is still the gasoline route). A column that runs out of catalyst keeps its route.
+
 The fields are in [DATA.md](DATA.md#refining-recipes). JEI and EMI list the routes, so a route you add is visible to players.
 (The script above uses KubeJS's ordinary recipe functions; this mod's CI loads KubeJS but has not run these exact lines.)
 

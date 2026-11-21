@@ -119,4 +119,17 @@ public record FuelSpec(double energyPerMb, double autoignitionTemp, double airPe
 	 * pre-ignite, boils off so much heat that it cools the charge, and leaves no soot on a plug.
 	 */
 	public static final FuelSpec ETHANOL = new FuelSpec(27, 3.4, 1.0, 1.8, 0.08, 0, ETHANOL_PREIGNITION);
+
+	/**
+	 * Where kerosene's charge starts to light early under boost: between gasoline's (2.7, its autoignition point) and ethanol's
+	 * (5.0). A precision engine on twin turbos and an intercooler pre-ignites gasoline and does not pre-ignite kerosene, and a
+	 * crude one on one turbo and no intercooler loses some of it to a hot charge, which ethanol does not.
+	 */
+	public static final double KEROSENE_PREIGNITION = 3.6;
+	/**
+	 * The all-rounder between diesel and gasoline: more energy to the mB than diesel and a little less than gasoline, a spark
+	 * fuel (2.2 is past what a pilot shot can light and past what compression reaches), a touch slower to warm in a cold block
+	 * than gasoline, and better than gasoline at holding out against boost.
+	 */
+	public static final FuelSpec KEROSENE = new FuelSpec(38, 2.2, 1.55, 1.1, 0, 1, KEROSENE_PREIGNITION);
 }

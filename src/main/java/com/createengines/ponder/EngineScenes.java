@@ -3728,6 +3728,15 @@ public final class EngineScenes {
 				.topOf(3, 2, 3))
 			.placeNearTarget();
 		scene.idle(160);
+
+		scene.overlay()
+			.showText(150)
+			.colored(PonderPalette.BLUE)
+			.text("Heated, Diesel with glowstone dust makes Kerosene instead of Gasoline. A refining column goes the way of the catalyst in its slot. Kerosene needs a spark plug, carries more energy than Diesel and a little less than Gasoline, and holds out against a hot, boosted charge better than Gasoline does.")
+			.pointAt(util.vector()
+				.topOf(3, 2, 3))
+			.placeNearTarget();
+		scene.idle(160);
 		scene.markAsFinished();
 	}
 }

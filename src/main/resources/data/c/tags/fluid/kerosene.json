@@ -1,0 +1,9 @@
+{
+  "values": [
+    "create_engines:kerosene",
+    {
+      "id": "create_engines:flowing_kerosene",
+      "required": false
+    }
+  ]
+}

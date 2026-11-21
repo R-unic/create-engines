@@ -42,8 +42,12 @@ public class BoostFuelGameTests {
 
 	/** A spark engine on the given fuel, optionally with a supercharger on its intake spun at the given speed. */
 	private static void build(GameTestHelper helper, boolean ethanol, boolean blower, int blowerRpm) {
+		build(helper, ethanol ? CEFluids.ETHANOL.get().getSource() : null, blower, blowerRpm);
+	}
+
+	private static void build(GameTestHelper helper, net.minecraft.world.level.material.Fluid fuel, boolean blower, int blowerRpm) {
 		TestEngine.buildSpark(helper.getLevel(), helper.absolutePos(BlockPos.ZERO), true);
-		if (ethanol) {
+		if (fuel != null) {
 			// Ethanol is injector-bound: it needs a fine injector to keep up under boost
 			helper.setBlock(HEAD, CEBlocks.PRECISION_CYLINDER_HEAD.getDefaultState()
 				.setValue(CylinderHeadBlock.FACING, Direction.UP)
@@ -55,8 +59,7 @@ public class BoostFuelGameTests {
 				.fill(new FluidStack(CEFluids.ENGINE_OIL.get()
 					.getSource(), 250), FluidAction.EXECUTE);
 			head.tank()
-				.fill(new FluidStack(CEFluids.ETHANOL.get()
-					.getSource(), 250), FluidAction.EXECUTE);
+				.fill(new FluidStack(fuel, 250), FluidAction.EXECUTE);
 		}
 		if (blower) {
 			helper.setBlock(TestEngine.AIR_INTAKE, Blocks.AIR);
@@ -92,6 +95,17 @@ public class BoostFuelGameTests {
 		if (summary == null)
 			helper.fail("Crankshaft has no engine", PRIMARY);
 		return summary;
+	}
+
+	/** Kerosene is a spark fuel like gasoline: a spark engine runs on it, and unboosted it never pre-ignites. */
+	@GameTest(template = "empty", timeoutTicks = 1200)
+	public static void aSparkEngineRunsOnKeroseneAndItNeverPreignitesUnboosted(GameTestHelper helper) {
+		build(helper, CEFluids.KEROSENE.get().getSource(), false, 0);
+		helper.runAtTickTime(900, () -> {
+			helper.assertTrue(summary(helper).state() == EngineState.RUNNING, "Engine should run on kerosene: " + summary(helper));
+			helper.assertTrue(cylinder(helper).preignition() == 0f, "Nothing to pre-ignite without boost: " + cylinder(helper));
+			helper.succeed();
+		});
 	}
 
 	/** Gasoline at atmospheric pressure never pre-ignites, however long the engine runs. */

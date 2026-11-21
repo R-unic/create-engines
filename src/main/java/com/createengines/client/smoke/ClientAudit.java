@@ -74,7 +74,8 @@ public final class ClientAudit {
 	private static void viewerPages(SmokeReport report) {
 		var fuels = com.createengines.client.compat.ViewerEntries.fuels();
 		for (var fluid : List.of(com.createengines.registry.CEFluids.PLANT_OIL, com.createengines.registry.CEFluids.DIESEL,
-			com.createengines.registry.CEFluids.GASOLINE, com.createengines.registry.CEFluids.ETHANOL))
+			com.createengines.registry.CEFluids.GASOLINE, com.createengines.registry.CEFluids.ETHANOL,
+			com.createengines.registry.CEFluids.KEROSENE))
 			report.check("compat", "the fuel page list holds " + fluid.getId()
 				.getPath(), fuels.stream()
 					.anyMatch(fuel -> fuel.stack()

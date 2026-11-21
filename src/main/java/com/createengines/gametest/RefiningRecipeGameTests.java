@@ -62,7 +62,7 @@ public class RefiningRecipeGameTests {
 	@GameTest(template = "empty")
 	public static void makesTellsWhichFluidsAColumnProduces(GameTestHelper helper) {
 		for (Object made : new Object[] {CEFluids.DIESEL.getSource(), CEFluids.GASOLINE.getSource(),
-			CEFluids.ETHANOL.getSource()})
+			CEFluids.ETHANOL.getSource(), CEFluids.KEROSENE.getSource()})
 			if (!RefiningRecipe.makes(helper.getLevel(), of(made, 1)))
 				helper.fail("a column should make " + made);
 		for (Object not : new Object[] {CEFluids.PLANT_OIL.getSource(), CEFluids.ENGINE_OIL.getSource()})
@@ -98,6 +98,35 @@ public class RefiningRecipeGameTests {
 	}
 
 	@GameTest(template = "empty")
+	public static void dieselGoesToKeroseneWithGlowstoneAndToGasolineOtherwise(GameTestHelper helper) {
+		var level = helper.getLevel();
+		FluidStack diesel = of(CEFluids.DIESEL.getSource(), 1000);
+		Object none = RefiningRecipe.find(level, diesel, Heat.HEATED, net.minecraft.world.item.ItemStack.EMPTY).orElseThrow().value().product().getFluid();
+		Object glow = RefiningRecipe.find(level, diesel, Heat.HEATED, new net.minecraft.world.item.ItemStack(Items.GLOWSTONE_DUST)).orElseThrow().value().product().getFluid();
+		Object blaze = RefiningRecipe.find(level, diesel, Heat.HEATED, new net.minecraft.world.item.ItemStack(Items.BLAZE_POWDER)).orElseThrow().value().product().getFluid();
+		Object stone = RefiningRecipe.find(level, diesel, Heat.HEATED, new net.minecraft.world.item.ItemStack(Items.STONE)).orElseThrow().value().product().getFluid();
+		if (none != CEFluids.GASOLINE.getSource())
+			helper.fail("an empty catalyst slot over diesel is the gasoline route, as it always was, got " + none);
+		if (glow != CEFluids.KEROSENE.getSource())
+			helper.fail("glowstone dust should take diesel to kerosene, got " + glow);
+		if (blaze != CEFluids.GASOLINE.getSource())
+			helper.fail("blaze powder should take diesel to gasoline, got " + blaze);
+		if (stone != CEFluids.GASOLINE.getSource())
+			helper.fail("an item no route takes changes nothing, got " + stone);
+		if (RefiningRecipe.find(level, diesel, Heat.HEATED).orElseThrow().value().product().getFluid() != CEFluids.GASOLINE.getSource())
+			helper.fail("the three-argument find is the old one: gasoline");
+		RefiningRoute kerosene = RefiningRecipe.find(level, diesel, Heat.HEATED, new net.minecraft.world.item.ItemStack(Items.GLOWSTONE_DUST))
+			.orElseThrow().value().route();
+		if (kerosene.feedMb() != 1000 || kerosene.productMb() != 1100 || kerosene.catalystFeedMb() != 1000
+			|| kerosene.heat() != Heat.HEATED || kerosene.speed() != 0.85)
+			helper.fail("kerosene route read as " + kerosene);
+		if (RefiningRecipe.find(level, of(CEFluids.PLANT_OIL.getSource(), 1000), Heat.HEATED,
+			new net.minecraft.world.item.ItemStack(Items.GLOWSTONE_DUST)).orElseThrow().value().product().getFluid() != CEFluids.DIESEL.getSource())
+			helper.fail("glowstone changes nothing for a feed it has no route for");
+		helper.succeed();
+	}
+
+	@GameTest(template = "empty")
 	public static void aColdBaseHasNoRoute(GameTestHelper helper) {
 		if (RefiningRecipe.find(helper.getLevel(), of(CEFluids.PLANT_OIL.getSource(), 1000), Heat.NONE).isPresent())
 			helper.fail("no route should run over a cold base");
@@ -124,6 +153,8 @@ public class RefiningRecipeGameTests {
 		int diesel = hintFor(helper, CEFluids.PLANT_OIL.getSource(), CEFluids.DIESEL.getSource());
 		int gasoline = hintFor(helper, CEFluids.DIESEL.getSource(), CEFluids.GASOLINE.getSource());
 		int ethanol = hintFor(helper, CEFluids.SUGAR_MASH.getSource(), CEFluids.ETHANOL.getSource());
+		if (hintFor(helper, CEFluids.DIESEL.getSource(), CEFluids.KEROSENE.getSource()) != 10)
+			helper.fail("diesel should be told a column makes 10% more kerosene too");
 		if (diesel != 10 || gasoline != 10)
 			helper.fail("diesel and gasoline should be told 10% more, got " + diesel + " and " + gasoline);
 		if (ethanol != 21)

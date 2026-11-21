@@ -61,7 +61,7 @@ sweeps a volume of 1.
 | Key | Required | Default | What it does |
 |---|---|---|---|
 | `energy_per_mb` | yes | | Energy released by burning 1 mB. This is the fuel's strength: engine power rises with it, and so does fuel economy (less volume for the same work). Must be above 0 |
-| `autoignition_temperature` | yes | | Charge temperature that lights the fuel by compression alone, ambient = 1. Diesel (1.55) and plant oil (1.7) are low and light by compression; gasoline (2.7) and ethanol (3.4) are high and need a spark plug. A fuel at or below `2.0` also counts as a **pilot fuel**: a compression engine can inject it as a small shot to light a charge that compression alone could not. Must be above 0 |
+| `autoignition_temperature` | yes | | Charge temperature that lights the fuel by compression alone, ambient = 1. Diesel (1.55) and plant oil (1.7) are low and light by compression; gasoline (2.7), kerosene (2.2) and ethanol (3.4) are high and need a spark plug. A fuel at or below `2.0` also counts as a **pilot fuel**: a compression engine can inject it as a small shot to light a charge that compression alone could not. Must be above 0 |
 | `air_per_mb` | yes | | Fresh charge consumed by burning 1 mB; a full cylinder of ambient air is about 1. Sets the air-fuel balance, and injectors are sized from it (a fuel that needs less than 1.5 per mB gets a proportionally larger shot). Must be above 0 |
 | `cold_sensitivity` | no | `1.0` | How much a cold engine block hurts this fuel's burn: 1 is usual, gasoline is 0.8 (best), ethanol 1.8 and plant oil 1.5 (worst) |
 | `charge_cooling` | no | `0.0` | How far evaporating the fuel cools the charge it is mixed into, in ambient temperatures, at a balanced mixture. A cooler charge is denser, so the cylinder draws more air. Ethanol is 0.08; the others cool nothing |
@@ -93,6 +93,7 @@ common `c:` fluid tags other mods already use, so another mod's diesel usually r
 | `c:gasoline` | gasoline |
 | `c:diesel`, `c:biodiesel` | diesel |
 | `c:ethanol` | ethanol |
+| `c:kerosene` | kerosene (38 energy, 2.2 autoignition, 1.55 air, `cold_sensitivity` 1.1, `preignition_temperature` 3.6; the mod's own Kerosene has no data map entry and runs on this) |
 | `c:plantoil` | plant oil |
 
 To make a fluid a fuel by tag, add it to the tag (the file merges; do not set `replace`):

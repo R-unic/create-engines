@@ -37,6 +37,7 @@ public final class CEFluids {
 	private static final int PLANT_OIL_COLOUR = 0xFF6E4A1A;
 	private static final int DIESEL_COLOUR = 0xFFC7A93B;
 	private static final int GASOLINE_COLOUR = 0xFFE6D27A;
+	private static final int KEROSENE_COLOUR = 0xFFE3B66A;
 	private static final int ENGINE_OIL_COLOUR = 0xFFD99A1E;
 	private static final int SUGAR_MASH_COLOUR = 0xFFB89A5E;
 	private static final int ETHANOL_COLOUR = 0xFFC9E8EC;
@@ -131,6 +132,25 @@ public final class CEFluids {
 			.source(BaseFlowingFluid.Source::new)
 			.block()
 			.properties(p -> p.mapColor(MapColor.TERRACOTTA_YELLOW))
+			.build()
+			.bucket()
+			.model(CEFluids::bucketModel)
+			.build()
+			.register();
+
+	/** The cut between diesel and gasoline: a spark fuel with more energy than diesel, that holds out against boost better than gasoline. */
+	public static final FluidEntry<BaseFlowingFluid.Flowing> KEROSENE =
+		REGISTRATE.fluid("kerosene", THIN_STILL, THIN_FLOW, tinted(KEROSENE_COLOUR))
+			.lang("Kerosene")
+			.properties(b -> b.viscosity(700)
+				.density(800))
+			.fluidProperties(p -> p.levelDecreasePerBlock(2)
+				.tickRate(10)
+				.slopeFindDistance(4)
+				.explosionResistance(100f))
+			.source(BaseFlowingFluid.Source::new)
+			.block()
+			.properties(p -> p.mapColor(MapColor.COLOR_ORANGE))
 			.build()
 			.bucket()
 			.model(CEFluids::bucketModel)

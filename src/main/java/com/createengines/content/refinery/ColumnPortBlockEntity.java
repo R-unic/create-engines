@@ -94,6 +94,8 @@ public class ColumnPortBlockEntity extends SmartBlockEntity implements IHaveGogg
 	private @Nullable RecipeHolder<RefiningRecipe> route;
 	private @Nullable FluidStack routeFeed;
 	private Heat routeHeat = Heat.NONE;
+	/** The catalyst the route was picked with: a feed with two routes goes the way of the item in the slot. */
+	private net.minecraft.world.item.Item routeCatalyst = net.minecraft.world.item.Items.AIR;
 	private IFluidHandler feedPort;
 	private IFluidHandler productPort;
 	private IItemHandler catalystPort;
@@ -274,17 +276,23 @@ public class ColumnPortBlockEntity extends SmartBlockEntity implements IHaveGogg
 			}
 		}
 		FluidStack feedFluid = feedTank().getFluid();
+		ItemStack heldCatalyst = catalyst.getStackInSlot(0);
+		// An empty slot keeps the route it was running (a column that used its last glowstone does not flip to the gasoline route)
+		boolean keepRoute = heldCatalyst.isEmpty() && route != null;
 		if (route == null || routeFeed == null || !FluidStack.isSameFluidSameComponents(routeFeed, feedFluid) || routeHeat != heat
-			|| ++sinceRoute >= ROUTE_INTERVAL) {
+			|| (!heldCatalyst.isEmpty() && routeCatalyst != heldCatalyst.getItem())
+			|| (++sinceRoute >= ROUTE_INTERVAL && !keepRoute)) {
 			sinceRoute = 0;
 			Optional<RecipeHolder<RefiningRecipe>> found = feedFluid.isEmpty() ? Optional.empty()
-				: RefiningRecipe.find(level, feedFluid, heat);
+				: RefiningRecipe.find(level, feedFluid, heat, heldCatalyst);
 			RecipeHolder<RefiningRecipe> next = found.orElse(null);
 			if (next == null ? route != null : route == null || !route.id().equals(next.id()))
 				column.reset();
 			route = next;
 			routeFeed = feedFluid.copy();
 			routeHeat = heat;
+			if (!heldCatalyst.isEmpty() || route == null)
+				routeCatalyst = heldCatalyst.getItem();
 		}
 
 		Limit now;

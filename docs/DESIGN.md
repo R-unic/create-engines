@@ -1458,6 +1458,33 @@ com.createengines
 
 M2 starts with camshafts, cam lobes and real valve actuation replacing `FixedValveProfile`.
 
+### Kerosene (2.0, 2026-11-20)
+
+The fuel the author asked for on 2026-11-17 ("kerosene soon"), added while engines are not yet maxed out: the cut between diesel and gasoline.
+No existing fuel, recipe or number changed.
+
+- **The fuel.** `create_engines:kerosene` (bucket, tag `c:kerosene`, sight-window tint added last in `WindowTint` so older tints keep their numbers).
+  `FuelSpec.KEROSENE`: 38 energy a mB (diesel 36, gasoline 40), autoignition 2.2 (past the 2.0 pilot limit, so a spark fuel that a diesel pilot shot cannot
+  light), 1.55 air, cold sensitivity 1.1 (a little slower to warm than gasoline's 0.8), no charge cooling, usual soot and sulfur. Its pre-ignition point is
+  3.6: gasoline's charge lights early past 2.7 and ethanol's past 5.0, so kerosene is the fuel for a boosted build that has outgrown gasoline and has no
+  ethanol chain. It is the all-rounder, not a power step: it is less energy to the mB than gasoline.
+- **No data map entry.** `fuel.json` is pinned by hash in `compat/manifest.txt`, so kerosene is not added to it. It comes in through `c:kerosene`
+  (`CEDataMaps.fuelForTags`), the route another mod's fuel takes, and `/ce fuels` reports it "from the tag #c:kerosene". A pack can still give it a data map
+  entry of its own to tune it (a data map entry wins).
+- **Making it.** Refining column: 1000 mB of diesel, heated base, glowstone dust as the catalyst (1000 mB to the item), speed 0.85, 1100 mB out, the same
+  ten percent over a basin that every other route has. Basin: 250 diesel and glowstone dust make 250 kerosene over a heated blaze burner.
+- **A column now follows its catalyst.** Diesel already had a route (gasoline, blaze powder), and a column picked its route by feed and heat alone, so a second
+  one would have been a tie. `RefiningRecipe.find` takes the item in the catalyst slot: if some route takes it, only those routes are looked at; an empty
+  slot or an item no route takes changes nothing, and a tie in heat and yield goes to the recipe whose name sorts first, which keeps an empty slot over diesel
+  on the gasoline route, as it was. The column re-picks when the item in the slot changes, and an empty slot keeps the route it was running (a column that
+  uses its last glowstone does not flip to gasoline). Every feed that had one route at a heat runs it exactly as before.
+- **Tests.** `KeroseneFuelTest` (ordering of energy, ignition and pre-ignition against diesel, gasoline and ethanol; spark only; power between diesel and
+  gasoline; the tint added last), GameTests `dieselGoesToKeroseneWithGlowstoneAndToGasolineOtherwise`, `aColumnOfDieselWithGlowstoneMakesKerosene`,
+  `aColumnOfDieselWithBlazePowderStillMakesGasoline`, `aSparkEngineRunsOnKeroseneAndItNeverPreignitesUnboosted`, and kerosene added to the tag, report, route,
+  basin-hint and client-audit lists. `compat/behaviour.txt` gained the `run:KEROSENE` lines and `compat/manifest.txt` four entries (all appended, none edited).
+- **Not seen:** the bucket and the fluid in a world, the sight windows glowing its tint, the Ponder text (the last line of the Fuels page), and how a boosted
+  build feels on it. The colours (`0xFFE3B66A`, window `0xFFEDC98A`) and the glowstone catalyst are first choices.
+
 ---
 
 ## 14. Decisions

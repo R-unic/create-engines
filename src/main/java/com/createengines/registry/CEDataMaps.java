@@ -173,11 +173,12 @@ public final class CEDataMaps {
 	public static final TagKey<Fluid> BIODIESEL = common("biodiesel");
 	public static final TagKey<Fluid> GASOLINE = common("gasoline");
 	public static final TagKey<Fluid> ETHANOL = common("ethanol");
+	public static final TagKey<Fluid> KEROSENE = common("kerosene");
 	public static final TagKey<Fluid> PLANT_OIL = common("plantoil");
 
 	/**
 	 * A fuel's properties: its entry in the fuel data map if it has one, and otherwise those of the common fluid tag it is
-	 * in, so any mod's diesel, gasoline, ethanol or plant oil runs an engine without a datapack. A data map entry wins, so a
+	 * in, so any mod's diesel, gasoline, ethanol, kerosene or plant oil runs an engine without a datapack. A data map entry wins, so a
 	 * pack can still tune or replace any fluid.
 	 */
 	public static @Nullable FuelSpec fuel(Fluid fluid) {
@@ -194,6 +195,8 @@ public final class CEDataMaps {
 			return FuelSpec.DIESEL;
 		if (inTag.test(ETHANOL))
 			return FuelSpec.ETHANOL;
+		if (inTag.test(KEROSENE))
+			return FuelSpec.KEROSENE;
 		if (inTag.test(PLANT_OIL))
 			return FuelSpec.PLANT_OIL;
 		return null;

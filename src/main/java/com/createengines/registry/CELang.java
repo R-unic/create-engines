@@ -425,6 +425,7 @@ public final class CELang {
 		REGISTRATE.addRawLang("tag.fluid.c.diesel", "Diesel");
 		REGISTRATE.addRawLang("tag.fluid.c.ethanol", "Ethanol");
 		REGISTRATE.addRawLang("tag.fluid.c.gasoline", "Gasoline");
+		REGISTRATE.addRawLang("tag.fluid.c.kerosene", "Kerosene");
 		REGISTRATE.addRawLang("tag.fluid.c.plantoil", "Plant Oil");
 		REGISTRATE.addRawLang("tag.fluid.create_engines.poor_lubricants", "Poor Lubricants");
 		REGISTRATE.addRawLang("tag.item.create_engines.ferments_mash", "Mash Ingredients");
