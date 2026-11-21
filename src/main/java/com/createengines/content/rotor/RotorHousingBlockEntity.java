@@ -110,6 +110,22 @@ public class RotorHousingBlockEntity extends CrankshaftBlockEntity implements Ga
 			}
 
 			/**
+			 * Create sends a player's setting to the first value box whose network id matches. The eccentric's angle and this
+			 * dial both said 0, so a change made on the fuel metering went to the angle (which is first in line) and the two
+			 * dials seemed to be one.
+			 */
+			@Override
+			public int netId() {
+				return 1;
+			}
+
+			/** Create's clipboard copies settings under this key, so each dial needs its own: the angle keeps Create's default. */
+			@Override
+			public String getClipboardKey() {
+				return METERING_KEY;
+			}
+
+			/**
 			 * Create saves every scroll value under the same key, and the eccentric's angle is one already: this one keeps
 			 * its own, or the two would overwrite each other whenever the block is saved or sent to a client.
 			 */

@@ -11,7 +11,7 @@ class WindowTintTest {
 	@Test
 	void everyShippedFluidHasItsOwnTintAndAnythingElseIsAmber() {
 		for (String fluid : new String[] {"plant_oil", "diesel", "gasoline", "sugar_mash", "ethanol", "glycerin", "used_oil",
-			"coolant", "engine_oil", "kerosene"})
+			"coolant", "engine_oil", "kerosene", "methanol"})
 			assertNotEquals(WindowTint.AMBER, WindowTint.ofPath(fluid), fluid + " should have a tint of its own");
 		assertEquals(WindowTint.AMBER, WindowTint.ofPath("water"));
 		assertEquals(WindowTint.AMBER, WindowTint.ofPath("amber"), "amber is the fallback, not a fluid");

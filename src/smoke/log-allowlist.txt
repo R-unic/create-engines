@@ -17,6 +17,14 @@ warn: Sound engine/ERROR\].*OpenAlUtil.*Stop: Invalid name parameter
 # Without this entry the release gate fails on its first run for a reason that is not a defect. Matches only that file.
 Failed to load properties from file: server\.properties
 
+# NeoForge's own FluidStack loader logs this ERROR when a saved fluid amount is negative and then loads an empty fluid. The GameTest
+# churn (StressGameTests, seeds 1 to 6) reloads block entities from deliberately mangled saves, and its mutation mode 2 turns every
+# saved integer into -abs(n) - 1, so a tank that held 522 mB reloads as -523. Whether a given run writes one depends on the seeded
+# random picks, which move whenever a block is added to the mod (found when methanol was added, 2026-11-21; kerosene did not hit it).
+# Harmless: the line is NeoForge's response to the corrupt save, and the engine carries on with an empty tank (the test checks that).
+# Matches only this message with a negative value, so any other fluid-loading error still fails the run.
+Tried to load invalid fluid: 'Value must be positive: -\d+'
+
 # Only in the EMI compatibility row. EMI logs an ERROR for each tag it cannot find a name for. Four of the tags in the
 # game belong to Create, NeoForge and Curios, not to this mod (the chocolate and tea convention tags and curios:head), so
 # naming them is not ours to do; the message is a cosmetic notice and changes nothing in the game. This mod's own tags are

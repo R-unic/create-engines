@@ -1,0 +1,8 @@
+{
+  "type": "create_engines:refining",
+  "feed": { "fluid": "minecraft:water", "amount": 1000 },
+  "product": { "id": "create_engines:methanol", "amount": 264 },
+  "heat": "superheated",
+  "speed": 0.5,
+  "catalyst": { "ingredient": { "tag": "minecraft:logs_that_burn" }, "feed_per_item": 250 }
+}

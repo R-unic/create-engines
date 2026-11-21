@@ -1485,6 +1485,31 @@ No existing fuel, recipe or number changed.
 - **Not seen:** the bucket and the fluid in a world, the sight windows glowing its tint, the Ponder text (the last line of the Fuels page), and how a boosted
   build feels on it. The colours (`0xFFE3B66A`, window `0xFFEDC98A`) and the glowstone catalyst are first choices.
 
+### Methanol (2.0, 2026-11-21)
+
+The fuel the author parked on 2026-11-17 ("methanol, later") and asked to ship in 2.0 on 2026-11-21, with a column recipe as well as a basin one. Not crop
+dependent, and clearly not ethanol. No existing fuel, recipe or number changed.
+
+- **The fuel.** `create_engines:methanol` (bucket, tag `c:methanol`, sight-window tint added last in `WindowTint`). `FuelSpec.METHANOL`: 22 energy a mB (the
+  least of any fuel; ethanol is 27), autoignition 3.8 (a spark fuel, harder to light than ethanol's 3.4), 0.8 air (so `injectorFlow()` is 1.875, ethanol's is
+  1.5: the same engine needs far more of it through the injector), cold sensitivity 1.9 (the worst, ethanol is 1.8), charge cooling 0.17 (ethanol 0.08), no soot,
+  no sulfur, pre-ignition 6.5 (ethanol 5.0). **Tuned by measuring**, not by feel: on the crude 12-cylinder dyno rig of `MethanolFuelTest`, methanol makes 3.2%
+  more peak power than ethanol unboosted and 4.2% more on one turbo, within about 1% of gasoline either way (charge cooling 0.14 gave 0%, 0.25 gave 13%, 0.4
+  gave 41%: cooling is the lever, and the value is the one that is a clear edge and not a power step). Its higher pre-ignition point is headroom for builds
+  that push ethanol's limit; no shipped build reaches ethanol's 5.0, so that half is margin, not what separates the two.
+- **No data map entry.** Same as kerosene: `fuel.json` is pinned, so it comes in through `c:methanol` and `/ce fuels` reports it "from the tag #c:methanol".
+- **Making it.** Superheated only (a Seething burner, as over a big engine's heat exchanger): logs (`#minecraft:logs_that_burn`, so no nether stems) and
+  water. Basin: 250 mB of water and a log make 60 mB. Column: 1000 mB of water with a log in the slot, one log to each 250 mB, 264 mB out at speed 0.5 (the basin's
+  60 per 250 with the usual ten percent over). A heated base makes nothing.
+- **Two small widenings the column route brings** (listed as an exception in the release record, awaiting approval): a column now accepts water as feed
+  (`RefiningRecipe.takesFeed`), though with no log in the slot it makes nothing and uses none, and its catalyst slot now accepts logs. `BasinHints` skips water,
+  so a basin of water does not show a "a column makes more methanol" line.
+- **Tests.** `MethanolFuelTest` (least energy, spark only, ignition and pre-ignition and cooling against every other fuel, clean burn, injector flow, the
+  measured power bands unboosted and boosted, the tint added last), GameTests `aSparkEngineRunsOnMethanolAndItNeverPreignitesUnboosted`,
+  `methanolComesFromWaterAndLogsSuperheatedInAColumnOrABasin`, `aColumnOfWaterWithLogsMakesMethanolOverASuperheatedBase`,
+  `aColumnOfWaterWithNoLogMakesNothingAndKeepsItsWater`, and methanol added to the tag, report, route, basin-hint and client-audit lists.
+- **Not seen:** the bucket and the fluid in a world, the sight windows, the Ponder text (the last line of the Fuels page), how a boosted build feels.
+
 ---
 
 ## 14. Decisions

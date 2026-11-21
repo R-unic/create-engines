@@ -3737,6 +3737,16 @@ public final class EngineScenes {
 				.topOf(3, 2, 3))
 			.placeNearTarget();
 		scene.idle(160);
+
+		scene.overlay()
+			.showText(150)
+			.attachKeyFrame()
+			.colored(PonderPalette.BLUE)
+			.text("Superheated, logs and water make Methanol: 60 mB to the log in a basin, a little more in a refining column with a log in its slot. It needs a spark plug and carries the least energy of any fuel, so an injector must give it a lot more flow. In return it cools the charge most, leaves no soot, and a hot, boosted charge will hardly light it early, even past what Ethanol takes.")
+			.pointAt(util.vector()
+				.topOf(3, 2, 3))
+			.placeNearTarget();
+		scene.idle(160);
 		scene.markAsFinished();
 	}
 }

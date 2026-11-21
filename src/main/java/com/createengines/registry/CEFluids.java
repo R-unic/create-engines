@@ -38,6 +38,7 @@ public final class CEFluids {
 	private static final int DIESEL_COLOUR = 0xFFC7A93B;
 	private static final int GASOLINE_COLOUR = 0xFFE6D27A;
 	private static final int KEROSENE_COLOUR = 0xFFE3B66A;
+	private static final int METHANOL_COLOUR = 0xFFC9BCE6;
 	private static final int ENGINE_OIL_COLOUR = 0xFFD99A1E;
 	private static final int SUGAR_MASH_COLOUR = 0xFFB89A5E;
 	private static final int ETHANOL_COLOUR = 0xFFC9E8EC;
@@ -151,6 +152,25 @@ public final class CEFluids {
 			.source(BaseFlowingFluid.Source::new)
 			.block()
 			.properties(p -> p.mapColor(MapColor.COLOR_ORANGE))
+			.build()
+			.bucket()
+			.model(CEFluids::bucketModel)
+			.build()
+			.register();
+
+	/** Wood spirit: a spark fuel with little energy in the bucket that boost will hardly light early. Made from logs and water. */
+	public static final FluidEntry<BaseFlowingFluid.Flowing> METHANOL =
+		REGISTRATE.fluid("methanol", THIN_STILL, THIN_FLOW, tinted(METHANOL_COLOUR))
+			.lang("Methanol")
+			.properties(b -> b.viscosity(600)
+				.density(790))
+			.fluidProperties(p -> p.levelDecreasePerBlock(2)
+				.tickRate(10)
+				.slopeFindDistance(4)
+				.explosionResistance(100f))
+			.source(BaseFlowingFluid.Source::new)
+			.block()
+			.properties(p -> p.mapColor(MapColor.COLOR_PURPLE))
 			.build()
 			.bucket()
 			.model(CEFluids::bucketModel)

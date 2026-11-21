@@ -107,6 +107,48 @@ public class RefiningColumnGameTests {
 		dieselColumn(helper, Items.GLOWSTONE_DUST, CEFluids.KEROSENE.getSource());
 	}
 
+	/** Water over a superheated base goes to methanol with a log in the slot, and goes nowhere without one. */
+	private static void waterColumn(GameTestHelper helper, ItemStack catalystStack, boolean expectMethanol) {
+		build(helper, 1, BlazeBurnerBlock.HeatLevel.SEETHING);
+		BlockPos reboiler = new BlockPos(1, BASE_Y, 1);
+		BlockPos condenser = new BlockPos(1, BASE_Y + 3, 1);
+		helper.runAfterDelay(15, () -> {
+			fluids(helper, reboiler).fill(of(net.minecraft.world.level.material.Fluids.WATER, 500), IFluidHandler.FluidAction.EXECUTE);
+			if (!catalystStack.isEmpty())
+				helper.getLevel()
+					.getCapability(Capabilities.ItemHandler.BLOCK, helper.absolutePos(reboiler), Direction.UP)
+					.insertItem(0, catalystStack, false);
+		});
+		if (expectMethanol)
+			helper.succeedWhen(() -> {
+				FluidStack made = fluids(helper, condenser).getFluidInTank(0);
+				helper.assertTrue(made.getFluid() == CEFluids.METHANOL.getSource() && made.getAmount() >= 20,
+					"the Condenser should hold methanol, holds " + made);
+				helper.assertTrue(port(helper, reboiler).feedTank()
+					.getFluidAmount() < 500, "the water should be going down");
+				helper.assertTrue(port(helper, reboiler).catalystStack()
+					.getCount() < 4, "a log is used up for each 250 mB of water");
+			});
+		else
+			helper.runAfterDelay(300, () -> {
+				helper.assertTrue(fluids(helper, condenser).getFluidInTank(0)
+					.isEmpty(), "with no log in the slot water makes nothing");
+				helper.assertTrue(port(helper, reboiler).feedTank()
+					.getFluidAmount() == 500, "and none of the water is used");
+				helper.succeed();
+			});
+	}
+
+	@GameTest(template = "empty", timeoutTicks = 400)
+	public static void aColumnOfWaterWithLogsMakesMethanolOverASuperheatedBase(GameTestHelper helper) {
+		waterColumn(helper, new ItemStack(Items.OAK_LOG, 4), true);
+	}
+
+	@GameTest(template = "empty", timeoutTicks = 400)
+	public static void aColumnOfWaterWithNoLogMakesNothingAndKeepsItsWater(GameTestHelper helper) {
+		waterColumn(helper, ItemStack.EMPTY, false);
+	}
+
 	@GameTest(template = "empty", timeoutTicks = 400)
 	public static void aColumnOfDieselWithBlazePowderStillMakesGasoline(GameTestHelper helper) {
 		dieselColumn(helper, Items.BLAZE_POWDER, CEFluids.GASOLINE.getSource());

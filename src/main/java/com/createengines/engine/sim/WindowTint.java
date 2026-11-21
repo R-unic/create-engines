@@ -11,7 +11,7 @@ public enum WindowTint {
 	AMBER(0xFFE8A030), PLANT_OIL(0xFF8A5E22), DIESEL(0xFFD9BA3B), GASOLINE(0xFFF0DC84), SUGAR_MASH(0xFFC9A765),
 	ETHANOL(0xFFD2F0F4), GLYCERIN(0xFFEBE2AA), USED_OIL(0xFF8E8882), COOLANT(0xFF6CE02E), ENGINE_OIL(0xFFE5A829),
 	/** Added last: the tint is a block state read by ordinal, so the older ones keep their numbers. */
-	KEROSENE(0xFFEDC98A);
+	KEROSENE(0xFFEDC98A), METHANOL(0xFFE2D4F2);
 
 	private final int colour;
 

@@ -68,6 +68,9 @@ public final class BasinHints {
 		List<RecipeHolder<RefiningRecipe>> routes = level.getRecipeManager()
 			.getAllRecipesFor(com.createengines.registry.CERecipes.REFINING.get());
 		for (FluidStack feed : feeds) {
+			// Water is in half the basins in a world (methanol's column route takes it), and a hint on every one of them is noise
+			if (feed.getFluid() == net.minecraft.world.level.material.Fluids.WATER)
+				continue;
 			for (RecipeHolder<RefiningRecipe> holder : routes) {
 				RefiningRecipe route = holder.value();
 				if (!route.feed()

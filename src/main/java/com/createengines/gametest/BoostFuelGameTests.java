@@ -108,6 +108,17 @@ public class BoostFuelGameTests {
 		});
 	}
 
+	/** Methanol is a spark fuel: a spark engine runs on it, and unboosted it never pre-ignites. */
+	@GameTest(template = "empty", timeoutTicks = 1200)
+	public static void aSparkEngineRunsOnMethanolAndItNeverPreignitesUnboosted(GameTestHelper helper) {
+		build(helper, CEFluids.METHANOL.get().getSource(), false, 0);
+		helper.runAtTickTime(900, () -> {
+			helper.assertTrue(summary(helper).state() == EngineState.RUNNING, "Engine should run on methanol: " + summary(helper));
+			helper.assertTrue(cylinder(helper).preignition() == 0f, "Nothing to pre-ignite without boost: " + cylinder(helper));
+			helper.succeed();
+		});
+	}
+
 	/** Gasoline at atmospheric pressure never pre-ignites, however long the engine runs. */
 	@GameTest(template = "empty", timeoutTicks = 1200)
 	public static void unboostedGasolineNeverPreignites(GameTestHelper helper) {

@@ -62,7 +62,7 @@ public class RefiningRecipeGameTests {
 	@GameTest(template = "empty")
 	public static void makesTellsWhichFluidsAColumnProduces(GameTestHelper helper) {
 		for (Object made : new Object[] {CEFluids.DIESEL.getSource(), CEFluids.GASOLINE.getSource(),
-			CEFluids.ETHANOL.getSource(), CEFluids.KEROSENE.getSource()})
+			CEFluids.ETHANOL.getSource(), CEFluids.KEROSENE.getSource(), CEFluids.METHANOL.getSource()})
 			if (!RefiningRecipe.makes(helper.getLevel(), of(made, 1)))
 				helper.fail("a column should make " + made);
 		for (Object not : new Object[] {CEFluids.PLANT_OIL.getSource(), CEFluids.ENGINE_OIL.getSource()})
@@ -148,11 +148,47 @@ public class RefiningRecipeGameTests {
 		return 0;
 	}
 
+	/** Methanol's two routes: a column (water, superheated, a log to each 250 mB) and a basin (250 mB of water and a log), the column ten percent over. */
+	@GameTest(template = "empty")
+	public static void methanolComesFromWaterAndLogsSuperheatedInAColumnOrABasin(GameTestHelper helper) {
+		FluidStack water = of(net.minecraft.world.level.material.Fluids.WATER, 1000);
+		RefiningRoute methanol = RefiningRecipe.find(helper.getLevel(), water, Heat.SUPERHEATED,
+			new net.minecraft.world.item.ItemStack(Items.OAK_LOG))
+			.orElseThrow()
+			.value()
+			.route();
+		if (methanol.feedMb() != 1000 || methanol.productMb() != 264 || methanol.catalystFeedMb() != 250
+			|| methanol.heat() != Heat.SUPERHEATED || methanol.speed() != 0.5)
+			helper.fail("methanol route read as " + methanol);
+		if (RefiningRecipe.find(helper.getLevel(), water, Heat.HEATED)
+			.isPresent())
+			helper.fail("a heated base is not enough for methanol");
+		if (!RefiningRecipe.takesCatalyst(helper.getLevel(), new net.minecraft.world.item.ItemStack(Items.SPRUCE_LOG)))
+			helper.fail("any log that burns is a catalyst for methanol");
+		if (RefiningRecipe.takesCatalyst(helper.getLevel(), new net.minecraft.world.item.ItemStack(Items.CRIMSON_STEM)))
+			helper.fail("a nether stem does not burn as a log and is not a catalyst");
+		var holder = helper.getLevel()
+			.getRecipeManager()
+			.byKey(CreateEngines.asResource("mixing/methanol"))
+			.orElseThrow();
+		var basin = (com.simibubi.create.content.processing.recipe.ProcessingRecipe<?, ?>) holder.value();
+		if (basin.getFluidResults()
+			.get(0)
+			.getAmount() != 60 || basin.getRequiredHeat() != com.simibubi.create.content.processing.recipe.HeatCondition.SUPERHEATED)
+			helper.fail("the basin methanol should be 60 mB over a superheated burner: " + basin);
+		helper.succeed();
+	}
+
 	@GameTest(template = "empty")
 	public static void aBasinHoldingFeedIsToldWhatAColumnWouldGive(GameTestHelper helper) {
 		int diesel = hintFor(helper, CEFluids.PLANT_OIL.getSource(), CEFluids.DIESEL.getSource());
 		int gasoline = hintFor(helper, CEFluids.DIESEL.getSource(), CEFluids.GASOLINE.getSource());
 		int ethanol = hintFor(helper, CEFluids.SUGAR_MASH.getSource(), CEFluids.ETHANOL.getSource());
+		if (hintFor(helper, net.minecraft.world.level.material.Fluids.WATER, CEFluids.METHANOL.getSource()) != 0
+			|| !com.createengines.content.refinery.BasinHints.hintsFor(helper.getLevel(),
+				java.util.List.of(of(net.minecraft.world.level.material.Fluids.WATER, 1000)))
+				.isEmpty())
+			helper.fail("a basin of water is told nothing, though a column takes water for methanol");
 		if (hintFor(helper, CEFluids.DIESEL.getSource(), CEFluids.KEROSENE.getSource()) != 10)
 			helper.fail("diesel should be told a column makes 10% more kerosene too");
 		if (diesel != 10 || gasoline != 10)

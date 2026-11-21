@@ -174,6 +174,7 @@ public final class CEDataMaps {
 	public static final TagKey<Fluid> GASOLINE = common("gasoline");
 	public static final TagKey<Fluid> ETHANOL = common("ethanol");
 	public static final TagKey<Fluid> KEROSENE = common("kerosene");
+	public static final TagKey<Fluid> METHANOL = common("methanol");
 	public static final TagKey<Fluid> PLANT_OIL = common("plantoil");
 
 	/**
@@ -197,6 +198,8 @@ public final class CEDataMaps {
 			return FuelSpec.ETHANOL;
 		if (inTag.test(KEROSENE))
 			return FuelSpec.KEROSENE;
+		if (inTag.test(METHANOL))
+			return FuelSpec.METHANOL;
 		if (inTag.test(PLANT_OIL))
 			return FuelSpec.PLANT_OIL;
 		return null;

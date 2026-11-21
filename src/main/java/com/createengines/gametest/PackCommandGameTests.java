@@ -103,6 +103,8 @@ public class PackCommandGameTests {
 			helper.fail("the report should say the fuel tags: " + lines);
 		if (!mentions(lines, "create_engines:kerosene   from the tag #c:kerosene"))
 			helper.fail("kerosene comes in by its tag, no data map entry, and the report should say so: " + lines);
+		if (!mentions(lines, "create_engines:methanol   from the tag #c:methanol"))
+			helper.fail("methanol comes in by its tag too, and the report should say so: " + lines);
 		helper.succeed();
 	}
 

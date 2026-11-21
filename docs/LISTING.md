@@ -49,7 +49,7 @@ your Create machines.
 | | |
 |---|---|
 | **Layouts** | Inline, V, flat and Wankel, with coupled crankshafts up to a V12 |
-| **Fuels** | Diesel, plant oil, gasoline, kerosene, ethanol and biodiesel, plus other mods' fuels |
+| **Fuels** | Diesel, plant oil, gasoline, kerosene, ethanol, methanol and biodiesel, plus other mods' fuels |
 | **Power** | Turbos, superchargers, intercoolers, flywheels and a 13-gear transmission |
 | **Tools** | Bank Builder, Timing Tool, Blueprints, Dynamometer, Black Box recorder, Engineer's Goggles |
 | **Learning** | A Ponder scene for every part, and advancement tracks |
@@ -100,7 +100,7 @@ your Create machines.
   shot of diesel
 - **Exhaust Heat Exchanger:** turns exhaust into basin heat, so an engine can cook its own fuel, and into boiler heat,
   so the exhaust can make steam for Create steam engines
-- **Other mods' fuels work:** anything tagged `c:diesel`, `c:gasoline`, `c:ethanol`, `c:kerosene` or `c:plantoil`, or given an entry
+- **Other mods' fuels work:** anything tagged `c:diesel`, `c:gasoline`, `c:ethanol`, `c:kerosene`, `c:methanol` or `c:plantoil`, or given an entry
   in the fuel data map
 - Starters, batteries and alternators, with Forge Energy output
 

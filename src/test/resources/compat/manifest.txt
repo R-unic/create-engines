@@ -4,6 +4,7 @@ data:data/c/tags/fluid/diesel.json
 data:data/c/tags/fluid/ethanol.json
 data:data/c/tags/fluid/gasoline.json
 data:data/c/tags/fluid/kerosene.json
+data:data/c/tags/fluid/methanol.json
 data:data/c/tags/fluid/plantoil.json
 data:data/create_engines/data_maps/fluid/fuel.json	5c568a10d7a15e48c70fcc368b664b93859e8b3c
 data:data/create_engines/loot_table/advancement/chief_engineer.json	28b298041108ca73ffe6fa38b375092b40c92113
@@ -119,6 +120,7 @@ data:data/create_engines/recipe/mixing/ethanol_superheated.json	494d31372e4334c8
 data:data/create_engines/recipe/mixing/gasoline.json	bce6670745b16a7fe3d489cc012aafef263cb5f8
 data:data/create_engines/recipe/mixing/gunpowder_from_soot.json	2c15a43be9f8e2a35afcc089bad39cacf51a57a8
 data:data/create_engines/recipe/mixing/kerosene.json	bf3070e6fedcb0d35497de5cca0f5f8e85629354
+data:data/create_engines/recipe/mixing/methanol.json	b9b3a8e24e055d9b4d9ec46c78fb1fa8c2078a90
 data:data/create_engines/recipe/mixing/used_oil_coking.json	99828c0102226fcafe8b7600386e421d4b0b77a7
 data:data/create_engines/recipe/muffler.json	864a395480f07c166f4a706285ed9600367c2c09
 data:data/create_engines/recipe/oil_filter.json	62c44a4d17bea6ba52f6a9c9a42859641b9e487f
@@ -133,6 +135,7 @@ data:data/create_engines/recipe/refining/ethanol.json	40004314b73890eeb46cc24fb2
 data:data/create_engines/recipe/refining/ethanol_superheated.json	a68d901592ac4e29f8e33a46b439c25238aa9209
 data:data/create_engines/recipe/refining/gasoline.json	511ec16d5d59c66c585d83576ef276dacf472daa
 data:data/create_engines/recipe/refining/kerosene.json	0c43d682c07d87ad0ba6e05254d1fd69bf61042f
+data:data/create_engines/recipe/refining/methanol.json	5042e780e85e42f9fe3380ef69e8f4e857794c62
 data:data/create_engines/recipe/rotor.json	bee80aa4d15f8ca51240133b1027badac7a49988
 data:data/create_engines/recipe/rotor_housing.json	732d9f6aa816024908b517c83ebd642a341ef764
 data:data/create_engines/recipe/soot_trap.json	67b41c2da2baf9b530e6f9167b5fb2e3596b94d2
@@ -567,6 +570,7 @@ reg:fluid:ethanol
 reg:fluid:gasoline
 reg:fluid:glycerin
 reg:fluid:kerosene
+reg:fluid:methanol
 reg:fluid:plant_oil
 reg:fluid:sugar_mash
 reg:fluid:used_oil

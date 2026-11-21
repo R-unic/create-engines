@@ -132,4 +132,16 @@ public record FuelSpec(double energyPerMb, double autoignitionTemp, double airPe
 	 * than gasoline, and better than gasoline at holding out against boost.
 	 */
 	public static final FuelSpec KEROSENE = new FuelSpec(38, 2.2, 1.55, 1.1, 0, 1, KEROSENE_PREIGNITION);
+
+	/**
+	 * Where methanol's charge starts to light early under boost: above ethanol's 5.0, so a build that pushes ethanol's limit has
+	 * room left on methanol.
+	 */
+	public static final double METHANOL_PREIGNITION = 6.5;
+	/**
+	 * The boost fuel with the least in the bucket: well under ethanol's energy to the mB, so an injector has to deliver far more
+	 * of it for the same air, but the hardest of any fuel to light early, the one that cools the charge most, and clean (no soot, no
+	 * sulfur). It needs a spark like ethanol and is the worst of the lot in a cold block.
+	 */
+	public static final FuelSpec METHANOL = new FuelSpec(22, 3.8, 0.8, 1.9, 0.17, 0, METHANOL_PREIGNITION);
 }
