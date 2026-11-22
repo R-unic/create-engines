@@ -184,6 +184,7 @@ All optional; none is needed to play.
   rich and less with a Soot Trap fitted. Nothing is read back into the engine, and a setting turns it off
 - **Create: Diesel Generators:** its diesel, biodiesel, gasoline, ethanol and plant oil burn in these engines
 - **KubeJS** and **CC: Tweaked:** read-only access to an engine's state, for scripts and computers
+- **Create Ultimate Factory:** recommended for building the factory around your engines. Nothing here depends on it, and the two have not been tested together
 - **JEI** and **EMI:** every fuel, refining route and engine part
 
 ## ✅ Requirements

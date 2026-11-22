@@ -181,6 +181,7 @@ All optional; none is needed to play.
 - **Jade** shows an engine's state when you look at its crankshaft, cylinder, head or rotor housing.
 - **Create Crafts & Additions**: an Alternator's Forge Energy charges its accumulators and motors (tested). Other mods' energy
   blocks should take it too; see [docs/INTEGRATIONS.md](docs/INTEGRATIONS.md) for which were tried.
+- **Create Ultimate Factory** is recommended for building the factory around your engines. Nothing in this mod depends on it, and the two have not been tested together.
 - **JEI** and **EMI** list every fuel, every refining route and every engine part. Sodium (also with Iris), Sound Physics
   Remastered, AmbientSounds and Flywheel on or off are tested to start and run together; no shader pack was tried.
 

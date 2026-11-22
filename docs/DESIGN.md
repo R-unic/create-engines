@@ -217,14 +217,16 @@ circles or per-pixel noise, and do not posterise to a few colours.
 - **Superheat payoff (2026-11-13).** Nothing in the fuel chain needs a superheated basin to work, but two recipes pay for
   one, which is the late-game reward for a big engine's Exhaust Heat Exchanger (about seven cylinders at speed):
   `mixing/ethanol_superheated` (250 mB mash, a ferment item and a sugar make 100 mB of ethanol, twice the heated yield)
-  and `mixing/engine_oil_recycled_superheated` (400 mB used oil, charcoal and a clay ball make 300 mB of engine oil
-  against 250). **Why the extra sugar and clay ball:** Create's `BasinOperatingBlockEntity.getMatchingRecipes` ranks the
+  and `mixing/engine_oil_recycled_superheated` (400 mB used oil and charcoal make 400 mB of engine oil, 1:1; the heated recipe now
+  needs a clay ball as well and makes 250). **Why the extra sugar and clay ball:** Create's `BasinOperatingBlockEntity.getMatchingRecipes` ranks the
   matching recipes only by how many item ingredients they have, most first, and ignores heat; a heated recipe still
   matches over a superheated burner. A superheated recipe with no more items than its heated twin would tie or lose
   (the used-oil coking recipe has no items at all), so each superheated recipe carries one more item than the heated one
   it improves on. `FuelRecipeGameTests` pins this: the superheated recipe is the unique top match at a seething burner,
   absent at a kindled one, and the heated recipe still runs when the extra item is missing. Keep this in mind for any
-  future heated/superheated pair: give the better one more items.
+  future heated/superheated pair: give the better one more items. **Exception, used oil recycling (the author's choice):** here
+  the superheated recipe has the fewer items (charcoal) and the heated one more (charcoal and a clay ball), so superheating is
+  the easy way. The cost is that a clay ball left in a superheated basin makes the heated recipe run; the test pins that too.
 - **Exhaust heat exchanger** (`HeatExchangerBlock`, a sensor on an exhaust network). The engine hands it its network's
   share of `CylinderModel.exhaustHeatLastTick` per second (about 3 per cylinder at speed, split between every exchanger
   on the network); it smooths that over about a second, turns it into a level with `HeatRecovery` (smouldering 1.5,

@@ -56,12 +56,15 @@ public class FuelRecipeGameTests {
 	}
 
 	@GameTest(template = "empty")
-	public static void superheatedRecyclingOutranksHeatedOnlyOverASuperheatedBurner(GameTestHelper helper) {
-		List<ItemStack> items = List.of(new ItemStack(Items.CHARCOAL), new ItemStack(Items.CLAY_BALL));
+	public static void superheatedRecyclingNeedsOnlyCharcoalAndTheHeatedOneAlsoClay(GameTestHelper helper) {
+		List<ItemStack> charcoal = List.of(new ItemStack(Items.CHARCOAL));
+		List<ItemStack> withClay = List.of(new ItemStack(Items.CHARCOAL), new ItemStack(Items.CLAY_BALL));
 		FluidStack used = new FluidStack((Fluid) CEFluids.USED_OIL.getSource(), 400);
-		assertRanksFirst(helper, "mixing/engine_oil_recycled_superheated", HeatLevel.SEETHING, items, used);
-		assertAbsent(helper, "mixing/engine_oil_recycled_superheated", HeatLevel.KINDLED, items, used);
-		assertRanksFirst(helper, "mixing/engine_oil_recycled", HeatLevel.KINDLED, items, used);
+		assertRanksFirst(helper, "mixing/engine_oil_recycled_superheated", HeatLevel.SEETHING, charcoal, used);
+		assertAbsent(helper, "mixing/engine_oil_recycled_superheated", HeatLevel.KINDLED, charcoal, used);
+		assertRanksFirst(helper, "mixing/engine_oil_recycled", HeatLevel.KINDLED, withClay, used);
+		// Charcoal alone does not run the heated recipe; it needs the clay.
+		assertAbsent(helper, "mixing/engine_oil_recycled", HeatLevel.KINDLED, charcoal, used);
 		helper.succeed();
 	}
 
@@ -70,7 +73,10 @@ public class FuelRecipeGameTests {
 	public static void withoutTheExtraItemTheHeatedRecipeRuns(GameTestHelper helper) {
 		assertRanksFirst(helper, "mixing/ethanol", HeatLevel.SEETHING, List.of(new ItemStack(Items.APPLE)),
 			new FluidStack((Fluid) CEFluids.SUGAR_MASH.getSource(), 250));
-		assertRanksFirst(helper, "mixing/engine_oil_recycled", HeatLevel.SEETHING, List.of(new ItemStack(Items.CHARCOAL)),
+		// Used oil is the other way round: the superheated recipe has the fewer items, so adding clay over a superheated
+		// burner runs the heated one.
+		assertRanksFirst(helper, "mixing/engine_oil_recycled", HeatLevel.SEETHING,
+			List.of(new ItemStack(Items.CHARCOAL), new ItemStack(Items.CLAY_BALL)),
 			new FluidStack((Fluid) CEFluids.USED_OIL.getSource(), 400));
 		helper.succeed();
 	}
