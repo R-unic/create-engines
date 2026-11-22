@@ -54,7 +54,8 @@ class ConfigMatrixTest {
 		new Switch("rotaryEngines", v -> Tuning.rotaryEngines = v),
 		new Switch("heatRecoveryEnabled", v -> Tuning.heatRecoveryEnabled = v),
 		new Switch("altitudeThinning", v -> Tuning.altitudeThinning = v),
-		new Switch("sableAirPressure", v -> Tuning.sableAirPressure = v));
+		new Switch("sableAirPressure", v -> Tuning.sableAirPressure = v),
+		new Switch("fuelFire", v -> Tuning.fuelFire = v));
 
 	@AfterEach
 	void resetTuning() {

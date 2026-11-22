@@ -5,6 +5,7 @@ import static com.createengines.CreateEngines.REGISTRATE;
 import java.util.function.Consumer;
 
 import com.createengines.CreateEngines;
+import com.createengines.content.fuel.FuelLiquidBlock;
 import com.tterrag.registrate.builders.FluidBuilder;
 import com.tterrag.registrate.providers.DataGenContext;
 import com.tterrag.registrate.providers.RegistrateItemModelProvider;
@@ -56,7 +57,7 @@ public final class CEFluids {
 				.slopeFindDistance(3)
 				.explosionResistance(100f))
 			.source(BaseFlowingFluid.Source::new)
-			.block()
+			.block(FuelLiquidBlock::new)
 			.properties(p -> p.mapColor(MapColor.TERRACOTTA_BROWN))
 			.build()
 			.bucket()
@@ -74,7 +75,7 @@ public final class CEFluids {
 				.slopeFindDistance(3)
 				.explosionResistance(100f))
 			.source(BaseFlowingFluid.Source::new)
-			.block()
+			.block(FuelLiquidBlock::new)
 			.properties(p -> p.mapColor(MapColor.TERRACOTTA_YELLOW))
 			.build()
 			.bucket()
@@ -93,7 +94,7 @@ public final class CEFluids {
 				.slopeFindDistance(4)
 				.explosionResistance(100f))
 			.source(BaseFlowingFluid.Source::new)
-			.block()
+			.block(FuelLiquidBlock::new)
 			.properties(p -> p.mapColor(MapColor.COLOR_YELLOW))
 			.build()
 			.bucket()
@@ -150,7 +151,7 @@ public final class CEFluids {
 				.slopeFindDistance(4)
 				.explosionResistance(100f))
 			.source(BaseFlowingFluid.Source::new)
-			.block()
+			.block(FuelLiquidBlock::new)
 			.properties(p -> p.mapColor(MapColor.COLOR_ORANGE))
 			.build()
 			.bucket()
@@ -169,7 +170,7 @@ public final class CEFluids {
 				.slopeFindDistance(4)
 				.explosionResistance(100f))
 			.source(BaseFlowingFluid.Source::new)
-			.block()
+			.block(FuelLiquidBlock::new)
 			.properties(p -> p.mapColor(MapColor.COLOR_PURPLE))
 			.build()
 			.bucket()
@@ -188,7 +189,7 @@ public final class CEFluids {
 				.slopeFindDistance(4)
 				.explosionResistance(100f))
 			.source(BaseFlowingFluid.Source::new)
-			.block()
+			.block(FuelLiquidBlock::new)
 			.properties(p -> p.mapColor(MapColor.ICE))
 			.build()
 			.bucket()
@@ -229,7 +230,7 @@ public final class CEFluids {
 				.slopeFindDistance(2)
 				.explosionResistance(100f))
 			.source(BaseFlowingFluid.Source::new)
-			.block()
+			.block(FuelLiquidBlock::new)
 			.properties(p -> p.mapColor(MapColor.COLOR_BLACK))
 			.build()
 			.bucket()

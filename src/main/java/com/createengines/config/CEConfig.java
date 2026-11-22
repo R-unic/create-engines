@@ -54,6 +54,7 @@ public final class CEConfig {
 
 	public static final ModConfigSpec.BooleanValue ALTITUDE_THINNING;
 	public static final ModConfigSpec.BooleanValue SABLE_AIR_PRESSURE;
+	public static final ModConfigSpec.BooleanValue FUEL_FIRE;
 	public static final ModConfigSpec.DoubleValue ALTITUDE_START;
 	public static final ModConfigSpec.DoubleValue ALTITUDE_SCALE;
 	public static final ModConfigSpec.DoubleValue ALTITUDE_FLOOR;
@@ -197,6 +198,10 @@ public final class CEConfig {
 				"engine's height, so it follows the dimension's pressure curve, datapacks included. Off, or without Sable,",
 				"the height curve below is used instead.")
 			.define("sableAirPressure", true));
+		FUEL_FIRE = value("compat.fuelFire", builder.comment(
+				"Liquid fuel lying in the world burns: fire, lava or burning fuel beside a pool lights it, and it burns off",
+				"in a wave through the pool, leaving fire where it was. Off, fuel on the ground only lies there as before.")
+			.define("fuelFire", true));
 		ALTITUDE_START = value("compat.altitudeStart", builder.comment(
 				"The height in blocks up to which the air is as thick as at sea level. Used when Sable's pressure is not.")
 			.defineInRange("altitudeStart", 128.0, -64.0, 100000.0));
@@ -288,6 +293,7 @@ public final class CEConfig {
 		Tuning.heatRecoveryEnabled = HEAT_RECOVERY_ENABLED.get();
 		Tuning.altitudeThinning = ALTITUDE_THINNING.get();
 		Tuning.sableAirPressure = SABLE_AIR_PRESSURE.get();
+		Tuning.fuelFire = FUEL_FIRE.get();
 		Tuning.altitudeStart = ALTITUDE_START.get();
 		Tuning.altitudeScale = ALTITUDE_SCALE.get();
 		Tuning.altitudeFloor = ALTITUDE_FLOOR.get();

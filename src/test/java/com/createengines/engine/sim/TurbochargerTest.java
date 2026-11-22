@@ -104,6 +104,51 @@ class TurbochargerTest {
 		}
 	}
 
+	/**
+	 * A big engine, or several turbos on one run, sends a tick more heat than the wastegate can answer in the same tick. The
+	 * wheel must not run away past the limit (it once reached tens of bar, then NaN, as the extra pressure made more heat).
+	 */
+	@Test
+	void aBigStackedEngineNeverRunsTheBoostAwayFromItsLimit() {
+		for (int count : new int[] {16, 64, 128})
+			for (int stack : new int[] {1, 2, 4})
+				for (double limit : new double[] {0.6, Turbocharger.MAX_LIMIT}) {
+					List<CylinderModel> cylinders = new ArrayList<>();
+					double[] tdc = {0, 0, 180, 180};
+					double[] lobe = {0, 180, 90, 270};
+					for (int i = 0; i < count; i++) {
+						CylinderModel cylinder =
+							new CylinderModel(CylinderSpec.CRUDE, CamProfile.BASIC, tdc[i % 4], new Camshaft(), lobe[i % 4]);
+						cylinder.fuelSupply = DIESEL;
+						cylinder.metering = 1;
+						cylinders.add(cylinder);
+					}
+					EngineSimulation engine = new EngineSimulation(cylinders, 1, 0.02);
+					for (CylinderModel cylinder : cylinders)
+						cylinder.resetGas(cylinder.pistonAngle(0, 1));
+					List<Turbocharger> turbos = new ArrayList<>();
+					for (int i = 0; i < stack; i++) {
+						Turbocharger turbo = new Turbocharger(cylinders, cylinders, 1);
+						turbo.limit = limit;
+						engine.addTurbo(turbo);
+						turbos.add(turbo);
+					}
+					for (int tick = 0; tick < 20 * 20; tick++) {
+						engine.tickDriven(EngineSimulation.rpmToOmega(256), 1);
+						for (Turbocharger turbo : turbos)
+							assertTrue(turbo.boost() <= limit + 1 + 1e-9,
+								count + " cylinders, " + stack + " turbos, limit " + limit + ": boost " + turbo.boost());
+					}
+				}
+	}
+
+	@Test
+	void aWheelThatIsNotANumberIsStoppedRatherThanKept() {
+		Rig rig = new Rig(true, DIESEL, 1, Double.NaN);
+		rig.drive(128, 2);
+		assertTrue(Double.isFinite(rig.turbo.boost()), "boost " + rig.turbo.boost());
+	}
+
 	@Test
 	void dumpingTheBoostBlowsItOffAndItBuildsAgain() {
 		Rig rig = new Rig(true, DIESEL, 1, 2);
@@ -226,5 +271,41 @@ class TurbochargerTest {
 		assertEquals(1, plain.cylinders.getFirst().intakePressure);
 		assertEquals(1, plain.cylinders.getFirst().exhaustPressure);
 		assertTrue(plain.engine.turbos().isEmpty());
+	}
+
+	/** Energy a wheel holds at a given boost: the inverse of {@code boost()}, with the wheel inertia of 40. */
+	private static double wheelEnergyAt(double boost, double flow) {
+		return boost / Turbocharger.FULL_BOOST * 40 * flow * flow / 2;
+	}
+
+	/** The runaway ceiling sits exactly one atmosphere over the limit, whatever the flow, so a wheel thrown far past it lands there. */
+	@Test
+	void aWheelThrownPastTheCeilingLandsOnItExactly() {
+		for (double flow : new double[] {1, 2, 3.5})
+			for (double limit : new double[] {0.6, 1.2, Turbocharger.MAX_LIMIT}) {
+				Rig rig = new Rig(true, DIESEL, 1, limit);
+				rig.turbo.flow = flow;
+				rig.turbo.energy = wheelEnergyAt(limit + 3, flow);
+				rig.turbo.tick(0.05);
+				assertEquals(limit + 1, rig.turbo.boost(), 1e-9, "flow " + flow + ", limit " + limit);
+			}
+	}
+
+	@Test
+	void aNegativeLimitStillCeilingsAtOneAtmosphere() {
+		Rig rig = new Rig(true, DIESEL, 1, -3);
+		rig.turbo.energy = wheelEnergyAt(3, 1);
+		rig.turbo.tick(0.05);
+		assertEquals(1, rig.turbo.boost(), 1e-9);
+	}
+
+	@Test
+	void aNaNOrInfiniteWheelIsStopped() {
+		for (double bad : new double[] {Double.NaN, Double.POSITIVE_INFINITY}) {
+			Rig rig = new Rig(true, DIESEL, 1, 0.6);
+			rig.turbo.energy = bad;
+			rig.turbo.tick(0.05);
+			assertTrue(Double.isFinite(rig.turbo.boost()) && rig.turbo.boost() <= 1.6 + 1e-9, "from " + bad);
+		}
 	}
 }

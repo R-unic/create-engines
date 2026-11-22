@@ -45,6 +45,8 @@ public final class Turbocharger {
 	private static final double BEARING_DRAG = 0.05;
 	/** How far above its limit the boost has to climb before the wastegate is fully open. */
 	private static final double WASTEGATE_BAND = 0.1;
+	/** How far above its limit the boost may climb before the wheel is held, atmospheres: only a runaway gets this far. */
+	private static final double RUNAWAY_MARGIN = 1;
 	/** Share of the isentropic temperature rise that the compressor actually puts into the air. */
 	private static final double COMPRESSOR_EFFICIENCY = 0.7;
 	private static final double HEAT_EXPONENT = 0.3 / 1.3;
@@ -102,7 +104,8 @@ public final class Turbocharger {
 	 */
 	public double flow = 1;
 
-	private double energy;
+	/** Package-visible so the ceiling on it can be tested at an exact value. */
+	double energy;
 	private double bypass;
 	private double vanes;
 	private boolean antiLagging;
@@ -222,6 +225,16 @@ public final class Turbocharger {
 		double spool = spool();
 		double drain = flow * (COMPRESSOR_POWER * spool * spool * spool + BEARING_DRAG * spool);
 		energy = Math.max(0, energy + (power * (1 - bypass) - drain) * dt);
+		// The wastegate reads the boost at the start of the tick, so a big or stacked engine's heat can throw the wheel far past
+		// the limit in one tick, and the extra intake pressure then makes more heat, round and round until the boost is tens of
+		// bar and then not a number. This is a ceiling for that runaway only: well above anything a gate that is working lets by
+		energy = Math.min(energy, energyAt(Math.max(0, limit) + RUNAWAY_MARGIN));
+		if (!Double.isFinite(energy))
+			energy = 0;
+	}
 
+	/** Wheel energy at which the compressor makes the given boost. */
+	private double energyAt(double boost) {
+		return boost / FULL_BOOST * INERTIA * flow * flow / 2;
 	}
 }

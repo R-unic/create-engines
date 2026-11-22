@@ -41,6 +41,8 @@ public final class Tuning {
 	public static volatile boolean altitudeThinning = true;
 	/** Whether, with Sable installed, the air's thickness is Sable's own air pressure where the engine is, see {@link Altitude}. */
 	public static volatile boolean sableAirPressure = true;
+	/** Whether liquid fuel lying in the world burns when lit, see {@code FuelLiquidBlock}. */
+	public static volatile boolean fuelFire = true;
 	/** Height from which the air thins when no pressure is read from Sable, see {@link Altitude#START}. */
 	public static volatile double altitudeStart = Altitude.START;
 	/** Blocks of climb per e-fold of thinning when no pressure is read from Sable, see {@link Altitude#SCALE}. */
@@ -77,6 +79,7 @@ public final class Tuning {
 		heatRecoveryEnabled = true;
 		altitudeThinning = true;
 		sableAirPressure = true;
+		fuelFire = true;
 		altitudeStart = Altitude.START;
 		altitudeScale = Altitude.SCALE;
 		altitudeFloor = Altitude.FLOOR;

@@ -107,6 +107,7 @@ class SharedStateConcurrencyTest {
 					Tuning.heatRecoveryEnabled = random.nextBoolean();
 					Tuning.altitudeThinning = random.nextBoolean();
 					Tuning.sableAirPressure = random.nextBoolean();
+					Tuning.fuelFire = random.nextBoolean();
 					Tuning.altitudeStart = edge(random, -64, 100000);
 					Tuning.altitudeScale = edge(random, 1, 100000);
 					Tuning.altitudeFloor = edge(random, 0.01, 1);

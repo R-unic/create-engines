@@ -211,13 +211,24 @@ that changes how an existing engine behaves says so in its changelog.
 
 ## Changelog for 2.0.1
 
-A patch for 2.0.0: Create Aeronautics fixes, finer control of thin air and pollution, Create: Diesel Generators fuels, and a
-Heavy Starter Ponder page. No ID, key or saved format is renamed or removed. Two defaults move, listed first.
+A patch for 2.0.0: Create Aeronautics fixes, finer control of thin air and pollution, Create: Diesel Generators fuels, a Heavy
+Starter Ponder page, a fix for a turbocharger that could run away, and fuel that burns when lit. No ID, key or saved format is
+renamed or removed. Three behaviours change by default, listed first.
 - Changed behaviour, thin air: the thinnest air an engine is given is now a quarter of sea level (was a fifth). Engines below
   about y 1800 are exactly as they were; above that they get a little more air than in 2.0.0 (the baseline sweep of a six-cylinder
   spark engine in the thinnest air starts at 0.48, was 0.08). This is `compat.altitudeFloor`, which can be set back to 0.2.
 - Changed behaviour, pollution: the default `compat.pollutionRate` is 0.25 (was 1.0), so a new config puts out a quarter of the
   gas. A config file that already holds a value keeps it. The rate's meaning is unchanged: 1 is the full amount.
+- Changed behaviour, fuel fire: liquid fuel lying in the world now burns. A pool of one of this mod's fluids that engines
+  burn (plant oil, diesel, gasoline, kerosene, methanol, ethanol, used oil; not engine oil, sugar mash, glycerin or coolant) that
+  has fire, lava, magma, a lit campfire or burning fuel beside it catches within a moment and burns off block by block, a few
+  ticks apart, leaving fire where it was. A source block on top of a pillar burns out instead of pouring for ever. Fuel inside
+  tanks, pipes and engines is not a block and does not burn. `compat.fuelFire` (default on) turns it off, and fuel then lies
+  there as it did in 2.0.0. Every fuel burns alike; none is harder to light than another.
+- Fix, turbochargers: a big or stacked engine could throw a turbo's wheel far past its boost limit in a single tick, and the extra
+  intake pressure made still more heat, until the boost was tens of bar and then not a number. The wheel's energy is now held to
+  that of one atmosphere above the limit (a wastegate that is working never lets the boost that high, so a normal turbo is
+  unchanged), and a wheel that is not a number is stopped.
 - New, pollution (only with Pollution of the Realms installed; nothing is read back into an engine): `compat.pollutionAreaCap`,
   off by default (0). Set above 0, an outlet stops releasing while the 7 by 7 by 7 block cube in front of it already holds that
   many steps of carbon and sulfur together, and starts again as the gas thins, so a factory stays hazy instead of growing
@@ -226,7 +237,7 @@ Heavy Starter Ponder page. No ID, key or saved format is renamed or removed. Two
 - New, Create Aeronautics: with Sable installed, the air an engine breathes is Sable's own air pressure at its height, so a
   datapack that changes the dimension's pressure curve changes the engine. If Sable does not answer, the height curve is used
   and one warning is logged. `compat.sableAirPressure` (default on) turns it off.
-- New config, `[compat]`: `sableAirPressure`, `altitudeStart` (128, -64 to 100000), `altitudeScale` (1200, 1 to 100000),
+- New config, `[compat]`: `fuelFire` (true), `sableAirPressure`, `altitudeStart` (128, -64 to 100000), `altitudeScale` (1200, 1 to 100000),
   `altitudeFloor` (0.25, 0.01 to 1), `carbonRate` and `sulfurRate` (1.0, 0 to 10, each on top of `pollutionRate`),
   `pollutionAreaCap` (0, off; 0 to 100000) and `pollutionEngineCeiling` (0, off; the most steps of each gas one engine may release per minute).
   The defaults leave the height curve as it was in 2.0.0, apart from the floor above.
@@ -241,7 +252,8 @@ Heavy Starter Ponder page. No ID, key or saved format is renamed or removed. Two
   the `c:diesel`, `c:gasoline`, `c:ethanol` and `c:plantoil` fluid tags as optional entries, so they burn in these engines and
   the tags still load without that mod. Only the tags were checked; a game with that mod has not been run.
 - New Ponder page for the Heavy Starter (it had none).
-- Tests added: air pressure and curve (`AltitudeTest`), config extremes for the new settings (`ConfigMatrixTest`,
+- Tests added: the turbo's runaway ceiling (`TurbochargerTest`), fuel fire on and off (`FuelFireGameTests`, `ConfigMatrixTest`,
+  `SharedStateConcurrencyTest`), air pressure and curve (`AltitudeTest`), config extremes for the new settings (`ConfigMatrixTest`,
   `SharedStateConcurrencyTest`), gas rates and the engine ceiling (`EmissionsTest`), the area cap (`PollutionGameTests`, run with the mod), crank phase (`RenderRotationTest`), the Heavy Starter page
   (`PonderCoverageTest`), the optional fuel tags (`DieselGeneratorsFuelTagsTest`) and two Sable GameTests (pressure falls with
   height; a part on a structure is in view where the structure is). `compat/behaviour.txt` changed on three lines (the altitude at 5000 and two thin-air sweeps), all from the floor.
