@@ -3711,6 +3711,24 @@ public final class EngineScenes {
 			.placeNearTarget();
 		scene.idle(150);
 
+		scene.overlay()
+			.showText(150)
+			.attachKeyFrame()
+			.colored(PonderPalette.RED)
+			.text("For the most heat, add burning cylinders on the one exhaust: each running at speed on a full shot gives about 3 heat per second, and they add up along a shared manifold. An idle or unfired cylinder gives nothing.")
+			.pointAt(util.vector()
+				.topOf(exchanger))
+			.placeNearTarget();
+		scene.idle(160);
+		scene.overlay()
+			.showText(150)
+			.colored(PonderPalette.RED)
+			.text("Use one exchanger on an exhaust for a hot basin: exchangers on the same exhaust split its heat between them. Goggles show the heat per second; 6 heats a basin, 20 superheats it.")
+			.pointAt(util.vector()
+				.topOf(exchanger))
+			.placeNearTarget();
+		scene.idle(160);
+
 		scene.world()
 			.hideSection(mixer, Direction.UP);
 		scene.idle(15);
