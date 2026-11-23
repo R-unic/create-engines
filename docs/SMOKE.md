@@ -18,7 +18,7 @@ Run it in a private copy of the checkout (see "Running it"): other Gradle runs a
 
 | Layer | Command | Time | Catches |
 |---|---|---|---|
-| Unit tests | `./gradlew test` | seconds | simulation maths, parsers, sound synthesis, **the harness's own logic** (46 tests) |
+| Unit tests | `./gradlew test` | seconds | simulation maths, parsers, sound synthesis, **the harness's own logic** (the tests in the `smoke` package) |
 | GameTests | `./gradlew runGameTestServer` (verified by `verifyGameTests`) | ~1 min | engine behaviour; **every block, item, fluid, recipe, loot table and advancement complete; every block entity placed, ticked, saved, loaded, fed garbage and broken in every sampled state; 16 engines at once under a tick budget; engines whose chunks unload, load staggered, stop ticking, or straddle a border; every tuning setting at both ends of its range** |
 | Client audit | `./gradlew runSmokeAudit` (verified by `verifyClientSmoke`) | ~2 min | **every block state's model and sprites, every item model, translation, sound, particle sheet and Flywheel partial; all 99 Ponder storyboards played to their end; six engines, a refinery, a turbo and a supercharger run for a minute with heap, direct memory, particles, sound voices and frame times tracked; the player walking 3000 blocks away and back; screenshots judged by pixels** |
 | Log check | automatic after each run above | seconds | errors the game does not call failures: missing model/texture/sound/recipe messages, stack traces, `OutOfMemoryError`, stale classes, anything logged at ERROR, a crash report |
