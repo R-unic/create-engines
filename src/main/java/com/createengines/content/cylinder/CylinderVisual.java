@@ -2,7 +2,9 @@ package com.createengines.content.cylinder;
 
 import java.util.function.Consumer;
 
+import com.createengines.content.AnimationDiagnostic;
 import com.createengines.content.EnginePoses;
+import com.createengines.content.crankshaft.CrankshaftBlockEntity;
 import com.createengines.content.StructureCulling;
 import com.createengines.registry.CEPartialModels;
 
@@ -45,6 +47,10 @@ public class CylinderVisual extends AbstractBlockEntityVisual<CylinderBlockEntit
 		pushrods = new TransformedInstance[] {instance(CEPartialModels.PUSHROD), instance(CEPartialModels.PUSHROD),
 			instance(CEPartialModels.ROCKER), instance(CEPartialModels.ROCKER)};
 		animate();
+		if (AnimationDiagnostic.ENABLED)
+			org.slf4j.LoggerFactory.getLogger("CreateEngines")
+				.info("[animation diagnostic] cylinder visual created at {} (visualPos {}, onStructure {})", pos, visualPos,
+					com.createengines.compat.sable.SableCompat.onStructure(level, pos));
 	}
 
 	private TransformedInstance instance(dev.engine_room.flywheel.lib.model.baked.PartialModel model) {
@@ -55,7 +61,15 @@ public class CylinderVisual extends AbstractBlockEntityVisual<CylinderBlockEntit
 	@Override
 	public void beginFrame(DynamicVisual.Context context) {
 		// Posed from the render time, so it is exact again the frame it comes back into view
-		if (!StructureCulling.visible(level, pos, visualPos, context.frustum(), isVisible(context.frustum())))
+		boolean plotVisible = isVisible(context.frustum());
+		boolean visible = StructureCulling.visible(level, pos, visualPos, context.frustum(), plotVisible);
+		if (AnimationDiagnostic.ENABLED) {
+			float time = AnimationTickHolder.getRenderTime(level);
+			CrankshaftBlockEntity crank = blockEntity.crankThrow();
+			AnimationDiagnostic.frame(level, pos, visualPos, plotVisible, visible, time, crank == null ? Double.NaN : crank.getTheoreticalSpeed(),
+				crank == null ? Double.NaN : EnginePoses.drawnShaft(crank, time), EnginePoses.cylinder(blockEntity, time), lastPose);
+		}
+		if (!visible)
 			return;
 		animate();
 	}

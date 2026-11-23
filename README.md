@@ -53,7 +53,7 @@ Minecraft 1.21.1 · NeoForge 21.1.219 · Create 6.0.10
   with spark ignition for the ones that need it. Kerosene is the all-rounder between diesel and gasoline that holds out
   against boost better than gasoline; methanol carries the least in the bucket and cools the charge most, so it is the
   fuel to push a boosted build with, at a heavy fuel bill
-- A craftable fuel chain: seeds to plant oil to diesel, diesel to kerosene with glowstone, sugar crops to ethanol, logs and
+- A craftable fuel chain: seeds (or saplings, sunflowers, cocoa beans, dried kelp) to plant oil to diesel, diesel to kerosene with glowstone, sugar crops to ethanol, logs and
   water to methanol over a superheated base, and biodiesel with glycerin on the
   side, all in Create basins. The loop closes: glycerin goes into engine oil and coolant, and used oil is burned as fuel or recycled into oil or charcoal
 - A **Refining Column**, a multiblock that makes the same fuels better than a basin: a square of Reboilers (1 to 3

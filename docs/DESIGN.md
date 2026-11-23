@@ -213,10 +213,10 @@ circles or per-pixel noise, and do not posterise to a few colours.
   and a better engine oil from plant oil and glycerin. Ethanol is a spark fuel with the highest autoignition point
   (3.4 against gasoline's 2.7), so boost-heated charge will not light it early, but it carries 27 energy per mB against
   gasoline's 40. Gasoline is cracked from diesel with blaze powder in a heated basin, no longer superheated, so it costs no more to refine than
-  diesel does. Ethanol is the dear one: 250 mB of mash and an apple or mushroom make only 50 mB (it was 100), and biodiesel takes 25 mB of it a batch, so the late-game precision boost builds that want its autoignition margin pay for it in crops. The ferments_mash item tag (apple, brown and red mushroom, c:mushrooms) lists what ferments it. Plant Oil also presses from two saplings (50 mB), alongside six seeds (100 mB).
+  diesel does. Ethanol is the dear one: 250 mB of mash and an apple or mushroom make only 50 mB (it was 100), and biodiesel takes 25 mB of it a batch, so the late-game precision boost builds that want its autoignition margin pay for it in crops. The ferments_mash item tag (apple, brown and red mushroom, c:mushrooms) lists what ferments it. Plant Oil also presses from two saplings (50 mB), alongside six seeds (100 mB), two sunflowers (50 mB), four cocoa beans (50 mB) or six dried kelp (50 mB).
 - **Superheat payoff (2026-11-13).** Nothing in the fuel chain needs a superheated basin to work, but two recipes pay for
   one, which is the late-game reward for a big engine's Exhaust Heat Exchanger (about seven cylinders at speed):
-  `mixing/ethanol_superheated` (250 mB mash, a ferment item and a sugar make 100 mB of ethanol, twice the heated yield)
+  `mixing/ethanol_superheated` (250 mB mash and a ferment item make 70 mB of ethanol, twice the heated yield; the heated recipe now needs a sugar as well)
   and `mixing/engine_oil_recycled_superheated` (400 mB used oil and charcoal make 400 mB of engine oil, 1:1; the heated recipe now
   needs a clay ball as well and makes 250). **Why the extra sugar and clay ball:** Create's `BasinOperatingBlockEntity.getMatchingRecipes` ranks the
   matching recipes only by how many item ingredients they have, most first, and ignores heat; a heated recipe still
@@ -224,9 +224,9 @@ circles or per-pixel noise, and do not posterise to a few colours.
   (the used-oil coking recipe has no items at all), so each superheated recipe carries one more item than the heated one
   it improves on. `FuelRecipeGameTests` pins this: the superheated recipe is the unique top match at a seething burner,
   absent at a kindled one, and the heated recipe still runs when the extra item is missing. Keep this in mind for any
-  future heated/superheated pair: give the better one more items. **Exception, used oil recycling (the author's choice):** here
-  the superheated recipe has the fewer items (charcoal) and the heated one more (charcoal and a clay ball), so superheating is
-  the easy way. The cost is that a clay ball left in a superheated basin makes the heated recipe run; the test pins that too.
+  future heated/superheated pair: give the better one more items. **Exception, used oil recycling and ethanol (the author's choice):** here
+  the superheated recipe has the fewer items (charcoal; the ferment item) and the heated one more (plus a clay ball; plus a sugar), so superheating is
+  the easy way. The cost is that a clay ball or sugar left in a superheated basin makes the heated recipe run; the tests pin that too.
 - **Exhaust heat exchanger** (`HeatExchangerBlock`, a sensor on an exhaust network). The engine hands it its network's
   share of `CylinderModel.exhaustHeatLastTick` per second (about 3 per cylinder at speed, split between every exchanger
   on the network); it smooths that over about a second, turns it into a level with `HeatRecovery` (smouldering 1.5,

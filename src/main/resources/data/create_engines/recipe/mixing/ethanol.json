@@ -9,6 +9,9 @@
     },
     {
       "tag": "create_engines:ferments_mash"
+    },
+    {
+      "item": "minecraft:sugar"
     }
   ],
   "results": [

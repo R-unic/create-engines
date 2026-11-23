@@ -263,7 +263,7 @@ Replace a route like any recipe, by providing a file at the same path; remove on
 | `data/create_engines/tags/fluid/poor_lubricants.json` | fluids an engine's oil pan accepts as **oil enough in a pinch** (poorly: they lubricate, but badly). The shipped tag holds plant oil and the common plant-oil fluid tags from other mods; add a fluid to make it a poor lubricant |
 | `data/create_engines/tags/item/ferments_mash.json` | items that ferment sugar mash into ethanol in the mod's Create mixing recipes (the shipped tag holds apples and mushrooms) |
 | `data/neoforge/data_maps/item/furnace_fuels.json` | the burn time of soot as a furnace fuel (200 ticks); a vanilla data map |
-| `data/create_engines/recipe/mixing`, `compacting` | the mod's own recipes for **Create's** mixing and compacting (plant oil and sugar mash, biodiesel, engine oil, ethanol, soot) |
+| `data/create_engines/recipe/mixing`, `compacting` | the mod's own recipes for **Create's** mixing and compacting (plant oil and sugar mash, biodiesel, engine oil (slime, glycerin, magma cream or clay), ethanol, soot) |
 | `data/create_engines/recipe/*.json` | crafting and the other recipes of the mod's blocks and items |
 
 All of these are ordinary data pack content: replace or remove them the way you would any mod's recipes. In 2.x the mod's own

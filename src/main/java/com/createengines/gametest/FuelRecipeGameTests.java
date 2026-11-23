@@ -46,12 +46,14 @@ public class FuelRecipeGameTests {
 	}
 
 	@GameTest(template = "empty")
-	public static void superheatedEthanolOutranksHeatedOnlyOverASuperheatedBurner(GameTestHelper helper) {
-		List<ItemStack> items = List.of(new ItemStack(Items.APPLE), new ItemStack(Items.SUGAR));
+	public static void superheatedEthanolNeedsNoSugarAndTheHeatedOneDoes(GameTestHelper helper) {
+		List<ItemStack> apple = List.of(new ItemStack(Items.APPLE));
+		List<ItemStack> withSugar = List.of(new ItemStack(Items.APPLE), new ItemStack(Items.SUGAR));
 		FluidStack mash = new FluidStack((Fluid) CEFluids.SUGAR_MASH.getSource(), 250);
-		assertRanksFirst(helper, "mixing/ethanol_superheated", HeatLevel.SEETHING, items, mash);
-		assertAbsent(helper, "mixing/ethanol_superheated", HeatLevel.KINDLED, items, mash);
-		assertRanksFirst(helper, "mixing/ethanol", HeatLevel.KINDLED, items, mash);
+		assertRanksFirst(helper, "mixing/ethanol_superheated", HeatLevel.SEETHING, apple, mash);
+		assertAbsent(helper, "mixing/ethanol_superheated", HeatLevel.KINDLED, apple, mash);
+		assertRanksFirst(helper, "mixing/ethanol", HeatLevel.KINDLED, withSugar, mash);
+		assertAbsent(helper, "mixing/ethanol", HeatLevel.KINDLED, apple, mash);
 		helper.succeed();
 	}
 
@@ -71,7 +73,10 @@ public class FuelRecipeGameTests {
 	/** Without the extra item the heated recipe is the one that runs, even over a superheated burner. */
 	@GameTest(template = "empty")
 	public static void withoutTheExtraItemTheHeatedRecipeRuns(GameTestHelper helper) {
-		assertRanksFirst(helper, "mixing/ethanol", HeatLevel.SEETHING, List.of(new ItemStack(Items.APPLE)),
+		// Ethanol is the other way round, like used oil: the superheated recipe has the fewer items, so sugar added over a
+		// superheated burner runs the heated one.
+		assertRanksFirst(helper, "mixing/ethanol", HeatLevel.SEETHING,
+			List.of(new ItemStack(Items.APPLE), new ItemStack(Items.SUGAR)),
 			new FluidStack((Fluid) CEFluids.SUGAR_MASH.getSource(), 250));
 		// Used oil is the other way round: the superheated recipe has the fewer items, so adding clay over a superheated
 		// burner runs the heated one.

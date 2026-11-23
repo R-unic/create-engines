@@ -1,0 +1,17 @@
+{
+  "type": "create:compacting",
+  "ingredients": [
+    {
+      "item": "minecraft:sunflower"
+    },
+    {
+      "item": "minecraft:sunflower"
+    }
+  ],
+  "results": [
+    {
+      "amount": 50,
+      "id": "create_engines:plant_oil"
+    }
+  ]
+}
