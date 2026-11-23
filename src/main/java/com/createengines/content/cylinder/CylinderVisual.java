@@ -67,7 +67,7 @@ public class CylinderVisual extends AbstractBlockEntityVisual<CylinderBlockEntit
 			float time = AnimationTickHolder.getRenderTime(level);
 			CrankshaftBlockEntity crank = blockEntity.crankThrow();
 			AnimationDiagnostic.frame(level, pos, visualPos, plotVisible, visible, time, crank == null ? Double.NaN : crank.getTheoreticalSpeed(),
-				crank == null ? Double.NaN : EnginePoses.drawnShaft(crank, time), EnginePoses.cylinder(blockEntity, time), lastPose, context.camera());
+				crank == null ? Double.NaN : EnginePoses.drawnShaft(crank, time), EnginePoses.cylinder(blockEntity, time), lastPose);
 		}
 		if (!visible)
 			return;

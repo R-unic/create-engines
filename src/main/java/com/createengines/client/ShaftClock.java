@@ -20,6 +20,10 @@ public final class ShaftClock {
 		Minecraft minecraft = Minecraft.getInstance();
 		if (minecraft.level == null)
 			return;
+		if (com.createengines.content.AnimationDiagnostic.ENABLED) {
+			net.minecraft.client.Camera camera = minecraft.gameRenderer.getMainCamera();
+			com.createengines.content.AnimationDiagnostic.camera(camera.getPosition(), new org.joml.Vector3f(camera.getLookVector()));
+		}
 		float partial = event.getPartialTick()
 			.getGameTimeDeltaPartialTick(false);
 		RenderRotation.setShaftTimeShift(minecraft.levelRenderer.ticks + partial - AnimationTickHolder.getRenderTime(minecraft.level));
