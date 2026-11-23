@@ -50,7 +50,11 @@ public final class StructureCulling {
 	public static boolean visible(Level level, BlockPos pos, Vec3i renderOrigin, FrustumIntersection frustum, boolean plotVisible) {
 		if (level == null || !SableCompat.onStructure(level, pos))
 			return plotVisible;
-		Vec3 world = SableCompat.worldPosition(level, pos);
+		return inView(SableCompat.worldPosition(level, pos), renderOrigin, frustum);
+	}
+
+	/** Whether a part at {@code world} is in a frustum that is relative to {@code renderOrigin}. */
+	public static boolean inView(Vec3 world, Vec3i renderOrigin, FrustumIntersection frustum) {
 		return frustum.testSphere((float) (world.x - renderOrigin.getX()), (float) (world.y - renderOrigin.getY()),
 			(float) (world.z - renderOrigin.getZ()), RADIUS);
 	}
