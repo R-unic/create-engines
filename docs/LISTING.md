@@ -210,6 +210,30 @@ that changes how an existing engine behaves says so in its changelog.
 - [Design notes](https://github.com/R-unic/create-engines/blob/master/docs/DESIGN.md), how the simulation works
 ```
 
+## Changelog for 2.0.2
+
+A small patch for 2.0.1: more ways to make plant oil and engine oil, two fuel recipes that cost differently, and a longer Heat
+Exchanger Ponder page. No ID, key or saved format is renamed or removed. Four existing recipes change, listed first.
+- Changed behaviour, used-oil recycling: engine oil from used oil over a superheated burner now takes used oil and charcoal
+  only (no clay) and returns 400 mB of engine oil (was 300 with clay). The heated recipe now also takes the clay ball, so adding
+  clay over a superheated burner runs the heated recipe instead.
+- Changed behaviour, ethanol: the superheated recipe no longer takes sugar (it is 250 mB mash and a fermenting item, still 70 mB
+  of ethanol), and the heated recipe now does. Over a superheated burner, add sugar to run the heated recipe.
+- New, plant oil: two sunflowers, four cocoa beans or six dried kelp press to 50 mB of plant oil each, in a basin with a
+  press, beside the six seeds (100 mB) and two saplings (50 mB) that already did. None of the new ones gives more per item than
+  a sapling.
+- New, engine oil: 250 mB plant oil with a magma cream, heated, makes 250 mB of engine oil (as with a slime ball); 250 mB plant
+  oil with two clay balls, heated, makes 200 mB.
+- Ponder: the Heat Exchanger page says how to get the most heat (more burning cylinders on one exhaust; one exchanger per
+  exhaust). Two new lines were added, so the boiler line is now `create_engines.ponder.heat_exchanger.text_8` (was `text_6`);
+  these are generated text keys, not saved data.
+- New, for finding a bug: starting the game with `-Dcreateengines.animationDiagnostic=true` logs once a second why one cylinder
+  is or is not animating. Off by default; changes nothing that is drawn.
+- Create Ultimate Factory is named in the README and this page as a recommended companion. Nothing depends on it, and the two
+  have not been tested together.
+- Tests added: `PlantOilSourcesTest`, `EngineOilSourcesTest`; `FuelRecipeGameTests` follows the ethanol and used-oil changes.
+  `compat/manifest.txt` has 5 lines added and 4 changed (the four recipes above).
+
 ## Changelog for 2.0.1
 
 A patch for 2.0.0: Create Aeronautics fixes, finer control of thin air and pollution, Create: Diesel Generators fuels, a Heavy
