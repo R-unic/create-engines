@@ -35,6 +35,9 @@ public class AnimationDiagnosticGameTests {
 			.add(0, 0, -10);
 		Vector3f ahead = new Vector3f(0, 0, 1);
 		Vector3f aside = new Vector3f(1, 0, 0);
+		// The client hands the camera over once a frame; switched off, a frame is not even counted
+		AnimationDiagnostic.camera(camera, ahead);
+		AnimationDiagnostic.frame(helper.getLevel(), pos, pos, true, true, 1f, 100, 90, pose, null);
 
 		String first = AnimationDiagnostic.record(0, helper.getLevel(), pos, pos, true, true, 1f, 100, 90, pose, null, camera, ahead);
 		if (first == null || !first.contains("frames=1 skippedOutOfView=0 posed=1 poseChanged=1 ")
@@ -58,6 +61,7 @@ public class AnimationDiagnosticGameTests {
 		Matrix4f projection = new Matrix4f().perspective((float) Math.toRadians(70), 1.6f, 0.05f, 256f);
 		FrustumIntersection frustum = new FrustumIntersection(new Matrix4f(projection).mul(view));
 		Vec3i origin = new Vec3i(1000, 0, 1000);
+		BlockPos ground = helper.absolutePos(BlockPos.ZERO);
 
 		if (!StructureCulling.inView(new Vec3(0, 0, 10), Vec3i.ZERO, frustum))
 			helper.fail("A part ahead of the camera should be in view");
@@ -67,6 +71,10 @@ public class AnimationDiagnosticGameTests {
 			helper.fail("A part ahead of the camera should be in view when its position and the origin are both far from zero");
 		if (StructureCulling.inView(new Vec3(1000, 0, 1010), Vec3i.ZERO, frustum))
 			helper.fail("The same position against the wrong origin is nowhere near the camera, which is the bug this test exists for");
+		// Off a moving structure Flywheel's own answer stands, whatever the frustum says
+		if (!StructureCulling.visible(helper.getLevel(), ground, origin, frustum, true) || StructureCulling.visible(helper.getLevel(), ground, origin, frustum, false)
+			|| !StructureCulling.visible(helper.getLevel(), ground, frustum, true) || StructureCulling.visible(helper.getLevel(), ground, frustum, false))
+			helper.fail("Off a structure, Flywheel's own answer must stand");
 		helper.succeed();
 	}
 }
