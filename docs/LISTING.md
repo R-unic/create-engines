@@ -233,10 +233,10 @@ Exchanger Ponder page. No ID, key or saved format is renamed or removed. Four ex
   to face the right place (it stopped and resumed). The part's real position is now taken against the main origin. Drawing only;
   no engine's numbers move. Not seen in a running game yet (see the release record).
 - New, for finding a bug: starting the game with `-Dcreateengines.animationDiagnostic=true` logs once a second why one cylinder
-  is or is not animating. Off by default; changes nothing that is drawn.
+  is or is not animating, with the camera's distance and the angle off its view. Off by default; changes nothing that is drawn.
 - Create Ultimate Factory is named in the README and this page as a recommended companion. Nothing depends on it, and the two
   have not been tested together.
-- Tests added: `PlantOilSourcesTest`, `EngineOilSourcesTest`; `FuelRecipeGameTests` follows the ethanol and used-oil changes.
+- Tests added: `PlantOilSourcesTest`, `EngineOilSourcesTest`, `AnimationDiagnosticGameTests` (the diagnostic's report and the in-view test); `FuelRecipeGameTests` follows the ethanol and used-oil changes, and `SableGameTests` the corrected in-view test.
   `compat/manifest.txt` has 5 lines added and 4 changed (the four recipes above).
 
 ## Changelog for 2.0.1
