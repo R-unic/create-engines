@@ -249,10 +249,10 @@ public class SableGameTests {
 		TestEngine.build(helper.getLevel(), origin, true);
 		SableTestSupport.Held held = SableTestSupport.assemble(helper.getLevel(), origin, origin.offset(7, 5, 5), 2000);
 		net.minecraft.world.phys.Vec3 at = SableCompat.worldPosition(helper.getLevel(), held.inPlot());
-		// Flywheel draws relative to a render origin near the camera, so the matrices are small numbers, not millions
+		// Flywheel draws relative to a render origin near the camera, so the matrices are small numbers, not millions. A part on a
+		// structure is in an embedding whose own origin is the plot, so its visual position is no help: the main origin is what counts
 		BlockPos plot = held.inPlot();
 		BlockPos renderOrigin = BlockPos.containing(at);
-		BlockPos visual = plot.subtract(renderOrigin);
 		float x = (float) (at.x - renderOrigin.getX());
 		float y = (float) (at.y - renderOrigin.getY());
 		float z = (float) (at.z - renderOrigin.getZ());
@@ -261,13 +261,13 @@ public class SableGameTests {
 		org.joml.Matrix4f projection = new org.joml.Matrix4f().perspective((float) Math.toRadians(70), 1.6f, 0.05f, 256f);
 		org.joml.FrustumIntersection looking = new org.joml.FrustumIntersection(new org.joml.Matrix4f(projection).mul(view));
 		org.joml.FrustumIntersection turned = new org.joml.FrustumIntersection(new org.joml.Matrix4f(projection).mul(away));
-		if (!com.createengines.content.StructureCulling.visible(helper.getLevel(), plot, visual, looking, false))
+		if (!com.createengines.content.StructureCulling.visible(helper.getLevel(), plot, renderOrigin, looking, false))
 			helper.fail("a part on a structure in front of the camera was called out of view because its plot is far away");
-		if (com.createengines.content.StructureCulling.visible(helper.getLevel(), plot, visual, turned, true))
+		if (com.createengines.content.StructureCulling.visible(helper.getLevel(), plot, renderOrigin, turned, true))
 			helper.fail("a part on a structure behind the camera was called in view because Flywheel said so for its plot");
 		BlockPos ground = helper.absolutePos(new BlockPos(1, 1, 1));
-		if (!com.createengines.content.StructureCulling.visible(helper.getLevel(), ground, ground, turned, true)
-			|| com.createengines.content.StructureCulling.visible(helper.getLevel(), ground, ground, looking, false))
+		if (!com.createengines.content.StructureCulling.visible(helper.getLevel(), ground, renderOrigin, turned, true)
+			|| com.createengines.content.StructureCulling.visible(helper.getLevel(), ground, renderOrigin, looking, false))
 			helper.fail("off a structure, Flywheel's own answer must stand");
 		helper.succeed();
 	}

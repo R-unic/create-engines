@@ -62,12 +62,12 @@ public class CylinderVisual extends AbstractBlockEntityVisual<CylinderBlockEntit
 	public void beginFrame(DynamicVisual.Context context) {
 		// Posed from the render time, so it is exact again the frame it comes back into view
 		boolean plotVisible = isVisible(context.frustum());
-		boolean visible = StructureCulling.visible(level, pos, visualPos, context.frustum(), plotVisible);
+		boolean visible = StructureCulling.visible(level, pos, context.frustum(), plotVisible);
 		if (AnimationDiagnostic.ENABLED) {
 			float time = AnimationTickHolder.getRenderTime(level);
 			CrankshaftBlockEntity crank = blockEntity.crankThrow();
 			AnimationDiagnostic.frame(level, pos, visualPos, plotVisible, visible, time, crank == null ? Double.NaN : crank.getTheoreticalSpeed(),
-				crank == null ? Double.NaN : EnginePoses.drawnShaft(crank, time), EnginePoses.cylinder(blockEntity, time), lastPose);
+				crank == null ? Double.NaN : EnginePoses.drawnShaft(crank, time), EnginePoses.cylinder(blockEntity, time), lastPose, context.camera());
 		}
 		if (!visible)
 			return;

@@ -48,7 +48,7 @@ public class CamshaftVisual extends RotatingPartVisual<CamshaftBlockEntity> {
 
 	@Override
 	public void beginFrame(DynamicVisual.Context context) {
-		if (!StructureCulling.visible(level, pos, visualPos, context.frustum(), isVisible(context.frustum())))
+		if (!StructureCulling.visible(level, pos, context.frustum(), isVisible(context.frustum())))
 			return;
 		super.beginFrame(context);
 		poseLobes();

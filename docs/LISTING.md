@@ -227,6 +227,11 @@ Exchanger Ponder page. No ID, key or saved format is renamed or removed. Four ex
 - Ponder: the Heat Exchanger page says how to get the most heat (more burning cylinders on one exhaust; one exchanger per
   exhaust). Two new lines were added, so the boiler line is now `create_engines.ponder.heat_exchanger.text_8` (was `text_6`);
   these are generated text keys, not saved data.
+- Fix, Create Aeronautics: the 2.0.1 fix for pistons, rods and cams freezing on a moving structure tested the part against the
+  wrong origin. Sable draws a structure inside a Flywheel embedding whose origin is the structure's plot, and the camera's view
+  is relative to the main origin, so the part was called out of view from most angles and animated only when the camera happened
+  to face the right place (it stopped and resumed). The part's real position is now taken against the main origin. Drawing only;
+  no engine's numbers move. Not seen in a running game yet (see the release record).
 - New, for finding a bug: starting the game with `-Dcreateengines.animationDiagnostic=true` logs once a second why one cylinder
   is or is not animating. Off by default; changes nothing that is drawn.
 - Create Ultimate Factory is named in the README and this page as a recommended companion. Nothing depends on it, and the two

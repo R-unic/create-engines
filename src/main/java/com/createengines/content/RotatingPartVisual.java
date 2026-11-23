@@ -43,7 +43,7 @@ public abstract class RotatingPartVisual<T extends KineticBlockEntity> extends A
 	@Override
 	public void beginFrame(DynamicVisual.Context context) {
 		// Posed from the render time, so it is exact again the frame it comes back into view
-		if (!StructureCulling.visible(level, pos, visualPos, context.frustum(), isVisible(context.frustum())))
+		if (!StructureCulling.visible(level, pos, context.frustum(), isVisible(context.frustum())))
 			return;
 		animate();
 	}
