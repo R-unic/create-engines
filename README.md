@@ -215,6 +215,12 @@ Other useful tasks: `./gradlew test` (simulation unit tests), `./gradlew runGame
 `./gradlew smoke` (unit tests, GameTests and the client audit, each verified; run it in a private copy of the checkout,
 see docs/SMOKE.md) and `./gradlew runVisualSmokeTest` (builds an engine and saves screenshots to `run/screenshots/`).
 
+The trailer is made by a harness, so it can be cut again when the mod changes: `python tools/trailer/record.py` plays the
+game with shaders, records it and writes the full trailer, a teaser, a vertical cut, thumbnails and the video description to
+`run/trailer/` (it needs ffmpeg and Pillow; the full cut is kept to 180 seconds). `python tools/gallery.py` retakes the mod
+page's pictures, each kept under 2 MB. Both are in [docs/SMOKE.md](docs/SMOKE.md) and open a real game window, so do not run
+them while doing something else on the machine.
+
 Design notes and how the simulation works are in [docs/DESIGN.md](docs/DESIGN.md). Where the project is going is in
 [docs/ROADMAP.md](docs/ROADMAP.md). How a release is checked is in [docs/STABILITY.md](docs/STABILITY.md), with the test
 layers in [docs/SMOKE.md](docs/SMOKE.md) and the rules that keep old worlds loading in
