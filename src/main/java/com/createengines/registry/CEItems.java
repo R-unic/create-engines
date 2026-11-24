@@ -41,6 +41,24 @@ public final class CEItems {
 		.model((c, p) -> p.withExistingParent(c.getName(), p.modLoc("block/cylinder_head/precision_injector_item")))
 		.register();
 
+	/**
+	 * An electric pump and driver that sits on a head's injector and spends battery charge to atomise each shot more finely and
+	 * pass a little more fuel at the limit. A bonus on top of an injector: it does nothing without one, and without charge the
+	 * injector runs exactly as it would have.
+	 */
+	public static final ItemEntry<Item> INJECTOR_ASSIST = REGISTRATE.item("injector_assist", Item::new)
+		.model((c, p) -> p.withExistingParent(c.getName(), p.modLoc("block/cylinder_head/assist_item")))
+		.register();
+
+	/**
+	 * A high-energy coil that sits on a head's spark plug and spends extra battery charge on a hotter spark, which lights a leaner
+	 * mixture and burns through more soot. A bonus on top of a plug: it does nothing without one, and without charge the plug sparks
+	 * exactly as it would have.
+	 */
+	public static final ItemEntry<Item> IGNITION_COIL = REGISTRATE.item("ignition_coil", Item::new)
+		.model((c, p) -> p.withExistingParent(c.getName(), p.modLoc("block/cylinder_head/coil_item")))
+		.register();
+
 	/** The triangular rotor of a Wankel engine, which goes in a rotor housing. */
 	public static final ItemEntry<Item> ROTOR = REGISTRATE.item("rotor", Item::new)
 		.lang("Engine Rotor")

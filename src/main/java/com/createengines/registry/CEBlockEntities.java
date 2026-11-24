@@ -124,7 +124,7 @@ public final class CEBlockEntities {
 
 	public static final BlockEntityEntry<BatteryBlockEntity> BATTERY = REGISTRATE
 		.blockEntity("battery", BatteryBlockEntity::new)
-		.validBlocks(CEBlocks.BATTERY)
+		.validBlocks(CEBlocks.BATTERY, CEBlocks.DRY_CELL, CEBlocks.LARGE_BATTERY)
 		.register();
 
 	public static final BlockEntityEntry<AlternatorBlockEntity> ALTERNATOR = REGISTRATE
@@ -271,6 +271,7 @@ public final class CEBlockEntities {
 			CEItems.JERRY_CAN.get());
 		event.registerBlockEntity(Capabilities.ItemHandler.BLOCK, SOOT_TRAP.get(), (be, side) -> be.itemCapability());
 		event.registerBlockEntity(Capabilities.EnergyStorage.BLOCK, ALTERNATOR.get(), (be, side) -> be.energyOutput());
+		event.registerBlockEntity(Capabilities.EnergyStorage.BLOCK, BATTERY.get(), (be, side) -> be.energyOutput());
 		// Only named when ComputerCraft is loaded, so a game without it never touches a ComputerCraft class
 		if (net.neoforged.fml.ModList.get()
 			.isLoaded("computercraft"))

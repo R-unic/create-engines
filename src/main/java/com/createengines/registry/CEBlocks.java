@@ -171,14 +171,7 @@ public final class CEBlocks {
 				.mapColor(MapColor.COLOR_ORANGE)
 				.lightLevel(EngineGlow::light))
 			.transform(TagGen.pickaxeOnly())
-			.blockstate((c, p) -> BlockStateGen.directionalBlockIgnoresWaterlogged(c, p, s -> {
-				boolean injector = s.getValue(CylinderHeadBlock.HAS_INJECTOR);
-				boolean plug = s.getValue(CylinderHeadBlock.HAS_SPARK_PLUG);
-				if (injector && plug)
-					return AssetLookup.partialBaseModel(c, p, "injector", "plug");
-				return plug ? AssetLookup.partialBaseModel(c, p, "plug")
-					: AssetLookup.partialBaseModel(c, p, injector ? "injector" : "");
-			}))
+			.blockstate((c, p) -> BlockStateGen.directionalBlockIgnoresWaterlogged(c, p, s -> headModel(c, p, s)))
 			.item()
 			.transform(ModelGen.customItemModel())
 			.register();
@@ -205,14 +198,7 @@ public final class CEBlocks {
 				.mapColor(MapColor.GOLD)
 				.lightLevel(EngineGlow::light))
 			.transform(TagGen.pickaxeOnly())
-			.blockstate((c, p) -> BlockStateGen.directionalBlockIgnoresWaterlogged(c, p, s -> {
-				boolean injector = s.getValue(CylinderHeadBlock.HAS_INJECTOR);
-				boolean plug = s.getValue(CylinderHeadBlock.HAS_SPARK_PLUG);
-				if (injector && plug)
-					return AssetLookup.partialBaseModel(c, p, "injector", "plug");
-				return plug ? AssetLookup.partialBaseModel(c, p, "plug")
-					: AssetLookup.partialBaseModel(c, p, injector ? "injector" : "");
-			}))
+			.blockstate((c, p) -> BlockStateGen.directionalBlockIgnoresWaterlogged(c, p, s -> headModel(c, p, s)))
 			.item()
 			.transform(ModelGen.customItemModel())
 			.register();
@@ -415,6 +401,32 @@ public final class CEBlocks {
 		.initialProperties(SharedProperties::softMetal)
 		.properties(p -> part(p)
 			.mapColor(MapColor.METAL))
+		.transform(TagGen.pickaxeOnly())
+		.blockstate(CEBlocks::batteryBlockstate)
+		.item()
+		.transform(ModelGen.customItemModel())
+		.register();
+
+	/** Half a battery's capacity and proof against the cold: 100 sparks, joins into a bank with any other battery. */
+	public static final BlockEntry<BatteryBlock> DRY_CELL = REGISTRATE
+		.block("dry_cell", p -> new BatteryBlock(p, BatteryTier.DRY_CELL))
+		.transform(DisplaySource.displaySource(CEDisplaySources.BATTERY_CHARGE))
+		.initialProperties(SharedProperties::softMetal)
+		.properties(p -> part(p)
+			.mapColor(MapColor.COLOR_ORANGE))
+		.transform(TagGen.pickaxeOnly())
+		.blockstate(CEBlocks::batteryBlockstate)
+		.item()
+		.transform(ModelGen.customItemModel())
+		.register();
+
+	/** Four batteries in one block: 800 sparks, but the cold holds back up to three quarters of it. The bank for an electric motor. */
+	public static final BlockEntry<BatteryBlock> LARGE_BATTERY = REGISTRATE
+		.block("large_battery", p -> new BatteryBlock(p, BatteryTier.LARGE))
+		.transform(DisplaySource.displaySource(CEDisplaySources.BATTERY_CHARGE))
+		.initialProperties(SharedProperties::softMetal)
+		.properties(p -> part(p)
+			.mapColor(MapColor.COLOR_GRAY))
 		.transform(TagGen.pickaxeOnly())
 		.blockstate(CEBlocks::batteryBlockstate)
 		.item()
@@ -866,6 +878,28 @@ public final class CEBlocks {
 		return block.defaultBlockState().hasProperty(Encasing.PAINT)
 			? new net.minecraft.world.level.block.state.properties.Property<?>[] { Encasing.PAINT }
 			: new net.minecraft.world.level.block.state.properties.Property<?>[0];
+	}
+
+	/**
+	 * A cylinder head's model for the parts fitted: an assist sits on an injector and a coil on a plug, so a state with either
+	 * without what it sits on is not a real one (only a command makes it) and draws as the head without it.
+	 */
+	private static net.neoforged.neoforge.client.model.generators.ModelFile headModel(
+		DataGenContext<Block, CylinderHeadBlock> c, RegistrateBlockstateProvider p, BlockState s) {
+		boolean injector = s.getValue(CylinderHeadBlock.HAS_INJECTOR);
+		boolean plug = s.getValue(CylinderHeadBlock.HAS_SPARK_PLUG);
+		boolean assist = injector && s.getValue(CylinderHeadBlock.HAS_ASSIST);
+		boolean coil = plug && s.getValue(CylinderHeadBlock.HAS_COIL);
+		if (assist)
+			return plug ? (coil ? AssetLookup.partialBaseModel(c, p, "injector_assist", "plug", "coil")
+				: AssetLookup.partialBaseModel(c, p, "injector_assist", "plug"))
+				: AssetLookup.partialBaseModel(c, p, "injector_assist");
+		if (injector && plug)
+			return coil ? AssetLookup.partialBaseModel(c, p, "injector", "plug", "coil")
+				: AssetLookup.partialBaseModel(c, p, "injector", "plug");
+		if (plug)
+			return coil ? AssetLookup.partialBaseModel(c, p, "plug", "coil") : AssetLookup.partialBaseModel(c, p, "plug");
+		return AssetLookup.partialBaseModel(c, p, injector ? "injector" : "");
 	}
 
 	/** The model a cylinder shows: its own, or a plain casing cube once clad. */

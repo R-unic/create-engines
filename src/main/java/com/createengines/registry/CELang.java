@@ -327,12 +327,14 @@ public final class CELang {
 		raw("goggles.fuel_rack", "Fuel rack: %1$s%%");
 
 		raw("goggles.starter", "Starter");
-		raw("goggles.starter.idle", "Idle: needs a redstone signal and input rotation");
+		raw("goggles.starter.idle", "Idle: needs a redstone signal, and rotation on its input unless a battery can turn it (spark engines only)");
+		raw("goggles.starter.electric", "Cranking the engine from the batteries: no input rotation needed");
 		raw("goggles.starter.cranking", "Cranking the engine");
 		raw("goggles.starter.by_hand", "Cranking the engine by hand: no redstone needed");
 		raw("goggles.starter.overrun", "Engaged, engine outrunning it");
 		raw("goggles.starter.warming", "Cranking and choking a cold engine");
 		raw("goggles.starter.no_engine", "Not touching a crankshaft");
+		raw("goggles.starter.drawing", "Spending battery charge to turn the engine over");
 		raw("goggles.starter.weak", "Batteries nearly flat: charge them, or an alternator on the crank line will as it turns");
 
 		raw("goggles.head", "Cylinder Head");
@@ -342,6 +344,14 @@ public final class CELang {
 		raw("goggles.head.metering.hint", "Too much fuel runs rich and wastes it, too little runs lean. Breathing falls as the engine speeds up");
 		raw("goggles.head.spark_plug", "Spark plug fitted");
 		raw("goggles.head.no_spark_plug", "Right-click with a Spark Plug to light fuel by spark instead of compression");
+		raw("goggles.head.assist", "Injector assist fitted: each shot spends battery charge to atomise finer, burning faster and passing half again as much fuel at the injector's limit");
+		raw("goggles.head.assist.hint", "It draws only from batteries that are not a reserve. With none to spare the injector works exactly as it would without it");
+		raw("goggles.head.no_assist", "Right-click with an Injector Assist to spend battery charge on finer fuel atomising");
+		raw("part.needs_injector", "Fit an injector first: the assist sits on it");
+		raw("goggles.head.coil", "Ignition coil fitted: each spark that has fuel to light spends more battery charge on a hotter spark, which burns the charge faster, lights a leaner mixture and burns through soot");
+		raw("goggles.head.coil.hint", "It draws only from batteries that are not a reserve. With none to spare the plug sparks exactly as it would without it");
+		raw("goggles.head.no_coil", "Right-click with an Ignition Coil to spend battery charge on a hotter spark");
+		raw("part.needs_plug", "Fit a spark plug first: the coil sits on it");
 
 		raw("goggles.sump", "Oil Sump");
 		raw("tooltip.jerry_can.empty", "Empty: holds %1$s mB of one fluid");
@@ -555,6 +565,7 @@ public final class CELang {
 		raw("goggles.oil_condition.hint",
 			"Spent oil drags the engine a little. Set an oil pan's Oil Exchange to change it as the engine turns");
 		raw("goggles.oil_filtered", "Oil filter fitted");
+		raw("goggles.oil_use", "Oil used: %1$s mB a minute");
 		raw("goggles.temperature.cold", "Cold: drags until warm");
 		raw("goggles.temperature.cool", "Cool: breathes better");
 		raw("goggles.temperature.warm", "Warm");
@@ -598,12 +609,19 @@ public final class CELang {
 
 		raw("goggles.battery", "Battery");
 		raw("goggles.battery.charge", "Charge: %1$s%%");
+		raw("goggles.battery.size", "This one holds %1$s sparks");
 		raw("goggles.battery.flat", "Flat: an alternator has to charge it");
 		raw("goggles.battery.bank", "Bank of %1$s batteries: %2$s of %3$s sparks");
 		raw("goggles.battery.draining", "Draining %1$s sparks a second: about %2$s left");
 		raw("goggles.battery.charging", "Charging %1$s sparks a second: full in about %2$s");
 		raw("goggles.battery.cold", "Cold: it can give only %1$s%% of its capacity");
-		raw("goggles.battery.cold_hint", "A heat source beside it, such as a blaze burner, warms it and gives the rest back.");
+		raw("goggles.battery.reserve", "Reserve: on. Kept for the starter and the spark plugs");
+		raw("goggles.battery.reserve_off", "Reserve: off. It gives to everything that draws on the bank");
+		raw("goggles.battery.reserve_split", "%1$s of %2$s batteries in this bank are a reserve, holding %3$s sparks; %4$s sparks are open to injector assists and other mods' wires");
+		raw("goggles.battery.reserve_hint", "Use a wrench on a battery to switch its reserve. A reserve is spent last, and is the first thing an alternator tops up");
+		raw("battery.reserve.on", "Reserve on: this battery is kept for the starter and the plugs");
+		raw("battery.reserve.off", "Reserve off: this battery gives to everything");
+		raw("goggles.battery.cold_hint","A heat source beside it, such as a blaze burner, warms it and gives the rest back.");
 
 		raw("goggles.alternator", "Alternator");
 		raw("goggles.alternator.charging", "Charging batteries from its shaft");

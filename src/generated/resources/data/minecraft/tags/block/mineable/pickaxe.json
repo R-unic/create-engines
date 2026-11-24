@@ -23,6 +23,8 @@
     "create_engines:starter",
     "create_engines:heavy_starter",
     "create_engines:battery",
+    "create_engines:dry_cell",
+    "create_engines:large_battery",
     "create_engines:alternator",
     "create_engines:cast_flywheel",
     "create_engines:dual_mass_flywheel",

@@ -312,6 +312,7 @@ nbt:EngineSummary:Load
 nbt:EngineSummary:LongestLine
 nbt:EngineSummary:Lubrication
 nbt:EngineSummary:Muffling
+nbt:EngineSummary:OilUse
 nbt:EngineSummary:Pilot
 nbt:EngineSummary:Ripple
 nbt:EngineSummary:Roughness
