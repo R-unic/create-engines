@@ -1,0 +1,19 @@
+# Which still of the showcase run becomes which picture of the mod page's gallery (docs/images/gallery.txt), read by tools/gallery.py.
+# Gallery file, then the still: scene, view and phase of ShowcaseRun (showcase_<scene>_<view>_<day|dusk>). Pictures not listed
+# here (Ponder, goggles, management, coupled, new parts) come from other runs and are left alone.
+# Dusk stills (glow and flames) exist for the first two views of each plain-engine scene only; look in run/gallery/all for them.
+engine_showcase_first.png	first_hero_day
+engine_showcase_inline6.png	inline6_hero_day
+engine_showcase_v8.png	v8_hero_day
+engine_showcase_v8_exhaust.png	v8_exhaust_day
+engine_showcase_v8_top.png	v8_top_day
+engine_showcase_flat6.png	flat6_hero_day
+engine_showcase_rotary.png	rotary_hero_day
+engine_accessory_twin_turbo_v8.png	twinturbo_v8_hero_day
+engine_accessory_turbo_stack.png	twinturbo_v8_turbos_day
+engine_accessory_blown_flat6.png	blown_flat6_hero_day
+engine_accessory_blowers.png	blown_flat6_blowers_day
+engine_accessory_blown_inline6.png	blown_i6_hero_day
+engine_accessory_variable_turbo.png	vgt_i4_hero_day
+engine_accessory_flywheel_governor.png	instruments_i4_governor_day
+engine_accessory_dyno.png	instruments_i4_dyno_day
