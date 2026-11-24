@@ -1,0 +1,92 @@
+plugins {
+    id 'java-library'
+    id 'net.neoforged.moddev.legacyforge' version '2.0.148'
+}
+
+version = "${mod_version}-${minecraft_version}"
+group = mod_group_id
+
+base {
+    archivesName = mod_id
+}
+
+java.toolchain.languageVersion = JavaLanguageVersion.of(17)
+
+repositories {
+    mavenCentral()
+    maven { url = 'https://maven.createmod.net' } // Create, Ponder, Flywheel
+    maven { url = 'https://maven.ithundxr.dev/snapshots' } // Registrate
+    maven { url = 'https://maven.minecraftforge.net' }
+    maven { url = 'https://maven.tterrag.com' } // Registrate for 1.20.1
+}
+
+evaluationDependsOn(':sim')
+
+legacyForge {
+    version = "${minecraft_version}-${forge_version}"
+    runs {
+        client {
+            client()
+        }
+        server {
+            server()
+        }
+        gameTestServer {
+            type = 'gameTestServer'
+            systemProperty 'forge.enabledGameTestNamespaces', mod_id
+        }
+    }
+    mods {
+        "${mod_id}" {
+            sourceSet sourceSets.main
+            sourceSet project(':sim').sourceSets.main
+        }
+    }
+}
+
+dependencies {
+    implementation project(':sim')
+
+    // Create's mixins need it at run time on Forge 1.20.1
+    runtimeOnly 'io.github.llamalad7:mixinextras-forge:0.4.1'
+    compileOnly 'io.github.llamalad7:mixinextras-common:0.4.1'
+
+    modImplementation("com.simibubi.create:create-${minecraft_version}:${create_version}:slim") { transitive = false }
+    modImplementation("net.createmod.ponder:Ponder-Forge-${minecraft_version}:${ponder_version}")
+    modCompileOnly("dev.engine-room.flywheel:flywheel-forge-api-${minecraft_version}:${flywheel_version}")
+    modRuntimeOnly("dev.engine-room.flywheel:flywheel-forge-${minecraft_version}:${flywheel_version}")
+    modImplementation("com.tterrag.registrate:Registrate:${registrate_version}")
+
+    testImplementation 'org.junit.jupiter:junit-jupiter:5.10.2'
+    testImplementation 'com.google.code.gson:gson:2.10.1' // Minecraft brings it in game
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+}
+
+// The mod's data files are the main build's, not copies: one fuel file, one set of numbers.
+tasks.named('processResources') {
+    from('../src/main/resources/data/create_engines/data_maps') { into 'data/create_engines/data_maps' }
+}
+
+test {
+    useJUnitPlatform()
+}
+
+tasks.named('jar', Jar) {
+    from project(':sim').sourceSets.main.output
+}
+
+// The mod's source is the main build's, rewritten for 1.20.1 by port.py; src/main/java here holds only the files ported by hand.
+tasks.register('portSources', Exec) {
+    inputs.dir('../src/main/java')
+    inputs.dir('src/main/java')
+    inputs.file('port.py')
+    outputs.dir('build/ported/java')
+    commandLine 'python', 'port.py'
+}
+
+sourceSets.main.java.srcDir 'build/ported/java'
+
+tasks.named('compileJava') {
+    dependsOn 'portSources'
+    options.compilerArgs << '-Xmaxerrs' << '100000'
+}

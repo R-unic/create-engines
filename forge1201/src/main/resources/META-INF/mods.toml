@@ -1,0 +1,29 @@
+modLoader = "javafml"
+loaderVersion = "[47,)"
+license = "MIT"
+
+[[mods]]
+modId = "create_engines"
+version = "${file.jarVersion}"
+displayName = "Create: Engine Engineer (Forge 1.20.1 spike)"
+
+[[dependencies.create_engines]]
+modId = "forge"
+mandatory = true
+versionRange = "[47,)"
+ordering = "NONE"
+side = "BOTH"
+
+[[dependencies.create_engines]]
+modId = "minecraft"
+mandatory = true
+versionRange = "[1.20.1]"
+ordering = "NONE"
+side = "BOTH"
+
+[[dependencies.create_engines]]
+modId = "create"
+mandatory = true
+versionRange = "[6.0.8,6.1)"
+ordering = "AFTER"
+side = "BOTH"

@@ -48,7 +48,8 @@ Set by the author on 2026-11-14:
 | 1.2 | Dress Parts | Cosmetic build variety | Small | Shipped as v1.2.0 (v1.2.1 fixed the sound-thread memory leak) |
 | 1.3 | Refinery | A refinery multiblock for the fuels that already exist | Large | Shipped as v1.3.0, 2026-11-17 |
 | 1.4 | Drawing Office | Blueprints, pack-maker tools, Aeronautics and other addons | Large | **In progress** (see its section) |
-| 2.0 | Open Block (released as "Open Throttle") | The platform, and the one breaking cleanup | Large | **Built, not tagged** (2026-11-21): the breaking cleanup, both crossovers, the port curve, altitude, the frozen API (1.1.0) and the dye cleanup, the platform (engine types, parts as data, an example addon), battery and part depth, headphones, kerosene and methanol, Jade and the other integrations; the Part 2 gate ran on 2026-11-21 (see `docs/releases/v2.0.0.md`); the hands-on boxes and the tag are the author's |
+| 2.0 | Open Block (released as "Open Throttle") | The platform, and the one breaking cleanup | Large | **Built, not tagged** (2026-11-21): the breaking cleanup, both crossovers, the port curve, altitude, the frozen API (1.1.0) and the dye cleanup, the platform (engine types, parts as data, an example addon), battery and part depth, headphones, kerosene and methanol, Jade and the other integrations; the Part 2 gate ran on 2026-11-21 (see `docs/releases/v2.0.0.md`); the hands-on boxes and the tag are the author's |
+| Port | Forge 1.20.1 | The same mod on Create 6.0.8, from one source | Large | **Started** (2026-11-24): simulation module, spike, data files, source generator; waves 0 to 8 are left (see its section) |
 
 ## 1.0.x Shakedown
 
@@ -957,6 +958,53 @@ PIT survivors that are not equivalent mutants (item 1, 134 live), and the engine
       tick count, and a flaky capture is fixed or dropped, never given a looser tolerance to make it pass.
     - Deliberate art changes update their goldens as part of the change.
 
+## Forge 1.20.1 port (no release of its own yet)
+
+Why: Create's downloads are mostly on 1.20.1 (Modrinth, summed per version: 1.20.1 Forge and NeoForge about 33M against 9M on
+1.21.1 NeoForge; CurseForge, 87 listed files: 36M against 8M), checked 2026-11-24. The plan and what a player can expect on a port
+are in [PORTS.md](PORTS.md); this section is the work. The main build comes first and every promise in these docs stays about it.
+Fabric is dropped; a forward port to newer NeoForge is the likelier later need.
+
+**Built (2026-11-24, branch `port-sim-module`, uncommitted):**
+- `sim/`, the simulation as its own plain-Java module, building for Java 17 (`SimMath.clamp` is the JDK's `Math.clamp`, bit for bit,
+  compared by `SimMathTest`). The root unit suite and every baseline are unchanged.
+- `forge1201/`, a build of its own (legacy Forge plugin, Forge 47.1.33, Create 6.0.8, Flywheel 1.0.6-beta-266, Ponder 1.0.91,
+  Registrate MC1.20-1.3.3). A spike block runs the shared simulation on a Create network: burns diesel from a Create fluid tank,
+  turns a shaft at the speed the simulation reports, stops with no fuel (3 GameTests pass).
+- The data the main build keeps in NeoForge data maps is read from the same files: fuels, part effects, cam profiles, part stats and
+  the part-effect map (`FuelFiles`, `DataMapFile`, `PackData`, with tests that the shipped files equal the simulation's values).
+- `forge1201/port.py` makes the port's source from the main build's by rewrite rules, so the mod is written once; files ported by
+  hand sit beside it and replace the generated file of the same path. `errors.py` summarises a compile.
+- First measurement: 301 generated files, 129 with errors, 1175 in all (blocks and block entities 517, client 334, registry 149,
+  advancements 115, engine 47). More will show once the first layer compiles.
+
+**Left, in order. Each wave ends with the port compiling and its checks passing before the next starts.**
+
+| Wave | Work | Done when |
+| --- | --- | --- |
+| 0 | Commit the sim split and the port build. Make the rest of the main source Java 17 clean (`Math.clamp` and `getFirst` in main code, pattern switches, sequenced collections), behaviour unchanged, so the generated tree needs no per-file fix for the language level | Main build and `compat/` baselines untouched; `forge1201` has no language-level error |
+| 1 | Rewrite rules and registry: `DeferredHolder` to `RegistryObject`, `ResourceLocation` factories, `ForgeConfigSpec` and the config bridge, event bus and mod loading, fluids (`BaseFlowingFluid`, the fluid type and bucket per fuel, as Registrate does on 1.20.1), the access transformer and the two mixin files against 1.20.1 names. One `@Mod` class (the spike's collides with `CreateEngines`) | Registry, config and fluids compile; the mod loads in the game test server |
+| 2 | Blocks and block entities (about 180 files): `use` in place of `useItemOn` and `useWithoutItem`, no `MapCodec`, block entity save and load without registry lookups, `saveWithFullMetadata`, capabilities with `getCapability` and `LazyOptional` (fluid, item, energy; 11 and 25 files), item data components as item NBT, the engine scanner and controller on the new block set | Every engine builds, runs and saves; the engine GameTests of wave 5 that need nothing client side pass |
+| 3 | Networking on a `SimpleChannel` (the 1.21 payloads and `StreamCodec`s: about 8 files), commands, advancements (`AdvancementHolder` and the 1.20.1 JSON shape), recipes (`RecipeHolder`, `RecipeInput`, serializers, recipe JSON shape; 7 files), loot tables and tags | Recipes, advancements and loot load; every packet round trips |
+| 4 | Data folders: the build renames the singular 1.21 folders (`recipe`, `structure`, `advancement`, `loot_table`, tag folders) to the plural ones 1.20.1 wants, from the one source set; `pack.mcmeta` format; lang and models as they are, redrawn only where the older renderer needs it. **Structure files (Ponder scenes, world fixtures) are 1.21 NBT: regenerate or check each on 1.20.1** | Data loads with no log error; every structure loads |
+| 5 | Client: Flywheel 1.0.6-beta-266 visuals (15 files), partial models, renderers, particles, the engine note and machinery sounds, the goggle overlay mixin, `ClientTickEvent` and `RenderFrameEvent` to their 1.20.1 events, the OpenAL hook for the headphones. Ponder 1.0.91 pages (13 files) and tooltips | Client audit on the port passes: models, Ponder sweep, the running fleet, leaks |
+| 6 | Optional mods that exist for 1.20.1 (Create: The Factory Must Grow, Create: Diesel Generators, Pollution of the Realms; JEI, EMI, KubeJS, CC: Tweaked, Jade, Curios, Sodium and Iris, Sound Physics, AmbientSounds), one at a time, each its own compat row. Each is run if a build for 1.20.1 exists and written "not run" otherwise. Aeronautics and Sable: whether a 1.20.1 build of either exists has not been checked | Each row green, red with its cause, or not run, as in [COMPAT.md](COMPAT.md) |
+| 7 | The 541 GameTests, carried to the 1.20.1 GameTest API by hand (41 files, 82 imports) and run on the port, then the smoke audits, the property, stress and config matrix tests that need the game, pitest and the coverage ratchets on the split modules. Item 13 goldens, once built | Same guarantees as the main build: a "Must pass" row in PORTS.md is green |
+| 8 | Release: its own record in `docs/releases/` with the Part 2 gate run on the port, the author's Part 3 boxes, listings (Modrinth and CurseForge pages say which row of the status table they are), a changelog from the real diff, and the "port" jar name with the Minecraft version | Signed record; the tag is the author's |
+
+**Decided and excluded:**
+- **The engine flywheel parts** (cast, data and dual-mass flywheels, `FlywheelSpec`, the flywheel data map and `SpringPackLag`) are not
+  in the port until the author says. They would need `FlywheelSpec` moved into `sim/` first. Create's Flywheel library itself is in.
+- Worlds do not move between builds, and the port offers no conversion. Blueprints shared as text are the one thing meant to cross.
+- A change that would move the main build's numbers is not made for the port's sake. The guards (`compat/behaviour.txt`,
+  `compat/trajectories.txt`, the manifest, the fixtures) stay single and shared; a port adds entries and never edits one.
+
+**Open questions:**
+- Which Create 6.0.x builds on 1.20.1 to support, and whether 6.0.8 is the floor (it is the newest the survey found).
+- Whether `forge1201/` should become a Gradle subproject of the root build once wave 1 compiles, so one command builds both.
+- How many 1.21-only features (Aeronautics crossover, data map based parts for other mods) a first port release can drop and still
+  be worth publishing; each one dropped is named in its changelog.
+
 ## Not on this roadmap
 
 **Declined, and not to be proposed again without a new reason:** knock as a mechanic, cooling blocks or radiators,
@@ -979,4 +1027,4 @@ would rebuild what Aeronautics already does, so it is only worth revisiting if t
 cylinder (no benefit, same day), a see-through cylinder (the existing cylinders already show their insides). The 2.0 platform is what would
 let a turbine or a two-stroke arrive as an addon instead of in the core.
 
-**Not planned:** other loaders, other Minecraft versions.
+**Not planned:** Fabric, Minecraft versions other than 1.21.1 and 1.20.1. A Forge 1.20.1 port is under way, see its section above.
