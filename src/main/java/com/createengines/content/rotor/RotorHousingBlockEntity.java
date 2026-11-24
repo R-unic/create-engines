@@ -288,7 +288,7 @@ public class RotorHousingBlockEntity extends CrankshaftBlockEntity implements Ga
 		if (!bangs[chamber].allow(level))
 			return;
 		if (level.getNearestPlayer(worldPosition.getX() + 0.5, worldPosition.getY() + 0.5, worldPosition.getZ() + 0.5, 48,
-			false) == null)
+			com.createengines.content.effects.EngineEffects.SPECTATORS_TOO) == null)
 			return;
 		RandomSource random = level.random;
 		EngineSummary engine = engineSummary();

@@ -395,12 +395,18 @@ public final class EngineEffects {
 	 * dropped by the game on spawn, so a cylinder farther than that from every player (40, to cover a third-person
 	 * camera) skips building them. It only ever lets more work through, never less than the game would show.
 	 */
+	/**
+	 * Every player counts as a viewer, a spectator included: {@code getNearestPlayer(.., false)} skips spectators, so someone
+	 * flying about in spectator mode (or a camera such as the trailer's) saw no exhaust, steam or sparks at all.
+	 */
+	public static final java.util.function.Predicate<net.minecraft.world.entity.Entity> SPECTATORS_TOO = e -> true;
+
 	private static boolean nearViewer(Level level, BlockPos at) {
 		return nearViewer(level, at.getX() + 0.5, at.getY() + 0.5, at.getZ() + 0.5, 40);
 	}
 
 	private static boolean nearViewer(Level level, double x, double y, double z, double range) {
-		return level.getNearestPlayer(x, y, z, range, false) != null;
+		return level.getNearestPlayer(x, y, z, range, SPECTATORS_TOO) != null;
 	}
 
 	/** One of {@code openings} at random, as it stands in the world; null if it is no longer an opening. */

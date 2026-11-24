@@ -246,7 +246,7 @@ public class CylinderBlockEntity extends SmartBlockEntity implements IHaveGoggle
 		if (!bangs.allow(level))
 			return;
 		if (level.getNearestPlayer(worldPosition.getX() + 0.5, worldPosition.getY() + 0.5, worldPosition.getZ() + 0.5,
-			48, false) == null)
+			48, com.createengines.content.effects.EngineEffects.SPECTATORS_TOO) == null)
 			return;
 		RandomSource random = level.random;
 		CrankshaftBlockEntity throwBlock = crankThrow();
@@ -291,7 +291,7 @@ public class CylinderBlockEntity extends SmartBlockEntity implements IHaveGoggle
 		if (!CEClientConfig.particles())
 			return;
 		if (level.getNearestPlayer(worldPosition.getX() + 0.5, worldPosition.getY() + 0.5, worldPosition.getZ() + 0.5,
-			24, false) == null)
+			24, com.createengines.content.effects.EngineEffects.SPECTATORS_TOO) == null)
 			return;
 		EnginePoses.CylinderPose pose = EnginePoses.cylinder(this, renderTime);
 		if (!pose.showPiston())
