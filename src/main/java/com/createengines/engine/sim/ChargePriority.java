@@ -21,6 +21,11 @@ public final class ChargePriority {
 	private ChargePriority() {
 	}
 
+	/** {@code x}, or 0 when it is negative or NaN. */
+	private static float nonNegative(float x) {
+		return x == x ? Math.max(0f, x) : 0f;
+	}
+
 	/**
 	 * What a draw of {@code use} can have from members that can each {@code deliverable} sparks, the {@code reserved} ones marked.
 	 * An essential draw sees everything; an optional one sees the members that are not a reserve.
@@ -41,9 +46,8 @@ public final class ChargePriority {
 	public static float[] split(float[] deliverable, boolean[] reserved, float wanted, Use use) {
 		float[] amounts = new float[deliverable.length];
 		float available = available(deliverable, reserved, use);
-		if (!(wanted > 0) || !(available > 0))
-			return amounts;
-		float taken = Math.min(wanted, available);
+		// A NaN or negative ask is nothing; with nothing asked or nothing there, every share below is zero
+		float taken = Math.min(nonNegative(wanted), available);
 		float open = 0;
 		for (int i = 0; i < deliverable.length; i++)
 			if (!reserved[i])
@@ -56,7 +60,7 @@ public final class ChargePriority {
 					amounts[i] = deliverable[i] * share;
 		}
 		float left = taken - fromOpen;
-		if (use == Use.ESSENTIAL && left > 0) {
+		if (use == Use.ESSENTIAL) {
 			float held = available - open;
 			if (held > 0) {
 				float share = Math.min(left, held) / held;
@@ -83,9 +87,7 @@ public final class ChargePriority {
 			else
 				openRoom += room[i];
 		}
-		if (!(sparks > 0) || !(reserveRoom + openRoom > 0))
-			return amounts;
-		float put = Math.min(sparks, reserveRoom + openRoom);
+		float put = Math.min(nonNegative(sparks), reserveRoom + openRoom);
 		float intoReserve = Math.min(put, reserveRoom);
 		if (reserveRoom > 0) {
 			float share = intoReserve / reserveRoom;
@@ -94,7 +96,7 @@ public final class ChargePriority {
 					amounts[i] = room[i] * share;
 		}
 		float intoOpen = put - intoReserve;
-		if (intoOpen > 0 && openRoom > 0) {
+		if (openRoom > 0) {
 			float share = intoOpen / openRoom;
 			for (int i = 0; i < room.length; i++)
 				if (!reserved[i])

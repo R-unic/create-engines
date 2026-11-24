@@ -14,13 +14,12 @@ public final class BatteryEnergy {
 
 	/** Whole FE that {@code sparks} of charge are worth, never negative and never more than an int holds. */
 	public static int toEnergy(double sparks) {
-		if (!(sparks > 0))
-			return 0;
-		return (int) Math.min(Integer.MAX_VALUE, Math.floor(sparks * FE_PER_SPARK));
+		// Max with 0 drops a negative; a NaN stays NaN and casts to 0
+		return (int) Math.min(Integer.MAX_VALUE, Math.floor(Math.max(0, sparks) * FE_PER_SPARK));
 	}
 
 	/** The sparks that {@code energy} FE is worth. */
 	public static double toSparks(int energy) {
-		return energy <= 0 ? 0 : (double) energy / FE_PER_SPARK;
+		return Math.max(0, energy) / (double) FE_PER_SPARK;
 	}
 }
