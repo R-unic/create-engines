@@ -296,11 +296,27 @@ cylinder or a head at all needs the source provider route in "A provider and a s
 timing of the valves can be changed for every engine, not for one block, with `data/create_engines/cam_profiles/` (DATA.md).
 This path is tested twice: in this repository with the effect named through the data map's test hook (`OwnPartGameTests`), and by a real addon that depends on the finished jar and nothing else, [examples/racing-addon](../examples/racing-addon): a Racing Cylinder block, its data map entry and its part effect, with GameTests that run an engine with it beside an engine with the plain cylinder and check the racing bore can deliver more. Copy it to start your own. Running it is in its README. A test (`ExampleAddonUsesOnlyTheApiTest`) fails if it ever imports anything of this mod outside `com.createengines.api`: if an addon needs an internal class, the API is missing something, and the answer is a new public surface.
 
+## A flywheel of your own
+
+Added in API 1.2. A flywheel is a block, a model and one data entry, and no simulation code:
+
+1. Make the block with `PartBlocks.flywheel(properties)`, register it with the game under your own id with your own model, and tell the
+   mod about it with `PartBlocks.register(modBus, () -> yourBlock)`, the same call as for a cylinder. It sits on the crank line
+   like a Cast Flywheel: either end of the crankshaft, or beyond a plain shaft from it.
+2. Model it along the Y axis and turn it with a blockstate for `axis=x`, `axis=y` and `axis=z`, as the example does. The mod turns the
+   model with the shaft.
+3. Give it masses in `data/create_engines/data_maps/block/flywheel.json`:
+   `{ "values": { "yourmod:racing_flywheel": { "primary_inertia": 0.6, "secondary_inertia": 2.0 } } }`. The primary mass joins the
+   crank; the optional secondary mass smooths the ripple above the spring pack's resonance, as the Dual-Mass Flywheel's does (see
+   [DATA.md](DATA.md)). A pack can retune it by supplying the same file.
+
+A flywheel with no entry adds nothing. The example addon's Racing Flywheel does all of this, with a GameTest that runs an engine with it.
+
 ## What you can rely on
 
 | | |
 |---|---|
-| **Frozen** (API 1.1.0, in 2.x only added to) | `com.createengines.api.*`, `engine.sim.TorqueSource`, `AbstractTorqueSource`, `Breather`, `StatusLine`; the `fuel`, `part_stats`, `part_effect` data maps and the `part_effects` and `cam_profiles` data formats; the KubeJS and CC names |
+| **Frozen** (API 1.2.0, in 2.x only added to) | `com.createengines.api.*`, `engine.sim.TorqueSource`, `AbstractTorqueSource`, `Breather`, `StatusLine`; the `fuel`, `part_stats`, `part_effect` and `flywheel` data maps and the `part_effects` and `cam_profiles` data formats; the KubeJS and CC names |
 | **Internal** | everything else: `engine.*`, `content.*`, the registries and the config classes. They may change in any release |
 
 `ApiSurfaceTest` reads every public declaration of the frozen types from the source and fails the build if one disappears or

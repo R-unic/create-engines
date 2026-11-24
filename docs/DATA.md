@@ -14,6 +14,7 @@ Names, keys, defaults and ranges of the `fuel`, `part_stats` and `part_effect` d
 | [fuel tags](#fuel-tags) | `data/c/tags/fluid/<name>.json` | the shortcut: a fluid in a fuel tag is a fuel with that fuel's numbers |
 | [`part_effects`](#part-effects-the-four-precision-parts) | `data/create_engines/part_effects/<part>.json` | what each precision part does to a cylinder |
 | [`part_effect`](#a-part-of-your-own-the-part-effect-data-map) data map | `data/create_engines/data_maps/block/part_effect.json` | names the effect file an addon's own cylinder or head block adds |
+| [`flywheel`](#a-flywheel-of-your-own-the-flywheel-data-map) data map | `data/create_engines/data_maps/block/flywheel.json` | gives an addon's own flywheel block its masses (added in 2.1, API 1.2) |
 | [`cam_profiles`](#cam-profiles-when-the-valves-open) | `data/create_engines/cam_profiles/<kind>.json` | when the valves of a piston cylinder, and the ports of a rotor, open and shut |
 | [`part_stats`](#part-stats-retuning-a-whole-kind-of-cylinder) data map | `data/create_engines/data_maps/block/part_stats.json` | scales over a whole kind of cylinder or rotor chamber |
 | [refining recipes](#refining-recipes) | `data/<namespace>/recipe/refining/<name>.json` | a route a refining column can run |
@@ -63,21 +64,22 @@ sweeps a volume of 1.
 | `energy_per_mb` | yes | | Energy released by burning 1 mB. This is the fuel's strength: engine power rises with it, and so does fuel economy (less volume for the same work). Must be above 0 |
 | `autoignition_temperature` | yes | | Charge temperature that lights the fuel by compression alone, ambient = 1. Diesel (1.55) and plant oil (1.7) are low and light by compression; gasoline (2.7), kerosene (2.2) and ethanol (3.4) are high and need a spark plug. A fuel at or below `2.0` also counts as a **pilot fuel**: a compression engine can inject it as a small shot to light a charge that compression alone could not. Must be above 0 |
 | `air_per_mb` | yes | | Fresh charge consumed by burning 1 mB; a full cylinder of ambient air is about 1. Sets the air-fuel balance, and injectors are sized from it (a fuel that needs less than 1.5 per mB gets a proportionally larger shot). Must be above 0 |
-| `cold_sensitivity` | no | `1.0` | How much a cold engine block hurts this fuel's burn: 1 is usual, gasoline is 0.8 (best), ethanol 1.8 and plant oil 1.5 (worst) |
+| `cold_sensitivity` | no | `1.0` | How much a cold engine block hurts this fuel's burn: 1 is usual, gasoline is 0.8 (best), ethanol 1.8 and plant oil 0.9 (the tolerant one; it was 1.5 before 2.1) |
 | `charge_cooling` | no | `0.0` | How far evaporating the fuel cools the charge it is mixed into, in ambient temperatures, at a balanced mixture. A cooler charge is denser, so the cylinder draws more air. Ethanol is 0.08; the others cool nothing |
 | `soot_factor` | no | `1.0` | How much of a rich burn's unburned fuel ends up as soot on a spark plug and in the exhaust. 0 burns clean however rich it runs (ethanol) |
 | `preignition_temperature` | no | `0.0` | Charge temperature past which a **boosted spark engine** lights the charge early and loses power (it costs power only; nothing is damaged). `0` (or leaving it out) uses the autoignition temperature. Ethanol sets 5.0, so it survives boost that gasoline does not |
+| `flammability` | no | `1.0` | How readily a **spill of the fuel lying in the world** catches and how fast a pool burns off once lit, with the server's `fuelFireByVolatility` on: 1 is how every fuel burned before 2.1, above 1 lights surely and burns off in a quick wave (gasoline and methanol 2.0, ethanol 1.5), below 1 is slow to catch and slow to spread (diesel, kerosene and plant oil 0.5). It never touches an engine's tank or a running engine. Must be above 0 |
 | `sulfur` | no | the soot factor | How sulfurous the exhaust is, for the **Pollution of the Realms** compat only; nothing in the simulation reads it. 1 is usual, 0 is none |
 
 **The shipped fuels** (these are the entries in the jar; a pack that gives the same key replaces them):
 
 | Fluid | `energy_per_mb` | `autoignition_temperature` | `air_per_mb` | Others |
 |---|---|---|---|---|
-| `create_engines:plant_oil` | 30 | 1.7 | 1.6 | `cold_sensitivity` 1.5 |
-| `create_engines:diesel` | 36 | 1.55 | 1.7 | |
-| `create_engines:gasoline` | 40 | 2.7 | 1.5 | `cold_sensitivity` 0.8 |
-| `create_engines:used_oil` | 22 | 1.85 | 1.6 | |
-| `create_engines:ethanol` | 27 | 3.4 | 1.0 | `cold_sensitivity` 1.8, `charge_cooling` 0.08, `soot_factor` 0, `preignition_temperature` 5.0 |
+| `create_engines:plant_oil` | 30 | 1.7 | 1.6 | `cold_sensitivity` 0.9, `soot_factor` 1.3, `flammability` 0.5 |
+| `create_engines:diesel` | 36 | 1.55 | 1.7 | `flammability` 0.5 |
+| `create_engines:gasoline` | 40 | 2.7 | 1.5 | `cold_sensitivity` 0.8, `flammability` 2.0 |
+| `create_engines:used_oil` | 22 | 1.85 | 1.6 | `flammability` 0.5 |
+| `create_engines:ethanol` | 27 | 3.4 | 1.0 | `cold_sensitivity` 1.8, `charge_cooling` 0.08, `soot_factor` 0, `preignition_temperature` 5.0, `flammability` 1.5 |
 
 Numbers outside what the shipped fuels cover work, but `/ce fuels` marks a fuel with `?` when the energy or air figure is
 far outside them (a slipped decimal place) and with `!` when a number cannot be right (zero air, a negative energy). The
@@ -91,7 +93,8 @@ common `c:` fluid tags other mods already use, so another mod's diesel usually r
 | Tag | Counts as |
 |---|---|
 | `c:gasoline` | gasoline |
-| `c:diesel`, `c:biodiesel` | diesel |
+| `c:diesel` | diesel |
+| `c:biodiesel` | biodiesel (33 energy, 1.55 autoignition, 1.7 air, `soot_factor` 0.5, `sulfur` 0, `flammability` 0.5): the clean diesel, with less energy to the mB. A fluid in both `c:diesel` and `c:biodiesel`, as Create: Diesel Generators' biodiesel is, burns as biodiesel. Before 2.1 it burned as diesel |
 | `c:ethanol` | ethanol |
 | `c:kerosene` | kerosene (38 energy, 2.2 autoignition, 1.55 air, `cold_sensitivity` 1.1, `preignition_temperature` 3.6; the mod's own Kerosene has no data map entry and runs on this) |
 | `c:methanol` | methanol (22 energy, 3.8 autoignition, 0.8 air, `cold_sensitivity` 1.9, `charge_cooling` 0.17, `soot_factor` 0, `preignition_temperature` 6.5; the mod's own Methanol has no data map entry and runs on this) |
@@ -161,6 +164,28 @@ cylinder that is also bored and forged has all of them. A cylinder block and a h
 block that names a file that was not read has no effect, and a part effect file of a namespace other than `create_engines` that no
 block names does nothing. Any block of this mod that names one would change engines built before 2.0, so a test holds that none
 does. `/ce parts` lists the files read.
+
+### A flywheel of your own: the flywheel data map
+
+Added in 2.1 (API 1.2). A flywheel that is a pack's or an addon's own is a block made with `PartBlocks.flywheel` (a data pack cannot
+make a block), with its own model, and its masses are data:
+
+```json
+{ "values": { "mymod:racing_flywheel": { "primary_inertia": 0.6, "secondary_inertia": 2.0 } } }
+```
+
+at `data/create_engines/data_maps/block/flywheel.json`.
+
+| Key | Default | Range | What it does |
+|---|---|---|---|
+| `primary_inertia` | required | 0 to 100 | joins the crank's inertia like any flywheel: it sets rev response, spool and starter load (the Cast Flywheel's is 1.0) |
+| `secondary_inertia` | 0 | 0 to 100 | sits behind a spring pack and only smooths the ripple the network sees, above the resonance, as the Dual-Mass Flywheel's secondary mass does |
+
+With no `secondary_inertia` it is a plain flywheel of its primary mass. The resonance of the spring pack is the server's
+`dualMassResonance` setting, the same for every part with a secondary mass; a flywheel has none of its own. A value outside its range
+is refused when the data pack loads. A flywheel block that no entry names adds nothing to the engine. The block's model is
+modelled along the Y axis and turned onto its real axis by its block state, like any rotated block; the mod turns it with the shaft.
+No block of this mod names an entry, so a test holds that nothing built before 2.1 can change.
 
 ## Cam profiles: when the valves open
 

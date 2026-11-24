@@ -1,4 +1,4 @@
-# Public API (frozen at 2.0, API version 1.1.0)
+# Public API (frozen at 2.0, API version 1.2.0)
 
 The API has its own version, `com.createengines.api.ApiVersion`, which follows semantic versioning and is not the mod's number.
 
@@ -16,6 +16,8 @@ The API has its own version, `com.createengines.api.ApiVersion`, which follows s
 - **Added in 1.1:** `PartBlocks` (make and register a cylinder or head block of your own, and read which part effect a block names) and
   `EngineBuilding` (time a cam lobe from code). They exist so that an addon names nothing of this mod outside `com.createengines.api`:
   anything an addon needs that is not here is a gap in the API to be filled with a new public surface, never an import of an internal class.
+- **Added in 1.2:** `PartBlocks.flywheel` (make a flywheel block of your own, with its masses in the `flywheel` data map). `register` takes it
+  as it takes a cylinder.
 - `ApiVersion.MAJOR`, `MINOR`, `PATCH` and `VERSION` are read at run time, not baked into an addon's jar when it is compiled, and
   `ApiVersion.isAtLeast(major, minor)` tells an addon whether a later minor version's feature is there.
 - Data a pack can supply, with their formats frozen the same way: `data_maps/fluid/fuel.json` (fuels),

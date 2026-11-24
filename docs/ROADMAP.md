@@ -692,6 +692,18 @@ same work, branch renamed `2.0-part-depth` (see "Part depth, Black Box replay an
 | 9 | **Black Box: replay.** Scrub back through a recorded run to see what the engine was doing before a stall: speed, load, faults. **Built 2026-11-20:** a Replay dial on the box (5 seconds a notch, the whole ten minutes) shows the state, speed, load, warmth and fault at that moment; the moment holds still while the tape runs on. The tape now also keeps the fault a second at a time. Not seen in game. | Information only, on the existing recorder (`BlackBoxBlockEntity`). Check how much it already keeps. |
 | 10 | **Display Link: more fields.** More engine facts out to Create's displays. Today there are fill, horsepower, speed, status, the sump and, added 2026-11-19, boost, rated torque and battery charge. | Chosen from what `EngineReadout` already works out. **Built 2026-11-20:** Engine Fault (every crankshaft block) and Transmission Gear (the transmission), each a new display source with its own test and lang entry. |
 
+### Electric power (2.1 and 2.2)
+
+Queued 2026-11-23, author's decisions in chat. Batteries had no use beyond plugs and the starter, so the bank gets a real
+consumer and a choice of size. **Row 1 is in 2.1; rows 2 and 3, the battery tiers and the Electric Motor, are for 2.2 (author, 2026-11-23).** New blocks and dials
+only, so nothing existing moves. (2.0 had already shipped when this was queued.)
+
+| # | What | Notes |
+| --- | --- | --- |
+| 1 | **Alternator charge-rate dial.** **Built 2026-11-23, not seen in game.** Four settings, 25/50/75/100% of full output; the charge made, the Forge Energy made and the stress on the shaft all scale with it, so a lower setting is a lighter load for a smaller charge. 100% is the default and what every alternator did before, a saved alternator with no key reads as 100%. Dial `charge_rate` in `EngineDials`. | `ChargeRate` (unit tested), `AlternatorBlockEntity.chargeRateDial`, a goggle line below 100%, a GameTest for half the stress and the saved key. |
+| 2 | **Battery tiers (moved to 2.2 with the Electric Motor, author, 2026-11-23).** Built 2026-11-23, not seen in game, then taken out of 2.1: the **Dry Cell** (100 sparks, the cold keeps nothing back) and the **Large Battery** (800 sparks, the cold keeps back up to three quarters; recipes: dry cell is zinc ingot, copper sheet and redstone, large is three batteries and a brass casing). Both join into one bank with the plain battery when they touch. | The tier machinery stays in the tree with `PLAIN` only: `BatteryTier`, `BatteryChemistry.deliverableLimit(.., coldLoss)` (unit tested), `BatteryBlock.tier()`, `BatteryBlockEntity.capacity()/room()`, `BatteryBank`; the plain battery is exactly what it was (`BatteryTierTest` pins it). Removed block files are saved in `../create-engines-deferred/dry-cell/` and `/large-battery/` (blockstate, loot table, recipe, models, the old test files). **To return them:** add `DRY_CELL(100, 0)` and `LARGE(800, 0.75)` to `BatteryTier`, the blocks in `CEBlocks` and `CEBlockEntities`, the `dry_cell` and `large_battery` kinds in `tools/generate_models.py`, goggle lines, recipes, lang, manifest lines and tier tests. **Needed first:** a Ponder page that explains the tiers (the author found the existing scene does not: it only lists the blocks as components), and release exception 2.7. |
+| 3 | **Electric Motor (2.2).** A standalone shaft source that draws sparks from the bank it touches and turns them into rotation. **Standalone: not a crank throw, no pistons, not on the crank line** (author's decision). Runs underwater (author's decision: "sure underwater is ok"; the rule against running engines underwater was for combustion). Speed set by a value box and also by a redstone setpoint, like the governor (author: "it can have both"). Hybrid use is allowed through Create's shaft network: the motor and a combustion engine's output can drive the same shafts, and an alternator on the engine charges the bank the motor draws from. | Each conversion loses some, so an engine, alternator and motor loop never makes energy. Needs tiers first, because a motor's draw would flatten a 200-spark battery in seconds. **The battery tiers (Dry Cell and Large Battery) ship in 2.2 with the motor**: see row 2. |
+
 ### Optimization pass
 
 **Status 2026-11-19: partly done.** Built: no per-tick starter list or carried-motion capture when nothing changed, engine parts skip
@@ -948,8 +960,9 @@ PIT survivors that are not equivalent mutants (item 1, 134 live), and the engine
 ## Not on this roadmap
 
 **Declined, and not to be proposed again without a new reason:** knock as a mechanic, cooling blocks or radiators,
-parallel throttles, snorkels or any way to run underwater, a power cost on the Muffler, parts that wear out or break,
-new failure modes of any kind (runaway, blown gaskets, seizure, valve float), new fuels (kerosene and methanol were added in 2.0 at the author's say, and no more are wanted), mixins into Create's trains,
+parallel throttles, snorkels or any way to run underwater, a power cost on the Muffler, parts that wear out or break
+in the default game (**reopened 2026-11-23 as an opt-in mode only, placed in 2.3, see "Wear mode" in ROADMAP-3.0.md**),
+new failure modes of any kind in the default game (runaway, blown gaskets, seizure, valve float; the same opt-in exception covers a thrown rod and worn gaskets), new fuels (kerosene and methanol were added in 2.0 at the author's say, and no more are wanted), mixins into Create's trains,
 engine classes, record boards and dyno commissions, cylinders extended or stacked for more volume (one connecting rod
 cannot serve two sizes of cylinder), heat glow on manifolds and turbos, exhaust tips other than the rain cap, intake
 dress parts, a cosmetic accessory belt drive, valve covers (the head block is already the finished head, and its

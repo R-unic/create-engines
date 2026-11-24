@@ -158,8 +158,27 @@ mix, not a better piston engine.
   rated torque is the best of `torque * Roughness.smoothness(ripple)` over the speeds at or below the current one
   (`Dynamometer.ratedTorque`): free below 4% ripple, then one-for-one to a cap of 40%. Mass, more cylinders and even
   firing all lower the ripple, and a faster engine surges less. Goggles on a crankshaft show the cost.
-- **Flywheels.** The Create Flywheel (inertia 1.5, `flywheelInertia`) and the Cast Flywheel (iron, inertia 1.0,
+- **Flywheels.** The Create Flywheel (inertia 2.5, `flywheelInertia`) and the Cast Flywheel (iron, inertia 1.6,
   `castFlywheelInertia`) both count when on the crank's shaft line. Mass also costs spin-up and starter effort.
+- **Dual-Mass Flywheel** (new in 2.1, a new block, nothing existing moved). Two masses on a spring pack, on the same shaft line.
+  The primary mass (`dualMassPrimaryInertia`, 0.45) joins the crank's inertia like any flywheel, so it sets rev response, spool
+  and starter load. The secondary mass (`dualMassSecondaryInertia`, 1.4) does not: it joins only the ripple the network sees,
+  by `DualMass.isolation(rpm, dualMassResonance)`, a pure function that is 0 at or below the resonance (48 RPM) and rises
+  smoothly to 1 at three times it. So it is never worse than a plain flywheel of its primary mass (the weak band loses the
+  benefit, not more), it is the weaker part for a slow engine (on a single cylinder a Cast Flywheel of 1.0 smooths more at 32 RPM),
+  and it wins for a fast, quick-revving or boosted engine (at 192 RPM its 1.85 total smooths more than 1.0 while the crank
+  carries 0.45); `DualMassTest` pins both ends. `EngineSimulation.setIsolatedMass` takes the secondary mass and `predictedRipple` uses the inertia the
+  ripple sees; the dynamometer's copy carries it, so the rating, goggles (a source line with the isolated share and the ripple
+  seen), Roughness and the governor all read it through those two numbers and nothing else. It is the end-game flywheel: a mechanical
+  crafter recipe of two Cast Flywheels (the two masses), a precision mechanism and six brass sheets (the dearest crank-line part), for the fast, boosted build at the top of the ladder.
+  **Spring-pack dial** (author, 2026-11-23): each flywheel has one value box, nine settings, `spring_pack` in a blueprint (`SpringPack`,
+  pure). The middle setting (4, "Standard") multiplies the secondary mass and the resonance by exactly 1, so an untouched flywheel is
+  the part above. One step towards stiff multiplies by a fraction of 1.5 on the resonance and 1.25 on the secondary mass, one step
+  towards soft by the inverse: the softest is 32 RPM and 1.12, the stiffest 72 RPM and 1.75. The two move together on purpose, so a soft
+  pack helps earlier and less and a stiff one later and more; neither end is better at every speed (`SpringPackTest`), and
+  there is no penalty or failure. An engine with several dual-mass flywheels has one resonance, the average of theirs weighted by the
+  secondary mass each isolates (`EngineLayout.isolatedResonanceFactor`, exactly 1 with every dial at the middle). Turning the dial
+  rescans the engine; the drawn lag follows the flywheel's own resonance; its goggles give the setting, resonance and mass.
 - **Variable-geometry turbo** (`VariableTurbochargerBlock`, same block entity): vanes close when the exhaust heat is thin
   (`VANES_OPEN_HEAT`), catching up to half again as much of it, and restrict the exhaust between 0.7 times (open) and 1.3
   times (closed) a fixed turbine's back-pressure.
@@ -839,6 +858,35 @@ one per plug firing and refilled by an alternator; what changed is below. The nu
 - **Display Link.** Battery Charge reads the bank, not the single battery.
 - **Saved data.** `BatteryBlockEntity` gained `Cold` (read back clamped to 0 to 1); `Charge` is now clamped to 0 to 200 and a NaN
   reads as 0. The starter gained `BatteryWeak`. Nothing was removed or renamed.
+
+### Battery tiers (moved to 2.2, 2026-11-23)
+
+**No tier block ships in 2.1.** The Dry Cell (100 sparks, the cold does not touch it) and the Large Battery (800 sparks, three quarters lost to the cold)
+were built and then moved to 2.2 with the Electric Motor, the consumer that needs a bigger bank (author, 2026-11-23). What stays in the tree is the
+machinery, with one tier: `BatteryTier` (no Minecraft types, `BatteryTierTest`) holds `PLAIN` only, `BatteryBlock` takes a tier, and `BatteryBlockEntity`
+reads its capacity and cold loss from its block. The plain battery is exactly what it was (200 sparks, half lost to the cold; `BatteryTierTest` pins it),
+so no existing engine or world changes. The removed blocks' files are saved in `../create-engines-deferred/` (`dry-cell`, `large-battery`).
+
+What the tiers did, for when they return:
+
+- **Banks.** Every tier is a `BatteryBlock`, so tiers join when they touch, and a bank's capacity is the sum of its members' own. Charging shares out by each
+  member's room and drawing by what each can deliver.
+- **Per battery.** The lamp strip, the goggles' percent and `chargeFraction` use that battery's own capacity; the comparator and the goggles' bank line read
+  the whole bank.
+- **Saved data.** The same keys. A saved charge is held to the capacity of the block it loads into.
+- **Not done, and needed before they return:** a Ponder page that actually explains the tiers (the existing battery scene only names the blocks as components
+  and says nothing about size, cold or banks: the author, 2026-11-23, "the ponder pages don't really explain the battery tiers"), and an in-game look at
+  both blocks.
+
+### Alternator charge rate (2.1, 2026-11-23)
+
+A value box on the alternator (any face the shaft does not run out of) sets how much of its full output it is allowed: 25, 50, 75 or
+100% (`ChargeRate`, unit tested). The charge it makes, the Forge Energy it makes and the stress it puts on the shaft (2 SU a RPM at
+100%) all scale with the setting, so a lower setting is a lighter load for a smaller charge: a marginal engine can carry a light
+alternator. The share of the engine's rated torque in the goggles follows it, and the goggles say when it is below 100%. The dial
+changes the stress at once, not at the next change of charging. 100% is the default and is exactly what an alternator did before:
+a saved alternator with no `ChargeRateSetting` key reads as 100%, and a damaged value is held to the dial's range. The blueprint
+dial is `charge_rate`. Nothing was removed or renamed.
 
 ### Part depth, first four items (2.0, 2026-11-19)
 

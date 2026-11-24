@@ -36,8 +36,11 @@ Units and inertias. The simulation's numbers are converted to Create's here.
 | `stressPerTorque` | `78.7` | 1.0 to 10000.0 | Stress Capacity (SU per RPM) produced by one unit of simulated engine torque. A crude single cylinder makes roughly 0.4 units at moderate speed. Calibrated so a tuned straight-12 on gasoline (about 60k SU at its best speed) is several times a Create steam engine (16k SU), which it costs far more to build and fuel. |
 | `journalInertia` | `0.15` | 0.0 to 100.0 | Rotational inertia of a crankshaft journal block. |
 | `throwInertia` | `0.2` | 0.0 to 100.0 | Rotational inertia of a crank throw block. |
-| `flywheelInertia` | `1.5` | 0.0 to 100.0 | Rotational inertia a Create Flywheel adds when coaxial with the crank. |
-| `castFlywheelInertia` | `1.0` | 0.0 to 100.0 | Rotational inertia a Cast Flywheel adds when coaxial with the crank. |
+| `flywheelInertia` | `2.5` | 0.0 to 100.0 | Rotational inertia a Create Flywheel adds when coaxial with the crank. |
+| `castFlywheelInertia` | `1.6` | 0.0 to 100.0 | Rotational inertia a Cast Flywheel adds when coaxial with the crank. |
+| `dualMassPrimaryInertia` | `0.45` | 0.0 to 100.0 | Rotational inertia of a Dual-Mass Flywheel's primary mass, bolted to the crank. It sets rev response, spool and starter load, like any flywheel. |
+| `dualMassSecondaryInertia` | `1.4` | 0.0 to 100.0 | Rotational inertia of a Dual-Mass Flywheel's secondary mass, behind its spring pack. It smooths the speed ripple the network sees but does not slow the crank, and only above the resonance. |
+| `dualMassResonance` | `48.0` | 1.0 to 100000.0 | Crank speed (RPM) at which a Dual-Mass Flywheel's spring pack resonates. The secondary mass does nothing at or below it and counts in full from three times it. |
 | `bearingFriction` | `0.01` | 0.0 to 10.0 | Friction torque per crankshaft block. |
 
 ### `[limits]`
@@ -50,6 +53,10 @@ How far the engine scanner looks. Bigger builds need bigger limits and cost more
 | `maxManifoldBlocks` | `256` | 1 to 4096 | Largest intake or exhaust manifold network the scanner will follow. |
 | `maxCoupledLines` | `8` | 1 to 64 | Most crankshafts that can be geared together, one to one, into a single engine. 1 turns coupled crankshafts off: each crank line is then an engine of its own. |
 | `maxCouplingWalk` | `512` | 1 to 8192 | Most kinetic blocks the scanner looks through, from a crankshaft, for other crankshafts geared to it. |
+| `throttleIdleMin` | `5` | 5 to 100 | Smallest idle stop a Throttle Body's value box offers, as a percent open (a multiple of 5). Raise it to stop players closing the valve down to a crack. |
+| `throttleIdleMax` | `100` | 5 to 100 | Largest idle stop a Throttle Body's value box offers, as a percent open (a multiple of 5). Never below throttleIdleMin: if it is, the minimum is used. |
+| `throttleWideMin` | `100` | 5 to 100 | Smallest wide-open bore a Throttle Body's value box offers, as a percent of the plain intake (a multiple of 5). 100 is the plain intake; lower lets a throttle body pinch the intake even at full signal. |
+| `throttleWideMax` | `150` | 100 to 150 | Largest wide-open bore a Throttle Body's value box offers, as a percent of the plain intake (a multiple of 5). 150 is the most the simulation allows; lower it to forbid oversized bores. Never below throttleWideMin. |
 
 ### `[balance]`
 
@@ -80,6 +87,7 @@ Balance multipliers. 1.0 is the shipped balance.
 | `pilotInjection` | `true` | on or off | A compression engine can inject a pilot shot of diesel (from an oil pan's pilot tank) to light gasoline or ethanol that compression alone could not. |
 | `rotaryEngines` | `true` | on or off | Rotor housings run. Off, they sit inert and say so in the goggles. |
 | `heatRecovery` | `true` | on or off | Exhaust Heat Exchangers take heat from the exhaust and warm basins. |
+| `meterAllHeads` | `false` | on or off | Setting the fuel metering of one cylinder head (or rotor housing) sets every other injector of that engine to the same figure. Each head keeps its own dial and can still be changed on its own afterwards; heads held by a MAF sensor or a closed fuel rack are left alone. Off, each head is set by hand as before. |
 
 ### `[compat]`
 
@@ -90,6 +98,7 @@ Other mods, and how the world around an engine answers it.
 | `altitudeThinning` | `true` | on or off | The air thins with height: past sea level an engine's intake charge falls, a little at first and more steeply near the build limit, so a naturally aspirated engine loses power as it climbs and a turbocharger or supercharger earns its place. Boost stages offset it. Off, the air is the same at every height. Nothing else about an engine changes, and it never destroys anything. |
 | `sableAirPressure` | `true` | on or off | With Sable (Create Aeronautics) installed, the air an engine breathes is Sable's own air pressure at the engine's height, so it follows the dimension's pressure curve, datapacks included. Off, or without Sable, the height curve below is used instead. |
 | `fuelFire` | `true` | on or off | Liquid fuel lying in the world burns: fire, lava or burning fuel beside a pool lights it, and it burns off in a wave through the pool, leaving fire where it was. Off, fuel on the ground only lies there as before. |
+| `fuelFireByVolatility` | `true` | on or off | A spill's fire follows the fuel: gasoline and methanol light surely and burn off in a quick wave, ethanol a little slower, and diesel, biodiesel, kerosene and plant oil are slow to catch and spread. Only fuel lying in the world is affected, never an engine's tank or a running engine. Off, every spilled fuel burns alike. Needs fuelFire. |
 | `altitudeStart` | `128.0` | -64.0 to 100000.0 | The height in blocks up to which the air is as thick as at sea level. Used when Sable's pressure is not. |
 | `altitudeScale` | `1200.0` | 1.0 to 100000.0 | Blocks of climb over which the air thins by a factor of e. Smaller is steeper. Used when Sable's pressure is not. |
 | `altitudeFloor` | `0.25` | 0.01 to 1.0 | The thinnest air an engine is given, as a share of sea level, whichever source says it. Raise it to keep engines running high up, lower it to starve them; the default 0.25 is about the ceiling of a World War II piston engine. |

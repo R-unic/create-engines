@@ -210,6 +210,76 @@ that changes how an existing engine behaves says so in its changelog.
 - [Design notes](https://github.com/R-unic/create-engines/blob/master/docs/DESIGN.md), how the simulation works
 ```
 
+## Changelog for 2.1.0
+
+A feature release, "Twin Mass": a Dual-Mass Flywheel, two new battery sizes, a charge-rate dial on the alternator, a way for an
+addon to add a flywheel of its own, outlines that follow the models, and one fix that changes an existing behaviour, listed first.
+No ID, key or saved format is renamed or removed; everything else is new.
+- Changed behaviour, spark fuels: an engine with **no spark plug and no pilot shot** no longer runs on a fuel that needs a spark
+  (gasoline, kerosene, ethanol, methanol), however much boost has heated the charge. Before, a plugless engine with enough
+  superchargers or turbos lit them by compression, at several times the power, with no plug, battery or timing. A plug-fitted engine
+  is unchanged (heat past the autoignition point is still pre-ignition, which costs power), and so are diesel, plant oil and used oil
+  and an engine lit by a pilot shot. Six lines of the behaviour baseline moved (plugless blown kerosene).
+- New, Dual-Mass Flywheel (`create_engines:dual_mass_flywheel`): a flywheel built as two masses on a spring pack, on the crank line
+  like the Cast Flywheel. The primary mass (0.45) joins the crank, so it sets rev response, spool and starter load; the secondary
+  mass (1.4) joins only the speed ripple the network sees, and only above the spring pack's resonance (48 RPM, full from three times
+  it). It is never worse than a plain flywheel of its primary mass, is the weaker part for a slow, heavy engine (a Cast Flywheel
+  still suits that), and suits a fast, quick-revving or boosted one. An end-game part. Recipe (mechanical crafter): 2 Cast
+  Flywheels, a precision mechanism and 6 brass sheets. The Cast Flywheel is unchanged. The secondary
+  disc is drawn lagging the primary through the resonance, for looks only; nothing about the rating depends on it. Three new server
+  settings: `dualMassPrimaryInertia`, `dualMassSecondaryInertia`, `dualMassResonance`. The flywheel has a spring-pack dial (a value
+  box, nine settings, "Standard" in the middle and what the settings above give): softer resonates lower and isolates less, stiffer
+  resonates higher and isolates more (32 RPM and 1.12 at the softest, 72 RPM and 1.75 at the stiffest), so neither end is better at
+  every speed. It is a blueprint dial (`spring_pack`), and the flywheel's goggles show the setting, its resonance and secondary mass.
+- New, readouts: the goggles of an engine with any flywheel say what ripple it has and what it would have without the flywheel
+  mass, and what share of the rating that keeps; a Dual-Mass Flywheel adds how much of its secondary mass is isolating now. A new
+  Display Link source, Engine Smoothness, on every crankshaft block. Information only. The flywheel's Ponder page gained two texts.
+- New, alternator charge rate: a value box sets the alternator to 25, 50, 75 or 100% of its output. The charge, the Forge Energy
+  and the stress on the shaft all scale with it, so a lower setting is a lighter load for a smaller charge. 100% is the default
+  and what every alternator did before; an alternator saved before reads as 100%.
+- New, for addons and packs (API 1.2): `PartBlocks.flywheel` makes a flywheel block of your own, and a new `flywheel` data map
+  (`primary_inertia`, optional `secondary_inertia`) gives it its masses. A flywheel block no entry names adds nothing, and no block of this mod is
+  one. The example addon has a Racing Flywheel and a test that runs an engine with it. See ADDONS.md, DATA.md and API.md.
+- Changed, outlines: the selection outline and collision of thirteen existing parts now follow their models instead of one cube
+  (alternator, black box, governor, flare stack, starter, air intake, exhaust outlet, turbocharger, cam lobe, crank throw, and the
+  body of a throttle, a MAF sensor and a heat exchanger), and the flange on the end of a pipe arm is a little wider. No engine's
+  numbers move; what you can aim at and stand against does.
+- Fix, advancements: the milestones that read engine speed now use the speed the engine makes under its own power, so an engine
+  held up to speed by a starter or another source no longer earns them.
+- Changed behaviour, biodiesel (author-approved): biodiesel (anything in `c:biodiesel`, such as Create: Diesel Generators' biodiesel,
+  which is also in `c:diesel`) used to burn as diesel exactly. It is now the clean diesel: 33 energy to the mB (diesel is 36), half
+  diesel's soot, and no sulfur for the Pollution of the Realms compat. Its autoignition, air and cold figures are diesel's, so it
+  lights and starts the same; an engine on it makes about a twelfth less power for the same fuel flow, and its exhaust is cleaner.
+  Anything in `c:diesel` alone is unchanged.
+- Changed behaviour, plant oil (author-approved): plant oil becomes the tolerant, dirty fuel. A cold block costs it less: its cold
+  sensitivity goes from 1.5 (the worst of the common fuels) to 0.9, so a stone-cold block burns 89% of its heat release against 82%
+  before (diesel 88%, gasoline 90%). Its soot and sulfur go from 1 to 1.3, so it makes more pollution than diesel. Its energy, air
+  and ignition are unchanged. Fourteen of the forty seeded engine trajectories in `compat/trajectories.txt` moved with it.
+  (A fuel-level tolerance for a poor mixture was not built: nothing in the simulation takes a mixture tolerance per fuel.)
+- New, spill fire by fuel (a new server setting, `fuelFireByVolatility`, on by default; `fuelFire` must also be on): a spill of
+  fuel lying in the world now burns by how flammable the fuel is. Gasoline and methanol (flammability 2.0) catch at once and burn off
+  in a quick wave (about two ticks a block), ethanol (1.5) a little slower, and diesel, biodiesel, kerosene, plant oil and used oil (0.5)
+  are slow to catch (they can fail a try and need another), six ticks a block, so they are safer to store and slower to spread. Before, every fuel burned
+  alike at three ticks a block. It only reads fuel lying in the world as a fluid block: an engine's tank and a running engine are
+  never touched. Off, every spill burns alike as in 2.0.2. A fuel gets its own figure with the new optional data map key
+  `flammability` (default 1, which is how every fuel burned before).
+- New, Ponder page "Choosing a Fuel" on the plant oil, diesel, gasoline, kerosene, ethanol and methanol buckets: what each fuel is for.
+- New, fuel tooltips: a fuel's tooltip now also says when its exhaust is dirty or cleaner than diesel's and how a spill of it burns
+  (volatile, a little slower, or hard to light). Information only.
+- New, setting `meterAllHeads` (off by default): with it on, setting the fuel metering of one cylinder head (or rotor housing)
+  sets every other injector of that engine to the same figure. Each head keeps its own dial and can be changed alone afterwards;
+  heads held by a MAF sensor or a closed fuel rack are left alone, and the Timing Tool's tune mode still sets each head on its own.
+  Off, nothing changes and no engine is rewritten.
+- Tests added: `FuelCharacterTest`, `MeteringFollowGameTests`, three more `FuelFireGameTests`, and the fuel data entries are now
+  checked against their constants. Guards moved by hand for the two fuel changes: the fuel line of `compat/manifest.txt`, fourteen
+  lines of `compat/trajectories.txt`, `ThermalTest`'s cold-burn ordering, `FuelSpecTest`'s soot figure, and the biodiesel assertion in
+  `EngineGameTests` (release record Exception 2.9).
+- Tests added: `DualMassTest`, `FlywheelSpecTest`, `PluglessBoostTest`, `BatteryTierTest`, `ChargeRateTest`, `HitboxFitTest`, the
+  dual-mass model tests and `SpringPackLagTest`, a property and a config-extremes case for the dual-mass settings,
+  `BatteryTierGameTests`, GameTests for the flywheel readout, the data flywheel, the charge-rate dial and the v2.0.0 world fixtures
+  (`engine_v2_0_0_*.snbt`, which an old engine must still load and run as before).
+  `compat/manifest.txt` has lines added and none changed or removed; `compat/behaviour.txt` has the six lines above moved by hand.
+
 ## Changelog for 2.0.2
 
 A small patch for 2.0.1: more ways to make plant oil and engine oil, two fuel recipes that cost differently, and a longer Heat
