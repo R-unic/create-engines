@@ -98,6 +98,7 @@ common `c:` fluid tags other mods already use, so another mod's diesel usually r
 | `c:ethanol` | ethanol |
 | `c:kerosene` | kerosene (38 energy, 2.2 autoignition, 1.55 air, `cold_sensitivity` 1.1, `preignition_temperature` 3.6; the mod's own Kerosene has no data map entry and runs on this) |
 | `c:methanol` | methanol (22 energy, 3.8 autoignition, 0.8 air, `cold_sensitivity` 1.9, `charge_cooling` 0.17, `soot_factor` 0, `preignition_temperature` 6.5; the mod's own Methanol has no data map entry and runs on this) |
+| `c:naphtha` | naphtha (37 energy, 2.9 autoignition, 1.45 air, `cold_sensitivity` 0.7; a spark fuel just under gasoline, there for Create: The Factory Must Grow's naphtha; this mod makes none) |
 | `c:plantoil` | plant oil |
 
 To make a fluid a fuel by tag, add it to the tag (the file merges; do not set `replace`):

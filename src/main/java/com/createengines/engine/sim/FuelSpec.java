@@ -190,4 +190,11 @@ public record FuelSpec(double energyPerMb, double autoignitionTemp, double airPe
 	 * sulfur). It needs a spark like ethanol and is the worst of the lot in a cold block.
 	 */
 	public static final FuelSpec METHANOL = new FuelSpec(22, 3.8, 0.8, 1.9, 0.17, 0, METHANOL_PREIGNITION).withFlammability(VOLATILE);
+
+	/**
+	 * The light cut other mods refine (Create: The Factory Must Grow's naphtha, anything in {@code c:naphtha}): a little less energy
+	 * to the mB than gasoline, harder to light by compression than it, and a touch less sensitive to a cold block. Nothing of this
+	 * mod makes it; it exists so that fluid is not dead weight beside an engine.
+	 */
+	public static final FuelSpec NAPHTHA = new FuelSpec(37, 2.9, 1.45, 0.7).withFlammability(VOLATILE);
 }
