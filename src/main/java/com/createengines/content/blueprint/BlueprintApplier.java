@@ -154,14 +154,27 @@ public final class BlueprintApplier {
 			.stream()
 			.anyMatch(p -> p.block()
 				.startsWith(EngineBlueprintPolicy.CREATE + ":"));
-		if (hasCreate)
-			return actual;
-		List<Blueprint.Part> ours = actual.parts()
+		// The fluid system and the Black Boxes were recorded later still: a blueprint with none of them does not describe them
+		boolean hasFluids = blueprint.parts()
 			.stream()
-			.filter(p -> !p.block()
+			.anyMatch(p -> EngineAttachments.isFluidSystemId(p.block()));
+		boolean hasBlackBox = blueprint.parts()
+			.stream()
+			.anyMatch(p -> EngineAttachments.isBlackBoxId(p.block()));
+		boolean hasTransmission = blueprint.parts()
+			.stream()
+			.anyMatch(p -> EngineAttachments.isTransmissionId(p.block()));
+		if (hasCreate && hasFluids && hasBlackBox && hasTransmission)
+			return actual;
+		List<Blueprint.Part> kept = actual.parts()
+			.stream()
+			.filter(p -> hasCreate || !p.block()
 				.startsWith(EngineBlueprintPolicy.CREATE + ":"))
+			.filter(p -> hasFluids || !EngineAttachments.isFluidSystemId(p.block()))
+			.filter(p -> hasBlackBox || !EngineAttachments.isBlackBoxId(p.block()))
+			.filter(p -> hasTransmission || !EngineAttachments.isTransmissionId(p.block()))
 			.toList();
-		return new Blueprint(actual.name(), actual.builder(), ours, actual.figures());
+		return new Blueprint(actual.name(), actual.builder(), kept, actual.figures());
 	}
 
 	private static @Nullable ScrollValueBehaviour behaviour(Level level, BlockPos origin, DialChange change) {

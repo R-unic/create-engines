@@ -39,6 +39,9 @@ import net.minecraft.world.level.block.state.properties.Property;
  * chain drives that couple crank lines) are recorded. A block of any other mod is counted in {@link Result#skipped()} and
  * is not in the blueprint (a pasted blueprint never places another mod's blocks).
  * <p>
+ * The engine's fluid system is recorded too (see {@link EngineAttachments}): the Create pipes, pumps, valves and tanks that
+ * run to its heads, oil pan and heat exchanger, and the Black Boxes against it.
+ * <p>
  * Nothing is changed in the world, and the fluids, fuel and oil in the engine are not recorded: a blueprint is the
  * engine's build and tune, not its contents.
  */
@@ -130,6 +133,26 @@ public final class BlueprintRecorder {
 		}
 		if (parts.isEmpty())
 			return Result.failed(Failure.NO_ENGINE, "");
+		// The fluid system and Black Boxes come after the engine's own blocks, and one that cannot be held (too far, too
+		// many, too many properties) is left out and counted rather than failing a recording that works without it
+		EngineAttachments.Found attached = EngineAttachments.find(level, new java.util.HashSet<>(members),
+			Math.min(EngineAttachments.MAX_FLUID_BLOCKS, Math.max(0, Limits.MAX_PARTS - parts.size())));
+		skipped += attached.overflow();
+		for (BlockPos pos : attached.blocks()) {
+			BlockState state = level.getBlockState(pos);
+			String id = BuiltInRegistries.BLOCK.getKey(state.getBlock())
+				.toString();
+			int dx = pos.getX() - origin.getX();
+			int dy = pos.getY() - origin.getY();
+			int dz = pos.getZ() - origin.getZ();
+			Map<String, String> properties = changedProperties(state);
+			if (Math.abs(dx) > Limits.MAX_SPAN || Math.abs(dy) > Limits.MAX_SPAN || Math.abs(dz) > Limits.MAX_SPAN
+				|| parts.size() >= Limits.MAX_PARTS || properties.size() > Limits.MAX_ENTRIES) {
+				skipped++;
+				continue;
+			}
+			parts.add(new Blueprint.Part(dx, dy, dz, id, properties, dials(level, pos, id)));
+		}
 		MakerPlateBlockEntity named = plateOn(level, members, false);
 		MakerPlateBlockEntity stamped = plateOn(level, members, true);
 		String called = !name.isEmpty() ? name : named != null && !named.name()
@@ -158,7 +181,9 @@ public final class BlueprintRecorder {
 		Map<String, String> changed = new TreeMap<>();
 		for (Property<?> property : state.getProperties())
 			// A battery's lamp strip shows what it holds, and its joins what touches it: a blueprint carries neither
-			if (!BatteryBlock.isOnlyForLooks(state, property) && !state.getValue(property)
+			// A pipe or tank standing in water is not a different build from one on dry land
+			if (!BatteryBlock.isOnlyForLooks(state, property) && !(property == BlockStateProperties.WATERLOGGED
+				&& EngineAttachments.isFluidSystem(state)) && !state.getValue(property)
 				.equals(standard.getValue(property)))
 				changed.put(property.getName(), valueName(state, property));
 		return changed;

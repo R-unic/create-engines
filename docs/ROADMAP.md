@@ -314,7 +314,14 @@ only registered `create_engines` blocks, properties and values the block really 
 blocks are recorded, and so are Create's own blocks the scanner counts as part of the engine (shafts, cogwheels and chain
 drives that couple crank lines; checked 2026-11-17 against `BlueprintRecorder` and `EngineBlueprintPolicy`, which allow the
 `create` namespace). The gearing from a crank to a camshaft is not part of what the scanner follows, so it is not recorded:
-this is the one gap left in recording. Fluids, fuel and oil are not recorded. The new IDs join the 1.x promise at release: item `blueprint`, data
+this is the one gap left in recording. The fluid in the engine (fuel, oil, coolant) is not recorded, but since 2026-11-24 the fluid
+system is: `EngineAttachments` follows Create's pipes, pumps, valves and tanks from the heads, rotor housings, oil pan and heat
+exchanger by the connections they really have (a tank only through a pipe, or sitting on a heat exchanger), nearest first, to at
+most 256 blocks, and records any Black Box set against the engine with its `replay` dial, and any transmission sitting on the end of the
+engine's shaft run (a chain of them too) with its `gear` and `shift_profile`. They come after the engine's own
+blocks and are never in `EngineLayout.members()`; one too far, too many or with too many properties is left out and counted as
+skipped rather than failing the recording, and a pipe's `waterlogged` is not recorded. A blueprint with no fluid block (or no Black Box) in it
+(or transmission) in it is compared without those on the engine, as one with no Create block is, so every blueprint recorded before still applies. The new IDs join the 1.x promise at release: item `blueprint`, data
 component `blueprint`, recipe `blueprint`; dial names and the `CEBP` format are frozen the same way. A sneak-use on a
 recorded blueprint records over it; a plain use says what it holds. Tests (`BlueprintGameTests`): a built engine is recorded
 block by block, every dial at its setting, recording changes nothing, a non-engine is refused, what is recorded passes the
