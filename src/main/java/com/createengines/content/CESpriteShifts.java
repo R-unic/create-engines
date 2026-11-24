@@ -38,6 +38,16 @@ public final class CESpriteShifts {
 		throw new IllegalStateException("The styled casing behaviour is only made on the client");
 	};
 
+	/** The same for a casing block or a cased shaft, which wear the one sheet given and have no plate property. */
+	public static java.util.function.Function<CTSpriteShiftEntry, com.simibubi.create.foundation.block.connected.ConnectedTextureBehaviour> CASING_BEHAVIOUR = s -> {
+		throw new IllegalStateException("The casing behaviour is only made on the client");
+	};
+
+	/** The same for an encased cogwheel, which Create gives its own behaviour for the ends and the shaft stubs. */
+	public static java.util.function.Function<CTSpriteShiftEntry, com.simibubi.create.foundation.block.connected.ConnectedTextureBehaviour> COG_BEHAVIOUR = s -> {
+		throw new IllegalStateException("The cog behaviour is only made on the client");
+	};
+
 	/** The sheet a part clad in a plate draws: the window plate is drawn by its own models, so it keeps the plain one. */
 	public static CTSpriteShiftEntry forStyle(CasingStyle style) {
 		return switch (style) {

@@ -49,7 +49,6 @@ import com.createengines.content.turbo.TurbochargerBlock;
 import com.createengines.content.turbo.VariableTurbochargerBlock;
 import com.simibubi.create.AllBlocks;
 import com.simibubi.create.api.behaviour.display.DisplaySource;
-import com.simibubi.create.content.decoration.encasing.EncasedCTBehaviour;
 import com.simibubi.create.content.decoration.encasing.EncasingRegistry;
 import com.simibubi.create.content.kinetics.base.RotatedPillarKineticBlock;
 import com.simibubi.create.content.kinetics.simpleRelays.encased.EncasedCogwheelBlock;
@@ -689,7 +688,7 @@ public final class CEBlocks {
 				.properties(p -> p.mapColor(MapColor.METAL))
 				.transform(TagGen.pickaxeOnly())
 				.blockstate((c, p) -> simpleIgnoringPaint(c, p, s -> AssetLookup.partialBaseModel(c, p)))
-				.onRegister(CreateRegistrate.connectedTextures(() -> new EncasedCTBehaviour(CESpriteShifts.ENGINE_CASING)))
+				.onRegister(CreateRegistrate.connectedTextures(() -> CESpriteShifts.CASING_BEHAVIOUR.apply(CESpriteShifts.ENGINE_CASING)))
 				.onRegister(CreateRegistrate.casingConnectivity(
 					(block, cc) -> cc.makeCasing(block, CESpriteShifts.ENGINE_CASING)))
 				.item()
@@ -705,7 +704,7 @@ public final class CEBlocks {
 				.transform(TagGen.pickaxeOnly())
 				.blockstate((c, p) -> simpleIgnoringPaint(c, p, s -> AssetLookup.partialBaseModel(c, p)))
 				.onRegister(CreateRegistrate.connectedTextures(
-					() -> new EncasedCTBehaviour(CESpriteShifts.ENGINE_RIVETED_CASING)))
+					() -> CESpriteShifts.CASING_BEHAVIOUR.apply(CESpriteShifts.ENGINE_RIVETED_CASING)))
 				.onRegister(CreateRegistrate.casingConnectivity(
 					(block, cc) -> cc.makeCasing(block, CESpriteShifts.ENGINE_RIVETED_CASING)))
 				.item()
@@ -721,7 +720,7 @@ public final class CEBlocks {
 				.transform(TagGen.pickaxeOnly())
 				.blockstate((c, p) -> simpleIgnoringPaint(c, p, s -> AssetLookup.partialBaseModel(c, p)))
 				.onRegister(CreateRegistrate.connectedTextures(
-					() -> new EncasedCTBehaviour(CESpriteShifts.ENGINE_LOUVRED_CASING)))
+					() -> CESpriteShifts.CASING_BEHAVIOUR.apply(CESpriteShifts.ENGINE_LOUVRED_CASING)))
 				.onRegister(CreateRegistrate.casingConnectivity(
 					(block, cc) -> cc.makeCasing(block, CESpriteShifts.ENGINE_LOUVRED_CASING)))
 				.item()
@@ -741,7 +740,7 @@ public final class CEBlocks {
 				.transform(TagGen.pickaxeOnly())
 				.blockstate((c, p) -> simpleIgnoringPaint(c, p, s -> AssetLookup.partialBaseModel(c, p)))
 				.onRegister(CreateRegistrate.connectedTextures(
-					() -> new EncasedCTBehaviour(CESpriteShifts.ENGINE_WINDOW_CASING)))
+					() -> CESpriteShifts.CASING_BEHAVIOUR.apply(CESpriteShifts.ENGINE_WINDOW_CASING)))
 				.onRegister(CreateRegistrate.casingConnectivity(
 					(block, cc) -> cc.makeCasing(block, CESpriteShifts.ENGINE_WINDOW_CASING)))
 				.item()
@@ -757,7 +756,7 @@ public final class CEBlocks {
 			.transform(TagGen.pickaxeOnly())
 			.blockstate((c, p) -> axisIgnoringPaint(c, p,
 				s -> p.models().getExistingFile(p.modLoc("block/engine_cased_shaft/block"))))
-			.onRegister(CreateRegistrate.connectedTextures(() -> new EncasedCTBehaviour(CESpriteShifts.ENGINE_CASING)))
+			.onRegister(CreateRegistrate.connectedTextures(() -> CESpriteShifts.CASING_BEHAVIOUR.apply(CESpriteShifts.ENGINE_CASING)))
 			.onRegister(CreateRegistrate.casingConnectivity((block, cc) -> cc.make(block, CESpriteShifts.ENGINE_CASING,
 				(s, f) -> f.getAxis() != s.getValue(RotatedPillarKineticBlock.AXIS))))
 			.transform(EncasingRegistry.addVariantTo(AllBlocks.SHAFT))
@@ -946,7 +945,7 @@ public final class CEBlocks {
 			.blockstate((c, p) -> axisIgnoringPaint(c, p,
 				s -> p.models().getExistingFile(p.modLoc("block/" + name + "/block"))))
 			.onRegister(CreateRegistrate.connectedTextures(
-				() -> new EncasedCTBehaviour(CESpriteShifts.forStyle(style))))
+				() -> CESpriteShifts.CASING_BEHAVIOUR.apply(CESpriteShifts.forStyle(style))))
 			.onRegister(CreateRegistrate.casingConnectivity((block, cc) -> cc.make(block, CESpriteShifts.forStyle(style),
 				(s, f) -> f.getAxis() != s.getValue(RotatedPillarKineticBlock.AXIS))))
 			.transform(EncasingRegistry.addVariantTo(AllBlocks.SHAFT))
@@ -984,8 +983,7 @@ public final class CEBlocks {
 					.getExistingFile(p.modLoc("block/" + name + "/block" + suffix));
 			}))
 			.onRegister(CreateRegistrate.connectedTextures(
-				() -> new com.simibubi.create.content.kinetics.simpleRelays.encased.EncasedCogCTBehaviour(
-					CESpriteShifts.forStyle(style))))
+				() -> CESpriteShifts.COG_BEHAVIOUR.apply(CESpriteShifts.forStyle(style))))
 			.onRegister(CreateRegistrate.casingConnectivity((block, cc) -> cc.make(block, CESpriteShifts.forStyle(style),
 				(s, f) -> f.getAxis() == s.getValue(RotatedPillarKineticBlock.AXIS)
 					&& !s.getValue(f.getAxisDirection() == Direction.AxisDirection.POSITIVE

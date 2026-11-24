@@ -34,6 +34,8 @@ public class CreateEnginesClient {
 		modContainer.registerConfig(ModConfig.Type.CLIENT, CEClientConfig.SPEC, CEClientConfig.FILE);
 		modEventBus.addListener(CEClientConfig::onConfig);
 		com.createengines.content.CESpriteShifts.STYLED_CASING_BEHAVIOUR = com.createengines.client.StyledCasingCTBehaviour::new;
+		com.createengines.content.CESpriteShifts.CASING_BEHAVIOUR = com.createengines.client.StyledCasingCTBehaviour::new;
+		com.createengines.content.CESpriteShifts.COG_BEHAVIOUR = com.createengines.client.StyledCogCTBehaviour::new;
 		CEPartialModels.init();
 		com.createengines.content.blueprint.BlueprintViewer.opener = com.createengines.client.BlueprintScreen::open;
 		com.createengines.content.blueprint.BlueprintViewer.copier = com.createengines.client.BlueprintImportScreen::copy;
