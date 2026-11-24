@@ -21,6 +21,7 @@ data:data/create_engines/loot_table/blocks/crank_throw.json	afbb397028cc69ded3b7
 data:data/create_engines/loot_table/blocks/crankshaft.json	7113e84eaceec514032b21086eb941bf38ecdea0
 data:data/create_engines/loot_table/blocks/cylinder.json	18880fcc5082fb4f1108a7c51397164c1102e94d
 data:data/create_engines/loot_table/blocks/cylinder_head.json	d753781ba40e8dfced4b13b75d2f402adffd2451
+data:data/create_engines/loot_table/blocks/dry_cell.json	adfe226b8ce7d3b837e02780558d960a7c76279a
 data:data/create_engines/loot_table/blocks/dual_mass_flywheel.json	f5c88f47e31a8638059e18e8831c66f80b721085
 data:data/create_engines/loot_table/blocks/dyno.json	90d6bd48b115bd5aab5f04229b2571f38a639cc8
 data:data/create_engines/loot_table/blocks/engine_cased_cogwheel.json	33514fcbecf2ae2d36955d3c981c59ebb28dca61
@@ -48,6 +49,7 @@ data:data/create_engines/loot_table/blocks/heat_exchanger.json	5bd16a70b9f44bf37
 data:data/create_engines/loot_table/blocks/heavy_starter.json	205c33942a04e8e1b6779f98a210a8d1bddc3906
 data:data/create_engines/loot_table/blocks/intake_manifold.json	ca901293ed17f24b76bd7bd164614a94ff21aef2
 data:data/create_engines/loot_table/blocks/intercooler.json	eb140f399ac429e74c4cbcc583cbe763f2f19229
+data:data/create_engines/loot_table/blocks/large_battery.json	2b4123955847bc0dcfaced7ad72de3adc5787d24
 data:data/create_engines/loot_table/blocks/maf_sensor.json	a987ca9024d0a1d4b8b78f4fe2017a5e160e6746
 data:data/create_engines/loot_table/blocks/maker_plate.json	e9f250566c609adbba83e7eac8716e2a45262eb9
 data:data/create_engines/loot_table/blocks/muffler.json	200c1c89d2c4aa040e8749b66a3dad5759bc4d64
@@ -91,6 +93,7 @@ data:data/create_engines/recipe/crank_throw.json	5f6597aeba82b34293b2fae5aac820a
 data:data/create_engines/recipe/crankshaft.json	14988c9b3e974c984cd4654b742dc6876e494a2b
 data:data/create_engines/recipe/cylinder.json	c718b97df68b2e599ed14be956e1d88852193208
 data:data/create_engines/recipe/cylinder_head.json	5fd1937693bf1fb5de787505c019605d8f105fa0
+data:data/create_engines/recipe/dry_cell.json	59abc8a47be89b8b71098f0320a31de55a94ab80
 data:data/create_engines/recipe/dual_mass_flywheel.json	5957ab54d86adfbe1a5c48f3fc780ff2ab768245
 data:data/create_engines/recipe/dyno.json	8823e350300928b89d5d8617385fc8c0d276f713
 data:data/create_engines/recipe/engine_casing.json	4bf77b6431038e430a96dd23a5730c47da0efdbb
@@ -108,9 +111,12 @@ data:data/create_engines/recipe/gray_dye_from_soot.json	93786b6d66421c7497d65d2c
 data:data/create_engines/recipe/headphones.json	0d1e437f7a545a0ea34e6a6df527a83b30ba2d76
 data:data/create_engines/recipe/heat_exchanger.json	804cf6ffb809adb2c0a29a0fd01164bf529daa98
 data:data/create_engines/recipe/heavy_starter.json	ccc4d22ab03e041add5c8e9e2f78ffdb677af937
+data:data/create_engines/recipe/ignition_coil.json	84e50d9597a6f88fa14518e3cf60ba4494964c71
+data:data/create_engines/recipe/injector_assist.json	81ef378da03091963c8f53324de092154454597e
 data:data/create_engines/recipe/intake_manifold.json	3b9dbab62da90b2f6cc0494c3831d64e2c538e9d
 data:data/create_engines/recipe/intercooler.json	aa47c3b438eb83b21bb4ce13390d718612568a88
 data:data/create_engines/recipe/jerry_can.json	18375f370fffe6e3d27a729549ce274650ed451f
+data:data/create_engines/recipe/large_battery.json	99ddd21fb714a0c79bfe0164b8fa5e9c6a4113fa
 data:data/create_engines/recipe/maf_sensor.json	8eae49b79a9f798037a0079678e818863569641a
 data:data/create_engines/recipe/maker_plate.json	78527074be9b6971f2d1f17d2dfcdbe167fcb6ff
 data:data/create_engines/recipe/mixing/biodiesel.json	c82cf8bed2a888b6c2502bb532606d1363ed2028
@@ -199,6 +205,10 @@ nbt:BatteryBlockEntity:Charge
 nbt:BatteryBlockEntity:Cold
 nbt:BatteryBlockEntity:Primary
 nbt:BatteryBlockEntity:Rate
+nbt:BatteryBlockEntity:Reserve
+nbt:BatteryPriorityGameTests:Reserve
+nbt:BatteryTierBlocksGameTests:Charge
+nbt:BatteryTierGameTests:Charge
 nbt:BlackBoxBlockEntity:Ago
 nbt:BlackBoxBlockEntity:Awarded
 nbt:BlackBoxBlockEntity:Changes
@@ -236,6 +246,7 @@ nbt:CamshaftBlockEntity:Primary
 nbt:CamshaftBlockEntity:Rack
 nbt:CamshaftBlockEntity:Ratio
 nbt:CamshaftBlockEntity:Timing
+nbt:CastFlywheelBlockEntity:SpringPackSetting
 nbt:ColumnPortBlockEntity:BaseX
 nbt:ColumnPortBlockEntity:BaseY
 nbt:ColumnPortBlockEntity:BaseZ
@@ -394,6 +405,9 @@ nbt:PaintMigrationGameTests:sections
 nbt:PaintMigrationGameTests:x
 nbt:PaintMigrationGameTests:y
 nbt:PaintMigrationGameTests:z
+nbt:PartDepthGameTests:ChargeRateSetting
+nbt:PartDepthGameTests:ScrollValue
+nbt:PartDepthGameTests:ShiftProfile
 nbt:RotorHousingBlockEntity:Chamber
 nbt:RotorHousingBlockEntity:ScrollValue
 nbt:SensorBlockEntity:Signal
@@ -406,6 +420,8 @@ nbt:SootTrapBlockEntity:Stored
 nbt:StarterBlockEntity:BatteryWeak
 nbt:StarterBlockEntity:Cranking
 nbt:StarterBlockEntity:Drag
+nbt:StarterBlockEntity:DrawingCharge
+nbt:StarterBlockEntity:ElectricReady
 nbt:StarterBlockEntity:Primary
 nbt:StarterBlockEntity:Turning
 nbt:StressGameTests:Force
@@ -443,6 +459,8 @@ prop:ColumnSectionBlock:tint
 prop:CylinderBlock:connecting_rod
 prop:CylinderBlock:forged_piston
 prop:CylinderBlock:piston
+prop:CylinderHeadBlock:assist
+prop:CylinderHeadBlock:coil
 prop:CylinderHeadBlock:fine_injector
 prop:CylinderHeadBlock:injector
 prop:CylinderHeadBlock:spark_plug
@@ -498,6 +516,7 @@ reg:block:crank_throw
 reg:block:crankshaft
 reg:block:cylinder
 reg:block:cylinder_head
+reg:block:dry_cell
 reg:block:dual_mass_flywheel
 reg:block:dyno
 reg:block:engine_cased_cogwheel
@@ -516,6 +535,7 @@ reg:block:heat_exchanger
 reg:block:heavy_starter
 reg:block:intake_manifold
 reg:block:intercooler
+reg:block:large_battery
 reg:block:maf_sensor
 reg:block:maker_plate
 reg:block:muffler
@@ -593,6 +613,8 @@ reg:item:connecting_rod
 reg:item:forged_piston
 reg:item:fuel_injector
 reg:item:headphones
+reg:item:ignition_coil
+reg:item:injector_assist
 reg:item:jerry_can
 reg:item:oil_filter
 reg:item:piston
