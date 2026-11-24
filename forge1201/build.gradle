@@ -84,9 +84,11 @@ tasks.register('portSources', Exec) {
     commandLine 'python', 'port.py'
 }
 
-sourceSets.main.java.srcDir 'build/ported/java'
-
-tasks.named('compileJava') {
-    dependsOn 'portSources'
-    options.compilerArgs << '-Xmaxerrs' << '100000'
+// Opt in with -Pgenerated until the generated tree compiles (ROADMAP, Forge 1.20.1 port): the spike builds without it.
+if (project.hasProperty('generated')) {
+    sourceSets.main.java.srcDir 'build/ported/java'
+    tasks.named('compileJava') {
+        dependsOn 'portSources'
+        options.compilerArgs << '-Xmaxerrs' << '100000'
+    }
 }
