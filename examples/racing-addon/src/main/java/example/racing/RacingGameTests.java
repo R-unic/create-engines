@@ -69,6 +69,13 @@ public class RacingGameTests {
 	 * rebuilt from the registry and Create's blocks, with a creative motor and a starter to run it.
 	 */
 	private static void build(Level level, BlockPos origin, Block cylinder) {
+		build(level, origin, cylinder, null);
+	}
+
+	/** As above, with {@code flywheel} (if not null) on the crank's free end, its shaft along the crank's. */
+	private static void build(Level level, BlockPos origin, Block cylinder, Block flywheel) {
+		if (flywheel != null)
+			level.setBlock(origin.offset(new BlockPos(0, 2, 2)), state(flywheel, "axis", "x"), Block.UPDATE_ALL);
 		java.util.function.BiConsumer<BlockPos, BlockState> set = (pos, s) -> level.setBlock(origin.offset(pos), s, Block.UPDATE_ALL);
 		set.accept(CRANK, state(engines("crankshaft"), "axis", "x"));
 		set.accept(new BlockPos(2, 2, 2), state(engines("crank_throw"), "axis", "x"));
@@ -115,6 +122,38 @@ public class RacingGameTests {
 		helper.assertTrue(PartBlocks.partEffect(engines("cylinder"))
 			.isEmpty(), "the mod's own cylinder names no part effect");
 		helper.succeed();
+	}
+
+	/**
+	 * The Racing Flywheel is a flywheel of this addon's own, made with {@link PartBlocks#flywheel} and given its masses by the
+	 * {@code flywheel} data map. Its mass is the engine's to carry: beside a plain engine it revs up more slowly, and it runs.
+	 */
+	@GameTest(template = "empty_large", timeoutTicks = 700)
+	public static void anEngineWithTheRacingFlywheelCarriesItsMassAndRuns(GameTestHelper helper) {
+		build(helper.getLevel(), helper.absolutePos(PLAIN), engines("cylinder"));
+		build(helper.getLevel(), helper.absolutePos(RACING), engines("cylinder"), RacingAddon.RACING_FLYWHEEL.get());
+		helper.assertTrue(helper.getLevel()
+			.getBlockEntity(helper.absolutePos(RACING.offset(0, 2, 2))) != null, "the racing flywheel has a block entity");
+		float[] early = new float[2];
+		helper.onEachTick(() -> {
+			Optional<EngineView> plain = view(helper, PLAIN);
+			Optional<EngineView> heavy = view(helper, RACING);
+			if (plain.isEmpty() || heavy.isEmpty())
+				return;
+			if (helper.getTick() == 60) {
+				early[0] = plain.get()
+					.rpm();
+				early[1] = heavy.get()
+					.rpm();
+			}
+			if (helper.getTick() < 300)
+				return;
+			helper.assertTrue(heavy.get()
+				.status() == EngineStatus.RUNNING, "the engine with the racing flywheel should be running: " + heavy.get());
+			helper.assertTrue(early[0] > 0 && early[1] < early[0], "a flywheel's mass slows the revs: " + early[1] + " rpm with it at tick 60, "
+				+ early[0] + " without");
+			helper.succeed();
+		});
 	}
 
 	@GameTest(template = "empty_large", timeoutTicks = 700)

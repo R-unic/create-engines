@@ -1,0 +1,7 @@
+{
+  "variants": {
+    "axis=y": { "model": "racing_addon:block/racing_flywheel" },
+    "axis=x": { "model": "racing_addon:block/racing_flywheel", "x": 90, "y": 90 },
+    "axis=z": { "model": "racing_addon:block/racing_flywheel", "x": 90 }
+  }
+}

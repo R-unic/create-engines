@@ -1,0 +1,5 @@
+{
+  "values": {
+    "racing_addon:racing_flywheel": { "primary_inertia": 0.6, "secondary_inertia": 2.0 }
+  }
+}
