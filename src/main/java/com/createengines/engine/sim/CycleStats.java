@@ -16,6 +16,12 @@ public final class CycleStats {
 	/** Sparks the plug fired this cycle, and attempts that produced nothing because the supply was flat. */
 	public int sparks;
 	public int deadSparks;
+	/** Shots an injector assist had its charge for this cycle, and shots it was fitted for but the bank could not spare it. */
+	public int assistedShots;
+	public int deadAssists;
+	/** Sparks an ignition coil had its charge for this cycle, and sparks it was fitted for but the bank could not spare it. */
+	public int coiledSparks;
+	public int deadCoils;
 	/** Why a spark failed to light the charge: -1 too lean, 1 too rich, 2 a fouled plug, 0 it didn't fail. */
 	public int flameOut;
 	/** Share of the shot a MAF sensor held back because the air could not burn it: 0 (none) to 1 (all of it). */
@@ -51,6 +57,10 @@ public final class CycleStats {
 		equivalence = other.equivalence;
 		sparks = other.sparks;
 		deadSparks = other.deadSparks;
+		assistedShots = other.assistedShots;
+		deadAssists = other.deadAssists;
+		coiledSparks = other.coiledSparks;
+		deadCoils = other.deadCoils;
 		flameOut = other.flameOut;
 		mafCut = other.mafCut;
 		mafAdded = other.mafAdded;
@@ -69,6 +79,10 @@ public final class CycleStats {
 		equivalence = 0;
 		sparks = 0;
 		deadSparks = 0;
+		assistedShots = 0;
+		deadAssists = 0;
+		coiledSparks = 0;
+		deadCoils = 0;
 		flameOut = 0;
 		mafCut = 0;
 		mafAdded = 0;

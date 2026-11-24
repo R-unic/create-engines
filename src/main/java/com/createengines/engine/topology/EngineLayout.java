@@ -109,20 +109,24 @@ public record EngineLayout(BlockPos primary, Axis axis, List<Segment> segments, 
 	 * @param chamber     which face (0 to 2) of a rotor this is, or -1 for a piston cylinder. A rotor housing is its own
 	 *                    throw, head and cylinder: its three chambers all have its position, and {@code tdcAngle} is the
 	 *                    shaft angle at which its eccentric points at the housing's mark
+	 * @param injectorAssist the head has an electric injector assist fitted (only ever counted with an injector); it draws charge
+	 *                    from the engine's batteries, so it is not a precision part and changes no spec
+	 * @param ignitionCoil the head has a high-energy ignition coil fitted (only ever counted with a spark plug); like the assist it draws
+	 *                    charge from the engine's batteries, so it is not a precision part and changes no spec
 	 * @param effects     the ids of the part effects (data files of a pack or an addon, see {@code PartEffects}) that the blocks
 	 *                    of this cylinder add to the ones its {@code precision} bits name; empty for every block this mod makes
 	 */
 	public record Cylinder(BlockPos pos, BlockPos throwPos, Direction bore, double tdcAngle, @Nullable BlockPos head,
 						   @Nullable BlockPos lobe, int camLine, double lobeAngle, int intake, int exhaust,
 						   int faults, boolean sparkPlug, int precision, int sense, double lobeLeaderTdc, int chamber,
-						   List<String> effects) {
+						   List<String> effects, boolean injectorAssist, boolean ignitionCoil) {
 
 		/** A cylinder built from the parts this mod ships only: no part of a pack's or an addon's own. */
 		public Cylinder(BlockPos pos, BlockPos throwPos, Direction bore, double tdcAngle, @Nullable BlockPos head,
 						@Nullable BlockPos lobe, int camLine, double lobeAngle, int intake, int exhaust, int faults,
 						boolean sparkPlug, int precision, int sense, double lobeLeaderTdc, int chamber) {
 			this(pos, throwPos, bore, tdcAngle, head, lobe, camLine, lobeAngle, intake, exhaust, faults, sparkPlug, precision,
-				sense, lobeLeaderTdc, chamber, List.of());
+				sense, lobeLeaderTdc, chamber, List.of(), false, false);
 		}
 
 		/** Whether this is one chamber of a Wankel rotor rather than a piston in a bore. */

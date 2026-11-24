@@ -73,6 +73,10 @@ public final class CylinderModel implements Breather {
 	/** Share of {@link CylinderSpec#maxFuelPerShot()} the injector is set to deliver, set by hand. */
 	public double metering = 1;
 	public IgnitionSource ignition = IgnitionSource.NONE;
+	/** The electric assist on this cylinder's injector, if there is one (see {@link InjectorAssist}); none leaves the shot as it always was. */
+	public InjectorAssist assist = InjectorAssist.NONE;
+	/** The high-energy coil on this cylinder's spark plug, if there is one (see {@link IgnitionCoil}); none leaves the spark as it always was. */
+	public IgnitionCoil coil = IgnitionCoil.NONE;
 	public double intakeFactor = 1;
 	/** Share of the shot a throttle body's linkage lets through; 1 where there is no throttle. */
 	public double fuelTrim = 1;
@@ -263,6 +267,8 @@ public final class CylinderModel implements Breather {
 		copy.rack = rack;
 		copy.metering = metering;
 		copy.ignition = ignition;
+		copy.assist = assist;
+		copy.coil = coil;
 		copy.intakeFactor = intakeFactor;
 		copy.fuelTrim = fuelTrim;
 		copy.pilotSupply = pilotSupply;
@@ -387,7 +393,7 @@ public final class CylinderModel implements Breather {
 			// A MAF sensor sets the shot from the air, up to what the injector can deliver; without one it is
 			// whatever Fuel Metering says
 			double fullShot = airMatch > 0
-				? Math.min(airLimit * airMatch, injectorLimit(fuel))
+				? Math.min(airLimit * airMatch, InjectorAssist.limit(injectorLimit(fuel), last.assistedShots > 0))
 				: usualShot(fuel) * metering * fuelTrim;
 			scale = Math.max(1, Math.min(fullShot, airLimit) / last.fuelBurned);
 		}

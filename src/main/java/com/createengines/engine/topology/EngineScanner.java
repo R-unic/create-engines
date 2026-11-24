@@ -268,6 +268,7 @@ public final class EngineScanner {
 
 		for (BlockPos head : heads)
 			addElectricsAround(head, batteries, alternators);
+		addAlternatorChain(alternators);
 
 		List<Cylinder> cylinders = new ArrayList<>();
 		Map<BlockPos, CylinderDraft> lobeLeaders = new HashMap<>();
@@ -341,6 +342,24 @@ public final class EngineScanner {
 				|| block instanceof SumpBlock && sumps.add(neighbour.immutable())
 				|| block instanceof GovernorBlock && governors.add(neighbour.immutable()))
 				members.add(neighbour.immutable());
+		}
+	}
+
+	/**
+	 * Alternators that touch one the engine reaches are connected to it, so they charge the engine's batteries too and count
+	 * among its alternators. The chain can run as far as alternators keep touching.
+	 */
+	private void addAlternatorChain(Set<BlockPos> alternators) {
+		Deque<BlockPos> queue = new ArrayDeque<>(alternators);
+		while (!queue.isEmpty()) {
+			BlockPos pos = queue.poll();
+			for (Direction direction : Direction.values()) {
+				BlockPos neighbour = pos.relative(direction);
+				if (state(neighbour).getBlock() instanceof AlternatorBlock && alternators.add(neighbour.immutable())) {
+					members.add(neighbour.immutable());
+					queue.add(neighbour.immutable());
+				}
+			}
 		}
 	}
 
@@ -426,6 +445,8 @@ public final class EngineScanner {
 		int sense;
 		double lobeLeaderTdc = Double.NaN;
 		int chamber = -1;
+		boolean injectorAssist;
+		boolean ignitionCoil;
 		/** Part effects of a pack's or an addon's own blocks in this cylinder, each once (see {@link #addEffect}). */
 		List<String> effects = List.of();
 
@@ -441,7 +462,8 @@ public final class EngineScanner {
 
 		Cylinder build() {
 			return new Cylinder(pos, throwPos, bore, tdcAngle, head, lobe, camLine, lobeAngle, intake, exhaust,
-				faults, sparkPlug, precision, sense, lobeLeaderTdc, chamber, List.copyOf(effects));
+				faults, sparkPlug, precision, sense, lobeLeaderTdc, chamber, List.copyOf(effects), injectorAssist,
+				ignitionCoil);
 		}
 
 		CylinderDraft copyAsChamber(int chamber) {
@@ -462,6 +484,8 @@ public final class EngineScanner {
 			copy.sense = sense;
 			copy.chamber = chamber;
 			copy.effects = effects;
+			copy.injectorAssist = injectorAssist;
+			copy.ignitionCoil = ignitionCoil;
 			return copy;
 		}
 	}
@@ -547,6 +571,10 @@ public final class EngineScanner {
 		if (!head.getValue(CylinderHeadBlock.HAS_INJECTOR))
 			draft.faults |= CylinderFault.NO_INJECTOR.bit();
 		draft.sparkPlug = head.getValue(CylinderHeadBlock.HAS_SPARK_PLUG);
+		// An assist belongs to an injector: a head that somehow has one without (a command, a hand-edited structure) has none
+		draft.injectorAssist = head.getValue(CylinderHeadBlock.HAS_INJECTOR) && head.getValue(CylinderHeadBlock.HAS_ASSIST);
+		// A coil sits on a plug in the same way
+		draft.ignitionCoil = draft.sparkPlug && head.getValue(CylinderHeadBlock.HAS_COIL);
 		if (((CylinderHeadBlock) head.getBlock()).precision())
 			draft.precision |= PrecisionParts.HEAD;
 		draft.addEffect(head.getBlock());

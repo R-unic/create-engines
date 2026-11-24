@@ -165,6 +165,11 @@ public final class Dynamometer {
 			copy.rack = 1;
 			copy.ignition = cylinder.ignition.installed() && cylinder.ignition.powered() ? IgnitionSource.UNLIMITED
 				: IgnitionSource.NONE;
+			// An assist the bank can spare the charge for is rated; one it cannot is not, as a flat plug is not
+			copy.assist = cylinder.assist.installed() && cylinder.assist.powered() ? InjectorAssist.UNLIMITED
+				: InjectorAssist.NONE;
+			copy.coil = cylinder.coil.installed() && cylinder.coil.powered() ? IgnitionCoil.UNLIMITED
+				: IgnitionCoil.NONE;
 			FuelSpec fuel = cylinder.fuelSupply.fuel();
 			copy.fuelSupply = fuel != null && cylinder.isTimed() ? unlimited(fuel) : FuelSupply.NONE;
 			FuelSpec pilot = cylinder.pilotSupply.fuel();

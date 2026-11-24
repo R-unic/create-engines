@@ -42,7 +42,12 @@ final class Soiling {
 
 	/** The richest mixture the plug can still light: a fouled plug cannot light what a clean one could. */
 	double richLimit() {
-		return CylinderModel.RICH_LIMIT - FOULED_RICH_LOSS * fouling;
+		return richLimit(false);
+	}
+
+	/** {@link #richLimit()} for a spark that a high-energy coil {@code coiled}: its hotter spark burns through some of the soot. */
+	double richLimit(boolean coiled) {
+		return CylinderModel.RICH_LIMIT - IgnitionCoil.fouledLoss(FOULED_RICH_LOSS, coiled) * fouling;
 	}
 
 	/** Soot the exhaust carried out since the last call, in mB of unburned fuel; empties the count. */

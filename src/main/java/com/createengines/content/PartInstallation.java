@@ -7,6 +7,7 @@ import com.simibubi.create.content.schematics.requirement.ItemRequirement.ItemUs
 import com.tterrag.registrate.util.entry.ItemEntry;
 
 import net.minecraft.core.BlockPos;
+import net.minecraft.network.chat.Component;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.ItemInteractionResult;
@@ -35,10 +36,25 @@ public final class PartInstallation {
 	 * @param gradeItem the precision part
 	 */
 	public record Slot(BooleanProperty property, ItemEntry<Item> item, @Nullable BooleanProperty grade,
-					   @Nullable ItemEntry<Item> gradeItem) {
+					   @Nullable ItemEntry<Item> gradeItem, @Nullable BooleanProperty requires, @Nullable String needs) {
 
 		public Slot(BooleanProperty property, ItemEntry<Item> item) {
-			this(property, item, null, null);
+			this(property, item, null, null, null, null);
+		}
+
+		public Slot(BooleanProperty property, ItemEntry<Item> item, @Nullable BooleanProperty grade,
+					@Nullable ItemEntry<Item> gradeItem) {
+			this(property, item, grade, gradeItem, null, null);
+		}
+
+		/** A part that only fits where {@code requires} is already fitted (an injector assist on a head with an injector). */
+		public Slot(BooleanProperty property, ItemEntry<Item> item, BooleanProperty requires) {
+			this(property, item, null, null, requires, "needs_injector");
+		}
+
+		/** The same, saying {@code needs} (a lang key under {@code create_engines.part.}) when the part it sits on is missing. */
+		public Slot(BooleanProperty property, ItemEntry<Item> item, BooleanProperty requires, String needs) {
+			this(property, item, null, null, requires, needs);
 		}
 
 		/** The item that comes out of this slot as it stands in {@code state}. */
@@ -55,6 +71,12 @@ public final class PartInstallation {
 		for (Slot slot : slots) {
 			if (state.getValue(slot.property()))
 				continue;
+			if (slot.requires() != null && !state.getValue(slot.requires()) && slot.item().isIn(stack)) {
+				// Say why it will not go in, instead of leaving the click to do nothing
+				if (!level.isClientSide)
+					player.displayClientMessage(Component.translatable("create_engines.part." + slot.needs()), true);
+				return ItemInteractionResult.sidedSuccess(level.isClientSide);
+			}
 			BlockState next;
 			if (slot.item().isIn(stack))
 				next = state.setValue(slot.property(), true);

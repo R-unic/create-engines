@@ -1,0 +1,140 @@
+{
+  "parent": "block/block",
+  "textures": {
+    "assist": "create_engines:block/black_oxide",
+    "coil": "create_engines:block/enamel_blue",
+    "terminal": "create_engines:block/cast_iron",
+    "ceramic": "create_engines:block/ceramic",
+    "particle": "create_engines:block/black_oxide"
+  },
+  "elements": [
+    {
+      "from": [
+        5.5,
+        0,
+        5.5
+      ],
+      "to": [
+        10.5,
+        3,
+        10.5
+      ],
+      "faces": {
+        "north": {
+          "texture": "#ceramic"
+        },
+        "south": {
+          "texture": "#ceramic"
+        },
+        "east": {
+          "texture": "#ceramic"
+        },
+        "west": {
+          "texture": "#ceramic"
+        },
+        "up": {
+          "texture": "#ceramic"
+        },
+        "down": {
+          "texture": "#ceramic"
+        }
+      }
+    },
+    {
+      "from": [
+        5.4,
+        2.9,
+        5.4
+      ],
+      "to": [
+        10.6,
+        8.9,
+        10.6
+      ],
+      "faces": {
+        "north": {
+          "texture": "#assist"
+        },
+        "south": {
+          "texture": "#assist"
+        },
+        "east": {
+          "texture": "#assist"
+        },
+        "west": {
+          "texture": "#assist"
+        },
+        "up": {
+          "texture": "#assist"
+        },
+        "down": {
+          "texture": "#assist"
+        }
+      }
+    },
+    {
+      "from": [
+        5.2,
+        4.7,
+        5.2
+      ],
+      "to": [
+        10.8,
+        6.3,
+        10.8
+      ],
+      "faces": {
+        "north": {
+          "texture": "#coil"
+        },
+        "south": {
+          "texture": "#coil"
+        },
+        "east": {
+          "texture": "#coil"
+        },
+        "west": {
+          "texture": "#coil"
+        },
+        "up": {
+          "texture": "#coil"
+        },
+        "down": {
+          "texture": "#coil"
+        }
+      }
+    },
+    {
+      "from": [
+        7,
+        8.8,
+        7
+      ],
+      "to": [
+        9,
+        10.8,
+        9
+      ],
+      "faces": {
+        "north": {
+          "texture": "#terminal"
+        },
+        "south": {
+          "texture": "#terminal"
+        },
+        "east": {
+          "texture": "#terminal"
+        },
+        "west": {
+          "texture": "#terminal"
+        },
+        "up": {
+          "texture": "#terminal"
+        },
+        "down": {
+          "texture": "#terminal"
+        }
+      }
+    }
+  ]
+}

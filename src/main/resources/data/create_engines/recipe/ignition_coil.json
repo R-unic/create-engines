@@ -1,0 +1,23 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "key": {
+    "B": {
+      "item": "create:brass_sheet"
+    },
+    "C": {
+      "item": "create:copper_sheet"
+    },
+    "R": {
+      "item": "minecraft:redstone"
+    },
+    "P": {
+      "item": "create_engines:spark_plug"
+    }
+  },
+  "pattern": [" P ", "CRC", " B "],
+  "result": {
+    "count": 1,
+    "id": "create_engines:ignition_coil"
+  }
+}

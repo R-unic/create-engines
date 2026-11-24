@@ -37,6 +37,10 @@ final class Combustion {
 	private double evaporativeCooling;
 	/** Share of the burn's heat the charge lost by lighting itself early, from {@link FuelSpec#preignitionLoss}; 0 for most burns. */
 	private double preignitionLoss;
+	/** Whether the last shot had its charge drawn by an injector assist, which sets its ignition delay and burn; see {@link InjectorAssist}. */
+	private boolean assisted;
+	/** Whether the charge now burning was lit by a coiled spark, which burns it faster; see {@link IgnitionCoil#BURN}. */
+	private boolean coiledBurn;
 
 	Combustion(CylinderModel owner, Charge charge, CycleStats current, Soiling soiling) {
 		this.owner = owner;
@@ -73,12 +77,16 @@ final class Combustion {
 		burning = false;
 		evaporativeCooling = 0;
 		preignitionLoss = 0;
+		assisted = false;
+		coiledBurn = false;
 	}
 
 	/** The cycle is over: whatever fuel was left is lost with the exhaust. */
 	void endCycle() {
 		fuelPending = 0;
 		burning = false;
+		assisted = false;
+		coiledBurn = false;
 	}
 
 	void copyFrom(Combustion other) {
@@ -90,6 +98,8 @@ final class Combustion {
 		evaporativeCooling = other.evaporativeCooling;
 		preignitionLoss = other.preignitionLoss;
 		burningFuel = other.burningFuel;
+		assisted = other.assisted;
+		coiledBurn = other.coiledBurn;
 	}
 
 	/**
@@ -103,11 +113,20 @@ final class Combustion {
 		double air = charge.fresh * charge.moles;
 		double shot = (fuel == null ? 0 : owner.usualShot(fuel)) * owner.rack * owner.metering * owner.fuelTrim
 			* owner.governedFuel();
+		// An assist spends its charge on a shot there is fuel for; one the bank cannot spare it for leaves the shot as it would have been
+		assisted = false;
+		if (fuel != null && owner.assist.installed()) {
+			assisted = owner.assist.fire();
+			if (assisted)
+				current.assistedShots++;
+			else
+				current.deadAssists++;
+		}
 		if (fuel != null && owner.airMatch > 0 && shot > 0) {
 			// A MAF sensor sets the shot from the air, whichever way that moves it. The rack still says how much of it is
 			// wanted, and so does a compression engine's governor; a spark engine's throttle is already in the air.
 			double matched = owner.rack * (owner.ignition.installed() ? 1 : owner.governor)
-				* Math.min(air / fuel.airPerMb() * owner.airMatch, owner.injectorLimit(fuel));
+				* Math.min(air / fuel.airPerMb() * owner.airMatch, InjectorAssist.limit(owner.injectorLimit(fuel), assisted));
 			if (matched < shot)
 				current.mafCut = 1 - matched / shot;
 			else if (matched > shot)
@@ -145,17 +164,28 @@ final class Combustion {
 		current.sparks++;
 		if (fuelPending <= CylinderModel.FUEL_EPSILON || burning || burningFuel == null)
 			return;
+		// A coil spends its charge on a spark there is fuel to light; one the bank cannot spare it for is the plug's own spark
+		boolean coiled = false;
+		if (owner.coil.installed()) {
+			coiled = owner.coil.fire();
+			if (coiled)
+				current.coiledSparks++;
+			else
+				current.deadCoils++;
+		}
 		double air = charge.fresh * charge.moles;
 		double equivalence = air < CylinderModel.MIN_FRESH_AIR ? Double.MAX_VALUE
 			: fuelPending * burningFuel.airPerMb() / air;
-		if (equivalence < LEAN_LIMIT)
+		if (equivalence < IgnitionCoil.leanLimit(LEAN_LIMIT, coiled))
 			current.flameOut = -1;
 		else if (equivalence > CylinderModel.RICH_LIMIT)
 			current.flameOut = 1;
-		else if (equivalence > soiling.richLimit())
+		else if (equivalence > soiling.richLimit(coiled))
 			current.flameOut = 2;
-		else
+		else {
+			coiledBurn = coiled;
 			startBurning();
+		}
 	}
 
 	/**
@@ -181,7 +211,8 @@ final class Combustion {
 		double air = charge.fresh * charge.moles;
 		burnEquivalence = air < CylinderModel.MIN_FRESH_AIR ? CylinderModel.RICH_LIMIT
 			: fuelPending * burningFuel.airPerMb() / air;
-		burnRate = fuelPending / owner.spec.burnDuration() * Mixture.flameSpeed(burnEquivalence);
+		burnRate = fuelPending
+			/ InjectorAssist.burn(IgnitionCoil.burn(owner.spec.burnDuration(), coiledBurn), assisted) * Mixture.flameSpeed(burnEquivalence);
 		// A spark engine's charge that the boost has already squeezed past its autoignition point burns early and loses
 		// power for it. A compression engine lights itself on purpose, so it loses nothing, and neither does an unboosted
 		// engine: a charge runs hotter with speed alone, and that is the engine's business, not the boost's.
@@ -195,7 +226,7 @@ final class Combustion {
 		if (!burning) {
 			timeSinceInjection += dt;
 			// A rotor's long, thin chamber loses too much heat to its walls for the charge to light itself: only a plug will
-			if (owner.ported() || timeSinceInjection < owner.spec.ignitionDelay())
+			if (owner.ported() || timeSinceInjection < InjectorAssist.delay(owner.spec.ignitionDelay(), assisted))
 				return;
 			boolean piloted = false;
 			// A spark fuel in an engine with no plug is lit by a pilot shot or not at all, however hot boost has made the

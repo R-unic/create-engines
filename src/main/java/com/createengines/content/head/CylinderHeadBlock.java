@@ -52,9 +52,24 @@ public class CylinderHeadBlock extends DirectionalBlock
 	/** Set with {@link #HAS_INJECTOR} when the injector is a precision common-rail one. */
 	public static final BooleanProperty FINE_INJECTOR = BooleanProperty.create("fine_injector");
 
+	/**
+	 * An electric injector assist, which only fits a head that already has an injector (the assist sits on the injector's
+	 * body). The scanner counts it only with an injector too, so a head never gets the bonus without one.
+	 */
+	public static final BooleanProperty HAS_ASSIST = BooleanProperty.create("assist");
+
+	/**
+	 * A high-energy ignition coil, which only fits a head that already has a spark plug (the coil sits on the plug's terminal). The
+	 * scanner counts it only with a plug too.
+	 */
+	public static final BooleanProperty HAS_COIL = BooleanProperty.create("coil");
+
+	/** In install order, which is the reverse of removal: the coil and the assist come off before the plug and injector they sit on. */
 	private static final Slot[] PARTS =
 		{new Slot(HAS_INJECTOR, CEItems.FUEL_INJECTOR, FINE_INJECTOR, CEItems.PRECISION_INJECTOR),
-			new Slot(HAS_SPARK_PLUG, CEItems.SPARK_PLUG)};
+			new Slot(HAS_SPARK_PLUG, CEItems.SPARK_PLUG),
+			new Slot(HAS_ASSIST, CEItems.INJECTOR_ASSIST, HAS_INJECTOR),
+			new Slot(HAS_COIL, CEItems.IGNITION_COIL, HAS_SPARK_PLUG, "needs_plug")};
 
 	private final boolean precision;
 
@@ -70,6 +85,8 @@ public class CylinderHeadBlock extends DirectionalBlock
 			.setValue(HAS_INJECTOR, false)
 			.setValue(FINE_INJECTOR, false)
 			.setValue(HAS_SPARK_PLUG, false)
+			.setValue(HAS_ASSIST, false)
+			.setValue(HAS_COIL, false)
 			.setValue(BlockStateProperties.LIT, false));
 	}
 
@@ -85,7 +102,7 @@ public class CylinderHeadBlock extends DirectionalBlock
 
 	@Override
 	protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {
-		builder.add(FACING, HAS_INJECTOR, FINE_INJECTOR, HAS_SPARK_PLUG, BlockStateProperties.LIT);
+		builder.add(FACING, HAS_INJECTOR, FINE_INJECTOR, HAS_SPARK_PLUG, HAS_ASSIST, HAS_COIL, BlockStateProperties.LIT);
 	}
 
 	@Override

@@ -1,0 +1,23 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "key": {
+    "B": {
+      "item": "create:brass_sheet"
+    },
+    "E": {
+      "item": "create:electron_tube"
+    },
+    "R": {
+      "item": "minecraft:redstone"
+    },
+    "I": {
+      "item": "create_engines:fuel_injector"
+    }
+  },
+  "pattern": [" E ", "BIB", " R "],
+  "result": {
+    "count": 1,
+    "id": "create_engines:injector_assist"
+  }
+}

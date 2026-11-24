@@ -6,7 +6,10 @@ import java.util.List;
 import com.createengines.content.battery.BatteryBank;
 import com.createengines.content.battery.BatteryBlockEntity;
 import com.createengines.engine.sim.BatteryChemistry;
+import com.createengines.engine.sim.ChargePriority;
+import com.createengines.engine.sim.IgnitionCoil;
 import com.createengines.engine.sim.IgnitionSource;
+import com.createengines.engine.sim.InjectorAssist;
 import com.createengines.engine.sim.Tuning;
 
 import net.minecraft.core.BlockPos;
@@ -68,6 +71,64 @@ public final class BatteryIgnition implements IgnitionSource {
 	@Override
 	public boolean spark() {
 		return BatteryBank.drawAll(supply(), sparkCost());
+	}
+
+	/**
+	 * The injector assists' draw on the same batteries. It is an optional use of charge: a battery set to reserve is kept for the
+	 * plugs and the starter, so an assist cannot take from it ({@link ChargePriority}).
+	 */
+	private final InjectorAssist assist = new InjectorAssist() {
+		@Override
+		public boolean installed() {
+			return true;
+		}
+
+		@Override
+		public boolean powered() {
+			return BatteryBank.deliverable(supply(), ChargePriority.Use.OPTIONAL) >= COST - 1e-4f;
+		}
+
+		@Override
+		public boolean fire() {
+			if (BatteryBank.deliverable(supply(), ChargePriority.Use.OPTIONAL) < COST - 1e-4f)
+				return false;
+			BatteryBank.drawUpTo(supply(), (float) COST, ChargePriority.Use.OPTIONAL);
+			return true;
+		}
+	};
+
+	/** What a cylinder with an assist fitted draws its shots' charge through. */
+	public InjectorAssist assist() {
+		return assist;
+	}
+
+	/**
+	 * The ignition coils' draw, on top of the plug's own spark. Like the assist it is an optional use of charge, so a reserve is
+	 * kept for the plugs and the starter: a coil can never leave a plain spark without its charge.
+	 */
+	private final IgnitionCoil coil = new IgnitionCoil() {
+		@Override
+		public boolean installed() {
+			return true;
+		}
+
+		@Override
+		public boolean powered() {
+			return BatteryBank.deliverable(supply(), ChargePriority.Use.OPTIONAL) >= COST - 1e-4f;
+		}
+
+		@Override
+		public boolean fire() {
+			if (BatteryBank.deliverable(supply(), ChargePriority.Use.OPTIONAL) < COST - 1e-4f)
+				return false;
+			BatteryBank.drawUpTo(supply(), (float) COST, ChargePriority.Use.OPTIONAL);
+			return true;
+		}
+	};
+
+	/** What a cylinder with a coil fitted draws its sparks' extra charge through. */
+	public IgnitionCoil coil() {
+		return coil;
 	}
 
 	/** Whether the batteries are there at all: an engine with none has no supply to draw a starter's current from. */

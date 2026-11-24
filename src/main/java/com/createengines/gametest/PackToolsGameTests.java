@@ -245,6 +245,11 @@ public class PackToolsGameTests {
 			for (net.minecraft.world.item.ItemStack block : part.blocks()) {
 				var state = ((net.minecraft.world.item.BlockItem) block.getItem()).getBlock()
 					.defaultBlockState();
+				// A part that sits on another (an assist on an injector, a coil on a plug) is offered to a head that has what it sits on
+				if (part.part().is(com.createengines.registry.CEItems.INJECTOR_ASSIST.get()))
+					state = state.setValue(com.createengines.content.head.CylinderHeadBlock.HAS_INJECTOR, true);
+				if (part.part().is(com.createengines.registry.CEItems.IGNITION_COIL.get()))
+					state = state.setValue(com.createengines.content.head.CylinderHeadBlock.HAS_SPARK_PLUG, true);
 				helper.getLevel()
 					.setBlock(helper.absolutePos(at), state, 3);
 				net.minecraft.world.item.ItemStack offered = part.part()
@@ -268,6 +273,7 @@ public class PackToolsGameTests {
 		for (var item : List.of(com.createengines.registry.CEItems.PISTON, com.createengines.registry.CEItems.FORGED_PISTON,
 			com.createengines.registry.CEItems.CONNECTING_ROD, com.createengines.registry.CEItems.FUEL_INJECTOR,
 			com.createengines.registry.CEItems.PRECISION_INJECTOR, com.createengines.registry.CEItems.SPARK_PLUG,
+			com.createengines.registry.CEItems.INJECTOR_ASSIST, com.createengines.registry.CEItems.IGNITION_COIL,
 			com.createengines.registry.CEItems.ROTOR, com.createengines.registry.CEItems.OIL_FILTER))
 			if (com.createengines.client.compat.ViewerEntries.parts()
 				.stream()

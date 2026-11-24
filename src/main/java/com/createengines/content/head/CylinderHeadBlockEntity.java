@@ -113,11 +113,29 @@ public class CylinderHeadBlockEntity extends SmartBlockEntity implements IHaveGo
 			if (isPlayerSneaking)
 				GoggleLines.add(CELang.translate("goggles.head.metering.hint")
 					.style(ChatFormatting.DARK_GRAY), tooltip, 2);
+			if (state.getValue(CylinderHeadBlock.HAS_ASSIST)) {
+				GoggleLines.add(CELang.translate("goggles.head.assist")
+					.style(ChatFormatting.AQUA), tooltip, 1);
+				if (isPlayerSneaking)
+					GoggleLines.add(CELang.translate("goggles.head.assist.hint")
+						.style(ChatFormatting.DARK_GRAY), tooltip, 2);
+			} else if (isPlayerSneaking)
+				GoggleLines.add(CELang.translate("goggles.head.no_assist")
+					.style(ChatFormatting.DARK_GRAY), tooltip, 1);
 		}
-		if (state.getValue(CylinderHeadBlock.HAS_SPARK_PLUG))
+		if (state.getValue(CylinderHeadBlock.HAS_SPARK_PLUG)) {
 			GoggleLines.add(CELang.translate("goggles.head.spark_plug")
 				.style(ChatFormatting.GRAY), tooltip, 1);
-		else if (isPlayerSneaking)
+			if (state.getValue(CylinderHeadBlock.HAS_COIL)) {
+				GoggleLines.add(CELang.translate("goggles.head.coil")
+					.style(ChatFormatting.AQUA), tooltip, 1);
+				if (isPlayerSneaking)
+					GoggleLines.add(CELang.translate("goggles.head.coil.hint")
+						.style(ChatFormatting.DARK_GRAY), tooltip, 2);
+			} else if (isPlayerSneaking)
+				GoggleLines.add(CELang.translate("goggles.head.no_coil")
+					.style(ChatFormatting.DARK_GRAY), tooltip, 1);
+		} else if (isPlayerSneaking)
 			GoggleLines.add(CELang.translate("goggles.head.no_spark_plug")
 				.style(ChatFormatting.DARK_GRAY), tooltip, 1);
 		if (oilTank().isEmpty())
