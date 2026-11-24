@@ -210,6 +210,47 @@ that changes how an existing engine behaves says so in its changelog.
 - [Design notes](https://github.com/R-unic/create-engines/blob/master/docs/DESIGN.md), how the simulation works
 ```
 
+## Changelog for 2.2.0
+
+A feature release, "Charge": the Dry Cell and Large Battery, a reserve setting for batteries, a starter that turns a spark engine from the batteries,
+and two parts that spend charge, the Injector Assist and the Ignition Coil, with fixes found on the way. No ID, key or saved format is renamed or
+removed, and no setting is added. Two things change for existing builds and are listed first.
+- Changed behaviour, batteries and other mods' wires: every battery now offers Forge Energy on all faces, take only (a wire can draw the bank's
+  charge that is not a reserve, at 200 FE to the spark; it cannot fill a battery). Before, no other mod could touch a battery. Nothing happens
+  unless a wire from another mod is touching one. (Release record Exception 2.12.)
+- Changed, parts on a moving structure: a part on a Sable/Aeronautics structure is posed every frame and never skipped for being out of view, as in 1.4.
+  2.0.1 and 2.0.2 skipped parts the camera could not see and parts still froze. It costs frame time with large contraptions, and changes nothing in
+  the simulation. (Exception 2.13.)
+- New, Dry Cell (`create_engines:dry_cell`): 100 sparks, half a Battery, and the cold does not touch it. Recipe (shapeless): zinc ingot, copper sheet and
+  redstone. Medium weight on a structure.
+- New, Large Battery (`create_engines:large_battery`): 800 sparks, four Batteries in one block, but the deepest cold holds back up to three quarters
+  of it. Recipe: three Batteries and a brass casing (`BB` over `BC`). Heavy on a structure.
+  Batteries of all three sizes that touch are one bank (capacity adds up, the lamps show each one's charge, a Comparator reads the bank), with 53
+  models each for the joins. The plain Battery is exactly what it was: 200 sparks, half lost to the cold. Goggles on any battery say how many sparks it holds.
+- New, reserve batteries: a Wrench on a battery toggles it as a **reserve** (sneak with it still picks the battery up), said on the action bar. A reserve is kept
+  for **essential** draws (a spark plug, a starter) and is closed to optional ones (an assist, a coil, another mod's wire); an essential draw takes
+  from the open batteries first, and an Alternator's charge fills a reserve first. With no reserve set, every draw and fill is the even share it always was.
+  Saved key `Reserve` (written only when set). Goggles say how many of the bank are reserves.
+- New, starters from the batteries: on a spark engine with charge in its batteries, a Starter or Heavy Starter with nothing on its input turns the engine over at 48 RPM
+  when it has a redstone signal, spending charge. A flat bank or a compression engine still needs rotation, and a starter with rotation behaves as before. Goggles say when
+  it is spending charge. Saved keys `DrawingCharge` and `ElectricReady`.
+- New, Injector Assist (`create_engines:injector_assist`): right-click onto a head (or precision head) that has an injector. Each shot spends half a spark: ignition delay
+  x0.85, burn duration x0.8, and the injector's limit x1.5. With no charge to spare, or no injector, the shot is exactly the old one. Recipe: electron tube over brass
+  sheet, fuel injector, brass sheet over redstone. New head state `assist` (default false).
+- New, Ignition Coil (`create_engines:ignition_coil`): right-click onto a head that has a spark plug (it says so otherwise). Each spark with fuel to light spends half a spark more: the
+  lean limit x0.7, burn duration x0.9, and soot narrows the rich limit by 0.4 of what it did. Pre-ignition is unchanged. With no charge to spare the spark is the plug's own, bit for bit.
+  Recipe: spark plug over copper sheet, redstone, copper sheet over brass sheet. New head state `coil` (default false). Neither part applies to rotor housings.
+  The dyno rates them only while the bank can spare the charge; the scanner counts one only with the part it sits on.
+- New, Ponder: "Batteries: Three Sizes" (with the reserve step), "Spending Charge: Injector Assist and Ignition Coil", and the starter pages say the battery start. The fuel buckets
+  open on "Choosing a Fuel", then the refinery, then the Basin page (renamed "Making Fuel in a Basin"); the ingredient fluids keep only the Basin page.
+- New, goggles: the crankshaft shows the oil the engine is using in mB a minute (new synced key `OilUse`, 0 when absent); a part that cannot go on says why ("Fit an injector first").
+- Fix, alternators: alternators that touch an engine's alternator now charge its batteries too, down the chain.
+- Fix, rebuilding a running rotary: an engine rebuilt while it ran (a battery added to its bank) gave all three chambers of a rotor the first chamber's gas and lost speed. It now matches them one by one.
+- Fix, flywheel goggles: a Cast Flywheel on a Sable contraption claimed a readout it had not written, which crashed the goggle overlay (it came from 2.1.0). The client audit now checks it.
+- Tests added: `BatteryEnergyTest`, `ChargePriorityTest`, `IgnitionCoilTest`, `InjectorAssistTest`, more `BatteryTierTest` and `BatteryModelsTest`, and GameTests `BatteryDepthGameTests`,
+  `BatteryPriorityGameTests`, `BatteryTierBlocksGameTests`, `IgnitionCoilGameTests`, `InjectorAssistGameTests`, `RebuildKeepsSpeedGameTests`, an alternator chain, oil use through the sync.
+  `compat/manifest.txt` has 23 lines added and none changed or removed; `compat/behaviour.txt` has 67 lines added (biodiesel, a 2.1 fuel with no baseline) and none changed.
+
 ## Changelog for 2.1.0
 
 A feature release, "Twin Mass": a Dual-Mass Flywheel, a charge-rate dial on the alternator, new fuel character (biodiesel, plant oil, spill fire), a way for an

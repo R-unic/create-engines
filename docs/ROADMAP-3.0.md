@@ -34,8 +34,8 @@ question, not an obstacle ([CLAUDE.md](../CLAUDE.md)).
 | --- | --- | --- | --- |
 | 2.0.x | Shakedown II | Pay down 2.0's listed exceptions and unseen parts; no features | Small |
 | 2.1 | Twin Mass | **Dual-mass flywheel**, the readouts that make a flywheel choice legible, and sharper niches for the existing fuels | Medium to large |
-| 2.2 | Proving Ground | Verification debts: goldens, soak, server-from-jar, the step-size finding; **the Electric Motor and the battery tiers** (author, 2026-11-23) | Medium |
-| 2.3 | Open Garage | Reach: API 1.2, energy and probe mods, the next Create, a second example addon; **opt-in wear mode with gaskets and piston rings**, **polluted intake air**, **high- and low-compression piston variants**, and **rotor variants with an exhaust niche** (author, 2026-11-23), then **look, sound and performance** only where the 2.0.x pass found something (was 2.4, merged by the author 2026-11-23) | Medium to large |
+| 2.2 | Proving Ground | Verification debts: goldens, soak, server-from-jar, the step-size finding; **the battery tiers**, then **charge priority, electric injector assist and ignition coils**, with electrolysis to be decided (author, 2026-11-23) | Medium |
+| 2.3 | Open Garage | Reach: API 1.2, energy and probe mods, the next Create, a second example addon; **opt-in wear mode with gaskets and piston rings**, **polluted intake air**, **high- and low-compression piston variants**, **rotor variants (a precision rotor among them) with an exhaust niche**, and **nitrous oxide** (liquid, a vaporiser and a gas in the intake manifolds) (author, 2026-11-23), a **W layout for the Bank Builder** (author, 2026-11-24), then **look, sound and performance** only where the 2.0.x pass found something (was 2.4, merged by the author 2026-11-23) | Medium to large |
 | 3.0 | Clean Slate | The second breaking cleanup: drop 1.x migrations, regenerate baselines, API 2.0 | Large |
 
 2.2 and 2.3 are independent of 2.1 and of each other; they can swap places or be cut, and 2.1 does not wait on either.
@@ -247,7 +247,8 @@ running engine on the rain cap schematic, so no new schematic); the client audit
 
 **Proposed 2026-11-22, in 2.1 because it is the release with player-facing features; the items are the author's pick from a longer list, the details are not yet decided.** This is not new
 fuels: the Declined list stands, and so does the author's 2026-11-21 answer (no more fuels beyond methanol, no gases, nitrous,
-heavy fuel oil, turbine or two-stroke). It gives the seven fuels that exist (plant oil, diesel, gasoline, ethanol, biodiesel,
+heavy fuel oil, turbine or two-stroke), **except that the author reversed "no gases, nitrous" on 2026-11-23**: nitrous oxide is
+now proposed in 2.3 (see "Nitrous oxide" there). It gives the seven fuels that exist (plant oil, diesel, gasoline, ethanol, biodiesel,
 kerosene, methanol) a clearer reason to be picked, the way 1.x gave ethanol its boost niche. The ethanol distillery, which was
 also on the list, is not included here.
 
@@ -300,11 +301,21 @@ showing a 2.0 world with each fuel runs the same. `pitest` is re-run if `engine/
 Mostly verification work that the 2.0 record left open, which changes no behaviour. Each item lands on its own and goes into whichever
 release has room.
 
-**Added 2026-11-23 (the author): the Electric Motor, with the battery tiers (Dry Cell and Large Battery).** The motor is row 3 of the 2.1 table in [ROADMAP.md](ROADMAP.md)
-("Part depth" follow-ups): a standalone shaft source fed from the battery bank, with a redstone setpoint. The Dry Cell (100 sparks) and the Large Battery (800 sparks),
-both built and then moved out of 2.1, come with it, because a motor flattens a 200-spark battery in seconds. These are new blocks, so they
+**Added 2026-11-23 (the author): the battery tiers (Dry Cell and Large Battery).** They were built and then moved out of 2.1. These are new blocks, so they
 do not change any existing build; release exception 2.7 (the battery seam) has to be explained before they return, and the tiers need a Ponder page that
 explains them (the current scene only names the blocks). 2.1 is the flywheel and roughness release and carries no battery block.
+
+**Dropped 2026-11-23 (the author): the Electric Motor.** It was built (a standalone shaft source drawing from the bank) and then removed before any release: a player with an
+electricity mod already has a better motor, and ours drew only on this mod's own batteries. Nothing saved depends on it. The batteries' consumers are the spark plugs
+and the starters; the starter's goggles now say when it is spending battery charge (`StarterBlockEntity.isDrawingCharge`), and its Ponder page says the same.
+**Starters turn from the batteries (2026-11-24, the author):** on a spark engine with charge in its batteries, a starter with nothing on its input turns the engine over at 48 RPM (`StarterBlockEntity.ELECTRIC_RPM`) when it has a redstone signal, spending charge; a flat bank or a compression engine still needs rotation. A starter that has rotation behaves as before. The Starter, Heavy Starter and battery Ponder pages explain it; GameTests in `BatteryDepthGameTests`.
+
+**Status (2026-11-23): the battery tiers are built, unreleased and not seen in game.**
+- **Battery tiers back:** `BatteryTier` gains `DRY_CELL(100, 0)` and `LARGE(800, 0.75)`; blocks `dry_cell` and `large_battery` (`BatteryBlock` with a tier, the same join and
+  lamp-strip blockstate, 53 models each from `tools/generate_models.py`, recipes: dry cell is zinc ingot, copper sheet and redstone; large is three batteries and a brass casing), weights
+  (dry cell medium, large battery heavy), a goggles line (`This one holds N sparks`) on every battery, and a Ponder page "Batteries: Three Sizes" (`BatteryScenes.batterySizes`) that
+  explains the tiers (the part that was owed). Tests: `BatteryTierTest` (three new), `BatteryTierBlocksGameTests` (capacity, mixed bank, saved charge, lamps, engine reaches a mixed bank, cold).
+- **Guards:** `compat/manifest.txt` appended (the tiers, a starter's `DrawingCharge` key, and 2.1 saved keys that were not yet in it), `compat/behaviour.txt` 67 BIODIESEL lines appended (a 2.1 fuel that had no baseline), no line changed.
 
 - **Goldens** (item 13 of the verification track, set aside until now): the visual set (fixed-camera shots of every casing and part
   model, plus a few Ponder frames, compared per region with a tolerance) and the audio set (synth-level scenarios recording
@@ -321,6 +332,62 @@ explains them (the current scene only names the blocks). 2.1 is the flywheel and
 - **The config matrix through the client audit's fleet** (item 9) and the **PIT survivors that are not equivalent mutants**
   (killing tests, ratchet down by hand).
 - **The ten-break mutation script** (`scripts/smoke-mutations.ps1`) re-run after the leak-trend change that was never checked.
+
+### Battery depth and electric consumers (author, 2026-11-23; charge priority built, the rest proposed)
+
+Chosen by the author from a list of ideas for deeper batteries and more uses for charge besides turning it back into rotation (the
+Electric Motor stays dropped, see above). Every item is a new block, item or an option an existing build does not use (rule 1), and
+none adds a failure mode (rule 4). Each gets tests, lang entries, a goggle line and a Ponder page. Decisions so far, not yet a design:
+
+- **Charge priority.** A bank can reserve charge for the starter and ignition so a heavy consumer cannot flatten it. The first idea is
+  a per-battery priority the player sets by wrench (or a Battery Monitor setting), with the lowest priority drawn from first and the
+  reserve left for the starter. It must read the same as today for a bank nobody has set: a bank with no priority drains as it does now.
+  The rule goes in `engine/sim/BatteryChemistry` or `BatteryBank` (pure, unit tested), not in a block entity.
+  **Built 2026-11-23, unreleased, not seen in game.** Two levels, not a number: a battery is a reserve or it is not. The wrench (no sneak) toggles it
+  (`BatteryBlock.onWrenched`; sneaking still picks the battery up) and an action-bar line says which. A reserve is kept for **essential** draws (a spark plug,
+  a starter) and is closed to **optional** ones (today only another mod's Forge Energy wire; the electric injector will be one). An essential draw takes from
+  the open batteries first and the reserve for what is left; an alternator's charge fills a reserve first. With no reserve set, every draw and fill is the
+  even share it always was (`BatteryBank` keeps an allocation-free path for that, since a spark is drawn many times a tick). The rule is
+  `engine/sim/ChargePriority` (pure); the saved key is `Reserve`, written only when set, so an untouched battery saves what it always did; goggles say
+  how many of the bank are reserves. Tests: `ChargePriorityTest`, `BatteryPriorityGameTests`. **Ponder written 2026-11-24** (a wrench step on "Batteries: Three Sizes"). **Open:** there is
+  no visible mark on the block (a lamp or band colour would need new models), and a bank set entirely to reserve gives the starter and plugs what it always did
+  but gives another mod's wire nothing.
+- **Electric injector assist.** Spending charge improves fuel metering: with power the injector holds its flow more precisely, without
+  power it falls back to exactly today's flow, so an engine with no battery near it is unchanged. It is a bonus, never a requirement. Still
+  to settle: whether it is a new injector block, an upgrade item for the existing precision injector, or a part that sits beside it;
+  what it improves (flow accuracy, a wider lean window, cleaner burn); and the per-tick draw.
+- **Ignition upgrades (high-energy coils).** A coil on a spark plug that spends more charge per fire for a stronger spark: a wider
+  window for lean and boosted spark fuels, fewer misfires. It is a spark-quality stat and a charge sink, new items only. It has to
+  be reconciled with the spark-fuel plug rule (2026-11-23) and must not let a plain plug do less than it does now.
+  **Built 2026-11-24, unreleased, not seen in game.** One item, the Ignition Coil, which sits on a head's spark plug (it will not go on
+  a head with no plug, and says so) and comes off before the plug. Each spark that has fuel to light draws `IgnitionCoil.COST` (half a
+  spark) more from the bank, as an optional use like the injector assist: a reserve battery is closed to it, so a coil can never leave a
+  plain spark without its charge. A coiled spark lights a leaner mixture (the lean limit times `LEAN`, 0.7), burns a little faster (`BURN`, 0.9) and loses less of the rich limit
+  to a fouled plug (`FOULING`, 0.4), which is the fewer-misfires part; it does not touch pre-ignition, which is the charge's temperature and
+  not the spark's. An uncoiled or unpowered spark takes exactly the old code path (the limits are returned unchanged, bit for bit), the
+  dyno rates a coil only when the bank can spare the charge, and the scanner counts a coil only with a plug. The rule is `engine/sim/IgnitionCoil`
+  (pure); the new block state `coil` defaults false, so no saved head changes. Tests: `IgnitionCoilTest`, `IgnitionCoilGameTests`.
+  **Ponder written 2026-11-24** ("Spending Charge: Injector Assist and Ignition Coil", also covers the assist). **Open:** the models are generated but unseen (a coil on the standard and the precision plug, in
+  all three head combinations), and rotor housings have no coil (a rotor has no head block to put one on).
+- **Battery wear** belongs to the opt-in wear mode in 2.3 (see below), not here: deep discharge and repeated cold cycles reduce a
+  battery's capacity, only with the mode on.
+
+**Electrolysis (author: "could be really cool"; a thought, not a plan).** Splitting water with charge is the biggest of the ideas and
+the one that can break rules, so it needs a decision before any design. The tension: the Declined list says no more fuels, and
+hydrogen would be one; a battery loop that makes more energy than it spends must be impossible. Ways it could fit, each answering
+that:
+1. **Power-to-fuel.** An Electrolyser turns water and charge into an input for the existing methanol chain (hydrogen to the column),
+   so charge becomes methanol, an existing fuel, and no new fuel exists. Lossy by design, so engine to alternator to electrolyser to
+   engine never gains energy. This is the cleanest fit and gives the batteries a real end-game sink. It touches the methanol
+   water-feed exception that is still pending.
+2. **An additive and not a fuel.** Hydrogen or oxygen fed into the intake as a supplement that widens a spark fuel's lean window or
+   cools a boosted charge, in the niche of the ethanol charge-cooling work. No new fuel, but a new fluid and a new intake input.
+3. **A pure sink and a showpiece.** The block only turns charge into visible gas and bubbles in a basin, a use for a surplus bank with
+   no gameplay output. Cheap and safe, but it gives nothing back.
+Open questions for the author: which of the three (or none); whether a fluid is made at all (it would be the first the mod invents
+that is not a fuel); the efficiency that keeps any loop a net loss (to be fixed by test, with a `BatteryEnergy`-style balance check);
+the draw it asks of the Large Battery; and whether it waits for the energy-mod bridge (Forge Energy) in 2.3, since an electrolyser
+fed from another mod's power is the same temptation that got the motor dropped.
 
 ## 2.3 Open Garage
 
@@ -379,6 +446,64 @@ one that high compression raises NA output and lowers the pre-ignition margin an
 combination produces a non-finite or negative result, a `ConfigMatrixTest` row, a GameTest for each variant fitted, saved and reloaded,
 and a `LegacyWorldGameTests` case showing a 2.0 world runs the same. `pitest` is re-run, since `engine/sim` changes.
 
+### Nitrous oxide: a liquid, a vaporiser and a gas in the intake (author, 2026-11-23; proposed)
+
+**Requested by the author on 2026-11-23 and placed in 2.3 with the piston variants, which it depends on for its trade-off. Nothing is built; this is a first design.**
+It **reverses the 2026-11-21 answer** quoted under "Fuel character" ("no gases, nitrous"), by the author's own say-so. It is not a fuel (nothing in it burns by
+itself; it carries oxygen), so the Declined entry "new fuels" is not what it touches. It is the first fluid the mod invents that is not a fuel, and the first gas
+(see the open questions). It is the end-game power item the "high and low compression" list was missing: a short, strong, supplied burst of power instead of a longer chain.
+
+- **Liquid nitrous oxide** is a Create fluid with a bucket, stored in any tank or fluid pipe as the fuels are. Where it comes from is still to settle (see below). It
+  does nothing alone: spilled or stored, it is inert and never burns, so it adds no fire and no new way to lose a build.
+- **Frost on the tank** (author, 2026-11-23; proposed). A tank holding liquid nitrous oxide grows a layer of frost, and the Vaporiser frosts over while it is
+  boiling liquid off, so cold reads at a glance. It is **cosmetic only**: no rating, no gameplay effect, and nothing saved (the look is derived from what the tank holds,
+  so a world without the mod loses nothing). **How it is built is the open part,** because the tank is Create's block, not ours: the likeliest route is a client-side
+  overlay drawn over a Create fluid tank whose fluid is nitrous (a render hook that reads the tank, with no mixin into Create and no change to its data), and a plain
+  frost texture state on our own Vaporiser. **Decided by the author on 2026-11-23:** frost **builds up over a few seconds** (and melts back the same way when the tank is
+  emptied), with **frost particles** and a **very subtle crackle**. It **must work with Flywheel and Sodium at the bare minimum** (the plain and contraption paths
+  are wanted too, and a path that cannot draw it falls back to nothing and is listed, never left broken). Still to settle: the exact build-up time, the particle
+  look, how quiet the crackle is (heard by the author and tuned by ear, on the sound-thread rules that fixed the 1.2.0 out-of-memory bug: capped voices, nothing
+  out of earshot), and that none of it costs frames on a large tank bank (a cap, with a client profile before any claim). Tests: the overlay appears only for nitrous,
+  never for another fluid, and a tank without the mod's fluid draws exactly as before; the build-up is a pure function of time and contents (unit tested, bounded,
+  never non-finite); the client audit and the compatibility matrix rows for Flywheel and Sodium stay green with frost on screen; a soak test of the crackle.
+- **The Nitrous Vaporiser** is a new block that takes liquid nitrous oxide on a fluid face and turns it into a gas that flows through the **intake manifolds**
+  it is attached to. It sits on an intake network the way the intercooler does: a new inline part, found by `EngineScanner` beside `network.intercoolers()`, which
+  gives an `EngineLayout.Inline` and a pure `engine/sim` class (`Nitrous`) for the numbers. The gas is a flow and not a stored quantity: while the vaporiser is
+  enabled and has liquid, every cylinder downstream of it on that network breathes nitrous, and a manifold holds nothing (it still never ticks). A redstone signal
+  switches it (the one control, as the governor's setpoint is), and it draws liquid only while a cylinder downstream is firing.
+- **What the gas does** (a first reading, to be measured): more oxygen per intake stroke lets a cylinder burn more fuel per cycle, so power rises by a factor
+  while the injector feeds enough fuel to use it (a lean engine gains little, which keeps it a fuel-system decision). The liquid boiling off also cools the charge,
+  the way ethanol's charge cooling and the intercooler already do. Nitrous therefore stacks with boost, and must read the same pre-ignition model the piston variants use:
+  **high compression plus nitrous is the aggressive build; low compression is where it is safest.** This is the link to the piston variants.
+- **No new punishment (rule 4).** Nitrous only helps. The cost is the liquid it uses up, and the pre-ignition margin it takes from the engine, which is the model
+  that already exists (`Combustion` loses a share of the burn, never the engine). Nothing here can break a part; if the opt-in wear mode is on, extra cylinder
+  pressure wears the gaskets faster, and with it off nothing wears.
+- **Existing builds are untouched (rule 1).** A cylinder with no vaporiser upstream breathes as it does today. `compat/behaviour.txt` and `compat/trajectories.txt`
+  are not touched; new entries are appended for the vaporiser only.
+
+**Decisions needed from the author before any design:**
+1. **Where liquid nitrous oxide comes from. Decided by the author on 2026-11-23: a basin recipe**, made by the player in the way the refinery makes fuels, and not
+   found or looted. Still to settle: the inputs (the first idea is ammonium or nitrate items plus heat, using only items and fluids that already exist, so no new
+   ingredient chain is added), the yield, and the cost, which is checked against the refinery numbers so a bucket is not cheaper than the power it gives.
+2. **How strong, and for how long.** The power factor, the oxygen it adds, and the draw per second. Measured by dyno and shown to the author as a table first
+   (`BoostParityTest` style); none of it is guessed. It must not make boosted engines of the lower classes obsolete (the progression rule in the vision: the end-game
+   is reached by a chain, and nitrous is a burst, not a replacement).
+3. **One vaporiser or tiers,** and whether the vaporiser also takes **gaseous input from a pipe** for packs with other gas mods. The proposal: one block, liquid only, no
+   second dial, and the redstone switch as its only control.
+4. **The first non-fuel fluid.** Whether a Ponder page and the goggle line are enough to explain that a fluid exists that no engine burns, or whether it needs
+   its own tank readout (the fuel tooltip comparison does not apply).
+
+**Built like the rest of 2.x:** the fluid, the bucket and the vaporiser each get lang entries, a goggle line (what the vaporiser feeds, whether it has liquid, the
+power it adds and the pre-ignition margin it uses), recipes, weights, a model from the generator scripts, a Ponder page that sits next to "Choosing a Fuel" and the
+piston variants page, config through `Tuning` for anything with a default (and no new dial unless it replaces one), the data-map or API route if parts are data, a
+blueprint round-trip (a blueprint with a vaporiser keeps it; a 2.0 blueprint loads unchanged), and casing for the vaporiser if the other intake parts have it.
+
+**Tests (new, unasked as always):** `Nitrous` unit tests (no vaporiser or no liquid reproduces today's numbers exactly for every fuel and class; power rises and the margin falls with gas,
+and a lean cylinder gains less than a rich one), a property test that no input produces a non-finite or negative result, a `ConfigMatrixTest` row, GameTests (liquid
+in, vaporiser on, a cylinder downstream gains; a cylinder on another network does not; the redstone switch; the liquid runs out and the engine falls back to normal; save and
+reload with the gas on; chunk unload), a `LegacyWorldGameTests` case showing a 2.0 world with intake manifolds runs the same, a soak test of the draw on the tick path, and `pitest`
+re-run, since `engine/sim` changes. The fluid joins `compat/manifest.txt` when it ships.
+
 ### Rotary depth: rotor variants and an exhaust niche (author, 2026-11-23; proposed)
 
 **The author accepted these on 2026-11-23, from a list of rotary ideas; nothing is built.** (Port variants, the first idea on that
@@ -391,6 +516,20 @@ three ported chambers, spark only, with its rotor fitted by hand and its port ti
   power and less boost headroom, using the pre-ignition model the pistons use. The stock rotor stays today's numbers. New items, a
   fitted choice and not a dial (rule 3), and pistons' rule on compression-lit engines is moot here: a ported chamber never
   compression-ignites, so a rotary has no compression-lit case to protect.
+- **Precision rotor** (author, 2026-11-24; proposed). The rotary's counterpart to the forged piston, so a rotor has a precision grade as
+  a cylinder does. A machined rotor with ground apex and side seals: **lighter and with less drag**, the forged piston's two gains
+  (`PRECISION_PISTON_INERTIA`, `_STATIC`, `_VISCOUS`), and no change to compression, so it never touches the pre-ignition margin. It is
+  fitted the way a forged piston is (the same gesture, rule: one way to fit a part): a new item, a second state property beside
+  `HAS_ROTOR` on the housing (as `FINE_INJECTOR` sits beside `HAS_INJECTOR`), a `Slot` in `RotorHousingBlock.PARTS`, and a precision
+  bit in `PrecisionParts` that `rotarySpec` reads next to the injector. Built in the same pass as the lightweight and high-compression
+  rotors, since all three are one slot with a grade. **Recipe:** one precision mechanism and brass sheets, dearer than the plain rotor
+  and cheaper than a precision cylinder, checked against the other precision recipes so a rotary stays below a precision piston engine.
+  **Not guessed:** the three scales are measured on the dyno and shown to the author as a table first (`BoostParityTest` style); and
+  whether it stacks with the lightweight rotor or replaces it (a housing holds one rotor, so the proposal is that it replaces it:
+  the precision rotor is the lightweight rotor's finished form and the two are not both offered, which the author decides). The
+  stock rotor stays today's numbers exactly. **Tests:** the stock rotor is unchanged in `RotaryEngineTest`, the precision rotor
+  lowers inertia and drag and moves nothing else, the blueprint keeps it, a schematic prices it, goggles name it, and it is
+  saved and reloaded.
 - **Exhaust energy niche.** A rotary dumps a lot of hot exhaust, so on a rotary a turbo spools faster and a heat exchanger yields
   more. **Constraint:** the existing housing's numbers are guarded, so the niche rides on the new rotor items, or on new
   `part_stats` keys for `create_engines:rotor_housing` whose defaults are today's values. Making every existing housing hotter would
@@ -444,6 +583,9 @@ changes (rule 1). With it off, nothing below runs. Decisions so far, not yet a d
   cylinder does. The rotary's wear curve is measured separately by dyno, not copied from the piston's. Wear grows with RPM and faster with heat, no oil and over-revving;
   gaskets also wear with boost (cylinder pressure). Worse wear means worse performance and a failure chance that starts near zero
   and rises with RPM.
+- **Batteries wear too** (author, 2026-11-23; proposed): deep discharge and repeated cold cycles slowly reduce a battery's capacity.
+  Same rules as the rest: opt-in, nothing runs with the mode off, saved charge is untouched until wear exists, a repair or replacement
+  restores it, and the wear curve is tested and then pinned. Not a failure: a worn battery holds less and never stops working.
 - **Failures** (author: gaskets can fail too): a rod can be thrown, with a loud bang, and a gasket can blow. Either stops that
   cylinder until it is repaired.
 - **Repair** (author: some damage with items, most by replacing): light wear can be set right with an item; most damage, and every
@@ -454,6 +596,35 @@ changes (rule 1). With it off, nothing below runs. Decisions so far, not yet a d
 - **Still to settle** (author): which light damage the repair item covers and what it costs; the exact wear and failure curves
   (tested, then pinned); whether a worn part shows on goggles and the Black Box; and the upgrade recipes. Each gets tests, lang
   entries, a Ponder page and a goggle line, and the failure paths get soak tests like the sound and tick paths.
+
+### W layout for the Bank Builder (author, 2026-11-24; proposed)
+
+A fourth layout beside inline, vee and flat: **W**, three banks on one crank line (a W12, or a W24 of eight throws with three
+cylinders each). Additive: a new `Layout` value appended after `FLAT` (check first how the `Layout` tag is stored, so a builder
+saved on 2.x keeps its layout), so no existing build changes (rule 1).
+
+- **Shape.** On the block grid a throw has four faces a quarter turn apart, so the W is three of them in a row: the clicked face
+  and the two beside it (bores at 0, 90 and 180 degrees, like a flat with a vee's third bank). `faces` returns three, `camOffsets`
+  gives one cam line in each of the two valleys (or one line per bank, decided with the author), and the preview, the missing-parts
+  list and the blueprint build all read the same list, so they stay in step.
+- **Firing, worked out (the author asked whether a W24 can fire evenly).** Not with every throw carrying all three banks. Fire
+  angles are `bore - throw` modulo 360, with the revolution free per cylinder. A 24-cylinder even order needs one firing every 30
+  degrees, which is 12 points modulo 360, each used twice. Bores 0, 90 and 180 are multiples of 30, so the lattice is reachable,
+  but a throw's three cylinders always land in the same one of three residue classes (the multiples of 90 apart) and take three of
+  that class's four points. Each class needs eight cylinders, and eight is not a multiple of three, so eight three-cylinder throws
+  cannot do it, whatever the throw angles. The same counting rules out an even W12 on four throws (a 90 degree bank cannot sit on a
+  60 degree lattice), which matches the existing "a 90 degree V12 cannot be even" test.
+  What does work: **nine throws** with one two-cylinder throw per residue class (a bank left out of three of the throws, which is a
+  stepped W, as real staggered W engines are), and a **four-bank X** of six throws with four cylinders each. The planner needs no
+  change to find either, since it already searches throw angles and revolutions for any cylinder list; the work is the layout
+  and a test per shape.
+- **Tests (new with the feature).** `FiringPlannerTest`: the eight-throw W24 is as close as it gets and not `even()` (pin the
+  deviation, so a planner change that improves it is noticed), the nine-throw stepped W24 is even, and the X24 is even. Builder
+  tests: three faces, the cam offsets, a W built in each facing, blocked and missing parts counted, and a blueprint round trip.
+  A Ponder step on the Bank Builder page and the firing-order page saying which W shapes fire evenly and which do not, with the
+  arithmetic left to the tooltip.
+- **For the author:** whether the W builds the stepped nine-throw form by default (even, but uneven-looking) or the plain
+  eight-throw form (tidy, not even), and whether to offer the X at the same time. Default to the stepped form if there is no say.
 
 ### Look, sound and performance (was 2.4 Paint and Polish; merged into 2.3 by the author, 2026-11-23)
 

@@ -862,7 +862,7 @@ one per plug firing and refilled by an alternator; what changed is below. The nu
 ### Battery tiers (moved to 2.2, 2026-11-23)
 
 **No tier block ships in 2.1.** The Dry Cell (100 sparks, the cold does not touch it) and the Large Battery (800 sparks, three quarters lost to the cold)
-were built and then moved to 2.2 with the Electric Motor, the consumer that needs a bigger bank (author, 2026-11-23). What stays in the tree is the
+were built and then moved to 2.2 (author, 2026-11-23); the Electric Motor that was to be their consumer was dropped the same day. What stays in the tree is the
 machinery, with one tier: `BatteryTier` (no Minecraft types, `BatteryTierTest`) holds `PLAIN` only, `BatteryBlock` takes a tier, and `BatteryBlockEntity`
 reads its capacity and cold loss from its block. The plain battery is exactly what it was (200 sparks, half lost to the cold; `BatteryTierTest` pins it),
 so no existing engine or world changes. The removed blocks' files are saved in `../create-engines-deferred/` (`dry-cell`, `large-battery`).
