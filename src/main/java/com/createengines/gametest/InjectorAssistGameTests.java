@@ -17,6 +17,7 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.gametest.framework.GameTest;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.network.chat.Component;
+import com.createengines.content.battery.BatteryBank;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
@@ -106,6 +107,8 @@ public class InjectorAssistGameTests {
 		// The part handed back lands in the hand that just clicked, and a click with an assist in it would fit it again
 		player.setItemInHand(InteractionHand.MAIN_HAND, ItemStack.EMPTY);
 		helper.useBlock(HEAD, player);
+		// The plug that came off lands in the hand too, and a click with a plug in hand would fit it straight back
+		player.setItemInHand(InteractionHand.MAIN_HAND, ItemStack.EMPTY);
 		helper.useBlock(HEAD, player);
 		state = stateAt(helper, HEAD);
 		helper.assertTrue(!state.getValue(CylinderHeadBlock.HAS_INJECTOR) && !state.getValue(CylinderHeadBlock.HAS_SPARK_PLUG),
@@ -197,13 +200,9 @@ public class InjectorAssistGameTests {
 		helper.succeed();
 	}
 
+	/** The reserve lines a battery's goggles would show, as lang keys (the goggle text itself loads client classes, so a server test cannot call it). */
 	private static List<String> goggles(BatteryBlockEntity battery, boolean sneaking) {
-		List<Component> tooltip = new ArrayList<>();
-		battery.addToGoggleTooltip(tooltip, sneaking);
-		List<String> lines = new ArrayList<>();
-		for (Component line : tooltip)
-			lines.add(line.getString());
-		return lines;
+		return com.createengines.engine.sim.ReserveLines.keys(battery.isReserve(), BatteryBank.reserveCount(battery.bank()), sneaking);
 	}
 
 	private static boolean has(List<String> lines, String key) {
@@ -220,7 +219,7 @@ public class InjectorAssistGameTests {
 		helper.assertTrue(!has(lines, "goggles.battery.reserve_hint"), "The wrench hint waits for a sneaking player");
 		plain.setReserve(true);
 		lines = goggles(plain, false);
-		helper.assertTrue(!has(lines, "goggles.battery.reserve_off") && lines.stream().anyMatch(line -> line.endsWith("goggles.battery.reserve")),
+		helper.assertTrue(!has(lines, "goggles.battery.reserve_off") && lines.stream().anyMatch(line -> line.equals("goggles.battery.reserve")),
 			"A reserve says it is one: " + lines);
 		helper.assertTrue(has(lines, "goggles.battery.reserve_split"), "and says what the bank holds back: " + lines);
 		helper.assertTrue(has(goggles(plain, true), "goggles.battery.reserve_hint"), "Sneaking adds how to change it");

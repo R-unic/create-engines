@@ -242,7 +242,7 @@ public class PackCommandGameTests {
 	}
 
 	@SuppressWarnings({ "unchecked", "rawtypes" })
-	@GameTest(template = "empty")
+	@GameTest(template = "empty", batch = "pack-preset-direct")
 	public static void aPresetMovesExactlyTheSettingsItNamesAndCanBeUndone(GameTestHelper helper) throws Exception {
 		Map<String, Object> before = new LinkedHashMap<>();
 		CEConfig.values()
@@ -283,7 +283,7 @@ public class PackCommandGameTests {
 
 	/** The command itself, not just {@code ConfigPresets}: it says how many settings moved, lists each, and the config really changes. */
 	@SuppressWarnings({ "unchecked", "rawtypes" })
-	@GameTest(template = "empty")
+	@GameTest(template = "empty", batch = "pack-preset-command")
 	public static void theCommandAppliesAPresetAndSaysWhatItChanged(GameTestHelper helper) throws Exception {
 		Map<String, Object> before = new LinkedHashMap<>();
 		CEConfig.values()

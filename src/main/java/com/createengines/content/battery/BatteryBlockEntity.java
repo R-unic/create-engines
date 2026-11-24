@@ -362,23 +362,23 @@ public class BatteryBlockEntity extends SmartBlockEntity implements IHaveGoggleI
 			GoggleLines.add(CELang.translate("goggles.battery.bank", bank.size(), Math.round(held), Math.round(capacity))
 				.style(ChatFormatting.GRAY), tooltip, 1);
 		// Every battery says whether it is a reserve, so a player can tell a plain one from one that is set aside
-		if (reserve)
-			GoggleLines.add(CELang.translate("goggles.battery.reserve")
-				.style(ChatFormatting.LIGHT_PURPLE), tooltip, 1);
-		else
-			GoggleLines.add(CELang.translate("goggles.battery.reserve_off")
-				.style(ChatFormatting.GRAY), tooltip, 1);
 		int reserves = BatteryBank.reserveCount(bank);
-		if (reserves > 0) {
-			// What is held back, and what is left for the draws that may not touch it
-			float kept = BatteryBank.reserveCharge(bank);
-			GoggleLines.add(CELang.translate("goggles.battery.reserve_split", reserves, bank.size(), Math.round(kept),
-					Math.round(held - kept))
-				.style(ChatFormatting.LIGHT_PURPLE), tooltip, 2);
+		for (String key : com.createengines.engine.sim.ReserveLines.keys(reserve, reserves, isPlayerSneaking)) {
+			switch (key) {
+				case "goggles.battery.reserve" -> GoggleLines.add(CELang.translate(key)
+					.style(ChatFormatting.LIGHT_PURPLE), tooltip, 1);
+				case "goggles.battery.reserve_off" -> GoggleLines.add(CELang.translate(key)
+					.style(ChatFormatting.GRAY), tooltip, 1);
+				case "goggles.battery.reserve_split" -> {
+					// What is held back, and what is left for the draws that may not touch it
+					float kept = BatteryBank.reserveCharge(bank);
+					GoggleLines.add(CELang.translate(key, reserves, bank.size(), Math.round(kept), Math.round(held - kept))
+						.style(ChatFormatting.LIGHT_PURPLE), tooltip, 2);
+				}
+				default -> GoggleLines.add(CELang.translate(key)
+					.style(ChatFormatting.DARK_GRAY), tooltip, 2);
+			}
 		}
-		if (isPlayerSneaking)
-			GoggleLines.add(CELang.translate("goggles.battery.reserve_hint")
-				.style(ChatFormatting.DARK_GRAY), tooltip, 2);
 		if (percent == 0)
 			GoggleLines.add(CELang.translate("goggles.battery.flat")
 				.style(ChatFormatting.GRAY), tooltip, 1);
