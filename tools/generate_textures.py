@@ -194,6 +194,54 @@ def enamel_red():
     return rimmed(RED, inside, outer=(1, 0, 0), inner=(-2, -3, -4, -5))
 
 
+def flywheel_steel():
+    """Machined steel for the flywheel's rims, flange and hub. It tiles both ways (no frame), and is laid along the length of a
+    bar: a bright lit edge, a fine turned groove, a broad flat, and a shaded lower edge, with a little repeating grain."""
+    bands = {0: 10.5, 1: 9.5, 2: 8.0, 3: 7.2, 4: 7.6, 5: 4.5, 6: 9.8, 7: 8.2, 8: 8.0, 9: 7.8, 10: 8.2, 11: 7.4, 12: 5.5,
+             13: 6.5, 14: 4.0, 15: 2.5}
+
+    def pixel(x, y):
+        grain = hashed(x % 8, y, 21) - 0.5
+        return bands[y] + 0.9 * grain + (0.5 if (x % 8) in (0, 1) else 0)
+
+    return [[pick(STEEL, pixel(x, y)) for x in range(SIZE)] for y in range(SIZE)]
+
+
+def flywheel_oxide():
+    """Blackened, machined iron for the masses' rings and spokes: dark with a soft lit edge and a fine bead line, tiling both ways."""
+    bands = {0: 7.5, 1: 6.0, 2: 4.2, 3: 3.6, 4: 3.4, 5: 3.2, 6: 4.8, 7: 3.0, 8: 2.8, 9: 3.0, 10: 3.2, 11: 3.4, 12: 3.0,
+             13: 2.4, 14: 1.6, 15: 1.0}
+
+    def pixel(x, y):
+        speck = hashed(x % 8, y, 33) - 0.5
+        return bands[y] + 1.1 * speck + (1.0 if (x + y) % 8 == 0 and 5 < y < 13 else 0)
+
+    return [[pick(OXIDE, pixel(x, y)) for x in range(SIZE)] for y in range(SIZE)]
+
+
+def flywheel_coil():
+    """A coil spring in brass, to lay along the pack's length: a ring every four pixels, dark between and lit on the crown,
+    shaded to a round bar top to bottom. It tiles both ways."""
+    ring = {0: 1.0, 1: 9.0, 2: 11.0, 3: 6.0}
+
+    def pixel(x, y):
+        round_bar = 3.2 * ((abs(y - 7.5) / 7.5) ** 2)
+        return ring[x % 4] - round_bar + 0.5 * (hashed(x % 4, y, 17) - 0.5)
+
+    return [[pick(BRASS, pixel(x, y)) for x in range(SIZE)] for y in range(SIZE)]
+
+
+def flywheel_enamel():
+    """Red enamel for the performance stripe: gloss colour, a bright line along the top and a thin dark one below, tiling both ways."""
+    rows = {0: 5.6, 1: 4.6, 2: 3.6, 3: 3.3, 4: 3.1, 5: 3.0, 6: 2.8, 7: 2.7, 8: 2.7, 9: 2.7, 10: 2.7, 11: 2.6, 12: 2.4,
+            13: 2.0, 14: 1.4, 15: 0.8}
+
+    def pixel(x, y):
+        return rows[y] + 0.4 * (hashed(x % 8, y, 9) - 0.5) + (0.5 if y == 3 and x % 8 < 5 else 0)
+
+    return [[pick(RED, pixel(x, y)) for x in range(SIZE)] for y in range(SIZE)]
+
+
 def ceramic():
     """Glazed insulator: round shading across the tile, bright to the left of the middle."""
 
@@ -525,7 +573,8 @@ def main():
         write_png("particle/glow_%d" % index, glow(17 + 11 * index))
     for name, painter in (("brass", brass), ("copper", copper), ("copper_panel", copper_panel), ("steel", steel),
                           ("cast_iron", cast_iron), ("black_oxide", black_oxide), ("rivet_plate", rivet_plate),
-                          ("enamel_red", enamel_red), ("ceramic", ceramic), ("screen", screen), ("column_glow", column_glow), ("heat_wrap", heat_wrap),
+                          ("enamel_red", enamel_red), ("flywheel_steel", flywheel_steel), ("flywheel_oxide", flywheel_oxide), ("flywheel_coil", flywheel_coil),
+                          ("flywheel_enamel", flywheel_enamel), ("ceramic", ceramic), ("screen", screen), ("column_glow", column_glow), ("heat_wrap", heat_wrap),
                           ("grille", grille)):
         write_png("block/" + name, painter())
     fluid("thin_still", thin_still, 16, 32, 2, THIN_LEVELS)

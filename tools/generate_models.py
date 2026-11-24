@@ -118,34 +118,54 @@ GLASS = "minecraft:block/glass"
 # --- crank, throw, cam ---------------------------------------------------------------------------------------------
 
 def crankshaft():
-    textures = {"axis": AXIS, "end": AXIS_TOP, "collar": CASING, "journal": IRON, "bolt": BRASS, "particle": CASING}
+    textures = {"axis": AXIS, "end": AXIS_TOP, "collar": CASING, "journal": IRON, "bolt": BRASS, "groove": DARK,
+                "particle": CASING}
     elements = [
         shaft((6, 0, 6), (10, 16, 10)),
-        box((5, 3, 5), (11, 13, 11), "journal"),
-        box((4, 5.5, 4), (12, 10.5, 12), "collar"),
-        box((3.75, 7.5, 3.75), (12.25, 8.5, 12.25), "journal"),
+        # The journal, with a thrust collar at each end that keeps the crank from walking along its line
+        box((5, 2.5, 5), (11, 13.5, 11), "journal"),
+        box((4.5, 2.5, 4.5), (11.5, 3.5, 11.5), "collar"),
+        box((4.5, 12.5, 4.5), (11.5, 13.5, 11.5), "collar"),
+        # The split main bearing: a lower shell and a cap, with the joint between them showing as a dark line
+        box((4, 5, 4), (12, 7.75, 12), "collar"),
+        box((4, 8.25, 4), (12, 11, 12), "collar"),
+        box((3.75, 7.75, 3.75), (12.25, 8.25, 12.25), "groove"),
+        # The oil feed into the shell, on the side the rest of the engine leaves free
+        box((3.5, 6, 7), (4, 7, 9), "groove"),
+        box((12, 6, 7), (12.5, 7, 9), "groove"),
     ]
-    # Tie bolts at the corners of the bearing cap, with a nut at each end
+    # Cap bolts at the corners, with a brass nut standing proud of the cap
     for x in (3.6, 11.4):
         for z in (3.6, 11.4):
-            elements.append(box((x, 5, z), (x + 1, 11, z + 1), "bolt"))
+            elements.append(box((x, 5.5, z), (x + 1, 10.5, z + 1), "bolt"))
+            elements.append(box((x - 0.25, 10.5, z - 0.25), (x + 1.25, 11.5, z + 1.25), "bolt"))
     write("crankshaft/block", textures, elements)
 
 
 def crank_throw():
     textures = {"axis": AXIS, "end": AXIS_TOP, "web": IRON, "pin": IRON_BLOCK, "weight": DARK, "collar": CASING,
-                "particle": IRON}
+                "bolt": BRASS, "particle": IRON}
     elements = [shaft((6, 0, 6), (10, 3, 10)), shaft((6, 13, 6), (10, 16, 10)),
                 box((5, 2, 5), (11, 3, 11), "collar"), box((5, 13, 5), (11, 14, 11), "collar")]
     for y0 in (3, 11):
         y1 = y0 + 2
-        # A web: a hub round the shaft, running out to a boss round the pin
-        elements.append(box((4.5, y0, 4), (11.5, y1, 15), "web"))
-        elements.append(box((4, y0, 5), (12, y1, 11), "web"))
-        # The counterweight on the far side from the pin, which balances the pin and the big end of the rod
-        elements.append(box((4, y0, 1), (12, y1, 5.5), "weight"))
-    elements.append(box((6.5, 5, 10.5), (9.5, 11, 13.5), "pin"))
-    elements.append(box((6.2, 7.5, 10.2), (9.8, 8.5, 13.8), "pin"))
+        outer = 2.9 if y0 == 3 else 13
+        # A web: a broad hub round the shaft that narrows into an arm out to the pin
+        elements.append(box((3.5, y0, 3.5), (12.5, y1, 10), "web"))
+        elements.append(box((5, y0, 9), (11, y1, 15), "web"))
+        # The counterweight on the far side from the pin, which balances the pin and the big end of the rod: a heavy
+        # fan that is widest at its rim
+        elements.append(box((3.5, y0, 1.5), (12.5, y1, 4), "weight"))
+        elements.append(box((3, y0, 1.5), (13, y1, 3), "weight"))
+        elements.append(box((4.5, y0, 1), (11.5, y1, 1.5), "weight"))
+        # Two balance holes drilled in the outer face of the weight
+        elements.append(box((4.5, outer, 2.2), (6.5, outer + 0.1, 3.8), "web"))
+        elements.append(box((9.5, outer, 2.2), (11.5, outer + 0.1, 3.8), "web"))
+    # The crank pin, with a fillet at each web, and the oil way across it
+    elements.append(box((6.25, 5, 10.25), (9.75, 11, 13.75), "pin"))
+    elements.append(box((5.75, 5, 9.75), (10.25, 5.6, 13.9), "pin"))
+    elements.append(box((5.75, 10.4, 9.75), (10.25, 11, 13.9), "pin"))
+    elements.append(box((6, 7.6, 10), (10, 8.4, 14), "bolt"))
     write("crank_throw/block", textures, elements)
 
 
@@ -699,25 +719,35 @@ def battery_joins_name(n, e, s, w, u):
     return "".join("1" if on else "0" for on in (n, e, s, w, u))
 
 
+def battery_tier_textures(kind):
+    """The materials of each tier of battery. The plain battery is zinc, brass and andesite, as it always was; the next tier will
+    need its own materials, to read apart on a bank."""
+    return battery_textures()
+
+
 def battery():
-    textures = battery_textures()
+    for kind in ("battery",):
+        battery_tier(kind, battery_tier_textures(kind))
+
+
+def battery_tier(kind, textures):
     lit_textures = dict(textures, lit=MAGMA)
     # One model for each of the 32 ways the neighbours can join it; the blockstate picks by the join properties
     for bits in range(32):
         joins = tuple(bool(bits >> i & 1) for i in range(5))
-        write("battery/block_j" + battery_joins_name(*joins), textures, battery_shell(*joins))
+        write(kind + "/block_j" + battery_joins_name(*joins), textures, battery_shell(*joins))
     # The inventory model, and the one the particle and the lone battery use: a lone battery with its lamps dark
     lone = battery_shell()
     for side in BATTERY_SIDES:
         lone += battery_gauge_side(side, "dark", 0)
-    write("battery/block", textures, lone)
+    write(kind + "/block", textures, lone)
     # Charge gauge: four slots along each face of the lid, dark when empty. gauge_N lights the first N of them (the
     # blockstate's charge property, see BatteryChemistry.gaugeStage), so the charge reads from any side without goggles.
     # A side that is joined to another battery has no lid face to put them on.
     for side in BATTERY_SIDES:
-        write("battery/block_dark_" + side, textures, battery_gauge_side(side, "dark", 0))
+        write(kind + "/block_dark_" + side, textures, battery_gauge_side(side, "dark", 0))
         for stage in range(1, 5):
-            write("battery/block_gauge_%d_%s" % (stage, side), lit_textures, battery_gauge_side(side, "lit", stage),
+            write(kind + "/block_gauge_%d_%s" % (stage, side), lit_textures, battery_gauge_side(side, "lit", stage),
                   ambientocclusion=False)
 
 
@@ -1020,6 +1050,164 @@ def cast_flywheel():
     # Turned a quarter about Z in the inventory so the wheel faces the viewer; the other displays keep the block's
     write("cast_flywheel/item", {**textures, **disc_textures}, collars + disc,
           display={"gui": {"rotation": [30, 225, 90], "translation": [0, 0, 0], "scale": [0.625, 0.625, 0.625]}})
+
+
+def _tbox(a, b, tex, **overrides):
+    """A box whose faces all show the texture at one pixel density: a face is cut from the texture's corner at its own size
+    (so a thin bar is not stretched, and a face longer than the texture is stretched across it once, not wrapped)."""
+    x1, y1, z1 = a
+    x2, y2, z2 = b
+    size = {"up": (x2 - x1, z2 - z1), "down": (x2 - x1, z2 - z1), "north": (x2 - x1, y2 - y1),
+            "south": (x2 - x1, y2 - y1), "west": (z2 - z1, y2 - y1), "east": (z2 - z1, y2 - y1)}
+    uv = {face: [0, 0, round(min(w, 16), 3), round(min(h, 16), 3)] for face, (w, h) in size.items()}
+    return box(a, b, tex, uv=uv, **overrides)
+
+
+def _octagon(radius, y0, y1, tex):
+    """A stepped octagon about the shaft (centre 8, 8) from y0 to y1, as boxes that touch but never overlap: a wide strip,
+    a tall strip either side of it, and two steps in each corner. Reaches radius either way."""
+    k = radius * 0.414
+    m = (k + radius) / 2 - 1.2
+    n = radius - (radius - k) * 0.22
+    c = 8
+    out = [_tbox((c - radius, y0, c - k), (c + radius, y1, c + k), tex),
+           _tbox((c - k, y0, c + k), (c + k, y1, c + radius), tex),
+           _tbox((c - k, y0, c - radius), (c + k, y1, c - k), tex)]
+    for sx in (1, -1):
+        for sz in (1, -1):
+            def at(x0, x1, z0, z1):
+                xs = sorted((c + sx * x0, c + sx * x1))
+                zs = sorted((c + sz * z0, c + sz * z1))
+                return _tbox((xs[0], y0, zs[0]), (xs[1], y1, zs[1]), tex)
+            out.append(at(k, m, k, n))
+            out.append(at(m, n, k, m))
+    return out
+
+
+def dual_mass_flywheel():
+    """A dual-mass flywheel on the shaft along the Y axis, as wide as Create's own flywheel (about 42 across, past its block, like
+    Create's) and built as a real flywheel: rims, spokes and a hub, twice over, with the spring pack that makes it dual-mass
+    in plain view. Low down is the big primary mass, a black-oxide wheel with a starter ring gear round its edge. On its rim
+    stand eight packs of four brass coils between dark stops, as an arc-spring damper has them, and inside them sits the
+    secondary mass: a smaller steel wheel with a red enamel stripe on its rim and black spokes, driven by eight steel lugs
+    that stand between the spring packs. A steel hub, bolted in brass, runs through both. Both wheels are open. Along the axis
+    it runs 3 to 13, a pixel past the block's collision shape either way, as Create's does. Diagonal pieces are the straight
+    ones turned 45 degrees about the shaft (the lugs, 22.5); they are a little shorter, so no two faces ever share a plane
+    where the bars cross."""
+    textures = {"collar": CASING, "bolt": BRASS, "particle": IRON}
+    collars = [box((5, 0, 5), (11, 2, 11), "collar"), box((5, 14, 5), (11, 16, 11), "collar")]
+    write("dual_mass_flywheel/block", textures, collars)
+
+    steel = "create_engines:block/flywheel_steel"
+    oxide = "create_engines:block/flywheel_oxide"
+    disc_textures = {"axis": AXIS, "end": AXIS_TOP, "steel": steel, "primary": oxide, "spoke": oxide, "stop": oxide,
+                     "tooth": steel, "lug": steel, "coil": "create_engines:block/flywheel_coil",
+                     "stripe": "create_engines:block/flywheel_enamel", "bolt": BRASS, "particle": oxide}
+    axle = shaft((6, 0, 6), (10, 16, 10))
+    del axle["faces"]["up"], axle["faces"]["down"]
+    disc = [axle]
+    c = 8
+    ANGLES = (0, 45, -45, 90)
+
+    def quarter(part):
+        """A piece turned a quarter about the shaft, as the same box with its x and z ranges swapped about the centre. The game
+        allows an element no more than 45 degrees of rotation, so a rotation of 90 stops the whole model loading."""
+        (x1, y1, z1), (x2, y2, z2) = part["from"], part["to"]
+        names = {face["texture"][1:] for face in part["faces"].values()}
+        assert len(names) == 1, "a quarter turn is for a piece of one texture"
+        xs = sorted((z1, z2))
+        zs = sorted((2 * c - x2, 2 * c - x1))
+        return _tbox((xs[0], y1, zs[0]), (xs[1], y2, zs[1]), names.pop())
+
+    def turn(part, angle, y):
+        if abs(angle) == 90:
+            return quarter(part)
+        if angle:
+            part["rotation"] = {"origin": [c, y, c], "axis": "y", "angle": angle}
+        return part
+
+    def place(make, y):
+        """make(sign, trim) is a piece (or a list of them) on the +z (sign 1) or -z (-1) side of the shaft. Add it, then turned
+        to the two diagonals (trimmed a little in height) and to the x sides, both ways round."""
+        for sign in (1, -1):
+            for angle in ANGLES:
+                made = make(sign, 0.15 if angle in (45, -45) else 0)
+                for part in (made if isinstance(made, list) else [made]):
+                    disc.append(turn(part, angle, y))
+
+    def ring(apothem, thick, y0, y1, tex):
+        half = apothem * 0.414 + 0.3
+
+        def make(sign, trim):
+            edge = c + sign * apothem
+            z0, z1 = sorted((edge, edge - sign * thick))
+            return _tbox((c - half, y0 + trim, z0), (c + half, y1 - trim, z1), tex)
+        place(make, (y0 + y1) / 2)
+
+    def spokes(inner, outer, y0, y1, width, tex):
+        def make(sign, trim):
+            z0, z1 = sorted((c + sign * inner, c + sign * outer))
+            return _tbox((c - width, y0 + trim, z0), (c + width, y1 - trim, z1), tex)
+        place(make, (y0 + y1) / 2)
+
+    # Primary mass (low, the big one): a black-oxide wheel, rim 18 to 21 out, spokes, and a ring gear of steel teeth round it
+    ring(21, 3, 3, 6, "primary")
+    spokes(2.5, 18, 3.8, 5.2, 1.0, "spoke")
+
+    def teeth(sign, trim):
+        z0, z1 = sorted((c + sign * 21, c + sign * 22))
+        return [_tbox((c + x - 0.75, 3.8 + trim, z0), (c + x + 0.75, 5.2 - trim, z1), "tooth") for x in (-7, -3.5, 0, 3.5, 7)]
+    place(teeth, 4.5)
+
+    # The spring pack: eight packs of four brass coils between a pair of dark stops, standing on the primary's rim
+    def springs(sign, trim):
+        z0, z1 = sorted((c + sign * 18.5, c + sign * 20.5))
+        parts = [_tbox((c - 5.4, 6, z0), (c - 4.4, 10, z1), "stop"), _tbox((c + 4.4, 6, z0), (c + 5.4, 10, z1), "stop")]
+        for i in range(4):
+            x0 = c - 3.9 + i * 2.1
+            parts.append(_tbox((x0, 6.5 + trim, z0 + 0.1), (x0 + 1.5, 9.5 - trim, z1 - 0.1), "coil"))
+        return parts
+    place(springs, 8)
+
+    secondary_from = len(disc)
+    # The lugs stop short of the spring packs' ring (18.5 out): they drive the packs from just inside it, so the secondary can swing
+    # a good way either side of the primary (SpringPackLag) without a lug ever passing through a spring
+    LUG_REACH = 18.3
+
+    # Secondary mass (high, inside the springs): a steel wheel with its red stripe and black spokes, and eight lugs that reach out
+    # between the spring packs to drive them (the +z, -z, +x and -x lugs, each turned 22.5 either way)
+    ring(17, 3, 10, 12.4, "steel")
+    ring(17, 3, 12.4, 13, "stripe")
+    spokes(2.5, 14, 10.4, 11.8, 1.1, "spoke")
+    for sign in (1, -1):
+        for angle in (22.5, -22.5):
+            lug = _tbox((c - 1.0, 6.2, c + sign * 17), (c + 1.0, 12.2, c + sign * LUG_REACH), "lug") if sign > 0 else \
+                _tbox((c - 1.0, 6.2, c - LUG_REACH), (c + 1.0, 12.2, c - 17), "lug")
+            disc.append(turn(lug, angle, 9))
+            side = _tbox((c + sign * 17, 6.2, c - 1.0), (c + sign * LUG_REACH, 12.2, c + 1.0), "lug") if sign > 0 else \
+                _tbox((c - LUG_REACH, 6.2, c - 1.0), (c - 17, 12.2, c + 1.0), "lug")
+            disc.append(turn(side, angle, 9))
+
+    secondary_to = len(disc)
+
+    # The hub, steel, through both wheels, bolted in brass top and bottom; and bolts round the underside of the primary's rim
+    disc.append(_tbox((5.5, 3, 5.5), (10.5, 12.6, 10.5), "steel"))
+    for x, z in ((5.5, 5.5), (10, 5.5), (5.5, 10), (10, 10)):
+        disc.append(_tbox((x, 12.6, z), (x + 0.5, 13, z + 0.5), "bolt"))
+        disc.append(_tbox((x, 2.6, z), (x + 0.5, 3, z + 0.5), "bolt"))
+    for x, z in ((c - 0.5, c - 19.5 - 0.5), (c - 0.5, c + 19.5 - 0.5), (c - 19.5 - 0.5, c - 0.5), (c + 19.5 - 0.5, c - 0.5),
+                 (c - 13.8 - 0.5, c - 13.8 - 0.5), (c + 13.8 - 0.5, c - 13.8 - 0.5), (c - 13.8 - 0.5, c + 13.8 - 0.5),
+                 (c + 13.8 - 0.5, c + 13.8 - 0.5)):
+        disc.append(_tbox((x, 2.6, z), (x + 1, 3, z + 1), "bolt"))
+    write("dual_mass_flywheel/disc", disc_textures, disc)
+    # The same wheel in its two masses, which the renderer draws apart so the secondary can lag the primary through the
+    # resonance (SpringPackLag): the secondary is its wheel, stripe, spokes and lugs; the primary is everything else, the
+    # shaft, hub, bolts, rim, ring gear and spring packs. Together they are exactly disc, and a test holds them to it
+    write("dual_mass_flywheel/primary", disc_textures, disc[:secondary_from] + disc[secondary_to:])
+    write("dual_mass_flywheel/secondary", disc_textures, disc[secondary_from:secondary_to])
+    # Turned a quarter about Z in the inventory so the wheel faces the viewer, and scaled to fit the slot
+    write("dual_mass_flywheel/item", {**textures, **disc_textures}, collars + disc,
+          display={"gui": {"rotation": [30, 225, 90], "translation": [0, 0, 0], "scale": [0.28, 0.28, 0.28]}})
 
 
 def dyno():
@@ -1689,6 +1877,7 @@ def main():
     supercharger()
     variable_supercharger()
     cast_flywheel()
+    dual_mass_flywheel()
     dyno()
     black_box()
     intercooler()
