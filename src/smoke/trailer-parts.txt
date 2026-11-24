@@ -1,0 +1,96 @@
+# Every block and item of the mod and where the trailer shows it. See TrailerCoverageTest and docs/SMOKE.md (Trailer).
+#
+# One line per part: "<name>: <status>". The name is the registry name (block.create_engines.<name> or item.create_engines.<name>
+# in the generated lang file; buckets are left out). The status is one of
+#   a shot name           the part is on screen in that shot (a Shot in client/ShowcaseRun.java; each shot has a caption in
+#                         tools/trailer/captions.txt)
+#   skip - <reason>       the part is not worth a shot of its own (inside another part, a variant, a tool, a fluid)
+#   later - <reason>      the part is significant and not in the trailer yet; this is a debt, listed on purpose
+# A new part fails the test until it is added here. Add a significant part to a pad in ShowcaseRun (and a shot) and name the shot.
+
+air_intake: inline6_turbo
+alternator: electric_alternator
+bank_builder: grow_engine
+battery: electric_battery
+black_box: instruments_governor
+blueprint: later - a shot of a framed blueprint rebuilding an engine
+cam_lobe: inline6_pass
+camshaft: inline6_pass
+cast_flywheel: first_rises
+coolant: skip - fluid
+column_section: refinery_column
+condenser: refinery_column
+connecting_rod: skip - inside the cylinder
+crank_throw: inline6_pass
+crankshaft: first_rises
+cylinder: first_rises
+cylinder_head: first_rises
+diesel: skip - fluid
+dry_cell: electric_battery
+dual_mass_flywheel: factory_flywheel
+dyno: instruments_dyno
+engine_cased_cogwheel: casing_styles
+engine_cased_large_cogwheel: casing_styles
+engine_cased_shaft: casing_styles
+engine_casing: casing_styles
+engine_louvred_cased_cogwheel: casing_styles
+engine_louvred_cased_large_cogwheel: casing_styles
+engine_louvred_cased_shaft: casing_styles
+engine_louvred_casing: casing_styles
+engine_oil: skip - fluid
+engine_riveted_cased_cogwheel: casing_styles
+engine_riveted_cased_large_cogwheel: casing_styles
+engine_riveted_cased_shaft: casing_styles
+engine_riveted_casing: casing_styles
+engine_window_cased_cogwheel: casing_styles
+engine_window_cased_large_cogwheel: casing_styles
+engine_window_cased_shaft: casing_styles
+engine_window_casing: casing_styles
+ethanol: skip - fluid
+exhaust_manifold: inline6_pass
+exhaust_outlet: inline6_pass
+flare_stack: refinery_flare
+forged_piston: skip - inside the cylinder
+framed_blueprint: later - a shot of a framed blueprint rebuilding an engine
+fuel_injector: inline6_pass
+gasoline: skip - fluid
+glycerin: skip - fluid
+governor: instruments_governor
+headphones: headphones_on
+heat_exchanger: refinery_column
+heavy_starter: heavy_starter
+ignition_coil: electric_heads
+injector_assist: electric_heads
+intake_manifold: inline6_pass
+intercooler: blown_i6_blower
+jerry_can: service_cans
+kerosene: skip - fluid
+large_battery: electric_battery
+maf_sensor: later - needs a pad with the sensor fitted
+maker_plate: casing_styles
+methanol: skip - fluid
+muffler: inline6_pass
+oil_filter: service_sump
+piston: skip - inside the cylinder
+plant_oil: skip - fluid
+precision_cylinder: grow_engine
+precision_cylinder_head: grow_engine
+precision_injector: grow_engine
+rain_cap: inline6_turbo
+reboiler: refinery_column
+rotor: rotary_orbit
+rotor_housing: rotary_orbit
+soot: skip - an item left by a rich engine
+soot_trap: later - needs a diesel with a trap fitted
+spark_plug: electric_heads
+starter: inline6_pass
+sugar_mash: skip - fluid
+sump: instruments_governor
+supercharger: skip - the variable-drive supercharger, which the trailer shows, is the same part with a drive
+throttle: inline6_pass
+timing_tool: skip - a tool; every engine in the trailer is timed with it
+transmission: factory_gearbox
+turbocharger: inline6_turbo
+used_oil: skip - fluid
+variable_supercharger: blown_i6_blower
+variable_turbocharger: later - needs a pad with a variable-geometry turbo

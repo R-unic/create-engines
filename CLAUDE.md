@@ -15,6 +15,13 @@ optional and a hurry is not a reason to skip it.
 - Smoke harness details are in [docs/SMOKE.md](docs/SMOKE.md); compatibility rules in
   [docs/COMPATIBILITY.md](docs/COMPATIBILITY.md).
 
+## The trailer keeps up with the mod
+
+A significant new block or item goes in the trailer ([docs/SMOKE.md](docs/SMOKE.md), "The trailer"): a pad and a shot in
+`client/ShowcaseRun`, a caption in `tools/trailer/captions.txt`, and its line in `src/smoke/trailer-parts.txt` naming the shot.
+`TrailerCoverageTest` fails a part with no line. Mark a part `skip` only with a real reason (inside another part, a variant, a
+tool, a fluid); `later` is an open debt, not a way to make the test pass. Captions say only what the mod does.
+
 ## When a test, snapshot or ratchet goes red
 
 A red guard is a question, not an obstacle: *did I change something I did not mean to?* The default answer is that the

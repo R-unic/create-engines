@@ -59,3 +59,7 @@ desktop.ini
 
 ### Discord feedback (local only) ###
 feedback/
+
+# Trailer harness: shader pack zips and a chosen backing track are not committed
+tools/trailer/shaderpacks/*.zip
+tools/trailer/music/

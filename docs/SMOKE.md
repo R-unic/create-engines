@@ -141,6 +141,96 @@ To re-prove the harness: make a *separate* copy, run `./scripts/smoke-mutations.
 run the Gradle task it names, and check every `EXPECT` line appears among the failures. It refuses to run in a folder with
 `.git`.
 
+## The trailer
+
+The mod's trailer is made by a harness, so it can be cut again when the mod changes. It is a development aid, not a check, and is
+kept out of the jar and the coverage count like the rest of the picture-taking code.
+
+```
+python tools/trailer/record.py              # plays the game, records screen and sound, cuts the videos
+python tools/trailer/record.py --post-only  # cuts the last recordings again (new captions or music)
+```
+
+- **What it records.** `ShowcaseRun` with `-PshowcaseSet=trailer` builds eleven walled pads (the five plain engines; a
+  pad with the battery sizes, an ignition coil and an injector assist on every head; a blown inline six; the test-bed diesel with its
+  instruments; a diesel driving a row of Create machines, two presses stamping iron and a fan smoking beef over a campfire; and a refining column with its flare
+  stack), runs them, goes fullscreen and flies a camera past them for about two minutes, smoothly, every frame. The shots are the
+  `Shot` records in that class, and every length is a whole number of bars of the music (three seconds) so the cuts land on the beat.
+  The run leaves one still from the middle of each shot in `run/showcase-shaders/screenshots`, to check the framing without watching
+  it, and `-PtrailerShots=a,b` keeps only the named shots, so a new pad can be looked at in a short run.
+- **The wheeled car.** With Create Aeronautics (its Offroad wheels) and Sable in the run, pad 11 has a turbocharged precision diesel
+  inline eight with one driven Offroad wheel (the crank line runs out of the east end through a gearbox, a shaft down and a second
+  gearbox into a wheel mount), three more wheels that roll free on a casing frame, and no walls. The pad's blocks are lifted into a
+  moving structure by `ShowcaseRunAero` when `rover_departs` begins; the car drives off east (about 14 blocks in twelve seconds) and
+  the camera follows its world position, eased between server ticks so it does not step. Loose items from the Bank Builder are swept
+  up. The shots `rover_departs` and `rover_wheels` are in the tour only for a run that has Sable, so a trailer cut from the plain run
+  has none. `record.py` loads Aeronautics by default (`runShowcaseShaders -PwithAeronautics`, or `runShowcaseAeronautics` with
+  `--no-shaders`); `--no-aeronautics` leaves it, and the shots, out. Lessons for changing the car: a wheel mount costs 16 stress per
+  rpm and takes drive from the block behind it; a large cogwheel meshes a small one diagonally; blocks that touch nothing are split off
+  into structures of their own when it is lifted.
+- **Gameplay clip.** `grow_engine` is seen through the player's own eyes, standing still (creative mode, the hotbar showing, the Bank
+  Builder in hand). One engine grows on a bare pad in six steps, two seconds apart, each the Bank Builder's work on a fresh crank line:
+  one cylinder, an inline four, a V8, a V16, the V16 in precision parts, and the V16 boosted. It is driven by `Cue`s (seconds into
+  a shot) in `ShowcaseRun.defineCues`; the other shots are a spectator's camera. The engine is rebuilt, not swapped, so no part items
+  are dropped on the floor (any that are get discarded).
+- **The later pads and what is real in them.** Bays 15 to 17 (past the car's drive) hold the casing styles (four styles of cased
+  shaft and cogs between casing pillars, a Maker's Plate, the player dyeing the pillars), a precision twin-turbo V16 that stands cold
+  until a cue gives its heavy starter power (then the player, in first person, puts on headphones), and a service bay. The service bay and
+  the refinery are built from Create's own machines and only the heat exchangers' heat, and the stock a tank or barrel starts with, is the
+  harness's: used oil goes from the pan by a pump to a basin under a mixer (driven from the engine's crank, through a shaft, a gearbox and a
+  cogwheel the mixer meshes with), charcoal and clay come from a barrel through a pair of funnels (an extracting funnel above an inserting
+  one: a wall funnel only drops its item into its own cell), and a second pump returns the clean oil to the pan; a pump fills a spout from a
+  tank, jerry cans ride a belt to an item drain, a pump takes the fuel into the engine's tank and another into a rail of pipes over the
+  heads, which are not refilled by the harness. The refinery has a pump from a plant-oil tank, a barrel of coal through the same funnel
+  pair, and two pumps to product tanks on its top. Pumps (and the mixer, and the belt) are turned by Create motors with a cogwheel beside
+  them, as every starter here has a motor; `logPlumbing` writes the pumps' speeds and every tank to the log at the end of a run. The
+  used-oil pump's motor is switched on at tick 600, after the charcoal and clay have arrived: with only 250 mB of used oil and no
+  charcoal or clay the basin cokes it, which is the mod's own recipe. The toasts and chat the first-person clips earn are cleared
+  every frame, and this mod's advancement sting and the game's toast sounds are dropped from the run's sound.
+- **Sound and walls.** Only the courtyard the camera is in is heard (sounds from other pads are cancelled as they start and stopped when
+  the camera moves on), and the camera is held inside the walls so no shot comes out of one.
+- **How it is recorded.** `record.py` copies the project to a private folder beside it (as every client run should be), starts
+  `ffmpeg` on the whole screen when the game logs `Showcase trailer ready`, and stops it after the last shot. The game runs with
+  Iris, Sodium and a shader pack (`runShowcaseShaders`; the pack is the first .zip in `tools/trailer/shaderpacks`, which is not
+  committed; `--no-shaders` runs the game without them). At the same moment it records what the speakers play (WASAPI loopback, the
+  `soundcard` package), which is the game's engine sound: keep the speakers on and nothing else playing, and leave the machine alone
+  and other windows off the game while it runs. ffmpeg comes from `winget install Gyan.FFmpeg`; the graphics card's encoder is used
+  when it has one.
+- **Keeping sound and picture together.** The two recorders do not start at the same instant and the speakers lag the screen, so the
+  game makes a sync mark in the lead-in: the screen goes white and an anvil clap plays, at one wall-clock moment it writes to
+  `trailer_sync.json`. `record.py` finds the flash in the picture and the clap in the sound and measures how far each is from the first
+  shot, and prints both next to what the recorders said. Without a mark (or if one is not found) it falls back to the recorders' times.
+- **A steady crank.** The showcase engines turn at 40 to 70 rpm, where a light crank's speed ripples by several percent each cycle and the
+  network shows it as shafts and presses that surge and jump. `record.py` gives the trailer's private game folder five times the
+  inertia on the crank blocks and flywheels (`TRAILER_CONFIG`; a ripple goes as one over the inertia). It touches nothing in the mod.
+- **How it is cut.** `post.py` puts a title card (Create's round logo, `docs/images/create_logo.png`, the mod icon, "CREATE" in Minecraft's title font (cut from the game's own logo texture, kept grey, by `tools/create_lettering.py`) and the gold wordmark `docs/images/wordmark.png` directly under it, and a subtitle; the 16:9 thumbnail uses the same pair; `tools/listing_art.py` makes the golden listing tile `docs/images/listing_gold.png`), a caption over each
+  shot, an end card (with the version line from `gradle.properties` and the AI notice, `outro_notice` in `captions.txt`), the game's sound and music around the recording, with a light
+  colour grade and vignette on the footage. All the text is drawn in Minecraft's own font by `mcfont.py`, from the game's font bitmap.
+  The words are in `tools/trailer/captions.txt`, in the order of the shots, so they read as one story. The music is the first file in
+  `tools/trailer/music/` if there is one, otherwise a backing track that `tools/trailer/music.py` synthesises (original, so nothing to
+  license; a placeholder for a real track; 80 beats a minute, a bar of three seconds).
+- **The cuts.** The full trailer, a teaser (four three-second shots named by `short_shots` in `captions.txt`, with a few words each)
+  and the teaser cropped to 9:16 for phones, each with a `.srt` of its captions, a thumbnail from the shot `thumbnail:` names, and a 9:16 thumbnail for Shorts from the shot `vertical_thumbnail:` names (`vertical_thumbnail_at:` seconds in, with `vertical_title:` and `vertical_sub:` for its words).
+- **The video description.** Every full cut also writes `run/trailer/description.txt` (`post.py`, so `--post-only` too): the pitch, the links, chapters from the `chapter <shot>` lines (a chapter under ten seconds long is dropped, as YouTube would ignore it), the version line and the AI notice. The words, links and chapters are in `captions.txt`; the Modrinth and CurseForge addresses are not there yet (post.py does not guess them).
+- **Output.** `run/trailer/trailer.mp4`, `trailer_teaser.mp4`, `trailer_vertical.mp4`, `thumbnail.png` and `thumbnail_vertical.png`, with the raw recordings and the shot timings beside them.
+- **Keeping it current.** `src/smoke/trailer-parts.txt` has a line for every block and item saying which shot shows it, or why none
+  does. `TrailerCoverageTest` fails when a new part has no line, when a line names a shot that does not exist, and when a shot has no
+  caption. A significant new part goes on a pad (or a new one) in `ShowcaseRun`, gets a shot and a caption, and its line names the
+  shot. A `later` line is a part that is significant and not in the trailer yet: a debt, kept in the open.
+- **Length budget.** The full trailer may run up to 180 seconds (title shot and end card included; the last cut was 162 s). It is a
+  limit for the author and for whoever adds shots, not something a test enforces: when new parts would push it past, trim or shorten
+  shots rather than let it grow.
+- **What it cannot see.** The test cannot tell that a part is really on screen in its shot, and nobody has heard the synthesised music
+  played through speakers. A person watches the cut before it is posted.
+
+## The gallery pictures
+
+`python tools/gallery.py` takes the mod page's engine pictures again with the trailer's shader pack: it runs `runShowcaseShaders`
+for the `engines` and `accessories` sets in a private copy (`create-engines-gallery`), keeps every still in `run/gallery/all`, and
+puts the ones `tools/gallery_shots.txt` names in `run/gallery/pick` under the gallery's file names. `--apply` copies the picks over
+`docs/images`; the git diff of the images is the review. Every picture is kept under 2,000,000 bytes (the sites' 2 MB limit): `gallery.py` shrinks a bigger still (optimised PNG, then 256 colours, then smaller), and `GalleryImageSizeTest` fails a picture in `docs/images` that is over. It opens a real window, so do not run it while recording the trailer.
+Pictures from other runs (Ponder, goggles, management, coupled, new parts) are not in the table and are left alone.
+
 ## The log allowlist
 
 `src/smoke/log-allowlist.txt` lists log lines that are known harmless. **Every entry must say why.** A line you cannot

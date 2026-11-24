@@ -275,6 +275,7 @@ neoForge {
             systemProperty 'neoforge.enabledGameTestNamespaces', project.mod_id
             systemProperty 'create_engines.showcase', 'true'
             systemProperty 'create_engines.showcase.set', project.hasProperty('showcaseSet') ? project.property('showcaseSet') : 'engines'
+            systemProperty 'create_engines.showcase.trailerShots', project.hasProperty('trailerShots') ? project.property('trailerShots') : ''
             programArguments.addAll '--width', '1920', '--height', '1080'
         }
 
@@ -286,7 +287,21 @@ neoForge {
             systemProperty 'neoforge.enabledGameTestNamespaces', project.mod_id
             systemProperty 'create_engines.showcase', 'true'
             systemProperty 'create_engines.showcase.set', project.hasProperty('showcaseSet') ? project.property('showcaseSet') : 'engines'
+            systemProperty 'create_engines.showcase.trailerShots', project.hasProperty('trailerShots') ? project.property('trailerShots') : ''
             programArguments.addAll '--width', '1920', '--height', '1080'
+        }
+
+        // The showcase with shaders, for the trailer: Iris (which draws through Sodium, see smokeAuditIris) and the shader pack in
+        // tools/trailer/shaderpacks, in a game folder of its own; its mods folder, options and Iris settings are written by the run task
+        showcaseShaders {
+            client()
+            gameDirectory = file('run/showcase-shaders')
+            systemProperty 'neoforge.enabledGameTestNamespaces', project.mod_id
+            systemProperty 'create_engines.showcase', 'true'
+            systemProperty 'create_engines.showcase.set', project.hasProperty('showcaseSet') ? project.property('showcaseSet') : 'engines'
+            systemProperty 'create_engines.showcase.trailerShots', project.hasProperty('trailerShots') ? project.property('trailerShots') : ''
+            programArguments.addAll '--width', '1920', '--height', '1080'
+            additionalRuntimeClasspathConfiguration.extendsFrom(configurations.sodiumRuntime)
         }
 
         server {
@@ -320,6 +335,14 @@ neoForge {
                 'createaddition:modular_accumulator,createaddition:electric_motor'
         }
 
+        // The GameTests with Create: The Factory Must Grow loaded, for TfmgCompatGameTests (its fluids burn as the fuels they are tagged as)
+        gameTestServerTfmg {
+            type = 'gameTestServer'
+            gameDirectory = file('run/gametest-tfmg')
+            systemProperty 'neoforge.enabledGameTestNamespaces', project.mod_id
+            systemProperty 'create_engines.requireTfmg', 'true'
+        }
+
         // The GameTests with Create Aeronautics and Sable loaded, for the tests that need a moving structure
         gameTestServerSable {
             type = 'gameTestServer'
@@ -335,14 +358,6 @@ neoForge {
         }
 
         configureEach {
-        // The GameTests with Create: The Factory Must Grow loaded, for TfmgCompatGameTests (its fluids burn as the fuels they are tagged as)
-        gameTestServerTfmg {
-            type = 'gameTestServer'
-            gameDirectory = file('run/gametest-tfmg')
-            systemProperty 'neoforge.enabledGameTestNamespaces', project.mod_id
-            systemProperty 'create_engines.requireTfmg', 'true'
-        }
-
             systemProperty 'forge.logging.markers', 'REGISTRIES'
             logLevel = org.slf4j.event.Level.DEBUG
         }
@@ -395,6 +410,7 @@ dependencies {
     ambientSoundsRuntime("maven.modrinth:ambientsounds:${ambient_sounds_version}") { transitive = false }
     ambientSoundsRuntime("maven.modrinth:creativecore:${creative_core_version}") { transitive = false }
     energyRuntime("maven.modrinth:createaddition:${create_additions_version}") { transitive = false }
+    tfmgRuntime("maven.modrinth:tfmg-community-edition:${tfmg_version}") { transitive = false }
     aeronauticsRuntime("maven.modrinth:create-aeronautics:${aeronautics_version}") { transitive = false }
     aeronauticsRuntime("maven.modrinth:sable:${sable_version}") { transitive = false }
     // Pollution of the Realms has no API: its classes are compiled against (never shipped) and only one bridge class names them
@@ -410,7 +426,6 @@ dependencies {
     testImplementation(platform('org.junit:junit-bom:5.11.4'))
     testImplementation('org.junit.jupiter:junit-jupiter')
     testRuntimeOnly('org.junit.platform:junit-platform-launcher')
-    tfmgRuntime("maven.modrinth:tfmg-community-edition:${tfmg_version}") { transitive = false }
     testImplementation('com.google.code.gson:gson:2.10.1')
 }
 
@@ -580,6 +595,39 @@ tasks.register('compatMatrix') {
     // Simulated logs about its own model, and the showcase shows wrong textures on this mod's small parts with it loaded
 }
 
+// The showcase with shaders: Iris goes in the game folder's mods folder (Sodium is on the classpath), the first shader pack of
+// tools/trailer/shaderpacks is switched on in Iris's settings, and the options are the trailer's (sound off, a short render distance)
+def irisShowcaseMods = configurations.getByName('irisRuntime').incoming.files
+// Resolved here, not inside the task's closure: the configuration cache does not allow the build script's own methods at run time
+def showcaseShadersDir = file('run/showcase-shaders')
+def showcaseShaderPacks = fileTree(dir: 'tools/trailer/shaderpacks', include: '*.zip')
+def showcaseShaderOptions = file('tools/trailer/options.txt')
+// -PwithAeronautics also puts Create Aeronautics and Sable (and their jars of Simulated and Offroad) in the mods folder, for the trailer's wheeled car
+def showcaseWithAeronautics = project.hasProperty('withAeronautics')
+def showcaseAeronauticsJars = configurations.getByName('aeronauticsRuntime').incoming.files
+tasks.matching { it.name == 'runShowcaseShaders' }.configureEach {
+    doFirst {
+        def gameDir = showcaseShadersDir
+        def packs = showcaseShaderPacks.files.sort()
+        if (packs.isEmpty())
+            throw new GradleException('no shader pack in tools/trailer/shaderpacks (see tools/trailer/shaderpacks/README.txt)')
+        def modsDir = new File(gameDir, 'mods')
+        modsDir.deleteDir()
+        modsDir.mkdirs()
+        irisShowcaseMods.files.each { jar -> new File(modsDir, jar.name).bytes = jar.bytes }
+        if (showcaseWithAeronautics)
+            showcaseAeronauticsJars.files.each { jar -> new File(modsDir, jar.name).bytes = jar.bytes }
+        def packsDir = new File(gameDir, 'shaderpacks')
+        packsDir.deleteDir()
+        packsDir.mkdirs()
+        new File(packsDir, packs[0].name).bytes = packs[0].bytes
+        def config = new File(gameDir, 'config')
+        config.mkdirs()
+        new File(config, 'iris.properties').text = "enableShaders=true\nshaderPack=${packs[0].name}\n"
+        new File(gameDir, 'options.txt').text = showcaseShaderOptions.text
+    }
+}
+
 // The showcase with Aeronautics loaded: its jars go in the game folder's mods folder, as in the rows above
 def aeroShowcaseMods = configurations.getByName('aeronauticsRuntime').incoming.files
 ['runShowcaseAeronautics': 'run/showcase-aeronautics', 'runClientAeronautics': 'run/client-aeronautics'].each { taskName, dir ->
@@ -623,6 +671,7 @@ tasks.matching { it.name == 'runSmokeAuditIris' }.configureEach { mustRunAfter '
 tasks.matching { it.name == 'runSmokeAuditSoundPhysics' }.configureEach { mustRunAfter 'runSmokeAuditIris' }
 tasks.matching { it.name == 'runSmokeAuditAmbientSounds' }.configureEach { mustRunAfter 'runSmokeAuditSoundPhysics' }
 tasks.matching { it.name == 'runGameTestServerEnergy' }.configureEach { mustRunAfter 'runSmokeAuditAmbientSounds' }
+tasks.matching { it.name == 'runGameTestServerTfmg' }.configureEach { mustRunAfter 'runGameTestServerEnergy' }
 
 // The energy GameTest row: other mods' jars in the game folder's mods folder, and its log and result judged like the main GameTests
 def energyMods = configurations.getByName('energyRuntime').incoming.files
@@ -649,6 +698,31 @@ tasks.matching { it.name == 'runGameTestServerEnergy' }.configureEach {
     }
 }
 
+// The TFMG GameTest row: same method as the energy row
+def tfmgMods = configurations.getByName('tfmgRuntime').incoming.files
+def tfmgDir = file('run/gametest-tfmg')
+tasks.register('verifyGameTestsTfmg', JavaExec) {
+    group = 'verification'
+    description = 'Fails unless the last runGameTestServerTfmg passed every test and logged no errors.'
+    classpath = verifyOutput
+    mainClass = 'com.createengines.smoke.SmokeVerify'
+    args '--run', 'gametest', '--gametest', '--log', new File(tfmgDir, 'logs/latest.log').path, '--allow', smokeAllowlist.path
+    dependsOn 'classes'
+}
+tasks.matching { it.name == 'runGameTestServerTfmg' }.configureEach {
+    timeout = java.time.Duration.ofMinutes(20)
+    finalizedBy 'verifyGameTestsTfmg'
+    doFirst {
+        new File(tfmgDir, 'smoke').deleteDir()
+        new File(tfmgDir, 'crash-reports').deleteDir()
+        new File(tfmgDir, 'logs/latest.log').delete()
+        def modsDir = new File(tfmgDir, 'mods')
+        modsDir.deleteDir()
+        modsDir.mkdirs()
+        tfmgMods.files.each { jar -> new File(modsDir, jar.name).bytes = jar.bytes }
+    }
+}
+
 // One command for everything unattended: unit tests, the GameTests with their log check, and the client audit.
 tasks.register('smoke') {
     group = 'verification'
@@ -671,7 +745,6 @@ idea {
 // other JVMs, so they carry the JaCoCo agent too and `coverageMerged` below joins all three into one report and a second
 // ratchet, src/smoke/coverage-floor-merged.txt.
 jacoco {
-tasks.matching { it.name == 'runGameTestServerTfmg' }.configureEach { mustRunAfter 'runGameTestServerEnergy' }
     toolVersion = '0.8.12'
 }
 
@@ -698,31 +771,6 @@ tasks.register('coverageRatchet', JacocoCoverageVerification) {
     dependsOn 'test'
     executionData.from(tasks.named('test').map { it.extensions.getByType(JacocoTaskExtension).destinationFile })
     classDirectories.from(files(sourceSets.main.output.classesDirs.files.collect { fileTree(dir: it, exclude: harnessPackages) }))
-// The TFMG GameTest row: same method as the energy row
-def tfmgMods = configurations.getByName('tfmgRuntime').incoming.files
-def tfmgDir = file('run/gametest-tfmg')
-tasks.register('verifyGameTestsTfmg', JavaExec) {
-    group = 'verification'
-    description = 'Fails unless the last runGameTestServerTfmg passed every test and logged no errors.'
-    classpath = verifyOutput
-    mainClass = 'com.createengines.smoke.SmokeVerify'
-    args '--run', 'gametest', '--gametest', '--log', new File(tfmgDir, 'logs/latest.log').path, '--allow', smokeAllowlist.path
-    dependsOn 'classes'
-}
-tasks.matching { it.name == 'runGameTestServerTfmg' }.configureEach {
-    timeout = java.time.Duration.ofMinutes(20)
-    finalizedBy 'verifyGameTestsTfmg'
-    doFirst {
-        new File(tfmgDir, 'smoke').deleteDir()
-        new File(tfmgDir, 'crash-reports').deleteDir()
-        new File(tfmgDir, 'logs/latest.log').delete()
-        def modsDir = new File(tfmgDir, 'mods')
-        modsDir.deleteDir()
-        modsDir.mkdirs()
-        tfmgMods.files.each { jar -> new File(modsDir, jar.name).bytes = jar.bytes }
-    }
-}
-
     sourceDirectories.from(sourceSets.main.allJava.srcDirs)
     violationRules {
         rule {
