@@ -26,30 +26,44 @@ SS = 3                 # supersampling, per side
 W = SIZE * SS
 TILT = 24              # degrees clockwise, so the piston points up and to the right
 YAW, PITCH = 225, 30   # the inventory view
-REACH = 205            # how far from the centre the parts' farthest corner may be, in output pixels
+MARGIN = 7             # transparent border round the disc, so a circular crop (Discord, Modrinth) never clips the rim
+R_OUT = 256 - MARGIN   # the disc's outer radius, in output pixels
+R_IN = R_OUT - 17      # the blueprint's radius, inside the rim
+LIMIT = R_IN - 5       # nothing the parts draw, outline and particles included, may reach further than this from the centre
+REACH = 222            # how far from the centre the parts' farthest corner may be, in output pixels
 CRANK = True
 CRANK_DEGREES = 140   # the crank angle from top dead centre: 0 is straight up, so the rod and piston stand in one line
-CORNER_RADIUS = 7      # output pixels: how much the silhouette's corners are rounded
+CORNER_RADIUS = 11     # output pixels: how much the silhouette's corners are rounded
 EMBERS = True          # square flame particles above the crown
 SMOKE = True           # pale square puffs above the embers
-OUTLINE = 1.7          # output pixels of dark outline around the parts
+OUTLINE = 3.0          # output pixels of dark outline around the parts
 GLOSS = 1.0            # strength of the sheen on upward faces
 RIM = "white"          # the disc's rim: "white", or "brass" with rivets, as on Create's own blocks
 COG = False            # a cogwheel pressed into the blueprint behind the parts
-SPOT = 0.17            # strength of the spotlight in the middle of the disc
+SPOT = 0.2            # strength of the spotlight in the middle of the disc
+VIGNETTE = 0.6         # how far the blueprint darkens toward the rim, under the parts only
 GRID = 1.0             # strength of the blueprint grid
 CREATE_TEXTURES = ("axis", "axis_top", "andesite_casing")
 
 # Minecraft's face shading, opened up a little (the game's own tops are 1.0, sides 0.8 and 0.6) so the black-oxide parts
 # still show their bevels against the blue, with a warm key light from the top and a cool fill from the other sides
-LIGHT = {"up": 1.3, "east": 1.12, "west": 0.9, "south": 0.88, "north": 0.8, "down": 0.5}
+LIGHT = {"up": 1.38, "east": 1.14, "west": 0.8, "south": 0.74, "north": 0.62, "down": 0.45}
 TINT = {"up": (1.03, 1.01, 0.97), "east": (1.02, 1.0, 0.98), "west": (0.94, 0.98, 1.06), "south": (0.94, 0.98, 1.06),
         "north": (0.92, 0.96, 1.07), "down": (0.9, 0.95, 1.08)}
-TONE = 0.8             # exponent applied to the texture's brightness: below 1 lifts the shadows
+TONE = 0.72            # exponent applied to the texture's brightness: below 1 lifts the shadows
 
 NAVY = (14, 28, 60)
+SEAM = (12, 20, 44)
+EDGE = (206, 214, 228)    # the soft light edge of the disc, so it does not look cut out with a black line
+GLOW = (246, 249, 253)     # the outline round the parts, which keeps them apart from the blue
+COPPER_RAMP = ((58, 24, 12), (170, 78, 36), (232, 128, 62), (255, 196, 128))   # the conrod, so it stands out from the crank
+TEXTURE_DETAIL = 0.55      # how much of each texture's pixel-level detail is kept: less reads better when the picture is small
+GROUP_GAIN = (1.28, 1.15, 1.0)   # crank, rod and piston: the lighter crank and rod stand off the dark piston by tone
+RING_BOOST = 2.0           # the brass rings are drawn this much thicker than the model's, so they show as bands
+SATURATION = 1.28          # the parts' colours are pushed a little so they still read when the picture is small
+CONTRAST = 1.14
 WHITE = (244, 246, 250)
-BLUE = (43, 98, 174)
+BLUE = (44, 112, 198)
 
 NORMAL = {"up": (0, 1, 0), "down": (0, -1, 0), "north": (0, 0, -1), "south": (0, 0, 1), "east": (1, 0, 0), "west": (-1, 0, 0)}
 
@@ -154,18 +168,39 @@ def create_root(out):
     return root
 
 
-def render_part(root, shift=(0.0, 0.0)):
+def boxed(element, offset):
+    """An element's from and to with the part's offset, the brass rings thickened about their middle."""
+    f = [element["from"][i] + offset[i] for i in range(3)]
+    t = [element["to"][i] + offset[i] for i in range(3)]
+    if all(spec["texture"] == "#ring" for spec in element["faces"].values()):
+        middle, half = (f[1] + t[1]) / 2, (t[1] - f[1]) / 2 * RING_BOOST
+        f[1], t[1] = middle - half, middle + half
+    return f, t
+
+
+_averages = {}
+
+
+def calmed(name, sprite, pixel):
+    """A texture's pixel pulled toward the texture's average colour, keeping the pixel look but not all of its noise."""
+    if name not in _averages:
+        solid = [p for row in sprite for p in row if p[3] >= 128] or [(128, 128, 128, 255)]
+        _averages[name] = tuple(sum(p[i] for p in solid) / len(solid) for i in range(3))
+    mean = _averages[name]
+    return tuple(mean[i] + (pixel[i] - mean[i]) * TEXTURE_DETAIL for i in range(3))
+
+
+def render_part(root, shift=(0.0, 0.0), reach=None):
     """The parts into W x W buffers: colour (None where empty), depth and element id. Returns them and the projection."""
     corners = []
     for path, offset, point, _ in parts():
         for element in load_model(path)["elements"]:
-            f = [element["from"][k] + offset[k] for k in range(3)]
-            t = [element["to"][k] + offset[k] for k in range(3)]
+            f, t = boxed(element, offset)
             for face in element["faces"]:
                 corners += [raw(point(c)) for c in quad(face, f, t)[0]]
     xs, ys = [c[0] for c in corners], [c[1] for c in corners]
     cx, cy = (min(xs) + max(xs)) / 2, (min(ys) + max(ys)) / 2
-    k = REACH * SS / max(math.hypot(c[0] - cx, c[1] - cy) for c in corners)
+    k = (reach or REACH) * SS / max(math.hypot(c[0] - cx, c[1] - cy) for c in corners)
 
     def project(p):
         x, y, d = raw(p)
@@ -176,13 +211,14 @@ def render_part(root, shift=(0.0, 0.0)):
     ident = [[0] * W for _ in range(W)]
     upward = [[False] * W for _ in range(W)]
     element_id = 0
-    for path, offset, point, rotate in parts():
+    group_of = {}
+    for group, (path, offset, point, rotate) in enumerate(parts()):
         data = load_model(path)
         textures = data.get("textures", {})
         for element in data["elements"]:
             element_id += 1
-            f = [element["from"][i] + offset[i] for i in range(3)]
-            t = [element["to"][i] + offset[i] for i in range(3)]
+            group_of[element_id] = group
+            f, t = boxed(element, offset)
             for face, spec in element["faces"].items():
                 pts = [project(point(p)) for p in quad(face, f, t)[0]]
                 area = (pts[1][0] - pts[0][0]) * (pts[3][1] - pts[0][1]) - (pts[1][1] - pts[0][1]) * (pts[3][0] - pts[0][0])
@@ -201,6 +237,7 @@ def render_part(root, shift=(0.0, 0.0)):
                     continue
                 normal = rotate(NORMAL[face])
                 shade, tint = shading(normal)
+                shade *= GROUP_GAIN[group]
                 facing_up = normal[1] > 0.7
                 da, db = pts[1][2] - pts[0][2], pts[3][2] - pts[0][2]
                 for py in range(max(0, int(min(p[1] for p in pts))), min(W - 1, int(max(p[1] for p in pts)) + 1) + 1):
@@ -222,8 +259,43 @@ def render_part(root, shift=(0.0, 0.0)):
                         zrow[px] = z
                         irow[px] = element_id
                         urow[px] = facing_up
-                        row[px] = tuple(min(255.0, 255 * (c / 255) ** TONE * shade * tint[i]) for i, c in enumerate(pixel[:3]))
-    return image, depth, ident, upward, project
+                        row[px] = grade(tuple(255 * (c / 255) ** TONE * shade * tint[i] for i, c in enumerate(copper(calmed(name, sprite, pixel)) if path == "cylinder/rod" else calmed(name, sprite, pixel))))
+    return image, depth, ident, upward, project, group_of
+
+
+def copper(colour):
+    """A texture colour recoloured along the copper ramp by its brightness."""
+    t = max(0.0, min(1.0, (0.3 * colour[0] + 0.59 * colour[1] + 0.11 * colour[2]) / 255)) * (len(COPPER_RAMP) - 1)
+    i = min(len(COPPER_RAMP) - 2, int(t))
+    return tuple(COPPER_RAMP[i][c] + (COPPER_RAMP[i + 1][c] - COPPER_RAMP[i][c]) * (t - i) for c in range(3))
+
+
+def grade(colour):
+    """More saturation and a touch more contrast, so the parts survive being shrunk."""
+    grey = 0.3 * colour[0] + 0.59 * colour[1] + 0.11 * colour[2]
+    return tuple(max(0.0, min(255.0, 128 + (grey + (c - grey) * SATURATION - 128) * CONTRAST)) for c in colour)
+
+
+def frame(image):
+    """Where to centre the parts and how far from that centre their farthest pixel is, in supersampled pixels. The centre is
+    halfway between the parts' mass and the middle of their bounding box, so the heavy piston is near the middle and the
+    extents are still balanced."""
+    n = sx = sy = 0
+    lo_x, hi_x, lo_y, hi_y = W, 0, W, 0
+    for y, row in enumerate(image):
+        for x, c in enumerate(row):
+            if c is not None:
+                n += 1
+                sx += x
+                sy += y
+                lo_x, hi_x, lo_y, hi_y = min(lo_x, x), max(hi_x, x), min(lo_y, y), max(hi_y, y)
+    cx, cy = (sx / n + (lo_x + hi_x) / 2) / 2, (sy / n + (lo_y + hi_y) / 2) / 2
+    far = 0.0
+    for y, row in enumerate(image):
+        for x, c in enumerate(row):
+            if c is not None:
+                far = max(far, (x - cx) ** 2 + (y - cy) ** 2)
+    return cx, cy, math.sqrt(far)
 
 
 def mass_centre(image):
@@ -253,6 +325,22 @@ def contact_shadows(image, depth, ident):
                 row[x] = tuple(c * (1 - 0.17 * blocked) for c in row[x])
 
 
+def seams(image, depth, ident, group_of):
+    """A dark line along the edge of a part where it passes in front of another part, so the parts read as separate shapes
+    even when the picture is small."""
+    reach = int(2.2 * SS)
+    for y in range(reach, W - reach):
+        row, zrow, irow = image[y], depth[y], ident[y]
+        for x in range(reach, W - reach):
+            if row[x] is None:
+                continue
+            for nx, ny in ((x + reach, y), (x - reach, y), (x, y + reach), (x, y - reach)):
+                other = ident[ny][nx]
+                if other and group_of[other] != group_of[irow[x]] and depth[ny][nx] > zrow[x] + 0.05:
+                    row[x] = tuple(c * 0.2 + k * 0.8 for c, k in zip(row[x], SEAM))
+                    break
+
+
 def gloss(image, upward):
     """A diagonal sheen across the surfaces that face up, like light on a polished crown."""
     for y in range(W):
@@ -265,6 +353,19 @@ def gloss(image, upward):
                     row[x] = tuple(min(255.0, c * k + (k - 1) * 70) for c in row[x])
 
 
+def inside(top, along, lateral, size):
+    """A particle's centre, in output pixels, pulled back down the axis until the whole square is inside the frame."""
+    ux, uy = math.sin(math.radians(TILT)), -math.cos(math.radians(TILT))
+    vx, vy = -uy, ux
+    pull = 0.66
+    while True:
+        cx = top[0] / SS + ux * along * pull + vx * lateral
+        cy = top[1] / SS + uy * along * pull + vy * lateral
+        if pull < 0.05 or math.hypot(cx - SIZE / 2, cy - SIZE / 2) + size * 0.7 + 4 <= LIMIT:
+            return cx, cy
+        pull -= 0.03
+
+
 def embers(image, project):
     """Square embers rising from the piston crown along the part's axis, like the mod's flame particles: flat squares with a
     hot core and a dark edge, smaller the further they rise."""
@@ -274,8 +375,7 @@ def embers(image, project):
     seed = 7
     for step, (along, lateral, size) in enumerate(((46, -8, 17), (74, 30, 13), (62, -40, 10), (104, 10, 10), (92, -26, 7), (128, 38, 7),
                                                     (118, -14, 5), (146, 12, 5))):
-        cx = top[0] / SS + ux * along * 0.66 + vx * lateral
-        cy = top[1] / SS + uy * along * 0.66 + vy * lateral
+        cx, cy = inside(top, along, lateral, size * 1.35)
         hot = (255, 236, 150) if step % 3 else (255, 206, 96)
         half = size * 1.35 * SS / 2
         for y in range(int(cy * SS - half) - 3, int(cy * SS + half) + 4):
@@ -293,8 +393,7 @@ def smoke(image, project):
     ux, uy = math.sin(math.radians(TILT)), -math.cos(math.radians(TILT))
     vx, vy = -uy, ux
     for along, lateral, size in ((70, 4, 30), (104, -20, 24), (134, 16, 19), (160, -6, 14)):
-        cx = top[0] / SS + ux * along * 0.66 + vx * lateral
-        cy = top[1] / SS + uy * along * 0.66 + vy * lateral
+        cx, cy = inside(top, along, lateral, size)
         half = size * SS / 2
         for y in range(int(cy * SS - half), int(cy * SS + half) + 1):
             for x in range(int(cx * SS - half), int(cx * SS + half) + 1):
@@ -359,7 +458,7 @@ def finish(image):
         x = 0
         while rim >> x:
             if (rim >> x) & 1:
-                row[x] = tuple(min(255.0, c * 1.45 + 26) for c in row[x])
+                row[x] = (min(255.0, row[x][0] * 1.4 + 62), min(255.0, row[x][1] * 1.35 + 40), min(255.0, row[x][2] * 1.25 + 14))
             x += 1
     # outline: the mask grown by an octagon, minus the mask
     edge_rows = octagon(masks, int(OUTLINE * SS), True)
@@ -369,7 +468,7 @@ def finish(image):
         x = 0
         while edge >> x:
             if (edge >> x) & 1:
-                row[x] = NAVY
+                row[x] = GLOW
             x += 1
 
 
@@ -377,7 +476,7 @@ BRASS_DARK, BRASS_LIGHT = (112, 64, 38), (255, 228, 132)
 
 
 def rim_colour(u, v, r):
-    """The disc's rim between radius 241 and 253."""
+    """The disc's rim, between R_IN + 2 and R_OUT - 3."""
     if RIM == "white":
         return WHITE
     angle = math.atan2(v - SIZE / 2, u - SIZE / 2)
@@ -387,7 +486,7 @@ def rim_colour(u, v, r):
     # twelve rivets
     step = math.pi / 6
     index = round(angle / step)
-    cx, cy = SIZE / 2 + 247 * math.cos(index * step), SIZE / 2 + 247 * math.sin(index * step)
+    cx, cy = SIZE / 2 + (R_OUT - 9) * math.cos(index * step), SIZE / 2 + (R_OUT - 9) * math.sin(index * step)
     d = math.hypot(u - cx, v - cy)
     if d < 4.4:
         if d > 3.3:
@@ -408,15 +507,15 @@ def backdrop(x, y):
     """The blueprint disc at one supersampled position: RGB, or None outside the disc."""
     u, v = (x + 0.5) / SS, (y + 0.5) / SS
     r = math.hypot(u - SIZE / 2, v - SIZE / 2)
-    if r > 256:
+    if r > R_OUT:
         return None
-    if r > 253:
-        return NAVY
-    if r > 241:
+    if r > R_OUT - 3:
+        return EDGE
+    if r > R_IN + 2:
         return rim_colour(u, v, r)
-    if r > 239:
-        return NAVY
-    lift = SPOT * (1 - (r / 239) ** 1.6)    # a soft spotlight in the middle
+    if r > R_IN:
+        return (26, 66, 134)
+    lift = SPOT * (1 - (r / R_IN) ** 1.6)    # a soft spotlight in the middle
     colour = tuple(c + (255 - c) * lift for c in BLUE)
     if COG and cogwheel(u, v, r):
         colour = tuple(c * 0.86 for c in colour)
@@ -427,7 +526,9 @@ def backdrop(x, y):
         if d <= (1.5 if heavy else 0.75):
             a = (0.26 if heavy else 0.13) * GRID
             colour = tuple(c + (255 - c) * a for c in colour)
-    return colour
+    # a vignette over the blueprint, deepening toward the white rim
+    shade = VIGNETTE * (r / R_IN) ** 2.6
+    return tuple(c + (k - c) * shade for c, k in zip(colour, (8, 26, 78)))
 
 
 def compose(part):
@@ -438,14 +539,14 @@ def compose(part):
         row, source = out[y], part[y]
         shadow_row = part[y - mask_dy] if y >= mask_dy else None
         for x in range(W):
-            if source[x] is not None:
+            if source[x] is not None and math.hypot((x + 0.5) / SS - SIZE / 2, (y + 0.5) / SS - SIZE / 2) < R_IN - 1:
                 row[x] = source[x]
                 continue
             colour = backdrop(x, y)
             if colour is None:
                 continue
             if shadow_row is not None and x >= mask_dx and shadow_row[x - mask_dx] is not None \
-                    and math.hypot((x + 0.5) / SS - SIZE / 2, (y + 0.5) / SS - SIZE / 2) < 239:
+                    and math.hypot((x + 0.5) / SS - SIZE / 2, (y + 0.5) / SS - SIZE / 2) < R_IN:
                 colour = tuple(c * 0.72 for c in colour)
             row[x] = colour
     return out
@@ -494,18 +595,27 @@ VARIANTS = {
     "05-cog": {"COG": True, "CRANK_DEGREES": 125, "TILT": 40, "SPOT": 0.2},
     "06-exhaust": {"EMBERS": True, "SMOKE": True, "CRANK_DEGREES": 140, "TILT": 24, "RIM": "brass"},
 }
-OPTIONS = ("TILT", "CRANK_DEGREES", "CORNER_RADIUS", "EMBERS", "SMOKE", "OUTLINE", "GLOSS", "RIM", "COG", "SPOT", "GRID", "BLUE", "NAVY")
+OPTIONS = ("VIGNETTE", "TILT", "CRANK_DEGREES", "CORNER_RADIUS", "EMBERS", "SMOKE", "OUTLINE", "GLOSS", "RIM", "COG", "SPOT", "GRID", "BLUE", "NAVY")
 
 
 def render(root):
     """The whole picture for the current options, at W x W."""
     mechanism()
-    # Render once to find where the parts' mass sits, then again moved so that point is the disc's centre
-    first = render_part(root)[0]
-    mx, my = mass_centre(first)
-    part, depth, ident, upward, project = render_part(root, (W / 2 - mx, W / 2 - my))
+    # Solve the scale so the parts, outline included, fit inside LIMIT around their centre, then render them there
+    reach = REACH
+    for _ in range(4):
+        first = render_part(root, (0.0, 0.0), reach)[0]
+        round_corners(first)
+        finish(first)
+        cx, cy, far = frame(first)
+        need = (far / SS + 2) / LIMIT
+        if abs(need - 1) < 0.01:
+            break
+        reach /= need
+    part, depth, ident, upward, project, group_of = render_part(root, (W / 2 - cx, W / 2 - cy), reach)
     round_corners(part)
     contact_shadows(part, depth, ident)
+    seams(part, depth, ident, group_of)
     gloss(part, upward)
     if SMOKE:
         smoke(part, project)
