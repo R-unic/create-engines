@@ -35,6 +35,19 @@ public class EngineReadoutGameTests {
 	}
 
 	@GameTest(template = "empty")
+	public static void oilUseSurvivesTheSyncAndAnOldSaveReadsZero(GameTestHelper helper) {
+		EngineSummary used = new EngineSummary(EngineState.RUNNING, 100, 10, 5, 0, 0, 1, 1, 1, 1, false, new float[0], 1, 0, 0, 1, 0, 0,
+			false, false, 0, 0, Diagnosis.Health.HEALTHY, Diagnosis.Cause.NONE, 0, 0, List.of(), 42.5f);
+		helper.assertTrue(EngineSummary.read(used.write()).oilPerMinute() == 42.5f, "oil use is carried in the synced summary");
+		helper.assertTrue(EngineSummary.read(summary(EngineState.RUNNING, 100, 10, 5, 1, 0, Diagnosis.Cause.NONE).write())
+			.oilPerMinute() == 0f, "a summary with no oil use key reads zero");
+		EngineSummary idle = new EngineSummary(EngineState.RUNNING, 100, 10, 5, 0, 0, 1, 1, 1, 1, false, new float[0], 1, 0, 0, 1, 0, 0,
+			false, false, 0, 0, Diagnosis.Health.HEALTHY, Diagnosis.Cause.NONE, 0, 0, List.of(), 0f);
+		helper.assertTrue(used.differsFrom(idle) && !idle.differsFrom(idle), "only a change in oil use is worth syncing");
+		helper.succeed();
+	}
+
+	@GameTest(template = "empty")
 	public static void horsepowerIsCalibratedSoTheBasicFourReadsAHundred(GameTestHelper helper) {
 		helper.assertTrue(EngineReadout.horsepower(1140f) == 1f, "1140 SU is one horsepower");
 		helper.assertTrue(EngineReadout.horsepower(-50f) == 0f, "a negative power reads zero");

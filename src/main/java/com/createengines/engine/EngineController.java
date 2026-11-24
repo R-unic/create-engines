@@ -55,6 +55,8 @@ import com.createengines.engine.sim.FuelSpec;
 import com.createengines.engine.sim.Governor;
 import com.createengines.engine.sim.FuelSupply;
 import com.createengines.engine.sim.IgnitionSource;
+import com.createengines.engine.sim.IgnitionCoil;
+import com.createengines.engine.sim.InjectorAssist;
 import com.createengines.engine.sim.Mixture;
 import com.createengines.engine.sim.Roughness;
 import com.createengines.engine.sim.Sensors;
@@ -157,6 +159,9 @@ public final class EngineController {
 	private boolean filtered;
 	/** How many moving parts need oil: crank blocks, plus every piston and rod turning with the crank. */
 	private final double oilParts;
+	/** Oil drawn from the pans and heads during the current tick, mB, and its smoothed rate in mB per minute: for goggles. */
+	private double oilDrawn;
+	private double oilRate;
 	/** Share of the rating this engine's crank lines lose to torsional flex at the shipped balance, and the throws on its longest line. */
 	private final double flexLoss;
 	private final int longestLine;
@@ -243,6 +248,7 @@ public final class EngineController {
 				double fromPans = pans.draw(mb);
 				double fromGallery = fromPans < mb ? oilGallery.draw(mb - fromPans) : 0;
 				double total = fromPans + fromGallery;
+				oilDrawn += total;
 				if (total > 0)
 					lubricity = (fromPans * pans.lubricity() + fromGallery * oilGallery.lubricity()) / total;
 				return total;
@@ -294,6 +300,9 @@ public final class EngineController {
 					camshaft, cylinder.lobeAngle());
 			model.fuelSupply = CylinderFault.NO_INJECTOR.in(cylinder.faults()) ? FuelSupply.NONE : fuelGallery;
 			model.ignition = cylinder.sparkPlug() ? plugs : IgnitionSource.NONE;
+			model.assist = cylinder.injectorAssist() && !CylinderFault.NO_INJECTOR.in(cylinder.faults()) ? plugs.assist()
+				: InjectorAssist.NONE;
+			model.coil = cylinder.ignitionCoil() && cylinder.sparkPlug() ? plugs.coil() : IgnitionCoil.NONE;
 			model.pilotSupply = pilots;
 			// Underwater, nothing gets in or out, wherever the pipes lead
 			boolean submerged = CylinderFault.SUBMERGED.in(cylinder.faults());
@@ -466,12 +475,19 @@ public final class EngineController {
 			BlockPos pos = layout.cylinders()
 				.get(i)
 				.pos();
+			// A rotor's three chambers share one housing, so matching the block alone hands every chamber the first one's gas
+			int chamber = layout.cylinders()
+				.get(i)
+				.chamber();
 			for (int j = 0; j < old.models.size(); j++) {
 				CylinderModel previous = old.models.get(j);
 				if (previous != null && old.layout.cylinders()
 					.get(j)
 					.pos()
-					.equals(pos)) {
+					.equals(pos)
+					&& old.layout.cylinders()
+						.get(j)
+						.chamber() == chamber) {
 					model.copyStateFrom(previous);
 					break;
 				}
@@ -584,7 +600,10 @@ public final class EngineController {
 			cranking = false;
 			for (BlockPos pos : layout.starters())
 				if (LoadedBlocks.blockEntity(level, pos) instanceof StarterBlockEntity starter)
+				{
 					starter.updateCranking(layout.primary(), 0, false);
+					starter.setElectricReady(false);
+				}
 			publishSpeed();
 			publishCapacity(torqueScale);
 			if (ticks % SYNC_INTERVAL == 0)
@@ -627,11 +646,16 @@ public final class EngineController {
 				.felt());
 			drawsBattery = com.createengines.engine.sim.Tuning.crankingDraw && sparkEngine && ignitionSupply.hasBatteries();
 		}
+		// A spark engine with charge in its batteries can be cranked by a starter with nothing on its input; a compression engine cannot
+		boolean electricStart = drawsBattery && ignitionSupply.deliverableShare() > 0;
+		for (BlockPos pos : layout.starters())
+			if (LoadedBlocks.blockEntity(level, pos) instanceof StarterBlockEntity starter)
+				starter.setElectricReady(electricStart);
 		double starterTop = 0;
 		for (BlockPos pos : layout.starters()) {
 			if (!(LoadedBlocks.blockEntity(level, pos) instanceof StarterBlockEntity starter) || !starter.wantsToCrank())
 				continue;
-			double omega = EngineSimulation.rpmToOmega(Math.abs(starter.getSpeed()));
+			double omega = EngineSimulation.rpmToOmega(starter.crankRpm());
 			if (omega > starterTop)
 				starterTop = omega;
 			if (omega > floor) {
@@ -648,7 +672,7 @@ public final class EngineController {
 			for (BlockPos pos : layout.starters())
 				if (LoadedBlocks.blockEntity(level, pos) instanceof StarterBlockEntity starter && starter.wantsToCrank()
 					&& starter.crankDirection() * senseAt(pos) == floorDirection
-					&& EngineSimulation.rpmToOmega(Math.abs(starter.getSpeed())) >= starterTop * 0.5)
+					&& EngineSimulation.rpmToOmega(starter.crankRpm()) >= starterTop * 0.5)
 					pushing.add(pos);
 		// A heavy starter keeps choking a cold engine for a few seconds after it lets go, so it can catch and settle
 		boolean warming = false;
@@ -664,8 +688,10 @@ public final class EngineController {
 		smoothedLoad += (load - smoothedLoad) * 0.1;
 		double maxOmega = EngineSimulation.rpmToOmega(AllConfigs.server().kinetics.maxRotationSpeed.get());
 		sim.tickCranked(load, maxOmega, floor, floorDirection);
+		oilDrawn = 0;
 		sim.lubrication()
 			.update(sim.revolutionsLastTick(), EngineSimulation.TICK, oilParts, oilSupply);
+		oilRate += (oilDrawn / EngineSimulation.TICK * 60 - oilRate) * 0.05;
 		serviceOil(level);
 		cranking = floor > 0 && !sim.isSustaining();
 		if (drawsBattery && cranking && activeStarter != null)
@@ -685,6 +711,7 @@ public final class EngineController {
 			if (LoadedBlocks.blockEntity(level, pos) instanceof StarterBlockEntity starter) {
 				boolean active = pushing.contains(pos);
 				starter.updateCranking(layout.primary(), active ? share : 0, active);
+					starter.setDrawingCharge(active && drawsBattery && cranking && ignitionSupply.deliverableShare() > 0);
 					starter.setBatteryWeak(drawsBattery && BatteryChemistry.isLow(ignitionSupply.deliverableShare()) && starter.wantsToCrank());
 			}
 
@@ -1161,6 +1188,8 @@ public final class EngineController {
 			key.add((int) Math.round(model.fuelTrim * 20));
 			key.add((int) Math.round(model.airMatch * 20));
 			key.add(model.ignition.installed() && model.ignition.powered());
+			key.add(model.assist.installed() && model.assist.powered());
+			key.add(model.coil.installed() && model.coil.powered());
 			Camshaft camshaft = model.camshaft();
 			key.add(camshaft != null && camshaft.isPhaseLocked());
 		}
@@ -1345,7 +1374,7 @@ public final class EngineController {
 			(float) sim.thermal()
 				.coolantRate(),
 			pilotLit(), filtered, (float) Torsion.scaled(flexLoss), longestLine, report.health(), report.cause(), muffling(),
-				inductionBoost(), sourceLines());
+				inductionBoost(), sourceLines(), sim.isStopped() ? 0 : (float) oilRate);
 	}
 
 	/**

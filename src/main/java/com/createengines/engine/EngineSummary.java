@@ -35,13 +35,26 @@ import net.minecraft.nbt.StringTag;
  * @param muffling         how much of the engine's exhaust goes through a muffler, 0 to 1 (see Muffling): only how
  *                         loud it sounds, never how it runs
  * @param sourceLines      goggle lines from sources that packs or addons added to the engine (see StatusLine)
+ * @param oilPerMinute     oil the moving parts are drawing from the pans and heads, mB per minute; 0 when stopped
  */
 public record EngineSummary(EngineState state, float rpm, float availableTorque, float loadTorque,
 							float fuelPerMinute, float ripple, int firing, int cylinders, float inertia, float lubrication,
 							boolean starterEngaged, float[] firingAngles, int lines, float thinning, float roughness,
 							float condition, float temperature, float coolantRate, boolean pilot, boolean filtered,
 							float flex, int longestLine, Diagnosis.Health health, Diagnosis.Cause cause, float muffling, float boost,
-								List<StatusLine> sourceLines) {
+								List<StatusLine> sourceLines, float oilPerMinute) {
+
+		/** The summary as it was before oil use was shown: no oil is being used. */
+		public EngineSummary(EngineState state, float rpm, float availableTorque, float loadTorque, float fuelPerMinute,
+							 float ripple, int firing, int cylinders, float inertia, float lubrication,
+							 boolean starterEngaged, float[] firingAngles, int lines, float thinning, float roughness,
+							 float condition, float temperature, float coolantRate, boolean pilot, boolean filtered,
+							 float flex, int longestLine, Diagnosis.Health health, Diagnosis.Cause cause, float muffling, float boost,
+							 List<StatusLine> sourceLines) {
+			this(state, rpm, availableTorque, loadTorque, fuelPerMinute, ripple, firing, cylinders, inertia, lubrication,
+				starterEngaged, firingAngles, lines, thinning, roughness, condition, temperature, coolantRate, pilot, filtered,
+				flex, longestLine, health, cause, muffling, boost, sourceLines, 0);
+		}
 
 	public static final EngineSummary EMPTY =
 		new EngineSummary(EngineState.STALLED, 0, 0, 0, 0, 0, 0, 0, 0, 0, false, new float[0], 1, 0, 0, 1, 0, 0,
@@ -51,7 +64,7 @@ public record EngineSummary(EngineState state, float rpm, float availableTorque,
 						 float ripple, int firing, int cylinders, float inertia, float lubrication,
 						 boolean starterEngaged, float[] firingAngles) {
 		this(state, rpm, availableTorque, loadTorque, fuelPerMinute, ripple, firing, cylinders, inertia, lubrication,
-			starterEngaged, firingAngles, 1, 0, 0, 1, 0, 0, false, false, 0, 0, Diagnosis.Health.HEALTHY, Diagnosis.Cause.NONE, 0, 0, List.of());
+			starterEngaged, firingAngles, 1, 0, 0, 1, 0, 0, false, false, 0, 0, Diagnosis.Health.HEALTHY, Diagnosis.Cause.NONE, 0, 0, List.of(), 0);
 	}
 
 	/** Whether the block is still giving up its heat with the crank stopped. */
@@ -78,6 +91,7 @@ public record EngineSummary(EngineState state, float rpm, float availableTorque,
 		tag.putFloat("Condition", condition);
 		tag.putFloat("Temperature", temperature);
 		tag.putFloat("Coolant", coolantRate);
+		tag.putFloat("OilUse", oilPerMinute);
 		tag.putBoolean("Pilot", pilot);
 		tag.putBoolean("Filtered", filtered);
 		tag.putFloat("Flex", flex);
@@ -120,7 +134,7 @@ public record EngineSummary(EngineState state, float rpm, float availableTorque,
 			tag.getFloat("Coolant"), tag.getBoolean("Pilot"), tag.getBoolean("Filtered"), tag.getFloat("Flex"),
 			tag.getInt("LongestLine"), healths[Math.clamp(tag.getInt("Health"), 0, healths.length - 1)],
 			causes[Math.clamp(tag.getInt("Cause"), 0, causes.length - 1)], tag.getFloat("Muffling"), tag.getFloat("Boost"),
-			readSourceLines(tag));
+			readSourceLines(tag), tag.getFloat("OilUse"));
 	}
 
 	private static List<StatusLine> readSourceLines(CompoundTag tag) {
@@ -164,7 +178,7 @@ public record EngineSummary(EngineState state, float rpm, float availableTorque,
 			|| Math.abs(condition - other.condition) >= 0.02 || Math.abs(temperature - other.temperature) >= 0.03
 			|| Math.abs(coolantRate - other.coolantRate) >= 0.1 || pilot != other.pilot || filtered != other.filtered
 			|| Math.abs(flex - other.flex) >= 0.01 || longestLine != other.longestLine || health != other.health
-			|| cause != other.cause || Math.abs(muffling - other.muffling) >= 0.02
+			|| relativeChange(oilPerMinute, other.oilPerMinute) || cause != other.cause || Math.abs(muffling - other.muffling) >= 0.02
 			|| !Arrays.equals(firingAngles, other.firingAngles) || !sourceLines.equals(other.sourceLines);
 	}
 

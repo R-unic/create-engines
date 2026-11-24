@@ -60,6 +60,7 @@ public final class ClientAudit {
 		ServerAudit.guard(report, "sound", "events", () -> sounds(report));
 		ServerAudit.guard(report, "particles", "sprite sheets", () -> particles(report));
 		ServerAudit.guard(report, "models", "battery joins on the client", () -> batteryJoins(report));
+		ServerAudit.guard(report, "gui", "flywheel goggles", () -> flywheelGoggles(report));
 		ServerAudit.guard(report, "tab", "creative tab", () -> creativeTab(report));
 		ServerAudit.guard(report, "compat", "viewer pages", () -> viewerPages(report));
 		ServerAudit.guard(report, "gui", "blueprint sheet", () -> {
@@ -127,6 +128,29 @@ public final class ClientAudit {
 		report.metric("batteries checked for joins on the client", batteries.size(), "");
 		report.check("models", "every battery the client has loaded draws the joins the server holds", problems.isEmpty(),
 			problems.size() + " sides disagree, e.g. " + (problems.isEmpty() ? "" : problems.get(0)));
+	}
+
+	/**
+	 * Create removes the last line of a goggle readout it was told exists, so a block entity that claims a readout and writes
+	 * nothing crashes the client (a Cast Flywheel on an Aeronautics contraption did, in 2.1.0). Goggle text loads client classes, so
+	 * no server GameTest can call it. A flywheel with no level has no kinetic lines to add and must say so, and a Dual-Mass
+	 * Flywheel's spring pack lines make it claim one.
+	 */
+	private static void flywheelGoggles(SmokeReport report) {
+		var cast = com.createengines.registry.CEBlocks.CAST_FLYWHEEL.get();
+		var dual = com.createengines.registry.CEBlocks.DUAL_MASS_FLYWHEEL.get();
+		var plain = (com.createengines.content.flywheel.CastFlywheelBlockEntity) cast.newBlockEntity(net.minecraft.core.BlockPos.ZERO,
+			cast.defaultBlockState());
+		List<net.minecraft.network.chat.Component> lines = new ArrayList<>();
+		boolean claimed = plain.addToGoggleTooltip(lines, false);
+		report.check("gui", "a flywheel claims a goggle readout only when it wrote lines", claimed == !lines.isEmpty(),
+			"claimed " + claimed + " with " + lines.size() + " lines");
+		var pack = (com.createengines.content.flywheel.CastFlywheelBlockEntity) dual.newBlockEntity(net.minecraft.core.BlockPos.ZERO,
+			dual.defaultBlockState());
+		List<net.minecraft.network.chat.Component> packLines = new ArrayList<>();
+		boolean packClaimed = pack.addToGoggleTooltip(packLines, false);
+		report.check("gui", "a Dual-Mass Flywheel's goggles show its spring pack", packClaimed && !packLines.isEmpty(),
+			"claimed " + packClaimed + " with " + packLines.size() + " lines");
 	}
 
 	/** The fuel and part pages the recipe viewers show, whether or not a viewer is installed: every shipped fuel has one. */

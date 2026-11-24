@@ -264,8 +264,9 @@ public class SableGameTests {
 		org.joml.FrustumIntersection turned = new org.joml.FrustumIntersection(new org.joml.Matrix4f(projection).mul(away));
 		if (!com.createengines.content.StructureCulling.visible(helper.getLevel(), plot, renderOrigin, looking, false))
 			helper.fail("a part on a structure in front of the camera was called out of view because its plot is far away");
-		if (com.createengines.content.StructureCulling.visible(helper.getLevel(), plot, renderOrigin, turned, true))
-			helper.fail("a part on a structure behind the camera was called in view because Flywheel said so for its plot");
+		// 1.4 posed every part every frame; a part on a structure is never skipped, even looking away and whatever Flywheel says
+		if (!com.createengines.content.StructureCulling.visible(helper.getLevel(), plot, renderOrigin, turned, false))
+			helper.fail("a part on a structure was skipped; parts on structures are posed every frame");
 		BlockPos ground = helper.absolutePos(new BlockPos(1, 1, 1));
 		if (!com.createengines.content.StructureCulling.visible(helper.getLevel(), ground, renderOrigin, turned, true)
 			|| com.createengines.content.StructureCulling.visible(helper.getLevel(), ground, renderOrigin, looking, false))

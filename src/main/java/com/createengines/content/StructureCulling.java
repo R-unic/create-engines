@@ -4,7 +4,6 @@ import org.joml.FrustumIntersection;
 
 import com.createengines.compat.sable.SableCompat;
 
-import dev.engine_room.flywheel.api.visualization.VisualizationManager;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Vec3i;
 import net.minecraft.world.level.Level;
@@ -37,10 +36,7 @@ public final class StructureCulling {
 	public static boolean visible(Level level, BlockPos pos, FrustumIntersection frustum, boolean plotVisible) {
 		if (level == null || !SableCompat.onStructure(level, pos))
 			return plotVisible;
-		VisualizationManager manager = VisualizationManager.get(level);
-		if (manager == null)
-			return plotVisible;
-		return visible(level, pos, manager.renderOrigin(), frustum, plotVisible);
+		return true;
 	}
 
 	/**
@@ -50,7 +46,11 @@ public final class StructureCulling {
 	public static boolean visible(Level level, BlockPos pos, Vec3i renderOrigin, FrustumIntersection frustum, boolean plotVisible) {
 		if (level == null || !SableCompat.onStructure(level, pos))
 			return plotVisible;
-		return inView(SableCompat.worldPosition(level, pos), renderOrigin, frustum);
+		// Never skipped on a structure, as in 1.4 (which had no culling at all). Testing the part where the structure is was
+		// tried in 2.0.1 and 2.0.2 and parts still froze: the structure's pose, the render origin and the frustum are all
+		// moving and on different clocks, so a part posed a frame late is a part seen frozen. The cost is that parts on a
+		// structure are posed every frame, which is all they cost before 2.0.0.
+		return true;
 	}
 
 	/** Whether a part at {@code world} is in a frustum that is relative to {@code renderOrigin}. */

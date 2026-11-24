@@ -449,6 +449,9 @@ public class CrankshaftBlockEntity extends GeneratingKineticBlockEntity implemen
 			if (fresh < 30 && isPlayerSneaking)
 				GoggleLines.add(CELang.translate("goggles.oil_condition.hint")
 					.style(ChatFormatting.DARK_GRAY), tooltip, 2);
+			if (engine.oilPerMinute() >= 0.05)
+				GoggleLines.add(CELang.translate("goggles.oil_use", format(engine.oilPerMinute()))
+					.style(ChatFormatting.GRAY), tooltip, 2);
 			if (engine.filtered())
 				GoggleLines.add(CELang.translate("goggles.oil_filtered")
 					.style(ChatFormatting.GRAY), tooltip, 2);

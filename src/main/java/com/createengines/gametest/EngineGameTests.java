@@ -1,6 +1,7 @@
 package com.createengines.gametest;
 
 import java.util.Collection;
+import java.util.List;
 import java.util.function.BiConsumer;
 
 import com.createengines.CreateEngines;
@@ -1195,6 +1196,26 @@ public class EngineGameTests {
 				"Cylinder should report no spark: " + cylinder(helper));
 			helper.succeed();
 		});
+	}
+
+	/** Alternators touching each other form a chain: ones past the first still count as the engine's, down to the end of the chain. */
+	@GameTest(template = "empty", timeoutTicks = 20)
+	public static void alternatorsTouchingEachOtherAllChargeTheEngine(GameTestHelper helper) {
+		TestEngine.buildSpark(helper.getLevel(), helper.absolutePos(BlockPos.ZERO), true);
+		BlockPos second = TestEngine.ALTERNATOR.west();
+		BlockPos third = second.west();
+		BlockPos apart = third.west().west();
+		helper.setBlock(second, TestEngine.axisX(CEBlocks.ALTERNATOR.getDefaultState()));
+		helper.setBlock(third, TestEngine.axisX(CEBlocks.ALTERNATOR.getDefaultState()));
+		helper.setBlock(apart, TestEngine.axisX(CEBlocks.ALTERNATOR.getDefaultState()));
+		EngineLayout layout = EngineScanner.scan(helper.getLevel(), helper.absolutePos(PRIMARY));
+		helper.assertTrue(layout != null, "The engine should scan");
+		List<BlockPos> found = layout.alternators();
+		helper.assertTrue(found.contains(helper.absolutePos(TestEngine.ALTERNATOR)), "The first alternator: " + found);
+		helper.assertTrue(found.contains(helper.absolutePos(second)), "An alternator touching the first: " + found);
+		helper.assertTrue(found.contains(helper.absolutePos(third)), "One touching that one: " + found);
+		helper.assertFalse(found.contains(helper.absolutePos(apart)), "One with a gap is not connected: " + found);
+		helper.succeed();
 	}
 
 	/** A spark engine runs only while its battery holds charge: drain one the engine cannot recharge and it quits. */

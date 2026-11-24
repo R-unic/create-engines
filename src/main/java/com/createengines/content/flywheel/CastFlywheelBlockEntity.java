@@ -111,6 +111,7 @@ public class CastFlywheelBlockEntity extends KineticBlockEntity {
 
 	@Override
 	public boolean addToGoggleTooltip(List<Component> tooltip, boolean isPlayerSneaking) {
+		int before = tooltip.size();
 		if (springPack != null) {
 			CELang.translate("goggles.spring_pack")
 				.forGoggles(tooltip);
@@ -123,7 +124,9 @@ public class CastFlywheelBlockEntity extends KineticBlockEntity {
 				.style(ChatFormatting.DARK_GRAY), tooltip, 1);
 		}
 		super.addToGoggleTooltip(tooltip, isPlayerSneaking);
-		return true;
+		// Create removes the last line when a readout is shown, so claiming one with nothing written crashes the overlay
+		// (a plain flywheel on a Sable contraption has no kinetic lines to add).
+		return tooltip.size() > before;
 	}
 
 	/**
