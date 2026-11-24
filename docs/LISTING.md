@@ -212,8 +212,8 @@ that changes how an existing engine behaves says so in its changelog.
 
 ## Changelog for 2.1.0
 
-A feature release, "Twin Mass": a Dual-Mass Flywheel, two new battery sizes, a charge-rate dial on the alternator, a way for an
-addon to add a flywheel of its own, outlines that follow the models, and one fix that changes an existing behaviour, listed first.
+A feature release, "Twin Mass": a Dual-Mass Flywheel, a charge-rate dial on the alternator, new fuel character (biodiesel, plant oil, spill fire), a way for an
+addon to add a flywheel of its own, outlines that follow the models, and changes to existing behaviour (the spark-fuel rule, biodiesel, plant oil and the default flywheel masses), each listed as "Changed behaviour".
 No ID, key or saved format is renamed or removed; everything else is new.
 - Changed behaviour, spark fuels: an engine with **no spark plug and no pilot shot** no longer runs on a fuel that needs a spark
   (gasoline, kerosene, ethanol, methanol), however much boost has heated the charge. Before, a plugless engine with enough
@@ -246,6 +246,9 @@ No ID, key or saved format is renamed or removed; everything else is new.
   numbers move; what you can aim at and stand against does.
 - Fix, advancements: the milestones that read engine speed now use the speed the engine makes under its own power, so an engine
   held up to speed by a starter or another source no longer earns them.
+- Changed behaviour, flywheel masses (author-approved): the default `flywheelInertia` goes from 1.5 to 2.5 and `castFlywheelInertia` from 1.0 to 1.6, because two
+  Create Flywheels on an inline-4 only took its roughness loss from 11.3% to 5.4%. Only the config default moves: a world whose config file already
+  holds a value keeps it, and a fresh one spins up more slowly and needs more starter effort (release record Exception 2.8).
 - Changed behaviour, biodiesel (author-approved): biodiesel (anything in `c:biodiesel`, such as Create: Diesel Generators' biodiesel,
   which is also in `c:diesel`) used to burn as diesel exactly. It is now the clean diesel: 33 energy to the mB (diesel is 36), half
   diesel's soot, and no sulfur for the Pollution of the Realms compat. Its autoignition, air and cold figures are diesel's, so it
