@@ -296,4 +296,5 @@ def main():
     print("wrote", out, len(sheet[0]), "x", len(sheet))
 
 
-main()
+if __name__ == "__main__":
+    main()
