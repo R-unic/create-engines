@@ -90,6 +90,22 @@ class SableWeightsTest {
 				assertTrue(seen.add(block), block + " is in more than one weight tag");
 	}
 
+	/**
+	 * The roadmap says a rotary earns its place in a plane. Swept volume fired per turn of the shaft: a piston cylinder fires once
+	 * in two turns, a housing's three chambers once a turn each. Per unit of mass the housing must give clearly more than a
+	 * cylinder, or the weights would need a new key (a change to existing weights is not allowed in 2.x).
+	 */
+	@Test
+	void aRotorHousingMakesMoreFiringPerKilogramThanACylinder() throws IOException {
+		Map<String, Double> masses = masses();
+		double cylinderPerTurn = com.createengines.engine.sim.CylinderSpec.CRUDE.displacement() / 2;
+		double housingPerTurn = 3 * com.createengines.engine.sim.CylinderSpec.ROTARY.displacement()
+			/ (com.createengines.engine.sim.CylinderModel.ROTARY_CYCLE / com.createengines.engine.sim.CylinderModel.ROTARY_CHAMBER_SPACING);
+		double cylinder = cylinderPerTurn / masses.get("heavy");
+		double housing = housingPerTurn / masses.get("medium");
+		assertTrue(housing > 1.5 * cylinder, "a housing should give at least 1.5 times a cylinder's firing per unit of mass: " + housing + " against " + cylinder);
+	}
+
 	@Test
 	void theWeightsSayWhatTheyAreMeantTo() throws IOException {
 		Map<String, Double> masses = masses();
@@ -102,6 +118,7 @@ class SableWeightsTest {
 		assertTrue(blocksOf("light").contains("create_engines:exhaust_manifold"));
 		assertTrue(masses.get("light") < 1.0);
 		assertTrue(blocksOf("flywheel").contains("create_engines:cast_flywheel"));
+		assertTrue(blocksOf("flywheel").contains("create_engines:dual_mass_flywheel"));
 		assertEquals(4.0, masses.get("flywheel"), 0);
 		assertTrue(masses.get("flywheel") > masses.get("heavy"));
 	}

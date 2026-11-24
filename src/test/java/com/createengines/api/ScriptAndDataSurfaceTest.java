@@ -96,6 +96,14 @@ class ScriptAndDataSurfaceTest {
 		for (String key : keys("engine/sim/CamProfiles.java"))
 			out.add("data cam_profiles " + key + " optional range 0..720");
 		out.add("data cam_profiles valve duration " + number(camSource, "MIN_DURATION") + ".." + number(camSource, "MAX_DURATION"));
+
+		// The flywheel data map (a pack's or an addon's own flywheel, API 1.2): its two masses and their range
+		String flywheel = maps.substring(maps.indexOf("record FlywheelProperties"), maps.indexOf("DataMapType<Block, FlywheelProperties>"));
+		String limit = number(readKeepingStrings("engine/FlywheelSpec.java"), "MAX_INERTIA");
+		Matcher mass = Pattern.compile("mass\\(\\)\\.(fieldOf|optionalFieldOf)\\(\"(\\w+)\"(?:, ([\\d.]+))?\\)").matcher(flywheel);
+		while (mass.find())
+			out.add("data flywheel " + mass.group(2) + " " + (mass.group(1).equals("fieldOf") ? "required"
+				: "optional " + mass.group(3)) + " range 0.0.." + limit);
 		return out;
 	}
 
@@ -138,10 +146,14 @@ class ScriptAndDataSurfaceTest {
 		assertTrue(now.contains("data fuel sulfur optional"), "" + now);
 		assertTrue(now.contains("data part_stats inertia optional 1.0 range 0.1..10"), "" + now);
 		assertEquals(11, now.stream().filter(l -> l.startsWith("data part_stats ")).count());
-		assertEquals(8, now.stream().filter(l -> l.startsWith("data fuel ")).count());
+		assertTrue(now.contains("data fuel flammability optional 1.0"), "" + now);
+		assertEquals(9, now.stream().filter(l -> l.startsWith("data fuel ")).count());
 		assertEquals(8, now.stream().filter(l -> l.startsWith("data part_effects ")).count());
 		assertEquals(6, now.stream().filter(l -> l.startsWith("data cam_profiles ") && l.contains(" optional ")).count());
 		assertTrue(now.contains("data part_effect effect required"), "" + now);
+		assertTrue(now.contains("data flywheel primary_inertia required range 0.0..100.0"), "" + now);
+		assertTrue(now.contains("data flywheel secondary_inertia optional 0.0 range 0.0..100.0"), "" + now);
+		assertEquals(2, now.stream().filter(l -> l.startsWith("data flywheel ")).count());
 		assertTrue(now.contains("data cam_profiles valve duration 40..400"), "" + now);
 	}
 

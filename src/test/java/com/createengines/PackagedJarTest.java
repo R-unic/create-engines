@@ -58,6 +58,7 @@ class PackagedJarTest {
 		"com/createengines/content/GoggleLines",
 		"com/createengines/content/MachineLoopSound",
 		"com/createengines/content/StingSound",
+		"com/createengines/content/alternator/AlternatorRenderer",
 		"com/createengines/content/effects/EngineEffects",
 		"com/createengines/content/plate/MakerPlateRenderer",
 		"com/createengines/content/raincap/RainCapBlockEntity",

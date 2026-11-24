@@ -52,6 +52,7 @@ class ArchitectureRulesTest {
 		"com/createengines/content/GoggleLines.java",
 		"com/createengines/content/MachineLoopSound.java",
 		"com/createengines/content/StingSound.java",
+		"com/createengines/content/alternator/AlternatorRenderer.java",
 		"com/createengines/content/effects/EngineEffects.java",
 		"com/createengines/content/plate/MakerPlateRenderer.java",
 		"com/createengines/content/raincap/RainCapBlockEntity.java",
