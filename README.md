@@ -8,6 +8,8 @@ with a boosted, precision-built V12.
 
 Minecraft 1.21.1 · NeoForge 21.1.219 · Create 6.0.10
 
+Other versions and loaders: none is released yet. [docs/PORTS.md](docs/PORTS.md) says what is planned and what to expect from a port.
+
 [Discord](https://discord.gg/QYVpy2dqGE)
 
 > [!NOTE]

@@ -20,7 +20,7 @@ public final class Roughness {
 
 	/** The share of an engine's rating lost to a speed ripple of {@code ripple}, 0 to {@link #MAX_LOSS}. */
 	public static double loss(double ripple) {
-		return Math.clamp((ripple - FREE_RIPPLE) * LOSS_PER_RIPPLE, 0, MAX_LOSS);
+		return SimMath.clamp((ripple - FREE_RIPPLE) * LOSS_PER_RIPPLE, 0, MAX_LOSS);
 	}
 
 	/** The share of the rating that is left after roughness. */

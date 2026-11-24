@@ -1,0 +1,21 @@
+// The engine simulation: plain Java with no Minecraft, loader or Create classes, so every loader build of the mod
+// (NeoForge 1.21.1 today, Forge and Fabric 1.20.1 later) shares one copy and one set of numbers. Nothing in
+// here may import net.minecraft, net.neoforged or com.createengines outside engine.sim (ArchitectureRulesTest checks).
+plugins {
+    id 'java-library'
+}
+
+java.toolchain.languageVersion = JavaLanguageVersion.of(21)
+
+// Compile against the Java 17 API: Minecraft 1.20.1 runs on 17, and this module is shared with that build.
+tasks.withType(JavaCompile).configureEach {
+    options.release = 17
+}
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    compileOnly 'org.jetbrains:annotations:24.1.0'
+}

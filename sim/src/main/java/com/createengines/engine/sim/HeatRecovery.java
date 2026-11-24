@@ -51,6 +51,6 @@ public final class HeatRecovery {
 	public static int signal(double heat) {
 		if (heat < SMOULDERING)
 			return 0;
-		return (int) Math.clamp(Math.round(15 * heat / (2 * SEETHING)), 1, 15);
+		return (int) SimMath.clamp(Math.round(15 * heat / (2 * SEETHING)), 1, 15);
 	}
 }

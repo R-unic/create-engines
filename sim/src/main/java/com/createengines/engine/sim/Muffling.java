@@ -41,6 +41,6 @@ public final class Muffling {
 
 	/** The volume an exhaust sound is played at, as a share of what it would be with no muffler: 1 at none, 0.2 at all. */
 	public static float volume(float muffling) {
-		return 1 - QUIET * Math.clamp(muffling, 0f, 1f);
+		return 1 - QUIET * SimMath.clamp(muffling, 0f, 1f);
 	}
 }

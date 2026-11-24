@@ -19,10 +19,17 @@ base {
 
 java.toolchain.languageVersion = JavaLanguageVersion.of(21)
 
+// The simulation is its own module (sim/), shared by every loader build. It is packed into this jar, run as part of the mod,
+// and counted by the coverage and mutation tasks as it was when it lived here.
+evaluationDependsOn(':sim')
+def simOutput = project(':sim').sourceSets.main.output
+def simSourceDirs = project(':sim').sourceSets.main.allJava.srcDirs
+
 // The harnesses that test the mod (GameTests, smoke audits, the picture-taking runs) are for development. The jar a player or
 // a server loads leaves them out; the development runs use the classes folder, so they still have them (PackagedJarTest
 // checks the jar, and CreateEnginesClient registers these by name so a jar without them starts).
 tasks.named('jar', Jar) {
+    from simOutput
     exclude 'com/createengines/gametest/**', 'com/createengines/smoke/**', 'com/createengines/client/smoke/**',
         'com/createengines/client/VisualSmokeTest*', 'com/createengines/client/ShowcaseRun*'
 }
@@ -341,6 +348,7 @@ neoForge {
     mods {
         "${mod_id}" {
             sourceSet(sourceSets.main)
+            sourceSet(project(":sim").sourceSets.main)
         }
     }
 }
@@ -350,6 +358,7 @@ configurations {
 }
 
 dependencies {
+    implementation project(":sim")
     // Create ships Registrate, Ponder and Flywheel in its own jar, so we compile against
     // the slim jar and pull the libraries in explicitly.
     implementation("com.simibubi.create:create-${minecraft_version}:${create_version}:slim") { transitive = false }
@@ -685,8 +694,8 @@ tasks.register('coverageRatchet', JacocoCoverageVerification) {
     description = 'Fails if instruction coverage of the unit tests (the mod itself, not the test harness) falls below src/smoke/coverage-floor.txt.'
     dependsOn 'test'
     executionData.from(tasks.named('test').map { it.extensions.getByType(JacocoTaskExtension).destinationFile })
-    classDirectories.from(files(sourceSets.main.output.classesDirs.files.collect { fileTree(dir: it, exclude: harnessPackages) }))
-    sourceDirectories.from(sourceSets.main.allJava.srcDirs)
+    classDirectories.from(files((sourceSets.main.output.classesDirs.files + simOutput.classesDirs.files).collect { fileTree(dir: it, exclude: harnessPackages) }))
+    sourceDirectories.from(sourceSets.main.allJava.srcDirs + simSourceDirs)
     violationRules {
         rule {
             limit {
@@ -716,14 +725,14 @@ def coverageRuns = ['test', 'runGameTestServer', 'runSmokeAudit']
     }
 }
 def mergedExecutionData = files(coverageRuns.collect { layout.buildDirectory.file("jacoco/${it}.exec").get().asFile }).filter { it.exists() }
-def mergedClasses = files(sourceSets.main.output.classesDirs.files.collect { fileTree(dir: it, exclude: harnessPackages) })
+def mergedClasses = files((sourceSets.main.output.classesDirs.files + simOutput.classesDirs.files).collect { fileTree(dir: it, exclude: harnessPackages) })
 
 tasks.register('coverageMergedReport', JacocoReport) {
     group = 'verification'
     description = 'Coverage of the unit tests, the GameTests and the client audit together (build/reports/jacoco/merged).'
     executionData.from(mergedExecutionData)
     classDirectories.from(mergedClasses)
-    sourceDirectories.from(sourceSets.main.allJava.srcDirs)
+    sourceDirectories.from(sourceSets.main.allJava.srcDirs + simSourceDirs)
     reports {
         xml.required = true
         html.required = true
@@ -741,7 +750,7 @@ tasks.register('coverageMerged', JacocoCoverageVerification) {
     finalizedBy 'coverageMergedReport'
     executionData.from(mergedExecutionData)
     classDirectories.from(mergedClasses)
-    sourceDirectories.from(sourceSets.main.allJava.srcDirs)
+    sourceDirectories.from(sourceSets.main.allJava.srcDirs + simSourceDirs)
     violationRules {
         rule {
             limit {
@@ -781,7 +790,7 @@ tasks.register('pitest', JavaExec) {
     classpath = configurations.pitest
     mainClass = 'org.pitest.mutationtest.commandline.MutationCoverageReport'
     def testClasspath = sourceSets.test.runtimeClasspath
-    def sourceDirs = sourceSets.main.allJava.srcDirs
+    def sourceDirs = sourceSets.main.allJava.srcDirs + simSourceDirs
     doFirst {
         args '--reportDir', pitestReports.get().asFile.path,
                 '--targetClasses', 'com.createengines.engine.sim.*',

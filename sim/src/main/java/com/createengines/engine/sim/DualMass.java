@@ -23,7 +23,7 @@ public final class DualMass {
 		// A speed of zero or less needs no check of its own: it falls below the resonance and the clamp below gives 0
 		if (!(Double.isFinite(rpm) && Double.isFinite(resonanceRpm)) || resonanceRpm <= 0)
 			return 0;
-		double t = Math.clamp((rpm / resonanceRpm - 1) / (FULL_AT - 1), 0, 1);
+		double t = SimMath.clamp((rpm / resonanceRpm - 1) / (FULL_AT - 1), 0, 1);
 		return t * t * (3 - 2 * t);
 	}
 

@@ -21,7 +21,7 @@ public final class ChargeRate {
 
 	/** A setting held to the dial's range. */
 	public static int clamp(int setting) {
-		return Math.clamp(setting, MIN_SETTING, MAX_SETTING);
+		return SimMath.clamp(setting, MIN_SETTING, MAX_SETTING);
 	}
 
 	/** The share of full output a setting allows, 0.25 to 1. */

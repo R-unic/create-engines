@@ -48,3 +48,9 @@ When the visual and audio goldens exist they follow the same rules. A diff nobod
 meant is updated with one command (`./gradlew updateGoldens`), the git diff of the images and numbers is the review,
 and the commit is the approval; any deliberate art or sound change updates its goldens as part of that change. Never widen a tolerance to make one pass; a flaky capture is fixed or dropped. When
 they are built, put the exact commands in [docs/SMOKE.md](docs/SMOKE.md) and keep this section true.
+
+## The simulation stays loader-free
+
+`sim/` is a separate Gradle module shared by every build (docs/PORTS.md). Nothing in it may import `net.minecraft`,
+`net.neoforged`, Create, or any `com.createengines` package outside `engine.sim`; `ArchitectureRulesTest` enforces it. A
+port adds code beside it, never inside it, and never edits `compat/behaviour.txt` or `compat/trajectories.txt` to fit.

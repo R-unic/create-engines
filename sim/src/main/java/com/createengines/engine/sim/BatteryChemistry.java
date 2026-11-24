@@ -42,19 +42,19 @@ public final class BatteryChemistry {
 
 	/** The charge one spark takes from a battery when the engine is {@code cold} (0 warm, 1 as cold as it gets): 1 warm, up to 2 as cold as it gets. */
 	public static double sparkCost(double cold, boolean enabled) {
-		return enabled ? SPARK_COST * (1 + COLD_SPARK_COST * Math.clamp(cold, 0, 1)) : SPARK_COST;
+		return enabled ? SPARK_COST * (1 + COLD_SPARK_COST * SimMath.clamp(cold, 0, 1)) : SPARK_COST;
 	}
 
 	/** How cold the air round a battery is, 0 to 1, from its biome's temperature: 0 from {@link #COMFORTABLE_BIOME} up, 1 at freezing and below. */
 	public static double ambientCold(double biomeTemperature) {
 		if (Double.isNaN(biomeTemperature))
 			return 0;
-		return Math.clamp((COMFORTABLE_BIOME - biomeTemperature) / COMFORTABLE_BIOME, 0, 1);
+		return SimMath.clamp((COMFORTABLE_BIOME - biomeTemperature) / COMFORTABLE_BIOME, 0, 1);
 	}
 
 	/** The share of the cold a heat source beside a battery takes off it, 0 to 1, for a Create heat level 0 (none) to 3 (seething). */
 	public static double warmth(int heatLevel) {
-		return WARMTH[Math.clamp(heatLevel, 0, WARMTH.length - 1)];
+		return WARMTH[SimMath.clamp(heatLevel, 0, WARMTH.length - 1)];
 	}
 
 	/** How cold a battery is: its air's cold, less what a heat source beside it makes up. */
@@ -69,7 +69,7 @@ public final class BatteryChemistry {
 
 	/** The same for a battery that loses {@code coldLoss} (0 to 1) of its capacity when as cold as it gets: see {@link BatteryTier#coldLoss()}. */
 	public static double deliverableLimit(double capacity, double cold, boolean enabled, double coldLoss) {
-		return enabled ? capacity * (1 - Math.clamp(coldLoss, 0, 1) * Math.clamp(cold, 0, 1)) : capacity;
+		return enabled ? capacity * (1 - SimMath.clamp(coldLoss, 0, 1) * SimMath.clamp(cold, 0, 1)) : capacity;
 	}
 
 	/** The charge a battery holding {@code charge} can actually give now. */
@@ -96,7 +96,7 @@ public final class BatteryChemistry {
 	public static double crankDraw(double cold, double deliverableShare) {
 		if (Double.isNaN(deliverableShare))
 			return 0;
-		return CRANK_DRAW * (1 + Math.clamp(cold, 0, 1)) * Math.clamp(deliverableShare / SAG_BELOW, 0, 1);
+		return CRANK_DRAW * (1 + SimMath.clamp(cold, 0, 1)) * SimMath.clamp(deliverableShare / SAG_BELOW, 0, 1);
 	}
 
 	/** A comparator's reading for a bank holding {@code share} of its capacity: 0 only when it is empty, 15 only when it is full. */
@@ -105,7 +105,7 @@ public final class BatteryChemistry {
 			return 0;
 		if (share >= 1)
 			return MAX_SIGNAL;
-		return Math.clamp((int) Math.floor(share * (MAX_SIGNAL - 1)) + 1, 1, MAX_SIGNAL - 1);
+		return SimMath.clamp((int) Math.floor(share * (MAX_SIGNAL - 1)) + 1, 1, MAX_SIGNAL - 1);
 	}
 
 	/** The lamp strip stage for a battery holding {@code share} of its capacity: 0 only when it is empty, {@link #GAUGE_STAGES} only when it is full. */
@@ -114,7 +114,7 @@ public final class BatteryChemistry {
 			return 0;
 		if (share >= 1)
 			return GAUGE_STAGES;
-		return Math.clamp((int) Math.floor(share * (GAUGE_STAGES - 1)) + 1, 1, GAUGE_STAGES - 1);
+		return SimMath.clamp((int) Math.floor(share * (GAUGE_STAGES - 1)) + 1, 1, GAUGE_STAGES - 1);
 	}
 
 	/**

@@ -25,6 +25,8 @@ import org.junit.jupiter.api.Test;
 class ApiSurfaceTest {
 
 	private static final Path ROOT = Path.of("src/main/java/com/createengines");
+	/** The simulation lives in its own module (sim/), so its files are read from there. */
+	private static final Path SIM_ROOT = Path.of("sim/src/main/java/com/createengines");
 	private static final Path FILE = Path.of("src/test/resources/compat/api-surface.txt");
 
 	private static List<Path> files() throws IOException {
@@ -33,10 +35,10 @@ class ApiSurfaceTest {
 			paths.filter(p -> p.toString().endsWith(".java") && !p.getFileName().toString().equals("ApiVersion.java"))
 				.sorted().forEach(out::add);
 		}
-		out.add(ROOT.resolve("engine/sim/TorqueSource.java"));
-		out.add(ROOT.resolve("engine/sim/Breather.java"));
-		out.add(ROOT.resolve("engine/sim/AbstractTorqueSource.java"));
-		out.add(ROOT.resolve("engine/sim/StatusLine.java"));
+		out.add(SIM_ROOT.resolve("engine/sim/TorqueSource.java"));
+		out.add(SIM_ROOT.resolve("engine/sim/Breather.java"));
+		out.add(SIM_ROOT.resolve("engine/sim/AbstractTorqueSource.java"));
+		out.add(SIM_ROOT.resolve("engine/sim/StatusLine.java"));
 		return out;
 	}
 

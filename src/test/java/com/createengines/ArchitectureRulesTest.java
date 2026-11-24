@@ -30,6 +30,8 @@ import org.junit.jupiter.api.Test;
 class ArchitectureRulesTest {
 
 	private static final Path ROOT = Path.of("src/main/java");
+	/** The simulation lives in its own module (sim/); the rules still cover it. */
+	private static final Path SIM_ROOT = Path.of("sim/src/main/java");
 	private static final Pattern IMPORT = Pattern.compile("^import\\s+(?:static\\s+)?([\\w.]+?)(?:\\.\\*)?;", Pattern.MULTILINE);
 
 	/** Packages that must stay free of the game. */
@@ -63,13 +65,17 @@ class ArchitectureRulesTest {
 		"com/createengines/ponder/EngineScenes.java");
 
 	private static List<Path> sources() throws IOException {
-		try (Stream<Path> walk = Files.walk(ROOT)) {
-			return walk.filter(p -> p.toString().endsWith(".java")).toList();
-		}
+		List<Path> out = new ArrayList<>();
+		for (Path root : List.of(ROOT, SIM_ROOT))
+			try (Stream<Path> walk = Files.walk(root)) {
+				walk.filter(p -> p.toString().endsWith(".java")).forEach(out::add);
+			}
+		return out;
 	}
 
 	private static String rel(Path path) {
-		return ROOT.relativize(path).toString().replace('\\', '/');
+		Path root = path.startsWith(SIM_ROOT) ? SIM_ROOT : ROOT;
+		return root.relativize(path).toString().replace('\\', '/');
 	}
 
 	private static List<String> imports(Path path) throws IOException {

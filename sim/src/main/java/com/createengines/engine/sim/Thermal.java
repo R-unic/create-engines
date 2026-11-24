@@ -96,7 +96,7 @@ public final class Thermal {
 
 	/** How red-hot exhaust parts look at {@code temperature}, 0 (dark metal) to 1. */
 	public static double glow(double temperature) {
-		return Math.clamp((temperature - GLOW_FROM) / GLOW_SPAN, 0, 1);
+		return SimMath.clamp((temperature - GLOW_FROM) / GLOW_SPAN, 0, 1);
 	}
 
 	/**
@@ -106,12 +106,12 @@ public final class Thermal {
 	public static double tickChance(double temperature) {
 		if (temperature < COOLING_FROM)
 			return 0;
-		return 0.004 + 0.045 * Math.clamp((temperature - COOLING_FROM) / (NORMAL - COOLING_FROM), 0, 1);
+		return 0.004 + 0.045 * SimMath.clamp((temperature - COOLING_FROM) / (NORMAL - COOLING_FROM), 0, 1);
 	}
 
 	/** A starter that warms cold engines is cranking, or has just stopped: that share of the cold is not felt. */
 	public void setCrankAssist(double assist) {
-		crankAssist = Math.clamp(assist, 0, 1);
+		crankAssist = SimMath.clamp(assist, 0, 1);
 	}
 
 	public double crankAssist() {
@@ -120,7 +120,7 @@ public final class Thermal {
 
 	/** Heat level of a heat source touching the engine, {@link HeatRecovery#NONE} to {@link HeatRecovery#SEETHE}. */
 	public void setPreheat(int level) {
-		preheat = PREHEAT[Math.clamp(level, 0, PREHEAT.length - 1)];
+		preheat = PREHEAT[SimMath.clamp(level, 0, PREHEAT.length - 1)];
 	}
 
 	/** Heat per cylinder per second an outside source is putting in now. */
@@ -158,7 +158,7 @@ public final class Thermal {
 	 */
 	public void update(double exhaustHeat, int cylinders, double dt, CoolantSupply coolant) {
 		int n = Math.max(1, cylinders);
-		double light = Math.clamp(1 - exhaustHeat / (n * FULL_LOAD_HEAT), 0, 1);
+		double light = SimMath.clamp(1 - exhaustHeat / (n * FULL_LOAD_HEAT), 0, 1);
 		double in = exhaustHeat * HEAT_SHARE * (1 + WARMUP_ASSIST * cold() * light) + preheat * n;
 		double out = PASSIVE * n * temperature * temperature;
 		coolantRate = 0;
@@ -179,7 +179,7 @@ public final class Thermal {
 
 	/** How cold the engine is, 0 (warm) to 1 (as cold as it gets). */
 	public double cold() {
-		return Tuning.engineTemperature ? Math.clamp((COLD_BELOW - temperature) / COLD_BELOW, 0, 1) : 0;
+		return Tuning.engineTemperature ? SimMath.clamp((COLD_BELOW - temperature) / COLD_BELOW, 0, 1) : 0;
 	}
 
 	/** How cold the engine behaves: {@link #cold()}, less whatever a starter is choking out of it. */
@@ -194,8 +194,8 @@ public final class Thermal {
 	public double cool() {
 		if (!Tuning.engineTemperature)
 			return 0;
-		double cooled = Math.clamp((COOL_NONE - temperature) / (COOL_NONE - COOL_FULL), 0, 1);
-		double warmed = Math.clamp((temperature - COLD_BELOW) / (THERMOSTAT - COLD_BELOW), 0, 1);
+		double cooled = SimMath.clamp((COOL_NONE - temperature) / (COOL_NONE - COOL_FULL), 0, 1);
+		double warmed = SimMath.clamp((temperature - COLD_BELOW) / (THERMOSTAT - COLD_BELOW), 0, 1);
 		return cooled * warmed;
 	}
 

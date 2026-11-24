@@ -71,7 +71,7 @@ public final class Torsion {
 
 	/** What the server's scaling makes of a loss: 0 turns flex off, 2 doubles it. */
 	public static double scaled(double loss) {
-		return Math.clamp(loss * Tuning.torsionalFlex, 0, ABSOLUTE_MAX_LOSS);
+		return SimMath.clamp(loss * Tuning.torsionalFlex, 0, ABSOLUTE_MAX_LOSS);
 	}
 
 	/** The share of the rating left once a crank's flex has taken its share, 1 for a stiff one. */

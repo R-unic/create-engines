@@ -61,10 +61,11 @@ public final class MeteringFollow {
 
 	/** The metering dial of the head or rotor housing at {@code pos}, or null if the block is neither. */
 	public static ScrollValueBehaviour dial(Level level, BlockPos pos) {
-		return switch (LoadedBlocks.blockEntity(level, pos)) {
-			case CylinderHeadBlockEntity head -> head.metering;
-			case RotorHousingBlockEntity housing -> housing.metering;
-			case null, default -> null;
-		};
+		Object be = LoadedBlocks.blockEntity(level, pos);
+		if (be instanceof CylinderHeadBlockEntity head)
+			return head.metering;
+		if (be instanceof RotorHousingBlockEntity housing)
+			return housing.metering;
+		return null;
 	}
 }

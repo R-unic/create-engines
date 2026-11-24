@@ -52,11 +52,11 @@ public final class Lubrication {
 	}
 
 	public void setGrade(double grade) {
-		this.grade = Math.clamp(grade, 0.1, 1);
+		this.grade = SimMath.clamp(grade, 0.1, 1);
 	}
 
 	public Lubrication(double film) {
-		this.film = Math.clamp(film, 0, 1);
+		this.film = SimMath.clamp(film, 0, 1);
 	}
 
 	/** Oil film from 0 (dry) to 1 (fully filmed), before fuel thins it. */
@@ -65,7 +65,7 @@ public final class Lubrication {
 	}
 
 	public void setFilm(double film) {
-		this.film = Math.clamp(film, 0, 1);
+		this.film = SimMath.clamp(film, 0, 1);
 	}
 
 	/** How much of the oil's strength unburned fuel has taken, 0 to {@link #MAX_DILUTION}. */
@@ -74,7 +74,7 @@ public final class Lubrication {
 	}
 
 	public void setDilution(double dilution) {
-		this.dilution = Math.clamp(dilution, 0, MAX_DILUTION);
+		this.dilution = SimMath.clamp(dilution, 0, MAX_DILUTION);
 	}
 
 	/** Unburned fuel washing the film off the cylinder walls and into the oil. */
@@ -93,7 +93,7 @@ public final class Lubrication {
 	}
 
 	public void setCondition(double condition) {
-		this.condition = Math.clamp(condition, 0, 1);
+		this.condition = SimMath.clamp(condition, 0, 1);
 	}
 
 	/**

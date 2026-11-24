@@ -906,12 +906,7 @@ public final class EngineController {
 		// Each head gets its own figure here, so the all-heads setting must not copy one head's to the rest
 		com.createengines.content.head.MeteringFollow.withoutFollow(() -> {
 		for (Map.Entry<BlockPos, double[]> entry : readings.entrySet()) {
-			ScrollValueBehaviour metering =
-				switch (LoadedBlocks.blockEntity(level, entry.getKey())) {
-					case CylinderHeadBlockEntity head -> head.metering;
-					case RotorHousingBlockEntity housing -> housing.metering;
-					case null, default -> null;
-				};
+			ScrollValueBehaviour metering = com.createengines.content.head.MeteringFollow.dial(level, entry.getKey());
 			if (metering == null)
 				continue;
 			double mixture = entry.getValue()[0] / entry.getValue()[1];

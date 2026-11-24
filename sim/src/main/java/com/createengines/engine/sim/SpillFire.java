@@ -24,7 +24,7 @@ public final class SpillFire {
 
 	/** Ticks before a block that touched a flame, or a burning neighbour, tries to catch: shorter for a more flammable fuel. */
 	public static int delay(double flammability) {
-		return (int) Math.clamp(Math.round(BASE_DELAY / usable(flammability)), MIN_DELAY, MAX_DELAY);
+		return (int) SimMath.clamp(Math.round(BASE_DELAY / usable(flammability)), MIN_DELAY, MAX_DELAY);
 	}
 
 	/** The chance each try catches: 1 for a fuel that is ordinary or more flammable, less for a hard-to-light one. */

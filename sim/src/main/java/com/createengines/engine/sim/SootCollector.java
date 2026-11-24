@@ -44,7 +44,7 @@ public final class SootCollector {
 	public static double share(double total, int runHeads, int totalHeads, float catchShare, int traps) {
 		if (!(total > 0) || !Double.isFinite(total) || runHeads <= 0 || totalHeads <= 0 || traps <= 0)
 			return 0;
-		double share = total * Math.min(1.0, (double) runHeads / totalHeads) * Math.clamp(catchShare, 0f, 1f) / traps;
+		double share = total * Math.min(1.0, (double) runHeads / totalHeads) * SimMath.clamp(catchShare, 0f, 1f) / traps;
 		return Double.isFinite(share) ? share : 0;
 	}
 
@@ -93,15 +93,15 @@ public final class SootCollector {
 
 	/** Takes up to {@code max} lumps out; returns how many came out. */
 	public int take(int max) {
-		int taken = Math.clamp(max, 0, stored);
+		int taken = SimMath.clamp(max, 0, stored);
 		stored -= taken;
 		return taken;
 	}
 
 	/** Restores what a save held, clamped so a damaged save cannot overfill or poison the trap. */
 	public void restore(int storedLumps, double gathered) {
-		stored = Math.clamp(storedLumps, 0, CAPACITY);
-		progress = Double.isFinite(gathered) ? Math.clamp(gathered, 0, MB_PER_SOOT) : 0;
+		stored = SimMath.clamp(storedLumps, 0, CAPACITY);
+		progress = Double.isFinite(gathered) ? SimMath.clamp(gathered, 0, MB_PER_SOOT) : 0;
 		if (full())
 			progress = 0;
 	}

@@ -25,15 +25,21 @@ import org.junit.jupiter.api.Test;
 class ScriptAndDataSurfaceTest {
 
 	private static final Path ROOT = Path.of("src/main/java/com/createengines");
+	/** The simulation lives in its own module (sim/), so its files are read from there. */
+	private static final Path SIM_ROOT = Path.of("sim/src/main/java/com/createengines");
+
+	private static Path source(String relative) {
+		return relative.startsWith("engine/sim/") ? SIM_ROOT.resolve(relative) : ROOT.resolve(relative);
+	}
 	private static final Path FILE = Path.of("src/test/resources/compat/script-surface.txt");
 
 	private static String read(String relative) throws IOException {
-		return ApiSurfaceTest.clean(Files.readString(ROOT.resolve(relative)));
+		return ApiSurfaceTest.clean(Files.readString(source(relative)));
 	}
 
 	/** Source without comments, but with string contents (the data map keys are strings). */
 	private static String readKeepingStrings(String relative) throws IOException {
-		return Files.readString(ROOT.resolve(relative))
+		return Files.readString(source(relative))
 			.replaceAll("(?s)/\\*.*?\\*/", " ")
 			.replaceAll("//[^\\n]*", " ");
 	}

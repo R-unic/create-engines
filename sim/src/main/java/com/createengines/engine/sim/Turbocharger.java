@@ -74,7 +74,7 @@ public final class Turbocharger {
 	public static int limitPercent(double boost, double limit) {
 		if (!(limit > 0))
 			return 0;
-		return (int) Math.round(Math.clamp(boost / limit, 0, 1) * 100);
+		return (int) Math.round(SimMath.clamp(boost / limit, 0, 1) * 100);
 	}
 
 	private final List<Breather> turbine;

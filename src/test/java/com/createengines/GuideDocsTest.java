@@ -88,8 +88,8 @@ class GuideDocsTest {
 				missing.add(m.group(1) + "." + m.group(2));
 		}
 		Matcher keys = Pattern.compile("Set\\.of\\(([^;]*?)\\);", Pattern.DOTALL)
-			.matcher(text(Path.of("src/main/java/com/createengines/engine/sim/PartEffects.java")).substring(
-				text(Path.of("src/main/java/com/createengines/engine/sim/PartEffects.java")).indexOf("KEYS")));
+			.matcher(text(Path.of("sim/src/main/java/com/createengines/engine/sim/PartEffects.java")).substring(
+				text(Path.of("sim/src/main/java/com/createengines/engine/sim/PartEffects.java")).indexOf("KEYS")));
 		assertTrue(keys.find(), "PartEffects.KEYS not found");
 		Matcher key = Pattern.compile("\"(\\w+)\"")
 			.matcher(keys.group(1));
@@ -102,8 +102,8 @@ class GuideDocsTest {
 		assertEquals(8, count, "the scan of the part effect keys read " + count);
 		// The cam profile files' keys, and the data map an addon's own part names its effect file by
 		Matcher camKeys = Pattern.compile("Set\\.of\\(([^;]*?)\\);", Pattern.DOTALL)
-			.matcher(text(Path.of("src/main/java/com/createengines/engine/sim/CamProfiles.java")).substring(
-				text(Path.of("src/main/java/com/createengines/engine/sim/CamProfiles.java")).indexOf("KEYS")));
+			.matcher(text(Path.of("sim/src/main/java/com/createengines/engine/sim/CamProfiles.java")).substring(
+				text(Path.of("sim/src/main/java/com/createengines/engine/sim/CamProfiles.java")).indexOf("KEYS")));
 		assertTrue(camKeys.find(), "CamProfiles.KEYS not found");
 		Matcher camKey = Pattern.compile("\"(\\w+)\"")
 			.matcher(camKeys.group(1));

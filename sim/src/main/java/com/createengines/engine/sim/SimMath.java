@@ -7,6 +7,48 @@ final class SimMath {
 	private SimMath() {
 	}
 
+	/*
+	 * The four overloads of Math.clamp (Java 21), kept here so the simulation compiles on Java 17, which 1.20.1 needs.
+	 * They are the JDK's own definitions, so every result, including NaN and signed zero, is bit-identical; SimMathTest
+	 * compares them with Math.clamp.
+	 */
+
+	static int clamp(long value, int min, int max) {
+		if (min > max)
+			throw new IllegalArgumentException(min + " > " + max);
+		return (int) Math.min(max, Math.max(value, min));
+	}
+
+	static long clamp(long value, long min, long max) {
+		if (min > max)
+			throw new IllegalArgumentException(min + " > " + max);
+		return Math.min(max, Math.max(value, min));
+	}
+
+	static double clamp(double value, double min, double max) {
+		if (!(min < max)) {
+			if (Double.isNaN(min))
+				throw new IllegalArgumentException("min is NaN");
+			if (Double.isNaN(max))
+				throw new IllegalArgumentException("max is NaN");
+			if (Double.compare(min, max) > 0)
+				throw new IllegalArgumentException(min + " > " + max);
+		}
+		return Math.min(max, Math.max(value, min));
+	}
+
+	static float clamp(float value, float min, float max) {
+		if (!(min < max)) {
+			if (Float.isNaN(min))
+				throw new IllegalArgumentException("min is NaN");
+			if (Float.isNaN(max))
+				throw new IllegalArgumentException("max is NaN");
+			if (Float.compare(min, max) > 0)
+				throw new IllegalArgumentException(min + " > " + max);
+		}
+		return Math.min(max, Math.max(value, min));
+	}
+
 	/** Wraps an angle into [0, 720). */
 	static double wrap(double cycleDegrees) {
 		return wrap(cycleDegrees, CYCLE);

@@ -103,4 +103,34 @@ class SimMathTest {
 			assertEquals(1, crossings, "mark " + mark);
 		}
 	}
+
+	@Test
+	void clampMatchesTheJdkBitForBit() {
+		double[] ds = {Double.NaN, Double.NEGATIVE_INFINITY, -2.5, -0.0, 0.0, 0.3, 1, 7.25, Double.POSITIVE_INFINITY};
+		for (double v : ds)
+			for (double lo : new double[] {-1, -0.0, 0.0, 0.1})
+				for (double hi : new double[] {0.0, 0.1, 1, 10}) {
+					if (lo > hi)
+						continue;
+					assertEquals(Double.doubleToRawLongBits(Math.clamp(v, lo, hi)),
+							Double.doubleToRawLongBits(SimMath.clamp(v, lo, hi)));
+					assertEquals(Float.floatToRawIntBits(Math.clamp((float) v, (float) lo, (float) hi)),
+							Float.floatToRawIntBits(SimMath.clamp((float) v, (float) lo, (float) hi)));
+				}
+		for (long v : new long[] {Long.MIN_VALUE, -5, 0, 3, 99, Long.MAX_VALUE})
+			for (int lo : new int[] {-4, 0, 2})
+				for (int hi : new int[] {2, 15, Integer.MAX_VALUE}) {
+					assertEquals(Math.clamp(v, lo, hi), SimMath.clamp(v, lo, hi));
+					assertEquals(Math.clamp(v, (long) lo, (long) hi), SimMath.clamp(v, (long) lo, (long) hi));
+				}
+	}
+
+	@Test
+	void clampRefusesBackwardsAndNaNBounds() {
+		org.junit.jupiter.api.Assertions.assertThrows(IllegalArgumentException.class, () -> SimMath.clamp(1.0, 2.0, 1.0));
+		org.junit.jupiter.api.Assertions.assertThrows(IllegalArgumentException.class, () -> SimMath.clamp(1.0, Double.NaN, 1.0));
+		org.junit.jupiter.api.Assertions.assertThrows(IllegalArgumentException.class, () -> SimMath.clamp(1, 3, 2));
+		org.junit.jupiter.api.Assertions.assertThrows(IllegalArgumentException.class, () -> SimMath.clamp(1L, 3L, 2L));
+		org.junit.jupiter.api.Assertions.assertThrows(IllegalArgumentException.class, () -> SimMath.clamp(1f, 2f, 1f));
+	}
 }

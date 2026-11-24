@@ -25,7 +25,7 @@ public final class SpringPack {
 
 	/** A setting held to the dial's range. */
 	public static int clamp(int setting) {
-		return Math.clamp(setting, MIN_SETTING, MAX_SETTING);
+		return SimMath.clamp(setting, MIN_SETTING, MAX_SETTING);
 	}
 
 	/** Where a setting sits from the softest, -1, through the middle, 0, to the stiffest, 1. */
