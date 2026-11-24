@@ -29,6 +29,8 @@ import com.createengines.content.camshaft.CamshaftBlockEntity;
 import com.createengines.content.crankshaft.CrankshaftBlock;
 import com.createengines.content.crankshaft.CrankshaftBlockEntity;
 import com.createengines.content.flywheel.CastFlywheelBlock;
+import com.createengines.content.flywheel.DataFlywheelBlock;
+import com.createengines.content.flywheel.DualMassFlywheelBlock;
 import com.createengines.content.cylinder.CylinderBlock;
 import com.createengines.content.head.CylinderHeadBlock;
 import com.createengines.content.governor.GovernorBlock;
@@ -71,6 +73,8 @@ public final class EngineScanner {
 
 	private final Level level;
 	private final Set<BlockPos> members = new LinkedHashSet<>();
+	/** Flywheels on the crank lines' shafts: alternators touching one belong to the engine too. */
+	private final Set<BlockPos> flywheelBlocks = new LinkedHashSet<>();
 	private final List<PortNetwork> ports = new ArrayList<>();
 	/** Known port networks by a member's position; a turbocharger is in one of each kind, so the kinds are kept apart. */
 	private final Map<PortKind, Map<BlockPos, Integer>> portIndex = new EnumMap<>(PortKind.class);
@@ -110,6 +114,10 @@ public final class EngineScanner {
 		final List<Segment> segments = new ArrayList<>();
 		/** Rotational inertia of the flywheels on this line's shaft. */
 		double flywheelInertia;
+		/** Secondary masses of the dual-mass flywheels on this line's shaft. */
+		double isolatedInertia;
+		/** The same masses, each times the factor its spring-pack dial gives its resonance. */
+		double isolatedResonance;
 		int sense;
 
 		Line(Axis axis, BlockPos start, int sense) {
@@ -154,7 +162,11 @@ public final class EngineScanner {
 			members.add(cursor.immutable());
 			cursor = cursor.relative(forward);
 		}
-		line.flywheelInertia = flywheelInertia(start.relative(back), back, axis) + flywheelInertia(cursor, forward, axis);
+		double[] behind = flywheelInertia(start.relative(back), back, axis);
+		double[] ahead = flywheelInertia(cursor, forward, axis);
+		line.flywheelInertia = behind[0] + ahead[0];
+		line.isolatedInertia = behind[1] + ahead[1];
+		line.isolatedResonance = behind[2] + ahead[2];
 		return line;
 	}
 
@@ -198,16 +210,29 @@ public final class EngineScanner {
 		int base = lines.getFirst().sense;
 		List<Segment> segments = new ArrayList<>();
 		double flywheelInertia = 0;
+		double isolatedInertia = 0;
+		double isolatedResonance = 0;
 		for (Line line : lines) {
 			line.relativeTo(base);
 			segments.addAll(line.segments);
 			flywheelInertia += line.flywheelInertia;
+			isolatedInertia += line.isolatedInertia;
+			isolatedResonance += line.isolatedResonance;
 		}
+		// With every dial at its middle setting the two sums are the same numbers, so the factor is exactly 1
+		double resonanceFactor = isolatedInertia > 0 ? isolatedResonance / isolatedInertia : 1;
 
 		Set<BlockPos> batteries = new LinkedHashSet<>();
 		Set<BlockPos> alternators = new LinkedHashSet<>();
 		for (Segment segment : segments)
 			addElectricsAround(segment.pos(), batteries, alternators);
+		// A flywheel is part of the engine's shaft, so an alternator on its far side charges from it too
+		for (BlockPos flywheel : flywheelBlocks)
+			for (Direction direction : Direction.values()) {
+				BlockPos neighbour = flywheel.relative(direction);
+				if (state(neighbour).getBlock() instanceof AlternatorBlock && alternators.add(neighbour.immutable()))
+					members.add(neighbour.immutable());
+			}
 
 		List<CylinderDraft> drafts = new ArrayList<>();
 		List<BlockPos> starters = new ArrayList<>();
@@ -262,7 +287,7 @@ public final class EngineScanner {
 		return new EngineLayout(first.start, first.axis, List.copyOf(segments), List.copyOf(cylinders),
 			List.copyOf(ports), List.copyOf(camLines), List.copyOf(starters), List.copyOf(batteries),
 			List.copyOf(alternators), List.copyOf(sumps), List.copyOf(governors), List.copyOf(heads),
-			turbos(), inlines(true), inlines(false), flywheelInertia, lines.size(), Set.copyOf(members), portCells(), incomplete, brokenCrank);
+			turbos(), inlines(true), inlines(false), flywheelInertia, isolatedInertia, resonanceFactor, lines.size(), Set.copyOf(members), portCells(), incomplete, brokenCrank);
 	}
 
 	/** Every pipe and opening of every port network found, by the network's index. */
@@ -338,9 +363,15 @@ public final class EngineScanner {
 		}
 	}
 
-	/** The inertia of the flywheels on the shaft running on from {@code from} in {@code direction}, beyond a crank line's end. */
-	private double flywheelInertia(BlockPos from, Direction direction, Axis axis) {
+	/**
+	 * The inertia of the flywheels on the shaft running on from {@code from} in {@code direction}, beyond a crank line's
+	 * end: what joins the crank's own, and what a dual-mass flywheel adds behind its spring pack (see {@code DualMass}).
+	 */
+	private double[] flywheelInertia(BlockPos from, Direction direction, Axis axis) {
 		double inertia = 0;
+		double isolated = 0;
+		// The secondary masses again, each weighted by how far its dial moves its resonance, so the engine has one resonance
+		double resonant = 0;
 		BlockPos cursor = from;
 		for (int i = 0; i < MAX_SHAFT_WALK; i++) {
 			BlockState state = state(cursor);
@@ -348,7 +379,21 @@ public final class EngineScanner {
 				&& state.getValue(BlockStateProperties.AXIS) == axis;
 			if (onAxis && AllBlocks.FLYWHEEL.has(state))
 				inertia += CEConfig.FLYWHEEL_INERTIA.get();
-			else if (onAxis && state.getBlock() instanceof CastFlywheelBlock)
+			else if (onAxis && state.getBlock() instanceof DualMassFlywheelBlock) {
+				// The spring-pack dial scales the secondary mass and where it resonates; its middle setting scales by exactly 1
+				int setting = level.getBlockEntity(cursor) instanceof com.createengines.content.flywheel.CastFlywheelBlockEntity be
+					? be.springPackSetting() : com.createengines.engine.sim.SpringPack.DEFAULT_SETTING;
+				double secondary = CEConfig.DUAL_MASS_SECONDARY_INERTIA.get() * com.createengines.engine.sim.SpringPack.massFactor(setting);
+				inertia += CEConfig.DUAL_MASS_PRIMARY_INERTIA.get();
+				isolated += secondary;
+				resonant += secondary * com.createengines.engine.sim.SpringPack.resonanceFactor(setting);
+			} else if (onAxis && state.getBlock() instanceof DataFlywheelBlock own) {
+				// A flywheel of a pack's or an addon's own: the masses its data map entry names, none if it names none
+				com.createengines.engine.FlywheelSpec spec = com.createengines.registry.CEDataMaps.flywheel(own);
+				inertia += spec.primaryInertia();
+				isolated += spec.secondaryInertia();
+				resonant += spec.secondaryInertia();
+			} else if (onAxis && state.getBlock() instanceof CastFlywheelBlock)
 				inertia += CEConfig.CAST_FLYWHEEL_INERTIA.get();
 			else if (i > 0 && isCrank(state, axis)) {
 				// A shaft in the middle of the crankshaft: the blocks either side of it are not one line
@@ -356,10 +401,12 @@ public final class EngineScanner {
 				break;
 			} else if (!onAxis || !AllBlocks.SHAFT.has(state))
 				break;
+			if (!AllBlocks.SHAFT.has(state))
+				flywheelBlocks.add(cursor.immutable());
 			members.add(cursor.immutable());
 			cursor = cursor.relative(direction);
 		}
-		return inertia;
+		return new double[] {inertia, isolated, resonant};
 	}
 
 	private final class CylinderDraft {

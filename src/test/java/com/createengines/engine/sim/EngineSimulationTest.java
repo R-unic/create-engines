@@ -123,6 +123,28 @@ class EngineSimulationTest {
 	}
 
 	@Test
+	void speedHeldUpByTheStarterIsNotTheEnginesOwn() {
+		// A drive at 256 RPM spins the crank that fast whatever the engine could do, so milestones must not read that speed
+		double held = EngineSimulation.rpmToOmega(256);
+		EngineSimulation heldUp = engine(FLYWHEEL_INERTIA, single(new Tank(1000)));
+		for (int i = 0; i < 200; i++)
+			heldUp.tickCranked(50, MAX_OMEGA, held, 1);
+		assertTrue(heldUp.rpm() >= 255, "the clutch holds the crank at the drive's speed, got " + heldUp.rpm());
+		assertTrue(heldUp.crankingTorque() > 0, "a loaded engine is being dragged to that speed");
+		assertEquals(0, heldUp.ownRpm(), 1e-9);
+
+		EngineSimulation dead = engine(FLYWHEEL_INERTIA, single(new Tank(0)));
+		for (int i = 0; i < 200; i++)
+			dead.tickCranked(0, MAX_OMEGA, held, 1);
+		assertEquals(0, dead.ownRpm(), 1e-9);
+
+		EngineSimulation live = engine(FLYWHEEL_INERTIA, single(new Tank(1000)));
+		crank(live, 20);
+		assertEquals(live.rpm(), live.ownRpm(), 1e-9, "an engine that outruns its starter reports its own speed");
+		assertTrue(live.ownRpm() > CRANK_RPM);
+	}
+
+	@Test
 	void eitherCamRevolutionWorks() {
 		EngineSimulation engine = engine(0, cylinder(0, 1, new Camshaft(), new Tank(1000)));
 		crank(engine, 10);

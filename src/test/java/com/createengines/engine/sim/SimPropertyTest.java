@@ -63,6 +63,41 @@ class SimPropertyTest {
 		}
 	}
 
+	/**
+	 * A dual-mass flywheel's secondary mass only ever lowers the ripple the network sees, never below that of the whole
+	 * mass as a plain flywheel, and it leaves the crank itself (its speed and inertia) exactly as it was.
+	 */
+	@Test
+	void aSecondaryMassOnlyEverMovesTheRippleBetweenPlainAndWholeMass() {
+		for (int seed = 0; seed < 60; seed++) {
+			Tuning.reset();
+			SimStressTest.Rig plain = new SimStressTest.Rig(seed);
+			Tuning.reset();
+			SimStressTest.Rig dual = new SimStressTest.Rig(seed);
+			// Not the rigs' own generator, which feeds their fuel supplies and must stay in step
+			Random draw = new Random(seed * 31L + 7);
+			double secondary = draw.nextDouble() * 6;
+			double resonance = 1 + draw.nextDouble() * 200;
+			double rpm = 8 + draw.nextDouble() * 248;
+			dual.engine.setIsolatedMass(secondary, resonance);
+			for (SimStressTest.Rig rig : List.of(plain, dual)) {
+				rig.engine.trackSwing();
+				rig.engine.restore(0, 0, 1);
+				for (int t = 0; t < 200; t++)
+					rig.engine.tickDriven(EngineSimulation.rpmToOmega(rpm), 1);
+			}
+			double before = plain.engine.predictedRipple();
+			double after = dual.engine.predictedRipple();
+			assertTrue(Double.isFinite(after) && after >= 0, "seed " + seed + ": " + after);
+			assertTrue(after <= before + 1e-12, "seed " + seed + ": " + after + " above " + before);
+			double whole = before * plain.engine.inertia() / (plain.engine.inertia() + secondary);
+			assertTrue(after >= whole - 1e-12, "seed " + seed + ": " + after + " below the whole mass " + whole);
+			assertEquals(plain.engine.inertia(), dual.engine.inertia(), 0, "seed " + seed);
+			assertEquals(Double.doubleToLongBits(plain.engine.omega()), Double.doubleToLongBits(dual.engine.omega()),
+				"seed " + seed + " crank speed");
+		}
+	}
+
 	/** An engine with nothing to burn never makes power on its own, whatever else it is. */
 	@Test
 	void anEngineWithNoFuelNeverSustainsItself() {

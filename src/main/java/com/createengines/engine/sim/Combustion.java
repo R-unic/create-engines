@@ -198,7 +198,12 @@ final class Combustion {
 			if (owner.ported() || timeSinceInjection < owner.spec.ignitionDelay())
 				return;
 			boolean piloted = false;
-			if (charge.temperature < burningFuel.autoignitionTemp()) {
+			// A spark fuel in an engine with no plug is lit by a pilot shot or not at all, however hot boost has made the
+			// charge: a plug-fitted engine's charge past the autoignition point is pre-ignition, which costs power but is
+			// still the plug's burn
+			boolean selfLit = charge.temperature >= burningFuel.autoignitionTemp()
+				&& (owner.ignition.installed() || !burningFuel.needsSpark());
+			if (!selfLit) {
 				if (!pilotLights())
 					return;
 				piloted = true;

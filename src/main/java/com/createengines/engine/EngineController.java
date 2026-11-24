@@ -48,6 +48,7 @@ import com.createengines.engine.sim.CylinderModel;
 import com.createengines.engine.sim.CylinderSpec;
 import com.createengines.engine.sim.Dynamometer;
 import com.createengines.engine.sim.EngineSimulation;
+import com.createengines.engine.sim.DualMass;
 import com.createengines.engine.sim.StatusLine;
 import com.createengines.engine.sim.TorqueSource;
 import com.createengines.engine.sim.FuelSpec;
@@ -317,6 +318,7 @@ public final class EngineController {
 		double friction = idleStatic + layout.segments()
 			.size() * CEConfig.BEARING_FRICTION.get();
 		sim = new EngineSimulation(working, inertia, friction, idleViscous);
+		sim.setIsolatedMass(layout.isolatedInertia(), CEConfig.DUAL_MASS_RESONANCE.get() * layout.isolatedResonanceFactor());
 		// What packs and addons drive the crank with besides cylinders, and the networks any of it breathes from
 		List<EngineProviders.Provided> provided = EngineProviders.sourcesFor(level, layout);
 		int[] providedIntake = new int[provided.size()];
@@ -692,6 +694,10 @@ public final class EngineController {
 			syncDiagnostics(level, torqueScale);
 	}
 
+	private double ownRpm() {
+		return sim.ownRpm();
+	}
+
 	/** How much of the engine's cold a starter is choking out of it now, 0 to 1. */
 	public double crankAssist() {
 		return sim.thermal()
@@ -869,7 +875,9 @@ public final class EngineController {
 			sum[0] += last.equivalence;
 			sum[1]++;
 		}
-		int tuned = 0;
+		int[] tunedCount = {0};
+		// Each head gets its own figure here, so the all-heads setting must not copy one head's to the rest
+		com.createengines.content.head.MeteringFollow.withoutFollow(() -> {
 		for (Map.Entry<BlockPos, double[]> entry : readings.entrySet()) {
 			ScrollValueBehaviour metering =
 				switch (LoadedBlocks.blockEntity(level, entry.getKey())) {
@@ -883,9 +891,44 @@ public final class EngineController {
 			int steps = (int) Math.round(Math.max(1, metering.getValue()) * TUNE_MIXTURE / mixture);
 			metering.setValue(Math.clamp(steps, CylinderHeadBlockEntity.MIN_METERING,
 				CylinderHeadBlockEntity.MAX_METERING));
-			tuned++;
+			tunedCount[0]++;
 		}
+		});
+		int tuned = tunedCount[0];
 		return new Tuning(tuned, skipped + readings.size() - tuned, (int) Math.round(sim.rpm()));
+	}
+
+	/**
+	 * Sets the metering of every injector of this engine except the one at {@code source} to {@code value} (the
+	 * {@code features.meterAllHeads} setting, see {@code MeteringFollow}). A head whose shot is held by a MAF sensor or a closed
+	 * rack is left alone, as in {@link #tuneFuel}. Returns how many heads were set.
+	 */
+	public int setAllMetering(Level level, BlockPos source, int value) {
+		int clamped = Math.clamp(value, CylinderHeadBlockEntity.MIN_METERING, CylinderHeadBlockEntity.MAX_METERING);
+		java.util.Set<BlockPos> held = new java.util.HashSet<>();
+		java.util.Set<BlockPos> heads = new java.util.LinkedHashSet<>();
+		for (int i = 0; i < models.size(); i++) {
+			BlockPos head = layout.cylinders()
+				.get(i)
+				.head();
+			if (head == null)
+				continue;
+			heads.add(head);
+			CylinderModel model = models.get(i);
+			if (model != null && (model.airMatch > 0 || model.rack < 0.99))
+				held.add(head);
+		}
+		int set = 0;
+		for (BlockPos head : heads) {
+			if (head.equals(source) || held.contains(head))
+				continue;
+			ScrollValueBehaviour metering = com.createengines.content.head.MeteringFollow.dial(level, head);
+			if (metering == null || metering.getValue() == clamped)
+				continue;
+			metering.setValue(clamped);
+			set++;
+		}
+		return set;
 	}
 
 	/**
@@ -1051,13 +1094,15 @@ public final class EngineController {
 	/**
 	 * Whether anything but engines is driving this crank's network. Two engines on one network each see the other's output
 	 * as a drive, and if each held the crank at that speed they would keep one another turning with no fuel at all, and
-	 * never stop. Only a source that is not a crankshaft (a motor, a wheel, a hand crank) is a drive.
+	 * never stop. Only a source that is not a crankshaft (a motor, a wheel, a hand crank) is a drive, and only while it is
+	 * actually turning: Create leaves a hand crank whose turn has run out in the network's sources with no capacity, and
+	 * counting it held a coasting engine at its own speed, "cranking" for ever, until the crank was broken.
 	 */
 	private boolean drivenFromOutside() {
 		if (!primary.hasNetwork())
 			return false;
 		for (KineticBlockEntity source : primary.getOrCreateNetwork().sources.keySet())
-			if (!(source instanceof CrankshaftBlockEntity))
+			if (!(source instanceof CrankshaftBlockEntity) && source.getGeneratedSpeed() != 0)
 				return true;
 		return false;
 	}
@@ -1311,9 +1356,18 @@ public final class EngineController {
 		List<TorqueSource> all = sim.sources();
 		int first = sim.cylinders()
 			.size();
-		if (all.size() == first)
-			return List.of();
+		StatusLine flywheel = flywheelLine();
+		StatusLine dualMass = dualMassLine();
+		if (all.size() == first) {
+			if (flywheel == null)
+				return dualMass == null ? List.of() : List.of(dualMass);
+			return dualMass == null ? List.of(flywheel) : List.of(flywheel, dualMass);
+		}
 		List<StatusLine> lines = new ArrayList<>();
+		if (flywheel != null)
+			lines.add(flywheel);
+		if (dualMass != null)
+			lines.add(dualMass);
 		for (int i = first; i < all.size() && lines.size() < StatusLine.LIMIT; i++) {
 			try {
 				List<StatusLine> given = all.get(i)
@@ -1328,6 +1382,50 @@ public final class EngineController {
 			}
 		}
 		return List.copyOf(lines);
+	}
+
+	/**
+	 * What the flywheels on the line are worth to this engine now: the speed ripple it has and what it would have without
+	 * their mass, and the share of the rating that difference keeps. Information only, so choosing between a Cast and a
+	 * Dual-Mass Flywheel is a reading: nothing it says feeds back. A ripple scales as one over the inertia, so the bare
+	 * crank's ripple is the live one times the whole inertia over the crank's own. Null with no flywheel or at a stand.
+	 * Whole percentages, so a drifting speed does not make the readout sync every tick.
+	 */
+	private @Nullable StatusLine flywheelLine() {
+		double mass = layout.flywheelInertia();
+		double inertia = sim.inertia();
+		double bare = inertia - mass;
+		double ripple = sim.ripple();
+		if (!(mass > 0) || !(bare > 0) || !(ripple > 0) || sim.isStopped())
+			return null;
+		double without = ripple * inertia / bare;
+		long with = Math.round(ripple * 100);
+		long bareRipple = Math.round(without * 100);
+		long kept = Math.round((Roughness.loss(without) - Roughness.loss(ripple)) * 100);
+		if (kept >= 1)
+			return StatusLine.of("create_engines.goggles.flywheel.keeps", StatusLine.Tone.GOOD, String.valueOf(with),
+				String.valueOf(bareRipple), String.valueOf(kept));
+		return StatusLine.of("create_engines.goggles.flywheel", StatusLine.Tone.NOTE, String.valueOf(with),
+			String.valueOf(bareRipple));
+	}
+
+	/**
+	 * What a dual-mass flywheel on the line is doing now: how much of its secondary mass is isolated at this speed, and the
+	 * ripple the network sees with it. Null with none. The live crank's own ripple is what it has with the primary mass
+	 * alone, so the secondary mass is that ripple's share of the inertia it adds to what the ripple sees. Rounded, so a
+	 * drifting speed does not make the readout sync every tick.
+	 */
+	private @Nullable StatusLine dualMassLine() {
+		double secondary = sim.isolatedInertia();
+		if (!(secondary > 0))
+			return null;
+		double rpm = sim.rpm();
+		double share = DualMass.isolation(rpm, sim.isolationResonanceRpm());
+		double seen = DualMass.effectiveInertia(sim.inertia(), secondary, rpm, sim.isolationResonanceRpm());
+		long isolating = Math.round(share * 10) * 10;
+		long ripple = Math.round(sim.ripple() * sim.inertia() / seen * 100);
+		return StatusLine.of("create_engines.goggles.dual_mass", isolating >= 50 ? StatusLine.Tone.GOOD : StatusLine.Tone.NOTE,
+			String.valueOf(isolating), String.valueOf(ripple));
 	}
 
 	/** The hardest any turbo or blower is pushing, for the roar at the intake. */
@@ -1705,7 +1803,7 @@ public final class EngineController {
 			boost = Math.max(boost, (float) turbo.boost());
 			dumping |= turbo.dump;
 		}
-		float rpm = (float) sim.rpm();
+		float rpm = (float) ownRpm();
 		reportInduction(level, state);
 		reportRotary(level, state);
 		reportRefining(level, state);
@@ -1845,7 +1943,7 @@ public final class EngineController {
 			}
 		}
 		award(level, EngineMilestones.reachedMechanics(new EngineMilestones.Mechanics(state == EngineState.RUNNING,
-			(float) sim.rpm(), layout.flywheelInertia(), roughness, vaneBoost, antiLagBoost, firing, vee, flat,
+			(float) ownRpm(), layout.flywheelInertia(), roughness, vaneBoost, antiLagBoost, firing, vee, flat,
 			ticks - dynoReadTick < 2 * SYNC_INTERVAL && rated && rating == null, sharedLobe)));
 	}
 
@@ -1889,7 +1987,7 @@ public final class EngineController {
 		wasRunning = running;
 		award(level, EngineMilestones.reachedWarmup(running, warmStart, hardStart, temperature));
 		award(level, EngineMilestones.reachedService(new EngineMilestones.Service(state == EngineState.RUNNING,
-			(float) sim.rpm(), exchanging, filtered, (float) sim.lubrication()
+			(float) ownRpm(), exchanging, filtered, (float) sim.lubrication()
 				.condition(),
 			(float) sim.thermal()
 				.temperature(),
@@ -1930,7 +2028,7 @@ public final class EngineController {
 				firing++;
 		}
 		award(level, EngineMilestones.reachedRotary(
-			new EngineMilestones.Rotary(state == EngineState.RUNNING, (float) sim.rpm(), firing)));
+			new EngineMilestones.Rotary(state == EngineState.RUNNING, (float) ownRpm(), firing)));
 	}
 
 	/** Whether the working cylinder at {@code index} fired on its last cycle. */

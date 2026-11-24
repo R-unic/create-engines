@@ -55,6 +55,9 @@ public final class EngineSimulation {
 	private boolean washesOil = true;
 	/** Measures how unevenly a driven engine turns the crank; see {@link #trackSwing()}. Null unless asked for. */
 	private SwingTracker swing;
+	/** Mass behind a dual-mass flywheel's spring pack, which smooths the ripple but not the crank; see {@link DualMass}. */
+	private double isolatedInertia;
+	private double isolationResonanceRpm;
 
 	/**
 	 * How a tick is cut into steps: the constants above in a live engine. A test sets finer ones through
@@ -223,6 +226,14 @@ public final class EngineSimulation {
 	/** Mean torque the cranking clutch supplied during the last tick (0 if the engine was outrunning it). */
 	public double crankingTorque() {
 		return crankingAngle > 0 ? crankingWork / crankingAngle : 0;
+	}
+
+	/**
+	 * Speed the engine is making under its own power, RPM, for milestones: 0 while the cranking clutch is putting work in to
+	 * hold the crank up to speed, since a starter or another source can spin an engine far faster than it could run itself.
+	 */
+	public double ownRpm() {
+		return crankingTorque() > 0 ? 0 : rpm();
 	}
 
 	/** Advances one tick with the crank held at exactly {@code drivenOmega}, like a dynamometer. */
@@ -613,6 +624,24 @@ public final class EngineSimulation {
 		return ripple;
 	}
 
+	/**
+	 * Fits the secondary mass of a dual-mass flywheel: {@code inertia} that counts toward {@link #predictedRipple()} but
+	 * not toward how fast the crank revs, by the share {@link DualMass#isolation} gives at the speed, for a spring pack
+	 * that resonates at {@code resonanceRpm}. Zero (the default) is a plain engine.
+	 */
+	public void setIsolatedMass(double inertia, double resonanceRpm) {
+		this.isolatedInertia = Double.isFinite(inertia) ? Math.max(0, inertia) : 0;
+		this.isolationResonanceRpm = resonanceRpm;
+	}
+
+	public double isolatedInertia() {
+		return isolatedInertia;
+	}
+
+	public double isolationResonanceRpm() {
+		return isolationResonanceRpm;
+	}
+
 	/** Starts measuring the energy swing of a driven engine, which {@link #predictedRipple()} turns into a speed ripple. */
 	public void trackSwing() {
 		if (swing == null)
@@ -622,13 +651,15 @@ public final class EngineSimulation {
 	/**
 	 * The speed ripple this engine would have if it were left to turn free at the speed it is being driven at: how far
 	 * the crank's energy swings over a cycle (power strokes in, compression and friction out), as a share of the energy
-	 * its inertia stores. A flywheel does not change the swing, only how much of it shows up as speed. Zero unless
+	 * its inertia stores. A flywheel does not change the swing, only how much of it shows up as speed; a dual-mass one adds its isolated secondary mass to the inertia the ripple sees. Zero unless
 	 * {@link #trackSwing()} was called and a whole cycle has been driven.
 	 */
 	public double predictedRipple() {
 		if (swing == null || swing.result() <= 0 || omega <= STALL_OMEGA)
 			return 0;
-		return swing.result() / (inertia * omega * omega);
+		// With no secondary mass this is the crank's own inertia exactly (a zero share of nothing is added)
+		double seen = DualMass.effectiveInertia(inertia, isolatedInertia, omegaToRpm(omega), isolationResonanceRpm);
+		return swing.result() / (seen * omega * omega);
 	}
 
 	/** Fuel injected per second over the last cycle, mB/s. */

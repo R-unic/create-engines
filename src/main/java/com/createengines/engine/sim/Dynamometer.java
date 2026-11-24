@@ -176,6 +176,7 @@ public final class Dynamometer {
 			new EngineSimulation(copies, engine.baseInertia(), engine.baseFriction(), engine.baseViscousFriction());
 		// The air is as thin up here for the rating as for the engine
 		dyno.setAmbientDensity(engine.ambientDensity());
+		dyno.setIsolatedMass(engine.isolatedInertia(), engine.isolationResonanceRpm());
 		// Turbos start at rest and build the boost this speed gives; the live engine's boost and dump don't carry over
 		for (Turbocharger turbo : engine.turbos())
 			dyno.addTurbo(turbo.copyOnto(copyOf));

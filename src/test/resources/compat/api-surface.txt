@@ -1,4 +1,4 @@
-# version 1.1.0
+# version 1.2.0
 # The frozen public API, as ApiSurfaceTest reads it from the source. Never edit a line: removing or changing one
 # is a major change. A new line is a minor change (bump ApiVersion.MINOR) and is added with API_REGEN=1.
 AbstractTorqueSource :: protected AbstractTorqueSource()
@@ -63,6 +63,7 @@ EngineView :: public record EngineView(EngineStatus status, float rpm, float ava
 PartBlocks :: public final class PartBlocks
 PartBlocks :: public static Block cylinder(BlockBehaviour.Properties properties)
 PartBlocks :: public static Block cylinderHead(BlockBehaviour.Properties properties)
+PartBlocks :: public static Block flywheel(BlockBehaviour.Properties properties)
 PartBlocks :: public static Optional<ResourceLocation> partEffect(Block block)
 PartBlocks :: public static void register(IEventBus modBus, Supplier<? extends Block> block)
 StatusLine :: public StatusLine

@@ -93,7 +93,8 @@ class FuelSpecTest {
 		assertEquals(0, FuelSpec.ETHANOL.sootFactor(), 0);
 		for (FuelSpec fuel : new FuelSpec[] {FuelSpec.PLANT_OIL, FuelSpec.DIESEL, FuelSpec.GASOLINE}) {
 			assertEquals(0, fuel.chargeCooling(), 0);
-			assertEquals(1, fuel.sootFactor(), 0);
+			// 2.1 (author-approved, Exception 2.9): plant oil is the dirty fuel, 1.3; diesel and gasoline are still 1
+			assertEquals(fuel == FuelSpec.PLANT_OIL ? 1.3 : 1, fuel.sootFactor(), 0);
 		}
 	}
 

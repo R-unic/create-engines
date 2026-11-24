@@ -55,7 +55,9 @@ class ConfigMatrixTest {
 		new Switch("heatRecoveryEnabled", v -> Tuning.heatRecoveryEnabled = v),
 		new Switch("altitudeThinning", v -> Tuning.altitudeThinning = v),
 		new Switch("sableAirPressure", v -> Tuning.sableAirPressure = v),
-		new Switch("fuelFire", v -> Tuning.fuelFire = v));
+		new Switch("fuelFire", v -> Tuning.fuelFire = v),
+		new Switch("fuelFireByVolatility", v -> Tuning.fuelFireByVolatility = v),
+		new Switch("meterAllHeads", v -> Tuning.meterAllHeads = v));
 
 	@AfterEach
 	void resetTuning() {
@@ -157,6 +159,9 @@ class ConfigMatrixTest {
 		java.util.Map.entry("throwInertia", "sim: inertiaAndFrictionAtTheConfigExtremesLeaveAnEngineSound"),
 		java.util.Map.entry("flywheelInertia", "sim: inertiaAndFrictionAtTheConfigExtremesLeaveAnEngineSound"),
 		java.util.Map.entry("castFlywheelInertia", "sim: inertiaAndFrictionAtTheConfigExtremesLeaveAnEngineSound"),
+		java.util.Map.entry("dualMassPrimaryInertia", "sim: inertiaAndFrictionAtTheConfigExtremesLeaveAnEngineSound (it joins the crank's inertia)"),
+		java.util.Map.entry("dualMassSecondaryInertia", "sim: dualMassSettingsAtTheirExtremesLeaveAnEngineSound"),
+		java.util.Map.entry("dualMassResonance", "sim: dualMassSettingsAtTheirExtremesLeaveAnEngineSound"),
 		java.util.Map.entry("bearingFriction", "sim: inertiaAndFrictionAtTheConfigExtremesLeaveAnEngineSound"),
 		java.util.Map.entry("stressPerTorque", "GameTest: SmokeAuditGameTests.everyConfigSettingAtItsExtremesLeavesAnEngineSane"),
 		java.util.Map.entry("maxCrankSegments", "GameTest: SmokeAuditGameTests.everyConfigSettingAtItsExtremesLeavesAnEngineSane"),
@@ -164,6 +169,10 @@ class ConfigMatrixTest {
 		java.util.Map.entry("maxCoupledLines", "GameTest: SmokeAuditGameTests.everyConfigSettingAtItsExtremesLeavesAnEngineSane"),
 		java.util.Map.entry("maxCouplingWalk", "GameTest: SmokeAuditGameTests.everyConfigSettingAtItsExtremesLeavesAnEngineSane"),
 		java.util.Map.entry("alternatorEnergy", "GameTest: SmokeAuditGameTests.everyConfigSettingAtItsExtremesLeavesAnEngineSane"),
+		java.util.Map.entry("throttleIdleMin", "GameTest: SmokeAuditGameTests.everyConfigSettingAtItsExtremesLeavesAnEngineSane; it only bounds the value box"),
+		java.util.Map.entry("throttleIdleMax", "GameTest: SmokeAuditGameTests.everyConfigSettingAtItsExtremesLeavesAnEngineSane; it only bounds the value box"),
+		java.util.Map.entry("throttleWideMin", "GameTest: SmokeAuditGameTests.everyConfigSettingAtItsExtremesLeavesAnEngineSane; it only bounds the value box"),
+		java.util.Map.entry("throttleWideMax", "GameTest: SmokeAuditGameTests.everyConfigSettingAtItsExtremesLeavesAnEngineSane; it only bounds the value box"),
 		java.util.Map.entry("pollution", "no effect on the sim: it only reports gas to another mod"),
 		java.util.Map.entry("pollutionRate", "no effect on the sim: it only reports gas to another mod"),
 		java.util.Map.entry("carbonRate", "no effect on the sim: it only reports gas to another mod; EmissionsTest"),
@@ -194,6 +203,47 @@ class ConfigMatrixTest {
 		assertEquals(List.of(), unaccounted, "settings the matrix neither runs nor names: add each to the matrix or to OUTSIDE_TUNING");
 		for (String name : OUTSIDE_TUNING.keySet())
 			assertTrue(source.contains("\"" + name + "\""), name + " is listed in OUTSIDE_TUNING but is no longer a config setting");
+	}
+
+	/** A dual-mass flywheel's secondary mass is 0 to 100 and its resonance 1 to 100000 RPM: every corner rates finite. */
+	@Test
+	void dualMassSettingsAtTheirExtremesLeaveAnEngineSound() {
+		for (double secondary : new double[] {0, 0.001, 1.4, 100})
+			for (double resonance : new double[] {1, 48, 100_000}) {
+				Tuning.reset();
+				List<CylinderModel> cylinders = new ArrayList<>();
+				Camshaft cam = new Camshaft();
+				for (int i = 0; i < 2; i++) {
+					double fire = i * 360;
+					CylinderModel c = new CylinderModel(CylinderSpec.build(true, true, true, true), CamProfile.BASIC, fire % 360, cam, fire / 2);
+					c.metering = 2;
+					c.airMatch = 1;
+					c.ignition = IgnitionSource.UNLIMITED;
+					c.fuelSupply = new FuelSupply() {
+						@Override
+						public double draw(double mb) {
+							return mb;
+						}
+
+						@Override
+						public FuelSpec fuel() {
+							return FuelSpec.GASOLINE;
+						}
+					};
+					c.resetGas(c.pistonAngle(0, 1));
+					cylinders.add(c);
+				}
+				EngineSimulation sim = new EngineSimulation(cylinders, 1, 0.02);
+				sim.setIsolatedMass(secondary, resonance);
+				Dynamometer.Measurement measurement = new Dynamometer.Measurement(sim, 256);
+				while (!measurement.advance()) {
+				}
+				for (int i = 0; i < measurement.curve().length; i++) {
+					String at = "secondary " + secondary + ", resonance " + resonance + ", point " + i;
+					assertTrue(Double.isFinite(measurement.curve()[i]), at + " curve");
+					assertTrue(Double.isFinite(measurement.ripples()[i]) && measurement.ripples()[i] >= 0, at + " ripple");
+				}
+			}
 	}
 
 	/**

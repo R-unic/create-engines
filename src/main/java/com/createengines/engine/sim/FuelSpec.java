@@ -17,9 +17,25 @@ package com.createengines.engine.sim;
  *                          power (see {@link #preignitionLoss}); the autoignition point for every fuel but ethanol
  * @param sulfur            how sulfurous the fuel's exhaust is, for the pollution compat only: 1 for the usual, 0 for a fuel
  *                          with none. Nothing in the simulation reads it. A fuel that does not set it takes its soot factor
+ * @param flammability      how readily fuel lying in the world (a spill, never a running engine's tank) catches and how fast a
+ *                          pool burns off once lit: 1 is the way every fuel burned before the field existed, above 1 lights surely
+ *                          and burns off fast (gasoline, methanol), below 1 is hard to light and slow (diesel, kerosene, plant oil).
+ *                          Only {@code FuelLiquidBlock} reads it; nothing in the simulation does
  */
 public record FuelSpec(double energyPerMb, double autoignitionTemp, double airPerMb, double coldSensitivity,
-					   double chargeCooling, double sootFactor, double preignitionTemp, double sulfur) {
+					   double chargeCooling, double sootFactor, double preignitionTemp, double sulfur, double flammability) {
+
+	/** A fuel that burns in a spill like every fuel did before flammability existed. */
+	public FuelSpec(double energyPerMb, double autoignitionTemp, double airPerMb, double coldSensitivity,
+					double chargeCooling, double sootFactor, double preignitionTemp, double sulfur) {
+		this(energyPerMb, autoignitionTemp, airPerMb, coldSensitivity, chargeCooling, sootFactor, preignitionTemp, sulfur, 1);
+	}
+
+	/** This fuel with a different flammability in a spill; every other figure is the same. */
+	public FuelSpec withFlammability(double flammability) {
+		return new FuelSpec(energyPerMb, autoignitionTemp, airPerMb, coldSensitivity, chargeCooling, sootFactor, preignitionTemp, sulfur,
+			flammability);
+	}
 
 	/** A fuel whose sulfur is its soot factor: how every fuel behaved before the field existed. */
 	public FuelSpec(double energyPerMb, double autoignitionTemp, double airPerMb, double coldSensitivity,
@@ -40,6 +56,21 @@ public record FuelSpec(double energyPerMb, double autoignitionTemp, double airPe
 
 	public FuelSpec(double energyPerMb, double autoignitionTemp, double airPerMb, double coldSensitivity) {
 		this(energyPerMb, autoignitionTemp, airPerMb, coldSensitivity, 0, 1);
+	}
+
+	/**
+	 * A fuel that autoignites at or below this is a compression fuel (diesel, plant oil, used oil); above it, it is a spark fuel
+	 * and an engine needs a plug or a pilot shot to light it. The pilot limit and the fuel tooltips draw the same line.
+	 */
+	public static final double COMPRESSION_LIMIT = 2.0;
+
+	/**
+	 * Whether this fuel needs a spark plug or a pilot shot. A spark fuel is not lit by the heat of compression in an engine that
+	 * has neither, however much boost has heated the charge: gasoline's "too hard to light by compression" held only until two
+	 * superchargers made the charge hot enough, after which a plugless engine ran on it at several times the power.
+	 */
+	public boolean needsSpark() {
+		return autoignitionTemp > COMPRESSION_LIMIT;
 	}
 
 	/** Fresh charge per mB of the fuel injectors are sized for: gasoline's. A thinner fuel needs a bigger shot for the same air. */
@@ -75,7 +106,7 @@ public record FuelSpec(double energyPerMb, double autoignitionTemp, double airPe
 		double cooling = Double.isFinite(chargeCooling) ? chargeCooling : 0;
 		if (energy == energyPerMb && air == airPerMb && cold == coldSensitivity && cooling == chargeCooling)
 			return this;
-		return new FuelSpec(energy, autoignitionTemp, air, cold, cooling, sootFactor, preignitionTemp, sulfur);
+		return new FuelSpec(energy, autoignitionTemp, air, cold, cooling, sootFactor, preignitionTemp, sulfur, flammability);
 	}
 
 	/**
@@ -108,17 +139,32 @@ public record FuelSpec(double energyPerMb, double autoignitionTemp, double airPe
 	 */
 	public static final double ETHANOL_PREIGNITION = 5.0;
 
-	/** Pressed seed oil: rustic, sluggish to ignite, modest energy. */
-	public static final FuelSpec PLANT_OIL = new FuelSpec(30, 1.7, 1.6, 1.5);
+	/** How readily a spill of each kind of fuel catches (see {@link #flammability}): the volatile ones light surely and burn off fast. */
+	public static final double VOLATILE = 2.0;
+	public static final double FLAMMABLE = 1.5;
+	/** Diesel-class fuels: safe to store, slow to catch and slow to spread. */
+	public static final double HARD_TO_LIGHT = 0.5;
+
+	/**
+	 * Pressed seed oil: the runs-on-anything fuel. Rustic, sluggish to ignite, modest energy and the dirtiest exhaust, in exchange
+	 * for being tolerant: a cold block costs it less than it costs diesel (2.1: its cold sensitivity went from 1.5 to 0.9, and its
+	 * soot and sulfur from 1 to 1.3).
+	 */
+	public static final FuelSpec PLANT_OIL = new FuelSpec(30, 1.7, 1.6, 0.9, 0, 1.3).withFlammability(HARD_TO_LIGHT);
 	/** Ignites readily and carries more energy per mB. */
-	public static final FuelSpec DIESEL = new FuelSpec(36, 1.55, 1.7, 1);
+	public static final FuelSpec DIESEL = new FuelSpec(36, 1.55, 1.7, 1).withFlammability(HARD_TO_LIGHT);
+	/**
+	 * Diesel made clean: half the soot and no sulfur of diesel, set against a lower energy to the mB (2.1: before it, biodiesel was
+	 * burned as diesel). It lights, starts and runs like diesel, a compression fuel.
+	 */
+	public static final FuelSpec BIODIESEL = new FuelSpec(33, 1.55, 1.7, 1, 0, 0.5, 1.55, 0, HARD_TO_LIGHT);
 	/** Too hard to light by compression alone at any speed an engine of this size turns: it needs a spark plug. */
-	public static final FuelSpec GASOLINE = new FuelSpec(40, 2.7, 1.5, 0.8);
+	public static final FuelSpec GASOLINE = new FuelSpec(40, 2.7, 1.5, 0.8).withFlammability(VOLATILE);
 	/**
 	 * Needs a spark like gasoline, with less energy to the mB. It will not light early under boost that makes gasoline
 	 * pre-ignite, boils off so much heat that it cools the charge, and leaves no soot on a plug.
 	 */
-	public static final FuelSpec ETHANOL = new FuelSpec(27, 3.4, 1.0, 1.8, 0.08, 0, ETHANOL_PREIGNITION);
+	public static final FuelSpec ETHANOL = new FuelSpec(27, 3.4, 1.0, 1.8, 0.08, 0, ETHANOL_PREIGNITION).withFlammability(FLAMMABLE);
 
 	/**
 	 * Where kerosene's charge starts to light early under boost: between gasoline's (2.7, its autoignition point) and ethanol's
@@ -131,7 +177,7 @@ public record FuelSpec(double energyPerMb, double autoignitionTemp, double airPe
 	 * fuel (2.2 is past what a pilot shot can light and past what compression reaches), a touch slower to warm in a cold block
 	 * than gasoline, and better than gasoline at holding out against boost.
 	 */
-	public static final FuelSpec KEROSENE = new FuelSpec(38, 2.2, 1.55, 1.1, 0, 1, KEROSENE_PREIGNITION);
+	public static final FuelSpec KEROSENE = new FuelSpec(38, 2.2, 1.55, 1.1, 0, 1, KEROSENE_PREIGNITION).withFlammability(HARD_TO_LIGHT);
 
 	/**
 	 * Where methanol's charge starts to light early under boost: above ethanol's 5.0, so a build that pushes ethanol's limit has
@@ -143,5 +189,5 @@ public record FuelSpec(double energyPerMb, double autoignitionTemp, double airPe
 	 * of it for the same air, but the hardest of any fuel to light early, the one that cools the charge most, and clean (no soot, no
 	 * sulfur). It needs a spark like ethanol and is the worst of the lot in a cold block.
 	 */
-	public static final FuelSpec METHANOL = new FuelSpec(22, 3.8, 0.8, 1.9, 0.17, 0, METHANOL_PREIGNITION);
+	public static final FuelSpec METHANOL = new FuelSpec(22, 3.8, 0.8, 1.9, 0.17, 0, METHANOL_PREIGNITION).withFlammability(VOLATILE);
 }

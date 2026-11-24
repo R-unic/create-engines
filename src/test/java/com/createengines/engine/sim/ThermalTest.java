@@ -282,7 +282,9 @@ class ThermalTest {
 		double diesel = Thermal.burnFactor(1, FuelSpec.DIESEL.coldSensitivity());
 		double oil = Thermal.burnFactor(1, FuelSpec.PLANT_OIL.coldSensitivity());
 		double ethanol = Thermal.burnFactor(1, FuelSpec.ETHANOL.coldSensitivity());
-		assertTrue(ethanol < oil && oil < diesel && diesel < gasoline && gasoline < 1,
+		// 2.1 (approved by the author, release record Exception 2.9): plant oil was the worst of the three in the cold, 1.5, and is now
+		// the tolerant one, 0.9, between diesel and gasoline
+		assertTrue(ethanol < diesel && diesel < oil && oil < gasoline && gasoline < 1,
 			ethanol + " " + oil + " " + diesel + " " + gasoline);
 		assertTrue(ethanol > 0.75, "cold costs a power, it does not stop the engine: " + ethanol);
 		assertEquals(1, new FuelSpec(30, 2, 1.5).coldSensitivity(), "a datapack fuel is an ordinary one");

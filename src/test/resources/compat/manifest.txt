@@ -6,7 +6,7 @@ data:data/c/tags/fluid/gasoline.json
 data:data/c/tags/fluid/kerosene.json
 data:data/c/tags/fluid/methanol.json
 data:data/c/tags/fluid/plantoil.json
-data:data/create_engines/data_maps/fluid/fuel.json	5c568a10d7a15e48c70fcc368b664b93859e8b3c
+data:data/create_engines/data_maps/fluid/fuel.json	2d4f347e54780cf391946fcd99e5b2e3fced2d2a
 data:data/create_engines/loot_table/advancement/chief_engineer.json	28b298041108ca73ffe6fa38b375092b40c92113
 data:data/create_engines/loot_table/blocks/air_intake.json	c67253912979b22a0381f88427a063466c73394f
 data:data/create_engines/loot_table/blocks/alternator.json	5c204e3f1c9bf84130e2f70ec7275d04352e3741
@@ -21,6 +21,7 @@ data:data/create_engines/loot_table/blocks/crank_throw.json	afbb397028cc69ded3b7
 data:data/create_engines/loot_table/blocks/crankshaft.json	7113e84eaceec514032b21086eb941bf38ecdea0
 data:data/create_engines/loot_table/blocks/cylinder.json	18880fcc5082fb4f1108a7c51397164c1102e94d
 data:data/create_engines/loot_table/blocks/cylinder_head.json	d753781ba40e8dfced4b13b75d2f402adffd2451
+data:data/create_engines/loot_table/blocks/dual_mass_flywheel.json	f5c88f47e31a8638059e18e8831c66f80b721085
 data:data/create_engines/loot_table/blocks/dyno.json	90d6bd48b115bd5aab5f04229b2571f38a639cc8
 data:data/create_engines/loot_table/blocks/engine_cased_cogwheel.json	33514fcbecf2ae2d36955d3c981c59ebb28dca61
 data:data/create_engines/loot_table/blocks/engine_cased_large_cogwheel.json	9dec2988095dc37c8eb96e3e7bd55f085f16c75f
@@ -90,6 +91,7 @@ data:data/create_engines/recipe/crank_throw.json	5f6597aeba82b34293b2fae5aac820a
 data:data/create_engines/recipe/crankshaft.json	14988c9b3e974c984cd4654b742dc6876e494a2b
 data:data/create_engines/recipe/cylinder.json	c718b97df68b2e599ed14be956e1d88852193208
 data:data/create_engines/recipe/cylinder_head.json	5fd1937693bf1fb5de787505c019605d8f105fa0
+data:data/create_engines/recipe/dual_mass_flywheel.json	5957ab54d86adfbe1a5c48f3fc780ff2ab768245
 data:data/create_engines/recipe/dyno.json	8823e350300928b89d5d8617385fc8c0d276f713
 data:data/create_engines/recipe/engine_casing.json	4bf77b6431038e430a96dd23a5730c47da0efdbb
 data:data/create_engines/recipe/engine_louvred_casing.json	710a9a6f844cfd5535814c61edb0ed3f822a125c
@@ -187,6 +189,7 @@ enumvalue:ColumnSectionBlock:lean_up
 enumvalue:ColumnSectionBlock:tint
 nbt:AlternatorBlockEntity:Batteries
 nbt:AlternatorBlockEntity:ChargeRate
+nbt:AlternatorBlockEntity:ChargeRateSetting
 nbt:AlternatorBlockEntity:Charging
 nbt:AlternatorBlockEntity:EngineShare
 nbt:AlternatorBlockEntity:FellowRate
@@ -494,6 +497,7 @@ reg:block:crank_throw
 reg:block:crankshaft
 reg:block:cylinder
 reg:block:cylinder_head
+reg:block:dual_mass_flywheel
 reg:block:dyno
 reg:block:engine_cased_cogwheel
 reg:block:engine_cased_large_cogwheel
@@ -537,6 +541,8 @@ reg:blockEntity:column_port
 reg:blockEntity:crankshaft
 reg:blockEntity:cylinder
 reg:blockEntity:cylinder_head
+reg:blockEntity:data_flywheel
+reg:blockEntity:dual_mass_flywheel
 reg:blockEntity:dyno
 reg:blockEntity:engine_cased_cogwheel
 reg:blockEntity:engine_cased_large_cogwheel
@@ -562,6 +568,7 @@ reg:displaySource:engine_fault
 reg:displaySource:engine_load
 reg:displaySource:engine_oil
 reg:displaySource:engine_power
+reg:displaySource:engine_smoothness
 reg:displaySource:engine_speed
 reg:displaySource:engine_status
 reg:displaySource:engine_temperature

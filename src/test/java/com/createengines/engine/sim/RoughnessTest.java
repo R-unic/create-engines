@@ -96,6 +96,24 @@ class RoughnessTest {
 		assertTrue(flywheel > bare * 1.05, "flywheel " + flywheel + " vs bare " + bare);
 	}
 
+	/** The default Create Flywheel is 2.5 (the test classpath has no config, so the number is repeated here). */
+	@Test
+	void twoFlywheelsOnAnInlineFourTakeMostOfItsRoughnessLossAway() {
+		double bare = lossOf(build(4, 0));
+		double twoFlywheels = lossOf(build(4, 2 * 2.5));
+		assertTrue(bare > 0.1, "a bare four is rough: " + bare);
+		// Measured: 11.3% bare, 3.8% with 5.0 of flywheel (it was 5.4% with the old 3.0)
+		assertTrue(twoFlywheels < 0.04, "two flywheels should leave it nearly smooth: " + twoFlywheels);
+		assertTrue(twoFlywheels < bare * 0.4, twoFlywheels + " should be well under " + bare);
+	}
+
+	private static double lossOf(EngineSimulation engine) {
+		Dynamometer.Measurement measurement = new Dynamometer.Measurement(engine, 256);
+		while (!measurement.advance()) {
+		}
+		return Dynamometer.roughnessLoss(measurement.curve(), measurement.ripples(), 256);
+	}
+
 	@Test
 	void aSmoothEngineIsRatedForItsFullTorque() {
 		EngineSimulation engine = build(8, 2);

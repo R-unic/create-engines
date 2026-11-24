@@ -34,6 +34,7 @@ public final class FuelCheck {
 		notBelow(out, "soot_factor", fuel.sootFactor());
 		above(out, "preignition_temperature", fuel.preignitionTemp(), "it is a charge temperature, ambient = 1");
 		notBelow(out, "sulfur", fuel.sulfur());
+		above(out, "flammability", fuel.flammability(), "a spill's lighting and burn-off speed are divided by it");
 		return out;
 	}
 

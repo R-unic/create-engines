@@ -8,11 +8,14 @@ data cam_profiles intake_close optional range 0..720
 data cam_profiles intake_open optional range 0..720
 data cam_profiles spark optional range 0..720
 data cam_profiles valve duration 40..400
+data flywheel primary_inertia required range 0.0..100.0
+data flywheel secondary_inertia optional 0.0 range 0.0..100.0
 data fuel air_per_mb required
 data fuel autoignition_temperature required
 data fuel charge_cooling optional 0.0
 data fuel cold_sensitivity optional 1.0
 data fuel energy_per_mb required
+data fuel flammability optional 1.0
 data fuel preignition_temperature optional 0.0
 data fuel soot_factor optional 1.0
 data fuel sulfur optional

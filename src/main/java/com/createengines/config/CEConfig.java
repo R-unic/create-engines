@@ -26,11 +26,18 @@ public final class CEConfig {
 	public static final ModConfigSpec.DoubleValue THROW_INERTIA;
 	public static final ModConfigSpec.DoubleValue FLYWHEEL_INERTIA;
 	public static final ModConfigSpec.DoubleValue CAST_FLYWHEEL_INERTIA;
+	public static final ModConfigSpec.DoubleValue DUAL_MASS_PRIMARY_INERTIA;
+	public static final ModConfigSpec.DoubleValue DUAL_MASS_SECONDARY_INERTIA;
+	public static final ModConfigSpec.DoubleValue DUAL_MASS_RESONANCE;
 	public static final ModConfigSpec.DoubleValue BEARING_FRICTION;
 	public static final ModConfigSpec.IntValue MAX_CRANK_SEGMENTS;
 	public static final ModConfigSpec.IntValue MAX_MANIFOLD_BLOCKS;
 	public static final ModConfigSpec.IntValue MAX_COUPLED_LINES;
 	public static final ModConfigSpec.IntValue MAX_COUPLING_WALK;
+	public static final ModConfigSpec.IntValue THROTTLE_IDLE_MIN;
+	public static final ModConfigSpec.IntValue THROTTLE_IDLE_MAX;
+	public static final ModConfigSpec.IntValue THROTTLE_WIDE_MIN;
+	public static final ModConfigSpec.IntValue THROTTLE_WIDE_MAX;
 
 	public static final ModConfigSpec.DoubleValue FUEL_CONSUMPTION;
 	public static final ModConfigSpec.DoubleValue PRECISION_BONUS;
@@ -55,6 +62,8 @@ public final class CEConfig {
 	public static final ModConfigSpec.BooleanValue ALTITUDE_THINNING;
 	public static final ModConfigSpec.BooleanValue SABLE_AIR_PRESSURE;
 	public static final ModConfigSpec.BooleanValue FUEL_FIRE;
+	public static final ModConfigSpec.BooleanValue FUEL_FIRE_BY_VOLATILITY;
+	public static final ModConfigSpec.BooleanValue METER_ALL_HEADS;
 	public static final ModConfigSpec.DoubleValue ALTITUDE_START;
 	public static final ModConfigSpec.DoubleValue ALTITUDE_SCALE;
 	public static final ModConfigSpec.DoubleValue ALTITUDE_FLOOR;
@@ -86,10 +95,22 @@ public final class CEConfig {
 			.defineInRange("throwInertia", 0.2, 0.0, 100.0));
 		FLYWHEEL_INERTIA = value("calibration.flywheelInertia",
 			builder.comment("Rotational inertia a Create Flywheel adds when coaxial with the crank.")
-				.defineInRange("flywheelInertia", 1.5, 0.0, 100.0));
+				.defineInRange("flywheelInertia", 2.5, 0.0, 100.0));
 		CAST_FLYWHEEL_INERTIA = value("calibration.castFlywheelInertia",
 			builder.comment("Rotational inertia a Cast Flywheel adds when coaxial with the crank.")
-				.defineInRange("castFlywheelInertia", 1.0, 0.0, 100.0));
+				.defineInRange("castFlywheelInertia", 1.6, 0.0, 100.0));
+		DUAL_MASS_PRIMARY_INERTIA = value("calibration.dualMassPrimaryInertia", builder.comment(
+				"Rotational inertia of a Dual-Mass Flywheel's primary mass, bolted to the crank.",
+				"It sets rev response, spool and starter load, like any flywheel.")
+			.defineInRange("dualMassPrimaryInertia", 0.45, 0.0, 100.0));
+		DUAL_MASS_SECONDARY_INERTIA = value("calibration.dualMassSecondaryInertia", builder.comment(
+				"Rotational inertia of a Dual-Mass Flywheel's secondary mass, behind its spring pack.",
+				"It smooths the speed ripple the network sees but does not slow the crank, and only above the resonance.")
+			.defineInRange("dualMassSecondaryInertia", 1.4, 0.0, 100.0));
+		DUAL_MASS_RESONANCE = value("calibration.dualMassResonance", builder.comment(
+				"Crank speed (RPM) at which a Dual-Mass Flywheel's spring pack resonates.",
+				"The secondary mass does nothing at or below it and counts in full from three times it.")
+			.defineInRange("dualMassResonance", 48.0, 1.0, 100000.0));
 		BEARING_FRICTION = value("calibration.bearingFriction", builder.comment("Friction torque per crankshaft block.")
 			.defineInRange("bearingFriction", 0.01, 0.0, 10.0));
 		builder.pop();
@@ -109,6 +130,22 @@ public final class CEConfig {
 				"Most kinetic blocks the scanner looks through, from a crankshaft, for other",
 				"crankshafts geared to it.")
 			.defineInRange("maxCouplingWalk", 512, 1, 8192));
+		THROTTLE_IDLE_MIN = value("limits.throttleIdleMin", builder.comment(
+				"Smallest idle stop a Throttle Body's value box offers, as a percent open (a multiple of 5).",
+				"Raise it to stop players closing the valve down to a crack.")
+			.defineInRange("throttleIdleMin", 5, 5, 100));
+		THROTTLE_IDLE_MAX = value("limits.throttleIdleMax", builder.comment(
+				"Largest idle stop a Throttle Body's value box offers, as a percent open (a multiple of 5).",
+				"Never below throttleIdleMin: if it is, the minimum is used.")
+			.defineInRange("throttleIdleMax", 100, 5, 100));
+		THROTTLE_WIDE_MIN = value("limits.throttleWideMin", builder.comment(
+				"Smallest wide-open bore a Throttle Body's value box offers, as a percent of the plain intake (a multiple of 5).",
+				"100 is the plain intake; lower lets a throttle body pinch the intake even at full signal.")
+			.defineInRange("throttleWideMin", 100, 5, 100));
+		THROTTLE_WIDE_MAX = value("limits.throttleWideMax", builder.comment(
+				"Largest wide-open bore a Throttle Body's value box offers, as a percent of the plain intake (a multiple of 5).",
+				"150 is the most the simulation allows; lower it to forbid oversized bores. Never below throttleWideMin.")
+			.defineInRange("throttleWideMax", 150, 100, 150));
 		builder.pop();
 
 		builder.comment("Balance multipliers. 1.0 is the shipped balance.")
@@ -183,6 +220,11 @@ public final class CEConfig {
 		HEAT_RECOVERY_ENABLED = value("features.heatRecovery",
 			builder.comment("Exhaust Heat Exchangers take heat from the exhaust and warm basins.")
 				.define("heatRecovery", true));
+		METER_ALL_HEADS = value("features.meterAllHeads", builder.comment(
+				"Setting the fuel metering of one cylinder head (or rotor housing) sets every other injector of that engine",
+				"to the same figure. Each head keeps its own dial and can still be changed on its own afterwards; heads held by",
+				"a MAF sensor or a closed fuel rack are left alone. Off, each head is set by hand as before.")
+			.define("meterAllHeads", false));
 		builder.pop();
 
 		builder.comment("Other mods, and how the world around an engine answers it.")
@@ -202,6 +244,11 @@ public final class CEConfig {
 				"Liquid fuel lying in the world burns: fire, lava or burning fuel beside a pool lights it, and it burns off",
 				"in a wave through the pool, leaving fire where it was. Off, fuel on the ground only lies there as before.")
 			.define("fuelFire", true));
+		FUEL_FIRE_BY_VOLATILITY = value("compat.fuelFireByVolatility", builder.comment(
+				"A spill's fire follows the fuel: gasoline and methanol light surely and burn off in a quick wave, ethanol a little",
+				"slower, and diesel, biodiesel, kerosene and plant oil are slow to catch and spread. Only fuel lying in the world",
+				"is affected, never an engine's tank or a running engine. Off, every spilled fuel burns alike. Needs fuelFire.")
+			.define("fuelFireByVolatility", true));
 		ALTITUDE_START = value("compat.altitudeStart", builder.comment(
 				"The height in blocks up to which the air is as thick as at sea level. Used when Sable's pressure is not.")
 			.defineInRange("altitudeStart", 128.0, -64.0, 100000.0));
@@ -294,8 +341,12 @@ public final class CEConfig {
 		Tuning.altitudeThinning = ALTITUDE_THINNING.get();
 		Tuning.sableAirPressure = SABLE_AIR_PRESSURE.get();
 		Tuning.fuelFire = FUEL_FIRE.get();
+		Tuning.fuelFireByVolatility = FUEL_FIRE_BY_VOLATILITY.get();
+		Tuning.meterAllHeads = METER_ALL_HEADS.get();
 		Tuning.altitudeStart = ALTITUDE_START.get();
 		Tuning.altitudeScale = ALTITUDE_SCALE.get();
 		Tuning.altitudeFloor = ALTITUDE_FLOOR.get();
+		// The throttle dial ranges come from the config, so the blueprint table is rebuilt on the next read
+		com.createengines.content.blueprint.EngineDials.invalidate();
 	}
 }

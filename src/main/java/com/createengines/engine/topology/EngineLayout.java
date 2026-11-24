@@ -27,6 +27,10 @@ import net.minecraft.core.Direction.Axis;
  * @param heads      every cylinder head on the crankshaft; their tanks form one fuel and oil gallery for the engine
  * @param lines      how many crank lines the engine has; more than one where cranks are geared together one to one, in
  *                   which case {@link #segments()} lists them all, the first line's first
+ * @param flywheelInertia inertia the flywheels on the crank line add to the crank, including a dual-mass flywheel's primary mass
+ * @param isolatedInertia the secondary masses of dual-mass flywheels on the line, which smooth the ripple but do not turn with the crank's inertia
+ * @param isolatedResonanceFactor what the server's dual-mass resonance is multiplied by for this engine: the spring-pack dials of its
+ *                   dual-mass flywheels, averaged by the secondary mass each isolates; 1 with every dial at its middle setting or none
  * @param members    every block whose change should trigger a rescan of this engine
  * @param portCells  every cell of every port network (pipes and openings) with the index into {@link #ports()} of the network it is
  *                   in, so a block beside a pipe can be told which network it breathes from ({@link #networkAt})
@@ -39,6 +43,7 @@ public record EngineLayout(BlockPos primary, Axis axis, List<Segment> segments, 
 						   List<BlockPos> batteries, List<BlockPos> alternators, List<BlockPos> sumps,
 						   List<BlockPos> governors, List<BlockPos> heads,
 						   List<Turbo> turbos, List<Inline> superchargers, List<Inline> intercoolers, double flywheelInertia,
+							   double isolatedInertia, double isolatedResonanceFactor,
 							   int lines, Set<BlockPos> members, java.util.Map<BlockPos, Integer> portCells, boolean incomplete,
 							   boolean broken) {
 

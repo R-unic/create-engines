@@ -43,6 +43,10 @@ public final class Tuning {
 	public static volatile boolean sableAirPressure = true;
 	/** Whether liquid fuel lying in the world burns when lit, see {@code FuelLiquidBlock}. */
 	public static volatile boolean fuelFire = true;
+	/** Whether a spill's fire follows the fuel: gasoline and methanol catch and burn off fast, diesel-class fuels slowly, see {@link SpillFire}. */
+	public static volatile boolean fuelFireByVolatility = true;
+	/** Whether setting one head's fuel metering sets every other head of its engine to the same figure, see {@code MeteringFollow}. */
+	public static volatile boolean meterAllHeads = false;
 	/** Height from which the air thins when no pressure is read from Sable, see {@link Altitude#START}. */
 	public static volatile double altitudeStart = Altitude.START;
 	/** Blocks of climb per e-fold of thinning when no pressure is read from Sable, see {@link Altitude#SCALE}. */
@@ -80,6 +84,8 @@ public final class Tuning {
 		altitudeThinning = true;
 		sableAirPressure = true;
 		fuelFire = true;
+		fuelFireByVolatility = true;
+		meterAllHeads = false;
 		altitudeStart = Altitude.START;
 		altitudeScale = Altitude.SCALE;
 		altitudeFloor = Altitude.FLOOR;

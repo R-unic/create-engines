@@ -64,12 +64,22 @@ public final class BatteryChemistry {
 
 	/** The most charge a battery of {@code capacity} can give while it is {@code cold}: its capacity less the share the cold keeps. */
 	public static double deliverableLimit(double capacity, double cold, boolean enabled) {
-		return enabled ? capacity * (1 - MAX_COLD_LOSS * Math.clamp(cold, 0, 1)) : capacity;
+		return deliverableLimit(capacity, cold, enabled, MAX_COLD_LOSS);
+	}
+
+	/** The same for a battery that loses {@code coldLoss} (0 to 1) of its capacity when as cold as it gets: see {@link BatteryTier#coldLoss()}. */
+	public static double deliverableLimit(double capacity, double cold, boolean enabled, double coldLoss) {
+		return enabled ? capacity * (1 - Math.clamp(coldLoss, 0, 1) * Math.clamp(cold, 0, 1)) : capacity;
 	}
 
 	/** The charge a battery holding {@code charge} can actually give now. */
 	public static double deliverable(double charge, double capacity, double cold, boolean enabled) {
 		return Math.max(0, Math.min(charge, deliverableLimit(capacity, cold, enabled)));
+	}
+
+	/** The charge a battery of a tier that loses {@code coldLoss} to the cold, holding {@code charge}, can actually give now. */
+	public static double deliverable(double charge, double capacity, double cold, boolean enabled, double coldLoss) {
+		return Math.max(0, Math.min(charge, deliverableLimit(capacity, cold, enabled, coldLoss)));
 	}
 
 	/** Whether a bank holding {@code deliverableShare} of its capacity is low enough to hold a starter back: below {@link #SAG_BELOW}, or not a number. */
