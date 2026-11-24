@@ -21,13 +21,11 @@ WRAP_UV = False
 WRAP_MIN_OVERRUN = 0.5
 
 
-def _wrapped_default_uv(a, b, face):
-    """The patch a face would show by default, moved back inside the texture when the element pokes out of the block
-    (a boss or port outside 0..16): outside the sprite the default patch samples the neighbouring sprites in the atlas
-    and shows as stray colours. Returns None when the default is already inside and needs no uv."""
+def _face_patch(a, b, face):
+    """The [u0, v0, u1, v1] patch of its texture that a face of the box from a to b shows by default."""
     x1, y1, z1 = a
     x2, y2, z2 = b
-    u0, v0, u1, v1 = {
+    return {
         "down": (x1, 16 - z2, x2, 16 - z1),
         "up": (x1, z1, x2, z2),
         "north": (16 - x2, 16 - y2, 16 - x1, 16 - y1),
@@ -35,6 +33,13 @@ def _wrapped_default_uv(a, b, face):
         "west": (z1, 16 - y2, z2, 16 - y1),
         "east": (16 - z2, 16 - y2, 16 - z1, 16 - y1),
     }[face]
+
+
+def _wrapped_default_uv(a, b, face):
+    """The patch a face would show by default, moved back inside the texture when the element pokes out of the block
+    (a boss or port outside 0..16): outside the sprite the default patch samples the neighbouring sprites in the atlas
+    and shows as stray colours. Returns None when the default is already inside and needs no uv."""
+    u0, v0, u1, v1 = _face_patch(a, b, face)
     if min(u0, v0) >= 0 and max(u1, v1) <= 16:
         return None
     # Models made before WRAP_UV (the pipe arms and the like) keep their approved default patches where the overrun is a
@@ -109,6 +114,7 @@ QUARTZ = "create_engines:block/ceramic"
 SMOOTH = "create_engines:block/heat_wrap"
 BRASS_CASING = "create:block/brass_casing"
 RED = "create_engines:block/enamel_red"
+BLUE = "create_engines:block/enamel_blue"
 RIVETED = "create_engines:block/rivet_plate"
 MAGMA = "create_engines:block/heat_kindled"
 LAVA = "create_engines:block/heat_seething"
@@ -310,12 +316,55 @@ def plug_elements():
     ]
 
 
+def assist_elements(y, x0, x1, z0, z1):
+    """An electric injector assist: a dark driver box that sits on the injector's body, a blue winding band round it and a
+    lead out of its side. Sunk 0.1 into what is under it so no face lies in the same plane as one below."""
+    return [
+        box((x0, y, z0), (x1, y + 2.1, z1), "assist"),
+        box((x0 - 0.2, y + 0.8, z0 - 0.2), (x1 + 0.2, y + 1.5, z1 + 0.2), "coil"),
+        box((x1 - 0.1, y + 1.0, (z0 + z1) / 2 - 0.4), (x1 + 1.2, y + 1.6, (z0 + z1) / 2 + 0.4), "terminal"),
+    ]
+
+
+def coil_elements(x0, x1, z0, z1, y):
+    """A high-energy ignition coil that sits on a spark plug's ceramic (its top at y): a dark can, a blue winding band round it
+    and a lead out of the top. The can is sunk 0.1 into the ceramic and stands 0.1 proud of it on every side, so no face lies in
+    the same plane as one under it."""
+    cx, cz = (x0 + x1) / 2, (z0 + z1) / 2
+    return [
+        box((x0 - 0.1, y - 0.1, z0 - 0.1), (x1 + 0.1, y + 2.9, z1 + 0.1), "assist"),
+        box((x0 - 0.3, y + 0.9, z0 - 0.3), (x1 + 0.3, y + 1.7, z1 + 0.3), "coil"),
+        box((cx - 0.5, y + 2.8, cz - 0.5), (cx + 0.5, y + 3.9, cz + 0.5), "terminal"),
+    ]
+
+
 def head():
     base = head_base()
     write("cylinder_head/block", HEAD_TEXTURES, base)
     write("cylinder_head/block_injector", HEAD_TEXTURES, base + injector_elements())
     write("cylinder_head/block_plug", HEAD_TEXTURES, base + plug_elements())
     write("cylinder_head/block_injector_plug", HEAD_TEXTURES, base + injector_elements() + plug_elements())
+    assist = assist_elements(17.4, 10.6, 14.4, 1.6, 5.4)
+    textures = dict(HEAD_TEXTURES, assist=DARK, coil=BLUE)
+    write("cylinder_head/block_injector_assist", textures, base + injector_elements() + assist)
+    write("cylinder_head/block_injector_assist_plug", textures,
+          base + injector_elements() + assist + plug_elements())
+    # A coil stands on the plug's ceramic and swallows its terminal, so that box is left out under it
+    plug = plug_elements()
+    coil = coil_elements(2.5, 5.5, 10.5, 13.5, 19)
+    coiled = dict(HEAD_TEXTURES, assist=DARK, coil=BLUE)
+    write("cylinder_head/block_plug_coil", coiled, base + [plug[0], plug[2]] + coil)
+    write("cylinder_head/block_injector_plug_coil", coiled, base + injector_elements() + [plug[0], plug[2]] + coil)
+    write("cylinder_head/block_injector_assist_plug_coil", coiled,
+          base + injector_elements() + assist + [plug[0], plug[2]] + coil)
+    write("cylinder_head/coil_item",
+          {"assist": DARK, "coil": BLUE, "terminal": IRON, "ceramic": QUARTZ, "particle": DARK},
+          [box((5.5, 0, 5.5), (10.5, 3, 10.5), "ceramic"), box((5.4, 2.9, 5.4), (10.6, 8.9, 10.6), "assist"),
+           box((5.2, 4.7, 5.2), (10.8, 6.3, 10.8), "coil"), box((7, 8.8, 7), (9, 10.8, 9), "terminal")])
+    write("cylinder_head/assist_item",
+          {"assist": DARK, "coil": BLUE, "terminal": IRON, "nozzle": IRON_BLOCK, "particle": DARK},
+          [box((5.5, 0, 5.5), (10.5, 5, 10.5), "assist"), box((5.3, 2, 5.3), (10.7, 3.4, 10.7), "coil"),
+           box((10.4, 2.2, 7.6), (12.4, 3.2, 8.4), "terminal"), box((7, -3, 7), (9, 0, 9), "nozzle")])
 
     write("cylinder_head/injector_item",
           {"body": BRASS, "cap": CUT_COPPER, "nozzle": IRON_BLOCK, "particle": BRASS},
@@ -661,6 +710,17 @@ def battery_textures():
             "particle": ZINC}
 
 
+# For each face, the joined edge of the block (or the top) that moves a side of the face's [u0, v0, u1, v1] patch one pixel in:
+# {side: (index in the patch, step)}. Which side of the patch a world edge falls on follows from _face_patch.
+BATTERY_JOIN_TRIMS = {
+    "north": {"east": (0, 1), "west": (2, -1), "top": (1, 1)},
+    "south": {"west": (0, 1), "east": (2, -1), "top": (1, 1)},
+    "west": {"north": (0, 1), "south": (2, -1), "top": (1, 1)},
+    "east": {"south": (0, 1), "north": (2, -1), "top": (1, 1)},
+    "up": {"west": (0, 1), "east": (2, -1), "north": (1, 1), "south": (3, -1)},
+}
+
+
 def battery_shell(n=False, e=False, s=False, w=False, u=False):
     """The battery with the sides in n (north, z-), e (x+), s (z+), w (x-) and the top u joined to another battery, as a
     tank or a vault runs on into the next one. The body, the band and the lid reach the edge of the block on a joined side and
@@ -672,15 +732,82 @@ def battery_shell(n=False, e=False, s=False, w=False, u=False):
     tx0, tx1 = (0 if w else 1.5), (16 if e else 14.5)
     tz0, tz1 = (0 if n else 1.5), (16 if s else 14.5)
 
+    strips = []
+
+    def flat(face, lo, hi, tex):
+        """One face with no thickness: the piece of a joined face that stays drawn."""
+        patch = [round(v, 4) for v in _face_patch(lo, hi, face)]
+        return {"from": [round(v, 4) for v in lo], "to": [round(v, 4) for v in hi],
+                "faces": {face: {"texture": "#" + tex, "uv": patch}}}
+
+    def margin_strips(face, a, b, tex):
+        """The part of a joined face that a neighbour may not cover. Every neighbour has a body 2 units in from the edges its own
+        joins leave free (1.5 for the band and the lid ring) and one lid and band below 13.5, so the middle of the face is left out
+        and only the margin beside a side this one is joined on stays; the body above 13.5 (there only with a battery on top)
+        stays whole, since a neighbour that is not stacked has nothing there."""
+        base = 1.5 if tex in ("band", "lid") else 2
+        out = []
+        if face == "up":
+            y = b[1]
+            if a[0] < base:
+                out.append(flat(face, (a[0], y, a[2]), (min(b[0], base), y, b[2]), tex))
+            if b[0] > 16 - base:
+                out.append(flat(face, (max(a[0], 16 - base), y, a[2]), (b[0], y, b[2]), tex))
+            xl, xh = max(a[0], base), min(b[0], 16 - base)
+            if a[2] < base:
+                out.append(flat(face, (xl, y, a[2]), (xh, y, min(b[2], base)), tex))
+            if b[2] > 16 - base:
+                out.append(flat(face, (xl, y, max(a[2], 16 - base)), (xh, y, b[2]), tex))
+            return out
+        along_x = face in ("north", "south")
+        lo, hi = (a[0], b[0]) if along_x else (a[2], b[2])
+        if a[1] >= 13.5:
+            spans = [(lo, hi)]
+        else:
+            spans = []
+            if lo < base:
+                spans.append((lo, min(hi, base)))
+            if hi > 16 - base:
+                spans.append((max(lo, 16 - base), hi))
+        for p0, p1 in spans:
+            if face == "east":
+                out.append(flat(face, (b[0], a[1], p0), (b[0], b[1], p1), tex))
+            elif face == "west":
+                out.append(flat(face, (a[0], a[1], p0), (a[0], b[1], p1), tex))
+            elif face == "south":
+                out.append(flat(face, (p0, a[1], b[2]), (p1, b[1], b[2]), tex))
+            else:
+                out.append(flat(face, (p0, a[1], a[2]), (p1, b[1], a[2]), tex))
+        return out
+
     def part(a, b, tex, omit=()):
         element = box(a, b, tex)
         for face in omit:
             element["faces"].pop(face, None)
-        # A face on the edge of the block on a joined side looks into the neighbour
+        # A face on the edge of the block on a joined side looks into the neighbour, but only where the neighbour is there too: it
+        # may be narrower (not joined to what this one is joined to) or lower (no battery on its top), and a face left out there
+        # would be a slot into the inside of the body, where an L bends or a stack steps. The part that every neighbour covers is
+        # left out; the rest of the face stays as a thin strip (it is inside the bank wherever the neighbour matches).
         for face, on in (("west", w and a[0] == 0), ("east", e and b[0] == 16), ("north", n and a[2] == 0),
                          ("south", s and b[2] == 16), ("up", u and b[1] == 16)):
             if on:
                 element["faces"].pop(face, None)
+                strips.extend(margin_strips(face, a, b, tex))
+        # A face that runs on into a neighbour would show the texture's own border (the brass plate's bevel, a dark edge line) again
+        # where the two meet, as a seam: leave out the border pixel on each joined edge, so the texture runs on across the join
+        edge = {"west": w and a[0] == 0, "east": e and b[0] == 16, "north": n and a[2] == 0, "south": s and b[2] == 16,
+                "top": u and b[1] == 16}
+        for face, moves in BATTERY_JOIN_TRIMS.items():
+            if face not in element["faces"]:
+                continue
+            patch = list(element["faces"][face].get("uv") or _face_patch(a, b, face))
+            trimmed = False
+            for side, (index, step) in moves.items():
+                if edge[side]:
+                    patch[index] += step
+                    trimmed = True
+            if trimmed:
+                element["faces"][face]["uv"] = [round(v, 4) for v in patch]
         return element
 
     elements = [
@@ -712,7 +839,7 @@ def battery_shell(n=False, e=False, s=False, w=False, u=False):
         elements += [part((14, 0, 5), (14.3, 5, 6.5), "lid"), part((14, 0, 9.5), (14.3, 5, 11), "lid")]
     # A piece whose every face looks into a neighbour (the middle of the body, with all four sides joined) is nothing to draw, and a
     # model with an element that has no faces does not load at all: the game shows the missing model for the whole block
-    return [e for e in elements if e["faces"]]
+    return [e for e in elements + strips if e["faces"]]
 
 
 def battery_joins_name(n, e, s, w, u):
@@ -721,12 +848,19 @@ def battery_joins_name(n, e, s, w, u):
 
 def battery_tier_textures(kind):
     """The materials of each tier of battery. The plain battery is zinc, brass and andesite, as it always was; the next tier will
-    need its own materials, to read apart on a bank."""
+    need its own materials, to read apart on a bank. The dry cell is copper-cased with an iron band; the large battery is a steel
+    tank with a brass band and a black lid."""
+    if kind == "dry_cell":
+        return {"body": COPPER_CASING, "band": IRON, "cap": CASING, "pole": IRON, "lid": DARK, "vent": IRON_BLOCK, "dark": BLACK,
+                "particle": COPPER_CASING}
+    if kind == "large_battery":
+        return {"body": IRON_BLOCK, "band": BRASS, "cap": DARK, "pole": IRON, "lid": DARK, "vent": CASING, "dark": BLACK,
+                "particle": IRON_BLOCK}
     return battery_textures()
 
 
 def battery():
-    for kind in ("battery",):
+    for kind in ("battery", "dry_cell", "large_battery"):
         battery_tier(kind, battery_tier_textures(kind))
 
 
@@ -741,6 +875,7 @@ def battery_tier(kind, textures):
     for side in BATTERY_SIDES:
         lone += battery_gauge_side(side, "dark", 0)
     write(kind + "/block", textures, lone)
+    write_item(kind + "/item", kind + "/block")
     # Charge gauge: four slots along each face of the lid, dark when empty. gauge_N lights the first N of them (the
     # blockstate's charge property, see BatteryChemistry.gaugeStage), so the charge reads from any side without goggles.
     # A side that is joined to another battery has no lid face to put them on.
@@ -1634,6 +1769,18 @@ def precision_head():
     write("precision_cylinder_head/block_injector", textures, base + injector)
     write("precision_cylinder_head/block_plug", textures, base + plug)
     write("precision_cylinder_head/block_injector_plug", textures, base + injector + plug)
+    # The assist stands above the injector's terminal, which it swallows, so that box is left out under it
+    assist = assist_elements(18.4, 10.1, 13.4, 1.7, 5.3)
+    assisted = dict(textures, assist=DARK, coil=BLUE)
+    write("precision_cylinder_head/block_injector_assist", assisted, base + injector[:1] + assist)
+    write("precision_cylinder_head/block_injector_assist_plug", assisted, base + injector[:1] + assist + plug)
+    # The coil stands on the plug's ceramic and swallows its terminal and the one that tops the collar, so those are left out under it
+    coil = coil_elements(3.5, 5.5, 11.5, 13.5, 20.5)
+    coiled = dict(textures, assist=DARK, coil=BLUE)
+    write("precision_cylinder_head/block_plug_coil", coiled, base + plug[:2] + coil)
+    write("precision_cylinder_head/block_injector_plug_coil", coiled, base + injector + plug[:2] + coil)
+    write("precision_cylinder_head/block_injector_assist_plug_coil", coiled,
+          base + injector[:1] + assist + plug[:2] + coil)
     write_item("precision_cylinder_head/item", "precision_cylinder_head/block")
 
 

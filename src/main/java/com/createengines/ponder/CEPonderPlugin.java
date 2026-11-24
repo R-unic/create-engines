@@ -59,6 +59,8 @@ public class CEPonderPlugin implements PonderPlugin {
 			.addStoryBoard("lubrication", EngineScenes::lubrication);
 		scenes.forComponents(CEBlocks.BATTERY, CEBlocks.ALTERNATOR, CEItems.SPARK_PLUG)
 			.addStoryBoard("spark", EngineScenes::spark);
+		scenes.forComponents(CEBlocks.BATTERY, CEBlocks.DRY_CELL, CEBlocks.LARGE_BATTERY)
+			.addStoryBoard("spark", BatteryScenes::batterySizes);
 		scenes.forComponents(CEBlocks.STARTER)
 			.addStoryBoard("starter", EngineScenes::starter);
 		scenes.forComponents(CEBlocks.HEAVY_STARTER)
@@ -117,11 +119,15 @@ public class CEPonderPlugin implements PonderPlugin {
 			.addStoryBoard("jerry_can", RefineryScenes::jerryCan);
 		scenes.forComponents(CEItems.BLUEPRINT, CEBlocks.FRAMED_BLUEPRINT)
 			.addStoryBoard("blueprint", BlueprintScenes::blueprint);
-		for (String fuel : new String[] {"plant_oil", "diesel", "gasoline", "kerosene", "sugar_mash", "ethanol", "methanol", "glycerin", "used_oil", "coolant"})
-			helper.forComponents(CreateEngines.asResource(fuel + "_bucket"))
-				.addStoryBoard("fuels", EngineScenes::fuels);
+		// A burnable fuel opens on what it is for, then how it is made: the column first, the basin recipes after.
 		for (String fuel : new String[] {"plant_oil", "diesel", "gasoline", "kerosene", "ethanol", "methanol"})
 			helper.forComponents(CreateEngines.asResource(fuel + "_bucket"))
-				.addStoryBoard("rain_cap", FuelScenes::choosingAFuel);
+				.addStoryBoard("rain_cap", FuelScenes::choosingAFuel)
+				.addStoryBoard("refinery", RefineryScenes::refinery)
+				.addStoryBoard("fuels", EngineScenes::fuels);
+		// The rest are ingredients and by-products, not fuels to choose between: only how they are made.
+		for (String fuel : new String[] {"sugar_mash", "glycerin", "used_oil", "coolant"})
+			helper.forComponents(CreateEngines.asResource(fuel + "_bucket"))
+				.addStoryBoard("fuels", EngineScenes::fuels);
 	}
 }

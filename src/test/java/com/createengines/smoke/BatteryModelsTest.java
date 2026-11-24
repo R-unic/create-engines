@@ -217,40 +217,165 @@ class BatteryModelsTest {
 		}
 	}
 
-	/** The faces that look into a neighbour are left out, and the body reaches the neighbour's body, so no seam shows. */
+	/**
+	 * The middle of a joined side, which every neighbour covers with its own body, has no face looking into the neighbour, and the
+	 * body reaches the neighbour's body, so no seam shows. Only the margin that a narrower or lower neighbour may leave open keeps
+	 * a thin face (see {@link #aJoinedSideLeavesNoSlotIntoTheBodyWhateverTheNeighbourIs}).
+	 */
 	@Test
-	void aJoinedSideRunsToTheEdgeOfTheBlockWithNoFaceLookingIntoTheNeighbour() throws IOException {
+	void aJoinedSideRunsToTheEdgeOfTheBlockWithNoFaceLookingIntoTheNeighbourInTheMiddle() throws IOException {
 		for (int joins = 0; joins < 32; joins++) {
 			List<Element> all = assembled(state(joins, 0));
 			for (int i = 0; i < 5; i++) {
 				boolean joined = (joins >> i & 1) != 0;
-				String face = switch (JOINS[i]) {
-					case "north" -> "north";
-					case "east" -> "east";
-					case "south" -> "south";
-					case "west" -> "west";
-					default -> "up";
-				};
+				String face = JOINS[i];
 				int a = axis(face);
 				double edge = positive(face) ? 16 : 0;
-				boolean reaches = false, looksOut = false;
+				boolean reaches = false;
 				for (Element e : all) {
 					double at = positive(face) ? e.to()[a] : e.from()[a];
 					if (Math.abs(at - edge) < EPS) {
 						reaches = true;
-						if (e.faces().contains(face))
-							looksOut = true;
+						if (joined && e.faces().contains(face))
+							assertFalse(coversTheMiddle(e, face), JOINS[i] + " joined, but a face looks into the middle of the neighbour (joins " + joins + ")");
 					}
 				}
-				if (joined) {
-					assertFalse(looksOut, JOINS[i] + " joined, but a face looks out of the block that way (joins " + joins + ")");
-					if (i < 4)
-						assertTrue(reaches, JOINS[i] + " joined, but nothing reaches that edge (joins " + joins + ")");
-				} else if (i < 4) {
+				if (joined && i < 4)
+					assertTrue(reaches, JOINS[i] + " joined, but nothing reaches that edge (joins " + joins + ")");
+				else if (!joined && i < 4)
 					assertFalse(reaches, JOINS[i] + " not joined, but something reaches that edge (joins " + joins + ")");
-				}
+				if (!joined)
+					for (Element e : all)
+						if (Math.abs((positive(face) ? e.to()[a] : e.from()[a]) - edge) < EPS && i == 4)
+							assertFalse(e.faces().contains(face) && e.to()[1] - e.from()[1] < EPS, "a strip on the top of a battery that has nothing joined there");
 			}
 		}
+	}
+
+	/** Whether the face of this element at the block's edge lies over the middle (the part inside 2 units of each edge, up to the lid) of that side. */
+	private static boolean coversTheMiddle(Element e, String face) {
+		int a = axis(face);
+		int u = (a + 1) % 3, v = (a + 2) % 3;
+		double ou = Math.min(e.to()[u], 14) - Math.max(e.from()[u], 2);
+		double ov = Math.min(e.to()[v], 14) - Math.max(e.from()[v], 2);
+		if (a == 1)
+			return ou > EPS && ov > EPS;
+		// A side: the middle runs from the ground to the top of the lid, and across the face between the margins
+		double along = a == 0 ? Math.min(e.to()[2], 14) - Math.max(e.from()[2], 2) : Math.min(e.to()[0], 14) - Math.max(e.from()[0], 2);
+		double high = Math.min(e.to()[1], 13.5) - Math.max(e.from()[1], 0);
+		return along > EPS && high > EPS;
+	}
+
+	/** The solid of a shell at one plane of its block, as rectangles in the plane's two other axes, and the faces it draws looking out through it. */
+	private record Plane(List<double[]> solid, List<double[]> faces) {
+	}
+
+	private static Plane plane(List<Element> shell, String face) {
+		int a = axis(face), u = (a + 1) % 3, v = (a + 2) % 3;
+		double at = positive(face) ? 16 : 0;
+		List<double[]> solid = new ArrayList<>(), faces = new ArrayList<>();
+		for (Element e : shell) {
+			double[] rect = {e.from()[u], e.to()[u], e.from()[v], e.to()[v]};
+			double edge = positive(face) ? e.to()[a] : e.from()[a];
+			if (Math.abs(edge - at) > EPS)
+				continue;
+			if (e.to()[a] - e.from()[a] > EPS)
+				solid.add(rect);
+			if (e.faces().contains(face))
+				faces.add(rect);
+		}
+		return new Plane(solid, faces);
+	}
+
+	/**
+	 * What a shell fills at one plane of its block, worked out from its joins and not from its elements: a piece whose every face
+	 * is left out (the middle of a body joined on all four sides) is not in the file, but the space is still the battery's.
+	 * Side planes are rectangles in (up, along) or (along, up) as {@link #plane} orders them; the top and the bottom in (z, x).
+	 */
+	private static List<double[]> filled(int joins, String face) {
+		boolean n = (joins & 1) != 0, e = (joins & 2) != 0, s = (joins & 4) != 0, w = (joins & 8) != 0, up = (joins & 16) != 0;
+		double x0 = w ? 0 : 2, x1 = e ? 16 : 14, z0 = n ? 0 : 2, z1 = s ? 16 : 14;
+		double tx0 = w ? 0 : 1.5, tx1 = e ? 16 : 14.5, tz0 = n ? 0 : 1.5, tz1 = s ? 16 : 14.5;
+		List<double[]> out = new ArrayList<>();
+		if (face.equals("up")) {
+			if (up)
+				out.add(new double[] {z0, z1, x0, x1});
+			return out;
+		}
+		if (face.equals("down")) {
+			out.add(new double[] {z0, z1, x0, x1});
+			return out;
+		}
+		boolean sideOfX = face.equals("east") || face.equals("west");
+		double[][] bands = {{0, 5, 0}, {5, 8, 1}, {8, 12, 0}, {12, 13.5, 1}, {13.5, 16, up ? 0 : -1}};
+		for (double[] band : bands) {
+			if (band[2] < 0)
+				continue;
+			boolean wide = band[2] == 1;
+			double lo = sideOfX ? (wide ? tz0 : z0) : (wide ? tx0 : x0), hi = sideOfX ? (wide ? tz1 : z1) : (wide ? tx1 : x1);
+			out.add(sideOfX ? new double[] {band[0], band[1], lo, hi} : new double[] {lo, hi, band[0], band[1]});
+		}
+		return out;
+	}
+
+	private static boolean within(List<double[]> rects, double p, double q) {
+		for (double[] r : rects)
+			if (p > r[0] + EPS && p < r[1] - EPS && q > r[2] + EPS && q < r[3] - EPS)
+				return true;
+		return false;
+	}
+
+	private static String shell(int joins) {
+		return "block_j" + (joins & 1) + (joins >> 1 & 1) + (joins >> 2 & 1) + (joins >> 3 & 1) + (joins >> 4 & 1);
+	}
+
+	/**
+	 * Where two batteries touch, one may be joined to something the other is not (an L's inside corner, a stacked battery beside one
+	 * with nothing on top), so its body is wider or taller at the plane they share. Whatever of it sticks out past the other must
+	 * still show a face there, or the player looks through a slot into the empty inside of the body. Checked for every shell against
+	 * every shell it can touch, side to side and on top of each other, by sampling the shared plane.
+	 */
+	@Test
+	void aJoinedSideLeavesNoSlotIntoTheBodyWhateverTheNeighbourIs() throws IOException {
+		// Bits in a shell's name: north 1, east 2, south 4, west 8, up 16
+		String[][] pairs = {{"east", "west"}, {"south", "north"}, {"up", "down"}};
+		int[] sideBits = {2, 4, 16};
+		int[] backBits = {8, 1, 0};
+		for (int p = 0; p < pairs.length; p++)
+			for (int first = 0; first < 32; first++) {
+				if ((first & sideBits[p]) == 0)
+					continue;
+				for (int second = 0; second < 32; second++) {
+					if (backBits[p] != 0 && (second & backBits[p]) == 0)
+						continue;
+					Plane near = new Plane(filled(first, pairs[p][0]), plane(elements(shell(first)), pairs[p][0]).faces());
+					List<Element> other = elements(shell(second));
+					Plane far = new Plane(filled(second, pairs[p][1]),
+						pairs[p][1].equals("down") ? downPlane(other).faces() : plane(other, pairs[p][1]).faces());
+					for (double s = 0.125; s < 16; s += 0.25)
+						for (double t = 0.125; t < 16; t += 0.25) {
+							if (within(near.solid(), s, t) && !within(far.solid(), s, t))
+								assertTrue(within(near.faces(), s, t), "shell " + shell(first) + " has a slot on its " + pairs[p][0] + " side at (" + s
+									+ ", " + t + ") where " + shell(second) + " does not reach");
+							if (within(far.solid(), s, t) && !within(near.solid(), s, t))
+								assertTrue(within(far.faces(), s, t), "shell " + shell(second) + " has a slot on its " + pairs[p][1] + " side at (" + s
+									+ ", " + t + ") where " + shell(first) + " does not reach");
+						}
+				}
+			}
+	}
+
+	/** The bottom of a shell: a battery has no join below, so its bottom is solid and drawn wherever its body is. */
+	private static Plane downPlane(List<Element> shell) {
+		List<double[]> solid = new ArrayList<>(), faces = new ArrayList<>();
+		for (Element e : shell)
+			if (Math.abs(e.from()[1]) < EPS && e.to()[1] - e.from()[1] > EPS) {
+				double[] rect = {e.from()[2], e.to()[2], e.from()[0], e.to()[0]};
+				solid.add(rect);
+				if (e.faces().contains("down"))
+					faces.add(rect);
+			}
+		return new Plane(solid, faces);
 	}
 
 	/** A battery with another on top has no terminals, caps or vents, only the body running up to the next one; one with nothing on top has them. */

@@ -396,6 +396,8 @@ public class BatteryDepthGameTests {
 		helper.runAtTickTime(150, () -> {
 			helper.assertTrue(battery.charge() == BatteryBlockEntity.CAPACITY,
 				"A compression engine has no plugs to feed, so cranking it takes no charge: " + battery.charge());
+			helper.assertFalse(((StarterBlockEntity) helper.getBlockEntity(TestEngine.STARTER)).isDrawingCharge(),
+				"and its starter does not claim to be spending any");
 			helper.succeed();
 		});
 	}
@@ -414,6 +416,77 @@ public class BatteryDepthGameTests {
 			double rpm = Math.abs(crank.getSpeed());
 			helper.assertTrue(Math.abs(rpm - TestEngine.MOTOR_RPM) < 1,
 				"but it turns the engine as fast as ever, so an engine that catches at that speed still does: " + rpm + " RPM");
+			helper.succeed();
+		});
+	}
+
+	@GameTest(template = "empty", timeoutTicks = 400, batch = "battery-depth")
+	public static void aStarterSaysItIsSpendingBatteryChargeWhileItCranksASparkEngine(GameTestHelper helper) {
+		TestEngine.buildSpark(helper.getLevel(), helper.absolutePos(BlockPos.ZERO), true);
+		helper.setBlock(TestEngine.ALTERNATOR, Blocks.AIR);
+		var head = (com.createengines.content.head.CylinderHeadBlockEntity) helper.getBlockEntity(TestEngine.HEAD);
+		head.tank()
+			.drain(1000, net.neoforged.neoforge.fluids.capability.IFluidHandler.FluidAction.EXECUTE);
+		battery(helper, TestEngine.BATTERY).charge(BatteryBlockEntity.CAPACITY);
+		helper.runAtTickTime(100, () -> {
+			StarterBlockEntity starter = helper.getBlockEntity(TestEngine.STARTER);
+			helper.assertTrue(starter.isDrawingCharge(), "A starter cranking a spark engine with no fuel says it is spending battery charge");
+			helper.assertFalse(starter.isBatteryWeak(), "and a charged bank is not called nearly flat");
+			helper.succeed();
+		});
+	}
+
+	/** A spark engine with no fuel and nothing turning the starter's input, so only the starter and the batteries can move it. */
+	private static void sparkWithNoInput(GameTestHelper helper) {
+		TestEngine.buildSpark(helper.getLevel(), helper.absolutePos(BlockPos.ZERO), true);
+		helper.setBlock(TestEngine.ALTERNATOR, Blocks.AIR);
+		helper.setBlock(TestEngine.MOTOR, Blocks.AIR);
+		var head = (com.createengines.content.head.CylinderHeadBlockEntity) helper.getBlockEntity(TestEngine.HEAD);
+		head.tank()
+			.drain(1000, net.neoforged.neoforge.fluids.capability.IFluidHandler.FluidAction.EXECUTE);
+	}
+
+	@GameTest(template = "empty", timeoutTicks = 400, batch = "battery-depth")
+	public static void aStarterWithNoInputTurnsASparkEngineOverFromItsCharge(GameTestHelper helper) {
+		sparkWithNoInput(helper);
+		BatteryBlockEntity battery = battery(helper, TestEngine.BATTERY);
+		battery.charge(BatteryBlockEntity.CAPACITY);
+		helper.runAtTickTime(100, () -> {
+			StarterBlockEntity starter = helper.getBlockEntity(TestEngine.STARTER);
+			helper.assertTrue(starter.isElectric(), "With a charged battery and no input the starter says it is turning from the batteries");
+			var crank = (com.createengines.content.crankshaft.CrankshaftBlockEntity) helper.getBlockEntity(TestEngine.PRIMARY);
+			double rpm = Math.abs(crank.getSpeed());
+			// Fuel left in the cylinders may catch and add a little, so the electric speed is a floor, not an exact figure
+			helper.assertTrue(rpm >= StarterBlockEntity.ELECTRIC_RPM - 2, "The engine is turned at the electric speed or better: " + rpm + " RPM");
+			helper.assertTrue(battery.charge() < BatteryBlockEntity.CAPACITY, "and the turning costs charge: " + battery.charge());
+			helper.succeed();
+		});
+	}
+
+	@GameTest(template = "empty", timeoutTicks = 400, batch = "battery-depth")
+	public static void aStarterWithNoInputDoesNothingOnAFlatBank(GameTestHelper helper) {
+		sparkWithNoInput(helper);
+		battery(helper, TestEngine.BATTERY).charge(0);
+		helper.runAtTickTime(100, () -> {
+			StarterBlockEntity starter = helper.getBlockEntity(TestEngine.STARTER);
+			helper.assertFalse(starter.isElectric(), "An empty bank cannot turn the starter");
+			var crank = (com.createengines.content.crankshaft.CrankshaftBlockEntity) helper.getBlockEntity(TestEngine.PRIMARY);
+			helper.assertTrue(Math.abs(crank.getSpeed()) < 1, "so the engine stays still: " + crank.getSpeed());
+			helper.succeed();
+		});
+	}
+
+	@GameTest(template = "empty", timeoutTicks = 400, batch = "battery-depth")
+	public static void aCompressionEngineStarterWithNoInputStaysStill(GameTestHelper helper) {
+		TestEngine.build(helper.getLevel(), helper.absolutePos(BlockPos.ZERO), false);
+		helper.setBlock(TestEngine.MOTOR, Blocks.AIR);
+		helper.setBlock(TestEngine.BATTERY, CEBlocks.BATTERY.getDefaultState());
+		battery(helper, TestEngine.BATTERY).charge(BatteryBlockEntity.CAPACITY);
+		helper.runAtTickTime(100, () -> {
+			StarterBlockEntity starter = helper.getBlockEntity(TestEngine.STARTER);
+			helper.assertFalse(starter.isElectric(), "A compression engine's starter has nothing electric to turn it");
+			var crank = (com.createengines.content.crankshaft.CrankshaftBlockEntity) helper.getBlockEntity(TestEngine.PRIMARY);
+			helper.assertTrue(Math.abs(crank.getSpeed()) < 1, "so with no rotation the engine stays still: " + crank.getSpeed());
 			helper.succeed();
 		});
 	}

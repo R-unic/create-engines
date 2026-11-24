@@ -1,0 +1,564 @@
+{
+  "multipart": [
+    {
+      "apply": {
+        "model": "create_engines:block/large_battery/block_j00000"
+      },
+      "when": {
+        "east": "false",
+        "north": "false",
+        "south": "false",
+        "up": "false",
+        "west": "false"
+      }
+    },
+    {
+      "apply": {
+        "model": "create_engines:block/large_battery/block_j10000"
+      },
+      "when": {
+        "east": "false",
+        "north": "true",
+        "south": "false",
+        "up": "false",
+        "west": "false"
+      }
+    },
+    {
+      "apply": {
+        "model": "create_engines:block/large_battery/block_j01000"
+      },
+      "when": {
+        "east": "true",
+        "north": "false",
+        "south": "false",
+        "up": "false",
+        "west": "false"
+      }
+    },
+    {
+      "apply": {
+        "model": "create_engines:block/large_battery/block_j11000"
+      },
+      "when": {
+        "east": "true",
+        "north": "true",
+        "south": "false",
+        "up": "false",
+        "west": "false"
+      }
+    },
+    {
+      "apply": {
+        "model": "create_engines:block/large_battery/block_j00100"
+      },
+      "when": {
+        "east": "false",
+        "north": "false",
+        "south": "true",
+        "up": "false",
+        "west": "false"
+      }
+    },
+    {
+      "apply": {
+        "model": "create_engines:block/large_battery/block_j10100"
+      },
+      "when": {
+        "east": "false",
+        "north": "true",
+        "south": "true",
+        "up": "false",
+        "west": "false"
+      }
+    },
+    {
+      "apply": {
+        "model": "create_engines:block/large_battery/block_j01100"
+      },
+      "when": {
+        "east": "true",
+        "north": "false",
+        "south": "true",
+        "up": "false",
+        "west": "false"
+      }
+    },
+    {
+      "apply": {
+        "model": "create_engines:block/large_battery/block_j11100"
+      },
+      "when": {
+        "east": "true",
+        "north": "true",
+        "south": "true",
+        "up": "false",
+        "west": "false"
+      }
+    },
+    {
+      "apply": {
+        "model": "create_engines:block/large_battery/block_j00010"
+      },
+      "when": {
+        "east": "false",
+        "north": "false",
+        "south": "false",
+        "up": "false",
+        "west": "true"
+      }
+    },
+    {
+      "apply": {
+        "model": "create_engines:block/large_battery/block_j10010"
+      },
+      "when": {
+        "east": "false",
+        "north": "true",
+        "south": "false",
+        "up": "false",
+        "west": "true"
+      }
+    },
+    {
+      "apply": {
+        "model": "create_engines:block/large_battery/block_j01010"
+      },
+      "when": {
+        "east": "true",
+        "north": "false",
+        "south": "false",
+        "up": "false",
+        "west": "true"
+      }
+    },
+    {
+      "apply": {
+        "model": "create_engines:block/large_battery/block_j11010"
+      },
+      "when": {
+        "east": "true",
+        "north": "true",
+        "south": "false",
+        "up": "false",
+        "west": "true"
+      }
+    },
+    {
+      "apply": {
+        "model": "create_engines:block/large_battery/block_j00110"
+      },
+      "when": {
+        "east": "false",
+        "north": "false",
+        "south": "true",
+        "up": "false",
+        "west": "true"
+      }
+    },
+    {
+      "apply": {
+        "model": "create_engines:block/large_battery/block_j10110"
+      },
+      "when": {
+        "east": "false",
+        "north": "true",
+        "south": "true",
+        "up": "false",
+        "west": "true"
+      }
+    },
+    {
+      "apply": {
+        "model": "create_engines:block/large_battery/block_j01110"
+      },
+      "when": {
+        "east": "true",
+        "north": "false",
+        "south": "true",
+        "up": "false",
+        "west": "true"
+      }
+    },
+    {
+      "apply": {
+        "model": "create_engines:block/large_battery/block_j11110"
+      },
+      "when": {
+        "east": "true",
+        "north": "true",
+        "south": "true",
+        "up": "false",
+        "west": "true"
+      }
+    },
+    {
+      "apply": {
+        "model": "create_engines:block/large_battery/block_j00001"
+      },
+      "when": {
+        "east": "false",
+        "north": "false",
+        "south": "false",
+        "up": "true",
+        "west": "false"
+      }
+    },
+    {
+      "apply": {
+        "model": "create_engines:block/large_battery/block_j10001"
+      },
+      "when": {
+        "east": "false",
+        "north": "true",
+        "south": "false",
+        "up": "true",
+        "west": "false"
+      }
+    },
+    {
+      "apply": {
+        "model": "create_engines:block/large_battery/block_j01001"
+      },
+      "when": {
+        "east": "true",
+        "north": "false",
+        "south": "false",
+        "up": "true",
+        "west": "false"
+      }
+    },
+    {
+      "apply": {
+        "model": "create_engines:block/large_battery/block_j11001"
+      },
+      "when": {
+        "east": "true",
+        "north": "true",
+        "south": "false",
+        "up": "true",
+        "west": "false"
+      }
+    },
+    {
+      "apply": {
+        "model": "create_engines:block/large_battery/block_j00101"
+      },
+      "when": {
+        "east": "false",
+        "north": "false",
+        "south": "true",
+        "up": "true",
+        "west": "false"
+      }
+    },
+    {
+      "apply": {
+        "model": "create_engines:block/large_battery/block_j10101"
+      },
+      "when": {
+        "east": "false",
+        "north": "true",
+        "south": "true",
+        "up": "true",
+        "west": "false"
+      }
+    },
+    {
+      "apply": {
+        "model": "create_engines:block/large_battery/block_j01101"
+      },
+      "when": {
+        "east": "true",
+        "north": "false",
+        "south": "true",
+        "up": "true",
+        "west": "false"
+      }
+    },
+    {
+      "apply": {
+        "model": "create_engines:block/large_battery/block_j11101"
+      },
+      "when": {
+        "east": "true",
+        "north": "true",
+        "south": "true",
+        "up": "true",
+        "west": "false"
+      }
+    },
+    {
+      "apply": {
+        "model": "create_engines:block/large_battery/block_j00011"
+      },
+      "when": {
+        "east": "false",
+        "north": "false",
+        "south": "false",
+        "up": "true",
+        "west": "true"
+      }
+    },
+    {
+      "apply": {
+        "model": "create_engines:block/large_battery/block_j10011"
+      },
+      "when": {
+        "east": "false",
+        "north": "true",
+        "south": "false",
+        "up": "true",
+        "west": "true"
+      }
+    },
+    {
+      "apply": {
+        "model": "create_engines:block/large_battery/block_j01011"
+      },
+      "when": {
+        "east": "true",
+        "north": "false",
+        "south": "false",
+        "up": "true",
+        "west": "true"
+      }
+    },
+    {
+      "apply": {
+        "model": "create_engines:block/large_battery/block_j11011"
+      },
+      "when": {
+        "east": "true",
+        "north": "true",
+        "south": "false",
+        "up": "true",
+        "west": "true"
+      }
+    },
+    {
+      "apply": {
+        "model": "create_engines:block/large_battery/block_j00111"
+      },
+      "when": {
+        "east": "false",
+        "north": "false",
+        "south": "true",
+        "up": "true",
+        "west": "true"
+      }
+    },
+    {
+      "apply": {
+        "model": "create_engines:block/large_battery/block_j10111"
+      },
+      "when": {
+        "east": "false",
+        "north": "true",
+        "south": "true",
+        "up": "true",
+        "west": "true"
+      }
+    },
+    {
+      "apply": {
+        "model": "create_engines:block/large_battery/block_j01111"
+      },
+      "when": {
+        "east": "true",
+        "north": "false",
+        "south": "true",
+        "up": "true",
+        "west": "true"
+      }
+    },
+    {
+      "apply": {
+        "model": "create_engines:block/large_battery/block_j11111"
+      },
+      "when": {
+        "east": "true",
+        "north": "true",
+        "south": "true",
+        "up": "true",
+        "west": "true"
+      }
+    },
+    {
+      "apply": {
+        "model": "create_engines:block/large_battery/block_dark_north"
+      },
+      "when": {
+        "north": "false"
+      }
+    },
+    {
+      "apply": {
+        "model": "create_engines:block/large_battery/block_gauge_1_north"
+      },
+      "when": {
+        "charge": "1",
+        "north": "false"
+      }
+    },
+    {
+      "apply": {
+        "model": "create_engines:block/large_battery/block_gauge_2_north"
+      },
+      "when": {
+        "charge": "2",
+        "north": "false"
+      }
+    },
+    {
+      "apply": {
+        "model": "create_engines:block/large_battery/block_gauge_3_north"
+      },
+      "when": {
+        "charge": "3",
+        "north": "false"
+      }
+    },
+    {
+      "apply": {
+        "model": "create_engines:block/large_battery/block_gauge_4_north"
+      },
+      "when": {
+        "charge": "4",
+        "north": "false"
+      }
+    },
+    {
+      "apply": {
+        "model": "create_engines:block/large_battery/block_dark_east"
+      },
+      "when": {
+        "east": "false"
+      }
+    },
+    {
+      "apply": {
+        "model": "create_engines:block/large_battery/block_gauge_1_east"
+      },
+      "when": {
+        "charge": "1",
+        "east": "false"
+      }
+    },
+    {
+      "apply": {
+        "model": "create_engines:block/large_battery/block_gauge_2_east"
+      },
+      "when": {
+        "charge": "2",
+        "east": "false"
+      }
+    },
+    {
+      "apply": {
+        "model": "create_engines:block/large_battery/block_gauge_3_east"
+      },
+      "when": {
+        "charge": "3",
+        "east": "false"
+      }
+    },
+    {
+      "apply": {
+        "model": "create_engines:block/large_battery/block_gauge_4_east"
+      },
+      "when": {
+        "charge": "4",
+        "east": "false"
+      }
+    },
+    {
+      "apply": {
+        "model": "create_engines:block/large_battery/block_dark_south"
+      },
+      "when": {
+        "south": "false"
+      }
+    },
+    {
+      "apply": {
+        "model": "create_engines:block/large_battery/block_gauge_1_south"
+      },
+      "when": {
+        "charge": "1",
+        "south": "false"
+      }
+    },
+    {
+      "apply": {
+        "model": "create_engines:block/large_battery/block_gauge_2_south"
+      },
+      "when": {
+        "charge": "2",
+        "south": "false"
+      }
+    },
+    {
+      "apply": {
+        "model": "create_engines:block/large_battery/block_gauge_3_south"
+      },
+      "when": {
+        "charge": "3",
+        "south": "false"
+      }
+    },
+    {
+      "apply": {
+        "model": "create_engines:block/large_battery/block_gauge_4_south"
+      },
+      "when": {
+        "charge": "4",
+        "south": "false"
+      }
+    },
+    {
+      "apply": {
+        "model": "create_engines:block/large_battery/block_dark_west"
+      },
+      "when": {
+        "west": "false"
+      }
+    },
+    {
+      "apply": {
+        "model": "create_engines:block/large_battery/block_gauge_1_west"
+      },
+      "when": {
+        "charge": "1",
+        "west": "false"
+      }
+    },
+    {
+      "apply": {
+        "model": "create_engines:block/large_battery/block_gauge_2_west"
+      },
+      "when": {
+        "charge": "2",
+        "west": "false"
+      }
+    },
+    {
+      "apply": {
+        "model": "create_engines:block/large_battery/block_gauge_3_west"
+      },
+      "when": {
+        "charge": "3",
+        "west": "false"
+      }
+    },
+    {
+      "apply": {
+        "model": "create_engines:block/large_battery/block_gauge_4_west"
+      },
+      "when": {
+        "charge": "4",
+        "west": "false"
+      }
+    }
+  ]
+}

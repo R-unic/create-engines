@@ -1,6 +1,7 @@
 package com.createengines.engine.sim;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.junit.jupiter.api.Test;
 
@@ -39,5 +40,29 @@ class BatteryTierTest {
 		assertEquals(0, BatteryChemistry.deliverableLimit(100, 1, true, 5), EPS, "a loss past 1 is held to all of it");
 		assertEquals(100, BatteryChemistry.deliverableLimit(100, 1, true, -5), EPS, "a negative loss is none");
 		assertEquals(0, BatteryChemistry.deliverable(-3, 100, 0, true, 0), EPS);
+	}
+
+	@Test
+	void theDryCellIsSmallerThanThePlainBatteryAndColdProof() {
+		assertEquals(100, BatteryTier.DRY_CELL.capacity(), 0);
+		assertTrue(BatteryTier.DRY_CELL.capacity() < BatteryTier.PLAIN.capacity());
+		assertEquals(0, BatteryTier.DRY_CELL.coldLoss(), 0);
+		assertEquals(100, BatteryChemistry.deliverableLimit(100, 1, true, BatteryTier.DRY_CELL.coldLoss()), EPS);
+	}
+
+	@Test
+	void theLargeBatteryIsFourPlainOnesAndTheColdHoldsBackThreeQuarters() {
+		assertEquals(800, BatteryTier.LARGE.capacity(), 0);
+		assertEquals(4 * BatteryTier.PLAIN.capacity(), BatteryTier.LARGE.capacity(), 0);
+		assertEquals(0.75, BatteryTier.LARGE.coldLoss(), 0);
+		assertEquals(200, BatteryChemistry.deliverableLimit(800, 1, true, BatteryTier.LARGE.coldLoss()), EPS);
+	}
+
+	@Test
+	void everyTierHasASaneSizeAndLoss() {
+		for (BatteryTier tier : BatteryTier.values()) {
+			assertTrue(tier.capacity() > 0 && Float.isFinite(tier.capacity()), tier + " has a capacity");
+			assertTrue(tier.coldLoss() >= 0 && tier.coldLoss() <= 1, tier + " loses a share of it, 0 to 1");
+		}
 	}
 }

@@ -6,6 +6,8 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+import com.createengines.engine.sim.ChargePriority;
+
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.world.level.Level;
@@ -86,16 +88,38 @@ public final class BatteryBank {
 	 * down evenly. Returns how much was taken.
 	 */
 	public static float drawUpTo(List<BatteryBlockEntity> bank, float wanted) {
-		float available = deliverable(bank);
+		return drawUpTo(bank, wanted, ChargePriority.Use.ESSENTIAL);
+	}
+
+	/**
+	 * The same for a draw of {@code use}: an essential one (a spark, a starter) may take from any battery, the reserve last; an
+	 * optional one (another mod's wire) only from batteries that are not set to reserve ({@link ChargePriority}). With no reserve in
+	 * the bank every use gives what it always gave.
+	 */
+	public static float drawUpTo(List<BatteryBlockEntity> bank, float wanted, ChargePriority.Use use) {
+		if (reserveCount(bank) == 0) {
+			// The common case, and a spark is drawn many times a tick: no arrays, the even share a bank has always given
+			float all = deliverable(bank);
+			if (!(wanted > 0) || !(all > 0))
+				return 0;
+			float taken = Math.min(wanted, all);
+			float share = taken / all;
+			for (int i = 0, n = bank.size(); i < n; i++) {
+				BatteryBlockEntity battery = bank.get(i);
+				battery.draw(battery.deliverable() * share);
+			}
+			return taken;
+		}
+		float[] deliverable = deliverables(bank);
+		boolean[] reserved = reserves(bank);
+		float available = ChargePriority.available(deliverable, reserved, use);
 		if (!(wanted > 0) || !(available > 0))
 			return 0;
-		float taken = Math.min(wanted, available);
-		float share = taken / available;
-		for (int i = 0, n = bank.size(); i < n; i++) {
-			BatteryBlockEntity battery = bank.get(i);
-			battery.draw(battery.deliverable() * share);
-		}
-		return taken;
+		float[] amounts = ChargePriority.split(deliverable, reserved, wanted, use);
+		for (int i = 0, n = bank.size(); i < n; i++)
+			bank.get(i)
+				.draw(amounts[i]);
+		return Math.min(wanted, available);
 	}
 
 	/** Takes {@code wanted} sparks only if the bank can give all of it, and returns whether it did. */
@@ -106,23 +130,70 @@ public final class BatteryBank {
 		return true;
 	}
 
+	/** The charge a draw of {@code use} could have from the bank now: all of it for an essential one, the batteries that are not a reserve for an optional one. */
+	public static float deliverable(List<BatteryBlockEntity> bank, ChargePriority.Use use) {
+		// An injector assist asks every shot: with no reserve in the bank every use sees all of it, so no arrays are needed
+		if (reserveCount(bank) == 0)
+			return deliverable(bank);
+		return ChargePriority.available(deliverables(bank), reserves(bank), use);
+	}
+
+	/** How many of the bank's batteries are set to hold their charge in reserve. */
+	public static int reserveCount(List<BatteryBlockEntity> bank) {
+		int count = 0;
+		for (int i = 0, n = bank.size(); i < n; i++)
+			if (bank.get(i)
+				.isReserve())
+				count++;
+		return count;
+	}
+
+	/** The charge held by the batteries that are set to reserve, in sparks. */
+	public static float reserveCharge(List<BatteryBlockEntity> bank) {
+		float total = 0;
+		for (int i = 0, n = bank.size(); i < n; i++) {
+			BatteryBlockEntity battery = bank.get(i);
+			if (battery.isReserve())
+				total += battery.charge();
+		}
+		return total;
+	}
+
+	private static float[] deliverables(List<BatteryBlockEntity> bank) {
+		float[] values = new float[bank.size()];
+		for (int i = 0; i < values.length; i++)
+			values[i] = bank.get(i)
+				.deliverable();
+		return values;
+	}
+
+	private static boolean[] reserves(List<BatteryBlockEntity> bank) {
+		boolean[] values = new boolean[bank.size()];
+		for (int i = 0; i < values.length; i++)
+			values[i] = bank.get(i)
+				.isReserve();
+		return values;
+	}
+
 	/**
 	 * Puts up to {@code sparks} into the bank, each member taking in proportion to the room it has, so a bank fills evenly.
 	 * Returns how much there was room for.
 	 */
 	public static float fill(List<BatteryBlockEntity> bank, float sparks) {
+		float[] rooms = new float[bank.size()];
 		float room = 0;
-		for (int i = 0, n = bank.size(); i < n; i++)
-			room += bank.get(i)
+		for (int i = 0; i < rooms.length; i++) {
+			rooms[i] = bank.get(i)
 				.room();
+			room += rooms[i];
+		}
 		if (!(sparks > 0) || !(room > 0))
 			return 0;
-		float put = Math.min(sparks, room);
-		float share = put / room;
-		for (int i = 0, n = bank.size(); i < n; i++) {
-			BatteryBlockEntity battery = bank.get(i);
-			battery.charge(battery.room() * share);
-		}
-		return put;
+		// A reserve fills first; with none in the bank this is the even share it has always been
+		float[] amounts = ChargePriority.fillSplit(rooms, reserves(bank), sparks);
+		for (int i = 0; i < rooms.length; i++)
+			bank.get(i)
+				.charge(amounts[i]);
+		return Math.min(sparks, room);
 	}
 }

@@ -24,10 +24,22 @@
       ],
       "faces": {
         "north": {
-          "texture": "#body"
+          "texture": "#body",
+          "uv": [
+            1,
+            11,
+            14,
+            16
+          ]
         },
         "south": {
-          "texture": "#body"
+          "texture": "#body",
+          "uv": [
+            2,
+            11,
+            15,
+            16
+          ]
         },
         "west": {
           "texture": "#body"
@@ -50,10 +62,22 @@
       ],
       "faces": {
         "north": {
-          "texture": "#body"
+          "texture": "#body",
+          "uv": [
+            1,
+            4,
+            14,
+            8
+          ]
         },
         "south": {
-          "texture": "#body"
+          "texture": "#body",
+          "uv": [
+            2,
+            4,
+            15,
+            8
+          ]
         },
         "west": {
           "texture": "#body"
@@ -73,16 +97,34 @@
       ],
       "faces": {
         "north": {
-          "texture": "#band"
+          "texture": "#band",
+          "uv": [
+            1,
+            8,
+            14.5,
+            11
+          ]
         },
         "south": {
-          "texture": "#band"
+          "texture": "#band",
+          "uv": [
+            1.5,
+            8,
+            15,
+            11
+          ]
         },
         "west": {
           "texture": "#band"
         },
         "up": {
-          "texture": "#band"
+          "texture": "#band",
+          "uv": [
+            1.5,
+            1.5,
+            15,
+            14.5
+          ]
         },
         "down": {
           "texture": "#band"
@@ -102,16 +144,34 @@
       ],
       "faces": {
         "north": {
-          "texture": "#lid"
+          "texture": "#lid",
+          "uv": [
+            1,
+            2.5,
+            14.5,
+            4
+          ]
         },
         "south": {
-          "texture": "#lid"
+          "texture": "#lid",
+          "uv": [
+            1.5,
+            2.5,
+            15,
+            4
+          ]
         },
         "west": {
           "texture": "#lid"
         },
         "up": {
-          "texture": "#lid"
+          "texture": "#lid",
+          "uv": [
+            1.5,
+            1.5,
+            15,
+            14.5
+          ]
         },
         "down": {
           "texture": "#lid"

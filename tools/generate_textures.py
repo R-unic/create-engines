@@ -63,6 +63,7 @@ STEEL = ramp("353b39", "404543", "494c4a", "505351", "585b58", "60635f", "686c68
 IRON = ramp("2b2b2e", "353438", "3f3e42", "444444", "494848", "4f4f4f", "595858", "676161", "757171", "8d8b8b", "989797")
 OXIDE = ramp("1b1a1d", "1f1e20", "252426", "29282a", "2f2e31", "353437", "3b3a3d", "43414f", "4f4e5a", "565660")
 RED = ramp("3d161e", "592424", "7a2a2d", "93333a", "a93f4b", "b84e55", "c8625f", "dc8676", "efb79c")
+BLUE = ramp("162447", "1f3766", "27498a", "315ba8", "3f73c4", "5589d6", "71a4e2", "9cc3ee", "cfe3f8")
 CERAMIC = ramp("8f8672", "a89d86", "bfb39a", "d4c2a4", "e0d2ae", "e8dfc2", "f2ecd6", "fbf8ea")
 WRAP = ramp("3d2c17", "553a1f", "5a4424", "70522e", "7a5a34", "886539", "a58150", "bb9c6c", "cfb78c")
 SCREEN = ramp("0d0f10", "14181a", "1a1f22", "222227", "2a3136", "3c4c52")
@@ -192,6 +193,15 @@ def enamel_red():
         return 5.2 if y in (3, 4) and 2 < x < 13 else 3.8 + 0.5 * (hashed(x // 2, y // 2, 3) - 0.5) - (0.8 if y > 11 else 0)
 
     return rimmed(RED, inside, outer=(1, 0, 0), inner=(-2, -3, -4, -5))
+
+
+def enamel_blue():
+    """Gloss paint for the electric motor's can, laid like the red: flat colour with one highlight along the top."""
+
+    def inside(x, y):
+        return 5.2 if y in (3, 4) and 2 < x < 13 else 3.8 + 0.5 * (hashed(x // 2, y // 2, 5) - 0.5) - (0.8 if y > 11 else 0)
+
+    return rimmed(BLUE, inside, outer=(1, 0, 0), inner=(-2, -3, -4, -5))
 
 
 def flywheel_steel():
@@ -573,7 +583,7 @@ def main():
         write_png("particle/glow_%d" % index, glow(17 + 11 * index))
     for name, painter in (("brass", brass), ("copper", copper), ("copper_panel", copper_panel), ("steel", steel),
                           ("cast_iron", cast_iron), ("black_oxide", black_oxide), ("rivet_plate", rivet_plate),
-                          ("enamel_red", enamel_red), ("flywheel_steel", flywheel_steel), ("flywheel_oxide", flywheel_oxide), ("flywheel_coil", flywheel_coil),
+                          ("enamel_red", enamel_red), ("enamel_blue", enamel_blue),("flywheel_steel", flywheel_steel), ("flywheel_oxide", flywheel_oxide), ("flywheel_coil", flywheel_coil),
                           ("flywheel_enamel", flywheel_enamel), ("ceramic", ceramic), ("screen", screen), ("column_glow", column_glow), ("heat_wrap", heat_wrap),
                           ("grille", grille)):
         write_png("block/" + name, painter())

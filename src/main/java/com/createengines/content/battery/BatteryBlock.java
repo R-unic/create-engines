@@ -6,6 +6,7 @@ import com.createengines.engine.sim.BatteryChemistry;
 import com.createengines.engine.sim.BatteryTier;
 import com.createengines.engine.topology.EngineTopology;
 import com.createengines.registry.CEBlockEntities;
+import com.createengines.registry.CELang;
 import com.simibubi.create.content.equipment.wrench.IWrenchable;
 import com.simibubi.create.foundation.block.IBE;
 
@@ -13,7 +14,9 @@ import org.jetbrains.annotations.Nullable;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.world.InteractionResult;
 import net.minecraft.world.item.context.BlockPlaceContext;
+import net.minecraft.world.item.context.UseOnContext;
 import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.LevelAccessor;
@@ -184,6 +187,28 @@ public class BatteryBlock extends Block implements IWrenchable, IBE<BatteryBlock
 			return;
 		TOPOLOGY.incrementAndGet();
 		EngineTopology.markDirty(level, pos);
+	}
+
+	/**
+	 * The wrench sets or clears this battery's reserve ({@link BatteryBlockEntity#isReserve}): a reserve is kept for the starter
+	 * and the spark plugs, and other mods' wires cannot draw on it. A battery has no facing, so the wrench had nothing else to do
+	 * here. Sneaking still picks the battery up.
+	 */
+	@Override
+	public InteractionResult onWrenched(BlockState state, UseOnContext context) {
+		Level level = context.getLevel();
+		BlockPos pos = context.getClickedPos();
+		if (!(level.getBlockEntity(pos) instanceof BatteryBlockEntity battery))
+			return IWrenchable.super.onWrenched(state, context);
+		if (!level.isClientSide) {
+			battery.setReserve(!battery.isReserve());
+			IWrenchable.playRotateSound(level, pos);
+			if (context.getPlayer() != null)
+				context.getPlayer()
+					.displayClientMessage(CELang.translate(battery.isReserve() ? "battery.reserve.on" : "battery.reserve.off")
+						.component(), true);
+		}
+		return InteractionResult.sidedSuccess(level.isClientSide);
 	}
 
 	@Override

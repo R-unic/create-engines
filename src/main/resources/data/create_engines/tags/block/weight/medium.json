@@ -4,6 +4,7 @@
 		"create_engines:precision_cylinder",
 		"create_engines:rotor_housing",
 		"create_engines:alternator",
-		"create_engines:sump"
+		"create_engines:sump",
+		"create_engines:dry_cell"
 	]
 }

@@ -8,7 +8,13 @@ package com.createengines.engine.sim;
 public enum BatteryTier {
 
 	/** The battery that has always been there. */
-	PLAIN(BatteryChemistry.CAPACITY, BatteryChemistry.MAX_COLD_LOSS);
+	PLAIN(BatteryChemistry.CAPACITY, BatteryChemistry.MAX_COLD_LOSS),
+
+	/** Half the capacity, and the cold does not touch it: the one to put outdoors in a snowy biome or away from any heat. */
+	DRY_CELL(100, 0),
+
+	/** Four times the plain battery, and the cold holds back up to three quarters of it: the bank for a motor, kept somewhere warm. */
+	LARGE(800, 0.75);
 
 	private final float capacity;
 	private final double coldLoss;

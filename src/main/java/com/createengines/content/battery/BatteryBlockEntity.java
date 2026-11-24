@@ -5,7 +5,9 @@ import java.util.List;
 import org.jetbrains.annotations.Nullable;
 
 import com.createengines.engine.sim.BatteryChemistry;
+import com.createengines.engine.sim.BatteryEnergy;
 import com.createengines.engine.sim.BatteryTier;
+import com.createengines.engine.sim.ChargePriority;
 import com.createengines.engine.sim.HeatRecovery;
 import com.createengines.engine.sim.Tuning;
 import com.createengines.engine.topology.EngineMember;
@@ -49,6 +51,8 @@ public class BatteryBlockEntity extends SmartBlockEntity implements IHaveGoggleI
 	private static final float RATE_SMOOTHING = 0.05f;
 
 	private float charge;
+	/** Held back for the starter and the spark plugs: other mods' wires and electric parts cannot draw on it ({@link com.createengines.engine.sim.ChargePriority}). */
+	private boolean reserve;
 	private @Nullable BlockPos primaryPos;
 	private float syncedCharge = -1;
 	private float syncedRate;
@@ -77,6 +81,20 @@ public class BatteryBlockEntity extends SmartBlockEntity implements IHaveGoggleI
 	/** The charge this battery holds, in sparks. */
 	public float charge() {
 		return charge;
+	}
+
+	/** Whether this battery is set to hold its charge in reserve for the starter and the plugs. */
+	public boolean isReserve() {
+		return reserve;
+	}
+
+	/** Sets or clears the reserve, and tells the clients and the save. */
+	public void setReserve(boolean reserve) {
+		if (this.reserve == reserve)
+			return;
+		this.reserve = reserve;
+		setChanged();
+		sendData();
 	}
 
 	/** Which kind of battery this is (a plain battery when the block is not a battery block, which only a test can arrange). */
@@ -131,6 +149,53 @@ public class BatteryBlockEntity extends SmartBlockEntity implements IHaveGoggleI
 		charge += taken;
 		return taken;
 	}
+
+	/**
+	 * The Forge Energy this battery offers on every face, for other mods' wires: the whole bank's deliverable charge, take only.
+	 * Nothing can be put in, so no other mod's generator can charge a battery, and a cold bank offers only what it can deliver.
+	 */
+	public net.neoforged.neoforge.energy.IEnergyStorage energyOutput() {
+		return output;
+	}
+
+	private final net.neoforged.neoforge.energy.IEnergyStorage output = new net.neoforged.neoforge.energy.IEnergyStorage() {
+		@Override
+		public int receiveEnergy(int toReceive, boolean simulate) {
+			return 0;
+		}
+
+		@Override
+		public int extractEnergy(int toExtract, boolean simulate) {
+			if (toExtract <= 0 || level == null || level.isClientSide)
+				return 0;
+			List<BatteryBlockEntity> bank = bank();
+			// Another mod's wire is an optional draw: a battery set to reserve is kept for the starter and the plugs
+			int out = Math.min(toExtract, BatteryEnergy.toEnergy(BatteryBank.deliverable(bank, ChargePriority.Use.OPTIONAL)));
+			if (out > 0 && !simulate)
+				BatteryBank.drawUpTo(bank, (float) BatteryEnergy.toSparks(out), ChargePriority.Use.OPTIONAL);
+			return out;
+		}
+
+		@Override
+		public int getEnergyStored() {
+			return BatteryEnergy.toEnergy(BatteryBank.deliverable(bank(), ChargePriority.Use.OPTIONAL));
+		}
+
+		@Override
+		public int getMaxEnergyStored() {
+			return BatteryEnergy.toEnergy(BatteryBank.capacity(bank()));
+		}
+
+		@Override
+		public boolean canExtract() {
+			return true;
+		}
+
+		@Override
+		public boolean canReceive() {
+			return false;
+		}
+	};
 
 	/** The batteries that touch this one, and those that touch them, this one included. Looked for again about once a second. */
 	public List<BatteryBlockEntity> bank() {
@@ -255,6 +320,9 @@ public class BatteryBlockEntity extends SmartBlockEntity implements IHaveGoggleI
 		super.write(tag, registries, clientPacket);
 		tag.putFloat("Charge", charge);
 		tag.putFloat("Cold", cold);
+		// Only written when set, so a battery nobody has touched saves exactly what it always did
+		if (reserve)
+			tag.putBoolean("Reserve", true);
 		if (clientPacket)
 			tag.putFloat("Rate", rate);
 		if (primaryPos != null)
@@ -269,6 +337,7 @@ public class BatteryBlockEntity extends SmartBlockEntity implements IHaveGoggleI
 		charge = Float.isNaN(read) ? 0 : Math.clamp(read, 0, capacity());
 		float coldRead = tag.getFloat("Cold");
 		cold = Float.isNaN(coldRead) ? 0 : Math.clamp(coldRead, 0, 1);
+		reserve = tag.getBoolean("Reserve");
 		if (clientPacket) {
 			float rateRead = tag.getFloat("Rate");
 			rate = Float.isFinite(rateRead) ? rateRead : 0;
@@ -287,9 +356,29 @@ public class BatteryBlockEntity extends SmartBlockEntity implements IHaveGoggleI
 		int percent = Math.round(capacity <= 0 ? 0 : held / capacity * 100);
 		GoggleLines.add(CELang.translate("goggles.battery.charge", percent)
 			.style(percent == 0 ? ChatFormatting.RED : percent < 20 ? ChatFormatting.GOLD : ChatFormatting.GREEN), tooltip, 1);
+		GoggleLines.add(CELang.translate("goggles.battery.size", Math.round(capacity()))
+			.style(ChatFormatting.GRAY), tooltip, 1);
 		if (bank.size() > 1)
 			GoggleLines.add(CELang.translate("goggles.battery.bank", bank.size(), Math.round(held), Math.round(capacity))
 				.style(ChatFormatting.GRAY), tooltip, 1);
+		// Every battery says whether it is a reserve, so a player can tell a plain one from one that is set aside
+		if (reserve)
+			GoggleLines.add(CELang.translate("goggles.battery.reserve")
+				.style(ChatFormatting.LIGHT_PURPLE), tooltip, 1);
+		else
+			GoggleLines.add(CELang.translate("goggles.battery.reserve_off")
+				.style(ChatFormatting.GRAY), tooltip, 1);
+		int reserves = BatteryBank.reserveCount(bank);
+		if (reserves > 0) {
+			// What is held back, and what is left for the draws that may not touch it
+			float kept = BatteryBank.reserveCharge(bank);
+			GoggleLines.add(CELang.translate("goggles.battery.reserve_split", reserves, bank.size(), Math.round(kept),
+					Math.round(held - kept))
+				.style(ChatFormatting.LIGHT_PURPLE), tooltip, 2);
+		}
+		if (isPlayerSneaking)
+			GoggleLines.add(CELang.translate("goggles.battery.reserve_hint")
+				.style(ChatFormatting.DARK_GRAY), tooltip, 2);
 		if (percent == 0)
 			GoggleLines.add(CELang.translate("goggles.battery.flat")
 				.style(ChatFormatting.GRAY), tooltip, 1);
