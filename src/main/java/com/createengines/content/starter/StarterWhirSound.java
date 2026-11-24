@@ -98,7 +98,7 @@ public final class StarterWhirSound extends AbstractTickableSoundInstance {
 			finish();
 			return;
 		}
-		float speed = LoopSanity.finite(Math.abs(starter.getSpeed()), 0, 128, 0) / 128f;
+		float speed = LoopSanity.finite((float) starter.crankRpm(), 0, 128, 0) / 128f;
 		volume = 0.8f * spin;
 		pitch = (0.75f + 0.6f * speed) * (0.55f + 0.45f * spin);
 	}

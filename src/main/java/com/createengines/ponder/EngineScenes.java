@@ -900,7 +900,7 @@ public final class EngineScenes {
 		scene.overlay()
 			.showText(170)
 			.colored(PonderPalette.BLUE)
-			.text("Cold costs charge. In a cold biome a battery gives only part of what it holds, and a cold engine makes each spark cost more. A heat source beside it, like a Blaze Burner, warms it. A starter draws on the batteries as it cranks a spark engine, less as they run low and none from an empty bank. It still turns at full speed, so keep them charged or crank by hand.")
+			.text("Cold costs charge. In a cold biome a battery gives only part of what it holds, and a cold engine makes each spark cost more. A heat source beside it, like a Blaze Burner, warms it. A starter draws on the batteries as it cranks a spark engine, less as they run low and none from an empty bank. With rotation on its input it still turns at full speed; with none, the batteries alone turn it, so an empty bank leaves it stopped. Keep them charged or crank by hand.")
 			.pointAt(util.vector()
 				.topOf(1, 2, 3))
 			.placeNearTarget();
@@ -2639,7 +2639,7 @@ public final class EngineScenes {
 		scene.idle(10);
 		scene.overlay()
 			.showText(80)
-			.text("Feed it rotation through its back from any source. It cranks the engine at the speed it is turned.")
+			.text("Feed it rotation through its back from any source. It cranks the engine at the speed it is turned. A compression engine, like a diesel, can only be started this way.")
 			.pointAt(util.vector()
 				.topOf(1, 2, 1))
 			.placeNearTarget();
@@ -2654,13 +2654,23 @@ public final class EngineScenes {
 			.indicateRedstone(util.grid()
 				.at(0, 2, 2));
 		scene.overlay()
-			.showText(90)
+			.showText(100)
 			.attachKeyFrame()
 			.text("It engages while powered by redstone. Turning a dead engine over takes effort, which appears as stress on the starter's input.")
 			.pointAt(util.vector()
 				.blockSurface(starter, Direction.WEST))
 			.placeNearTarget();
-		scene.idle(100);
+		scene.idle(110);
+
+		scene.overlay()
+			.showText(170)
+			.attachKeyFrame()
+			.colored(PonderPalette.BLUE)
+			.text("A spark engine with a charged Battery touching it needs no input rotation at all: with the starter's shaft still, a redstone signal makes it spend charge to turn the engine over, slowly. A flat bank stops that. A compression engine has no plugs and takes no charge, so it always needs rotation.")
+			.pointAt(util.vector()
+				.blockSurface(starter, Direction.WEST))
+			.placeNearTarget();
+		scene.idle(180);
 
 		scene.world()
 			.setKineticSpeed(util.select()
@@ -2770,7 +2780,7 @@ public final class EngineScenes {
 
 		scene.overlay()
 			.showText(90)
-			.text("Like a plain Starter, a one-way clutch lets go once the engine outruns it, and a Hand Crank on its shaft engages it with no signal.")
+			.text("Like a plain Starter, a one-way clutch lets go once the engine outruns it, and a Hand Crank on its shaft engages it with no signal. It too can turn a spark engine from its Battery with nothing on its input, but a compression engine always needs rotation.")
 			.pointAt(util.vector()
 				.topOf(1, 2, 1))
 			.placeNearTarget();
@@ -3790,7 +3800,7 @@ public final class EngineScenes {
 
 	public static void fuels(SceneBuilder builder, SceneBuildingUtil util) {
 		CreateSceneBuilder scene = new CreateSceneBuilder(builder);
-		scene.title("fuels", "Refining Fuel");
+		scene.title("fuels", "Making Fuel in a Basin");
 		scene.configureBasePlate(0, 0, 7);
 		scene.world()
 			.showSection(util.select()
@@ -3813,7 +3823,7 @@ public final class EngineScenes {
 		scene.overlay()
 			.showText(130)
 			.attachKeyFrame()
-			.text("Seeds or saplings pressed in a Basin make Plant Oil, six seeds to 100 mB or two saplings to 50 mB. Sugar cane, beetroot or potatoes pressed with water make Sugar Mash.")
+			.text("A Basin is the simple way to make fuel; a Refining Column makes the same fuels faster and gives more from the feed. Seeds or saplings pressed in a Basin make Plant Oil, six seeds to 100 mB or two saplings to 50 mB. Sugar cane, beetroot or potatoes pressed with water make Sugar Mash.")
 			.pointAt(util.vector()
 				.topOf(1, 2, 3))
 			.placeNearTarget();
@@ -3884,7 +3894,7 @@ public final class EngineScenes {
 		scene.overlay()
 			.showText(150)
 			.colored(PonderPalette.BLUE)
-			.text("Heated, Diesel with glowstone dust makes Kerosene instead of Gasoline. A refining column goes the way of the catalyst in its slot. Kerosene needs a spark plug, carries more energy than Diesel and a little less than Gasoline, and holds out against a hot, boosted charge better than Gasoline does.")
+			.text("Heated, Diesel with glowstone dust makes Kerosene instead of Gasoline. A refining column goes the way of the catalyst fed to its Reboiler. Kerosene needs a spark plug, carries more energy than Diesel and a little less than Gasoline, and holds out against a hot, boosted charge better than Gasoline does.")
 			.pointAt(util.vector()
 				.topOf(3, 2, 3))
 			.placeNearTarget();
@@ -3894,7 +3904,7 @@ public final class EngineScenes {
 			.showText(150)
 			.attachKeyFrame()
 			.colored(PonderPalette.BLUE)
-			.text("Superheated, logs and water make Methanol: 60 mB to the log in a basin, a little more in a refining column with a log in its slot. It needs a spark plug and carries the least energy of any fuel, so an injector must give it a lot more flow. In return it cools the charge most, leaves no soot, and a hot, boosted charge will hardly light it early, even past what Ethanol takes.")
+			.text("Superheated, logs and water make Methanol: 60 mB to the log in a basin, a little more in a refining column with a log fed to a Reboiler. It needs a spark plug and carries the least energy of any fuel, so an injector must give it a lot more flow. In return it cools the charge most, leaves no soot, and a hot, boosted charge will hardly light it early, even past what Ethanol takes.")
 			.pointAt(util.vector()
 				.topOf(3, 2, 3))
 			.placeNearTarget();

@@ -33,6 +33,9 @@ public class StarterBlockEntity extends KineticBlockEntity implements EngineMemb
 	/** Ticks the engine has to go without drawing on the starter before it counts as having outrun it. */
 	private static final int ENGAGED_GRACE = 10;
 
+	/** How fast the batteries turn a starter with nothing on its input. Slower than a hand crank's best, so it is a way to start and not a source. */
+	public static final double ELECTRIC_RPM = 48;
+
 	private @Nullable BlockPos primaryPos;
 	private float drag;
 	private float smoothedDrag;
@@ -40,6 +43,10 @@ public class StarterBlockEntity extends KineticBlockEntity implements EngineMemb
 	private boolean turning;
 	/** Wanted to crank but the batteries behind it are nearly flat: it draws less from them, and says so. */
 	private boolean batteryWeak;
+	/** Cranking a spark engine, so the charge for it is coming out of the batteries against the engine. */
+	private boolean drawingCharge;
+	/** A spark engine with charge in its batteries: the starter can turn with nothing on its input. */
+	private boolean electricReady;
 	private int idleTicks;
 
 	public StarterBlockEntity(BlockEntityType<?> type, BlockPos pos, BlockState state) {
@@ -52,7 +59,32 @@ public class StarterBlockEntity extends KineticBlockEntity implements EngineMemb
 	 * be turned over with nothing else running.
 	 */
 	public boolean wantsToCrank() {
-		return level != null && getSpeed() != 0 && (Signals.hasNeighbour(level, worldPosition) || isHandCranked());
+		if (level == null)
+			return false;
+		if (getSpeed() != 0)
+			return Signals.hasNeighbour(level, worldPosition) || isHandCranked();
+		// No rotation on its input: a spark engine's batteries can turn it over, but only on a redstone signal
+		return electricReady && Signals.hasNeighbour(level, worldPosition);
+	}
+
+	/** The speed it turns the crank at: that of its input shaft, or {@link #ELECTRIC_RPM} when the batteries are turning it with no input. */
+	public double crankRpm() {
+		if (getSpeed() != 0)
+			return Math.abs(getSpeed());
+		return electricReady ? ELECTRIC_RPM : 0;
+	}
+
+	/** Whether the batteries, not a shaft, are what is turning it: nothing on its input and a charged bank on a spark engine. */
+	public boolean isElectric() {
+		return getSpeed() == 0 && electricReady;
+	}
+
+	/** Said by the engine each tick: whether this is a spark engine with a charged battery bank, which can crank it with no input rotation. */
+	public void setElectricReady(boolean ready) {
+		if (ready == electricReady)
+			return;
+		electricReady = ready;
+		sendData();
 	}
 
 	/** Whether the shaft driving this starter gets its rotation from a hand crank. */
@@ -72,7 +104,7 @@ public class StarterBlockEntity extends KineticBlockEntity implements EngineMemb
 
 	/** Which way it turns the crank. A starter turned the other way cranks the engine the other way. */
 	public int crankDirection() {
-		return getSpeed() > 0 ? 1 : -1;
+		return getSpeed() >= 0 ? 1 : -1;
 	}
 
 	/** Called by the engine each tick with how hard turning it over currently is (SU per RPM). */
@@ -99,6 +131,19 @@ public class StarterBlockEntity extends KineticBlockEntity implements EngineMemb
 		}
 		if (changed)
 			sendData();
+	}
+
+	/** Whether it is taking charge from the batteries touching the engine as it cranks. */
+	public boolean isDrawingCharge() {
+		return drawingCharge;
+	}
+
+	/** Said by the engine each tick: whether this starter is spending battery charge turning the engine over. */
+	public void setDrawingCharge(boolean drawing) {
+		if (drawing == drawingCharge)
+			return;
+		drawingCharge = drawing;
+		sendData();
 	}
 
 	/** Whether the batteries behind it are nearly flat. */
@@ -151,6 +196,8 @@ public class StarterBlockEntity extends KineticBlockEntity implements EngineMemb
 		primaryPos = null;
 		cranking = false;
 		turning = false;
+		drawingCharge = false;
+		electricReady = false;
 		drag = 0;
 		smoothedDrag = 0;
 		if (hasNetwork())
@@ -165,6 +212,8 @@ public class StarterBlockEntity extends KineticBlockEntity implements EngineMemb
 		tag.putBoolean("Cranking", cranking);
 		tag.putBoolean("Turning", turning);
 		tag.putBoolean("BatteryWeak", batteryWeak);
+		tag.putBoolean("DrawingCharge", drawingCharge);
+		tag.putBoolean("ElectricReady", electricReady);
 		if (primaryPos != null)
 			tag.put("Primary", NbtUtils.writeBlockPos(primaryPos));
 	}
@@ -177,6 +226,8 @@ public class StarterBlockEntity extends KineticBlockEntity implements EngineMemb
 		cranking = tag.getBoolean("Cranking");
 		turning = tag.getBoolean("Turning");
 		batteryWeak = tag.getBoolean("BatteryWeak");
+		drawingCharge = tag.getBoolean("DrawingCharge");
+		electricReady = tag.getBoolean("ElectricReady");
 		primaryPos = NbtUtils.readBlockPos(tag, "Primary")
 			.orElse(null);
 	}
@@ -196,7 +247,10 @@ public class StarterBlockEntity extends KineticBlockEntity implements EngineMemb
 		} else if (cranking && isHandCranked() && !Signals.hasNeighbour(level, worldPosition)) {
 			key = "goggles.starter.by_hand";
 			colour = ChatFormatting.YELLOW;
-		} else if (cranking && warmsColdEngines()) {
+		} else if (cranking && isElectric()) {
+				key = "goggles.starter.electric";
+				colour = ChatFormatting.AQUA;
+			} else if (cranking && warmsColdEngines()) {
 			key = "goggles.starter.warming";
 			colour = ChatFormatting.GOLD;
 		} else if (cranking) {
@@ -211,6 +265,9 @@ public class StarterBlockEntity extends KineticBlockEntity implements EngineMemb
 		}
 		GoggleLines.add(CELang.translate(key)
 			.style(colour), tooltip, 1);
+		if (drawingCharge)
+			GoggleLines.add(CELang.translate("goggles.starter.drawing")
+				.style(ChatFormatting.AQUA), tooltip, 1);
 		super.addToGoggleTooltip(tooltip, isPlayerSneaking);
 		return true;
 	}
