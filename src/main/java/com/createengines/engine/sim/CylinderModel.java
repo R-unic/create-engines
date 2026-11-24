@@ -393,7 +393,7 @@ public final class CylinderModel implements Breather {
 			// A MAF sensor sets the shot from the air, up to what the injector can deliver; without one it is
 			// whatever Fuel Metering says
 			double fullShot = airMatch > 0
-				? Math.min(airLimit * airMatch, InjectorAssist.limit(injectorLimit(fuel), last.assistedShots > 0))
+				? Math.min(airLimit * airMatch, InjectorAssist.limit(injectorLimit(fuel), last.assistedShots))
 				: usualShot(fuel) * metering * fuelTrim;
 			scale = Math.max(1, Math.min(fullShot, airLimit) / last.fuelBurned);
 		}

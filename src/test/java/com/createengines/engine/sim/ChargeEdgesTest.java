@@ -74,6 +74,13 @@ class ChargeEdgesTest {
 	}
 
 	@Test
+	void theLimitOfACycleIsRaisedOnlyWhenAShotWasAssisted() {
+		assertEquals(10, InjectorAssist.limit(10, 0), 0);
+		assertEquals(10 * InjectorAssist.FLOW, InjectorAssist.limit(10, 1), 1e-12);
+		assertEquals(10 * InjectorAssist.FLOW, InjectorAssist.limit(10, 3), 1e-12);
+	}
+
+	@Test
 	void theNoneAndUnlimitedPartsSayWhatTheyAre() {
 		assertFalse(InjectorAssist.NONE.installed());
 		assertFalse(InjectorAssist.NONE.powered());

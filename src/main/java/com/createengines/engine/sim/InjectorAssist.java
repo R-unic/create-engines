@@ -82,4 +82,9 @@ public interface InjectorAssist {
 	static double limit(double limit, boolean assisted) {
 		return assisted ? limit * FLOW : limit;
 	}
+
+	/** {@link #limit(double, boolean)} for a cycle in which {@code assistedShots} shots had their charge: any at all counts as assisted. */
+	static double limit(double limit, int assistedShots) {
+		return limit(limit, assistedShots > 0);
+	}
 }
