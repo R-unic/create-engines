@@ -141,35 +141,6 @@ To re-prove the harness: make a *separate* copy, run `./scripts/smoke-mutations.
 run the Gradle task it names, and check every `EXPECT` line appears among the failures. It refuses to run in a folder with
 `.git`.
 
-## The trailer
-
-The mod's trailer is made by a harness, so it can be cut again when the mod changes. It is a development aid, not a check, and is
-kept out of the jar and the coverage count like the rest of the picture-taking code.
-
-```
-python tools/trailer/record.py              # plays the game, records the screen, cuts the video
-python tools/trailer/record.py --post-only  # cuts the last recording again (new captions or music)
-```
-
-- **What it records.** `ShowcaseRun` with `-PshowcaseSet=trailer` builds eight engines on walled pads (the plain engines, a pad with
-  the battery sizes, an ignition coil and an injector assist on every head, a blown inline six, and the test-bed diesel with its
-  instruments), runs them, goes fullscreen and flies a camera past them for about 90 seconds, smoothly, every frame. The shots are the
-  `Shot` records in that class. The run leaves one still from the middle of each shot in `run/showcase/screenshots`, to check the
-  framing without watching it.
-- **How it is recorded.** `record.py` copies the project to a private folder beside it (as every client run should be), starts
-  `ffmpeg` on the whole screen when the game logs `Showcase trailer ready`, and stops it after the last shot. Leave the machine alone
-  while it runs and keep other windows off the game. ffmpeg comes from `winget install Gyan.FFmpeg`.
-- **How it is cut.** `post.py` puts a title card, a caption over each shot, an end card and music around the recording. The words
-  are in `tools/trailer/captions.txt`. The music is the first file in `tools/trailer/music/` if there is one, otherwise a backing
-  track that `tools/trailer/music.py` synthesises (original, so nothing to license; a placeholder for a real track).
-- **Output.** `run/trailer/trailer.mp4`, with the raw recording and the shot timings beside it.
-- **Keeping it current.** `src/smoke/trailer-parts.txt` has a line for every block and item saying which shot shows it, or why none
-  does. `TrailerCoverageTest` fails when a new part has no line, when a line names a shot that does not exist, and when a shot has no
-  caption. A significant new part goes on a pad (or a new one) in `ShowcaseRun`, gets a shot and a caption, and its line names the
-  shot. A `later` line is a part that is significant and not in the trailer yet: a debt, kept in the open.
-- **What it cannot see.** The test cannot tell that a part is really on screen in its shot, and nobody has heard the synthesised music
-  played through speakers. A person watches the cut before it is posted.
-
 ## The log allowlist
 
 `src/smoke/log-allowlist.txt` lists log lines that are known harmless. **Every entry must say why.** A line you cannot
