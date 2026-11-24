@@ -4,6 +4,7 @@ import java.util.Optional;
 import java.util.function.Supplier;
 
 import com.createengines.content.cylinder.CylinderBlock;
+import com.createengines.content.flywheel.DataFlywheelBlock;
 import com.createengines.content.head.CylinderHeadBlock;
 import com.createengines.registry.CEBlockEntities;
 import com.createengines.registry.CEDataMaps;
@@ -39,9 +40,21 @@ public final class PartBlocks {
 	}
 
 	/**
-	 * Tells this mod that a block made by {@link #cylinder} or {@link #cylinderHead} exists, so its block entity works. Call it
-	 * once per block while your mod is being constructed, with your mod's event bus. A block of any other kind fails when the
-	 * game asks for it, with a message that names it.
+	 * A new flywheel block: a disc on a shaft on the engine's crank line, like the Cast Flywheel. <b>Added in API 1.2.</b> Its
+	 * masses are not in code but in the {@code flywheel} data map ({@code data/<namespace>/data_maps/block/flywheel.json}: a
+	 * {@code primary_inertia}, and optionally a {@code secondary_inertia} behind a spring pack, as the Dual-Mass Flywheel has),
+	 * so a pack can retune it. A flywheel the map does not name adds nothing. Its look is its own block model, modelled
+	 * along the Y axis and turned by its block state like any rotated block, and it turns with the shaft. Give it your own
+	 * properties, model, texture and recipe; register it as for {@link #cylinder}.
+	 */
+	public static Block flywheel(BlockBehaviour.Properties properties) {
+		return new DataFlywheelBlock(properties);
+	}
+
+	/**
+	 * Tells this mod that a block made by {@link #cylinder}, {@link #cylinderHead} or {@link #flywheel} exists, so its block
+	 * entity works. Call it once per block while your mod is being constructed, with your mod's event bus. A block of any
+	 * other kind fails when the game asks for it, with a message that names it.
 	 */
 	public static void register(IEventBus modBus, Supplier<? extends Block> block) {
 		modBus.addListener((BlockEntityTypeAddBlocksEvent event) -> {
@@ -50,8 +63,11 @@ public final class PartBlocks {
 				event.modify(CEBlockEntities.CYLINDER.get(), part);
 			else if (part instanceof CylinderHeadBlock)
 				event.modify(CEBlockEntities.CYLINDER_HEAD.get(), part);
+			else if (part instanceof DataFlywheelBlock)
+				event.modify(CEBlockEntities.DATA_FLYWHEEL.get(), part);
 			else
-				throw new IllegalArgumentException(part + " was not made by PartBlocks.cylinder or PartBlocks.cylinderHead");
+				throw new IllegalArgumentException(part
+					+ " was not made by PartBlocks.cylinder, PartBlocks.cylinderHead or PartBlocks.flywheel");
 		});
 	}
 

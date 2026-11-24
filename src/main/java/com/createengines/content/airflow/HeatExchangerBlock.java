@@ -1,5 +1,6 @@
 package com.createengines.content.airflow;
 
+import com.createengines.content.PartShapes;
 import com.createengines.registry.CEBlockEntities;
 import com.simibubi.create.content.processing.burner.BlazeBurnerBlock;
 
@@ -48,5 +49,10 @@ public class HeatExchangerBlock extends SensorBlock<HeatExchangerBlockEntity> {
 	@Override
 	public BlockEntityType<? extends HeatExchangerBlockEntity> getBlockEntityType() {
 		return CEBlockEntities.HEAT_EXCHANGER.get();
+	}
+
+	@Override
+	protected net.minecraft.world.phys.shapes.VoxelShape body() {
+		return PartShapes.EXCHANGER_BODY;
 	}
 }

@@ -56,7 +56,11 @@ public final class BatteryBank {
 
 	/** The capacity of every member together, in sparks. */
 	public static float capacity(List<BatteryBlockEntity> bank) {
-		return bank.size() * BatteryBlockEntity.CAPACITY;
+		float total = 0;
+		for (int i = 0, n = bank.size(); i < n; i++)
+			total += bank.get(i)
+				.capacity();
+		return total;
 	}
 
 	/** The charge the members can give now: what they hold, less what the cold keeps back in each. */
@@ -109,15 +113,15 @@ public final class BatteryBank {
 	public static float fill(List<BatteryBlockEntity> bank, float sparks) {
 		float room = 0;
 		for (int i = 0, n = bank.size(); i < n; i++)
-			room += BatteryBlockEntity.CAPACITY - bank.get(i)
-				.charge();
+			room += bank.get(i)
+				.room();
 		if (!(sparks > 0) || !(room > 0))
 			return 0;
 		float put = Math.min(sparks, room);
 		float share = put / room;
 		for (int i = 0, n = bank.size(); i < n; i++) {
 			BatteryBlockEntity battery = bank.get(i);
-			battery.charge((BatteryBlockEntity.CAPACITY - battery.charge()) * share);
+			battery.charge(battery.room() * share);
 		}
 		return put;
 	}

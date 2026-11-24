@@ -3,6 +3,7 @@ package com.createengines.registry;
 import org.jetbrains.annotations.Nullable;
 
 import com.createengines.CreateEngines;
+import com.createengines.engine.FlywheelSpec;
 import com.createengines.engine.sim.FuelSpec;
 import com.createengines.engine.sim.PartStats;
 import com.mojang.serialization.Codec;
@@ -32,7 +33,14 @@ public final class CEDataMaps {
 	 */
 	public record FuelProperties(double energyPerMb, double autoignitionTemp, double airPerMb, double coldSensitivity,
 								 double chargeCooling, double sootFactor, double preignitionTemp,
-								 java.util.Optional<Double> sulfur) {
+								 java.util.Optional<Double> sulfur, double flammability) {
+
+		/** A fuel that burns in a spill the way every fuel did before {@code flammability} existed. */
+		public FuelProperties(double energyPerMb, double autoignitionTemp, double airPerMb, double coldSensitivity,
+							  double chargeCooling, double sootFactor, double preignitionTemp, java.util.Optional<Double> sulfur) {
+			this(energyPerMb, autoignitionTemp, airPerMb, coldSensitivity, chargeCooling, sootFactor, preignitionTemp, sulfur, 1);
+		}
+
 		public static final Codec<FuelProperties> CODEC = RecordCodecBuilder.create(i -> i.group(
 				Codec.DOUBLE.fieldOf("energy_per_mb").forGetter(FuelProperties::energyPerMb),
 				Codec.DOUBLE.fieldOf("autoignition_temperature").forGetter(FuelProperties::autoignitionTemp),
@@ -41,7 +49,8 @@ public final class CEDataMaps {
 				Codec.DOUBLE.optionalFieldOf("charge_cooling", 0.0).forGetter(FuelProperties::chargeCooling),
 				Codec.DOUBLE.optionalFieldOf("soot_factor", 1.0).forGetter(FuelProperties::sootFactor),
 				Codec.DOUBLE.optionalFieldOf("preignition_temperature", 0.0).forGetter(FuelProperties::preignitionTemp),
-				Codec.DOUBLE.optionalFieldOf("sulfur").forGetter(FuelProperties::sulfur))
+				Codec.DOUBLE.optionalFieldOf("sulfur").forGetter(FuelProperties::sulfur),
+				Codec.DOUBLE.optionalFieldOf("flammability", 1.0).forGetter(FuelProperties::flammability))
 			.apply(i, FuelProperties::new));
 
 		/** The sulfur a fuel that does not set one gives off: its soot factor, as before the field existed. */
@@ -51,7 +60,7 @@ public final class CEDataMaps {
 
 		public FuelSpec toSpec() {
 			return new FuelSpec(energyPerMb, autoignitionTemp, airPerMb, coldSensitivity, chargeCooling, sootFactor,
-				preignitionTemp > 0 ? preignitionTemp : autoignitionTemp, effectiveSulfur());
+				preignitionTemp > 0 ? preignitionTemp : autoignitionTemp, effectiveSulfur(), flammability);
 		}
 	}
 
@@ -118,6 +127,49 @@ public final class CEDataMaps {
 		DataMapType.builder(CreateEngines.asResource("part_effect"), Registries.BLOCK, PartEffectProperties.CODEC)
 			.build();
 
+	/**
+	 * The masses of a flywheel that is a pack's or an addon's own: a block made by {@code PartBlocks.flywheel} that is named
+	 * here is a flywheel on the crank line, and one that is not named adds nothing. {@code
+	 * data/<namespace>/data_maps/block/flywheel.json}. Added in 2.1 (API 1.2). {@code primary_inertia} joins the crank's inertia
+	 * like any flywheel; {@code secondary_inertia} (optional, 0) sits behind the spring pack and only smooths the ripple the
+	 * network sees, as the Dual-Mass Flywheel's does, at the resonance the server's {@code dualMassResonance} sets. Both are
+	 * between 0 and {@link FlywheelSpec#MAX_INERTIA}, like the server's own flywheel settings. No block of this mod is named here.
+	 */
+	public record FlywheelProperties(double primaryInertia, double secondaryInertia) {
+
+		private static Codec<Double> mass() {
+			return Codec.doubleRange(0.0, FlywheelSpec.MAX_INERTIA);
+		}
+
+		public static final Codec<FlywheelProperties> CODEC = RecordCodecBuilder.create(i -> i.group(
+				mass().fieldOf("primary_inertia").forGetter(FlywheelProperties::primaryInertia),
+				mass().optionalFieldOf("secondary_inertia", 0.0).forGetter(FlywheelProperties::secondaryInertia))
+			.apply(i, FlywheelProperties::new));
+
+		public FlywheelSpec toSpec() {
+			return new FlywheelSpec(primaryInertia, secondaryInertia);
+		}
+	}
+
+	public static final DataMapType<Block, FlywheelProperties> FLYWHEEL =
+		DataMapType.builder(CreateEngines.asResource("flywheel"), Registries.BLOCK, FlywheelProperties.CODEC)
+			.build();
+
+	/** What to answer in place of the flywheel data map, for the GameTests. Null in play. */
+	public static volatile @Nullable java.util.function.Function<Block, FlywheelSpec> flywheelOverride;
+
+	/** The masses a flywheel block of a pack's or an addon's own carries, or {@link FlywheelSpec#NONE} if no entry names it. */
+	public static FlywheelSpec flywheel(Block block) {
+		java.util.function.Function<Block, FlywheelSpec> forced = flywheelOverride;
+		if (forced != null) {
+			FlywheelSpec spec = forced.apply(block);
+			return spec == null ? FlywheelSpec.NONE : spec;
+		}
+		FlywheelProperties properties = block.builtInRegistryHolder()
+			.getData(FLYWHEEL);
+		return properties == null ? FlywheelSpec.NONE : properties.toSpec();
+	}
+
 	/** What to answer in place of the data map, for the GameTests, which cannot add an entry to one. Null in play. */
 	public static volatile @Nullable java.util.function.Function<Block, String> partEffectOverride;
 
@@ -162,6 +214,7 @@ public final class CEDataMaps {
 		event.register(FUEL);
 		event.register(PART_STATS);
 		event.register(PART_EFFECT);
+		event.register(FLYWHEEL);
 	}
 
 	private static TagKey<Fluid> common(String name) {
@@ -192,7 +245,10 @@ public final class CEDataMaps {
 	public static @Nullable FuelSpec fuelForTags(Predicate<TagKey<Fluid>> inTag) {
 		if (inTag.test(GASOLINE))
 			return FuelSpec.GASOLINE;
-		if (inTag.test(DIESEL) || inTag.test(BIODIESEL))
+		// Biodiesel first: Create: Diesel Generators' biodiesel is in c:diesel as well, and is the clean one
+		if (inTag.test(BIODIESEL))
+			return FuelSpec.BIODIESEL;
+		if (inTag.test(DIESEL))
 			return FuelSpec.DIESEL;
 		if (inTag.test(ETHANOL))
 			return FuelSpec.ETHANOL;
@@ -210,7 +266,7 @@ public final class CEDataMaps {
 	}
 
 	/** Fuels that light themselves easily enough to start a flame in a charge that will not: diesel, plant oil and the like. */
-	public static final double PILOT_IGNITION_LIMIT = 2.0;
+	public static final double PILOT_IGNITION_LIMIT = FuelSpec.COMPRESSION_LIMIT;
 
 	/** Whether a fluid can be injected as a pilot shot to light a main charge: a fuel that compression lights readily. */
 	public static boolean isPilotFuel(FluidStack stack) {

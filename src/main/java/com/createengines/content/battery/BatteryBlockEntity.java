@@ -5,6 +5,7 @@ import java.util.List;
 import org.jetbrains.annotations.Nullable;
 
 import com.createengines.engine.sim.BatteryChemistry;
+import com.createengines.engine.sim.BatteryTier;
 import com.createengines.engine.sim.HeatRecovery;
 import com.createengines.engine.sim.Tuning;
 import com.createengines.engine.topology.EngineMember;
@@ -78,13 +79,28 @@ public class BatteryBlockEntity extends SmartBlockEntity implements IHaveGoggleI
 		return charge;
 	}
 
+	/** Which kind of battery this is (a plain battery when the block is not a battery block, which only a test can arrange). */
+	public BatteryTier tier() {
+		return getBlockState().getBlock() instanceof BatteryBlock block ? block.tier() : BatteryTier.PLAIN;
+	}
+
+	/** Sparks this battery holds when full: its tier's capacity. */
+	public float capacity() {
+		return tier().capacity();
+	}
+
 	/** The share of this battery's own capacity that is charged, 0 to 1. */
 	public float chargeFraction() {
-		return charge / CAPACITY;
+		return charge / capacity();
 	}
 
 	public boolean isFull() {
-		return charge >= CAPACITY;
+		return charge >= capacity();
+	}
+
+	/** Sparks of room left in this battery. */
+	public float room() {
+		return Math.max(0, capacity() - charge);
 	}
 
 	/** How cold this battery is, 0 to 1. */
@@ -99,7 +115,7 @@ public class BatteryBlockEntity extends SmartBlockEntity implements IHaveGoggleI
 
 	/** The charge this battery can give now: what it holds, less what the cold keeps back. */
 	public float deliverable() {
-		return (float) BatteryChemistry.deliverable(charge, CAPACITY, cold, Tuning.batteryCold);
+		return (float) BatteryChemistry.deliverable(charge, capacity(), cold, Tuning.batteryCold, tier().coldLoss());
 	}
 
 	/** Takes up to {@code sparks} of charge and returns how much was actually there to give. */
@@ -111,7 +127,7 @@ public class BatteryBlockEntity extends SmartBlockEntity implements IHaveGoggleI
 
 	/** Takes in up to {@code sparks} of charge and returns how much there was room for. */
 	public float charge(float sparks) {
-		float taken = Math.max(0, Math.min(CAPACITY - charge, sparks));
+		float taken = Math.max(0, Math.min(room(), sparks));
 		charge += taken;
 		return taken;
 	}
@@ -175,7 +191,7 @@ public class BatteryBlockEntity extends SmartBlockEntity implements IHaveGoggleI
 			level.updateNeighbourForOutputSignal(worldPosition, getBlockState().getBlock());
 			lastSignal = signal;
 		}
-		if (Math.abs(charge - syncedCharge) >= CAPACITY * 0.01f || Math.abs(rate - syncedRate) >= 0.05f
+		if (Math.abs(charge - syncedCharge) >= capacity() * 0.01f || Math.abs(rate - syncedRate) >= 0.05f
 			|| Math.abs(cold - syncedCold) >= 0.02f) {
 			syncedCharge = charge;
 			syncedRate = rate;
@@ -250,7 +266,7 @@ public class BatteryBlockEntity extends SmartBlockEntity implements IHaveGoggleI
 		super.read(tag, registries, clientPacket);
 		float read = tag.getFloat("Charge");
 		// Saved data may hold anything: a charge that is not a number, or is more than the battery holds, is clamped to what it can
-		charge = Float.isNaN(read) ? 0 : Math.clamp(read, 0, CAPACITY);
+		charge = Float.isNaN(read) ? 0 : Math.clamp(read, 0, capacity());
 		float coldRead = tag.getFloat("Cold");
 		cold = Float.isNaN(coldRead) ? 0 : Math.clamp(coldRead, 0, 1);
 		if (clientPacket) {
@@ -286,8 +302,8 @@ public class BatteryBlockEntity extends SmartBlockEntity implements IHaveGoggleI
 			GoggleLines.add(CELang.translate("goggles.battery.charging", perSecond(perTick),
 					duration(BatteryChemistry.ticksLeft(capacity - held, perTick)))
 				.style(ChatFormatting.GREEN), tooltip, 1);
-		if (Tuning.batteryCold && cold >= 0.05f) {
-			int usable = Math.round((float) BatteryChemistry.deliverableLimit(100, cold, true));
+		if (Tuning.batteryCold && cold >= 0.05f && tier().coldLoss() > 0) {
+			int usable = Math.round((float) BatteryChemistry.deliverableLimit(100, cold, true, tier().coldLoss()));
 			GoggleLines.add(CELang.translate("goggles.battery.cold", usable)
 				.style(ChatFormatting.AQUA), tooltip, 1);
 			if (isPlayerSneaking)

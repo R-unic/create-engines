@@ -59,6 +59,7 @@ public final class ClientAudit {
 		ServerAudit.guard(report, "lang", "advancements", () -> advancementText(report));
 		ServerAudit.guard(report, "sound", "events", () -> sounds(report));
 		ServerAudit.guard(report, "particles", "sprite sheets", () -> particles(report));
+		ServerAudit.guard(report, "models", "battery joins on the client", () -> batteryJoins(report));
 		ServerAudit.guard(report, "tab", "creative tab", () -> creativeTab(report));
 		ServerAudit.guard(report, "compat", "viewer pages", () -> viewerPages(report));
 		ServerAudit.guard(report, "gui", "blueprint sheet", () -> {
@@ -68,6 +69,64 @@ public final class ClientAudit {
 				throw new IllegalStateException(e);
 			}
 		});
+	}
+
+	/**
+	 * Every battery the client has loaded around the player draws the joins the server holds for it, and each join agrees with the
+	 * batteries beside it. A battery drawn unjoined where its neighbour is joined to it is a seam in a bank the goggles report whole:
+	 * the server is right and the client was told something else, or nothing, which no server test can see.
+	 */
+	private static void batteryJoins(SmokeReport report) {
+		Minecraft minecraft = Minecraft.getInstance();
+		var client = minecraft.level;
+		var server = minecraft.getSingleplayerServer();
+		if (client == null || minecraft.player == null || server == null) {
+			report.skip("models", "battery joins on the client", "not in a single-player world");
+			return;
+		}
+		var serverLevel = server.getLevel(client.dimension());
+		if (serverLevel == null) {
+			report.skip("models", "battery joins on the client", "no server level");
+			return;
+		}
+		net.minecraft.core.BlockPos centre = minecraft.player.blockPosition();
+		int radius = 64;
+		List<net.minecraft.core.BlockPos> batteries = new ArrayList<>();
+		for (net.minecraft.core.BlockPos pos : net.minecraft.core.BlockPos.betweenClosed(centre.offset(-radius, -radius, -radius),
+			centre.offset(radius, radius, radius)))
+			if (client.hasChunkAt(pos) && client.getBlockState(pos)
+				.getBlock() instanceof com.createengines.content.battery.BatteryBlock)
+				batteries.add(pos.immutable());
+		if (batteries.isEmpty()) {
+			report.skip("models", "battery joins on the client", "no battery within " + radius + " blocks of the player");
+			return;
+		}
+		List<String> problems = server.submit(() -> {
+			List<String> found = new ArrayList<>();
+			for (var pos : batteries) {
+				BlockState seen = client.getBlockState(pos);
+				BlockState held = serverLevel.getBlockState(pos);
+				for (Direction side : new Direction[] { Direction.NORTH, Direction.EAST, Direction.SOUTH, Direction.WEST, Direction.UP }) {
+					var join = com.createengines.content.battery.BatteryBlock.joinFor(side);
+					boolean drawn = seen.getValue(join);
+					boolean there = client.hasChunkAt(pos.relative(side)) && client.getBlockState(pos.relative(side))
+						.getBlock() instanceof com.createengines.content.battery.BatteryBlock;
+					boolean serverHas = held.getBlock() instanceof com.createengines.content.battery.BatteryBlock
+						&& held.getValue(join);
+					if (drawn != serverHas)
+						found.add(pos.toShortString() + " " + side + ": the client draws join " + drawn + ", the server holds " + serverHas
+							+ " (chunk " + (pos.getX() >> 4) + "," + (pos.getZ() >> 4) + ")");
+					else if (drawn != there)
+						found.add(pos.toShortString() + " " + side + ": draws join " + drawn + " with " + (there ? "a battery" : "no battery")
+							+ " against it");
+				}
+			}
+			return found;
+		})
+			.join();
+		report.metric("batteries checked for joins on the client", batteries.size(), "");
+		report.check("models", "every battery the client has loaded draws the joins the server holds", problems.isEmpty(),
+			problems.size() + " sides disagree, e.g. " + (problems.isEmpty() ? "" : problems.get(0)));
 	}
 
 	/** The fuel and part pages the recipe viewers show, whether or not a viewer is installed: every shipped fuel has one. */

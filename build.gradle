@@ -408,6 +408,10 @@ tasks.named('test', Test) {
     dependsOn 'jar'
     systemProperty 'ce.jar', tasks.named('jar', Jar).get().archiveFile.get().asFile.path
     useJUnitPlatform()
+    // Separate JVMs, not in-JVM parallelism: the tests share static caches (CylinderSpec.GEOMETRIES, CamProfile.CURVES) and
+    // some reset them on purpose, so classes must not share a JVM at the same time. Four forks keep the timing-sensitive tests
+    // (perf budgets, concurrency) from fighting over cores.
+    maxParallelForks = 4
     testLogging {
         events 'failed'
         showStandardStreams = true

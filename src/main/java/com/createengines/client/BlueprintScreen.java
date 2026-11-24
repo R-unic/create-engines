@@ -99,7 +99,7 @@ public class BlueprintScreen extends Screen {
 	/** The colour a block is drawn in: crankshaft steel, cylinder brass, cams green, intakes blue, exhaust red. */
 	public static int colourOf(String id) {
 		String path = id.substring(id.indexOf(':') + 1);
-		if (path.startsWith("crank") || path.startsWith("rotor_housing") || path.startsWith("cast_flywheel"))
+		if (path.startsWith("crank") || path.startsWith("rotor_housing") || path.startsWith("cast_flywheel") || path.startsWith("dual_mass_flywheel"))
 			return 0xFFC3CCD6;
 		if (path.contains("cylinder_head"))
 			return 0xFFE6E2D2;

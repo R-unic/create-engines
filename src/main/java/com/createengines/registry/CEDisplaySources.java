@@ -40,6 +40,9 @@ public final class CEDisplaySources {
 	public static final RegistryEntry<DisplaySource, EngineFillDisplaySource> ENGINE_OIL =
 		REGISTRATE.displaySource("engine_oil", () -> new EngineFillDisplaySource(EngineReadout::oil))
 			.register();
+	public static final RegistryEntry<DisplaySource, EngineFillDisplaySource> ENGINE_SMOOTHNESS =
+		REGISTRATE.displaySource("engine_smoothness", () -> new EngineFillDisplaySource(EngineReadout::smoothness))
+			.register();
 	public static final RegistryEntry<DisplaySource, SumpDisplaySource> SUMP_LEVELS =
 		REGISTRATE.displaySource("sump_levels", SumpDisplaySource::new)
 			.register();

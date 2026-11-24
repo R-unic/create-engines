@@ -187,6 +187,23 @@ public class LegacyWorldGameTests {
 		loadAndCheck(helper, "engine_v1_3_0_rotary.snbt", "1.3.0");
 	}
 
+	// Recorded from the v2.0.0 source, the 2.x baseline: what 2.1 (the Dual-Mass Flywheel) must still load.
+
+	@GameTest(template = "empty_large", timeoutTicks = 400)
+	public static void aDieselEngineSavedBy200Loads(GameTestHelper helper) {
+		loadAndCheck(helper, "engine_v2_0_0_diesel.snbt", "2.0.0");
+	}
+
+	@GameTest(template = "empty_large", timeoutTicks = 400)
+	public static void aSparkEngineSavedBy200Loads(GameTestHelper helper) {
+		loadAndCheck(helper, "engine_v2_0_0_spark.snbt", "2.0.0");
+	}
+
+	@GameTest(template = "empty_large", timeoutTicks = 400)
+	public static void aRotaryEngineSavedBy200Loads(GameTestHelper helper) {
+		loadAndCheck(helper, "engine_v2_0_0_rotary.snbt", "2.0.0");
+	}
+
 	private static void loadAndCheck(GameTestHelper helper, String fixture, String saver) {
 		Path file = fixtureDir().resolve(fixture);
 		if (!Files.exists(file)) {

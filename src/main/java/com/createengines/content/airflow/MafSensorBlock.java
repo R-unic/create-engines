@@ -1,5 +1,6 @@
 package com.createengines.content.airflow;
 
+import com.createengines.content.PartShapes;
 import com.createengines.registry.CEBlockEntities;
 
 import net.minecraft.world.level.block.entity.BlockEntityType;
@@ -27,5 +28,10 @@ public class MafSensorBlock extends SensorBlock<MafSensorBlockEntity> {
 	@Override
 	public BlockEntityType<? extends MafSensorBlockEntity> getBlockEntityType() {
 		return CEBlockEntities.MAF_SENSOR.get();
+	}
+
+	@Override
+	protected net.minecraft.world.phys.shapes.VoxelShape body() {
+		return PartShapes.MAF_BODY;
 	}
 }

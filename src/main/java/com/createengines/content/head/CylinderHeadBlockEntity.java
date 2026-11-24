@@ -72,6 +72,8 @@ public class CylinderHeadBlockEntity extends SmartBlockEntity implements IHaveGo
 		metering.between(MIN_METERING, MAX_METERING);
 		metering.value = DEFAULT_METERING;
 		metering.withFormatter(v -> v * METERING_STEP + "%");
+		// With features.meterAllHeads on, a player's change to this head is copied to the rest of the engine
+		metering.withCallback(v -> MeteringFollow.onChanged(level, worldPosition, v));
 		behaviours.add(metering);
 	}
 

@@ -39,6 +39,35 @@ public class OwnPartGameTests {
 		PartEffects.reset();
 	}
 
+	/**
+	 * Flywheels of a pack's or an addon's own (API 1.2) are only ever a block made by {@code PartBlocks.flywheel}, and no block
+	 * of this mod is one, so no engine built before 2.1 has a flywheel that the data map could change. The three flywheels of
+	 * this mod keep reading their masses from the server settings, and a data flywheel with no entry adds nothing.
+	 */
+	@GameTest(template = "empty", batch = BATCH)
+	public static void noBlockOfThisModIsAFlywheelOfADataMapEntry(GameTestHelper helper) {
+		for (var entry : net.minecraft.core.registries.BuiltInRegistries.BLOCK.entrySet()) {
+			if (!entry.getKey()
+				.location()
+				.getNamespace()
+				.equals(CreateEngines.MOD_ID))
+				continue;
+			var block = entry.getValue();
+			String id = entry.getKey()
+				.location()
+				.toString();
+			if (block instanceof com.createengines.content.flywheel.DataFlywheelBlock)
+				helper.fail(id + " is a data flywheel; none of this mod's blocks may be, or a pack could change a built engine");
+			if (com.createengines.registry.CEBlockEntities.DATA_FLYWHEEL.get()
+				.isValid(block.defaultBlockState()))
+				helper.fail(id + " is valid for the data flywheel block entity, which is for an addon's blocks only");
+			if (!com.createengines.registry.CEDataMaps.flywheel(block)
+				.equals(com.createengines.engine.FlywheelSpec.NONE))
+				helper.fail(id + " names masses in the flywheel data map, which would change an engine built before 2.1");
+		}
+		helper.succeed();
+	}
+
 	@GameTest(template = "empty_large", timeoutTicks = 200, batch = BATCH)
 	public static void aBlockThatNamesAPartEffectAddsItToTheCylinderItIsPartOf(GameTestHelper helper) {
 		// No block of this mod names one of its own: that would change an engine built before 2.0

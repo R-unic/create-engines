@@ -252,6 +252,16 @@ public final class CELang {
 		raw("goggles.firing", "Firing cylinders: %1$s of %2$s");
 		raw("goggles.firing_intervals", "Firing intervals: %1$s");
 		raw("goggles.inertia", "Rotating inertia: %1$s");
+		raw("goggles.flywheel", "Flywheel mass: ripple %1$s%%, %2$s%% without it");
+		raw("goggles.flywheel.keeps", "Flywheel mass: ripple %1$s%%, %2$s%% without it, keeping %3$s%% of the rating");
+		raw("goggles.dual_mass", "Dual-mass flywheel isolating %1$s%% of its secondary mass, ripple seen %2$s%%");
+		raw("value.spring_pack", "Spring Pack");
+		raw("value.spring_pack.standard", "Standard");
+		raw("value.spring_pack.soft", "Soft %1$s");
+		raw("value.spring_pack.stiff", "Stiff %1$s");
+		raw("goggles.spring_pack", "Spring pack:");
+		raw("goggles.spring_pack.setting", "Set to %1$s: softer resonates sooner but isolates less, stiffer resonates later and isolates more");
+		raw("goggles.spring_pack.figures", "Resonates at %1$s RPM, secondary mass %2$s");
 		raw("goggles.starter_engaged", "Starter engaged");
 		raw("goggles.no_cylinders", "No cylinders attached");
 		raw("goggles.part_of_engine", "Part of an engine");
@@ -474,6 +484,11 @@ public final class CELang {
 		raw("tooltip.fuel.column", "A refining column makes it from less feed than a basin does");
 		raw("tooltip.fuel.clean", "Burns clean: no soot on a spark plug, however rich");
 		raw("tooltip.fuel.thin","Thin: the injectors need %1$s times the usual shot");
+		raw("tooltip.fuel.dirty", "Dirty exhaust: more soot and sulfur than diesel");
+		raw("tooltip.fuel.cleaner", "Cleaner than diesel: less soot, no sulfur");
+		raw("tooltip.fuel.spill.volatile", "Volatile: a spill catches at once and burns off fast");
+		raw("tooltip.fuel.spill.flammable", "A spill burns a little slower than gasoline");
+		raw("tooltip.fuel.spill.safe", "Hard to light: a spill is slow to catch and slow to spread");
 		raw("value.sump_signal", "Comparator Reads");
 		raw("value.sump_signal.0", "Engine Oil");
 		raw("value.sump_signal.1", "Used Oil");
@@ -490,6 +505,7 @@ public final class CELang {
 		raw("display_source.engine_torque", "Engine Rated Torque");
 		raw("display_source.battery_charge", "Battery Charge");
 		raw("display_source.engine_fault", "Engine Fault");
+		raw("display_source.engine_smoothness", "Engine Smoothness");
 		raw("display_source.transmission_gear", "Transmission Gear");
 		raw("display.engine.fault.none", "No fault");
 		raw("display.engine.fault.build", "Missing part");
@@ -596,6 +612,8 @@ public final class CELang {
 		raw("goggles.turbo.working", "Working at %1$s%% of its boost limit");
 		raw("goggles.supercharger.working", "Working at %1$s%% of its boost limit");
 		raw("goggles.alternator.rate", "Making %1$s sparks of charge a second");
+		raw("value.alternator_rate", "Charge Rate");
+		raw("goggles.alternator.limited", "Set to %1$s%% of full output: a lighter load for a smaller charge");
 		raw("goggles.alternator.share", "Taking %1$s%% of the engine's rated torque");
 		raw("goggles.alternator.fellows", "%1$s alternators on this engine: this one makes %2$s%% of the charge");
 		raw("goggles.alternator.no_battery", "No battery touching it or its engine to charge");

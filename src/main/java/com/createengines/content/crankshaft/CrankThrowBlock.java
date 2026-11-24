@@ -1,12 +1,16 @@
 package com.createengines.content.crankshaft;
 
 import com.createengines.content.Encasing;
+import com.createengines.content.PartShapes;
+import com.simibubi.create.AllShapes;
 
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction.Axis;
 import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.shapes.CollisionContext;
+import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
 
 /**
@@ -15,7 +19,15 @@ import net.minecraft.world.phys.shapes.VoxelShape;
  */
 public class CrankThrowBlock extends CrankshaftBlock {
 
-	private static final VoxelShape SHAPE = Block.box(2, 2, 2, 14, 14, 14);
+	private static final VoxelShape[] SHAPES = shapes();
+
+	/** The shaft through the whole block and the web, as wide as the web swings. */
+	private static VoxelShape[] shapes() {
+		VoxelShape[] shapes = new VoxelShape[3];
+		for (Axis axis : Axis.values())
+			shapes[axis.ordinal()] = Shapes.or(AllShapes.EIGHT_VOXEL_POLE.get(axis), PartShapes.CRANK_THROW[axis.ordinal()]);
+		return shapes;
+	}
 
 	public CrankThrowBlock(Properties properties) {
 		super(properties);
@@ -28,6 +40,7 @@ public class CrankThrowBlock extends CrankshaftBlock {
 
 	@Override
 	public VoxelShape getShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext context) {
-		return Encasing.shape(state, SHAPE);
+		return Encasing.shape(state, SHAPES[state.getValue(AXIS)
+			.ordinal()]);
 	}
 }

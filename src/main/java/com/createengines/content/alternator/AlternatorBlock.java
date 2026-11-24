@@ -1,5 +1,6 @@
 package com.createengines.content.alternator;
 
+import com.createengines.content.PartShapes;
 import com.createengines.engine.topology.EngineTopology;
 import com.createengines.registry.CEBlockEntities;
 import com.simibubi.create.content.kinetics.base.RotatedPillarKineticBlock;
@@ -25,8 +26,7 @@ import net.minecraft.world.phys.shapes.VoxelShape;
  */
 public class AlternatorBlock extends RotatedPillarKineticBlock implements IBE<AlternatorBlockEntity> {
 
-	private static final VoxelShape[] SHAPES = {
-		Block.box(0, 2, 2, 16, 14, 14), Block.box(2, 0, 2, 14, 16, 14), Block.box(2, 2, 0, 14, 14, 16)};
+	private static final VoxelShape[] SHAPES = PartShapes.ALTERNATOR;
 
 	public AlternatorBlock(Properties properties) {
 		super(properties);

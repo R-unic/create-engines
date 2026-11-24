@@ -28,6 +28,11 @@ public final class FuelTooltips {
 	private static final double GOOD_COLD = 0.9;
 	private static final double POOR_COLD = 1.2;
 	private static final double THIN = 1.05;
+	private static final double DIRTY = 1.2;
+	private static final double CLEANER = 0.6;
+	private static final double VOLATILE_SPILL = 2.0;
+	private static final double FLAMMABLE_SPILL = 1.2;
+	private static final double SAFE_SPILL = 0.8;
 
 	private FuelTooltips() {
 	}
@@ -82,7 +87,35 @@ public final class FuelTooltips {
 		if (fuel.injectorFlow() > THIN)
 			lines.add(grey(CELang.translate("tooltip.fuel.thin", number(fuel.injectorFlow()))
 				.component()));
+		String exhaust = exhaust(fuel);
+		if (exhaust != null)
+			lines.add(grey(CELang.translate(exhaust)
+				.component()));
+		String spill = spill(fuel);
+		if (spill != null)
+			lines.add(grey(CELang.translate(spill)
+				.component()));
 		return lines;
+	}
+
+	/** The lang key for how dirty a fuel's exhaust is next to diesel's, or null for the usual. A fuel that burns clean has its own line. */
+	static String exhaust(FuelSpec fuel) {
+		if (fuel.sootFactor() > DIRTY)
+			return "tooltip.fuel.dirty";
+		if (fuel.sootFactor() > 0 && fuel.sootFactor() <= CLEANER && fuel.sulfur() <= 0)
+			return "tooltip.fuel.cleaner";
+		return null;
+	}
+
+	/** The lang key for how a spill of the fuel burns (see {@link FuelSpec#flammability()}), or null for the usual. */
+	static String spill(FuelSpec fuel) {
+		if (fuel.flammability() >= VOLATILE_SPILL)
+			return "tooltip.fuel.spill.volatile";
+		if (fuel.flammability() >= FLAMMABLE_SPILL)
+			return "tooltip.fuel.spill.flammable";
+		if (fuel.flammability() < SAFE_SPILL)
+			return "tooltip.fuel.spill.safe";
+		return null;
 	}
 
 	private static @Nullable Component cold(FuelSpec fuel) {

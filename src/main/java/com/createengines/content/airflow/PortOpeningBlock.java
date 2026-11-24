@@ -1,5 +1,8 @@
 package com.createengines.content.airflow;
 
+import net.minecraft.world.phys.shapes.VoxelShape;
+import net.minecraft.world.phys.shapes.CollisionContext;
+import com.createengines.content.PartShapes;
 import org.jetbrains.annotations.Nullable;
 
 import com.createengines.engine.topology.EngineTopology;
@@ -66,6 +69,12 @@ public class PortOpeningBlock extends DirectionalBlock implements AirflowPort, I
 			.isEmpty()
 			// On a moving structure, the sea the mouth is in is in the world and not in the plot
 			|| level instanceof net.minecraft.world.level.Level world && com.createengines.compat.sable.SableCompat.fluidInWorldAt(world, front);
+	}
+
+	@Override
+	protected VoxelShape getShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext context) {
+		return (kind == PortKind.INTAKE ? PartShapes.AIR_INTAKE : PartShapes.EXHAUST_OUTLET)[state.getValue(FACING)
+			.ordinal()];
 	}
 
 	@Override

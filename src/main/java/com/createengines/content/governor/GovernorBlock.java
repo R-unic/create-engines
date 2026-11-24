@@ -1,5 +1,6 @@
 package com.createengines.content.governor;
 
+import com.createengines.content.PartShapes;
 import com.createengines.engine.topology.EngineTopology;
 import com.createengines.registry.CEBlockEntities;
 import com.simibubi.create.content.equipment.wrench.IWrenchable;
@@ -24,7 +25,7 @@ import net.minecraft.world.phys.shapes.VoxelShape;
  */
 public class GovernorBlock extends Block implements IWrenchable, IBE<GovernorBlockEntity> {
 
-	private static final VoxelShape SHAPE = Block.box(1, 0, 1, 15, 12, 15);
+	private static final VoxelShape SHAPE = PartShapes.GOVERNOR;
 
 	public GovernorBlock(Properties properties) {
 		super(properties);

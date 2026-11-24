@@ -98,6 +98,14 @@ public final class EngineReadout {
 		return Math.clamp(engine.condition(), 0f, 1f);
 	}
 
+	/**
+	 * How smoothly the engine runs: the share of its rating that uneven running leaves it, 1 for a smooth one. The same
+	 * figure the goggles' rough-running line takes off, so the two agree.
+	 */
+	public static float smoothness(EngineSummary engine) {
+		return Math.clamp(1f - engine.roughness(), 0f, 1f);
+	}
+
 	/** The lines of the Engine Status source: state, speed, load, temperature and oil. */
 	public static List<MutableComponent> status(@Nullable EngineSummary engine) {
 		if (engine == null || engine.state() == EngineState.INCOMPLETE || engine.state() == EngineState.BROKEN)

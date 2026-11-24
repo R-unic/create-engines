@@ -79,7 +79,7 @@ public class CEPonderPlugin implements PonderPlugin {
 			.addStoryBoard("rotor", EngineScenes::rotor);
 		scenes.forComponents(CEBlocks.SUMP, CEItems.OIL_FILTER)
 			.addStoryBoard("sump", EngineScenes::sump);
-		scenes.forComponents(CEBlocks.CAST_FLYWHEEL)
+		scenes.forComponents(CEBlocks.CAST_FLYWHEEL, CEBlocks.DUAL_MASS_FLYWHEEL)
 			.addStoryBoard("flywheel", EngineScenes::flywheel);
 		scenes.forComponents(CEItems.BANK_BUILDER)
 			.addStoryBoard("bank_builder", EngineScenes::bankBuilder);
@@ -97,7 +97,7 @@ public class CEPonderPlugin implements PonderPlugin {
 			.addStoryBoard("rain_cap", EngineScenes::rainCap);
 		scenes.forComponents(CEItems.HEADPHONES)
 			.addStoryBoard("rain_cap", HeadphonesScenes::headphones);
-		scenes.forComponents(CEBlocks.CRANKSHAFT, CEBlocks.CAST_FLYWHEEL, CEBlocks.TURBOCHARGER, CEBlocks.ROTOR_HOUSING)
+		scenes.forComponents(CEBlocks.CRANKSHAFT, CEBlocks.CAST_FLYWHEEL, CEBlocks.DUAL_MASS_FLYWHEEL, CEBlocks.TURBOCHARGER, CEBlocks.ROTOR_HOUSING)
 			.addStoryBoard("rain_cap", AeronauticsScenes::movingEngine);
 		scenes.forComponents(CEBlocks.ENGINE_CASING)
 			.addStoryBoard("engine_casing", EngineScenes::engineCasing);
@@ -120,5 +120,8 @@ public class CEPonderPlugin implements PonderPlugin {
 		for (String fuel : new String[] {"plant_oil", "diesel", "gasoline", "kerosene", "sugar_mash", "ethanol", "methanol", "glycerin", "used_oil", "coolant"})
 			helper.forComponents(CreateEngines.asResource(fuel + "_bucket"))
 				.addStoryBoard("fuels", EngineScenes::fuels);
+		for (String fuel : new String[] {"plant_oil", "diesel", "gasoline", "kerosene", "ethanol", "methanol"})
+			helper.forComponents(CreateEngines.asResource(fuel + "_bucket"))
+				.addStoryBoard("rain_cap", FuelScenes::choosingAFuel);
 	}
 }

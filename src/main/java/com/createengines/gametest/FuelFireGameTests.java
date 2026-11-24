@@ -102,6 +102,89 @@ public class FuelFireGameTests {
 		});
 	}
 
+	private static final int ROW_GASOLINE = 1;
+	private static final int ROW_DIESEL = 6;
+
+	private static void laidPool(GameTestHelper helper, int z, net.minecraft.world.level.material.Fluid fuel) {
+		for (int x = 0; x < POOL + 2; x++)
+			helper.setBlock(new BlockPos(x, 1, z), Blocks.STONE);
+		for (int x = 0; x < POOL; x++)
+			helper.setBlock(new BlockPos(x, 2, z), fuel.defaultFluidState()
+				.createLegacyBlock());
+		helper.setBlock(new BlockPos(POOL, 2, z), Blocks.FIRE);
+	}
+
+	private static int fuelLeft(GameTestHelper helper, int z, net.minecraft.world.level.material.Fluid fuel) {
+		int left = 0;
+		for (int x = 0; x < POOL; x++)
+			if (helper.getBlockState(new BlockPos(x, 2, z))
+				.getFluidState()
+				.is(fuel))
+				left++;
+		return left;
+	}
+
+	/**
+	 * Spilled gasoline lights at once and burns off in a quick wave; spilled diesel is slow to catch and slow to spread. The
+	 * same five-block pool, lit at one end at the same moment: gasoline is gone before diesel can have burnt even its fifth block
+	 * (it needs at least five delays of six ticks), and diesel still burns out in the end.
+	 */
+	@GameTest(template = "empty_large", timeoutTicks = 500)
+	public static void aGasolinePoolBurnsOffFasterThanADieselPool(GameTestHelper helper) {
+		var gasoline = CEFluids.GASOLINE.get()
+			.getSource();
+		var diesel = CEFluids.DIESEL.get()
+			.getSource();
+		laidPool(helper, ROW_GASOLINE, gasoline);
+		laidPool(helper, ROW_DIESEL, diesel);
+		helper.runAtTickTime(25, () -> {
+			helper.assertTrue(fuelLeft(helper, ROW_GASOLINE, gasoline) == 0, "gasoline should be gone by now: " + fuelLeft(helper, ROW_GASOLINE, gasoline));
+			helper.assertTrue(fuelLeft(helper, ROW_DIESEL, diesel) > 0, "diesel cannot be gone yet: five blocks of six ticks each");
+		});
+		helper.succeedWhen(() -> helper.assertTrue(fuelLeft(helper, ROW_DIESEL, diesel) == 0, "diesel burns out in the end"));
+	}
+
+	/** With {@code compat.fuelFireByVolatility} off every fuel burns alike, as in 2.0.1. Its own batch: it flips a global. */
+	@GameTest(template = "empty_large", timeoutTicks = 100, batch = "fuel-fire-alike")
+	public static void withVolatilityOffGasolineAndDieselBurnAlike(GameTestHelper helper) {
+		Tuning.fuelFireByVolatility = false;
+		var gasoline = CEFluids.GASOLINE.get()
+			.getSource();
+		var diesel = CEFluids.DIESEL.get()
+			.getSource();
+		laidPool(helper, ROW_GASOLINE, gasoline);
+		laidPool(helper, ROW_DIESEL, diesel);
+		helper.runAtTickTime(40, () -> {
+			try {
+				helper.assertTrue(fuelLeft(helper, ROW_GASOLINE, gasoline) == 0 && fuelLeft(helper, ROW_DIESEL, diesel) == 0,
+					"both pools burn off within the same time: gasoline " + fuelLeft(helper, ROW_GASOLINE, gasoline) + ", diesel "
+						+ fuelLeft(helper, ROW_DIESEL, diesel));
+			} finally {
+				Tuning.fuelFireByVolatility = true;
+			}
+			helper.succeed();
+		});
+	}
+
+	/** An engine's own fuel tank is not spilled fuel: with fire all around, a cylinder head holding gasoline keeps it. */
+	@GameTest(template = "empty", timeoutTicks = 100)
+	public static void fuelInAnEnginesTankDoesNotBurn(GameTestHelper helper) {
+		floor(helper);
+		BlockPos head = new BlockPos(2, 2, 1);
+		helper.setBlock(head, com.createengines.registry.CEBlocks.CYLINDER_HEAD.getDefaultState());
+		var tank = ((com.createengines.content.head.CylinderHeadBlockEntity) helper.getBlockEntity(head)).tank();
+		tank.fill(new net.neoforged.neoforge.fluids.FluidStack(CEFluids.GASOLINE.get()
+			.getSource(), 250), net.neoforged.neoforge.fluids.capability.IFluidHandler.FluidAction.EXECUTE);
+		helper.setBlock(new BlockPos(1, 2, 1), Blocks.FIRE);
+		helper.setBlock(new BlockPos(3, 2, 1), Blocks.LAVA);
+		helper.runAfterDelay(60, () -> {
+			helper.assertTrue(tank.getFluidAmount() == 250, "the tank keeps its gasoline: " + tank.getFluidAmount());
+			helper.assertTrue(helper.getBlockState(head)
+				.getBlock() instanceof com.createengines.content.head.CylinderHeadBlock, "and the head stays a head");
+			helper.succeed();
+		});
+	}
+
 	/** With {@code compat.fuelFire} off, fuel beside lava lies there as it did before. Its own batch: it flips a global. */
 	@GameTest(template = "empty", timeoutTicks = 100, batch = "fuel-fire-off")
 	public static void fuelBesideLavaStaysWhenFuelFireIsOff(GameTestHelper helper) {

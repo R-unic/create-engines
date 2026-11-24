@@ -103,6 +103,41 @@ public final class EnginePartRenderers {
 		}
 	}
 
+	/** The dual-mass flywheel's two discs and springs, turning with the shaft. */
+	public static class DualMassFlywheel extends Base<CastFlywheelBlockEntity> {
+		public DualMassFlywheel(BlockEntityRendererProvider.Context context) {
+			super(context);
+		}
+
+		@Override
+		protected void render(CastFlywheelBlockEntity be, float renderTime, PoseStack ms, MultiBufferSource buffer,
+							  int light) {
+			BlockState state = be.getBlockState();
+			Axis axis = state.getValue(BlockStateProperties.AXIS);
+			float degrees = com.createengines.content.flywheel.DualMassPose.primary(be, axis);
+			draw(CEPartialModels.DUAL_MASS_PRIMARY, state, EnginePoses.rotatingPart(axis, degrees), ms, buffer, light);
+			draw(CEPartialModels.DUAL_MASS_SECONDARY, state,
+				EnginePoses.rotatingPart(axis, com.createengines.content.flywheel.DualMassPose.secondary(be, degrees, renderTime)), ms, buffer,
+				light);
+		}
+	}
+
+	/** The blower's rotor, turning with the shaft. Create's default renderer would turn the whole casing instead. */
+	public static class Supercharger extends Base<com.createengines.content.supercharger.SuperchargerBlockEntity> {
+		public Supercharger(BlockEntityRendererProvider.Context context) {
+			super(context);
+		}
+
+		@Override
+		protected void render(com.createengines.content.supercharger.SuperchargerBlockEntity be, float renderTime,
+							  PoseStack ms, MultiBufferSource buffer, int light) {
+			BlockState state = be.getBlockState();
+			Axis axis = state.getValue(BlockStateProperties.AXIS);
+			float degrees = (float) Math.toDegrees(KineticBlockEntityRenderer.getAngleForBe(be, be.getBlockPos(), axis));
+			draw(CEPartialModels.SUPERCHARGER_ROTOR, state, EnginePoses.rotatingPart(axis, degrees), ms, buffer, light);
+		}
+	}
+
 	public static class RotorHousing extends Base<RotorHousingBlockEntity> {
 		public RotorHousing(BlockEntityRendererProvider.Context context) {
 			super(context);

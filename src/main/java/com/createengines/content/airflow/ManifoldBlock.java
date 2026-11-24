@@ -52,13 +52,16 @@ public class ManifoldBlock extends Block implements AirflowPort, IWrenchable {
 	private static final Map<Direction, VoxelShape> ARMS = new EnumMap<>(Direction.class);
 	private static final VoxelShape[] SHAPES = new VoxelShape[1 << 6];
 
+	/** This pipe's shapes with its body added, by open ends; only filled for a block that has a body. */
+	private final VoxelShape[] withBody = new VoxelShape[1 << 6];
+
 	static {
-		ARMS.put(Direction.UP, Shapes.or(Block.box(5, 11, 5, 11, 14, 11), Block.box(4, 14, 4, 12, 16, 12)));
-		ARMS.put(Direction.DOWN, Shapes.or(Block.box(5, 2, 5, 11, 5, 11), Block.box(4, 0, 4, 12, 2, 12)));
-		ARMS.put(Direction.NORTH, Shapes.or(Block.box(5, 5, 2, 11, 11, 5), Block.box(4, 4, 0, 12, 12, 2)));
-		ARMS.put(Direction.SOUTH, Shapes.or(Block.box(5, 5, 11, 11, 11, 14), Block.box(4, 4, 14, 12, 12, 16)));
-		ARMS.put(Direction.EAST, Shapes.or(Block.box(11, 5, 5, 14, 11, 11), Block.box(14, 4, 4, 16, 12, 12)));
-		ARMS.put(Direction.WEST, Shapes.or(Block.box(2, 5, 5, 5, 11, 11), Block.box(0, 4, 4, 2, 12, 12)));
+		ARMS.put(Direction.UP, Shapes.or(Block.box(5, 11, 5, 11, 14, 11), Block.box(3.5, 14, 3.5, 12.5, 16, 12.5)));
+		ARMS.put(Direction.DOWN, Shapes.or(Block.box(5, 2, 5, 11, 5, 11), Block.box(3.5, 0, 3.5, 12.5, 2, 12.5)));
+		ARMS.put(Direction.NORTH, Shapes.or(Block.box(5, 5, 2, 11, 11, 5), Block.box(3.5, 3.5, 0, 12.5, 12.5, 2)));
+		ARMS.put(Direction.SOUTH, Shapes.or(Block.box(5, 5, 11, 11, 11, 14), Block.box(3.5, 3.5, 14, 12.5, 12.5, 16)));
+		ARMS.put(Direction.EAST, Shapes.or(Block.box(11, 5, 5, 14, 11, 11), Block.box(14, 3.5, 3.5, 16, 12.5, 12.5)));
+		ARMS.put(Direction.WEST, Shapes.or(Block.box(2, 5, 5, 5, 11, 11), Block.box(0, 3.5, 3.5, 2, 12.5, 12.5)));
 	}
 
 	private final PortKind kind;
@@ -144,7 +147,20 @@ public class ManifoldBlock extends Block implements AirflowPort, IWrenchable {
 					shape = Shapes.or(shape, ARMS.get(direction));
 			SHAPES[mask] = shape;
 		}
+		VoxelShape body = body();
+		if (body != null) {
+			VoxelShape joined = withBody[mask];
+			if (joined == null)
+				withBody[mask] = joined = Shapes.or(shape, body)
+					.optimize();
+			shape = joined;
+		}
 		return Encasing.shape(state, shape);
+	}
+
+	/** What a throttle or a sensor has on the pipe beyond its core, or null for a plain pipe. */
+	protected VoxelShape body() {
+		return null;
 	}
 
 	/** Engine Casing goes over a plain manifold, not over a throttle or a sensor, which have a face to show. */

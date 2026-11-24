@@ -2,6 +2,7 @@ package com.createengines.content.airflow;
 
 import java.util.List;
 
+import com.createengines.config.CEConfig;
 import com.createengines.engine.Signals;
 import com.createengines.engine.sim.Throttle;
 import com.createengines.content.GoggleLines;
@@ -23,6 +24,7 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.Vec3;
+import net.neoforged.neoforge.common.ModConfigSpec;
 
 /**
  * The valve of a {@link ThrottleBlock}. It holds the idle stop (how far open it sits with no signal) and the wide-open
@@ -40,6 +42,36 @@ public class ThrottleBlockEntity extends SmartBlockEntity implements IHaveGoggle
 	public static final int WIDE_STEP = 5;
 	public static final int MIN_WIDE = 100 / WIDE_STEP;
 	public static final int MAX_WIDE = (int) Math.round(Throttle.MAX_WIDE_OPEN * 100 / WIDE_STEP);
+
+	/** Smallest idle stop the value box offers, in {@link #IDLE_STEP}s: {@link #MIN_IDLE} unless the config raises it. */
+	public static int minIdle() {
+		return Math.max(MIN_IDLE, Math.min(MAX_IDLE, configSteps(CEConfig.THROTTLE_IDLE_MIN, MIN_IDLE, IDLE_STEP)));
+	}
+
+	/** Largest idle stop the value box offers, in {@link #IDLE_STEP}s: {@link #MAX_IDLE} unless the config lowers it. */
+	public static int maxIdle() {
+		return Math.max(minIdle(), Math.min(MAX_IDLE, configSteps(CEConfig.THROTTLE_IDLE_MAX, MAX_IDLE, IDLE_STEP)));
+	}
+
+	/** Smallest wide-open bore the value box offers, in {@link #WIDE_STEP}s: {@link #MIN_WIDE} (the plain intake) unless the config lowers it. */
+	public static int minWide() {
+		return Math.max(1, Math.min(MIN_WIDE, configSteps(CEConfig.THROTTLE_WIDE_MIN, MIN_WIDE, WIDE_STEP)));
+	}
+
+	/** Largest wide-open bore the value box offers, in {@link #WIDE_STEP}s: {@link #MAX_WIDE} unless the config lowers it. */
+	public static int maxWide() {
+		return Math.max(minWide(), Math.min(MAX_WIDE, configSteps(CEConfig.THROTTLE_WIDE_MAX, MAX_WIDE, WIDE_STEP)));
+	}
+
+	/** A percent setting as dial steps, or the shipped default if the config has not loaded (a client before it joins). */
+	private static int configSteps(ModConfigSpec.IntValue setting, int fallback, int step) {
+		try {
+			return Math.round(setting.get() / (float) step);
+		} catch (IllegalStateException notLoaded) {
+			return fallback;
+		}
+	}
+
 	private static final BehaviourType<ScrollValueBehaviour> IDLE_TYPE = new BehaviourType<>("throttle_idle");
 	private static final BehaviourType<ScrollValueBehaviour> WIDE_TYPE = new BehaviourType<>("throttle_wide");
 	private static final String WIDE_KEY = "WideBore";
@@ -60,8 +92,8 @@ public class ThrottleBlockEntity extends SmartBlockEntity implements IHaveGoggle
 				return IDLE_TYPE;
 			}
 		};
-		idle.between(MIN_IDLE, MAX_IDLE);
-		idle.value = DEFAULT_IDLE;
+		idle.between(minIdle(), maxIdle());
+		idle.value = Math.max(minIdle(), Math.min(maxIdle(), DEFAULT_IDLE));
 		idle.withFormatter(v -> v * IDLE_STEP + "%");
 		behaviours.add(idle);
 
@@ -98,7 +130,7 @@ public class ThrottleBlockEntity extends SmartBlockEntity implements IHaveGoggle
 					super.read(nbt.getCompound(WIDE_KEY), registries, clientPacket);
 			}
 		};
-		wide.between(MIN_WIDE, MAX_WIDE);
+		wide.between(minWide(), maxWide());
 		wide.value = MIN_WIDE;
 		wide.withFormatter(v -> v * WIDE_STEP + "%");
 		behaviours.add(wide);
@@ -106,12 +138,12 @@ public class ThrottleBlockEntity extends SmartBlockEntity implements IHaveGoggle
 
 	/** How far the valve opens at full signal, as a multiple of the plain intake: 1, or more for a bigger bore. */
 	public double wideFraction() {
-		return Math.max(MIN_WIDE, wide.getValue()) * WIDE_STEP / 100d;
+		return Math.max(minWide(), Math.min(maxWide(), wide.getValue())) * WIDE_STEP / 100d;
 	}
 
 	/** How far open the valve rests with no signal: 0.05 (a crack) to 1 (no throttling at all). */
 	public double idleFraction() {
-		return Math.max(MIN_IDLE, idle.getValue()) * IDLE_STEP / 100d;
+		return Math.max(minIdle(), Math.min(maxIdle(), idle.getValue())) * IDLE_STEP / 100d;
 	}
 
 	/** How far open the valve is now, from the idle stop at no signal to 1 at full redstone strength. */

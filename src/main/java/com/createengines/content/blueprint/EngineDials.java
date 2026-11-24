@@ -8,6 +8,10 @@ import java.util.function.Function;
 
 import org.jetbrains.annotations.Nullable;
 
+import com.createengines.content.alternator.AlternatorBlockEntity;
+import com.createengines.engine.sim.ChargeRate;
+import com.createengines.engine.sim.SpringPack;
+import com.createengines.content.flywheel.CastFlywheelBlockEntity;
 import com.createengines.content.airflow.MafSensorBlockEntity;
 import com.createengines.content.airflow.ThrottleBlockEntity;
 import com.createengines.content.blackbox.BlackBoxBlockEntity;
@@ -59,9 +63,14 @@ public final class EngineDials {
 		}
 	}
 
-	private static Map<String, List<Dial>> table;
+	private static volatile Map<String, List<Dial>> table;
 
 	private EngineDials() {
+	}
+
+	/** Forget the built table, so the next read picks up ranges that come from the config (the throttle's). */
+	public static synchronized void invalidate() {
+		table = null;
 	}
 
 	/** The dials of a block, by registry id such as {@code create_engines:cylinder_head}. Empty if it has none. */
@@ -96,8 +105,8 @@ public final class EngineDials {
 		add(t, CEBlocks.CYLINDER_HEAD, headMetering);
 		add(t, CEBlocks.PRECISION_CYLINDER_HEAD, headMetering);
 		add(t, CEBlocks.THROTTLE,
-			new Dial("idle", ThrottleBlockEntity.MIN_IDLE, ThrottleBlockEntity.MAX_IDLE, e -> ((ThrottleBlockEntity) e).idle),
-			new Dial("wide", ThrottleBlockEntity.MIN_WIDE, ThrottleBlockEntity.MAX_WIDE, e -> ((ThrottleBlockEntity) e).wide));
+			new Dial("idle", ThrottleBlockEntity.minIdle(), ThrottleBlockEntity.maxIdle(), e -> ((ThrottleBlockEntity) e).idle),
+			new Dial("wide", ThrottleBlockEntity.minWide(), ThrottleBlockEntity.maxWide(), e -> ((ThrottleBlockEntity) e).wide));
 		add(t, CEBlocks.MAF_SENSOR, new Dial("target", MafSensorBlockEntity.MIN_TARGET, MafSensorBlockEntity.MAX_TARGET,
 			e -> ((MafSensorBlockEntity) e).target));
 		add(t, CEBlocks.GOVERNOR, new Dial("target", GovernorBlockEntity.MIN_TARGET, GovernorBlockEntity.MAX_TARGET,
@@ -117,6 +126,10 @@ public final class EngineDials {
 		add(t, CEBlocks.SUMP,
 			new Dial("oil_exchange", 0, SumpBlockEntity.EXCHANGE_RATES.length - 1, e -> ((SumpBlockEntity) e).exchange),
 			new Dial("signal_tank", 0, SumpBlockEntity.SIGNAL_TANKS - 1, e -> ((SumpBlockEntity) e).signalTank));
+		add(t, CEBlocks.ALTERNATOR, new Dial("charge_rate", ChargeRate.MIN_SETTING, ChargeRate.MAX_SETTING,
+			e -> ((AlternatorBlockEntity) e).chargeRateDial));
+		add(t, CEBlocks.DUAL_MASS_FLYWHEEL, new Dial("spring_pack", SpringPack.MIN_SETTING, SpringPack.MAX_SETTING,
+			e -> ((CastFlywheelBlockEntity) e).springPack));
 		add(t, CEBlocks.BLACK_BOX,
 			new Dial("replay", 0, FlightRecorder.REPLAY_STEPS, e -> ((BlackBoxBlockEntity) e).replay));
 		table = t;

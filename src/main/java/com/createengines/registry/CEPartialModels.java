@@ -29,6 +29,9 @@ public final class CEPartialModels {
 	public static final PartialModel TURBO_WHEEL = block("turbocharger/wheel");
 	public static final PartialModel SUPERCHARGER_ROTOR = block("supercharger/rotor");
 	public static final PartialModel FLYWHEEL_DISC = block("cast_flywheel/disc");
+	/** A Dual-Mass Flywheel's two masses, drawn apart so the secondary can lag the primary (see SpringPackLag). */
+	public static final PartialModel DUAL_MASS_PRIMARY = block("dual_mass_flywheel/primary");
+	public static final PartialModel DUAL_MASS_SECONDARY = block("dual_mass_flywheel/secondary");
 
 	private CEPartialModels() {
 	}

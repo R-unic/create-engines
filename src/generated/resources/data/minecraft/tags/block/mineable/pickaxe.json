@@ -25,6 +25,7 @@
     "create_engines:battery",
     "create_engines:alternator",
     "create_engines:cast_flywheel",
+    "create_engines:dual_mass_flywheel",
     "create_engines:dyno",
     "create_engines:black_box",
     "create_engines:sump",

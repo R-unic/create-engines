@@ -1,5 +1,9 @@
 package com.createengines.content.starter;
 
+import net.minecraft.world.phys.shapes.VoxelShape;
+import net.minecraft.world.phys.shapes.CollisionContext;
+import net.minecraft.world.level.BlockGetter;
+import com.createengines.content.PartShapes;
 import com.createengines.engine.topology.EngineTopology;
 import com.createengines.registry.CEBlockEntities;
 import com.simibubi.create.content.kinetics.base.DirectionalKineticBlock;
@@ -91,5 +95,11 @@ public class StarterBlock extends DirectionalKineticBlock implements IBE<Starter
 	@Override
 	public BlockEntityType<? extends StarterBlockEntity> getBlockEntityType() {
 		return CEBlockEntities.STARTER.get();
+	}
+
+	@Override
+	protected VoxelShape getShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext context) {
+		return PartShapes.STARTER[state.getValue(FACING)
+			.ordinal()];
 	}
 }

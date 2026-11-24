@@ -1,6 +1,7 @@
 {
 	"replace": false,
 	"values": [
-		"create_engines:cast_flywheel"
+		"create_engines:cast_flywheel",
+		"create_engines:dual_mass_flywheel"
 	]
 }

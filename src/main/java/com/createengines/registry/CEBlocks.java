@@ -20,6 +20,7 @@ import com.createengines.content.airflow.PortOpeningBlock;
 import com.createengines.content.airflow.ThrottleBlock;
 import com.createengines.content.alternator.AlternatorBlock;
 import com.createengines.content.battery.BatteryBlock;
+import com.createengines.engine.sim.BatteryTier;
 import com.createengines.engine.sim.BatteryChemistry;
 import com.createengines.content.camshaft.CamLobeBlock;
 import com.createengines.content.camshaft.CamshaftBlock;
@@ -29,6 +30,7 @@ import com.createengines.content.crankshaft.CrankshaftBlock;
 import com.createengines.content.cylinder.CylinderBlock;
 import com.createengines.content.dyno.DynoBlock;
 import com.createengines.content.flywheel.CastFlywheelBlock;
+import com.createengines.content.flywheel.DualMassFlywheelBlock;
 import com.createengines.content.governor.GovernorBlock;
 import com.createengines.content.head.CylinderHeadBlock;
 import com.createengines.content.intercooler.IntercoolerBlock;
@@ -432,6 +434,22 @@ public final class CEBlocks {
 	/** An iron disc on the crankshaft's line: cheap rotating mass that evens out the engine's power strokes. */
 	public static final BlockEntry<CastFlywheelBlock> CAST_FLYWHEEL =
 		REGISTRATE.block("cast_flywheel", CastFlywheelBlock::new)
+			.initialProperties(SharedProperties::softMetal)
+			.properties(p -> part(p)
+				.mapColor(MapColor.METAL))
+			.transform(TagGen.pickaxeOnly())
+			.blockstate((c, p) -> BlockStateGen.axisBlock(c, p, s -> AssetLookup.partialBaseModel(c, p)))
+			.item()
+			.transform(ModelGen.customItemModel())
+			.register();
+
+	/**
+	 * Two masses on a spring pack: a light one on the crank for quick revs, a heavy one behind it that smooths the network's
+	 * torque once the engine is past the springs' resonance.
+	 */
+	public static final BlockEntry<DualMassFlywheelBlock> DUAL_MASS_FLYWHEEL =
+		REGISTRATE.block("dual_mass_flywheel", DualMassFlywheelBlock::new)
+			.lang("Dual-Mass Flywheel")
 			.initialProperties(SharedProperties::softMetal)
 			.properties(p -> part(p)
 				.mapColor(MapColor.METAL))
@@ -950,7 +968,8 @@ public final class CEBlocks {
 			.transform(DisplaySource.displaySource(CEDisplaySources.ENGINE_OIL))
 			.transform(DisplaySource.displaySource(CEDisplaySources.ENGINE_BOOST))
 			.transform(DisplaySource.displaySource(CEDisplaySources.ENGINE_TORQUE))
-			.transform(DisplaySource.displaySource(CEDisplaySources.ENGINE_FAULT));
+			.transform(DisplaySource.displaySource(CEDisplaySources.ENGINE_FAULT))
+			.transform(DisplaySource.displaySource(CEDisplaySources.ENGINE_SMOOTHNESS));
 	}
 
 	/** A pipe is a core with an arm model on each side it is connected through. */

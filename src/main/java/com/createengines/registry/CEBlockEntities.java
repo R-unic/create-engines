@@ -12,6 +12,9 @@ import com.createengines.content.blackbox.BlackBoxBlockEntity;
 import com.createengines.content.dyno.DynoBlockEntity;
 import com.createengines.content.flywheel.CastFlywheelBlockEntity;
 import com.createengines.content.flywheel.CastFlywheelVisual;
+import com.createengines.content.flywheel.DataFlywheelVisual;
+import com.createengines.content.flywheel.DualMassFlywheelVisual;
+import com.createengines.content.alternator.AlternatorRenderer;
 import com.createengines.content.battery.BatteryBlockEntity;
 import com.createengines.content.camshaft.CamshaftBlockEntity;
 import com.createengines.content.camshaft.CamshaftVisual;
@@ -128,7 +131,7 @@ public final class CEBlockEntities {
 		.blockEntity("alternator", AlternatorBlockEntity::new)
 		.visual(() -> AlternatorVisual::create, false)
 		.validBlocks(CEBlocks.ALTERNATOR)
-		.renderer(() -> KineticBlockEntityRenderer::new)
+		.renderer(() -> AlternatorRenderer::new)
 		.register();
 
 	public static final BlockEntityEntry<CastFlywheelBlockEntity> CAST_FLYWHEEL = REGISTRATE
@@ -136,6 +139,23 @@ public final class CEBlockEntities {
 		.visual(() -> CastFlywheelVisual::create, false)
 		.validBlocks(CEBlocks.CAST_FLYWHEEL)
 		.renderer(() -> EnginePartRenderers.CastFlywheel::new)
+		.register();
+
+	public static final BlockEntityEntry<CastFlywheelBlockEntity> DUAL_MASS_FLYWHEEL = REGISTRATE
+		.blockEntity("dual_mass_flywheel", CastFlywheelBlockEntity::new)
+		.visual(() -> DualMassFlywheelVisual::create, false)
+		.validBlocks(CEBlocks.DUAL_MASS_FLYWHEEL)
+		.renderer(() -> EnginePartRenderers.DualMassFlywheel::new)
+		.register();
+
+	/**
+	 * The block entity of the flywheels a pack or an addon makes with {@code PartBlocks.flywheel}. None of this mod's own blocks
+	 * is valid for it: an addon's blocks are added to it when the addon registers them.
+	 */
+	public static final BlockEntityEntry<CastFlywheelBlockEntity> DATA_FLYWHEEL = REGISTRATE
+		.blockEntity("data_flywheel", CastFlywheelBlockEntity::new)
+		.visual(() -> DataFlywheelVisual::create, false)
+		.renderer(() -> KineticBlockEntityRenderer::new)
 		.register();
 
 	public static final BlockEntityEntry<DynoBlockEntity> DYNO = REGISTRATE
@@ -192,7 +212,7 @@ public final class CEBlockEntities {
 		.blockEntity("supercharger", SuperchargerBlockEntity::new)
 		.visual(() -> SuperchargerVisual::create, false)
 		.validBlocks(CEBlocks.SUPERCHARGER, CEBlocks.VARIABLE_SUPERCHARGER)
-		.renderer(() -> KineticBlockEntityRenderer::new)
+		.renderer(() -> EnginePartRenderers.Supercharger::new)
 		.register();
 
 	public static final BlockEntityEntry<TransmissionBlockEntity> TRANSMISSION = REGISTRATE

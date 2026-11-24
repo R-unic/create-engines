@@ -4,23 +4,28 @@
       "energy_per_mb": 30,
       "autoignition_temperature": 1.7,
       "air_per_mb": 1.6,
-      "cold_sensitivity": 1.5
+      "cold_sensitivity": 0.9,
+      "soot_factor": 1.3,
+      "flammability": 0.5
     },
     "create_engines:diesel": {
       "energy_per_mb": 36,
       "autoignition_temperature": 1.55,
-      "air_per_mb": 1.7
+      "air_per_mb": 1.7,
+      "flammability": 0.5
     },
     "create_engines:gasoline": {
       "energy_per_mb": 40,
       "autoignition_temperature": 2.7,
       "air_per_mb": 1.5,
-      "cold_sensitivity": 0.8
+      "cold_sensitivity": 0.8,
+      "flammability": 2.0
     },
     "create_engines:used_oil": {
       "energy_per_mb": 22,
       "autoignition_temperature": 1.85,
-      "air_per_mb": 1.6
+      "air_per_mb": 1.6,
+      "flammability": 0.5
     },
     "create_engines:ethanol": {
       "energy_per_mb": 27,
@@ -29,7 +34,8 @@
       "cold_sensitivity": 1.8,
       "charge_cooling": 0.08,
       "soot_factor": 0.0,
-      "preignition_temperature": 5.0
+      "preignition_temperature": 5.0,
+      "flammability": 1.5
     }
   }
 }

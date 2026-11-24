@@ -1,5 +1,6 @@
 package com.createengines.content.turbo;
 
+import com.createengines.content.PartShapes;
 import org.jetbrains.annotations.Nullable;
 
 import com.createengines.content.airflow.AirflowPort;
@@ -39,7 +40,7 @@ public class TurbochargerBlock extends DirectionalBlock implements InlineDuct, I
 
 	public static final DirectionProperty FACING = DirectionalBlock.FACING;
 
-	private static final VoxelShape SHAPE = Block.box(1, 1, 1, 15, 15, 15);
+	private static final VoxelShape[] SHAPES = PartShapes.TURBOCHARGER;
 
 	public TurbochargerBlock(Properties properties) {
 		super(properties);
@@ -84,7 +85,8 @@ public class TurbochargerBlock extends DirectionalBlock implements InlineDuct, I
 
 	@Override
 	protected VoxelShape getShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext context) {
-		return SHAPE;
+		return SHAPES[state.getValue(FACING)
+			.ordinal()];
 	}
 
 	@Override

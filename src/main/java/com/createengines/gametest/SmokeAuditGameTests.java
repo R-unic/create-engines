@@ -529,11 +529,18 @@ public class SmokeAuditGameTests {
 			new ConfigKnob("throwInertia", com.createengines.config.CEConfig.THROW_INERTIA, 0, 100, false),
 			new ConfigKnob("flywheelInertia", com.createengines.config.CEConfig.FLYWHEEL_INERTIA, 0, 100, false),
 			new ConfigKnob("castFlywheelInertia", com.createengines.config.CEConfig.CAST_FLYWHEEL_INERTIA, 0, 100, false),
+			new ConfigKnob("dualMassPrimaryInertia", com.createengines.config.CEConfig.DUAL_MASS_PRIMARY_INERTIA, 0, 100, false),
+			new ConfigKnob("dualMassSecondaryInertia", com.createengines.config.CEConfig.DUAL_MASS_SECONDARY_INERTIA, 0, 100, false),
+			new ConfigKnob("dualMassResonance", com.createengines.config.CEConfig.DUAL_MASS_RESONANCE, 1, 100000, false),
 			new ConfigKnob("bearingFriction", com.createengines.config.CEConfig.BEARING_FRICTION, 0, 10, false),
 			new ConfigKnob("maxCrankSegments", com.createengines.config.CEConfig.MAX_CRANK_SEGMENTS, 1, 1024, true),
 			new ConfigKnob("maxManifoldBlocks", com.createengines.config.CEConfig.MAX_MANIFOLD_BLOCKS, 1, 4096, true),
 			new ConfigKnob("maxCoupledLines", com.createengines.config.CEConfig.MAX_COUPLED_LINES, 1, 64, true),
 			new ConfigKnob("maxCouplingWalk", com.createengines.config.CEConfig.MAX_COUPLING_WALK, 1, 8192, true),
+			new ConfigKnob("throttleIdleMin", com.createengines.config.CEConfig.THROTTLE_IDLE_MIN, 5, 100, false),
+			new ConfigKnob("throttleIdleMax", com.createengines.config.CEConfig.THROTTLE_IDLE_MAX, 5, 100, false),
+			new ConfigKnob("throttleWideMin", com.createengines.config.CEConfig.THROTTLE_WIDE_MIN, 5, 100, false),
+			new ConfigKnob("throttleWideMax", com.createengines.config.CEConfig.THROTTLE_WIDE_MAX, 100, 150, false),
 			new ConfigKnob("alternatorEnergy", com.createengines.config.CEConfig.ALTERNATOR_ENERGY, 0, 100, false));
 		java.util.Map<ConfigKnob, Number> originals = new java.util.LinkedHashMap<>();
 		for (ConfigKnob knob : knobs)

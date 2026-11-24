@@ -1501,13 +1501,21 @@ public final class EngineScenes {
 			.showSection(body, Direction.SOUTH);
 		scene.idle(15);
 		scene.overlay()
-			.showText(100)
+			.showText(110)
 			.attachKeyFrame()
 			.text("A Throttle Body is a length of intake pipe with a valve in it. Close it and every cylinder behind it draws less air.")
 			.pointAt(util.vector()
 				.topOf(throttle))
 			.placeNearTarget();
-		scene.idle(110);
+		scene.idle(120);
+
+		scene.overlay()
+			.showText(110)
+			.text("It replaces a piece of the intake line between the Air Intake and the cylinders, and air runs through it like any manifold piece. Only the cylinders behind it feel the valve.")
+			.pointAt(util.vector()
+				.topOf(throttle))
+			.placeNearTarget();
+		scene.idle(120);
 
 		scene.overlay()
 			.showControls(util.vector()
@@ -1515,10 +1523,10 @@ public final class EngineScenes {
 			.rightClick();
 		scene.idle(10);
 		scene.overlay()
-			.showText(100)
+			.showText(130)
 			.attachKeyFrame()
 			.colored(PonderPalette.BLUE)
-			.text("Its Idle Stop, set with the value panel, is how far open the valve rests with no signal.")
+			.text("Its Idle Stop, set with the value panel, is how far open the valve rests with no signal: 5% to 100% in steps of 5%, and 20% to begin with. Set it higher for an engine that should idle strongly; set it low for one that should barely tick over.")
 			.pointAt(util.vector()
 				.blockSurface(throttle, Direction.WEST))
 			.placeNearTarget();
@@ -1526,7 +1534,7 @@ public final class EngineScenes {
 			.setKineticSpeed(crank, 24);
 		scene.world()
 			.setKineticSpeed(cam, 12);
-		scene.idle(110);
+		scene.idle(140);
 
 		scene.world()
 			.showSection(pedal, Direction.DOWN);
@@ -1550,6 +1558,14 @@ public final class EngineScenes {
 		scene.idle(120);
 
 		scene.overlay()
+			.showText(130)
+			.text("The opening rises in a straight line with signal strength. With a 20% idle stop, strength 0 is 20%, strength 8 is about 63% and strength 15 is 100%. Engineer's Goggles on the valve read its opening right now.")
+			.pointAt(util.vector()
+				.topOf(throttle))
+			.placeNearTarget();
+		scene.idle(140);
+
+		scene.overlay()
 			.showText(120)
 			.colored(PonderPalette.BLUE)
 			.text("A second dial, the Wide-Open Bore, sets how far full signal opens it: 100% is the plain intake, and up to 150% is a bigger bore that lets a fast engine breathe more than the intake alone gives. It does nothing with no signal.")
@@ -1565,12 +1581,12 @@ public final class EngineScenes {
 		scene.world()
 			.setKineticSpeed(cam, 12);
 		scene.overlay()
-			.showText(110)
-			.text("Less air means less power: a throttled engine runs slower and has less torque to spare. Nearly shut, the piston spends more dragging air through the valve than it earns.")
+			.showText(130)
+			.text("Less air means less power: a throttled engine runs slower and has less torque to spare. Nearly shut, the piston spends more dragging air through the valve than it earns. Air gain flattens as the valve opens, so the last stretch of travel adds little and the first stretch matters most.")
 			.pointAt(util.vector()
 				.topOf(2, 2, 3))
 			.placeNearTarget();
-		scene.idle(120);
+		scene.idle(140);
 
 		scene.overlay()
 			.showText(110)
@@ -1584,12 +1600,12 @@ public final class EngineScenes {
 		scene.idle(120);
 
 		scene.overlay()
-			.showText(90)
-			.text("Throttle bodies in one intake line act together: the most closed one governs every cylinder behind it.")
+			.showText(120)
+			.text("Throttle bodies in one intake line act together: the most closed one governs every cylinder behind it. A bore past 100% only helps when every body in the line is set that wide.")
 			.pointAt(util.vector()
 				.topOf(throttle))
 			.placeNearTarget();
-		scene.idle(100);
+		scene.idle(130);
 		scene.markAsFinished();
 	}
 
@@ -2834,6 +2850,31 @@ public final class EngineScenes {
 				.topOf(2, 3, 2))
 			.placeNearTarget();
 		scene.idle(120);
+
+		scene.world()
+			.setBlock(flywheelPos, CEBlocks.DUAL_MASS_FLYWHEEL.getDefaultState()
+				.setValue(BlockStateProperties.AXIS, Direction.Axis.X), false);
+		scene.world()
+			.setKineticSpeed(flywheel, 48);
+		scene.idle(15);
+		scene.overlay()
+			.showText(130)
+			.attachKeyFrame()
+			.colored(PonderPalette.GREEN)
+			.text("A Dual-Mass Flywheel is two masses on a spring pack. The light one is bolted to the crank, so the engine still revs quickly. The heavy one sits behind the springs and smooths what the network sees.")
+			.pointAt(util.vector()
+				.topOf(flywheelPos))
+			.placeNearTarget();
+		scene.idle(140);
+
+		scene.overlay()
+			.showText(130)
+			.colored(PonderPalette.RED)
+			.text("The springs only isolate above their resonance, about 48 RPM. Below it the part is no better than its light mass alone, so a big Cast Flywheel still suits a slow, heavy engine. It is never worse than its light mass, and it costs a precision mechanism.")
+			.pointAt(util.vector()
+				.topOf(flywheelPos))
+			.placeNearTarget();
+		scene.idle(140);
 		scene.markAsFinished();
 	}
 

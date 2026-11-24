@@ -14,6 +14,14 @@ import com.createengines.content.battery.BatteryBank;
 import com.createengines.content.battery.BatteryBlockEntity;
 import com.createengines.content.crankshaft.CrankshaftBlockEntity;
 import com.createengines.engine.GhostRotation;
+import com.createengines.engine.sim.ChargeRate;
+import com.simibubi.create.foundation.blockEntity.behaviour.BehaviourType;
+import com.simibubi.create.foundation.blockEntity.behaviour.BlockEntityBehaviour;
+import com.simibubi.create.foundation.blockEntity.behaviour.ValueBoxTransform;
+import com.simibubi.create.foundation.blockEntity.behaviour.scrollValue.ScrollValueBehaviour;
+import net.createmod.catnip.math.VecHelper;
+import net.minecraft.world.level.block.state.properties.BlockStateProperties;
+import net.minecraft.world.phys.Vec3;
 import com.createengines.engine.topology.EngineMember;
 import com.createengines.content.GoggleLines;
 import com.createengines.registry.CELang;
@@ -60,6 +68,11 @@ public class AlternatorBlockEntity extends KineticBlockEntity implements EngineM
 	/** Ticks between working out the share of the engine's torque and what the other alternators make. */
 	private static final int READOUT_INTERVAL = 10;
 
+	private static final BehaviourType<ScrollValueBehaviour> RATE_TYPE = new BehaviourType<>("alternator_charge_rate");
+
+	/** How much of its full output the alternator is allowed, in four steps (see {@link ChargeRate}). */
+	public ScrollValueBehaviour chargeRateDial;
+
 	private @Nullable BlockPos primaryPos;
 	/** Batteries of the engine this alternator touches, set by the engine. */
 	private List<BlockPos> engineBatteries = List.of();
@@ -85,6 +98,57 @@ public class AlternatorBlockEntity extends KineticBlockEntity implements EngineM
 
 	public AlternatorBlockEntity(BlockEntityType<?> type, BlockPos pos, BlockState state) {
 		super(type, pos, state);
+	}
+
+	@Override
+	public void addBehaviours(List<BlockEntityBehaviour> behaviours) {
+		super.addBehaviours(behaviours);
+		chargeRateDial = new ScrollValueBehaviour(CELang.translate("value.alternator_rate")
+			.component(), this, new ValueBox()) {
+			@Override
+			public BehaviourType<?> getType() {
+				return RATE_TYPE;
+			}
+
+			@Override
+			public void write(CompoundTag tag, HolderLookup.Provider registries, boolean clientPacket) {
+				tag.putInt("ChargeRateSetting", value);
+			}
+
+			@Override
+			public void read(CompoundTag tag, HolderLookup.Provider registries, boolean clientPacket) {
+				// An alternator saved before the dial has no key and reads as full output; a damaged one is held to the dial's range
+				value = tag.contains("ChargeRateSetting") ? ChargeRate.clamp(tag.getInt("ChargeRateSetting")) : ChargeRate.DEFAULT_SETTING;
+			}
+		};
+		chargeRateDial.between(ChargeRate.MIN_SETTING, ChargeRate.MAX_SETTING);
+		chargeRateDial.value = ChargeRate.DEFAULT_SETTING;
+		chargeRateDial.withFormatter(v -> ChargeRate.percent(v) + "%");
+		// The load on the shaft follows the dial at once, not at the next change of charging
+		chargeRateDial.withCallback(v -> {
+			if (level != null && !level.isClientSide && hasNetwork())
+				getOrCreateNetwork().updateStressFor(this, calculateStressApplied());
+		});
+		behaviours.add(chargeRateDial);
+	}
+
+	/** The share of full output the dial allows, 0.25 to 1; 1 before the dial exists. */
+	public float outputShare() {
+		return chargeRateDial == null ? 1 : (float) ChargeRate.share(chargeRateDial.getValue());
+	}
+
+	/** A value box on any face the shaft does not run out of. */
+	private static class ValueBox extends ValueBoxTransform.Sided {
+
+		@Override
+		protected Vec3 getSouthLocation() {
+			return VecHelper.voxelSpace(8, 8, 14);
+		}
+
+		@Override
+		protected boolean isSideActive(BlockState state, Direction direction) {
+			return direction.getAxis() != state.getValue(BlockStateProperties.AXIS);
+		}
 	}
 
 	public void attachToEngine(BlockPos primary, List<BlockPos> batteries, List<BlockPos> alternators) {
@@ -129,7 +193,7 @@ public class AlternatorBlockEntity extends KineticBlockEntity implements EngineM
 
 	@Override
 	public float calculateStressApplied() {
-		lastStressApplied = charging || supplying ? CHARGING_STRESS : 0;
+		lastStressApplied = charging || supplying ? CHARGING_STRESS * outputShare() : 0;
 		return lastStressApplied;
 	}
 
@@ -154,7 +218,7 @@ public class AlternatorBlockEntity extends KineticBlockEntity implements EngineM
 		ghost.tick(this);
 		boolean turning = getSpeed() != 0 && !isOverStressed();
 		List<BatteryBlockEntity> batteries = turning ? batteries() : List.of();
-		float budget = turning ? Math.abs(getSpeed()) * CHARGE_PER_RPM : 0;
+		float budget = turning ? Math.abs(getSpeed()) * CHARGE_PER_RPM * outputShare() : 0;
 		boolean wanted = false;
 		for (BatteryBlockEntity battery : batteries)
 			if (!battery.isFull()) {
@@ -198,7 +262,7 @@ public class AlternatorBlockEntity extends KineticBlockEntity implements EngineM
 		float share = 0;
 		if (primaryPos != null && level.isLoaded(primaryPos) && level.getBlockEntity(primaryPos) instanceof CrankshaftBlockEntity crank
 			&& crank.publishedCapacity() > 0)
-			share = Math.min(1, CHARGING_STRESS / crank.publishedCapacity());
+			share = Math.min(1, CHARGING_STRESS * outputShare() / crank.publishedCapacity());
 		int count = 0;
 		float total = 0;
 		for (BlockPos pos : engineAlternators)
@@ -226,7 +290,7 @@ public class AlternatorBlockEntity extends KineticBlockEntity implements EngineM
 	 * leaving it lately, which is when the shaft is made to work for it.
 	 */
 	private boolean supplyEnergy(boolean turning) {
-		double perRpm = CEConfig.ALTERNATOR_ENERGY.get();
+		double perRpm = CEConfig.ALTERNATOR_ENERGY.get() * outputShare();
 		if (turning && perRpm > 0) {
 			double made = Math.abs(getSpeed()) * perRpm + energyCarry;
 			int whole = (int) made;
@@ -309,6 +373,10 @@ public class AlternatorBlockEntity extends KineticBlockEntity implements EngineM
 				.style(ChatFormatting.GREEN), tooltip, 1);
 		GoggleLines.add(CELang.translate(key)
 			.style(colour), tooltip, 1);
+		int allowed = chargeRateDial == null ? 100 : ChargeRate.percent(chargeRateDial.getValue());
+		if (allowed < 100)
+			GoggleLines.add(CELang.translate("goggles.alternator.limited", allowed)
+				.style(ChatFormatting.GRAY), tooltip, 1);
 		if (charging && chargeRate > 0)
 			GoggleLines.add(CELang.translate("goggles.alternator.rate", String.format(java.util.Locale.ROOT, "%.1f", chargeRate * 20))
 				.style(ChatFormatting.DARK_GREEN), tooltip, 1);

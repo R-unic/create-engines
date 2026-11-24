@@ -19,7 +19,7 @@ public final class ApiVersion {
 	// addon compiled against API 1.2 would carry "2" for ever and never see the version actually installed. Going through a
 	// method keeps the read at run time, which is the only time an addon wants to know.
 	public static final int MAJOR = of(1);
-	public static final int MINOR = of(1);
+	public static final int MINOR = of(2);
 	public static final int PATCH = of(0);
 
 	/** {@code MAJOR.MINOR.PATCH}. */

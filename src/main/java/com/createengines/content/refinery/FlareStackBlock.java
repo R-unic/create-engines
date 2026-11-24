@@ -1,5 +1,6 @@
 package com.createengines.content.refinery;
 
+import com.createengines.content.PartShapes;
 import com.createengines.engine.sim.ColumnShape.Part;
 import com.createengines.engine.sim.RefiningColumn.Limit;
 import com.simibubi.create.content.equipment.wrench.IWrenchable;
@@ -25,7 +26,7 @@ public class FlareStackBlock extends Block implements IWrenchable {
 
 	public static final BooleanProperty LIT = BooleanProperty.create("lit");
 	private static final int INTERVAL = 10;
-	private static final VoxelShape SHAPE = Block.box(5, 0, 5, 11, 16, 11);
+	private static final VoxelShape SHAPE = PartShapes.FLARE_STACK;
 
 	public FlareStackBlock(Properties properties) {
 		super(properties);

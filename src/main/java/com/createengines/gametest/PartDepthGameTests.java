@@ -159,6 +159,53 @@ public class PartDepthGameTests {
 		});
 	}
 
+	@GameTest(template = "empty", timeoutTicks = 260, batch = BATCH)
+	public static void anAlternatorSetToHalfTakesHalfTheStressAndSavesItsDialApartFromEverythingElse(GameTestHelper helper) {
+		helper.setBlock(new BlockPos(0, 2, 1), AllBlocks.CREATIVE_MOTOR.getDefaultState()
+			.setValue(CreativeMotorBlock.FACING, Direction.EAST));
+		helper.setBlock(new BlockPos(1, 2, 1), TestEngine.axisX(AllBlocks.SHAFT.getDefaultState()));
+		BlockPos at = new BlockPos(2, 2, 1);
+		helper.setBlock(at, TestEngine.axisX(CEBlocks.ALTERNATOR.getDefaultState()));
+		helper.setBlock(at.above(), CEBlocks.BATTERY.getDefaultState());
+		((CreativeMotorBlockEntity) helper.getBlockEntity(new BlockPos(0, 2, 1))).generatedSpeed.setValue(40);
+		AlternatorBlockEntity box = helper.getBlockEntity(at);
+		helper.assertTrue(box.chargeRateDial.getValue() == 3, "A new alternator is at full output");
+		helper.assertTrue(box.outputShare() == 1, "and takes its whole load");
+		float[] full = {0};
+		helper.runAtTickTime(80, () -> {
+			AlternatorBlockEntity alternator = helper.getBlockEntity(at);
+			full[0] = alternator.getOrCreateNetwork()
+				.calculateStress();
+			helper.assertTrue(full[0] > 0, "A charging alternator puts stress on the shaft: " + full[0]);
+			alternator.chargeRateDial.setValue(1);
+		});
+		helper.runAtTickTime(160, () -> {
+			AlternatorBlockEntity alternator = helper.getBlockEntity(at);
+			float half = alternator.getOrCreateNetwork()
+				.calculateStress();
+			helper.assertTrue(half > 0 && Math.abs(half - full[0] / 2) < 0.02f * full[0],
+				"At half the dial it takes half the stress: " + half + " against " + full[0]);
+			net.minecraft.nbt.CompoundTag tag = alternator.saveWithFullMetadata(helper.getLevel()
+				.registryAccess());
+			helper.assertTrue(tag.getInt("ChargeRateSetting") == 1, "The setting saves under its own key");
+			alternator.chargeRateDial.setValue(3);
+			alternator.loadWithComponents(tag, helper.getLevel()
+				.registryAccess());
+			helper.assertTrue(alternator.chargeRateDial.getValue() == 1, "and reads back as it was: " + alternator.chargeRateDial.getValue());
+			net.minecraft.nbt.CompoundTag old = tag.copy();
+			old.remove("ChargeRateSetting");
+			alternator.loadWithComponents(old, helper.getLevel()
+				.registryAccess());
+			helper.assertTrue(alternator.chargeRateDial.getValue() == 3, "An alternator saved before the dial reads as full output");
+			net.minecraft.nbt.CompoundTag wild = tag.copy();
+			wild.putInt("ChargeRateSetting", 99);
+			alternator.loadWithComponents(wild, helper.getLevel()
+				.registryAccess());
+			helper.assertTrue(alternator.chargeRateDial.getValue() == 3, "A damaged setting is held to the dial's range");
+			helper.succeed();
+		});
+	}
+
 	/** The gear and the fault are one Display Link source each: the gear on a transmission, the fault on any crankshaft block. */
 	@GameTest(template = "empty", batch = BATCH)
 	public static void aTransmissionOffersItsGearAndACrankshaftItsFaultToADisplayLink(GameTestHelper helper) {

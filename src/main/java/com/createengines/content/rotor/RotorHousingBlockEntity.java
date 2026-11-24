@@ -147,6 +147,7 @@ public class RotorHousingBlockEntity extends CrankshaftBlockEntity implements Ga
 		metering.between(CylinderHeadBlockEntity.MIN_METERING, CylinderHeadBlockEntity.MAX_METERING);
 		metering.value = CylinderHeadBlockEntity.DEFAULT_METERING;
 		metering.withFormatter(v -> v * CylinderHeadBlockEntity.METERING_STEP + "%");
+		metering.withCallback(v -> com.createengines.content.head.MeteringFollow.onChanged(level, worldPosition, v));
 		behaviours.add(metering);
 	}
 

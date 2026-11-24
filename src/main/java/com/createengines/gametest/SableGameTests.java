@@ -191,6 +191,7 @@ public class SableGameTests {
 		check(helper, pos, com.createengines.registry.CEBlocks.EXHAUST_MANIFOLD.getDefaultState(), 0.5);
 		check(helper, pos, com.createengines.registry.CEBlocks.INTAKE_MANIFOLD.getDefaultState(), 0.5);
 		check(helper, pos, com.createengines.registry.CEBlocks.CAST_FLYWHEEL.getDefaultState(), 4.0);
+		check(helper, pos, com.createengines.registry.CEBlocks.DUAL_MASS_FLYWHEEL.getDefaultState(), 4.0);
 		helper.succeed();
 	}
 

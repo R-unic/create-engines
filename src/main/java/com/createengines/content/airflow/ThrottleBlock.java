@@ -1,5 +1,6 @@
 package com.createengines.content.airflow;
 
+import com.createengines.content.PartShapes;
 import com.createengines.registry.CEBlockEntities;
 import com.simibubi.create.foundation.block.IBE;
 
@@ -28,5 +29,10 @@ public class ThrottleBlock extends ManifoldBlock implements IBE<ThrottleBlockEnt
 	@Override
 	public BlockEntityType<? extends ThrottleBlockEntity> getBlockEntityType() {
 		return CEBlockEntities.THROTTLE.get();
+	}
+
+	@Override
+	protected net.minecraft.world.phys.shapes.VoxelShape body() {
+		return PartShapes.THROTTLE_BODY;
 	}
 }

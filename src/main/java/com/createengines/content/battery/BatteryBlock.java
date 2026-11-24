@@ -3,6 +3,7 @@ package com.createengines.content.battery;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import com.createengines.engine.sim.BatteryChemistry;
+import com.createengines.engine.sim.BatteryTier;
 import com.createengines.engine.topology.EngineTopology;
 import com.createengines.registry.CEBlockEntities;
 import com.simibubi.create.content.equipment.wrench.IWrenchable;
@@ -54,6 +55,11 @@ public class BatteryBlock extends Block implements IWrenchable, IBE<BatteryBlock
 	public static final BooleanProperty WEST = BlockStateProperties.WEST;
 	public static final BooleanProperty UP = BlockStateProperties.UP;
 
+	/** Which kind of battery this is: how much it holds and how the cold treats it. */
+	public BatteryTier tier() {
+		return tier;
+	}
+
 	/** The join property for the way a neighbour lies, or null for down, which has none. */
 	public static @Nullable BooleanProperty joinFor(Direction direction) {
 		return switch (direction) {
@@ -96,8 +102,16 @@ public class BatteryBlock extends Block implements IWrenchable, IBE<BatteryBlock
 				(mask & 4) != 0 ? 16 : 14);
 	}
 
+	private final BatteryTier tier;
+
+	/** A plain battery: 200 sparks, as it has always been. */
 	public BatteryBlock(Properties properties) {
+		this(properties, BatteryTier.PLAIN);
+	}
+
+	public BatteryBlock(Properties properties, BatteryTier tier) {
 		super(properties);
+		this.tier = tier;
 		registerDefaultState(defaultBlockState().setValue(CHARGE, 0)
 			.setValue(NORTH, false)
 			.setValue(EAST, false)

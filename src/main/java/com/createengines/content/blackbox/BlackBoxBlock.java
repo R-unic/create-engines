@@ -1,5 +1,6 @@
 package com.createengines.content.blackbox;
 
+import com.createengines.content.PartShapes;
 import com.createengines.registry.CEBlockEntities;
 import com.simibubi.create.content.equipment.wrench.IWrenchable;
 import com.simibubi.create.foundation.block.IBE;
@@ -19,7 +20,7 @@ import net.minecraft.world.phys.shapes.VoxelShape;
  */
 public class BlackBoxBlock extends Block implements IWrenchable, IBE<BlackBoxBlockEntity> {
 
-	private static final VoxelShape SHAPE = Block.box(1, 0, 1, 15, 10, 15);
+	private static final VoxelShape SHAPE = PartShapes.BLACK_BOX;
 
 	public BlackBoxBlock(Properties properties) {
 		super(properties);

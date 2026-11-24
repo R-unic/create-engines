@@ -1,5 +1,7 @@
 package com.createengines.content.fuel;
 
+import com.createengines.engine.sim.FuelSpec;
+import com.createengines.engine.sim.SpillFire;
 import com.createengines.engine.sim.Tuning;
 import com.createengines.registry.CEDataMaps;
 
@@ -22,8 +24,8 @@ import net.minecraft.world.level.material.Fluids;
  */
 public class FuelLiquidBlock extends LiquidBlock {
 
-	/** Ticks between one block of a pool catching and the next. */
-	public static final int SPREAD_DELAY = 3;
+	/** Ticks between one block of a pool catching and the next, for a fuel of flammability 1 (see {@link SpillFire#delay}). */
+	public static final int SPREAD_DELAY = SpillFire.BASE_DELAY;
 
 	public FuelLiquidBlock(FlowingFluid fluid, Properties properties) {
 		super(fluid, properties);
@@ -41,6 +43,23 @@ public class FuelLiquidBlock extends LiquidBlock {
 	private static boolean burns(BlockState state) {
 		return state.getBlock() instanceof FuelLiquidBlock && CEDataMaps.fuel(state.getFluidState()
 			.getType()) != null;
+	}
+
+	/**
+	 * How flammable the fuel in this block is, 1 (every fuel alike, as in 2.0.1) unless {@code compat.fuelFireByVolatility} is on.
+	 * Only fuel lying in the world is ever read: nothing here touches an engine's tank or a running engine.
+	 */
+	private static double flammability(BlockState state) {
+		if (!Tuning.fuelFireByVolatility)
+			return 1;
+		FuelSpec fuel = CEDataMaps.fuel(state.getFluidState()
+			.getType());
+		return fuel == null ? 1 : fuel.flammability();
+	}
+
+	/** Ticks before a block of this fuel next to a flame tries to catch: short for gasoline, long for diesel. */
+	private static int spreadDelay(BlockState state) {
+		return SpillFire.delay(flammability(state));
 	}
 
 	private boolean touchesIgnition(Level level, BlockPos pos) {
@@ -61,7 +80,7 @@ public class FuelLiquidBlock extends LiquidBlock {
 	public void randomTick(BlockState state, ServerLevel level, BlockPos pos, RandomSource random) {
 		super.randomTick(state, level, pos, random);
 		if (touchesIgnition(level, pos))
-			level.scheduleTick(pos, this, SPREAD_DELAY);
+			level.scheduleTick(pos, this, spreadDelay(state));
 	}
 
 	@Override
@@ -79,7 +98,7 @@ public class FuelLiquidBlock extends LiquidBlock {
 	private void wake(Level level, BlockPos pos) {
 		if (!level.isClientSide && touchesIgnition(level, pos) && !level.getBlockTicks()
 			.hasScheduledTick(pos, this))
-			level.scheduleTick(pos, this, SPREAD_DELAY);
+			level.scheduleTick(pos, this, spreadDelay(level.getBlockState(pos)));
 	}
 
 	@Override
@@ -88,6 +107,14 @@ public class FuelLiquidBlock extends LiquidBlock {
 		// itself may be gone by now (fire cannot stand on falling liquid), so do not ask for one again here.
 		if (!Tuning.fuelFire || !burns(state))
 			return;
+		// A hard-to-light fuel (diesel, kerosene, plant oil) does not always catch: it tries again after its own, longer delay
+		// while a flame is still beside it, so it lights, but later and with gaps, while gasoline lights at once
+		double chance = SpillFire.catchChance(flammability(state));
+		if (chance < 1 && random.nextDouble() >= chance) {
+			if (touchesIgnition(level, pos))
+				level.scheduleTick(pos, this, spreadDelay(state));
+			return;
+		}
 		burnAway(level, pos);
 	}
 
@@ -106,7 +133,7 @@ public class FuelLiquidBlock extends LiquidBlock {
 			BlockPos next = pos.relative(direction);
 			BlockState neighbour = level.getBlockState(next);
 			if (burns(neighbour))
-				level.scheduleTick(next, neighbour.getBlock(), SPREAD_DELAY);
+				level.scheduleTick(next, neighbour.getBlock(), spreadDelay(neighbour));
 		}
 	}
 }
