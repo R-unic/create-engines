@@ -68,7 +68,7 @@ Minecraft 1.21.1 · NeoForge 21.1.219 · Create 6.0.10
 - Oil film and lubrication, starters, batteries and alternators. **Batteries join into banks** like tanks (capacity adds up,
   a comparator reads the charge, lamps on the lid show it), a cold battery gives less and a cold engine costs more charge per
   spark, and a starter cranking a spark engine draws charge (both can be switched off). A starter on a hand crank needs no redstone
-- Forge Energy out of an alternator, and other mods' fuels (anything tagged `c:diesel`, `c:gasoline`, `c:ethanol`, `c:kerosene`, `c:methanol` or `c:plantoil`, or given an entry in the fuel data map) in the engines
+- Forge Energy out of an alternator, and other mods' fuels (anything tagged `c:diesel`, `c:gasoline`, `c:ethanol`, `c:kerosene`, `c:methanol`, `c:naphtha` or `c:plantoil`, or given an entry in the fuel data map) in the engines
 - An **oil sump that is the engine's service port**: one block against the engine takes its oil, its coolant and its
   pilot fuel from any face, so the cylinder heads keep their faces for air and fuel
 - **Oil that goes off**: a spent charge drags a little more (never stops or damages anything). Set the sump's Oil
@@ -169,11 +169,11 @@ with boost, goggle lines and blueprint support). JEI and EMI show the refining r
 All optional; none is needed to play.
 
 - **Create Aeronautics**: the thin-air rule is for it, and with Sable installed the air an engine breathes is Sable's own air pressure. The mod's GameTests also run alongside Aeronautics 1.3.2 and Sable 2.0.6,
-  and one engine on one wheeled contraption has been tried by hand. Other contraptions have not been tried, so treat it as
-  early.
+  I have run one engine on one wheeled contraption by hand, and another player has tried it on Aeronautics contraptions of their own.
+  Contraptions beyond those have not been tried, so treat it as early.
 - **Pollution of the Realms**: engines put carbon and sulfur into the air through an open exhaust outlet, in proportion to the
   fuel they burn (more carbon when they run rich, less with a Soot Trap fitted; sulfur follows how dirty the fuel is). Nothing
-  is read back into the engine. `compat.pollution`, `pollutionRate` (a quarter of the full amount by default), `carbonRate`, `sulfurRate`, `pollutionAreaCap` (off by default; set, an outlet stops releasing into air that is already thick) and `pollutionEngineCeiling` (most gas one engine may release per minute) control it.
+  is read back into the engine. Another player has used it and reports it works. `compat.pollution`, `pollutionRate` (a quarter of the full amount by default), `carbonRate`, `sulfurRate`, `pollutionAreaCap` (off by default; set, an outlet stops releasing into air that is already thick) and `pollutionEngineCeiling` (most gas one engine may release per minute) control it.
 - **Create: Diesel Generators**: its diesel, biodiesel, gasoline, ethanol and plant oil are listed in the common fuel tags, so
   they burn in these engines. This is only the tags (each entry optional); a game with that mod installed has not been run.
 - **KubeJS** (server scripts) and **CC: Tweaked** (a peripheral on a crankshaft, cylinder, head or rotor housing) can watch an
@@ -181,8 +181,9 @@ All optional; none is needed to play.
 - **Jade** shows an engine's state when you look at its crankshaft, cylinder, head or rotor housing.
 - **Create Crafts & Additions**: an Alternator's Forge Energy charges its accumulators and motors (tested). Other mods' energy
   blocks should take it too; see [docs/INTEGRATIONS.md](docs/INTEGRATIONS.md) for which were tried.
-- **Create Ultimate Factory** is recommended for building the factory around your engines. Nothing in this mod depends on it, and the two have not been tested together.
-- **JEI** and **EMI** list every fuel, every refining route and every engine part. Sodium (also with Iris), Sound Physics
+- **Create Ultimate Factory** is recommended for building the factory around your engines. Nothing in this mod depends on it. The author has played the two together and reports it works well; no automated test runs with it.
+- **Create: The Factory Must Grow** (Community Edition 1.3.3a): its diesel, gasoline, kerosene and naphtha burn in these engines, and its crude oil, heavy oil, lubrication oil and LPG do not. A GameTest checks that fuel path with the mod loaded. Its own engines and generators have not been tried against ours.
+- **JEI** and **EMI** list every fuel, every refining route and every engine part. EMI is tested in an automated game; JEI by hand, alongside Create Ultimate Factory. Sodium (also with Iris), Sound Physics
   Remastered, AmbientSounds and Flywheel on or off are tested to start and run together; no shader pack was tried.
 
 ## For pack makers and addon authors

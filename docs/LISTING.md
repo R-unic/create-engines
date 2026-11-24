@@ -9,12 +9,12 @@ Copy-paste material for the project pages. Not shipped in the jar.
 | Name | Create: Engine Engineer |
 | Slug | create-engine-engineer (check it is free on both sites) |
 | Icon | `docs/images/icon.png` (512x512). The jar carries a 256x256 copy as `logo.png` |
-| Summary (CurseForge, 250 max) | Build real engines piece by piece: V8s, flat sixes, Wankels, twin-turbos. Tune them, hear them roar, and turn their power into Create rotation. |
+| Summary (CurseForge, 250 max) | Build a V8 piece by piece, then hear it fire in order. Working engines for Create: inline, V, flat and Wankel layouts, turbos and superchargers, and an exhaust note made from the engine's own firing order. All of it turns Create rotation. |
 | Short description (Modrinth, 256 max) | Same as the summary. |
 | Categories | Technology, plus the Create addon tag where the site offers one |
 | Game version | 1.21.1 |
 | Loader | NeoForge |
-| Dependencies | Create 6.0.10 (required). Pollution of the Realms (optional; list it as an optional dependency where the site has one). JEI, EMI, KubeJS, CC: Tweaked and Create Aeronautics are integrations, not dependencies |
+| Dependencies | Create 6.0.10 (required). Pollution of the Realms (optional; list it as an optional dependency where the site has one). JEI, EMI, KubeJS, CC: Tweaked, Create Aeronautics, Create Ultimate Factory and Create: The Factory Must Grow are integrations, not dependencies |
 | Environment | Client and server (required on both) |
 | License | MIT |
 | Source | https://github.com/R-unic/create-engines |
@@ -31,16 +31,21 @@ view after converting it, or retype the headings and lists. Modrinth takes the M
 ```markdown
 # Create: Engine Engineer
 
-### Build a real engine, one part at a time, and hear it run.
+### Build a V8 one part at a time, then hear it fire.
 
 ![A V8 from the exhaust side, running](https://raw.githubusercontent.com/R-unic/create-engines/master/docs/images/engine_showcase_v8_exhaust.png)
 
-An addon for **Create** with working internal combustion engines. Place the crankshaft, cylinders, heads, pistons, cams
-and valves yourself, pipe in air and fuel, and the engine you built fires in order, sounds like what it is, and drives
-your Create machines.
+> 🔊 **Turn your sound up.** The exhaust note is made as it plays, from the engine's speed and firing order: a V-twin
+> lopes, a flat six hums, a dead cylinder limps, and turbos whistle, blow off and crackle.
 
-> 🔊 **It has a voice.** The exhaust note is made from the engine's speed and firing order, so a V-twin lopes, a six
-> hums and a dead cylinder limps. Turbos whistle, blow off and crackle. Turn your sound up.
+An addon for **Create** with working internal combustion engines. Place the crankshaft, cylinders, heads, pistons, cams
+and valves yourself, pipe in air and fuel, and the engine you built fires in order and drives your Create machines.
+
+- **Start small:** one diesel cylinder and a flywheel, in a forgiving early game
+- **Grow:** inline sixes, V8s, flat sixes and Wankels, laid out in a click with the Bank Builder
+- **Go big:** turbos, superchargers, a 13-gear transmission and coupled-crank V12s
+- **Plays well with others:** burns the fuels of Create: The Factory Must Grow and Create: Diesel Generators, and
+  gives Create Aeronautics aircraft something to climb with (see [Works with](#-works-with))
 
 ---
 
@@ -53,7 +58,7 @@ your Create machines.
 | **Power** | Turbos, superchargers, intercoolers, flywheels and a 13-gear transmission |
 | **Tools** | Bank Builder, Timing Tool, Blueprints, Dynamometer, Black Box recorder, Engineer's Goggles |
 | **Learning** | A Ponder scene for every part, and advancement tracks |
-| **Works with** | Create Aeronautics (thin air), Create: Diesel Generators (fuels), Pollution of the Realms, JEI, EMI, KubeJS, CC: Tweaked |
+| **Works with** | Create Aeronautics (thin air), Create: Diesel Generators and Create: The Factory Must Grow (fuels), Create Ultimate Factory, Pollution of the Realms, JEI, EMI, KubeJS, CC: Tweaked |
 | **For packs and addons** | Config presets, data-driven parts and fuels, a `/ce` command, and a frozen public API |
 | **Needs** | Minecraft 1.21.1, NeoForge, Create 6.0.10 (required on client and server) |
 
@@ -100,7 +105,7 @@ your Create machines.
   shot of diesel
 - **Exhaust Heat Exchanger:** turns exhaust into basin heat, so an engine can cook its own fuel, and into boiler heat,
   so the exhaust can make steam for Create steam engines
-- **Other mods' fuels work:** anything tagged `c:diesel`, `c:gasoline`, `c:ethanol`, `c:kerosene`, `c:methanol` or `c:plantoil`, or given an entry
+- **Other mods' fuels work:** anything tagged `c:diesel`, `c:gasoline`, `c:ethanol`, `c:kerosene`, `c:methanol`, `c:naphtha` or `c:plantoil`, or given an entry
   in the fuel data map
 - Starters, batteries and alternators, with Forge Energy output
 
@@ -178,14 +183,17 @@ with boost, goggle lines and blueprint support. A working example is built and t
 
 All optional; none is needed to play.
 
-- **Create Aeronautics:** the thin-air rule is for it, using Sable's own air pressure where Sable is installed. The mod's tests run alongside Aeronautics 1.3.2 and Sable 2.0.6, and
-  one engine on one wheeled contraption has been tried by hand. Other contraptions are untried, so treat it as early
-- **Pollution of the Realms:** engines put carbon and sulfur into the air through an open exhaust outlet, more when they run
-  rich and less with a Soot Trap fitted. Nothing is read back into the engine, and a setting turns it off
-- **Create: Diesel Generators:** its diesel, biodiesel, gasoline, ethanol and plant oil burn in these engines
+- **[Create Aeronautics](https://modrinth.com/mod/create-aeronautics):** the thin-air rule is for it, using Sable's own air pressure where Sable is installed. The mod's tests run alongside Aeronautics 1.3.2 and Sable 2.0.6, and
+  I have run one engine on one wheeled contraption by hand, and another player has tried it on Aeronautics contraptions of their own. Contraptions beyond those are untried, so treat it as early
+- **[Pollution of the Realms](https://modrinth.com/mod/pollution-of-the-realms):** engines put carbon and sulfur into the air through an open exhaust outlet, more when they run
+  rich and less with a Soot Trap fitted. Nothing is read back into the engine, and a setting turns it off. Another player has used it and reports it works
+- **[Create: The Factory Must Grow](https://modrinth.com/mod/create-tfmg):** its diesel, gasoline, kerosene and naphtha burn in these
+  engines, so its refinery can feed them. Its crude oil, heavy oil, lubrication oil and LPG do not burn here. A GameTest checks the fuel path with
+  the mod loaded; its own engines and generators have not been tried beside ours
+- **[Create: Diesel Generators](https://modrinth.com/mod/create-diesel-generators):** its diesel, biodiesel, gasoline, ethanol and plant oil burn in these engines
 - **KubeJS** and **CC: Tweaked:** read-only access to an engine's state, for scripts and computers
-- **Create Ultimate Factory:** recommended for building the factory around your engines. Nothing here depends on it, and the two have not been tested together
-- **JEI** and **EMI:** every fuel, refining route and engine part
+- **[Create Ultimate Factory](https://modrinth.com/mod/create-ultimate-factory):** recommended for building the factory around your engines. Nothing here depends on it, and I have played the two together and it works well
+- **JEI** and **EMI:** every fuel, refining route and engine part (EMI is tested in an automated game, JEI by hand)
 
 ## ✅ Requirements
 
@@ -287,15 +295,15 @@ No ID, key or saved format is renamed or removed; everything else is new.
   numbers move; what you can aim at and stand against does.
 - Fix, advancements: the milestones that read engine speed now use the speed the engine makes under its own power, so an engine
   held up to speed by a starter or another source no longer earns them.
-- Changed behaviour, flywheel masses (author-approved): the default `flywheelInertia` goes from 1.5 to 2.5 and `castFlywheelInertia` from 1.0 to 1.6, because two
+- Changed behaviour, flywheel masses (deliberate): the default `flywheelInertia` goes from 1.5 to 2.5 and `castFlywheelInertia` from 1.0 to 1.6, because two
   Create Flywheels on an inline-4 only took its roughness loss from 11.3% to 5.4%. Only the config default moves: a world whose config file already
   holds a value keeps it, and a fresh one spins up more slowly and needs more starter effort (release record Exception 2.8).
-- Changed behaviour, biodiesel (author-approved): biodiesel (anything in `c:biodiesel`, such as Create: Diesel Generators' biodiesel,
+- Changed behaviour, biodiesel (deliberate): biodiesel (anything in `c:biodiesel`, such as Create: Diesel Generators' biodiesel,
   which is also in `c:diesel`) used to burn as diesel exactly. It is now the clean diesel: 33 energy to the mB (diesel is 36), half
   diesel's soot, and no sulfur for the Pollution of the Realms compat. Its autoignition, air and cold figures are diesel's, so it
   lights and starts the same; an engine on it makes about a twelfth less power for the same fuel flow, and its exhaust is cleaner.
   Anything in `c:diesel` alone is unchanged.
-- Changed behaviour, plant oil (author-approved): plant oil becomes the tolerant, dirty fuel. A cold block costs it less: its cold
+- Changed behaviour, plant oil (deliberate): plant oil becomes the tolerant, dirty fuel. A cold block costs it less: its cold
   sensitivity goes from 1.5 (the worst of the common fuels) to 0.9, so a stone-cold block burns 89% of its heat release against 82%
   before (diesel 88%, gasoline 90%). Its soot and sulfur go from 1 to 1.3, so it makes more pollution than diesel. Its energy, air
   and ignition are unchanged. Fourteen of the forty seeded engine trajectories in `compat/trajectories.txt` moved with it.
@@ -609,7 +617,9 @@ into used oil, and a refining column keeps and reports its catalyst better. Ever
   supercharger limits, the transmission gear, the sump's oil exchange and signal tank) as a pasteable string, `CEBP2:...`.
   The Maker's Plate figures and the engine's name ride along. The shafts, cogwheels, chain drives and gearboxes that turn each
   camshaft or gear one crank line to another are recorded with the engine; a line reachable only through a belt is left out
-  and counted as skipped. Fluids, fuel and oil are not recorded.
+  and counted as skipped. The fluid system is recorded too: the Create pipes, pumps, valves and tanks that run to the heads,
+  oil pan and heat exchanger (at most 256 blocks, nearest first), a Black Box set against the engine, and a transmission on the end of its shaft. The fuel, oil and
+  coolant in them are not.
   Use a recorded blueprint in the air to read it as a drafting sheet (the plan from above, the parts counted, the figures),
   sneak and use to record over it.
 - Apply: use a recorded blueprint on an engine built the same way to set every dial that differs, checked on the server
