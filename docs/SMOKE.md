@@ -137,6 +137,15 @@ cd <copy>
 now use their own folders (`run/gametest`, `run/smoke-client`), so they start from shipped default settings and never share
 a log or config with a development client. The client audit opens a real window for about two minutes.
 
+**A copy that is reused must have its test world cleared.** `robocopy /MIR /XD run ...` leaves `run/` alone, and the GameTest world in
+`run/gametest/world` keeps its entities between runs. The stress tests (`StressGameTests`) drop hundreds of thousands of items in the
+chunks they use (a casing for every state of every clad block, a piston and rod for every state of a cylinder), so a second run in the same
+copy loads the first run's pile, and a third the two before it: the heap climbs to the JVM's limit mid-run, the log gets an
+`OutOfMemoryError` from `entity-deserializer` and "Saving oversized chunk" warnings, `verifyGameTests` fails on it, and the server then hangs
+after "All N required tests passed" until Gradle's 20-minute timeout kills it. Nothing is wrong with the code when this happens (the same tests
+in a fresh copy pass with a peak under 2 GB). Delete `run/gametest/world` before each gate run in a reused copy, or make a fresh copy
+for the gate; the release gate always uses a fresh one.
+
 To re-prove the harness: make a *separate* copy, run `./scripts/smoke-mutations.ps1 -Copy <copy> -Set server|client|crash`,
 run the Gradle task it names, and check every `EXPECT` line appears among the failures. It refuses to run in a folder with
 `.git`.
@@ -203,7 +212,7 @@ python tools/trailer/record.py --post-only  # cuts the last recordings again (ne
 - **A steady crank.** The showcase engines turn at 40 to 70 rpm, where a light crank's speed ripples by several percent each cycle and the
   network shows it as shafts and presses that surge and jump. `record.py` gives the trailer's private game folder five times the
   inertia on the crank blocks and flywheels (`TRAILER_CONFIG`; a ripple goes as one over the inertia). It touches nothing in the mod.
-- **How it is cut.** `post.py` puts a title card (Create's round logo, `docs/images/create_logo.png`, the mod icon, "CREATE" in Minecraft's title font (cut from the game's own logo texture, kept grey, by `tools/create_lettering.py`) and the gold wordmark `docs/images/wordmark.png` directly under it, and a subtitle; the 16:9 thumbnail uses the same pair; `tools/listing_art.py` makes the golden listing tile `docs/images/listing_gold.png`), a caption over each
+- **How it is cut.** `post.py` puts a title card (the mod's round icon, `docs/images/icon.png`, "CREATE" in Minecraft's title font (cut from the game's own logo texture, kept grey, by `tools/create_lettering.py`) and the gold wordmark `docs/images/wordmark.png` directly under it, and a subtitle; the 16:9 thumbnail uses the same pair; `tools/listing_art.py` makes the golden listing tile `docs/images/listing_gold.png`), a caption over each
   shot, an end card (with the version line from `gradle.properties` and the AI notice, `outro_notice` in `captions.txt`), the game's sound and music around the recording, with a light
   colour grade and vignette on the footage. All the text is drawn in Minecraft's own font by `mcfont.py`, from the game's font bitmap.
   The words are in `tools/trailer/captions.txt`, in the order of the shots, so they read as one story. The music is the first file in
