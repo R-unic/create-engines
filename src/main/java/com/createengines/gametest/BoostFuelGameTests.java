@@ -3,7 +3,6 @@ package com.createengines.gametest;
 import com.createengines.CreateEngines;
 import com.createengines.content.cylinder.CylinderBlockEntity;
 import com.createengines.engine.sim.Knock;
-import com.createengines.engine.sim.Tuning;
 import com.createengines.content.airflow.PortOpeningBlock;
 import com.createengines.content.cylinder.CylinderBlockEntity;
 import com.createengines.content.head.CylinderHeadBlock;
@@ -168,13 +167,13 @@ public class BoostFuelGameTests {
 
 	@AfterBatch(batch = KNOCK)
 	public static void restoreTheModeAfterKnock(ServerLevel level) {
-		Tuning.wearMode = false;
+		GameTestConfig.wearMode(false);
 	}
 
 	/** Ordinary wear takes a piston 1.6 times as fast as a rod, a little more when hot: knock is what takes it well past that. */
 	@GameTest(template = "empty", timeoutTicks = 1200, batch = KNOCK)
 	public static void withTheWearModeOnAKnockingEngineWearsItsPistonFarFaster(GameTestHelper helper) {
-		Tuning.wearMode = true;
+		GameTestConfig.wearMode(true);
 		build(helper, false, true, 256);
 		helper.runAtTickTime(900, () -> {
 			CylinderBlockEntity body = helper.getBlockEntity(CYLINDER);
@@ -188,7 +187,7 @@ public class BoostFuelGameTests {
 
 	@GameTest(template = "empty", timeoutTicks = 1200, batch = KNOCK)
 	public static void withTheWearModeOnAnUnboostedEngineWearsItsPistonAsUsual(GameTestHelper helper) {
-		Tuning.wearMode = true;
+		GameTestConfig.wearMode(true);
 		build(helper, false, false, 0);
 		helper.runAtTickTime(900, () -> {
 			CylinderBlockEntity body = helper.getBlockEntity(CYLINDER);

@@ -1504,7 +1504,7 @@ public class EngineGameTests {
 			helper.assertTrue((shown > 0) == (exchanger.heatLevel() > 0),
 				"The block should carry the heat level a basin reads: " + shown + " against " + exchanger.heatLevel());
 			helper.assertTrue(exchanger.signal() > 0, "Its heat should come out as redstone");
-			com.createengines.engine.sim.Tuning.heatRecoveryEnabled = false;
+			GameTestConfig.heatRecovery(false);
 		});
 		helper.runAtTickTime(1000, () -> {
 			try {
@@ -1516,7 +1516,7 @@ public class EngineGameTests {
 					== com.simibubi.create.content.processing.burner.BlazeBurnerBlock.HeatLevel.NONE,
 					"And so should its block");
 			} finally {
-				com.createengines.engine.sim.Tuning.heatRecoveryEnabled = true;
+				GameTestConfig.heatRecovery(true);
 			}
 			helper.succeed();
 		});
@@ -2983,7 +2983,7 @@ public class EngineGameTests {
 	@GameTest(template = "empty", timeoutTicks = 1500)
 	public static void twoEnginesOnOneNetworkDoNotHoldEachOtherUp(GameTestHelper helper) {
 		int coupledLines = CEConfig.MAX_COUPLED_LINES.get();
-		CEConfig.MAX_COUPLED_LINES.set(1);
+		GameTestConfig.save(CEConfig.MAX_COUPLED_LINES, 1);
 		buildSingleCylinder(helper, false);
 		TestEngine.addCoupledLine(helper.getLevel(), helper.absolutePos(BlockPos.ZERO));
 		BlockPos secondCrank = new BlockPos(1, 2, 4);
@@ -2994,7 +2994,7 @@ public class EngineGameTests {
 		});
 		helper.runAtTickTime(300, () -> helper.setBlock(STARTER_POWER, Blocks.AIR));
 		helper.runAtTickTime(1100, () -> {
-			CEConfig.MAX_COUPLED_LINES.set(coupledLines);
+			GameTestConfig.save(CEConfig.MAX_COUPLED_LINES, coupledLines);
 			CrankshaftBlockEntity first = helper.getBlockEntity(PRIMARY);
 			CrankshaftBlockEntity second = helper.getBlockEntity(secondCrank);
 			helper.assertTrue(first.getGeneratedSpeed() == 0 && second.getGeneratedSpeed() == 0,

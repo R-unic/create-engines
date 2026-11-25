@@ -238,11 +238,11 @@ public class BatteryDepthGameTests {
 	public static void withBatteryColdOffAColdBatteryGivesEverything(GameTestHelper helper) {
 		BatteryBlockEntity.biomeTemperatureOverride = 0f;
 		boolean before = Tuning.batteryCold;
-		Tuning.batteryCold = false;
+		GameTestConfig.batteryCold(false);
 		BatteryBlockEntity battery = place(helper, A, BatteryBlockEntity.CAPACITY);
 		helper.runAtTickTime(45, () -> {
 			helper.assertTrue(Math.abs(battery.deliverable() - 200) < 1e-3, "With the feature off the cold keeps nothing back: " + battery.deliverable());
-			Tuning.batteryCold = before;
+			GameTestConfig.batteryCold(before);
 			BatteryBlockEntity.biomeTemperatureOverride = null;
 			helper.succeed();
 		});
@@ -371,7 +371,7 @@ public class BatteryDepthGameTests {
 	@GameTest(template = "empty", timeoutTicks = 400, batch = "battery-crank-off")
 	public static void withCrankingDrawOffACrankingStarterTakesNothing(GameTestHelper helper) {
 		boolean before = Tuning.crankingDraw;
-		Tuning.crankingDraw = false;
+		GameTestConfig.crankingDraw(false);
 		TestEngine.buildSpark(helper.getLevel(), helper.absolutePos(BlockPos.ZERO), true);
 		var head = (com.createengines.content.head.CylinderHeadBlockEntity) helper.getBlockEntity(TestEngine.HEAD);
 		head.tank()
@@ -382,7 +382,7 @@ public class BatteryDepthGameTests {
 		helper.runAtTickTime(150, () -> {
 			// The plug still takes a spark each cycle; only the starter's draw is off
 			helper.assertTrue(battery.charge() > BatteryBlockEntity.CAPACITY - 15, "With the feature off cranking is free: " + battery.charge());
-			Tuning.crankingDraw = before;
+			GameTestConfig.crankingDraw(before);
 			helper.succeed();
 		});
 	}
@@ -542,11 +542,11 @@ public class BatteryDepthGameTests {
 	@AfterBatch(batch = "battery-cold-off")
 	public static void restoreBatteryCold(ServerLevel level) {
 		BatteryBlockEntity.biomeTemperatureOverride = null;
-		Tuning.batteryCold = true;
+		GameTestConfig.batteryCold(true);
 	}
 
 	@AfterBatch(batch = "battery-crank-off")
 	public static void restoreCrankingDraw(ServerLevel level) {
-		Tuning.crankingDraw = true;
+		GameTestConfig.crankingDraw(true);
 	}
 }
