@@ -205,6 +205,18 @@
       }
     ]
   },
+  "seize_warning": {
+    "sounds": [
+      {
+        "name": "create_engines:seize_warning1",
+        "attenuation_distance": 24
+      },
+      {
+        "name": "create_engines:seize_warning2",
+        "attenuation_distance": 24
+      }
+    ]
+  },
   "piston_seize": {
     "sounds": [
       {

@@ -57,7 +57,9 @@ public final class CESounds {
 	public static final DeferredHolder<SoundEvent, SoundEvent> ROD_THROWN = register("rod_thrown");
 	/** The wear mode's: a head gasket blowing, a hard pop and hot gas hissing out past the joint. */
 	public static final DeferredHolder<SoundEvent, SoundEvent> GASKET_BLOW = register("gasket_blow");
-	/** The wear mode's: a piston seizing from running dry, a rising shriek cut off by a hard clunk. */
+	/** The wear mode's: a piston running dry crying out, a short wavering shriek, played more often the nearer it is to seizing. */
+	public static final DeferredHolder<SoundEvent, SoundEvent> SEIZE_WARNING = register("seize_warning");
+	/** The wear mode's: a piston seizing from running dry, a short rising shriek cut off by a hard clunk. */
 	public static final DeferredHolder<SoundEvent, SoundEvent> PISTON_SEIZE = register("piston_seize");
 
 	/** The wear mode's: a rotor's apex seals failing, a snap, the loose strip clattering round the chamber and the wheeze of blow-by. */

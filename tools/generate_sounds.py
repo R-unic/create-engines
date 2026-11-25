@@ -31,7 +31,8 @@ Sounds:
                      clang as the head splits, a grinding scrape of the wreck turning against itself, and the ring of the casting
   gasket_blow1..2    a head gasket blowing: a hard pop, then hot gas hissing out past the joint, sputtering as it settles
   apex_fail1..2      a rotor's apex seal letting go: a snap, the loose strip clattering round the chamber, and the wheeze of blow-by
-  piston_seize1..2   a piston seizing in its bore: a rising shriek of dry metal that cuts off in a hard clunk and a low shudder
+  seize_warning1..2  a dry piston crying out before it seizes: a short shriek that swells and dies away
+piston_seize1..2   a piston seizing in its bore: a rising shriek of dry metal that cuts off in a hard clunk and a low shudder
 """
 import ctypes
 import glob
@@ -565,9 +566,11 @@ def gasket_blow(seed, pitch):
     pop = band(rng.standard_normal(n), 700 * pitch, 6500, 2) * rise * np.exp(-t / 0.012)
     thump = np.sin(2 * np.pi * np.cumsum((60 + 160 * np.exp(-t / 0.02)) * pitch) / SR) * np.minimum(t / 0.001, 1) * np.exp(-t / 0.07)
     # The hiss: high, thin noise that holds, then falls away and chatters as the pressure runs out
-    chatter = 0.6 + 0.4 * np.sign(np.sin(2 * np.pi * (26 + 40 * t) * t))
+    chatter = 0.6 + 0.4 * np.tanh(2.0 * np.sin(2 * np.pi * (26 + 40 * t) * t))
     hold = np.exp(-np.maximum(t - 0.12, 0) / 0.35) * np.minimum(np.maximum(t - 0.005, 0) / 0.02, 1)
-    hiss = band(rng.standard_normal(n), 2600, 10500, 2) * hold * np.where(t > 0.55, chatter, 1.0)
+    # The chatter comes in gradually, not all at once
+    blend = np.clip((t - 0.45) / 0.2, 0, 1)
+    hiss = band(rng.standard_normal(n), 2600, 10500, 2) * hold * (1 + blend * (chatter - 1))
     body = band(rng.standard_normal(n), 400, 1800, 2) * hold * 0.5
     mix = (0.9 * pop / np.max(np.abs(pop)) + 0.8 * thump + 0.7 * hiss / np.max(np.abs(hiss)) + 0.4 * body / np.max(np.abs(body)))
     mix = np.tanh(1.3 * mix)
@@ -581,12 +584,12 @@ def piston_seize(seed, pitch):
     rng = np.random.default_rng(seed)
     n = int(1.4 * SR)
     t = np.arange(n) / SR
-    grab = 0.62  # when it locks
+    grab = 0.14  # when it locks: short, so the clunk lands with the smoke and the cylinder stopping
     f = (1500 + 1800 * np.minimum(t / grab, 1) ** 1.6) * pitch
     shriek = np.sin(2 * np.pi * np.cumsum(f) / SR + 2.2 * np.sin(2 * np.pi * 9 * t))
     shriek += 0.5 * np.sin(2 * np.pi * np.cumsum(f * 2.01) / SR) + 0.25 * np.sin(2 * np.pi * np.cumsum(f * 3.02) / SR)
-    stick = band(rng.standard_normal(n), 1800, 7000, 2) * (0.5 + 0.5 * np.sign(np.sin(2 * np.pi * (40 + 90 * np.minimum(t / grab, 1)) * t)))
-    swell = np.minimum(t / 0.25, 1) ** 1.5 * (t < grab)
+    stick = band(rng.standard_normal(n), 1800, 7000, 2) * (0.65 + 0.35 * np.sin(2 * np.pi * (40 + 90 * np.minimum(t / grab, 1)) * t))
+    swell = np.minimum(t / 0.06, 1) * np.clip((grab + 0.012 - t) / 0.012, 0, 1)
     squeal = (0.6 * shriek / np.max(np.abs(shriek)) + 0.5 * stick / np.max(np.abs(stick))) * swell
     k = int(grab * SR)
     u = np.arange(n - k) / SR
@@ -679,6 +682,8 @@ SOUNDS = {
     "rod_thrown2": lambda: rod_thrown(137, 0.88),
     "gasket_blow1": lambda: gasket_blow(139, 1.0),
     "gasket_blow2": lambda: gasket_blow(149, 0.85),
+    "seize_warning1": lambda: seize_warning(163, 1.0),
+    "seize_warning2": lambda: seize_warning(167, 0.93),
     "piston_seize1": lambda: piston_seize(151, 1.0),
     "piston_seize2": lambda: piston_seize(157, 0.88),
     "apex_fail1": lambda: apex_fail(163, 1.0),
@@ -695,6 +700,21 @@ def write_wav(directory, name, samples):
         fh.setframerate(SR)
         fh.writeframes((np.clip(samples, -1, 1) * 32767).astype("<i2").tobytes())
     print("wrote", os.path.normpath(path), "%.2fs" % (len(samples) / SR))
+
+
+def seize_warning(seed, pitch):
+    """A dry piston crying out before it seizes: one short shriek of metal on metal that swells, wavers and dies away, with a rasp under it.
+    A one-off, so it starts and ends in silence."""
+    rng = np.random.default_rng(seed)
+    n = int(0.9 * SR)
+    t = np.arange(n) / SR
+    f = (1700 + 350 * np.sin(np.pi * t / 0.9) + 60 * np.sin(2 * np.pi * 11 * t)) * pitch
+    phase = 2 * np.pi * np.cumsum(f) / SR
+    shriek = np.sin(phase) + 0.4 * np.sin(2.01 * phase) + 0.15 * np.sin(3.02 * phase)
+    rasp = band(rng.standard_normal(n), 1500, 5000, 2) * (0.65 + 0.35 * np.sin(2 * np.pi * 47 * t))
+    envelope = np.sin(0.5 * np.pi * np.clip(t / 0.12, 0, 1)) ** 2 * np.sin(0.5 * np.pi * np.clip((0.9 - t) / 0.45, 0, 1)) ** 2
+    mix = (0.7 * shriek / np.max(np.abs(shriek)) + 0.45 * rasp / np.max(np.abs(rasp))) * envelope
+    return finish(mix, 0.7)
 
 
 def main():
