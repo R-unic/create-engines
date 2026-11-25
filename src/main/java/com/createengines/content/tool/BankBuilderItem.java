@@ -54,7 +54,10 @@ import net.minecraft.world.level.block.state.properties.BlockStateProperties;
  *     <li><b>Inline</b>: the clicked face only.</li>
  *     <li><b>Vee</b>: the clicked face and the one a quarter turn round the crank from it, as in a 90 degree V.</li>
  *     <li><b>Flat</b>: the clicked face and the one opposite it, as in a boxer.</li>
+ *     <li><b>W</b>: the clicked face and the two a quarter turn either side of it, three banks on one crank.</li>
+ *     <li><b>X</b>: all four faces, four banks on one crank.</li>
  * </ul>
+ * The layout is saved on the item as its place in {@link Layout}, so new layouts only ever go on the end.
  * Sneak-using it, in the air or on a block, changes the layout, and each time the layouts come round it changes between
  * standard and precision parts. Precision builds use precision cylinders, heads, forged pistons and precision injectors,
  * and also swap those in for the standard parts already on the throws, handing the old ones back. Parts come out of the
@@ -64,13 +67,14 @@ import net.minecraft.world.level.block.state.properties.BlockStateProperties;
  * Two extras are laid only for a builder who is carrying them, creative or not, so a diesel stays as it should be:
  * <b>spark plugs</b> go into the heads, and <b>camshafts and cam lobes</b> make a cam line beside the bank, parallel to
  * the crank, with a lobe in reach of every cylinder: beside each block for an inline or a flat, in the valley for a vee,
- * where one lobe times both banks. The line still has to be geared to half the crank's speed and its lobes timed (the
+ * where one lobe times both banks, and in each valley of a W or an X. The line still has to be geared to half the crank's speed and its lobes timed (the
  * Timing Tool does that). Pipes and fuel are still the builder's.
  */
 public class BankBuilderItem extends Item {
 
 	public enum Layout {
-		INLINE, VEE, FLAT
+		// Saved by ordinal: append only, never reorder or remove
+		INLINE, VEE, FLAT, W, X
 	}
 
 	private static final String LAYOUT_TAG = "Layout";
@@ -189,28 +193,45 @@ public class BankBuilderItem extends Item {
 	 * Where the cam line or lines go, as offsets from a throw, for a layout built on the face {@code side}: beside the
 	 * cylinder block on the side a quarter turn round the crank from the bore (the next face a vee builds on), so
 	 * the lobe's axis is the crank's and does not point into the block. A vee has the one line in its valley, touching
-	 * the block of both banks; a flat has a line by each block.
+	 * the block of both banks; a flat has a line by each block. A W has a line in each of its two valleys, either side of
+	 * the middle bank, and an X one in each of its four.
 	 */
 	public static List<BlockPos> camOffsets(Layout layout, Axis axis, Direction side) {
 		Direction beside = side.getClockWise(axis);
+		Direction other = side.getCounterClockWise(axis);
+		Direction opposite = side.getOpposite();
 		return switch (layout) {
-			case INLINE, VEE -> List.of(BlockPos.ZERO.relative(side)
-				.relative(beside));
-			case FLAT -> List.of(BlockPos.ZERO.relative(side)
-				.relative(beside),
-				BlockPos.ZERO.relative(side.getOpposite())
-					.relative(beside));
+			case INLINE, VEE -> List.of(valley(side, beside));
+			case FLAT -> List.of(valley(side, beside), valley(opposite, beside));
+			case W -> List.of(valley(side, beside), valley(side, other));
+			case X -> List.of(valley(side, beside), valley(beside, opposite), valley(opposite, other), valley(other, side));
 		};
+	}
+
+	private static BlockPos valley(Direction one, Direction two) {
+		return BlockPos.ZERO.relative(one)
+			.relative(two);
 	}
 
 	/** The faces of a throw that a layout builds on, given the face that was clicked. */
 	public static List<Direction> faces(Layout layout, Axis axis, Direction clicked) {
 		List<Direction> faces = new ArrayList<>();
 		faces.add(clicked);
-		if (layout == Layout.FLAT)
-			faces.add(clicked.getOpposite());
-		else if (layout == Layout.VEE)
-			faces.add(clicked.getClockWise(axis));
+		switch (layout) {
+			case INLINE -> {
+			}
+			case VEE -> faces.add(clicked.getClockWise(axis));
+			case FLAT -> faces.add(clicked.getOpposite());
+			case W -> {
+				faces.add(clicked.getClockWise(axis));
+				faces.add(clicked.getCounterClockWise(axis));
+			}
+			case X -> {
+				faces.add(clicked.getClockWise(axis));
+				faces.add(clicked.getOpposite());
+				faces.add(clicked.getCounterClockWise(axis));
+			}
+		}
 		return faces;
 	}
 

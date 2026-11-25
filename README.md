@@ -44,7 +44,7 @@ Minecraft 1.21.1 · NeoForge 21.1.219 · Create 6.0.10
 - **Breathing with diminishing returns**: each extra intake or exhaust opening on a head adds less than the last (one
   opening per head breathes at about 90 percent, two at about 99), and openings that touch count half, so a tidy layout
   beats a forest of mouths. The loss is mostly at the top of the rev range
-- A **Bank Builder** that lays out a whole inline, V or flat bank in one click (it fits the spark plugs you carry, and
+- A **Bank Builder** that lays out a whole inline, V, flat, W or X bank in one click (it fits the spark plugs you carry, and
   lays a cam line beside the bank if you carry a camshaft and cam lobes), and a **Timing Tool** that sets the
   firing order for you
 

@@ -881,6 +881,16 @@ saved on 2.x keeps its layout), so no existing build changes (rule 1).
   arithmetic left to the tooltip.
 - **For the author:** whether the W builds the stepped nine-throw form by default (even, but uneven-looking) or the plain
   eight-throw form (tidy, not even), and whether to offer the X at the same time. Default to the stepped form if there is no say.
+- **Built 2026-11-25 (author's answers that day: the plain W, one cam line per valley, and the X too).** `Layout` gains `W`
+  and `X`, appended after `FLAT`; the tag is saved as the ordinal, so a 2.x builder keeps its layout, and the cycle runs
+  inline, vee, flat, W, X before the grade changes. A W builds the clicked face and both beside it on every throw (no
+  stepped form: a player leaves the bank off three throws by hand), with a cam line in each of its two valleys; an X
+  builds all four faces with a line in each of its four valleys. Measured with one lobe per cylinder: the eight-throw W24
+  is 15 degrees off even at best and the four-throw W12 30 (both pinned), the nine-throw stepped W24 and the six-throw X24
+  are even. Tests: `FiringPlannerTest` (those four) and `BankLayoutGameTests` (layout order, faces and valleys in every
+  facing, each built from every face, every cylinder finds a lobe and scans as one engine, blocked and missing counted, a
+  W blueprint round trip). The Ponder step went on the Bank Builder page only, not the firing-order page. Not yet seen in
+  game, and the changelog line is owed when the release that carries it is prepared.
 
 ### Look, sound and performance (was 2.4 Paint and Polish; merged into 2.3 by the author on 2026-11-23, then moved with the rest to 2.4 on 2026-11-24)
 

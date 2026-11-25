@@ -189,8 +189,9 @@ mix, not a better piston engine.
   dial plus a redstone dump.
 - **Bank Builder** (`BankBuilderItem`): use on a crank throw to place a cylinder and head, and fit pistons, rods and
   injectors from the player's inventory, on the clicked face of every throw: inline (that face), vee (and the face a
-  quarter turn round the crank) or flat (and the opposite face). Pipes and fuel stay the builder's; spark plugs and the cam line are laid only if the builder carries them (see "Boiler heat, readouts, builder extras, muffler and casing").
-  Sneak-use cycles the layouts and then between standard and precision parts: a precision build places precision cylinders, heads, forged pistons and precision injectors, and swaps them in for standard parts already on the throws, handing the old ones back. Blocked places and missing blocks are reported. It places no cams: a vee's valley camshaft (see *Valley cam lobes*) is added by hand.
+  quarter turn round the crank), flat (and the opposite face), W (and both faces a quarter turn either side: three banks)
+  or X (all four faces). The layout is saved on the item by its place in `Layout`, so new layouts are only appended. Pipes and fuel stay the builder's; spark plugs and the cam line are laid only if the builder carries them (see "Boiler heat, readouts, builder extras, muffler and casing").
+  Sneak-use cycles the layouts and then between standard and precision parts: a precision build places precision cylinders, heads, forged pistons and precision injectors, and swaps them in for standard parts already on the throws, handing the old ones back. Blocked places and missing blocks are reported.
 - **Dynamometer block** (`DynoBlock`): set against any block of an engine, goggles draw its torque and power curves as
   bars, with peaks and the powerband, from the rating the engine itself uses. Redstone rises as the engine climbs to the
   speed of its peak power.
@@ -715,7 +716,9 @@ Variable-Drive Supercharger = Variable-Geometry Turbocharger.**
   Cam Lobe lays a cam line parallel to the crank: a lobe at each throw's offset and Camshaft blocks in the gaps so the
   line is unbroken (`BankBuilderItem.camOffsets`). The offset is the cell beside each cylinder block, on the side a quarter
   turn round the crank from the bore: a flat gets a line by each bank, and a vee, whose second bank is on that very side,
-  gets one lobe in the valley that touches the block of both banks, which the shared-lobe timing already handles. The
+  gets one lobe in the valley that touches the block of both banks, which the shared-lobe timing already handles. A W
+  gets a line in each of its two valleys, either side of the middle bank, and an X one in each of its four; a block
+  touching two lobes takes the first the scanner finds (`EngineScanner.lobeBesideBlock`). The
   extras use the player's real inventory even when creative (a creative builder otherwise has everything and would
   put plugs in every diesel), and a creative player's stack is not used up. The line still has to be geared to half the
   crank's speed, and the Timing Tool times the lobes. Advancement: Cam Included (`CAMS_LAID`). (The Timing Tool already

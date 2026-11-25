@@ -99,6 +99,51 @@ class FiringPlannerTest {
 		assertTrue(plan.deviation() <= 30, "but it should be close: " + plan.deviation());
 	}
 
+	/**
+	 * Banks bored at the given angles on every throw, as the Bank Builder lays a W (0, 90, 180) or an X (all four); the
+	 * last {@code short} throws leave the last bank out. Each cylinder has its own lobe.
+	 */
+	private static List<Cylinder> banks(int throwCount, int shortThrows, double... bores) {
+		List<Cylinder> cylinders = new ArrayList<>();
+		for (int i = 0; i < throwCount; i++) {
+			int count = i >= throwCount - shortThrows ? bores.length - 1 : bores.length;
+			for (int b = 0; b < count; b++)
+				cylinders.add(new Cylinder(i, bores[b], cylinders.size()));
+		}
+		return cylinders;
+	}
+
+	/**
+	 * A W24 of eight throws cannot fire evenly: a throw's three cylinders always fall in one residue class of 90 degrees,
+	 * each class needs eight, and eight is not a multiple of three. Pinned, so a planner change that does better is noticed.
+	 */
+	@Test
+	void aWTwentyFourOnEightThrowsCannotBeEven() {
+		Plan plan = solve(Style.SMOOTH, 8, 24, banks(8, 0, 0, 90, 180));
+		assertTrue(!plan.even(), "an eight-throw W24 can't fire evenly");
+		assertEquals(15, plan.deviation(), 1e-9, "as close as it gets");
+	}
+
+	/** The stepped W24: nine throws, three of them without the last bank, so each residue class gets eight. */
+	@Test
+	void aSteppedWTwentyFourOnNineThrowsIsEven() {
+		assertEvenlySpaced(solve(Style.SMOOTH, 9, 24, banks(9, 3, 0, 90, 180)), 24);
+	}
+
+	/** A W12 of four throws cannot be even either, as the 90 degree V12 cannot. */
+	@Test
+	void aWTwelveOnFourThrowsCannotBeEven() {
+		Plan plan = solve(Style.SMOOTH, 4, 12, banks(4, 0, 0, 90, 180));
+		assertTrue(!plan.even(), "a four-throw W12 can't fire evenly");
+		assertEquals(30, plan.deviation(), 1e-9, "as close as it gets");
+	}
+
+	/** An X24 of six throws, four cylinders each, fires evenly. */
+	@Test
+	void anXTwentyFourOnSixThrowsIsEven() {
+		assertEvenlySpaced(solve(Style.SMOOTH, 6, 24, banks(6, 0, 0, 90, 180, 270)), 24);
+	}
+
 	/** With the throws left alone, only the revolution each cylinder fires on is chosen. */
 	@Test
 	void camsOnlyLeavesTheThrowsAndSpreadsTheFiring() {

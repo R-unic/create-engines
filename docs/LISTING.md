@@ -77,8 +77,8 @@ and valves yourself, pipe in air and fuel, and the engine you built fires in ord
 
 ## 🔧 Build it
 
-- **Real layouts:** inline, V, flat and rotary (Wankel), with coupled crankshafts for bigger engines
-- **Bank Builder:** lays out a whole inline, V or flat bank in one click (it fits the spark plugs you carry, and lays a
+- **Real layouts:** inline, V, flat, W, X and rotary (Wankel), with coupled crankshafts for bigger engines
+- **Bank Builder:** lays out a whole inline, V, flat, W or X bank in one click (it fits the spark plugs you carry, and lays a
   cam line beside the bank if you carry a camshaft and cam lobes)
 - **Timing Tool:** sets the firing order for you, and can tune every injector in one click
 - **Blueprints:** record a built engine's layout and every dial, copy the whole tune onto another engine of the same

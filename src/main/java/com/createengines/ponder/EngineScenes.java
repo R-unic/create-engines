@@ -2965,7 +2965,17 @@ public final class EngineScenes {
 		scene.idle(20);
 		scene.world()
 			.showSection(vee, Direction.SOUTH);
-		scene.idle(100);
+		scene.idle(120);
+
+		scene.overlay()
+			.showText(120)
+			.attachKeyFrame()
+			.colored(PonderPalette.WHITE)
+			.text("W builds three banks, the face you click and both beside it, as here, with a cam line in each valley. X builds all four. Not every W fires evenly: eight throws of three cannot, but leave a bank off three throws of nine and they can. Six throws of an X can.")
+			.pointAt(util.vector()
+				.blockSurface(throwPos, Direction.NORTH))
+			.placeNearTarget();
+		scene.idle(130);
 		scene.markAsFinished();
 	}
 

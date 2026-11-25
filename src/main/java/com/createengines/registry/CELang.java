@@ -77,6 +77,8 @@ public final class CELang {
 		raw("tool.bank_builder.layout.inline", "Inline (the face you click)");
 		raw("tool.bank_builder.layout.vee", "Vee (that face and the next, a quarter turn round)");
 		raw("tool.bank_builder.layout.flat", "Flat (that face and the one opposite)");
+		raw("tool.bank_builder.layout.w", "W (that face and the two either side)");
+		raw("tool.bank_builder.layout.x", "X (all four faces)");
 		raw("tool.bank_builder.hint", "Use on a crank throw to set a cylinder and head on that face of every throw of the crankshaft, with the pistons, rods, injectors and spark plugs you carry, and a cam line beside the bank if you carry Camshafts and Cam Lobes. Sneak-use to change layout, and then between standard and precision parts: a precision build swaps precision parts in for standard ones too");
 		raw("tool.bank_builder.cams", "Laid %1$s cam block(s) beside the bank. Gear the line to half the crank's speed, then time the lobes with a Timing Tool");
 		raw("tool.bank_builder.no_crank", "Use it on a crankshaft throw");
