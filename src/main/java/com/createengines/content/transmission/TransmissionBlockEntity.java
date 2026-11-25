@@ -57,6 +57,8 @@ public class TransmissionBlockEntity extends SplitShaftBlockEntity {
 	public ScrollValueBehaviour shiftProfile;
 
 	private int gear = Gears.NEUTRAL;
+	/** Whether a redstone signal chose the gear at the last look. Sent to the client for the gear dial, never saved. */
+	private boolean signalled;
 	/** The gear auto has chosen; kept while another setting is selected so it can pick up where it was. */
 	private int autoGear = Gears.FIRST;
 	/** Whether auto was the setting at the last look, to start it from the gear in use. */
@@ -97,6 +99,12 @@ public class TransmissionBlockEntity extends SplitShaftBlockEntity {
 			public void setValueSettings(Player player, ValueSettings settings, boolean ctrlDown) {
 				Operators.record(getWorld(), getPos(), player);
 				super.setValueSettings(player, settings, ctrlDown);
+			}
+
+			/** Under a redstone signal the dial reads the gear that signal picked; the setting is kept for afterwards. */
+			@Override
+			public String formatValue() {
+				return signalled ? Gears.label(gear) : super.formatValue();
 			}
 		};
 		panel.between(Gears.NEUTRAL, Gears.AUTO);
@@ -139,8 +147,7 @@ public class TransmissionBlockEntity extends SplitShaftBlockEntity {
 	}
 
 	/** A redstone signal selects a gear outright; with none, the panel does, and on auto the block's own choice. */
-	private int wantedGear() {
-		int selected = signalGear();
+	private int wantedGear(int selected) {
 		if (selected >= 0) {
 			wasAuto = false;
 			return selected;
@@ -161,9 +168,16 @@ public class TransmissionBlockEntity extends SplitShaftBlockEntity {
 	public void updateGear() {
 		if (level == null || level.isClientSide || panel == null)
 			return;
-		int wanted = Gears.clamp(wantedGear());
-		if (wanted == gear)
+		int selected = signalGear();
+		int wanted = Gears.clamp(wantedGear(selected));
+		boolean signalChanged = signalled != selected >= 0;
+		signalled = selected >= 0;
+		if (wanted == gear) {
+			// A signal that picks the gear already in use shifts nothing, but the dial still has to hear of it
+			if (signalChanged)
+				sendData();
 			return;
+		}
 		RotationPropagator.handleRemoved(level, worldPosition, this);
 		gear = wanted;
 		lastShift = level.getGameTime();
@@ -281,6 +295,8 @@ public class TransmissionBlockEntity extends SplitShaftBlockEntity {
 		tag.putBoolean("ThirteenGears", true);
 		if (inputFace != null)
 			tag.putInt("InputFace", inputFace.get3DDataValue());
+		if (clientPacket)
+			tag.putBoolean("Signalled", signalled);
 	}
 
 	@Override
@@ -297,6 +313,8 @@ public class TransmissionBlockEntity extends SplitShaftBlockEntity {
 		gear = Gears.clamp(saved);
 		autoGear = tag.contains("AutoGear") ? Gears.clamp(tag.getInt("AutoGear")) : gear;
 		gearsUsed = tag.contains("ThirteenGears") ? tag.getInt("GearsUsed") : 0;
+		if (clientPacket)
+			signalled = tag.getBoolean("Signalled");
 	}
 
 	@Override

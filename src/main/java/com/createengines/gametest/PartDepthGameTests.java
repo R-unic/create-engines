@@ -274,6 +274,42 @@ public class PartDepthGameTests {
 		});
 	}
 
+	/**
+	 * The gear dial reads the gear a redstone signal picked, on the server and in what the client is sent, and goes back to
+	 * the hand setting when the signal goes. The setting itself is never overwritten.
+	 */
+	@GameTest(template = "empty", batch = BATCH)
+	public static void theGearDialReadsTheGearARedstoneSignalPicks(GameTestHelper helper) {
+		BlockPos at = new BlockPos(1, 1, 1);
+		BlockPos source = new BlockPos(1, 2, 1);
+		helper.setBlock(at, CEBlocks.TRANSMISSION.getDefaultState()
+			.setValue(BlockStateProperties.AXIS, Direction.Axis.X));
+		TransmissionBlockEntity box = helper.getBlockEntity(at);
+		box.panel.setValue(7);
+		helper.assertTrue(box.panel.formatValue().equals("7"), "By hand it reads 7: " + box.panel.formatValue());
+
+		helper.setBlock(source, net.minecraft.world.level.block.Blocks.REDSTONE_BLOCK);
+		helper.assertTrue(box.panel.formatValue().equals("R"), "Full strength reads reverse: " + box.panel.formatValue());
+		helper.assertTrue(box.panel.getValue() == 7, "and the hand setting is kept: " + box.panel.getValue());
+		helper.assertTrue(clientDial(helper, box).equals("R"), "and the client is told: " + clientDial(helper, box));
+
+		helper.setBlock(source, net.minecraft.world.level.block.Blocks.AIR);
+		helper.assertTrue(box.panel.formatValue().equals("7"), "With no signal it reads 7 again: " + box.panel.formatValue());
+		helper.assertTrue(clientDial(helper, box).equals("7"), "on the client too: " + clientDial(helper, box));
+		helper.assertTrue(!box.saveWithFullMetadata(helper.getLevel().registryAccess())
+			.contains("Signalled"), "The signal is not part of the save");
+		helper.succeed();
+	}
+
+	/** What the gear dial reads on a copy of the box built from the packet a client would get. */
+	private static String clientDial(GameTestHelper helper, TransmissionBlockEntity box) {
+		var copy = new TransmissionBlockEntity(box.getType(), box.getBlockPos(), box.getBlockState());
+		copy.handleUpdateTag(box.getUpdateTag(helper.getLevel()
+			.registryAccess()), helper.getLevel()
+				.registryAccess());
+		return copy.panel.formatValue();
+	}
+
 	/** A new box is on the normal profile, and the profile dial never disturbs the gear dial or its own save. */
 	@GameTest(template = "empty", batch = BATCH)
 	public static void aGearboxDefaultsToTheNormalShiftProfileAndSavesItApartFromTheGear(GameTestHelper helper) {
