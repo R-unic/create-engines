@@ -47,6 +47,8 @@ public final class Tuning {
 	public static volatile boolean fuelFireByVolatility = true;
 	/** Whether setting one head's fuel metering sets every other head of its engine to the same figure, see {@code MeteringFollow}. */
 	public static volatile boolean meterAllHeads = false;
+	/** Whether pistons, rods and head gaskets wear, and can fail, see {@link Wear}. Off, nothing wears and nothing here runs. */
+	public static volatile boolean wearMode = false;
 	/** Height from which the air thins when no pressure is read from Sable, see {@link Altitude#START}. */
 	public static volatile double altitudeStart = Altitude.START;
 	/** Blocks of climb per e-fold of thinning when no pressure is read from Sable, see {@link Altitude#SCALE}. */
@@ -86,6 +88,7 @@ public final class Tuning {
 		fuelFire = true;
 		fuelFireByVolatility = true;
 		meterAllHeads = false;
+		wearMode = false;
 		altitudeStart = Altitude.START;
 		altitudeScale = Altitude.SCALE;
 		altitudeFloor = Altitude.FLOOR;

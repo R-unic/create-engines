@@ -30,7 +30,17 @@ public enum CylinderFault {
 	 * A fluid is against the cylinder, its head or its rotor housing: the engine is underwater, and nothing burns in it
 	 * wherever its pipes lead. It still drags on the crank.
 	 */
-	SUBMERGED(false);
+	SUBMERGED(false),
+	/** The wear mode's: the head's gasket has blown, which stops the cylinder under it until a new gasket goes in. */
+	BLOWN_GASKET(true),
+	/** The wear mode's: a rod was thrown and its wreck is still in the cylinder, which misfires until a Service Kit clears it. */
+	THROWN_ROD(true),
+	/** The wear mode's: the head broke when a rod was thrown, and has to be replaced. */
+	BROKEN_HEAD(true),
+	/** The wear mode's: a piston seized from running dry, which locks the cylinder and drags on the crank until a Service Kit frees it or the piston is replaced. */
+	SEIZED(true),
+	/** The wear mode's: a rotor housing's apex seals have failed, which stops all three chambers until a new set is fitted. */
+	APEX_FAILED(true);
 
 	/** Without this the cylinder is not a working piston at all and is left out of the simulation. */
 	public final boolean disablesCylinder;
@@ -81,6 +91,8 @@ public enum CylinderFault {
 	public static double dragOnCrank(int faults) {
 		if (NOT_ON_THROW.in(faults) || NO_ROD.in(faults) || NO_ROTOR.in(faults) || ROTARY_DISABLED.in(faults))
 			return 0;
+		if (SEIZED.in(faults))
+			return com.createengines.engine.sim.Wear.SEIZED_DRAG;
 		return NO_PISTON.in(faults) ? 0.5 : 1;
 	}
 }

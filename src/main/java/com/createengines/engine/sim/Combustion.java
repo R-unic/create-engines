@@ -250,7 +250,8 @@ final class Combustion {
 		fuelPending -= burned;
 		charge.fresh = Math.max(0, (charge.fresh * charge.moles - burned * burningFuel.airPerMb()) / charge.moles);
 		double heat = burned * burningFuel.energyPerMb() * Mixture.efficiency(burnEquivalence)
-			* Thermal.burnFactor(owner.coldness, burningFuel.coldSensitivity()) * (1 - preignitionLoss);
+			* Thermal.burnFactor(owner.coldness, burningFuel.coldSensitivity()) * (1 - preignitionLoss)
+			* (owner.wear == Wear.NONE ? 1 : owner.wear.seal());
 		charge.temperature += heat * (CylinderModel.GAMMA - 1) / (charge.moles + FUEL_HEAT_CAPACITY * fuelPending);
 		current.fuelBurned += burned;
 		if (fuelPending <= CylinderModel.FUEL_EPSILON)

@@ -57,7 +57,8 @@ class ConfigMatrixTest {
 		new Switch("sableAirPressure", v -> Tuning.sableAirPressure = v),
 		new Switch("fuelFire", v -> Tuning.fuelFire = v),
 		new Switch("fuelFireByVolatility", v -> Tuning.fuelFireByVolatility = v),
-		new Switch("meterAllHeads", v -> Tuning.meterAllHeads = v));
+		new Switch("meterAllHeads", v -> Tuning.meterAllHeads = v),
+		new Switch("wearMode", v -> Tuning.wearMode = v));
 
 	@AfterEach
 	void resetTuning() {

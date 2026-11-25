@@ -77,6 +77,8 @@ public final class CylinderModel implements Breather {
 	public InjectorAssist assist = InjectorAssist.NONE;
 	/** The high-energy coil on this cylinder's spark plug, if there is one (see {@link IgnitionCoil}); none leaves the spark as it always was. */
 	public IgnitionCoil coil = IgnitionCoil.NONE;
+	/** What this cylinder's worn parts cost it, only with the wear mode on (see {@link Wear}); none leaves it as it always was. */
+	public Wear.State wear = Wear.NONE;
 	public double intakeFactor = 1;
 	/** Share of the shot a throttle body's linkage lets through; 1 where there is no throttle. */
 	public double fuelTrim = 1;
@@ -269,6 +271,7 @@ public final class CylinderModel implements Breather {
 		copy.ignition = ignition;
 		copy.assist = assist;
 		copy.coil = coil;
+		copy.wear = wear;
 		copy.intakeFactor = intakeFactor;
 		copy.fuelTrim = fuelTrim;
 		copy.pilotSupply = pilotSupply;
@@ -338,17 +341,17 @@ public final class CylinderModel implements Breather {
 
 	@Override
 	public double frictionStatic() {
-		return spec.frictionStatic();
+		return wear == Wear.NONE ? spec.frictionStatic() : spec.frictionStatic() * wear.drag();
 	}
 
 	@Override
 	public double frictionViscous() {
-		return spec.frictionViscous();
+		return wear == Wear.NONE ? spec.frictionViscous() : spec.frictionViscous() * wear.drag();
 	}
 
 	@Override
 	public double frictionAt(double omega, double film) {
-		return spec.frictionAt(omega, film);
+		return wear == Wear.NONE ? spec.frictionAt(omega, film) : spec.frictionAt(omega, film) * wear.drag();
 	}
 
 	@Override
