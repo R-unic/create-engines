@@ -684,7 +684,8 @@ These were the 2.3.1 patch. They go out with 2.4 and are listed first in its cha
   "Fix in 2.3.1" in 2.3 above.
 - **The 2.3.0 audit fixes**, already done in the working tree and written up in `docs/LISTING.md` (the changelog block that was "2.3.1" is now
   "2.4.0"). Exceptions owed in the 2.4.0 record, each with the author's name: `limits.maxBankBatteries` splitting very large banks, the
-  Black Box noticing up to 10 s late, the pollution cap read every 3 s, and the changed `WearToggle` assertion. Still open from the audit: the
+  Black Box noticing up to 10 s late, the pollution cap read every 3 s, the changed `WearToggle` assertion, and the rubber and cardboard
+  gasket recipes replaced (author, 2026-11-25; the old slime and paper recipes removed, manifest lines moved by hand). Still open from the audit: the
   slower coupling walk (needs the author) and a mid-session `wearMode` toggle not reaching connected players.
 - **The Copper Gasket cannot be crafted in 2.3.0.** Its shipped recipe (`recipe/copper_gasket.json`) has the pattern `"C", "CC", "C"`, rows of
   different widths, which vanilla refuses ("Invalid pattern: each row must be the same width", `ShapedRecipePattern`), so the recipe never
@@ -824,10 +825,12 @@ turbo rules, SilverThorn's thread) on 2026-11-25:
 4. **Wire the plug and turbo wear.** `PlugWear` and `TurboWear` are written and unit-tested in 2.3 but no engine reads them. Plugs foul and
    wear with soot and hours and misfire more as they go; a turbo wears with speed and heat and loses boost as it does. Repair, readouts and
    Black Box events like the other parts.
-5. **Gasket recipes** (SilverThorn): the **Cardboard Gasket from Create's Cardboard**, added beside today's paper recipe (replacing it would
-   move a pinned recipe; adding one does not). The **Copper Gasket as a staged Create craft** (copper sheets, cut on a Mechanical Saw, finished
-   by a Mechanical Press, as a sequenced assembly), so the cheaper tiers have a reason to exist. Since the 2.3.0 copper recipe never loaded,
-   this is its only recipe (see "Fixes carried over").
+5. **Gasket recipes** (SilverThorn; **built 2026-11-25 at the author's say, not seen in game**): the author chose to **replace** the
+   shipped recipes rather than add beside them. **Rubber** is sawn from a Mechanical Belt (Create's rubber is kelp), two gaskets a belt;
+   **cardboard** is one of Create's Cardboard; **copper** is a sequenced assembly on a Rubber Gasket (deploy a copper sheet, press, deploy
+   a sheet, press; transitional item `incomplete_copper_gasket`), so the cheaper tiers have a reason to exist. Since the 2.3.0 copper recipe
+   never loaded, that one is its only recipe. Tests: `GasketRecipeGameTests`. The manifest lines for the three recipes moved by hand
+   (exception owed, see "Fixes carried over").
 6. **The failure curve.** [WEAR.md](WEAR.md) shows a part at 0.8 wear at 256 RPM is certain to fail within a minute. Retune with the new heat
    input in place, so Hot plus heavy wear is the warning and Critical plus heavy wear is the risk. Numbers by probe, pinned in `WearTableTest`.
 

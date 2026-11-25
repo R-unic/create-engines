@@ -221,8 +221,13 @@ that changes how an existing engine behaves says so in its changelog. More on
 
 ## Changelog for 2.4.0
 
-Unreleased; being written as 2.4 "Running Hot" is built. So far: fixes to the wear mode, and less work for a server. No ID, key or saved
-format changes. Changes to existing builds are listed first.
+Unreleased; being written as 2.4 "Running Hot" is built. So far: fixes to the wear mode, new gasket recipes, and less work for a server. One new
+item ID (`incomplete_copper_gasket`); no ID, key or saved format is renamed or removed. Changes to existing builds are listed first.
+- Changed, gasket recipes (author, 2026-11-25): the **Rubber Gasket** is sawn from a Mechanical Belt (a Mechanical Saw cuts one belt into two
+  gaskets) instead of crafted from two slime balls and a paper. The **Cardboard Gasket** is crafted from one of Create's Cardboard instead of three
+  paper. The **Copper Gasket** is a Create sequenced assembly on a Rubber Gasket: a Deployer puts a copper sheet on, a Press presses it, a second
+  sheet goes on and is pressed (four steps, one pass), through a new in-progress item, `incomplete_copper_gasket`. The old slime and paper recipes
+  are gone, and 2.3.0's copper recipe never loaded (its pattern rows were uneven), so this is the first way to make one.
 - Changed, very large battery banks: a new setting, `limits.maxBankBatteries` (see [CONFIG.md](CONFIG.md)), limits how many touching batteries act as
   one bank. A bank bigger than that now acts as more than one.
 - Changed, Black Box: it remembers the engine it found instead of searching for it again every second. It searches again when that engine is gone,

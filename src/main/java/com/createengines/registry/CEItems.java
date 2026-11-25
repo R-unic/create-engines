@@ -80,6 +80,12 @@ public final class CEItems {
 		.model((c, p) -> p.generated(c, p.modLoc("item/copper_gasket")))
 		.register();
 
+	/** A Rubber Gasket part way through its Create sequenced assembly into a Copper Gasket (sheet deployed, pressed, sheet deployed, pressed). */
+	public static final ItemEntry<Item> INCOMPLETE_COPPER_GASKET = REGISTRATE.item("incomplete_copper_gasket",
+			p -> (Item) new com.simibubi.create.content.processing.sequenced.SequencedAssemblyItem(p))
+		.model((c, p) -> p.generated(c, p.modLoc("item/copper_gasket")))
+		.register();
+
 	/** Wear mode: right-click a cylinder or a head to set its piston, rod or gasket right when the wear is light. Heavy wear needs the part replaced. */
 	public static final ItemEntry<Item> SERVICE_KIT = REGISTRATE.item("service_kit", p -> (Item) new com.createengines.content.ServiceKitItem(p))
 		.properties(p -> p.durability(com.createengines.content.WearService.KIT_USES))

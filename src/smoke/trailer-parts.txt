@@ -98,5 +98,6 @@ cardboard_gasket: later - wear mode (2.3): a head with each gasket tier fitted, 
 stock_gasket: later - wear mode (2.3): see cardboard_gasket
 rubber_gasket: later - wear mode (2.3): see cardboard_gasket
 copper_gasket: later - wear mode (2.3): see cardboard_gasket
+incomplete_copper_gasket: skip - the half-made Copper Gasket of its sequenced assembly, an intermediate, not a part
 service_kit: later - wear mode (2.3): see cardboard_gasket
 apex_seals: later - wear mode (2.3): a rotor housing with worn seals and one with a new set need a pad of their own

@@ -2,9 +2,7 @@
   "type": "minecraft:crafting_shapeless",
   "category": "misc",
   "ingredients": [
-    {"item": "minecraft:paper"},
-    {"item": "minecraft:paper"},
-    {"item": "minecraft:paper"}
+    {"item": "create:cardboard"}
   ],
   "result": {
     "count": 1,

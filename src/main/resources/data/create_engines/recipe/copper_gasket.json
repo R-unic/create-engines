@@ -1,14 +1,49 @@
 {
-  "type": "minecraft:crafting_shaped",
-  "category": "misc",
-  "key": {
-    "C": {
-      "item": "create:copper_sheet"
+  "type": "create:sequenced_assembly",
+  "ingredient": {"item": "create_engines:rubber_gasket"},
+  "transitional_item": {"id": "create_engines:incomplete_copper_gasket"},
+  "loops": 1,
+  "results": [
+    {"id": "create_engines:copper_gasket"}
+  ],
+  "sequence": [
+    {
+      "type": "create:deploying",
+      "ingredients": [
+        {"item": "create_engines:incomplete_copper_gasket"},
+        {"item": "create:copper_sheet"}
+      ],
+      "results": [
+        {"id": "create_engines:incomplete_copper_gasket"}
+      ]
+    },
+    {
+      "type": "create:pressing",
+      "ingredients": [
+        {"item": "create_engines:incomplete_copper_gasket"}
+      ],
+      "results": [
+        {"id": "create_engines:incomplete_copper_gasket"}
+      ]
+    },
+    {
+      "type": "create:deploying",
+      "ingredients": [
+        {"item": "create_engines:incomplete_copper_gasket"},
+        {"item": "create:copper_sheet"}
+      ],
+      "results": [
+        {"id": "create_engines:incomplete_copper_gasket"}
+      ]
+    },
+    {
+      "type": "create:pressing",
+      "ingredients": [
+        {"item": "create_engines:incomplete_copper_gasket"}
+      ],
+      "results": [
+        {"id": "create_engines:incomplete_copper_gasket"}
+      ]
     }
-  },
-  "pattern": [" C ", "C C", " C "],
-  "result": {
-    "count": 1,
-    "id": "create_engines:copper_gasket"
-  }
+  ]
 }
