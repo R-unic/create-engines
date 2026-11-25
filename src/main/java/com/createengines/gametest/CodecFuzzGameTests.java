@@ -145,10 +145,22 @@ public class CodecFuzzGameTests {
 		return out;
 	}
 
+	/**
+	 * The CPU time this thread has used. The clock on the wall also counts collection pauses and a machine short of memory, which
+	 * have made a 6 byte decode seem to take 15 seconds. A decode that slept or blocked would not be counted; one that loops is.
+	 */
+	private static long cpuNanos() {
+		long nanos = java.lang.management.ManagementFactory.getThreadMXBean()
+			.getCurrentThreadCpuTime();
+		if (nanos < 0)
+			throw new IllegalStateException("this JVM cannot time a thread, so a slow decode would go unseen");
+		return nanos;
+	}
+
 	/** One decode, timed, with anything that is not an ordinary exception reported. Returns the value, or null if rejected. */
 	private static <T> T tryDecode(StreamCodec<RegistryFriendlyByteBuf, T> codec, RegistryFriendlyByteBuf buf, String where,
 		List<String> problems) {
-		long start = System.nanoTime();
+		long start = cpuNanos();
 		try {
 			return codec.decode(buf);
 		} catch (RuntimeException e) {
@@ -157,9 +169,9 @@ public class CodecFuzzGameTests {
 			problems.add(where + ": decode threw " + t.getClass().getName() + ", not an ordinary exception");
 			return null;
 		} finally {
-			long took = System.nanoTime() - start;
+			long took = cpuNanos() - start;
 			if (took > SLOW_NANOS)
-				problems.add(where + ": decode took " + took / 1_000_000 + " ms");
+				problems.add(where + ": decode took " + took / 1_000_000 + " ms of CPU");
 		}
 	}
 
