@@ -56,12 +56,20 @@ class GearsTest {
 	}
 
 	@Test
-	void redstoneStrengthOneIsNeutralAndFifteenIsReverse() {
+	void redstoneStrengthIsTheGearThenReverseThenAuto() {
 		assertEquals(-1, Gears.fromSignal(0));
-		assertEquals(Gears.NEUTRAL, Gears.fromSignal(1));
-		assertEquals(Gears.FIRST, Gears.fromSignal(2));
-		assertEquals(Gears.TOP, Gears.fromSignal(14));
-		assertEquals(Gears.REVERSE, Gears.fromSignal(15));
+		for (int gear = Gears.FIRST; gear <= Gears.TOP; gear++)
+			assertEquals(gear, Gears.fromSignal(gear));
+		assertEquals(Gears.REVERSE, Gears.fromSignal(14));
+		assertEquals(Gears.AUTO, Gears.fromSignal(15));
+	}
+
+	@Test
+	void noRedstoneStrengthIsNeutralAndNoneRunsPastAuto() {
+		for (int signal = 1; signal <= 15; signal++)
+			assertTrue(Gears.fromSignal(signal) != Gears.NEUTRAL, "Strength " + signal);
+		assertEquals(-1, Gears.fromSignal(-4));
+		assertEquals(Gears.AUTO, Gears.fromSignal(99));
 	}
 
 	@Test

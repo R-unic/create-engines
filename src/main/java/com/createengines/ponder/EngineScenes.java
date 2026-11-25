@@ -2286,7 +2286,7 @@ public final class EngineScenes {
 			.showText(120)
 			.attachKeyFrame()
 			.colored(PonderPalette.RED)
-			.text("A redstone signal picks the gear instead of the panel: strength 1 is neutral, 2 to 14 are first to thirteenth, and 15 is reverse. Shifting briefly cuts the output off.")
+			.text("A redstone signal picks the gear instead of the panel: strength 1 to 13 is that gear, 14 is reverse, and 15 is Auto. Shifting briefly cuts the output off.")
 			.pointAt(util.vector()
 				.topOf(2, 1, 3))
 			.placeNearTarget();

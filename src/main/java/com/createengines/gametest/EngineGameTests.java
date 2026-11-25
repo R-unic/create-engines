@@ -2034,22 +2034,57 @@ public class EngineGameTests {
 		helper.runAtTickTime(150, helper::succeed);
 	}
 
-	/** A redstone signal selects the gear over the panel, and the panel takes over again without one. */
+	/** A redstone signal selects a setting over the panel, auto included, and the panel takes over again without one. */
 	@GameTest(template = "empty", timeoutTicks = 200)
 	public static void redstoneOverridesTheTransmissionPanel(GameTestHelper helper) {
 		buildTransmission(helper, Gears.FIRST);
+		BlockPos at = new BlockPos(1, 1, 1);
 		BlockPos power = new BlockPos(1, 2, 1);
 		helper.runAtTickTime(20, () -> helper.assertTrue(Math.abs(outputSpeed(helper) - 5.333f) < 0.1f,
 			"The panel's first gear should be in use: " + outputSpeed(helper)));
-		helper.runAtTickTime(25, () -> helper.setBlock(power, Blocks.REDSTONE_BLOCK));
-		helper.runAtTickTime(45, () -> helper.assertTrue(outputSpeed(helper) < -20,
-			"A strong signal selects reverse: " + outputSpeed(helper)));
-		helper.runAtTickTime(50, () -> helper.setBlock(power, Blocks.AIR));
-		helper.runAtTickTime(70, () -> {
-			helper.assertTrue(Math.abs(outputSpeed(helper) - 5.333f) < 0.1f,
+		helper.runAtTickTime(25, () -> setLever(helper, power, 7));
+		helper.runAtTickTime(45, () -> helper.assertTrue(Math.abs(outputSpeed(helper) - 18.497f) < 0.1f,
+			"Strength 7 selects seventh: " + outputSpeed(helper)));
+		helper.runAtTickTime(50, () -> setLever(helper, power, 14));
+		helper.runAtTickTime(70, () -> helper.assertTrue(Math.abs(outputSpeed(helper) + 21.333f) < 0.1f,
+			"Strength 14 selects reverse: " + outputSpeed(helper)));
+		helper.runAtTickTime(75, () -> setLever(helper, power, 15));
+		helper.runAtTickTime(95, () -> {
+			TransmissionBlockEntity box = helper.getBlockEntity(at);
+			helper.assertTrue(box.isAuto(), "Full strength puts it on auto");
+			// Out of reverse, and with no engine to read, auto starts in first and stays there
+			helper.assertTrue(box.gear() == Gears.FIRST, "Auto from reverse starts in first: " + box.gear());
+			helper.assertTrue(box.panel.getValue() == Gears.FIRST, "The panel is left alone: " + box.panel.getValue());
+		});
+		helper.runAtTickTime(100, () -> setLever(helper, power, 1));
+		helper.runAtTickTime(120, () -> {
+			TransmissionBlockEntity box = helper.getBlockEntity(at);
+			helper.assertTrue(!box.isAuto() && box.gear() == Gears.FIRST, "Strength 1 is first, by signal: " + box.gear());
+			box.panel.setValue(7);
+		});
+		helper.runAtTickTime(125, () -> helper.setBlock(power, Blocks.AIR));
+		helper.runAtTickTime(145, () -> {
+			helper.assertTrue(Math.abs(outputSpeed(helper) - 18.497f) < 0.1f,
 				"Without a signal the panel decides again: " + outputSpeed(helper));
 			helper.succeed();
 		});
+	}
+
+	/** A Create analog lever at the given strength, standing on the block below it. */
+	private static void setLever(GameTestHelper helper, BlockPos at, int strength) {
+		if (!helper.getBlockState(at)
+			.is(AllBlocks.ANALOG_LEVER.get()))
+			helper.setBlock(at, AllBlocks.ANALOG_LEVER.getDefaultState()
+				.setValue(BlockStateProperties.ATTACH_FACE, net.minecraft.world.level.block.state.properties.AttachFace.FLOOR));
+		var lever = helper.getLevel()
+			.getBlockEntity(helper.absolutePos(at));
+		var tag = lever.saveWithFullMetadata(helper.getLevel()
+			.registryAccess());
+		tag.putInt("State", strength);
+		lever.loadWithComponents(tag, helper.getLevel()
+			.registryAccess());
+		helper.getLevel()
+			.updateNeighborsAt(helper.absolutePos(at), AllBlocks.ANALOG_LEVER.get());
 	}
 
 	/** In a low gear a crank carries a load that overstresses it direct: the speed-for-torque trade the block is for. */
@@ -2717,6 +2752,33 @@ public class EngineGameTests {
 			helper.succeed();
 		});
 	}
+
+	/** Already driving on auto in the top gear, a transmission drops when a load arrives that it cannot carry there. */
+	@GameTest(template = "empty_large", timeoutTicks = 4000)
+	public static void anAutoTransmissionDownshiftsWhenALoadArrives(GameTestHelper helper) {
+		buildSingleCylinder(helper, true);
+		helper.setBlock(PRESS, CEBlocks.TRANSMISSION.getDefaultState()
+			.setValue(BlockStateProperties.AXIS, Axis.X));
+		TransmissionBlockEntity box = helper.getBlockEntity(PRESS);
+		box.panel.setValue(Gears.AUTO);
+		helper.runAtTickTime(300, () -> helper.setBlock(STARTER_POWER, Blocks.AIR));
+		// A shaft behind it, so there is an output to turn while it climbs with nothing to drive
+		helper.runAtTickTime(500, () -> helper.setBlock(PRESS.east(), AllBlocks.SHAFT.getDefaultState()
+			.setValue(BlockStateProperties.AXIS, Axis.X)));
+		helper.runAtTickTime(1200, () -> {
+			helper.assertTrue(box.gear() == Gears.TOP, "With no load auto should be in the top gear: " + box.gear());
+			placePresses(helper, scaledPresses(3));
+		});
+		helper.runAtTickTime(3600, () -> {
+			CrankshaftBlockEntity crank = helper.getBlockEntity(PRIMARY);
+			helper.assertFalse(crank.isOverStressed(), "Auto should have dropped to a gear the engine can carry: gear " + box.gear());
+			helper.assertTrue(box.gear() < Gears.TOP, "It should have left the top gear: " + box.gear());
+			KineticBlockEntity press = helper.getBlockEntity(PRESS.east());
+			helper.assertTrue(press.getSpeed() != 0, "The presses should turn behind the transmission");
+			helper.succeed();
+		});
+	}
+
 	/** An exhaust manifold joined to a head, with an outlet on the end of it, carries the exhaust and the engine runs. */
 	@GameTest(template = "empty", timeoutTicks = 900)
 	public static void anExhaustManifoldCarriesTheExhaustFromAHead(GameTestHelper helper) {

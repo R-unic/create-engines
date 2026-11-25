@@ -226,7 +226,7 @@ public final class CELang {
 		raw("value.shift_profile.2", "Sport");
 		raw("goggles.transmission.reverse","Reverse: %1$s turns of the input to one of the output, backwards");
 		raw("goggles.transmission.hint",
-			"The panel sets the gear: neutral, thirteen forward gears, reverse, or Auto. Auto takes the tallest gear the engine can pull without overloading, down to a lower one when the load is too heavy and up again when there is room. A redstone signal picks a gear instead: 1 neutral, 2 to 14 first to thirteenth, 15 reverse. A low gear lets the engine carry a heavier load at a slower output");
+			"The panel sets the gear: neutral, thirteen forward gears, reverse, or Auto. Auto takes the tallest gear the engine can pull without overloading, down to a lower one when the load is too heavy and up again when there is room. A redstone signal picks a setting instead: 1 to 13 that gear, 14 reverse, 15 Auto. A low gear lets the engine carry a heavier load at a slower output");
 
 		raw("goggles.engine", "Engine");
 		raw("goggles.state.stalled", "Stalled");

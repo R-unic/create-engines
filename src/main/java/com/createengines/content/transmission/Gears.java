@@ -36,11 +36,14 @@ public final class Gears {
 	private Gears() {
 	}
 
-	/** The position a redstone signal selects, or -1 if there is none and the panel decides. Strength 1 is neutral, 15 reverse. */
+	/**
+	 * The setting a redstone signal selects, or -1 if there is none and the panel decides. Strength 1 to 13 is that gear, 14
+	 * reverse and 15 auto. No strength is neutral: only the panel selects it.
+	 */
 	public static int fromSignal(int signal) {
 		if (signal <= 0)
 			return -1;
-		return Math.min(signal - 1, POSITIONS - 1);
+		return Math.min(signal, AUTO);
 	}
 
 	/** Output speed over input speed: 0 in neutral, negative in reverse. */

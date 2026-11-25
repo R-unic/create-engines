@@ -289,15 +289,21 @@ public class PartDepthGameTests {
 		helper.assertTrue(box.panel.formatValue().equals("7"), "By hand it reads 7: " + box.panel.formatValue());
 
 		helper.setBlock(source, net.minecraft.world.level.block.Blocks.REDSTONE_BLOCK);
-		helper.assertTrue(box.panel.formatValue().equals("R"), "Full strength reads reverse: " + box.panel.formatValue());
+		helper.assertTrue(box.panel.formatValue().equals("A"), "Full strength reads auto: " + box.panel.formatValue());
+		helper.assertTrue(box.isAuto(), "and the box is on auto");
 		helper.assertTrue(box.panel.getValue() == 7, "and the hand setting is kept: " + box.panel.getValue());
-		helper.assertTrue(clientDial(helper, box).equals("R"), "and the client is told: " + clientDial(helper, box));
+		helper.assertTrue(clientDial(helper, box).equals("A"), "and the client is told: " + clientDial(helper, box));
+
+		// A signal beats an auto panel too, and the goggles and display must not call that gear automatic
+		box.panel.setValue(Gears.AUTO);
+		helper.assertTrue(box.isAuto(), "Still auto under full strength");
 
 		helper.setBlock(source, net.minecraft.world.level.block.Blocks.AIR);
+		box.panel.setValue(7);
 		helper.assertTrue(box.panel.formatValue().equals("7"), "With no signal it reads 7 again: " + box.panel.formatValue());
 		helper.assertTrue(clientDial(helper, box).equals("7"), "on the client too: " + clientDial(helper, box));
 		helper.assertTrue(!box.saveWithFullMetadata(helper.getLevel().registryAccess())
-			.contains("Signalled"), "The signal is not part of the save");
+			.contains("SignalSetting"), "The signal is not part of the save");
 		helper.succeed();
 	}
 
