@@ -17,8 +17,8 @@ dual-mass flywheel; everything else is proposed, and each proposal says what nee
 - **The 2.0 platform gets used.** Where a feature can be data, an API piece or an addon-sized change, it is built that way first.
 - **Debts first.** 2.0 was tagged with five listed exceptions and nine open hands-on boxes (the author resolved them as
   exceptions on 2026-11-21). 2.0.x pays down what can be paid by test, and the rest is looked at by eye before 2.1 piles on.
-- The Declined list in [ROADMAP.md](ROADMAP.md) ("Not on this roadmap") stands: no new failure modes or wear in the default game (an opt-in wear mode is allowed, see 2.3), no new fuels, no
-  knock, cooling blocks, snorkels, turbines or two-strokes, no mixins into Create's trains. Nothing below breaks it.
+- The Declined list in [ROADMAP.md](ROADMAP.md) ("Not on this roadmap") stands: no new failure modes or wear in the default game (an opt-in wear mode is allowed, and is all of 2.3), no new fuels, no
+  knock outside that mode (approved for it 2026-11-24), cooling blocks, snorkels, turbines or two-strokes, no mixins into Create's trains. Nothing below breaks it.
 
 ## Rules every release keeps
 
@@ -35,15 +35,23 @@ question, not an obstacle ([CLAUDE.md](../CLAUDE.md)).
 | 2.0.x | Shakedown II | Pay down 2.0's listed exceptions and unseen parts; no features | Small |
 | 2.1 | Twin Mass | **Dual-mass flywheel**, the readouts that make a flywheel choice legible, and sharper niches for the existing fuels | Medium to large |
 | 2.2 | Proving Ground | Verification debts: goldens, soak, server-from-jar, the step-size finding; **the battery tiers**, then **charge priority, electric injector assist and ignition coils**, with electrolysis to be decided (author, 2026-11-23) | Medium |
-| 2.3 | Open Garage | Reach: API 1.2, energy and probe mods, the next Create, a second example addon; **opt-in wear mode with gaskets and piston rings**, **polluted intake air**, **high- and low-compression piston variants**, **rotor variants (a precision rotor among them) with an exhaust niche**, and **nitrous oxide** (liquid, a vaporiser and a gas in the intake manifolds) (author, 2026-11-23), a **W layout for the Bank Builder** (author, 2026-11-24), then **look, sound and performance** only where the 2.0.x pass found something (was 2.4, merged by the author 2026-11-23) | Medium to large |
+| 2.3 | Wear and Tear | **The opt-in wear mode and nothing else** (author, 2026-11-24): pistons, rods, gaskets (stock and three tiers), rotary apex seals and batteries wear, precision parts wear slower, a rod can be thrown (a flag, a misfire, a broken head, with spectacle) and a gasket can blow, light wear is repaired by an automatable, durable Service Kit and the rest by replacing the part, worn parts keep their wear as items, and the Black Box and Display Link report each part and a total; off by default, nothing runs with it off, and gaskets and seals are not required with it off | Medium to large |
+| 2.4 | Open Garage | Reach: API 1.2, energy and probe mods, the next Create, a second example addon; **piston rings**, **polluted intake air**, **high- and low-compression piston variants**, **rotor variants (a precision rotor among them) with an exhaust niche**, and **nitrous oxide** (liquid, a vaporiser and a gas in the intake manifolds) (author, 2026-11-23), a **W layout for the Bank Builder** (author, 2026-11-24), then **look, sound and performance** only where the 2.0.x pass found something (all of it was 2.3 until the author moved it, 2026-11-24) | Medium to large |
 | 3.0 | Clean Slate | The second breaking cleanup: drop 1.x migrations, regenerate baselines, API 2.0 | Large |
 
-2.2 and 2.3 are independent of 2.1 and of each other; they can swap places or be cut, and 2.1 does not wait on either.
+**Shipped so far (tags):** 2.0.0 (2026-11-21), 2.0.1 and 2.0.2 (2026-11-22), 2.1.0 (2026-11-23) and 2.2.0 (2026-11-24). 2.3 is built in the working tree and not yet
+released; 2.4 and 3.0 are not started. Each shipped release has its sign-off record in [releases](releases), which lists what the machine gate did not see in a running
+game and what the author's Part 3 pass covered; the "built, not seen in game" notes below are the state at the time of building, kept for the record.
+
+2.2, 2.3 and 2.4 are independent of 2.1 and of each other; they can swap places or be cut, and 2.1 does not wait on either.
 
 ## 2.0.x Shakedown II
 
 The point is to find out what is wrong with 2.0 before building on it. Nothing here adds a feature; a fix that moves a guarded
 number is listed as an exception with the author's name on it, as always.
+
+**Status: shipped as v2.0.1 and v2.0.2 (2026-11-22).** What those two records leave ticked by the author or named as an exception is settled there; anything they list as still
+owed stays owed (the unattended soak and the unseen-by-eye items among them).
 
 - **Look at what only tests have seen** (the 3.1 to 3.9 boxes of the v2.0.0 record): the advancement tab layout and that no
   toast plays for carried-over progress, thin air above y 128, the pollution amounts, headphones by ear (`Muffle.GAIN` 0.5 and
@@ -65,7 +73,7 @@ number is listed as an exception with the author's name on it, as always.
 
 ### Dual-mass flywheel (requested by the author)
 
-**Status (2026-11-23): built, unreleased.** Block `create_engines:dual_mass_flywheel`, `DualMass` (the isolation curve, pure),
+**Status: shipped in v2.1.0 (tagged 2026-11-23).** Block `create_engines:dual_mass_flywheel`, `DualMass` (the isolation curve, pure),
 `EngineSimulation.setIsolatedMass`, scanner and layout (`isolatedInertia`), three config settings (primary 0.45, secondary 1.4,
 resonance 48 RPM), model by `tools/generate_models.py`, recipe, Ponder text on the flywheel page, a goggles line, Sable weight.
 Tests: `DualMassTest`, a property in `SimPropertyTest`, `DualMassFlywheelModelTest`, the config-extremes case in
@@ -226,9 +234,9 @@ same. A new fixture, `engine_2_1.snbt`, is recorded from the v2.0.0 source.
   the built jar: an engine with the Racing Flywheel revs up more slowly than a plain one and runs. Not done: the Racing
   Flywheel's model, and the data flywheel turning in the world, have not been seen in game.
 
-### Fuel character (built 2026-11-23, unreleased)
+### Fuel character (built 2026-11-23, shipped in v2.1.0)
 
-**Status (2026-11-23): items 1 to 4 built at the author's say-so, not seen in game, no Ponder page yet.** The author answered in chat: all
+**Status: items 1 to 4 built at the author's say-so and shipped in v2.1.0, with the "Choosing a Fuel" Ponder page.** The author answered in chat: all
 four items, and "Change it now (exception)" for biodiesel and for plant oil instead of the opt-in routes proposed below, and "Spills only, on
 by default" for fire. So **existing numbers did move**, recorded as Exception 2.9 in [the v2.1.0 record](releases/v2.1.0.md):
 
@@ -248,7 +256,7 @@ running engine on the rain cap schematic, so no new schematic); the client audit
 **Proposed 2026-11-22, in 2.1 because it is the release with player-facing features; the items are the author's pick from a longer list, the details are not yet decided.** This is not new
 fuels: the Declined list stands, and so does the author's 2026-11-21 answer (no more fuels beyond methanol, no gases, nitrous,
 heavy fuel oil, turbine or two-stroke), **except that the author reversed "no gases, nitrous" on 2026-11-23**: nitrous oxide is
-now proposed in 2.3 (see "Nitrous oxide" there). It gives the seven fuels that exist (plant oil, diesel, gasoline, ethanol, biodiesel,
+now proposed in 2.4 (see "Nitrous oxide" there). It gives the seven fuels that exist (plant oil, diesel, gasoline, ethanol, biodiesel,
 kerosene, methanol) a clearer reason to be picked, the way 1.x gave ethanol its boost niche. The ethanol distillery, which was
 also on the list, is not included here.
 
@@ -310,7 +318,7 @@ electricity mod already has a better motor, and ours drew only on this mod's own
 and the starters; the starter's goggles now say when it is spending battery charge (`StarterBlockEntity.isDrawingCharge`), and its Ponder page says the same.
 **Starters turn from the batteries (2026-11-24, the author):** on a spark engine with charge in its batteries, a starter with nothing on its input turns the engine over at 48 RPM (`StarterBlockEntity.ELECTRIC_RPM`) when it has a redstone signal, spending charge; a flat bank or a compression engine still needs rotation. A starter that has rotation behaves as before. The Starter, Heavy Starter and battery Ponder pages explain it; GameTests in `BatteryDepthGameTests`.
 
-**Status (2026-11-23): the battery tiers are built, unreleased and not seen in game.**
+**Status: the battery tiers shipped in v2.2.0 (tagged 2026-11-24).**
 - **Battery tiers back:** `BatteryTier` gains `DRY_CELL(100, 0)` and `LARGE(800, 0.75)`; blocks `dry_cell` and `large_battery` (`BatteryBlock` with a tier, the same join and
   lamp-strip blockstate, 53 models each from `tools/generate_models.py`, recipes: dry cell is zinc ingot, copper sheet and redstone; large is three batteries and a brass casing), weights
   (dry cell medium, large battery heavy), a goggles line (`This one holds N sparks`) on every battery, and a Ponder page "Batteries: Three Sizes" (`BatteryScenes.batterySizes`) that
@@ -343,7 +351,7 @@ none adds a failure mode (rule 4). Each gets tests, lang entries, a goggle line 
   a per-battery priority the player sets by wrench (or a Battery Monitor setting), with the lowest priority drawn from first and the
   reserve left for the starter. It must read the same as today for a bank nobody has set: a bank with no priority drains as it does now.
   The rule goes in `engine/sim/BatteryChemistry` or `BatteryBank` (pure, unit tested), not in a block entity.
-  **Built 2026-11-23, unreleased, not seen in game.** Two levels, not a number: a battery is a reserve or it is not. The wrench (no sneak) toggles it
+  **Built 2026-11-23, shipped in v2.2.0.** Two levels, not a number: a battery is a reserve or it is not. The wrench (no sneak) toggles it
   (`BatteryBlock.onWrenched`; sneaking still picks the battery up) and an action-bar line says which. A reserve is kept for **essential** draws (a spark plug,
   a starter) and is closed to **optional** ones (today only another mod's Forge Energy wire; the electric injector will be one). An essential draw takes from
   the open batteries first and the reserve for what is left; an alternator's charge fills a reserve first. With no reserve set, every draw and fill is the
@@ -359,7 +367,7 @@ none adds a failure mode (rule 4). Each gets tests, lang entries, a goggle line 
 - **Ignition upgrades (high-energy coils).** A coil on a spark plug that spends more charge per fire for a stronger spark: a wider
   window for lean and boosted spark fuels, fewer misfires. It is a spark-quality stat and a charge sink, new items only. It has to
   be reconciled with the spark-fuel plug rule (2026-11-23) and must not let a plain plug do less than it does now.
-  **Built 2026-11-24, unreleased, not seen in game.** One item, the Ignition Coil, which sits on a head's spark plug (it will not go on
+  **Built 2026-11-24, shipped in v2.2.0.** One item, the Ignition Coil, which sits on a head's spark plug (it will not go on
   a head with no plug, and says so) and comes off before the plug. Each spark that has fuel to light draws `IgnitionCoil.COST` (half a
   spark) more from the bank, as an optional use like the injector assist: a reserve battery is closed to it, so a coil can never leave a
   plain spark without its charge. A coiled spark lights a leaner mixture (the lean limit times `LEAN`, 0.7), burns a little faster (`BURN`, 0.9) and loses less of the rich limit
@@ -369,7 +377,7 @@ none adds a failure mode (rule 4). Each gets tests, lang entries, a goggle line 
   (pure); the new block state `coil` defaults false, so no saved head changes. Tests: `IgnitionCoilTest`, `IgnitionCoilGameTests`.
   **Ponder written 2026-11-24** ("Spending Charge: Injector Assist and Ignition Coil", also covers the assist). **Open:** the models are generated but unseen (a coil on the standard and the precision plug, in
   all three head combinations), and rotor housings have no coil (a rotor has no head block to put one on).
-- **Battery wear** belongs to the opt-in wear mode in 2.3 (see below), not here: deep discharge and repeated cold cycles reduce a
+- **Battery wear** belongs to the opt-in wear mode in 2.3 (2.3, see below), not here: deep discharge and repeated cold cycles reduce a
   battery's capacity, only with the mode on.
 
 **Electrolysis (author: "could be really cool"; a thought, not a plan).** Splitting water with charge is the biggest of the ideas and
@@ -386,10 +394,268 @@ that:
    no gameplay output. Cheap and safe, but it gives nothing back.
 Open questions for the author: which of the three (or none); whether a fluid is made at all (it would be the first the mod invents
 that is not a fuel); the efficiency that keeps any loop a net loss (to be fixed by test, with a `BatteryEnergy`-style balance check);
-the draw it asks of the Large Battery; and whether it waits for the energy-mod bridge (Forge Energy) in 2.3, since an electrolyser
+the draw it asks of the Large Battery; and whether it waits for the energy-mod bridge (Forge Energy) in 2.4, since an electrolyser
 fed from another mod's power is the same temptation that got the motor dropped.
 
-## 2.3 Open Garage
+## 2.3 Wear and Tear
+
+**The whole of 2.3 (the author, 2026-11-24): the opt-in wear mode, and nothing else.** Everything else this release held (API 1.2,
+energy and probe mods, the next Create, the second example addon, piston and rotor variants, nitrous oxide, polluted intake air, the W
+layout, look and sound) moved to 2.4 below. **Gaskets stay**, because they are a part that wears; **piston rings go to 2.4** with the
+other upgrades, since they never wear and need no mode. Wear is one system with a lot of surface (parts, items, readouts, failures,
+saved data), and it has to be tested to the standard of the release record before anything is stacked on it.
+
+**Status (2026-11-24): the core is built and tested, unreleased.** See "Build status" at the end of this section for what exists and what is open.
+
+### The design (author, 2026-11-23; opt-in)
+
+Requested by SilverThorn on Discord ("optional damage and wear and tear", "engine upgrades"); the author reopened the Declined
+entry on 2026-11-23 and placed it here. **Opt-in only: a config switch, off by default**, so no existing build, world or number
+changes (rule 1). With it off, nothing below runs. Decisions of 2026-11-23 and, where marked, **2026-11-24 (the author, which win
+over anything in "Build status" that says otherwise)**:
+
+- **What wears:** pistons, connecting rods and the new gaskets, and on a rotary the **apex seals** (author, 2026-11-23; **in 2.3,
+  2026-11-24**): the part rotaries are known for losing, standing in for the piston rings and rod a rotor housing does not have. They
+  follow the same rules (opt-in, replaced or lightly repaired by item, soak-tested failure path), and a sealed-out chamber stops like a
+  failed cylinder does. **Like gaskets, apex seals are not required with the mode off:** a rotor housing without them runs as it always
+  did, and they are only a part, with a stock set standing in, when the mode is on. The rotary's wear curve is measured separately by
+  dyno, not copied from the piston's. Wear grows with RPM and faster with heat, no oil and over-revving;
+  gaskets also wear with boost (cylinder pressure). Worse wear means worse performance and a failure chance that starts near zero
+  and rises with RPM.
+- **Precision parts wear slower** (author, 2026-11-24): every precision part (the Forged Piston and the precision parts in the other
+  slots) lasts longer than its standard version, by a stated factor tested and pinned like the rest. It is part of what precision is for.
+- **Batteries wear too** (author, 2026-11-23; **confirmed and in 2.3, 2026-11-24**): deep discharge and repeated cold cycles slowly
+  reduce a battery's capacity, and **each battery wears differently, according to its niche** (the tiers differ in what they are for,
+  so what hurts each one differs too; the per-battery rules are still to be written, see "Open"). Same rules as the rest: opt-in,
+  nothing runs with the mode off, saved charge is untouched until wear exists, a repair or replacement restores it, and the wear curve
+  is tested and then pinned. Not a failure: a worn battery holds less and never stops working.
+- **Failures** (author: gaskets can fail too). **A thrown rod** (2026-11-24) sets a **thrown flag** on the cylinder, with the **broken
+  rod left inside** (drawn, see Spectacle). The cylinder then **misfires**: it cannot compress or light fuel, so it simply stops
+  contributing, with no separate rule. The thrown flag is cleared by a **Service Kit**, which removes the wreck; the kit does not give
+  anything back: **the rod and the piston are both lost and cannot be recovered as items**, and a new piston and rod are then fitted.
+  **The cylinder head always breaks when a rod does** (author, 2026-11-24): it becomes a broken head, drawn with the rod poking out of it, which the
+  kit does not repair; it has to be replaced with a new head, and a gasket fitted under it was lost with it (a gasket is only dropped when taken out on purpose).
+  **A blown gasket** stops that cylinder until it is replaced and **leaks particles** for as long as it stays blown.
+- **Oil-starvation seizure** (proposed by Claude and taken by the author, 2026-11-24; **built 2026-11-24, not seen in game**): a piston that runs dry
+  seizes. A running engine whose oil film stays below 0.15 (the same figure as the goggles' "failing: dry oil" reading, so the readout warns first) counts
+  up the seconds a cylinder has run dry; oil brings the count down twice as fast, a stopped engine neither gains nor loses; at **20 seconds** the piston
+  seizes, and half way (10 seconds) the engine squeals. A seized cylinder is **locked** (new fault `SEIZED`, appended after `BROKEN_HEAD`; it drags on
+  the crank 4 times a plain cylinder, so a small engine with one may stall), keeps all its parts, and its piston is left **at least 0.75 worn**. A
+  **Service Kit frees it** but the piston stays as worn as the seizure left it, so it is replaced soon; **taking the piston out** also ends the seizure,
+  and a new piston starts new. Deterministic, no roll (the count is the warning), the count is not saved (an engine rebuilt starts clean), the flag is
+  saved only while set (`Seized`). All numbers are first-pass (`Wear.SEIZE_*`). Tests: `WearTest` (the count, the threshold, nonsense in, drag), and
+  GameTests run dry, run oiled, and freed by a kit or a new piston, each in its own batch because the film override is global.
+- **Repair** (author: some damage with items, most by replacing): light wear can be set right with a Service Kit; most damage, and every
+  failure, is cured by replacing the part. **The Service Kit has durability** (2026-11-24; the author left its recipe and balance to
+  the release) and **must be automatable** (below).
+- **Gaskets** in three tiers (cardboard, rubber, copper) applied to a cylinder head, sealing leaks for higher cylinder pressure.
+  New items, so new IDs, joined to the 2.x promise on the day they ship. **The stock gasket is an item too** (2026-11-24) and the
+  weakest tier. **A fitted gasket seals the head with the wear mode on or off** (the author, 2026-11-24: "we won't have standard gaskets that do
+  nothing with wear off"; built the same day, first-pass numbers): a new gasket keeps this much more of each burn's heat than a head with none
+  fitted, **stock 1%, cardboard 2.5%, rubber 4%, copper 6%** (`Wear.Gasket.bonus`; a copper gasket is worth a few percent on the dyno, pinned
+  between 2% and 12% in `WearEngineTest`), so a better gasket is more power, not just a longer life. With the mode on the bonus fades as the gasket wears and a worn
+  one loses power besides; with it off nothing wears, so the bonus is the new gasket's. **Only wear and the requirement belong to the mode:** a head with
+  **no gasket fitted runs exactly as it always did** (old builds are untouched, `WearEngineTest` pins it to the last bit), and with the mode on is read as
+  holding the stock gasket, which wears but gives no bonus, so turning the mode on never strands an existing engine. Fitting or taking out a gasket rebuilds
+  the engine to read it. **A gasket taken out is dropped as an item, and carries its wear and a durability, so it can be
+  repaired** with a Service Kit (the same light-wear rule as in the engine) and fitted again. **The Bank Builder builds gaskets too**,
+  from what it carries, as it does pistons and rods.
+  **Piston rings moved to 2.4** (author, 2026-11-24): up to three, each a small power gain, no wear, and they work with the mode off, so they are not wear.
+- **Worn parts carry their wear as items, and the kit can be automated** (author, 2026-11-24): a piston, rod, forged piston, gasket or
+  apex seal taken out of an engine keeps its wear on the item (a worn stack shows it as a damage bar; a stack with no wear data reads as
+  new, so every existing item stays valid), so a factory can take worn parts out, repair them with the kit, and put them back. That asks
+  for three things, each its own test: the cylinder, head and rotor housing accept their parts through an ordinary use of an item on
+  the block (so a Create Deployer can refit them), the kit works on a worn part held or lying on a belt or in a basin by a Create recipe
+  or Deployer, and the kit's use is spent from its durability the same way each time.
+- **Readouts** (author, 2026-11-24): goggles show each part. The **Black Box and the Display Link both report wear**, each part and
+  **a single total wear percentage for the whole build** (every wearing part of the engine, batteries included, folded into one
+  figure: **a plain mean**, author, 2026-11-24, tested and pinned). A thrown rod and a
+  blown gasket are also events in the Black Box's record.
+
+- **Knock** (approved by the author, 2026-11-24; it was on the Declined list): a spark engine whose charge lights early wears its
+  pistons faster and can be heard, with the wear mode on only. It never breaks a part by itself. **Built 2026-11-24 (not seen or
+  heard in game):** `WearKeeper` adds `Knock.pistonWear` to each piston that fired early (a Forged Piston's longer life applies), the
+  cylinder pings on the client from 7% of the burn lost (the pre-ignition knock sound, played high; no sound of its own) and goggles say
+  so from above 4%. A rotor has no piston and does not knock. The numbers are in [WEAR.md](WEAR.md). The spark plug and turbocharger
+  rules (`PlugWear`, `TurboWear`) are **still not read by any engine**.
+
+### Spectacle when a rod is thrown (author, 2026-11-24: options 1, 2, 3 and 6)
+
+Four effects, all only with the mode on:
+1. **Sound sequence:** a loud metallic bang, a clatter, then the sputter of the misfiring cylinder. The bang is vanilla's explosion sound
+   today; this is a sound of our own, so it is a new asset (and a new line in the sound audit and the soak test).
+2. **A burst of debris:** sparks, oil spray and dark smoke thrown from the cylinder in one burst, then oil dripping from the wreck for as
+   long as the flag is set.
+3. **The wreck is visible, and the head breaks:** the broken rod is drawn **poking out through the cylinder head**, which is now a
+   broken head, so the dead cylinder is plain from across a room. New models for the broken rod and the broken head, and a client audit
+   that they draw.
+6. **Fire:** a short flame at the cylinder where there is fuel, **tied to the existing `fuelFire` setting**, so a server that turned fire off
+   gets none and no block is set alight where fire is off.
+Not taken: the flying rod, the crank jolt, and camera shake and a warning.
+
+### Build status (2026-11-24, unreleased, not seen in game)
+
+**Built, with tests.** `features.wearMode` (off by default; `Tuning.wearMode`, `CEConfig.WEAR_MODE`, a `ConfigMatrixTest` switch, a CONFIG.md row,
+`tuning:wearMode false` appended to `compat/behaviour.txt`). Everything below does nothing with it off, and an engine that has it off runs
+bit for bit as before (`WearEngineTest.aSoundStateIsBitForBitTheEngineWithNoWear`, `WearGameTests`).
+
+- **The rules, pure:** `engine/sim/Wear` (wear per second for a piston, rod and gasket from speed, heat, oil film and boost; what a worn piston and
+  gasket cost; the failure chance; the repair rule; the gasket tiers `STOCK`, `CARDBOARD`, `RUBBER`, `COPPER`). `CylinderModel.wear` applies two
+  effects: a share of each burn's heat is lost (`Combustion`, a leak past the rings and the gasket) and the cylinder drags harder
+  (`frictionStatic`, `frictionViscous`, `frictionAt`). First-pass numbers, the author's to tune, none yet shown as a dyno table: a piston lasts 5 hours
+  at 128 RPM warm and oiled, a rod 8, a stock gasket 3; wear is the square of speed (a floor of 2% when idling, capped at 4 times); heat adds 2.5 per
+  unit over normal, a dry engine up to 5 times, boost up to 3 per bar over ambient divided by what the gasket holds. A piston at wear 1 keeps 0.8 of its
+  burn and drags 1.6 times, a stock gasket keeps 0.7; nothing can fail below 0.5 wear, and with both parts at 0.3 the dyno peak is down about 6%, at 0.5 about 18%, at 0.7 about 34% and spent about 65% (bounds pinned in `WearEngineTest`).
+- **Where it lives:** the piston's and rod's wear in `CylinderBlockEntity` (`PistonWear`, `RodWear`), the gasket's tier, wear and blown flag in
+  `CylinderHeadBlockEntity` (`Gasket`, `GasketWear`, `Blown`), each saved only once it differs from a part that never wore (a damaged save reads as new;
+  `WearGameTests` checks both). The parts own the wear, so it survives the engine being rebuilt. `WearKeeper` (engine) reads it into the models, wears
+  it once a second, and rolls for failures; `EngineController.wearTick` calls it, and puts the models back if the mode is switched off.
+- **Failures:** a rod worse than half worn can be thrown (`Wear.failureChance`, rising with the cube of the wear past 0.5 and with speed): the cylinder block
+  loses its piston **and** rod and keeps a thrown flag, and the head breaks (see "A thrown rod is a flag" below, which replaces the first version of this). Every wear
+  change calls `EngineTopology.wearChanged`, which rebuilds the engine around it, because an engine whose layout is unchanged keeps its controller and would never re-read the
+  wear faults (the bug behind the first blown-gasket failures). A gasket the same way blows: new fault `CylinderFault.BLOWN_GASKET` (stops the cylinder, appended after `SUBMERGED`), set by the controller from the head's
+  flag and not by the scanner, which stays free of block entities. Tests force the roll through `WearKeeper.roller`.
+- **What the player does:** a head with no gasket has the **stock** one, the weakest, so turning the mode on never leaves an existing engine without; three new
+  items `cardboard_gasket`, `rubber_gasket`, `copper_gasket` are fitted by right-clicking the head and **replace** whatever was there (a blown one is not
+  given back, a sound one is), each tier lasting longer and holding more boost; the **Service Kit** (`service_kit`, a flat item) sets light wear (0.35 or
+  less) on a piston, rod or gasket back to 0.1 and does nothing for heavy wear or a blown gasket. A new piston or rod starts new (`WearService.partsChanged`).
+  Goggles show each part's wear, the gasket tier, and a blown gasket; sneaking says whether a kit would help. Lang, four textures
+  (`tools/generate_wear_textures.py`), four recipes, and the manifest lines (recipes, nbt keys, items) are in.
+- **Tests:** `WearTest` (curves, bounds, NaN and infinity, tiers), `WearEngineTest` (the dyno), the config matrix, and `WearGameTests` (off changes nothing, on wears,
+  a rod is thrown, a gasket blows and stops its cylinder and stays blown when the engine is rebuilt, a new gasket gets it firing again, the kit, replacement
+  resets wear, save and load, damaged saves).
+
+**Settled by the author on 2026-11-24, and in places different from what is built above.** What was "decided without the author" there is now
+answered: the piston goes with a thrown rod (confirmed, and now neither is recoverable); the stock gasket is an item, required only with the mode on; one
+failure each for rod and gasket and none for the piston stays; **the kit is one item for all parts and has durability**. Where the build disagrees with the
+design section, the design section is the target and the build is to be changed:
+
+- **A thrown rod is a flag, not missing parts. Built 2026-11-24 (not seen in game).** The cylinder loses its piston and rod for good, keeps a **thrown flag**
+  (`CylinderBlockEntity.thrown`, saved only while set) and the head breaks (`CylinderHeadBlockEntity.broken`, saved only while set; the gasket under it is lost).
+  Two new faults, `THROWN_ROD` and `BROKEN_HEAD`, appended after `BLOWN_GASKET`, stop the cylinder, so it misfires. `WearKeeper.wearFaults` gathers the three
+  wear faults by cylinder for the controller. A Service Kit clears the wreck (and nothing is given back); no piston or rod goes in until it has; a broken head takes
+  neither gasket nor kit, drops no head item when broken, and is replaced. Spectacle built: bang, clatter and a second metal sound (vanilla sounds for now, our own
+  asset still to do), a burst of sparks, lava drops and oil-black smoke, a flame only with `fuelFire` on and fuel in the head, and from then on the broken head
+  smokes and drips on the client; a blown gasket leaks smoke the same way. Open: the visible wreck model (the rod poking out of a broken head) is not drawn yet.
+- **Precision slower. Built:** `Wear.PRECISION_LIFE` = 2.5 (first-pass), applied to the Forged Piston (the only precision part that wears; a rod and a gasket have no precision version).
+- **The Service Kit has durability. Built:** 24 uses (`WearService.KIT_USES`), spent with `hurtAndBreak` by whoever uses it, a deployer's fake player included.
+- **Worn parts keep their wear as item data. Built 2026-11-24 (not seen in game).** A data component `create_engines:wear` (0 to 1, absent on a new part, so every part from
+  before the mode is still new) rides on the Engine Piston, Forged Piston, Connecting Rod and every gasket (`WornPartItem`, same ids, a bar for the life left and a
+  tooltip line). A part taken out of a cylinder (by hand, or dropped when the cylinder is broken up) comes out as worn as it was, and a worn one fitted goes in as worn
+  as it was (`PartInstallation.Dresser`, `WearService.dress` and `partsChanged(..., carried)`). A worn and a new part do not stack together; a part repaired to nothing
+  is the same stack as a new one. The Bank Builder only ever uses unworn parts, because it could otherwise hand back a new one for a worn one.
+- **A removed gasket is dropped, with its wear, and is repairable. Built.** Fitting a gasket returns the one that was in as an item with its wear (a blown one as spent,
+  wear 1); a gasket that is fitted comes out with the head when it is broken up (a broken head's is lost); and **sneaking with a Service Kit on a head takes the gasket
+  out** (no use of the kit), leaving the head **without a gasket, which stops its cylinder** (it reuses the blown-gasket fault, now worded "blown or missing") so taking one out
+  is never a free new stock gasket. A gasket that is no better than the one in is not swapped for it.
+- **The stock gasket is an item. Built:** `stock_gasket` (two paper), the plainest tier. A head that has never been given one is still read as holding the stock one
+  (so turning the mode on strands no engine), which is not an item; `CylinderHeadBlockEntity.hasGasketItem` says which, saved only for the stock tier (`StockFitted`).
+- **The kit repairs a held part. Built:** a Service Kit with a lightly worn part in the other hand sets one part of the stack right (to 0.1) for one use, used in the air or
+  on a block with nothing to mend. **Bank Builder gaskets. Built:** with the mode on it fits the best new gasket it carries to a head with none of its own.
+- **Repairing on belts, in basins and on depots. Built 2026-11-24, tested on a real powered Deployer.** A Create Deployer holding a Service Kit sets a lightly worn
+  part (a piston, rod or gasket, a single part, wear above 0.1 and up to 0.35) right to 0.1 as it passes on a belt, sits in a basin or rests on a depot, the way it applies a
+  casing, and spends one use of the kit's durability. It is not a recipe type of our own and nothing is registered with the recipe manager: Create's
+  `DeployerRecipeSearchEvent` lets us hand the Deployer a recipe made on the spot from the very part in front of it (`WearRepairRecipes`), because Create's recipes
+  match by item and cannot say "wear between a tenth and a third". Nothing is offered for a new part, a badly worn one, a stack of more than one (one use would
+  otherwise repair the lot), or any other tool. The kit is deliberately not marked "kept": Create leaves a kept tool untouched and only spends the durability of one that
+  is not. `WearRepairGameTests`: the recipe offered and refused for each case, and a powered Deployer over a depot repairing a piston and spending one use. A depot and a belt
+  hand a Deployer an item through the same belt-processing behaviour, so the depot run covers the belt's path, but **no GameTest builds a belt**; a belt run by eye is still
+  the author's. A Deployer on a cylinder or head is a use-on-block like a casing and spends the kit the same way (tested with a mock player). **Not built:** a
+  machine taking a part out of an engine (a Deployer does not sneak), and the repair showing in JEI or EMI.
+
+**Open, in this order of how much they matter:**
+1. **The numbers**: the lives above are guesses and nothing is pinned as final. **The author's table is [WEAR.md](WEAR.md)** (written 2026-11-24 by `WearTableTest` from the real rules, and
+   the test fails if the file stops matching them): hours to wear out by speed and conditions for each part, what a gasket is worth new, half worn and spent, power and drag against wear,
+   and the chance of a failure in a minute. **What it shows, for the author to judge:** wear has a long, gentle middle and a steep end. A piston at 128 RPM warm lasts 5 hours to wear 1,
+   but failure chance in a minute is 7.7% at wear 0.7, 26% at 0.8 and 61% at 0.9, so a part fails somewhere between 0.7 and 0.85 in practice, long before it is spent, and above
+   about 190 RPM a part at 0.8 wear is certain to fail within the minute. The part is "at risk" for the last quarter of its life, which is not much warning (the goggles go red from
+   0.5 and a Display Link or Black Box shows the build's mean). Whether that is the right shape is the author's call; the curve is `Wear.failureChance` (`FAILURE_RATE`, the cube).
+   Also new: the precision parts' wear factor, the Service Kit's durability and cost (**the author left the recipe and balance to the release**, checked
+   against the gaskets' and the other precision parts' recipes), and a gasket's durability.
+2. **The changes in the list above** (thrown flag and misfire, broken head, dropped gasket, wear on items, kit durability and automation, stock gasket item,
+   Bank Builder gaskets, precision slower), each with new tests and, for the thrown flag, the soak test of the failure path.
+3. **Battery wear: built 2026-11-24 (first pass, not seen in game).** `engine/sim/BatteryWear` (pure) and `BatteryBlockEntity` (`Wear`, saved only once above 0).
+   **Every draw** wears a battery (`BatteryBlockEntity.draw`, which the starter, the plugs and another mod's wire all go through): a full warm discharge from a good charge takes
+   `1 / cycles` of its life, **more from a nearly flat battery** (the stress rises evenly from 1 at 20% charge to `deepStress` empty) and **more in the cold**
+   (`1 + coldStress` at the coldest; follows `batteryCold`, so a server with the cold off has no cold wear). **A worn battery holds less and never stops working**: at wear 1 it
+   holds half (`MAX_FADE` 0.5), and what it held above the new capacity is gone. **Each tier wears for its own reasons** (first-pass numbers, the author's to tune):
+   plain 1500 cycles, deep ×3, cold +2 (the all-rounder); dry cell 800 cycles, deep ×4, **cold 0** (made for the cold, but cheap and hates a deep discharge);
+   large battery 3000 cycles, deep ×2, cold +3 (lasts longest, but a large bank left outdoors in the snow wears fastest). A Service Kit used on a battery sets light wear
+   (0.35 or less) back to 0.1; heavy wear is cured by a new battery. With the mode off, `capacity()` is exactly the tier's, nothing wears and nothing is saved (`WearBatteryRotaryGameTests`).
+   Goggles: "Battery wear: N%, holds M% of what it did new". Tests: `BatteryWearTest` (curves, tiers, bounds), `WearBatteryRotaryGameTests` (off, on, deep vs shallow, spent
+   holds half and works, kit, save and damaged save, the cold wears a plain battery and not a dry cell). **Open:** a battery does not yet carry its wear as item data (break and
+   place it and it is new; the same open piece as pistons, rods and gaskets), no wear while sitting flat (only draws wear), the readouts (Black Box and Display Link)
+   and the total, a Ponder page and the tooltip, and the numbers are not measured against play.
+4. **Rotary apex seals: built 2026-11-24 (first pass, not seen in game).** `engine/sim/ApexSeals` (pure), `RotorHousingBlockEntity` (`ApexWear`, `ApexFailed`, saved only
+   once set) and `WearKeeper` (one set per housing: it wears and rolls for failure once per interval on the housing's first chamber, and all three chambers read the
+   same wear). The curve is the rotary's own: a reference shaft speed of 192 RPM (not 128), a life of 4 hours there, **heat 4 per unit over normal** (the piston's is 2.5)
+   and **no oil up to 7 times** (the piston's is 5), because the seals live on the oil film. A worn set costs every chamber its burn (`SEAL_LOSS` 0.35 × wear²; leaks do
+   not bind, so no extra drag). **On the dyno a rotor keeps 96% of its peak torque at wear 0.3, 90% at 0.5 (where failure starts), 80% at 0.7 and 59% spent**
+   (pinned in `ApexSealsTest`). **A failed set** (`CylinderFault.APEX_FAILED`, appended after `SEIZED`) **stops all three chambers** until a new set is fitted: the new
+   item `apex_seals` (one precision mechanism, brass and iron sheets), right-clicked on the housing, replaces whatever set is there, worn or failed. A Service Kit sets light wear right.
+   **Like gaskets, seals are not required with the mode off:** a housing with none fitted runs as it always did and the stock set is not an item. Goggles show the wear and the
+   failure. Tests: `ApexSealsTest`, `WearBatteryRotaryGameTests` (off, on, a spent set fails and stops the rotor, a new set restarts it, kit, save and damaged save).
+   **Open:** (the spectacle is built, item 5) the replaced set is not given back (no wear on items yet), no precision variant (a rotor housing has none),
+   the trailer line is `later`, the readouts, and the numbers are not measured against play.
+5. **Wreck visuals and sounds. Built 2026-11-24; the visuals were seen in the game (`-PsmokeWear`), the sounds were not heard.** Each failure now looks and sounds like itself:
+   - **Thrown rod:** `cylinder_head/wreck` is laid over the broken head (a split in the top plate, a flap of it thrown up, the broken rod standing out of the hole leaning, with its
+     torn big end and a glowing break, bolts and shards flung about, an oil stain) and `cylinder/wreck` lies in the bore (the rod folded in two, shards of the piston). A broken head
+     smoulders and now and then puffs heavy smoke, and a thrown cylinder leaks a little oil smoke.
+   - **Blown gasket:** `cylinder_head/blown_gasket` has the gasket squeezed out and drooping from the joint on **all four sides**, with a soot streak up each, so a pipe on one face
+     does not hide it (the first version had only a north side and the engine's own air intake covered it). It leaks smoke as before.
+   - **Seized piston:** `cylinder/seized_ring` is drawn at the piston's own pose: the skirt blackened, a wide ring of heat colour round the crown, and glowing weld seams; a seized
+     cylinder keeps smoking.
+   - **Drawing:** one Flywheel instance each on `CylinderVisual` and `CylinderHeadVisual` (laid once when the state changes, not every frame) and the same through the fallback
+     renderers, using `EnginePoses.facingFrame` to stand the upright models on whichever way a block faces. Models come from `tools/generate_models.py` (`wear_wrecks`).
+   - **Sounds**, synthesised in `tools/generate_sounds.py` and encoded only for these six (every other recording untouched): `rod_thrown1..2` (a flat crack, the clang of the cast
+     head splitting, a grind of the wreck, the ring of the casting; 1.7 s), `gasket_blow1..2` (a hard pop and hot gas hissing out, sputtering; 1.3 s) and `piston_seize1..2` (a rising
+     dry shriek cut off by a clunk and a low shudder; 1.4 s), registered in `CESounds` and `sounds.json`. The warning squeal half way to seizing is the existing `bearing_squeal`.
+     Checked by the numbers (levels, no clipping, the envelope in time) and by `SoundAssetsTest`, not by ear: **they need listening to**.
+   - **Failed apex seals. Built 2026-11-24 (not seen or heard in game):** sounds of their own (`apex_fail1..2`: a snap, the loose strip clattering round the chamber, the
+     wheeze of blow-by; 1.6 s), a burst of sparks and smoke, `rotor_housing/wreck` (sprung seal strips out between the posts on all four sides, soot on both rims, clear of
+     the rotor's sweep, `ApexWreckAssetsTest`), drawn until a new set is fitted, and a housing that keeps smoking. The explosion stand-in is gone. No fire: the author's
+     fire was for the thrown rod. `./gradlew runVisualSmokeTest -PsmokeWear` now photographs a failed rotor too.
+   - **Not yet:** spark plug and turbo failures have no wreck or sound because they are not wired into an engine (knock breaks nothing, so has no wreck). Open: a first look at the in-game wreck colours (the head's top and the soot are the first guess).
+   - **Also open from "seen in game":** the goggles lines, the gasket and kit textures (flat items, first pass), and the four spectacle effects' timing.
+6. **Readouts. Built 2026-11-24 (not seen in game).** `EngineSummary` carries a new `wear` figure (the **plain mean** of every part that wears: each fitted piston and rod,
+   each head's gasket, each rotor housing's apex seals and each battery, 0 new to 1 spent; a thrown rod's piston and rod, and a blown, missing or broken head's gasket, count
+   as spent, and a cylinder with no piston fitted counts nothing for it; -1 and no saved key with the mode off), worked out by `WearKeeper.total` once a second from the
+   controller. The **Display Link** has an `engine_wear` source (a percentage or a bar, like oil and smoothness; 0 with the mode off). The **Black Box** keeps it on its tape
+   (a new `Wear` array in the tape, the readout, the replay moment and the saved block; an old tape has none and draws no line), shows a **Wear** bar line and the figure in its
+   goggles, and a replay line for the build's wear at the moment the dial is on. Tests: `WearTotalTest` (the mean, nonsense, percent), `FlightRecorderWearTest` (the tape, save
+   and restore, the wire, old tapes, damaged saves), and GameTests for the summary, the Black Box tape, the Display Link figure, the mode off and the thrown-rod case.
+   **Failure events on the Black Box. Built 2026-11-24 (not seen in game):** `EngineSummary` carries `failures`, the number of rods thrown, gaskets blown, pistons seized and sets of apex
+   seals failed packed a byte each (`WearFailures`, counted by `WearKeeper.failureCounts` when the engine is built; a thrown rod's broken head is the same failure and not two). The tape notes each
+   rise as an event of its own, `ROD_THROWN`, `GASKET_BLOWN`, `PISTON_SEIZED` or `APEX_FAILED` (appended to `FlightRecorder.Cause`, so older tapes read), with the state before and after the same,
+   and the goggles show it in red as "N s ago: a connecting rod was thrown". A failure that was already there when a saved tape is loaded is not reported again, and a part put right is no event.
+   Tests: `WearFailuresTest`, `FlightRecorderWearTest`, and a GameTest that throws a rod and reads it back from a Black Box. **Not built:** a per-part readout on a Display Link, and seeing it in
+   game. Open: the colours of the line (red from half, gold from a third) are a first guess.
+7. **Blueprints and schematics. Built 2026-11-24 (schematic priced, blueprint decided).** A **schematic** of a head with a gasket fitted now prices that gasket (`CylinderHeadBlock.getRequiredItems`,
+   which reads the block entity: a gasket is block entity data, so Create priced it at nothing), a head with none fitted costs none, and a broken head's gasket is lost with it so it costs none; a
+   GameTest pins each. The block entity data a schematic prints still carries the gasket's wear, so a printed head is as worn as the one that was copied, for the price of a new gasket (harmless:
+   it is never better than new). A **blueprint** does not record a gasket and a head it rebuilds has none fitted, which is the same as a head nobody ever fitted one to and costs nothing; the Bank
+   Builder or a player fits one after. Nothing is carried by a blueprint that was not before. Open: nothing, unless the author wants blueprints to record gaskets too.
+7b. **Ponder. Built 2026-11-24 (not seen by eye).** "Wear and Tear" (`WearScenes.wearAndTear`, text over a running engine on the rain cap schematic, on the Service Kit, all four gaskets, the piston,
+   the forged piston and the connecting rod): what wears and why, what a fitted gasket is worth with the mode on or off, the readouts, the kit and the Deployer, what a blown gasket and a
+   thrown rod leave behind, and seizure. The client audit plays it. **Not done:** a page for batteries and apex seals (the other session's), and item tooltips beyond the gasket's bonus and a
+   worn part's percentage.
+8. **Answered by the author on 2026-11-24:** (a) a head always breaks when a rod does (above); (c) the total wear percentage is **a plain mean** of every wearing
+   part of the build, batteries included, and is pinned by a test; (b) the kit works as a **use-on-item action, and a Create Deployer applies it the way it
+   applies casings** (no recipe type of our own): a Deployer holding the kit uses it on a worn part, as it does on a casing, and the same use refits parts
+   to cylinders and heads. Nothing is left open here.
+9. **The gate, run 2026-11-24 on a fresh copy of the tree (not the release gate: the tree is still moving).** `./gradlew smoke` passed: **599 GameTests**, the client audit **1326 passed, 0 warn,
+   0 fail, 1 skip** (the battery-join skip every release has had), and the unit tests. It first failed on two audit warnings, both fixed rather than waved through: the three
+   failure sounds were never started in the fleet (they are fired by a mode that is off by default, and a fleet that wore parts out on purpose would fail every "engines are running" check, so
+   `SmokeAudit` starts them by hand with the other sounds it cannot rely on, which proves the events and files play on a real sound card; their triggers are tested by `WearGameTests`), and the
+   `apex_seals` item had no Ponder page (it is now on "Wear and Tear"). It also failed once on an **out-of-memory error in the GameTest server followed by a hang**, which was **not a code
+   fault**: a reused private copy keeps `run/gametest/world`, and `StressGameTests` drops about 600,000 items into it every run, so each run loads the last runs' pile (the same tests in a
+   fresh copy pass with a heap peak under 2 GB). The lesson is in [SMOKE.md](SMOKE.md) ("A copy that is reused must have its test world cleared"). **`pitest` failed** on its ratchet:
+   168 live mutants against the limit of 129 (v2.2.0 was 124); 13 of the new survivors were in `Wear` and `WearFailures` and have been killed or restructured away (an equivalent boundary check is
+   removed, not tolerated), and the rest are in the other session's new classes. The limit is not moved. **Still to run:** `pitest` again once those are down, the Sable and Aeronautics matrix rows
+   with the mode on, and the release gate itself. The trailer has `later` lines in `trailer-parts.txt` for the wear items; the changelog, README and release record are not written (they wait
+   for the other session's plug, turbo and knock work and for the author's say on the failure curve).
+
+## 2.4 Open Garage
 
 Reach, in the order the author's direction names (other Create addons and pack makers). Everything is optional and compiled
 against without being required.
@@ -409,7 +675,7 @@ against without being required.
 
 ### Piston variants: high and low compression (author, 2026-11-23; proposed)
 
-**Chosen by the author on 2026-11-23, from a list of end-game power ideas, and placed in 2.3 (not 2.1) by the author the same day. Nothing is built; the details below are a first design.**
+**Chosen by the author on 2026-11-23, from a list of end-game power ideas, and placed in 2.3 (not 2.1) by the author the same day; moved to 2.4 on 2026-11-24 when 2.3 became the wear release. Nothing is built; the details below are a first design.**
 The end-game power path is one chain (air, boost, fuel, oil), so more power today means a longer chain. This adds a choice instead:
 two piston variants that trade naturally aspirated (NA) output against boost headroom.
 
@@ -448,7 +714,7 @@ and a `LegacyWorldGameTests` case showing a 2.0 world runs the same. `pitest` is
 
 ### Nitrous oxide: a liquid, a vaporiser and a gas in the intake (author, 2026-11-23; proposed)
 
-**Requested by the author on 2026-11-23 and placed in 2.3 with the piston variants, which it depends on for its trade-off. Nothing is built; this is a first design.**
+**Requested by the author on 2026-11-23 and placed in 2.3 with the piston variants (both now 2.4), which it depends on for its trade-off. Nothing is built; this is a first design.**
 It **reverses the 2026-11-21 answer** quoted under "Fuel character" ("no gases, nitrous"), by the author's own say-so. It is not a fuel (nothing in it burns by
 itself; it carries oxygen), so the Declined entry "new fuels" is not what it touches. It is the first fluid the mod invents that is not a fuel, and the first gas
 (see the open questions). It is the end-game power item the "high and low compression" list was missing: a short, strong, supplied burst of power instead of a longer chain.
@@ -508,7 +774,7 @@ re-run, since `engine/sim` changes. The fluid joins `compat/manifest.txt` when i
 
 **The author accepted these on 2026-11-23, from a list of rotary ideas; nothing is built.** (Port variants, the first idea on that
 list, were not taken. Apex seals are under Wear mode below, the Timing Tool for rotors and the weight check are in 2.1 "Around it",
-and the rotary's sound and look are under "Look, sound and performance" at the end of 2.3.) A rotary today is one block with one set of numbers: a Rotor Housing on the crank line,
+and the rotary's sound and look are under "Look, sound and performance" at the end of 2.4.) A rotary today is one block with one set of numbers: a Rotor Housing on the crank line,
 three ported chambers, spark only, with its rotor fitted by hand and its port timing in `cam_profiles/rotary.json`.
 
 - **Rotor variants.** The counterpart to the piston variants above, and built on the same compression factor so the work is done
@@ -546,7 +812,7 @@ since `engine/sim` changes.
 ### Polluted intake air (author, 2026-11-23; opt-in)
 
 Suggested by SilverThorn on Discord ("pollution of the realms chunk pollution effecting engine air", marked "not needed but could
-be cool"); the author accepted it for 2.3. Today the Pollution of the Realms compat only writes: engines put carbon and sulfur into
+be cool"); the author accepted it for 2.3 (now 2.4). Today the Pollution of the Realms compat only writes: engines put carbon and sulfur into
 the air and nothing is read back into an engine. This is the other direction. **Opt-in only: a config switch, off by default**, so
 no existing build or world changes (rule 1), and nothing is read without the pollution mod installed.
 
@@ -570,32 +836,6 @@ no existing build or world changes (rule 1), and nothing is read without the pol
   medium and a carbon bed); the rest is copper or copper sheets, as for the other intake parts (author). The exact shape and counts are still to settle, and are
   checked against the other intake recipes so the filter is not cheaper or dearer than they are. Needs tests that it is inert and unobtainable without the
   mod, that the part and its saved data survive the mod being removed, and a Ponder page and goggle line.
-
-### Wear mode (author, 2026-11-23; opt-in)
-
-Requested by SilverThorn on Discord ("optional damage and wear and tear", "engine upgrades"); the author reopened the Declined
-entry on 2026-11-23 and placed it here. **Opt-in only: a config switch, off by default**, so no existing build, world or number
-changes (rule 1). With it off, nothing below runs. Decisions so far, not yet a design:
-
-- **What wears:** pistons, connecting rods and the new gaskets, and on a rotary the **apex seals** (author, 2026-11-23): the part
-  rotaries are known for losing, standing in for the piston rings and rod a rotor housing does not have. They follow the same
-  rules (opt-in, replaced or lightly repaired by item, soak-tested failure path), and a sealed-out chamber stops like a failed
-  cylinder does. The rotary's wear curve is measured separately by dyno, not copied from the piston's. Wear grows with RPM and faster with heat, no oil and over-revving;
-  gaskets also wear with boost (cylinder pressure). Worse wear means worse performance and a failure chance that starts near zero
-  and rises with RPM.
-- **Batteries wear too** (author, 2026-11-23; proposed): deep discharge and repeated cold cycles slowly reduce a battery's capacity.
-  Same rules as the rest: opt-in, nothing runs with the mode off, saved charge is untouched until wear exists, a repair or replacement
-  restores it, and the wear curve is tested and then pinned. Not a failure: a worn battery holds less and never stops working.
-- **Failures** (author: gaskets can fail too): a rod can be thrown, with a loud bang, and a gasket can blow. Either stops that
-  cylinder until it is repaired.
-- **Repair** (author: some damage with items, most by replacing): light wear can be set right with an item; most damage, and every
-  failure, is cured by replacing the part (the piston and rod of a thrown rod, or the gasket).
-- **Gaskets** in three tiers (cardboard, rubber, copper) applied to a cylinder head, sealing leaks for higher cylinder pressure.
-  **Piston rings** (up to three, each a small power gain) are a plain upgrade and need no wear; they work with the mode off.
-  New items, so new IDs, allowed in 1.x terms and joined to the promise at 2.0.
-- **Still to settle** (author): which light damage the repair item covers and what it costs; the exact wear and failure curves
-  (tested, then pinned); whether a worn part shows on goggles and the Black Box; and the upgrade recipes. Each gets tests, lang
-  entries, a Ponder page and a goggle line, and the failure paths get soak tests like the sound and tick paths.
 
 ### W layout for the Bank Builder (author, 2026-11-24; proposed)
 
@@ -626,7 +866,7 @@ saved on 2.x keeps its layout), so no existing build changes (rule 1).
 - **For the author:** whether the W builds the stepped nine-throw form by default (even, but uneven-looking) or the plain
   eight-throw form (tidy, not even), and whether to offer the X at the same time. Default to the stepped form if there is no say.
 
-### Look, sound and performance (was 2.4 Paint and Polish; merged into 2.3 by the author, 2026-11-23)
+### Look, sound and performance (was 2.4 Paint and Polish; merged into 2.3 by the author on 2026-11-23, then moved with the rest to 2.4 on 2026-11-24)
 
 Held until 2.0.x has looked at what 2.0 added. Contents are whatever that pass finds, plus these, each only if a profile or an eye
 asks for it:

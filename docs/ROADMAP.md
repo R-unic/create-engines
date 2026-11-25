@@ -111,7 +111,8 @@ exactly what it is today.
 | Gasoline lighting early under boost | A goggles line and lost power | A rattle and orange flashes in the exhaust |
 | Cold block | White vapour, drag | Nothing added: the white vapour is the show |
 
-The boost rattle is a sound for a loss that exists. Knock as a mechanic stays declined.
+The boost rattle is a sound for a loss that exists. Knock as a mechanic stays declined in the default game (approved
+2026-11-24 for the opt-in wear mode only).
 
 Trimmed on 2026-11-15, after the first rows were built and liked: the soot streaks, the labouring groan, the lugging
 note and the stumbling cold note are dropped, so the drama stays a few clear cues and not a wall of effects. The
@@ -966,9 +967,11 @@ PIT survivors that are not equivalent mutants (item 1, 134 live), and the engine
 
 ## Not on this roadmap
 
-**Declined, and not to be proposed again without a new reason:** knock as a mechanic, cooling blocks or radiators,
+**Declined, and not to be proposed again without a new reason:** knock as a mechanic in the default game (**approved by the
+author 2026-11-24 as part of the opt-in wear mode only: it wears the piston faster and never breaks a part by itself, see
+"2.3 Wear and Tear" in ROADMAP-3.0.md**), cooling blocks or radiators,
 parallel throttles, snorkels or any way to run underwater, a power cost on the Muffler, parts that wear out or break
-in the default game (**reopened 2026-11-23 as an opt-in mode only, placed in 2.3, see "Wear mode" in ROADMAP-3.0.md**),
+in the default game (**reopened 2026-11-23 as an opt-in mode only, placed in 2.3, which is the wear release, see "2.3 Wear and Tear" in ROADMAP-3.0.md**),
 new failure modes of any kind in the default game (runaway, blown gaskets, seizure, valve float; the same opt-in exception covers a thrown rod and worn gaskets), new fuels (kerosene and methanol were added in 2.0 at the author's say, and no more are wanted), mixins into Create's trains,
 engine classes, record boards and dyno commissions, cylinders extended or stacked for more volume (one connecting rod
 cannot serve two sizes of cylinder), heat glow on manifolds and turbos, exhaust tips other than the rain cap, intake
