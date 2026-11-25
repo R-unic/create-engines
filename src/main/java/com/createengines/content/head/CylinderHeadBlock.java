@@ -4,6 +4,7 @@ import org.jetbrains.annotations.Nullable;
 
 import com.createengines.content.EngineGlow;
 import com.createengines.content.PartInstallation;
+import com.createengines.content.WearService;
 import com.createengines.content.PartInstallation.Slot;
 import com.createengines.content.airflow.AirflowPort;
 import com.createengines.content.airflow.Pipes;
@@ -120,15 +121,25 @@ public class CylinderHeadBlock extends DirectionalBlock
 		return state.rotate(mirror.getRotation(state.getValue(FACING)));
 	}
 
-	/** A schematic of a fitted head costs the injector and plug as well as the block. */
+	/**
+	 * A schematic of a fitted head costs the injector and plug as well as the block, and the gasket if one has been fitted: a gasket is block entity
+	 * data and not a block state, which Create would otherwise price at nothing. A broken head's is lost with it, so it costs none. A schematic
+	 * does not carry a gasket's wear as an item; the block entity data it prints does.
+	 */
 	@Override
 	public ItemRequirement getRequiredItems(BlockState state, @Nullable BlockEntity blockEntity) {
-		return PartInstallation.requirement(state, PARTS);
+		ItemRequirement needed = PartInstallation.requirement(state, PARTS);
+		if (blockEntity instanceof CylinderHeadBlockEntity head && head.hasGasketItem() && !head.broken())
+			needed = needed.union(new ItemRequirement(ItemRequirement.ItemUseType.CONSUME, WearService.itemFor(head.gasket())));
+		return needed;
 	}
 
 	@Override
 	protected ItemInteractionResult useItemOn(ItemStack stack, BlockState state, Level level, BlockPos pos,
 											  Player player, InteractionHand hand, BlockHitResult hit) {
+		ItemInteractionResult worn = WearService.onHead(stack, level, pos, player, hand);
+		if (worn != ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION)
+			return worn;
 		return PartInstallation.tryInstall(stack, state, level, pos, player, PARTS);
 	}
 
@@ -157,8 +168,24 @@ public class CylinderHeadBlock extends DirectionalBlock
 		EngineTopology.markDirty(level, pos);
 	}
 
+	/** A head a thrown rod broke is scrap: breaking it gives nothing back (its injector and plug are still returned, as they are fitted parts). */
+	@Override
+	protected java.util.List<ItemStack> getDrops(BlockState state, net.minecraft.world.level.storage.loot.LootParams.Builder params) {
+		if (params.getOptionalParameter(net.minecraft.world.level.storage.loot.parameters.LootContextParams.BLOCK_ENTITY) instanceof CylinderHeadBlockEntity head
+			&& head.broken())
+			return java.util.List.of();
+		return super.getDrops(state, params);
+	}
+
 	@Override
 	protected void onRemove(BlockState state, Level level, BlockPos pos, BlockState newState, boolean movedByPiston) {
+		// A gasket that was fitted comes out with the head when it is broken up, as worn as it was (a broken head's is lost with it)
+		if (!level.isClientSide && !state.is(newState.getBlock())
+			&& level.getBlockEntity(pos) instanceof CylinderHeadBlockEntity head && !head.broken()) {
+			ItemStack gasket = head.gasketStack();
+			if (!gasket.isEmpty())
+				Block.popResource(level, pos, gasket);
+		}
 		PartInstallation.dropParts(state, level, pos, newState, PARTS);
 		IBE.onRemove(state, level, pos, newState);
 		if (!EngineGlow.onlyGlowChanged(state, newState))

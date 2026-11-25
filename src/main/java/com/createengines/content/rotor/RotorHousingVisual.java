@@ -27,7 +27,10 @@ public class RotorHousingVisual extends AbstractBlockEntityVisual<RotorHousingBl
 
 	private final TransformedInstance eccentric;
 	private final TransformedInstance rotor;
+	/** The wear mode's: the seals sprung out of a housing whose set has failed. Hidden unless it has. */
+	private final TransformedInstance wreck;
 	private final Axis axis;
+	private boolean wrecked;
 
 	public RotorHousingVisual(VisualizationContext context, RotorHousingBlockEntity blockEntity, float partialTick) {
 		super(context, blockEntity, partialTick);
@@ -36,7 +39,20 @@ public class RotorHousingVisual extends AbstractBlockEntityVisual<RotorHousingBl
 			.createInstance();
 		rotor = instancerProvider().instancer(InstanceTypes.TRANSFORMED, Models.partial(CEPartialModels.ROTOR))
 			.createInstance();
+		wreck = instancerProvider().instancer(InstanceTypes.TRANSFORMED, Models.partial(CEPartialModels.ROTOR_WRECK))
+			.createInstance();
+		wrecked = blockEntity.apexFailed();
+		layWreck();
 		animate();
+	}
+
+	/** Lays the wreck when the seals fail, and takes it away when a new set goes in; nothing in between. */
+	private void layWreck() {
+		wreck.setVisible(wrecked);
+		wreck.setIdentityTransform()
+			.translate(getVisualPosition())
+			.mul(EnginePoses.axisFrame(axis))
+			.setChanged();
 	}
 
 	@Override
@@ -48,6 +64,11 @@ public class RotorHousingVisual extends AbstractBlockEntityVisual<RotorHousingBl
 	}
 
 	private void animate() {
+		if (wrecked != blockEntity.apexFailed()) {
+			wrecked = !wrecked;
+			layWreck();
+			relight(wreck);
+		}
 		float renderTime = AnimationTickHolder.getRenderTime(level);
 		eccentric.setIdentityTransform()
 			.translate(getVisualPosition())
@@ -64,18 +85,20 @@ public class RotorHousingVisual extends AbstractBlockEntityVisual<RotorHousingBl
 
 	@Override
 	public void updateLight(float partialTick) {
-		relight(eccentric, rotor);
+		relight(eccentric, rotor, wreck);
 	}
 
 	@Override
 	protected void _delete() {
 		eccentric.delete();
 		rotor.delete();
+		wreck.delete();
 	}
 
 	@Override
 	public void collectCrumblingInstances(Consumer<Instance> consumer) {
 		consumer.accept(eccentric);
 		consumer.accept(rotor);
+		consumer.accept(wreck);
 	}
 }

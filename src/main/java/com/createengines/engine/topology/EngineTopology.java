@@ -70,6 +70,21 @@ public final class EngineTopology {
 			markDirty(level, pos);
 	}
 
+	/** How far from a wear change an engine's crank can be and still be rebuilt for it. */
+	private static final int WEAR_REACH = 16;
+
+	/**
+	 * A part of the wear mode changed at {@code pos} (a gasket blew or was fitted, a rod was thrown or its wreck cleared, a head broke): the
+	 * engine around it is rebuilt at the end of the tick, not just looked at again, because the faults the wear mode adds are read when an
+	 * engine is built and a layout that came back unchanged would keep its old controller, and with it the old faults.
+	 */
+	public static void wearChanged(@Nullable Level level, BlockPos pos) {
+		if (level == null || level.isClientSide())
+			return;
+		markDirty(level, pos);
+		rebuildNear(level, pos, WEAR_REACH);
+	}
+
 	/**
 	 * A block that an engine source provider watches was placed or broken at {@code pos}: every engine with a crank
 	 * segment within {@code reach} blocks of it is rebuilt at the end of the tick, so its providers are asked again. A

@@ -1,0 +1,23 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "key": {
+    "B": {
+      "item": "create:brass_sheet"
+    },
+    "I": {
+      "item": "create:iron_sheet"
+    },
+    "M": {
+      "item": "create:precision_mechanism"
+    }
+  },
+  "pattern": [
+    "IBI",
+    " M "
+  ],
+  "result": {
+    "count": 1,
+    "id": "create_engines:apex_seals"
+  }
+}

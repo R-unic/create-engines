@@ -140,6 +140,19 @@ class ExhaustLookTest {
 	}
 
 	@Test
+	void aKnockPingsOnlyOnceItIsLoudEnoughAndABigEngineNoMoreOftenThanAFour() {
+		float quiet = Math.nextDown((float) com.createengines.engine.sim.Knock.AUDIBLE_FROM - 0.001f);
+		float worst = (float) com.createengines.engine.sim.FuelSpec.PREIGNITION_MAX_LOSS;
+		assertEquals(0, ExhaustLook.knockPing(0, 4));
+		assertEquals(0, ExhaustLook.knockPing(quiet, 4));
+		float mild = ExhaustLook.knockPing(0.1f, 4);
+		float bad = ExhaustLook.knockPing(worst, 4);
+		assertTrue(mild > 0 && bad > mild && bad <= 0.5f, "mild " + mild + ", bad " + bad);
+		assertEquals(bad, ExhaustLook.knockPing(worst, 1), 1e-6f);
+		assertEquals(bad * 4, ExhaustLook.knockPing(worst, 16) * 16, 1e-5f);
+	}
+
+	@Test
 	void dryBearingsSmokeOnlyOnceTheySquealHard() {
 		assertEquals(0, MechanicalNoise.crankcaseSmoke(100, 1));
 		assertEquals(0, MechanicalNoise.crankcaseSmoke(100, MechanicalNoise.DRY_BELOW - 0.01f), "barely dry: no smoke");

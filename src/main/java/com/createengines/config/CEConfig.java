@@ -64,6 +64,7 @@ public final class CEConfig {
 	public static final ModConfigSpec.BooleanValue FUEL_FIRE;
 	public static final ModConfigSpec.BooleanValue FUEL_FIRE_BY_VOLATILITY;
 	public static final ModConfigSpec.BooleanValue METER_ALL_HEADS;
+	public static final ModConfigSpec.BooleanValue WEAR_MODE;
 	public static final ModConfigSpec.DoubleValue ALTITUDE_START;
 	public static final ModConfigSpec.DoubleValue ALTITUDE_SCALE;
 	public static final ModConfigSpec.DoubleValue ALTITUDE_FLOOR;
@@ -173,7 +174,7 @@ public final class CEConfig {
 		COOLING_BONUS = value("balance.coolingBonus", builder.comment(
 				"Scales how much better a well cooled engine breathes: about 6 to 9 percent more",
 				"power at 1.0. 0 removes the bonus. Cold engines drag and uncooled ones earn nothing either way,",
-				"and nothing ever overheats or wears out.")
+				"and nothing ever overheats, and nothing wears out outside the wear mode (wearMode).")
 			.defineInRange("coolingBonus", 1.0, 0.0, 3.0));
 		TORSIONAL_FLEX = value("balance.torsionalFlex", builder.comment(
 				"Scales the rating an engine loses to a long crankshaft: past 8 throws on one unbroken",
@@ -225,6 +226,15 @@ public final class CEConfig {
 				"to the same figure. Each head keeps its own dial and can still be changed on its own afterwards; heads held by",
 				"a MAF sensor or a closed fuel rack are left alone. Off, each head is set by hand as before.")
 			.define("meterAllHeads", false));
+		WEAR_MODE = value("features.wearMode", builder.comment(
+				"Wear and tear. On, pistons, connecting rods and head gaskets wear with use (faster with speed, heat, boost and",
+				"no oil), a worn piston or gasket costs power, and a badly worn rod can be thrown or a gasket blown, which stops",
+				"that cylinder until the part is replaced. A spark engine that knocks (boost lighting the charge early) wears its",
+				"pistons faster, and can be heard. A rotor housing's apex seals wear the same way and a failed set stops",
+				"the rotor. Batteries wear too: deep discharge, and drawing on them in the cold, slowly reduce what they hold, but",
+				"never to nothing. Light wear is set right with a Service Kit. Off, nothing wears, no gasket is needed, and every",
+				"engine runs exactly as it did before the mode existed (a gasket fitted to a head still seals it, on or off).")
+			.define("wearMode", false));
 		builder.pop();
 
 		builder.comment("Other mods, and how the world around an engine answers it.")
@@ -343,6 +353,7 @@ public final class CEConfig {
 		Tuning.fuelFire = FUEL_FIRE.get();
 		Tuning.fuelFireByVolatility = FUEL_FIRE_BY_VOLATILITY.get();
 		Tuning.meterAllHeads = METER_ALL_HEADS.get();
+		Tuning.wearMode = WEAR_MODE.get();
 		Tuning.altitudeStart = ALTITUDE_START.get();
 		Tuning.altitudeScale = ALTITUDE_SCALE.get();
 		Tuning.altitudeFloor = ALTITUDE_FLOOR.get();

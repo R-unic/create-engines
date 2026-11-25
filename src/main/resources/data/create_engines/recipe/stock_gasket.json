@@ -1,0 +1,12 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "category": "misc",
+  "ingredients": [
+    {"item": "minecraft:paper"},
+    {"item": "minecraft:paper"}
+  ],
+  "result": {
+    "count": 1,
+    "id": "create_engines:stock_gasket"
+  }
+}

@@ -6,6 +6,8 @@ import org.jetbrains.annotations.Nullable;
 
 import com.createengines.engine.sim.BatteryChemistry;
 import com.createengines.engine.sim.BatteryEnergy;
+import com.createengines.engine.sim.BatteryWear;
+import com.createengines.engine.sim.Wear;
 import com.createengines.engine.sim.BatteryTier;
 import com.createengines.engine.sim.ChargePriority;
 import com.createengines.engine.sim.HeatRecovery;
@@ -51,6 +53,8 @@ public class BatteryBlockEntity extends SmartBlockEntity implements IHaveGoggleI
 	private static final float RATE_SMOOTHING = 0.05f;
 
 	private float charge;
+	/** Wear mode: how worn the battery is, 0 new to 1 spent. Saved only once there is some, so a battery that never wore saves what it always did. */
+	private double wear;
 	/** Held back for the starter and the spark plugs: other mods' wires and electric parts cannot draw on it ({@link com.createengines.engine.sim.ChargePriority}). */
 	private boolean reserve;
 	private @Nullable BlockPos primaryPos;
@@ -102,9 +106,42 @@ public class BatteryBlockEntity extends SmartBlockEntity implements IHaveGoggleI
 		return getBlockState().getBlock() instanceof BatteryBlock block ? block.tier() : BatteryTier.PLAIN;
 	}
 
-	/** Sparks this battery holds when full: its tier's capacity. */
+	/**
+	 * Sparks this battery holds when full: its tier's capacity, less what wear has taken when the wear mode is on (see {@link BatteryWear}).
+	 * With the mode off, or a battery that never wore, it is exactly the tier's capacity.
+	 */
 	public float capacity() {
-		return tier().capacity();
+		return Tuning.wearMode && wear > 0 ? BatteryWear.capacity(tier(), wear) : tier().capacity();
+	}
+
+	/** How worn this battery is, 0 new to 1 spent. It has no effect with the wear mode off. */
+	public double wear() {
+		return wear;
+	}
+
+	private void wearBy(double amount) {
+		if (!(amount > 0))
+			return;
+		int before = (int) Math.round(wear * 20);
+		wear = Wear.clamp(wear + amount);
+		// What it held above its new, smaller capacity is gone
+		charge = Math.min(charge, capacity());
+		// Clients are told, and the save marked, when wear moves to a new 5% step: a draw happens many times a second
+		if (before != (int) Math.round(wear * 20)) {
+			setChanged();
+			if (level != null && !level.isClientSide)
+				sendData();
+		}
+	}
+
+	/** Sets right light wear with a Service Kit (see {@link Wear#repairable}); heavy wear is cured by a new battery. Returns whether anything changed. */
+	public boolean service() {
+		if (!BatteryWear.repairable(wear))
+			return false;
+		wear = BatteryWear.repaired(wear);
+		setChanged();
+		sendData();
+		return true;
 	}
 
 	/** The share of this battery's own capacity that is charged, 0 to 1. */
@@ -139,6 +176,9 @@ public class BatteryBlockEntity extends SmartBlockEntity implements IHaveGoggleI
 	/** Takes up to {@code sparks} of charge and returns how much was actually there to give. */
 	public float draw(float sparks) {
 		float drawn = Math.max(0, Math.min(deliverable(), sparks));
+		// Wear mode: a deep discharge, and drawing on a cold battery, wear it (how full it was when the draw began is what counts)
+		if (drawn > 0 && Tuning.wearMode)
+			wearBy(BatteryWear.drawWear(tier(), drawn, chargeFraction(), Tuning.batteryCold ? cold : 0));
 		charge -= drawn;
 		return drawn;
 	}
@@ -239,6 +279,9 @@ public class BatteryBlockEntity extends SmartBlockEntity implements IHaveGoggleI
 		super.tick();
 		if (level == null || level.isClientSide)
 			return;
+		// A battery that wore with the mode on and is read with it off holds all it did; the other way round, what it can no longer hold goes
+		if (Tuning.wearMode && wear > 0 && charge > capacity())
+			charge = capacity();
 		if (lastCharge < 0)
 			lastCharge = charge;
 		rate += ((charge - lastCharge) - rate) * RATE_SMOOTHING;
@@ -323,6 +366,8 @@ public class BatteryBlockEntity extends SmartBlockEntity implements IHaveGoggleI
 		// Only written when set, so a battery nobody has touched saves exactly what it always did
 		if (reserve)
 			tag.putBoolean("Reserve", true);
+		if (wear > 0)
+			tag.putDouble("Wear", wear);
 		if (clientPacket)
 			tag.putFloat("Rate", rate);
 		if (primaryPos != null)
@@ -332,6 +377,8 @@ public class BatteryBlockEntity extends SmartBlockEntity implements IHaveGoggleI
 	@Override
 	protected void read(CompoundTag tag, HolderLookup.Provider registries, boolean clientPacket) {
 		super.read(tag, registries, clientPacket);
+		// Absent in a world from before wear existed; read first, since what the battery can hold depends on it (a damaged save reads as new)
+		wear = Wear.clamp(tag.getDouble("Wear"));
 		float read = tag.getFloat("Charge");
 		// Saved data may hold anything: a charge that is not a number, or is more than the battery holds, is clamped to what it can
 		charge = Float.isNaN(read) ? 0 : Math.clamp(read, 0, capacity());
@@ -358,6 +405,13 @@ public class BatteryBlockEntity extends SmartBlockEntity implements IHaveGoggleI
 			.style(percent == 0 ? ChatFormatting.RED : percent < 20 ? ChatFormatting.GOLD : ChatFormatting.GREEN), tooltip, 1);
 		GoggleLines.add(CELang.translate("goggles.battery.size", Math.round(capacity()))
 			.style(ChatFormatting.GRAY), tooltip, 1);
+		if (Tuning.wearMode && wear >= 0.05) {
+			GoggleLines.add(CELang.translate("goggles.wear.battery", Math.round(wear * 100), Math.round(BatteryWear.capacityShare(wear) * 100))
+				.style(wear >= Wear.FAILURE_FROM ? ChatFormatting.RED : wear >= Wear.REPAIRABLE ? ChatFormatting.GOLD : ChatFormatting.GRAY), tooltip, 1);
+			if (isPlayerSneaking)
+				GoggleLines.add(CELang.translate(BatteryWear.repairable(wear) ? "goggles.wear.light" : "goggles.wear.heavy_battery")
+					.style(ChatFormatting.DARK_GRAY), tooltip, 2);
+		}
 		if (bank.size() > 1)
 			GoggleLines.add(CELang.translate("goggles.battery.bank", bank.size(), Math.round(held), Math.round(capacity))
 				.style(ChatFormatting.GRAY), tooltip, 1);

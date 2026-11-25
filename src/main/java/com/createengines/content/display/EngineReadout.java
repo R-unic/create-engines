@@ -93,6 +93,11 @@ public final class EngineReadout {
 		return Math.clamp(engine.temperature() / (float) Thermal.NORMAL, 0f, 1.5f);
 	}
 
+	/** The wear mode's total for the whole build, 0 new to 1 spent: 0 with the mode off, since there is nothing worn to show. */
+	public static float wear(EngineSummary engine) {
+		return engine.wear() < 0 ? 0f : Math.clamp(engine.wear(), 0f, 1f);
+	}
+
 	/** How fresh the oil is: 1 new, 0 spent. */
 	public static float oil(EngineSummary engine) {
 		return Math.clamp(engine.condition(), 0f, 1f);

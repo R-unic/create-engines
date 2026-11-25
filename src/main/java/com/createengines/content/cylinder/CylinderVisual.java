@@ -28,6 +28,11 @@ public class CylinderVisual extends AbstractBlockEntityVisual<CylinderBlockEntit
 	private final TransformedInstance piston;
 	private final TransformedInstance forgedPiston;
 	private final TransformedInstance rod;
+	/** The wear mode's wreck lying in the bore of a cylinder whose rod was thrown, and the scorch on a seized piston. Hidden unless they are wanted. */
+	private final TransformedInstance wreck;
+	private final TransformedInstance scorch;
+	private Boolean lastThrown;
+	private boolean lastSeized;
 	/** Intake and exhaust pushrods, then their rockers on the head, for a cylinder whose cam is beside its block. */
 	private final TransformedInstance[] pushrods;
 	/** Which piston was last left hidden, and whether the pushrods are showing; null/true until first posed. */
@@ -44,6 +49,8 @@ public class CylinderVisual extends AbstractBlockEntityVisual<CylinderBlockEntit
 			Models.partial(CEPartialModels.FORGED_PISTON)).createInstance();
 		rod = instancerProvider().instancer(InstanceTypes.TRANSFORMED, Models.partial(CEPartialModels.CONNECTING_ROD))
 			.createInstance();
+		wreck = instance(CEPartialModels.CYLINDER_WRECK);
+		scorch = instance(CEPartialModels.SEIZED_RING);
 		pushrods = new TransformedInstance[] {instance(CEPartialModels.PUSHROD), instance(CEPartialModels.PUSHROD),
 			instance(CEPartialModels.ROCKER), instance(CEPartialModels.ROCKER)};
 		animate();
@@ -79,10 +86,21 @@ public class CylinderVisual extends AbstractBlockEntityVisual<CylinderBlockEntit
 		BlockPos origin = getVisualPosition();
 		boolean forged = blockEntity.getBlockState().getValue(CylinderBlock.FORGED_PISTON);
 		// Piston and rod that have not moved since the last frame (a stopped engine) keep their pose and are not re-uploaded
-		if (lastForged == null || lastForged != forged || !pose.equals(lastPose)) {
+		boolean seized = blockEntity.seized();
+		if (lastForged == null || lastForged != forged || !pose.equals(lastPose) || seized != lastSeized) {
 			pose(forged ? forgedPiston : piston, pose.showPiston(), origin, pose.piston());
 			pose(rod, pose.showRod(), origin, pose.rod());
+			// The scorch rides on the piston it is the scorch of
+			pose(scorch, seized && pose.showPiston(), origin, pose.piston());
+			lastSeized = seized;
 			lastPose = pose;
+		}
+		// A thrown rod's wreck is laid once, when it appears or goes
+		boolean thrown = blockEntity.thrown();
+		if (lastThrown == null || lastThrown != thrown) {
+			pose(wreck, thrown, origin, EnginePoses.facingFrame(blockEntity.getBlockState()
+				.getValue(CylinderBlock.FACING)));
+			lastThrown = thrown;
 		}
 		// The piston not in use only needs hiding once, when the cylinder is first posed or its piston type changes
 		if (lastForged == null || lastForged != forged) {
@@ -123,7 +141,7 @@ public class CylinderVisual extends AbstractBlockEntityVisual<CylinderBlockEntit
 
 	@Override
 	public void updateLight(float partialTick) {
-		relight(piston, forgedPiston, rod);
+		relight(piston, forgedPiston, rod, wreck, scorch);
 		relight(pushrods);
 	}
 
@@ -132,6 +150,8 @@ public class CylinderVisual extends AbstractBlockEntityVisual<CylinderBlockEntit
 		piston.delete();
 		forgedPiston.delete();
 		rod.delete();
+		wreck.delete();
+		scorch.delete();
 		for (TransformedInstance instance : pushrods)
 			instance.delete();
 	}
@@ -141,6 +161,8 @@ public class CylinderVisual extends AbstractBlockEntityVisual<CylinderBlockEntit
 		consumer.accept(piston);
 		consumer.accept(forgedPiston);
 		consumer.accept(rod);
+		consumer.accept(wreck);
+		consumer.accept(scorch);
 		for (TransformedInstance instance : pushrods)
 			consumer.accept(instance);
 	}

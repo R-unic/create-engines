@@ -159,6 +159,16 @@ public final class EngineController {
 	private boolean filtered;
 	/** How many moving parts need oil: crank blocks, plus every piston and rod turning with the crank. */
 	private final double oilParts;
+	/** The wear mode's reader and writer for this engine's cylinders (see {@link WearKeeper}); idle with the mode off. */
+	private final WearKeeper wear;
+	/** Whether the cylinders' models carry the state their saved wear gives, so switching the mode off knows to put them back. */
+	private boolean wearApplied;
+	/** The wear mode's faults by cylinder (blown gasket, broken head, thrown rod), when the mode is on; read when the engine is built, and a failure has it rebuilt. */
+	private final Map<BlockPos, Integer> wearFaults;
+	/** The wear mode's total for the whole build (see {@code WearTotal}), refreshed with each wearing step; -1 with the mode off. */
+	private float wearTotal = -1f;
+	/** How many parts of each kind have failed in this build (see {@code WearFailures}), counted when the engine is built: a failure has it rebuilt. */
+	private final int wearFailures;
 	/** Oil drawn from the pans and heads during the current tick, mB, and its smoothed rate in mB per minute: for goggles. */
 	private double oilDrawn;
 	private double oilRate;
@@ -260,11 +270,14 @@ public final class EngineController {
 			}
 		};
 
+		// Wear (opt-in): a head whose gasket has blown stops its cylinder, and every other reading of the layout's faults sees that too
+		wearFaults = com.createengines.engine.sim.Tuning.wearMode ? WearKeeper.wearFaults(level, layout) : Map.of();
+		wearFailures = WearKeeper.failureCounts(wearFaults);
 		BatteryIgnition plugs = new BatteryIgnition(level, layout.batteries());
 		ignitionSupply = plugs;
 		sparkEngine = layout.cylinders()
 			.stream()
-			.anyMatch(cylinder -> cylinder.sparkPlug() && !CylinderFault.disables(cylinder.faults()));
+			.anyMatch(cylinder -> cylinder.sparkPlug() && !CylinderFault.disables(faultsOf(cylinder)));
 		// The oil pans also hold the engine's coolant and its pilot fuel
 		CoolantSupply coolant = layout.sumps()
 			.isEmpty() ? CoolantSupply.NONE : new SumpCoolantSupply(level, layout.sumps());
@@ -280,9 +293,9 @@ public final class EngineController {
 		double parts = layout.segments()
 			.size();
 		for (Cylinder cylinder : layout.cylinders()) {
-			if (CylinderFault.disables(cylinder.faults())) {
+			if (CylinderFault.disables(faultsOf(cylinder))) {
 				models.add(null);
-				double weight = CylinderFault.dragOnCrank(cylinder.faults());
+				double weight = CylinderFault.dragOnCrank(faultsOf(cylinder));
 				idleInertia += weight * CylinderSpec.CRUDE.inertia();
 				idleStatic += weight * CylinderSpec.CRUDE.frictionStatic();
 				idleViscous += weight * CylinderSpec.CRUDE.frictionViscous();
@@ -315,6 +328,12 @@ public final class EngineController {
 		}
 
 		oilParts = parts;
+		wear = new WearKeeper(layout, models);
+		if (com.createengines.engine.sim.Tuning.wearMode) {
+			wear.refresh(level);
+			wearApplied = true;
+		} else
+			wear.applyFitted(level);
 		int[] lineThrows = throwsPerLine(layout);
 		flexLoss = Torsion.loss(lineThrows);
 		longestLine = Arrays.stream(lineThrows)
@@ -693,6 +712,8 @@ public final class EngineController {
 			.update(sim.revolutionsLastTick(), EngineSimulation.TICK, oilParts, oilSupply);
 		oilRate += (oilDrawn / EngineSimulation.TICK * 60 - oilRate) * 0.05;
 		serviceOil(level);
+		if (wearTick(level))
+			return;
 		cranking = floor > 0 && !sim.isSustaining();
 		if (drawsBattery && cranking && activeStarter != null)
 			ignitionSupply.drawCranking();
@@ -719,6 +740,41 @@ public final class EngineController {
 		publishCapacity(torqueScale);
 		if (ticks % SYNC_INTERVAL == 0)
 			syncDiagnostics(level, torqueScale);
+	}
+
+	/**
+	 * The wear mode's share of a tick (see {@link WearKeeper}). With the mode off, an engine that had it on is put back to running as it
+	 * did before. Returns whether a part failed, which has the engine rebuilt around the gap, so the caller leaves the rest of the tick.
+	 */
+	private boolean wearTick(Level level) {
+		if (!com.createengines.engine.sim.Tuning.wearMode) {
+			wearTotal = -1f;
+			if (wearApplied) {
+				wear.applyFitted(level);
+				wearApplied = false;
+			}
+			return false;
+		}
+		if (!wearApplied) {
+			wear.refresh(level);
+			wearApplied = true;
+		}
+		if (ticks % WearKeeper.INTERVAL != 0 && wearTotal >= 0)
+			return false;
+		wearTotal = WearKeeper.total(level, layout);
+		if (ticks % WearKeeper.INTERVAL != 0)
+			return false;
+		boolean failed = wear.tick(level, EngineSimulation.omegaToRpm(Math.abs(sim.omega())), sim.thermal()
+			.temperature(), sim.lubrication()
+			.film());
+		if (!failed)
+			wearTotal = WearKeeper.total(level, layout);
+		return failed;
+	}
+
+	/** A cylinder's faults as the scanner found them, plus the wear mode's (a blown gasket, a broken head, a thrown rod), which are not the scanner's to know. */
+	private int faultsOf(Cylinder cylinder) {
+		return wearFaults.isEmpty() ? cylinder.faults() : cylinder.faults() | wearFaults.getOrDefault(cylinder.pos(), 0);
 	}
 
 	private double ownRpm() {
@@ -1374,7 +1430,7 @@ public final class EngineController {
 			(float) sim.thermal()
 				.coolantRate(),
 			pilotLit(), filtered, (float) Torsion.scaled(flexLoss), longestLine, report.health(), report.cause(), muffling(),
-				inductionBoost(), sourceLines(), sim.isStopped() ? 0 : (float) oilRate);
+				inductionBoost(), sourceLines(), sim.isStopped() ? 0 : (float) oilRate, wearTotal, wearFailures);
 	}
 
 	/**
@@ -1668,7 +1724,7 @@ public final class EngineController {
 			FuelSpec fuel = model == null ? null : model.fuelSupply.fuel();
 			float charge = last == null || last.fuelInjected <= 0 ? Float.NaN : (float) last.compressionTemp;
 			List<BlockPos> outlets = openings(cylinder.exhaust());
-			be.updateStatus(new CylinderStatus(layout.primary(), cylinder.faults(),
+			be.updateStatus(new CylinderStatus(layout.primary(), faultsOf(cylinder),
 				last == null ? com.createengines.engine.sim.CycleResult.NONE : last.result, last != null && last.rich(),
 				(float) cylinder.tdcAngle(), timing, charge, fuel == null ? Float.NaN : (float) fuel.autoignitionTemp(),
 				cylinder.lobe(), outlets, last != null && last.lean(),
@@ -1727,7 +1783,7 @@ public final class EngineController {
 		CycleStats last = model == null ? null : model.lastCycle();
 		FuelSpec fuel = model == null ? null : model.fuelSupply.fuel();
 		List<BlockPos> outlets = openings(cylinder.exhaust());
-		return new CylinderStatus(layout.primary(), cylinder.faults(),
+		return new CylinderStatus(layout.primary(), faultsOf(cylinder),
 			last == null ? CycleResult.NONE : last.result, last != null && last.rich(), (float) cylinder.tdcAngle(),
 			Float.NaN, last == null || last.fuelInjected <= 0 ? Float.NaN : (float) last.compressionTemp,
 			fuel == null ? Float.NaN : (float) fuel.autoignitionTemp(), null, outlets, last != null && last.lean(),

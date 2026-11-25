@@ -1,0 +1,13 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "category": "misc",
+  "ingredients": [
+    {"item": "minecraft:slime_ball"},
+    {"item": "minecraft:slime_ball"},
+    {"item": "minecraft:paper"}
+  ],
+  "result": {
+    "count": 1,
+    "id": "create_engines:rubber_gasket"
+  }
+}

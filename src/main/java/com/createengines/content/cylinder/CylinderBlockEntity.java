@@ -11,6 +11,7 @@ import org.joml.Vector3f;
 import com.createengines.engine.LoadedBlocks;
 import com.createengines.config.CEClientConfig;
 import com.createengines.content.EffectRate;
+import com.createengines.content.effects.ExhaustLook;
 import com.createengines.content.EngineNoteSound;
 import com.createengines.content.EnginePoses;
 import com.createengines.content.camshaft.CamshaftBlockEntity;
@@ -27,8 +28,12 @@ import com.createengines.engine.Diagnosis;
 import com.createengines.engine.sim.CamProfile;
 import com.createengines.engine.sim.CycleResult;
 import com.createengines.engine.sim.CylinderModel;
+import com.createengines.engine.sim.Knock;
 import com.createengines.engine.sim.Mixture;
+import com.createengines.engine.sim.Tuning;
+import com.createengines.engine.sim.Wear;
 import com.createengines.engine.topology.CylinderFault;
+import com.createengines.engine.topology.EngineTopology;
 import com.createengines.engine.topology.EngineMember;
 import com.createengines.content.GoggleLines;
 import com.createengines.registry.CELang;
@@ -69,6 +74,144 @@ public class CylinderBlockEntity extends SmartBlockEntity implements IHaveGoggle
 		sendData();
 	}
 
+
+	// Wear (opt-in, see Wear): how worn the piston and the connecting rod fitted here are, 0 new to 1 spent. Saved only once there is
+	// some, so a cylinder that never wore saves what it always did.
+	private double pistonWear;
+	private double rodWear;
+
+	public double pistonWear() {
+		return pistonWear;
+	}
+
+	public double rodWear() {
+		return rodWear;
+	}
+
+	/** A thrown rod's wreck is in the cylinder (the wear mode's, see {@link Wear}): saved only while it is, and cleared by a Service Kit. */
+	private boolean thrown;
+
+	public boolean thrown() {
+		return thrown;
+	}
+
+	/** The piston has seized from running dry (the wear mode's): saved only while it has, freed by a Service Kit or a new piston. */
+	private boolean seized;
+
+	public boolean seized() {
+		return seized;
+	}
+
+	/** The piston seizes: it is left badly worn, the cylinder locks, and the engine is rebuilt around it. */
+	public void seize() {
+		if (seized)
+			return;
+		seized = true;
+		pistonWear = Math.max(pistonWear, Wear.SEIZED_WEAR);
+		setChanged();
+		sendData();
+		EngineTopology.wearChanged(level, worldPosition);
+	}
+
+	/** The seizure ends without a kit, because the seized piston came out. Returns whether there was one. */
+	public boolean unseize() {
+		if (!seized)
+			return false;
+		seized = false;
+		setChanged();
+		sendData();
+		EngineTopology.wearChanged(level, worldPosition);
+		return true;
+	}
+
+	/** The rod goes through: the wreck stays in, the parts are lost, and the engine is looked at again. */
+	public void throwRod() {
+		pistonWear = 0;
+		rodWear = 0;
+		thrown = true;
+		setChanged();
+		sendData();
+		EngineTopology.wearChanged(level, worldPosition);
+	}
+
+	/**
+	 * Adds wear to the fitted piston and rod. Returns whether either moved to a new 5% step, which is when clients are told, so a
+	 * slowly wearing engine does not send a packet a second.
+	 */
+	public boolean addWear(double piston, double rod) {
+		int before = step(pistonWear) * 100 + step(rodWear);
+		pistonWear = Wear.clamp(pistonWear + piston);
+		rodWear = Wear.clamp(rodWear + rod);
+		setChanged();
+		boolean visible = before != step(pistonWear) * 100 + step(rodWear);
+		if (visible)
+			sendData();
+		return visible;
+	}
+
+	private static int step(double wear) {
+		return (int) Math.round(wear * 20);
+	}
+
+	/** A new piston is in: the old one's wear goes with it. */
+	public void resetPiston() {
+		if (pistonWear == 0)
+			return;
+		pistonWear = 0;
+		setChanged();
+		sendData();
+	}
+
+	/** A worn piston is fitted: it keeps the wear it had. */
+	public void fitPiston(double wear) {
+		pistonWear = Wear.clamp(wear);
+		setChanged();
+		sendData();
+	}
+
+	/** A worn connecting rod is fitted: it keeps the wear it had. */
+	public void fitRod(double wear) {
+		rodWear = Wear.clamp(wear);
+		setChanged();
+		sendData();
+	}
+
+	/** A new connecting rod is in. */
+	public void resetRod() {
+		if (rodWear == 0)
+			return;
+		rodWear = 0;
+		setChanged();
+		sendData();
+	}
+
+	/**
+	 * Sets right the light wear of whatever is fitted (see {@link Wear#repairable}). Returns whether anything changed. Heavy wear, and a
+	 * part that is not here, are left alone: those are cured by replacing the part.
+	 */
+	public boolean service() {
+		// A thrown rod's wreck comes first: only clearing it makes room for new parts
+		if (thrown) {
+			thrown = false;
+			setChanged();
+			sendData();
+			EngineTopology.wearChanged(level, worldPosition);
+			return true;
+		}
+		// A seized piston is freed (not made new: it stays as worn as the seizure left it, so it is soon replaced)
+		if (unseize())
+			return true;
+		BlockState state = getBlockState();
+		double piston = state.getValue(CylinderBlock.HAS_PISTON) ? Wear.repaired(pistonWear) : pistonWear;
+		double rod = state.getValue(CylinderBlock.HAS_ROD) ? Wear.repaired(rodWear) : rodWear;
+		if (piston == pistonWear && rod == rodWear)
+			return false;
+		pistonWear = piston;
+		rodWear = rod;
+		setChanged();
+		sendData();
+		return true;
+	}
 
 	/** Where the cam says the charge fires: the top of the compression stroke. */
 	private static final double FIRING_CYCLE_ANGLE = 360;
@@ -142,7 +285,18 @@ public class CylinderBlockEntity extends SmartBlockEntity implements IHaveGoggle
 	 * in step with the moving parts: the bang at firing TDC, the gas in the bore, the draught at the intake as the piston
 	 * starts down, and what the exhaust throws out when its valve opens. The heat off the head needs no cam.
 	 */
+	/** A piston that has seized keeps smoking from the hot metal, and a thrown rod's wreck leaks a little oil smoke. Only ever the wear mode's. */
+	private void wearEffects() {
+		if (!(seized || thrown) || level.random.nextInt(seized ? 6 : 14) != 0)
+			return;
+		double x = worldPosition.getX() + 0.3 + level.random.nextDouble() * 0.4;
+		double y = worldPosition.getY() + 0.7 + level.random.nextDouble() * 0.3;
+		double z = worldPosition.getZ() + 0.3 + level.random.nextDouble() * 0.4;
+		level.addParticle(seized ? net.minecraft.core.particles.ParticleTypes.LARGE_SMOKE : net.minecraft.core.particles.ParticleTypes.SMOKE, x, y, z, 0, 0.03, 0);
+	}
+
 	private void tickClient() {
+		wearEffects();
 		CylinderStatus current = status;
 		if (current != null && ((level.getGameTime() + worldPosition.asLong()) & 3) == 0) {
 			CrankshaftBlockEntity crank = crankThrow();
@@ -242,6 +396,17 @@ public class CylinderBlockEntity extends SmartBlockEntity implements IHaveGoggle
 	}
 
 	/** The bang, and a flash of flame and sparks at the roof of the chamber. */
+	/** The wear mode's knock, heard from the piston it is wearing: a high, hard ping on some of the firings that light early. */
+	private void knockPing(int cylinders) {
+		CylinderStatus current = status;
+		if (!Tuning.wearMode || current == null)
+			return;
+		float volume = CEClientConfig.mechanicalVolume();
+		if (volume > 0 && level.random.nextFloat() < ExhaustLook.knockPing(current.preignition(), cylinders))
+			level.playLocalSound(worldPosition, CESounds.PREIGNITION_KNOCK.get(), SoundSource.BLOCKS, 0.5f * volume,
+				1.45f + level.random.nextFloat() * 0.2f, false);
+	}
+
 	private void ignite() {
 		if (!bangs.allow(level))
 			return;
@@ -251,6 +416,7 @@ public class CylinderBlockEntity extends SmartBlockEntity implements IHaveGoggle
 		RandomSource random = level.random;
 		CrankshaftBlockEntity throwBlock = crankThrow();
 		EngineSummary engine = throwBlock == null ? null : throwBlock.engineSummary();
+		knockPing(engine == null ? 1 : engine.cylinders());
 		float volume = CEClientConfig.bangVolume() * Muffling.volume(engine == null ? 0 : engine.muffling());
 		// With the engine's own exhaust note playing, the bang is in the note: it comes from the same firing, so it lands
 		// with it, which a sample played from here a few tenths of a second ahead of the stream never would
@@ -439,6 +605,14 @@ public class CylinderBlockEntity extends SmartBlockEntity implements IHaveGoggle
 	protected void write(CompoundTag tag, HolderLookup.Provider registries, boolean clientPacket) {
 		super.write(tag, registries, clientPacket);
 		paint.write(tag);
+		if (pistonWear > 0)
+			tag.putDouble("PistonWear", pistonWear);
+		if (rodWear > 0)
+			tag.putDouble("RodWear", rodWear);
+		if (thrown)
+			tag.putBoolean("Thrown", true);
+		if (seized)
+			tag.putBoolean("Seized", true);
 		if (clientPacket && status != null)
 			tag.put("Status", status.write());
 	}
@@ -447,6 +621,11 @@ public class CylinderBlockEntity extends SmartBlockEntity implements IHaveGoggle
 	protected void read(CompoundTag tag, HolderLookup.Provider registries, boolean clientPacket) {
 		super.read(tag, registries, clientPacket);
 		paint.read(tag, level, worldPosition, getBlockState());
+		// Absent in a world from before wear existed; a damaged save must not hand the model NaN (clamp reads it as new)
+		pistonWear = Wear.clamp(tag.getDouble("PistonWear"));
+		rodWear = Wear.clamp(tag.getDouble("RodWear"));
+		thrown = tag.getBoolean("Thrown");
+		seized = tag.getBoolean("Seized");
 		if (clientPacket)
 			status = tag.contains("Status") ? CylinderStatus.read(tag.getCompound("Status")) : null;
 	}
@@ -502,6 +681,9 @@ public class CylinderBlockEntity extends SmartBlockEntity implements IHaveGoggle
 						GoggleLines.add(CELang.translate("goggles.preignition.hint")
 							.style(ChatFormatting.DARK_GRAY), tooltip, 2);
 				}
+				if (Tuning.wearMode && current.sparkPlug() && Knock.intensity(current.preignition()) > 0)
+					GoggleLines.add(CELang.translate("goggles.wear.knock")
+						.style(ChatFormatting.GOLD), tooltip, 1);
 				if (current.sparkPlug()) {
 				GoggleLines.add(CELang.translate("goggles.ignition.spark")
 					.style(ChatFormatting.GRAY), tooltip, 1);
@@ -532,7 +714,27 @@ public class CylinderBlockEntity extends SmartBlockEntity implements IHaveGoggle
 			if (fault.in(faults))
 				GoggleLines.add(CELang.translate(fault.langKey())
 					.style(fault.disablesCylinder ? ChatFormatting.RED : ChatFormatting.GOLD), tooltip, 1);
+		if (thrown)
+			GoggleLines.add(CELang.translate("goggles.wear.thrown")
+				.style(ChatFormatting.RED), tooltip, 1);
+		if (seized)
+			GoggleLines.add(CELang.translate("goggles.wear.seized")
+				.style(ChatFormatting.RED), tooltip, 1);
+		wearLine(tooltip, "goggles.wear.piston",state.getValue(CylinderBlock.HAS_PISTON), pistonWear, isPlayerSneaking);
+		wearLine(tooltip, "goggles.wear.rod", state.getValue(CylinderBlock.HAS_ROD), rodWear, isPlayerSneaking);
 		return true;
+	}
+
+	/** How worn a part is, only once it has any (wear is opt-in, so a cylinder that never wore says nothing). */
+	static void wearLine(List<Component> tooltip, String key, boolean fitted, double wear, boolean sneaking) {
+		int percent = (int) Math.round(wear * 100);
+		if (!fitted || percent < 5)
+			return;
+		GoggleLines.add(CELang.translate(key, percent)
+			.style(wear >= Wear.FAILURE_FROM ? ChatFormatting.RED : wear >= Wear.REPAIRABLE ? ChatFormatting.GOLD : ChatFormatting.GRAY), tooltip, 1);
+		if (sneaking)
+			GoggleLines.add(CELang.translate(Wear.repairable(wear) ? "goggles.wear.light" : "goggles.wear.heavy")
+				.style(ChatFormatting.DARK_GRAY), tooltip, 2);
 	}
 
 	/** The mixture as a plain reading: balanced, or how many times richer or leaner than balanced it is. */

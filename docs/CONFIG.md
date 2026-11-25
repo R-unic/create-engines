@@ -69,7 +69,7 @@ Balance multipliers. 1.0 is the shipped balance.
 | `boostStrength` | `1.0` | 0.0 to 2.0 | Scales the boost made by every turbocharger and supercharger. |
 | `rotaryPower` | `1.0` | 0.25 to 2.0 | Scales a Wankel rotor chamber's swept volume, and so its power and thirst. Rotary engines are tuned as a niche (compact and smooth but thirsty, weak at low speed); raising this shifts that balance. |
 | `heatRecoveryOutput` | `1.0` | 0.1 to 10.0 | Scales the heat an Exhaust Heat Exchanger takes from an engine's exhaust. Create's basins need a heated or superheated source below them, and the exchanger gets there only with enough exhaust heat, so lower values need a bigger engine. |
-| `coolingBonus` | `1.0` | 0.0 to 3.0 | Scales how much better a well cooled engine breathes: about 6 to 9 percent more power at 1.0. 0 removes the bonus. Cold engines drag and uncooled ones earn nothing either way, and nothing ever overheats or wears out. |
+| `coolingBonus` | `1.0` | 0.0 to 3.0 | Scales how much better a well cooled engine breathes: about 6 to 9 percent more power at 1.0. 0 removes the bonus. Cold engines drag and uncooled ones earn nothing either way, and nothing ever overheats, and nothing wears out outside the wear mode (wearMode). |
 | `torsionalFlex` | `1.0` | 0.0 to 2.0 | Scales the rating an engine loses to a long crankshaft: past 8 throws on one unbroken crank line it falls by 2.5 percent a throw at 1.0. A vee or flat has half as many throws as cylinders, and cranks geared together one to one are separate lines. 0 turns it off. |
 | `alternatorEnergy` | `2.0` | 0.0 to 100.0 | Forge Energy an Alternator makes each tick for every RPM of its shaft, while something is drawing it. It puts 2 stress units on the shaft for each RPM while it does, so the default of 2 makes one stress unit worth about one FE a tick. 0 turns FE output off; spark charging is unaffected. |
 
@@ -88,6 +88,7 @@ Balance multipliers. 1.0 is the shipped balance.
 | `rotaryEngines` | `true` | on or off | Rotor housings run. Off, they sit inert and say so in the goggles. |
 | `heatRecovery` | `true` | on or off | Exhaust Heat Exchangers take heat from the exhaust and warm basins. |
 | `meterAllHeads` | `false` | on or off | Setting the fuel metering of one cylinder head (or rotor housing) sets every other injector of that engine to the same figure. Each head keeps its own dial and can still be changed on its own afterwards; heads held by a MAF sensor or a closed fuel rack are left alone. Off, each head is set by hand as before. |
+| `wearMode` | `false` | on or off | Wear and tear. On, pistons, connecting rods and head gaskets wear with use (faster with speed, heat, boost and no oil), a worn piston or gasket costs power, and a badly worn rod can be thrown or a gasket blown, which stops that cylinder until the part is replaced. A spark engine that knocks (boost lighting the charge early) wears its pistons faster, and can be heard. A rotor housing's apex seals wear the same way and a failed set stops the rotor. Batteries wear too: deep discharge, and drawing on them in the cold, slowly reduce what they hold, but never to nothing. Light wear is set right with a Service Kit. Off, nothing wears, no gasket is needed, and every engine runs exactly as it did before the mode existed (a gasket fitted to a head still seals it, on or off). |
 
 ### `[compat]`
 

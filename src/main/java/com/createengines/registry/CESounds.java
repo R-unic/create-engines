@@ -53,6 +53,16 @@ public final class CESounds {
 	/** A Flare Stack's flame catching and settling, as it burns off a working column's gas. */
 	public static final DeferredHolder<SoundEvent, SoundEvent> FLARE_WHOOSH = register("flare_whoosh");
 
+	/** The wear mode's loudest failure: a connecting rod going through the head, with the clang of the casting splitting and the grind of the wreck. */
+	public static final DeferredHolder<SoundEvent, SoundEvent> ROD_THROWN = register("rod_thrown");
+	/** The wear mode's: a head gasket blowing, a hard pop and hot gas hissing out past the joint. */
+	public static final DeferredHolder<SoundEvent, SoundEvent> GASKET_BLOW = register("gasket_blow");
+	/** The wear mode's: a piston seizing from running dry, a rising shriek cut off by a hard clunk. */
+	public static final DeferredHolder<SoundEvent, SoundEvent> PISTON_SEIZE = register("piston_seize");
+
+	/** The wear mode's: a rotor's apex seals failing, a snap, the loose strip clattering round the chamber and the wheeze of blow-by. */
+	public static final DeferredHolder<SoundEvent, SoundEvent> APEX_FAIL = register("apex_fail");
+
 	/** The rev-up that plays for a goal or a challenge: made up as it plays, so the recording named in sounds.json is never read. */
 	public static final DeferredHolder<SoundEvent, SoundEvent> ADVANCEMENT_STING = register("advancement_sting");
 

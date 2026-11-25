@@ -98,6 +98,19 @@ public final class PartInstallation {
 
 	/** Removes the last installed part in {@code slots} (the order they are listed is install order). */
 	public static boolean tryRemove(BlockState state, Level level, BlockPos pos, Player player, Slot... slots) {
+		return tryRemove(state, level, pos, player, Dresser.NONE, slots);
+	}
+
+	/** Gives a part that has come out of a block anything it carries with it: the wear it had, for a part that wears. */
+	@FunctionalInterface
+	public interface Dresser {
+		Dresser NONE = (slot, part) -> part;
+
+		ItemStack dress(Slot slot, ItemStack part);
+	}
+
+	/** As above, with {@code dresser} giving the part that comes out its wear (and the one that drops when the block breaks). */
+	public static boolean tryRemove(BlockState state, Level level, BlockPos pos, Player player, Dresser dresser, Slot... slots) {
 		if (!player.isShiftKeyDown())
 			return false;
 		for (int i = slots.length - 1; i >= 0; i--) {
@@ -105,7 +118,7 @@ public final class PartInstallation {
 			if (!state.getValue(slot.property()))
 				continue;
 			if (!level.isClientSide) {
-				ItemStack part = slot.fitted(state);
+				ItemStack part = dresser.dress(slot, slot.fitted(state));
 				BlockState next = state.setValue(slot.property(), false);
 				if (slot.grade() != null)
 					next = next.setValue(slot.grade(), false);
@@ -135,10 +148,15 @@ public final class PartInstallation {
 	}
 
 	public static void dropParts(BlockState state, Level level, BlockPos pos, BlockState newState, Slot... slots) {
+		dropParts(state, level, pos, newState, Dresser.NONE, slots);
+	}
+
+	/** As above, with the parts that drop carrying the wear {@code dresser} gives them. */
+	public static void dropParts(BlockState state, Level level, BlockPos pos, BlockState newState, Dresser dresser, Slot... slots) {
 		if (level.isClientSide || state.is(newState.getBlock()))
 			return;
 		for (Slot slot : slots)
 			if (state.getValue(slot.property()))
-				Block.popResource(level, pos, slot.fitted(state));
+				Block.popResource(level, pos, dresser.dress(slot, slot.fitted(state)));
 	}
 }

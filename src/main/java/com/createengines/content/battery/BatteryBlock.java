@@ -211,6 +211,16 @@ public class BatteryBlock extends Block implements IWrenchable, IBE<BatteryBlock
 		return InteractionResult.sidedSuccess(level.isClientSide);
 	}
 
+	/** A Service Kit sets right a battery's light wear (the wear mode's); anything else is as it always was. */
+	@Override
+	protected net.minecraft.world.ItemInteractionResult useItemOn(net.minecraft.world.item.ItemStack stack, BlockState state, Level level,
+		BlockPos pos, net.minecraft.world.entity.player.Player player, net.minecraft.world.InteractionHand hand,
+		net.minecraft.world.phys.BlockHitResult hit) {
+		net.minecraft.world.ItemInteractionResult worn = com.createengines.content.WearService.onBattery(stack, level, pos, player, hand);
+		return worn != net.minecraft.world.ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION ? worn
+			: super.useItemOn(stack, state, level, pos, player, hand, hit);
+	}
+
 	@Override
 	protected boolean hasAnalogOutputSignal(BlockState state) {
 		return true;

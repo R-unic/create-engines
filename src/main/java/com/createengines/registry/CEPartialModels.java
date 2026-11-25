@@ -21,6 +21,14 @@ public final class CEPartialModels {
 	public static final PartialModel FORGED_PISTON = block("cylinder/forged_piston");
 	public static final PartialModel CONNECTING_ROD = block("cylinder/rod");
 	public static final PartialModel VALVE_STEM = block("cylinder_head/valve");
+	/** The wear mode's wrecks, each laid over the part it is the wreck of: a head a rod went through, a gasket pushed out of the joint, the wreck in a bore. */
+	public static final PartialModel HEAD_WRECK = block("cylinder_head/wreck");
+	public static final PartialModel HEAD_BLOWN_GASKET = block("cylinder_head/blown_gasket");
+	public static final PartialModel CYLINDER_WRECK = block("cylinder/wreck");
+	/** A failed set of apex seals, sprung out of a rotor housing, in the frame of a housing whose shaft stands upright. */
+	public static final PartialModel ROTOR_WRECK = block("rotor_housing/wreck");
+	/** A scorched band and a ring of heat colour, drawn at a seized piston's own pose. */
+	public static final PartialModel SEIZED_RING = block("cylinder/seized_ring");
 	/** A pushrod beside a cylinder block that a cam works from the side, and the rocker on the head it tips. */
 	public static final PartialModel PUSHROD = block("cylinder/pushrod");
 	public static final PartialModel ROCKER = block("cylinder_head/rocker");

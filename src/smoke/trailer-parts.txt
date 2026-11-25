@@ -94,3 +94,9 @@ turbocharger: inline6_turbo
 used_oil: skip - fluid
 variable_supercharger: blown_i6_blower
 variable_turbocharger: later - needs a pad with a variable-geometry turbo
+cardboard_gasket: later - wear mode (2.3): a head with each gasket tier fitted, and a Service Kit, need a pad of their own
+stock_gasket: later - wear mode (2.3): see cardboard_gasket
+rubber_gasket: later - wear mode (2.3): see cardboard_gasket
+copper_gasket: later - wear mode (2.3): see cardboard_gasket
+service_kit: later - wear mode (2.3): see cardboard_gasket
+apex_seals: later - wear mode (2.3): a rotor housing with worn seals and one with a new set need a pad of their own

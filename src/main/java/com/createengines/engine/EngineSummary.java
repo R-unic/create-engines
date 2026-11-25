@@ -36,13 +36,40 @@ import net.minecraft.nbt.StringTag;
  *                         loud it sounds, never how it runs
  * @param sourceLines      goggle lines from sources that packs or addons added to the engine (see StatusLine)
  * @param oilPerMinute     oil the moving parts are drawing from the pans and heads, mB per minute; 0 when stopped
+ * @param failures         how many parts of each kind have failed, packed (see {@code WearFailures}); 0 when none, and always 0 with the wear mode off
+ * @param wear             the wear mode's total: the plain mean of how worn every part of the build is, 0 new to 1 spent, or -1 with the mode off
+ *                         (see {@code WearTotal})
  */
 public record EngineSummary(EngineState state, float rpm, float availableTorque, float loadTorque,
 							float fuelPerMinute, float ripple, int firing, int cylinders, float inertia, float lubrication,
 							boolean starterEngaged, float[] firingAngles, int lines, float thinning, float roughness,
 							float condition, float temperature, float coolantRate, boolean pilot, boolean filtered,
 							float flex, int longestLine, Diagnosis.Health health, Diagnosis.Cause cause, float muffling, float boost,
-								List<StatusLine> sourceLines, float oilPerMinute) {
+								List<StatusLine> sourceLines, float oilPerMinute, float wear, int failures) {
+
+		/** The summary as it was before failures were counted: none have failed. */
+		public EngineSummary(EngineState state, float rpm, float availableTorque, float loadTorque, float fuelPerMinute,
+							 float ripple, int firing, int cylinders, float inertia, float lubrication,
+							 boolean starterEngaged, float[] firingAngles, int lines, float thinning, float roughness,
+							 float condition, float temperature, float coolantRate, boolean pilot, boolean filtered,
+							 float flex, int longestLine, Diagnosis.Health health, Diagnosis.Cause cause, float muffling, float boost,
+							 List<StatusLine> sourceLines, float oilPerMinute, float wear) {
+			this(state, rpm, availableTorque, loadTorque, fuelPerMinute, ripple, firing, cylinders, inertia, lubrication,
+				starterEngaged, firingAngles, lines, thinning, roughness, condition, temperature, coolantRate, pilot, filtered,
+				flex, longestLine, health, cause, muffling, boost, sourceLines, oilPerMinute, wear, 0);
+		}
+
+		/** The summary as it was before the wear total: there is none. */
+		public EngineSummary(EngineState state, float rpm, float availableTorque, float loadTorque, float fuelPerMinute,
+							 float ripple, int firing, int cylinders, float inertia, float lubrication,
+							 boolean starterEngaged, float[] firingAngles, int lines, float thinning, float roughness,
+							 float condition, float temperature, float coolantRate, boolean pilot, boolean filtered,
+							 float flex, int longestLine, Diagnosis.Health health, Diagnosis.Cause cause, float muffling, float boost,
+							 List<StatusLine> sourceLines, float oilPerMinute) {
+			this(state, rpm, availableTorque, loadTorque, fuelPerMinute, ripple, firing, cylinders, inertia, lubrication,
+				starterEngaged, firingAngles, lines, thinning, roughness, condition, temperature, coolantRate, pilot, filtered,
+				flex, longestLine, health, cause, muffling, boost, sourceLines, oilPerMinute, -1f);
+		}
 
 		/** The summary as it was before oil use was shown: no oil is being used. */
 		public EngineSummary(EngineState state, float rpm, float availableTorque, float loadTorque, float fuelPerMinute,
@@ -92,6 +119,10 @@ public record EngineSummary(EngineState state, float rpm, float availableTorque,
 		tag.putFloat("Temperature", temperature);
 		tag.putFloat("Coolant", coolantRate);
 		tag.putFloat("OilUse", oilPerMinute);
+		if (wear >= 0)
+			tag.putFloat("Wear", wear);
+		if (failures != 0)
+			tag.putInt("Failures", failures);
 		tag.putBoolean("Pilot", pilot);
 		tag.putBoolean("Filtered", filtered);
 		tag.putFloat("Flex", flex);
@@ -134,7 +165,8 @@ public record EngineSummary(EngineState state, float rpm, float availableTorque,
 			tag.getFloat("Coolant"), tag.getBoolean("Pilot"), tag.getBoolean("Filtered"), tag.getFloat("Flex"),
 			tag.getInt("LongestLine"), healths[Math.clamp(tag.getInt("Health"), 0, healths.length - 1)],
 			causes[Math.clamp(tag.getInt("Cause"), 0, causes.length - 1)], tag.getFloat("Muffling"), tag.getFloat("Boost"),
-			readSourceLines(tag), tag.getFloat("OilUse"));
+			readSourceLines(tag), tag.getFloat("OilUse"), tag.contains("Wear") ? tag.getFloat("Wear") : -1f,
+			Math.max(0, tag.getInt("Failures")));
 	}
 
 	private static List<StatusLine> readSourceLines(CompoundTag tag) {
@@ -178,7 +210,7 @@ public record EngineSummary(EngineState state, float rpm, float availableTorque,
 			|| Math.abs(condition - other.condition) >= 0.02 || Math.abs(temperature - other.temperature) >= 0.03
 			|| Math.abs(coolantRate - other.coolantRate) >= 0.1 || pilot != other.pilot || filtered != other.filtered
 			|| Math.abs(flex - other.flex) >= 0.01 || longestLine != other.longestLine || health != other.health
-			|| relativeChange(oilPerMinute, other.oilPerMinute) || cause != other.cause || Math.abs(muffling - other.muffling) >= 0.02
+			|| relativeChange(oilPerMinute, other.oilPerMinute) || Math.abs(wear - other.wear) >= 0.01f || failures != other.failures || cause != other.cause || Math.abs(muffling - other.muffling) >= 0.02
 			|| !Arrays.equals(firingAngles, other.firingAngles) || !sourceLines.equals(other.sourceLines);
 	}
 

@@ -132,7 +132,8 @@ before relying on it.
   open ends until a wrench opens them.
 - **Spark timing is fixed.** A spark engine's timing is the cam lobe's angle plus a fixed advance; there is no
   distributor and no ignition-advance dial. There is also no knock: pre-ignition of gasoline at high speed just falls
-  out of the compression temperature.
+  out of the compression temperature. (Knock as extra piston wear is approved for the opt-in wear mode, 2026-11-24; its rules
+  are in `engine/sim/Knock`. `WearKeeper` adds the wear to each piston that fired early, and the cylinder pings on the client.)
 - **No knock, no turbo damage.** Compressing the air heats it, and only an Intercooler cools it again; excess boost shows as pre-ignition in a spark engine and as waste in a rich one, and nothing breaks, however many stages are stacked. Series and parallel are told apart per stage by whether the air can go round it (see *Series and parallel*), not per cylinder: a stage on a side branch next to a clear path to an opening counts as parallel, and two stages on one branch that both have a bypass are treated as a bank and not as a pair in series. A supercharger's boost has no flow limit and no surge. Nitrous is not modelled; variable-geometry turbos and anti-lag are (see *Early game, flywheels, banks, dyno and turbo mechanics*).
 - The turbocharger and sump have Ponder scenes and smoke-test screenshots (a real-world turbo and sump). The turbo's wheel speed in Ponder comes from NBT set by the scene, not an engine; a running turbo spinning in a real world has not been watched by hand.
 - Series detection is covered by the twin-turbo GameTest (a compound pair must still multiply); detecting a parallel bank in a real built world has only the unit-tested simulation behind it, no GameTest or hand test.

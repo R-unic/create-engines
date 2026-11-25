@@ -11,6 +11,7 @@ import com.createengines.content.crankshaft.CrankshaftBlockEntity;
 import com.createengines.content.cylinder.CylinderBlock;
 import com.createengines.content.cylinder.CylinderBlockEntity;
 import com.createengines.content.flywheel.CastFlywheelBlockEntity;
+import com.createengines.content.head.CylinderHeadBlock;
 import com.createengines.content.head.CylinderHeadBlockEntity;
 import com.createengines.content.rotor.RotorHousingBlock;
 import com.createengines.content.rotor.RotorHousingBlockEntity;
@@ -151,6 +152,9 @@ public final class EnginePartRenderers {
 				EnginePoses.crankAngle(be, renderTime)), ms, buffer, light);
 			if (state.getValue(RotorHousingBlock.HAS_ROTOR))
 				draw(CEPartialModels.ROTOR, state, EnginePoses.rotor(be, renderTime), ms, buffer, light);
+			if (be.apexFailed())
+				draw(CEPartialModels.ROTOR_WRECK, state, EnginePoses.axisFrame(state.getValue(BlockStateProperties.AXIS)), ms,
+					buffer, light);
 		}
 	}
 
@@ -195,6 +199,11 @@ public final class EnginePartRenderers {
 		protected void render(CylinderBlockEntity be, float renderTime, PoseStack ms, MultiBufferSource buffer,
 							  int light) {
 			EnginePoses.CylinderPose pose = EnginePoses.cylinder(be, renderTime);
+			if (be.thrown())
+				draw(CEPartialModels.CYLINDER_WRECK, be.getBlockState(), EnginePoses.facingFrame(be.getBlockState()
+					.getValue(CylinderBlock.FACING)), ms, buffer, light);
+			if (be.seized() && pose.showPiston())
+				draw(CEPartialModels.SEIZED_RING, be.getBlockState(), pose.piston(), ms, buffer, light);
 			if (pose.showPiston())
 				draw(be.getBlockState().getValue(CylinderBlock.FORGED_PISTON) ? CEPartialModels.FORGED_PISTON
 					: CEPartialModels.PISTON, be.getBlockState(), pose.piston(), ms, buffer, light);
@@ -218,6 +227,12 @@ public final class EnginePartRenderers {
 		@Override
 		protected void render(CylinderHeadBlockEntity be, float renderTime, PoseStack ms, MultiBufferSource buffer,
 							  int light) {
+			var frame = EnginePoses.facingFrame(be.getBlockState()
+				.getValue(CylinderHeadBlock.FACING));
+			if (be.broken())
+				draw(CEPartialModels.HEAD_WRECK, be.getBlockState(), frame, ms, buffer, light);
+			else if (be.blown())
+				draw(CEPartialModels.HEAD_BLOWN_GASKET, be.getBlockState(), frame, ms, buffer, light);
 			EnginePoses.ValvePose pose = EnginePoses.valves(be, renderTime);
 			if (pose == null)
 				return;

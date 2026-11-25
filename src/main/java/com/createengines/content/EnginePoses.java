@@ -166,6 +166,23 @@ public final class EnginePoses {
 			.translate(-0.5f, -0.5f, -0.5f);
 	}
 
+	/**
+	 * A model made for a block that points up, laid on a block that points along {@code facing}: turned about the block's centre. A wreck is
+	 * modelled upright on its head or cylinder, and this stands it on whichever way the block is built.
+	 */
+	public static Matrix4f facingFrame(Direction facing) {
+		return new Matrix4f().translate(0.5f, 0.5f, 0.5f)
+			.rotate(new Quaternionf().rotationTo(UP, new Vector3f(facing.step())))
+			.translate(-0.5f, -0.5f, -0.5f);
+	}
+
+	/** A model made for a block whose shaft stands upright, laid on one whose shaft lies along {@code axis}. It does not turn. */
+	public static Matrix4f axisFrame(Axis axis) {
+		return new Matrix4f().translate(0.5f, 0.5f, 0.5f)
+			.rotate(CrankGeometry.modelToAxis(axis))
+			.translate(-0.5f, -0.5f, -0.5f);
+	}
+
 	/** Piston and connecting rod, from the crank throw's angle by slider-crank geometry. */
 	public static CylinderPose cylinder(CylinderBlockEntity cylinder, float renderTime) {
 		BlockState state = cylinder.getBlockState();

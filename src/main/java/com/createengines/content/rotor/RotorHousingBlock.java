@@ -110,6 +110,9 @@ public class RotorHousingBlock extends CrankshaftBlock implements AirflowPort, S
 	@Override
 	protected ItemInteractionResult useItemOn(ItemStack stack, BlockState state, Level level, BlockPos pos,
 											  Player player, InteractionHand hand, BlockHitResult hit) {
+		ItemInteractionResult worn = com.createengines.content.WearService.onRotor(stack, level, pos, player, hand);
+		if (worn != ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION)
+			return worn;
 		ItemInteractionResult result = PartInstallation.tryInstall(stack, state, level, pos, player, PARTS);
 		return result == ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION
 			? super.useItemOn(stack, state, level, pos, player, hand, hit) : result;

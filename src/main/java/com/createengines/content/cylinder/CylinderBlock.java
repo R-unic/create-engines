@@ -5,6 +5,7 @@ import org.jetbrains.annotations.Nullable;
 import com.createengines.content.CasingStyle;
 import com.createengines.content.Encasing;
 import com.createengines.content.PartInstallation;
+import com.createengines.content.WearService;
 import com.createengines.content.PartInstallation.Slot;
 import com.createengines.engine.topology.EngineTopology;
 import com.createengines.registry.CEBlockEntities;
@@ -114,7 +115,15 @@ public class CylinderBlock extends DirectionalBlock
 		// Nothing goes in or out of a cylinder that is clad
 		if (state.getValue(Encasing.ENCASED))
 			return ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION;
-		return PartInstallation.tryInstall(stack, state, level, pos, player, PARTS);
+		ItemInteractionResult serviced = WearService.onCylinder(stack, level, pos, player, hand);
+		if (serviced != ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION)
+			return serviced;
+		// A part fitted keeps the wear it had on the stack (a new one has none)
+		double carried = WearService.wearOf(stack);
+		ItemInteractionResult result = PartInstallation.tryInstall(stack, state, level, pos, player, PARTS);
+		if (result != ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION)
+			WearService.partsChanged(level, pos, state, level.getBlockState(pos), carried);
+		return result;
 	}
 
 	/** A wrench takes the casing off a clad cylinder before it does anything else. */
@@ -133,8 +142,11 @@ public class CylinderBlock extends DirectionalBlock
 	@Override
 	protected InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos, Player player,
 											   BlockHitResult hit) {
-		if (!state.getValue(Encasing.ENCASED) && PartInstallation.tryRemove(state, level, pos, player, PARTS))
+		if (!state.getValue(Encasing.ENCASED) && PartInstallation.tryRemove(state, level, pos, player,
+			(slot, part) -> WearService.dress(level, pos, slot, part), PARTS)) {
+			WearService.partsChanged(level, pos, state, level.getBlockState(pos));
 			return InteractionResult.sidedSuccess(level.isClientSide);
+		}
 		return InteractionResult.PASS;
 	}
 
@@ -147,7 +159,7 @@ public class CylinderBlock extends DirectionalBlock
 	@Override
 	protected void onRemove(BlockState state, Level level, BlockPos pos, BlockState newState, boolean movedByPiston) {
 		Encasing.dropOnRemove(state, level, pos, newState);
-		PartInstallation.dropParts(state, level, pos, newState, PARTS);
+		PartInstallation.dropParts(state, level, pos, newState, (slot, part) -> WearService.dress(level, pos, slot, part), PARTS);
 		IBE.onRemove(state, level, pos, newState);
 		EngineTopology.markDirty(level, pos);
 	}

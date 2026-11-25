@@ -2,6 +2,9 @@ package com.createengines.content.head;
 
 import java.util.List;
 
+import com.createengines.content.WearService;
+import com.createengines.engine.sim.Wear;
+import com.createengines.engine.topology.EngineTopology;
 import com.createengines.registry.CEDataMaps;
 import com.createengines.registry.CEFluids;
 import com.createengines.content.GoggleLines;
@@ -17,7 +20,10 @@ import com.simibubi.create.foundation.fluid.SmartFluidTank;
 
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.HolderLookup;
+import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
 import net.neoforged.neoforge.fluids.capability.IFluidHandler;
@@ -48,6 +54,176 @@ public class CylinderHeadBlockEntity extends SmartBlockEntity implements IHaveGo
 
 	public CylinderHeadBlockEntity(BlockEntityType<?> type, BlockPos pos, BlockState state) {
 		super(type, pos, state);
+	}
+
+	// Wear (opt-in, see Wear): the gasket under the head, how worn it is, and whether it has blown. All saved only once they differ from a
+	// head that never wore, so such a head saves what it always did.
+	private Wear.Gasket gasket = Wear.Gasket.STOCK;
+	private double gasketWear;
+	private boolean blown;
+	private boolean broken;
+	/** Whether the stock gasket in this head was fitted as an item (any other tier always was): see {@link #hasGasketItem}. */
+	private boolean stockFitted;
+
+	public Wear.Gasket gasket() {
+		return gasket;
+	}
+
+	public double gasketWear() {
+		return gasketWear;
+	}
+
+	/** Whether the gasket has blown: the cylinder under this head is stopped until a new gasket goes in. */
+	public boolean blown() {
+		return blown;
+	}
+
+	/**
+	 * Adds wear to the gasket. Returns whether it moved to a new 5% step, which is when clients are told.
+	 */
+	public boolean addGasketWear(double amount) {
+		int before = (int) Math.round(gasketWear * 20);
+		gasketWear = Wear.clamp(gasketWear + amount);
+		setChanged();
+		boolean visible = before != (int) Math.round(gasketWear * 20);
+		if (visible)
+			sendData();
+		return visible;
+	}
+
+	/** Whether a thrown rod broke this head: it stops its cylinder for good, and only replacing the head cures it. */
+	public boolean broken() {
+		return broken;
+	}
+
+	/** A rod went through the head: it is broken, and the gasket under it is lost with it. */
+	public void breakHead() {
+		if (broken)
+			return;
+		broken = true;
+		blown = false;
+		gasket = Wear.Gasket.STOCK;
+		gasketWear = 0;
+		setChanged();
+		sendData();
+		EngineTopology.wearChanged(level, worldPosition);
+	}
+
+	/**
+	 * A leak or a wreck makes itself seen: a blown gasket puffs smoke, and a head with a rod through it drips oil and smokes. Client side
+	 * only, nothing saved, and nothing at all from a head that is sound, so with the wear mode off no head ever does this.
+	 */
+	@Override
+	public void tick() {
+		super.tick();
+		if (level == null || !level.isClientSide || !(blown || broken))
+			return;
+		var random = level.random;
+		if (random.nextInt(broken ? 7 : 5) != 0)
+			return;
+		double x = worldPosition.getX() + 0.3 + random.nextDouble() * 0.4;
+		double y = worldPosition.getY() + 0.6 + random.nextDouble() * 0.3;
+		double z = worldPosition.getZ() + 0.3 + random.nextDouble() * 0.4;
+		// A broken head mostly smoulders, with only now and then a heavy puff, so the wreck itself stays in view
+		level.addParticle(broken && random.nextInt(4) == 0 ? net.minecraft.core.particles.ParticleTypes.LARGE_SMOKE : net.minecraft.core.particles.ParticleTypes.SMOKE, x, y, z, 0, 0.04, 0);
+		if (broken && random.nextInt(4) == 0)
+			level.addParticle(net.minecraft.core.particles.ParticleTypes.DRIPPING_OBSIDIAN_TEAR, x, y - 0.3, z, 0, 0, 0);
+	}
+
+	/** The gasket blows: the engine is looked at again, and the cylinder under this head stops. */
+	public void blow() {
+		if (blown)
+			return;
+		blown = true;
+		setChanged();
+		sendData();
+		EngineTopology.wearChanged(level, worldPosition);
+	}
+
+	/** Puts a new gasket of {@code tier} in, in place of whatever was there (a blown one included): new, sound and sealed. */
+	public ItemStack fit(Wear.Gasket tier) {
+		return fit(tier, 0);
+	}
+
+	/**
+	 * Puts a gasket of {@code tier} that has {@code wear} in, in place of whatever was there (a blown one included), and returns the one that
+	 * came out as an item with its wear (a blown one is spent), or an empty stack if the head had none fitted of its own.
+	 */
+	public ItemStack fit(Wear.Gasket tier, double wear) {
+		ItemStack old = gasketStack();
+		gasket = tier;
+		gasketWear = Wear.clamp(wear);
+		stockFitted = true;
+		blown = false;
+		setChanged();
+		sendData();
+		// A gasket seals the head whether or not the wear mode is on, so the engine is rebuilt to read it
+		EngineTopology.wearChanged(level, worldPosition);
+		return old;
+	}
+
+	/** Whether a gasket has been fitted to this head as an item (a head that has never had one is read as holding the stock one, which is not). */
+	public boolean hasGasketItem() {
+		return gasket != Wear.Gasket.STOCK || stockFitted;
+	}
+
+	/** The gasket fitted, as an item carrying its wear (a blown one is spent), or an empty stack if none was fitted as an item. */
+	public ItemStack gasketStack() {
+		return hasGasketItem() ? WearService.withWear(WearService.itemFor(gasket), blown ? 1 : gasketWear) : ItemStack.EMPTY;
+	}
+
+	/**
+	 * Takes the fitted gasket out. The head is then without one, and stops its cylinder until a gasket is fitted (a gasket-less head is not
+	 * a free new one). Returns the gasket as an item with its wear, or an empty stack if there was none fitted as an item.
+	 */
+	public ItemStack removeGasket() {
+		ItemStack out = gasketStack();
+		if (out.isEmpty())
+			return out;
+		gasket = Wear.Gasket.STOCK;
+		gasketWear = 0;
+		stockFitted = false;
+		blown = true;
+		setChanged();
+		sendData();
+		EngineTopology.wearChanged(level, worldPosition);
+		return out;
+	}
+
+	/** Sets right light gasket wear (see {@link Wear#repairable}). Returns whether anything changed; a blown or heavily worn one is replaced instead. */
+	public boolean service() {
+		if (blown || !Wear.repairable(gasketWear))
+			return false;
+		gasketWear = Wear.repaired(gasketWear);
+		setChanged();
+		sendData();
+		return true;
+	}
+
+	@Override
+	protected void write(CompoundTag tag, HolderLookup.Provider registries, boolean clientPacket) {
+		super.write(tag, registries, clientPacket);
+		if (gasket != Wear.Gasket.STOCK)
+			tag.putInt("Gasket", gasket.ordinal());
+		if (gasketWear > 0)
+			tag.putDouble("GasketWear", gasketWear);
+		if (blown)
+			tag.putBoolean("Blown", true);
+		if (broken)
+			tag.putBoolean("Broken", true);
+		if (stockFitted && gasket == Wear.Gasket.STOCK)
+			tag.putBoolean("StockFitted", true);
+	}
+
+	@Override
+	protected void read(CompoundTag tag, HolderLookup.Provider registries, boolean clientPacket) {
+		super.read(tag, registries, clientPacket);
+		// Absent in a world from before wear existed, where a head has the stock gasket, new
+		gasket = tag.contains("Gasket") ? Wear.Gasket.byId(tag.getInt("Gasket")) : Wear.Gasket.STOCK;
+		gasketWear = Wear.clamp(tag.getDouble("GasketWear"));
+		blown = tag.getBoolean("Blown");
+		broken = tag.getBoolean("Broken");
+		stockFitted = tag.getBoolean("StockFitted");
 	}
 
 	@Override
@@ -138,6 +314,22 @@ public class CylinderHeadBlockEntity extends SmartBlockEntity implements IHaveGo
 		} else if (isPlayerSneaking)
 			GoggleLines.add(CELang.translate("goggles.head.no_spark_plug")
 				.style(ChatFormatting.DARK_GRAY), tooltip, 1);
+		if (broken)
+			GoggleLines.add(CELang.translate("goggles.wear.head_broken")
+				.style(ChatFormatting.RED), tooltip, 1);
+		else if (blown)
+			GoggleLines.add(CELang.translate("goggles.wear.gasket_blown")
+				.style(ChatFormatting.RED), tooltip, 1);
+		else if (gasketWear > 0 || gasket != Wear.Gasket.STOCK) {
+			int percent = (int) Math.round(gasketWear * 100);
+			GoggleLines.add(CELang.translate("goggles.wear.gasket", CELang.translate("goggles.wear.gasket." + gasket.name().toLowerCase(java.util.Locale.ROOT))
+					.string(), percent)
+				.style(gasketWear >= Wear.FAILURE_FROM ? ChatFormatting.RED : gasketWear >= Wear.REPAIRABLE ? ChatFormatting.GOLD : ChatFormatting.GRAY),
+				tooltip, 1);
+			if (isPlayerSneaking && percent >= 5)
+				GoggleLines.add(CELang.translate(Wear.repairable(gasketWear) ? "goggles.wear.light" : "goggles.wear.heavy")
+					.style(ChatFormatting.DARK_GRAY), tooltip, 2);
+		}
 		if (oilTank().isEmpty())
 			GoggleLines.add(CELang.translate("goggles.head.oil")
 				.style(ChatFormatting.GRAY), tooltip, 1);

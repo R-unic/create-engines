@@ -75,6 +75,9 @@ public final class VisualSmokeTest {
 	/** Run only the engines' smoke, steam, sparks and bubbles (gradle {@code -PsmokeEffects}). */
 	private static final String EFFECTS_ONLY = "create_engines.visualSmokeTest.effects";
 
+	/** Run only the wear mode's wrecks (gradle {@code -PsmokeWear}): a thrown rod and its broken head, a blown gasket and a seized piston, each against a sound engine. */
+	private static final String WEAR_ONLY = "create_engines.visualSmokeTest.wear";
+
 	/** Run only the pushrod close-up (gradle {@code -PsmokePushrods}): one cylinder with its cam beside the block. */
 	private static final String PUSHRODS_ONLY = "create_engines.visualSmokeTest.pushrods";
 	/** Run only the casing wall (gradle {@code -PsmokeCasings}): every casing plate in a row of dyes. */
@@ -219,6 +222,11 @@ public final class VisualSmokeTest {
 
 		if (Boolean.getBoolean(EFFECTS_ONLY)) {
 			effects(60);
+			return;
+		}
+
+		if (Boolean.getBoolean(WEAR_ONLY)) {
+			wear(60);
 			return;
 		}
 
@@ -842,6 +850,60 @@ public final class VisualSmokeTest {
 	 * open, one with its air intake underwater and one with no oil. Then the first is choked so it dies, it rains, and
 	 * each engine's figures are logged so the pictures can be read against them.
 	 */
+	/** Where the five wear engines stand: a thrown rod and its broken head, a blown gasket, a seized piston, a sound one to compare and a rotor with failed seals. */
+	private static final BlockPos WRECK_OFFSET = BlockPos.ZERO;
+	private static final BlockPos BLOWN_OFFSET = new BlockPos(14, 0, 0);
+	private static final BlockPos SEIZED_OFFSET = new BlockPos(28, 0, 0);
+	private static final BlockPos SOUND_OFFSET = new BlockPos(42, 0, 0);
+	private static final BlockPos APEX_OFFSET = new BlockPos(56, 0, 0);
+
+	/**
+	 * The wear mode's wrecks, each photographed from the side that shows it, running (a wreck is drawn whatever the engine is doing), against an
+	 * engine with nothing wrong; then the run ends. It shows that a thrown rod's wreck stands out of a broken head and lies in the bore, that a
+	 * blown gasket hangs from the joint with its soot streak, and that a seized piston is scorched.
+	 */
+	private static void wear(int start) {
+		STEPS.add(new Step(start, () -> server(server -> {
+			var level = server.overworld();
+			for (BlockPos offset : List.of(WRECK_OFFSET, BLOWN_OFFSET, SEIZED_OFFSET, SOUND_OFFSET))
+				TestEngine.build(level, origin.offset(offset), true);
+			BlockPos wreck = origin.offset(WRECK_OFFSET);
+			level.setBlock(wreck.offset(TestEngine.CYLINDER), level.getBlockState(wreck.offset(TestEngine.CYLINDER))
+				.setValue(com.createengines.content.cylinder.CylinderBlock.HAS_PISTON, false)
+				.setValue(com.createengines.content.cylinder.CylinderBlock.HAS_ROD, false), 3);
+			if (level.getBlockEntity(wreck.offset(TestEngine.CYLINDER)) instanceof com.createengines.content.cylinder.CylinderBlockEntity cylinder)
+				cylinder.throwRod();
+			if (level.getBlockEntity(wreck.offset(TestEngine.HEAD)) instanceof CylinderHeadBlockEntity head)
+				head.breakHead();
+			if (level.getBlockEntity(origin.offset(BLOWN_OFFSET)
+				.offset(TestEngine.HEAD)) instanceof CylinderHeadBlockEntity head)
+				head.blow();
+			if (level.getBlockEntity(origin.offset(SEIZED_OFFSET)
+				.offset(TestEngine.CYLINDER)) instanceof com.createengines.content.cylinder.CylinderBlockEntity cylinder)
+				cylinder.seize();
+			TestEngine.buildRotary(level, origin.offset(APEX_OFFSET), true);
+			if (level.getBlockEntity(origin.offset(APEX_OFFSET)
+				.offset(TestEngine.HOUSING)) instanceof com.createengines.content.rotor.RotorHousingBlockEntity housing)
+				housing.failApex();
+		})));
+		// The head from above and the side, then the cylinder through its glass, of each engine in turn
+		int at = start + 60;
+		for (BlockPos offset : List.of(WRECK_OFFSET, BLOWN_OFFSET, SEIZED_OFFSET, SOUND_OFFSET, APEX_OFFSET)) {
+			String name = offset.equals(WRECK_OFFSET) ? "wreck" : offset.equals(BLOWN_OFFSET) ? "blown" : offset.equals(SEIZED_OFFSET) ? "seized" : offset.equals(APEX_OFFSET) ? "apex" : "sound";
+			int x = offset.getX();
+			frames("wear_" + name + "_head", at, x + 3.5, 6.2, 0.2, 20, 38);
+			frames("wear_" + name + "_north", at + 30, x + 2.5, 4.4, -1.4, 0, 8);
+			frames("wear_" + name + "_cylinder", at + 60, x + 2.5, 2.0, -0.5, 0, 2.3f);
+			at += 100;
+		}
+		STEPS.add(new Step(at + 20, () -> {
+			logEngines("wear");
+			soundReport();
+			Minecraft.getInstance()
+				.stop();
+		}));
+	}
+
 	private static void effects(int start) {
 		STEPS.add(new Step(start - 10, VisualSmokeTest::soundCheck));
 		STEPS.add(new Step(start, () -> server(server -> {

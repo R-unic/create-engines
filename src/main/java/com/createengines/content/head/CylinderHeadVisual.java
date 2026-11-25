@@ -25,6 +25,11 @@ public class CylinderHeadVisual extends AbstractBlockEntityVisual<CylinderHeadBl
 
 	private final TransformedInstance intake;
 	private final TransformedInstance exhaust;
+	/** The wear mode's wreck of a head a rod went through, and the gasket pushed out of a blown joint. Hidden unless they are wanted. */
+	private final TransformedInstance wreck;
+	private final TransformedInstance flap;
+	private Boolean lastBroken;
+	private boolean lastBlown;
 	private boolean posed;
 	private EnginePoses.ValvePose lastPose;
 
@@ -33,6 +38,10 @@ public class CylinderHeadVisual extends AbstractBlockEntityVisual<CylinderHeadBl
 		intake = instancerProvider().instancer(InstanceTypes.TRANSFORMED, Models.partial(CEPartialModels.VALVE_STEM))
 			.createInstance();
 		exhaust = instancerProvider().instancer(InstanceTypes.TRANSFORMED, Models.partial(CEPartialModels.VALVE_STEM))
+			.createInstance();
+		wreck = instancerProvider().instancer(InstanceTypes.TRANSFORMED, Models.partial(CEPartialModels.HEAD_WRECK))
+			.createInstance();
+		flap = instancerProvider().instancer(InstanceTypes.TRANSFORMED, Models.partial(CEPartialModels.HEAD_BLOWN_GASKET))
 			.createInstance();
 		animate();
 	}
@@ -45,7 +54,31 @@ public class CylinderHeadVisual extends AbstractBlockEntityVisual<CylinderHeadBl
 		animate();
 	}
 
+	/** Lays the wreck or the blown gasket when the head breaks or blows, and takes them away when it is replaced; nothing in between. */
+	private void overlay() {
+		boolean broken = blockEntity.broken();
+		boolean blown = blockEntity.blown() && !broken;
+		if (lastBroken != null && lastBroken == broken && lastBlown == blown)
+			return;
+		lastBroken = broken;
+		lastBlown = blown;
+		BlockPos origin = getVisualPosition();
+		var frame = EnginePoses.facingFrame(blockEntity.getBlockState()
+			.getValue(CylinderHeadBlock.FACING));
+		wreck.setVisible(broken);
+		wreck.setIdentityTransform()
+			.translate(origin)
+			.mul(frame)
+			.setChanged();
+		flap.setVisible(blown);
+		flap.setIdentityTransform()
+			.translate(origin)
+			.mul(frame)
+			.setChanged();
+	}
+
 	private void animate() {
+		overlay();
 		EnginePoses.ValvePose pose = EnginePoses.valves(blockEntity, AnimationTickHolder.getRenderTime(level));
 		// Valves that have not moved since the last frame (a stopped engine) keep their pose and are not re-uploaded
 		if (posed && java.util.Objects.equals(pose, lastPose))
@@ -69,18 +102,22 @@ public class CylinderHeadVisual extends AbstractBlockEntityVisual<CylinderHeadBl
 
 	@Override
 	public void updateLight(float partialTick) {
-		relight(intake, exhaust);
+		relight(intake, exhaust, wreck, flap);
 	}
 
 	@Override
 	protected void _delete() {
 		intake.delete();
 		exhaust.delete();
+		wreck.delete();
+		flap.delete();
 	}
 
 	@Override
 	public void collectCrumblingInstances(Consumer<Instance> consumer) {
 		consumer.accept(intake);
 		consumer.accept(exhaust);
+		consumer.accept(wreck);
+		consumer.accept(flap);
 	}
 }

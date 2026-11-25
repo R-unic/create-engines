@@ -31,6 +31,13 @@ public final class CEComponents {
 			.networkSynchronized(RecordedBlueprint.STREAM_CODEC)
 			.build());
 
+	/** How worn a part is, 0 new to 1 spent. Absent on a new part, so every part from before the wear mode is still a new one. */
+	public static final DeferredHolder<DataComponentType<?>, DataComponentType<Double>> WEAR =
+		TYPES.register("wear", () -> DataComponentType.<Double>builder()
+			.persistent(com.mojang.serialization.Codec.doubleRange(0, 1))
+			.networkSynchronized(net.minecraft.network.codec.ByteBufCodecs.DOUBLE)
+			.build());
+
 	private CEComponents() {
 	}
 

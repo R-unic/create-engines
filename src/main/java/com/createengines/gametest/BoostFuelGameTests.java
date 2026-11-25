@@ -1,6 +1,9 @@
 package com.createengines.gametest;
 
 import com.createengines.CreateEngines;
+import com.createengines.content.cylinder.CylinderBlockEntity;
+import com.createengines.engine.sim.Knock;
+import com.createengines.engine.sim.Tuning;
 import com.createengines.content.airflow.PortOpeningBlock;
 import com.createengines.content.cylinder.CylinderBlockEntity;
 import com.createengines.content.head.CylinderHeadBlock;
@@ -18,8 +21,10 @@ import com.simibubi.create.content.kinetics.motor.CreativeMotorBlockEntity;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.Direction.Axis;
+import net.minecraft.gametest.framework.AfterBatch;
 import net.minecraft.gametest.framework.GameTest;
 import net.minecraft.gametest.framework.GameTestHelper;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.neoforged.neoforge.fluids.FluidStack;
@@ -153,6 +158,42 @@ public class BoostFuelGameTests {
 				"A boosted ethanol engine should run: " + summary(helper) + ", cylinder " + cylinder(helper));
 			helper.assertTrue(cylinder(helper).preignition() == 0f,
 				"Ethanol should stay under its autoignition point at the same boost: " + cylinder(helper));
+			helper.succeed();
+		});
+	}
+
+	// --- Knock: the wear mode's share of pre-ignition ---
+
+	private static final String KNOCK = "knock_wear";
+
+	@AfterBatch(batch = KNOCK)
+	public static void restoreTheModeAfterKnock(ServerLevel level) {
+		Tuning.wearMode = false;
+	}
+
+	/** Ordinary wear takes a piston 1.6 times as fast as a rod, a little more when hot: knock is what takes it well past that. */
+	@GameTest(template = "empty", timeoutTicks = 1200, batch = KNOCK)
+	public static void withTheWearModeOnAKnockingEngineWearsItsPistonFarFaster(GameTestHelper helper) {
+		Tuning.wearMode = true;
+		build(helper, false, true, 256);
+		helper.runAtTickTime(900, () -> {
+			CylinderBlockEntity body = helper.getBlockEntity(CYLINDER);
+			helper.assertTrue(cylinder(helper).preignition() >= (float) Knock.FROM, "The engine knocks: " + cylinder(helper));
+			helper.assertTrue(body.rodWear() > 0 && body.pistonWear() > 4 * body.rodWear(),
+				"Knock wears the piston: piston " + body.pistonWear() + ", rod " + body.rodWear() + ", " + cylinder(helper));
+			helper.assertTrue(!body.thrown() && !body.seized(), "and breaks nothing by itself");
+			helper.succeed();
+		});
+	}
+
+	@GameTest(template = "empty", timeoutTicks = 1200, batch = KNOCK)
+	public static void withTheWearModeOnAnUnboostedEngineWearsItsPistonAsUsual(GameTestHelper helper) {
+		Tuning.wearMode = true;
+		build(helper, false, false, 0);
+		helper.runAtTickTime(900, () -> {
+			CylinderBlockEntity body = helper.getBlockEntity(CYLINDER);
+			helper.assertTrue(body.rodWear() > 0 && body.pistonWear() < 4 * body.rodWear(),
+				"No knock, no extra wear: piston " + body.pistonWear() + ", rod " + body.rodWear());
 			helper.succeed();
 		});
 	}

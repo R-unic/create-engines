@@ -15,6 +15,7 @@ import com.createengines.config.CEConfig;
 import com.createengines.content.camshaft.CamshaftBlock;
 import com.createengines.content.crankshaft.CrankshaftBlock;
 import com.createengines.content.cylinder.CylinderBlock;
+import com.createengines.content.WearService;
 import com.createengines.content.head.CylinderHeadBlock;
 import com.createengines.registry.CEBlocks;
 import com.createengines.registry.CEItems;
@@ -389,6 +390,19 @@ public class BankBuilderItem extends Item {
 					level.setBlockAndUpdate(headPos, plugged.setValue(CylinderHeadBlock.HAS_SPARK_PLUG, true));
 					counts[0]++;
 				}
+				// A head with no gasket of its own gets the best new one the builder carries (never a worn one: a worn
+				// part keeps its wear on the item, and the builder would otherwise hand back a new one)
+				if (level.getBlockEntity(headPos) instanceof com.createengines.content.head.CylinderHeadBlockEntity gasketHead
+					&& !gasketHead.broken() && !gasketHead.hasGasketItem()) {
+					for (ItemEntry<Item> gasket : new ItemEntry[] {CEItems.COPPER_GASKET, CEItems.RUBBER_GASKET,
+						CEItems.CARDBOARD_GASKET, CEItems.STOCK_GASKET}) {
+						if (supplies.takeExtra(gasket.get())) {
+							gasketHead.fit(WearService.gasketOf(gasket.asStack()), 0);
+							counts[0]++;
+							break;
+						}
+					}
+				}
 			}
 		}
 		int[] cams = layCams(level, throwPositions, axis, layout, side, supplies, player);
@@ -507,7 +521,7 @@ public class BankBuilderItem extends Item {
 			for (ItemEntry<Item> item : items) {
 				if (free)
 					return item;
-				if (take(item::isIn))
+				if (take(stack -> item.isIn(stack) && WearService.wearOf(stack) <= 0))
 					return item;
 			}
 			return null;
@@ -532,7 +546,7 @@ public class BankBuilderItem extends Item {
 			Inventory inventory = player.getInventory();
 			for (int i = 0; i < inventory.getContainerSize(); i++)
 				if (inventory.getItem(i)
-					.is(item))
+					.is(item) && WearService.wearOf(inventory.getItem(i)) <= 0)
 					return true;
 			return false;
 		}
@@ -541,7 +555,7 @@ public class BankBuilderItem extends Item {
 		private boolean takeExtra(Item item) {
 			if (!hasExtra(item))
 				return false;
-			return free || take(stack -> stack.is(item));
+			return free || take(stack -> stack.is(item) && WearService.wearOf(stack) <= 0);
 		}
 
 		/** As {@link #takeExtra} for a block's item, answering with the block. */

@@ -14,12 +14,12 @@ import net.minecraft.world.item.Item;
 /** Parts that are installed into blocks rather than placed: they are part of the engine but smaller than a block. */
 public final class CEItems {
 
-	public static final ItemEntry<Item> PISTON = REGISTRATE.item("piston", Item::new)
+	public static final ItemEntry<Item> PISTON = REGISTRATE.item("piston", p -> (Item) new com.createengines.content.WornPartItem(p))
 		.lang("Engine Piston")
 		.model((c, p) -> p.withExistingParent(c.getName(), p.modLoc("block/cylinder/piston")))
 		.register();
 
-	public static final ItemEntry<Item> CONNECTING_ROD = REGISTRATE.item("connecting_rod", Item::new)
+	public static final ItemEntry<Item> CONNECTING_ROD = REGISTRATE.item("connecting_rod", p -> (Item) new com.createengines.content.WornPartItem(p))
 		.model((c, p) -> p.withExistingParent(c.getName(), p.modLoc("block/cylinder/rod_item")))
 		.register();
 
@@ -32,7 +32,7 @@ public final class CEItems {
 		.register();
 
 	/** A lighter, harder piston that drags less: a precision part for a cylinder. */
-	public static final ItemEntry<Item> FORGED_PISTON = REGISTRATE.item("forged_piston", Item::new)
+	public static final ItemEntry<Item> FORGED_PISTON = REGISTRATE.item("forged_piston", p -> (Item) new com.createengines.content.WornPartItem(p))
 		.model((c, p) -> p.withExistingParent(c.getName(), p.modLoc("block/cylinder/forged_piston")))
 		.register();
 
@@ -57,6 +57,41 @@ public final class CEItems {
 	 */
 	public static final ItemEntry<Item> IGNITION_COIL = REGISTRATE.item("ignition_coil", Item::new)
 		.model((c, p) -> p.withExistingParent(c.getName(), p.modLoc("block/cylinder_head/coil_item")))
+		.register();
+
+	/**
+	 * Wear mode: a head gasket in three tiers (see {@code Wear.Gasket}), fitted by right-clicking a head. A better gasket lasts longer and takes
+	 * more boost. With the mode off a fitted one does nothing, and every head has the stock gasket, which is not an item.
+	 */
+	/** The plainest gasket, the one a head is read as holding when none is fitted; fitting one explicitly puts a new one in. */
+	public static final ItemEntry<Item> STOCK_GASKET = REGISTRATE.item("stock_gasket", p -> (Item) new com.createengines.content.WornPartItem(p))
+		.model((c, p) -> p.generated(c, p.modLoc("item/stock_gasket")))
+		.register();
+
+	public static final ItemEntry<Item> CARDBOARD_GASKET = REGISTRATE.item("cardboard_gasket", p -> (Item) new com.createengines.content.WornPartItem(p))
+		.model((c, p) -> p.generated(c, p.modLoc("item/cardboard_gasket")))
+		.register();
+
+	public static final ItemEntry<Item> RUBBER_GASKET = REGISTRATE.item("rubber_gasket", p -> (Item) new com.createengines.content.WornPartItem(p))
+		.model((c, p) -> p.generated(c, p.modLoc("item/rubber_gasket")))
+		.register();
+
+	public static final ItemEntry<Item> COPPER_GASKET = REGISTRATE.item("copper_gasket", p -> (Item) new com.createengines.content.WornPartItem(p))
+		.model((c, p) -> p.generated(c, p.modLoc("item/copper_gasket")))
+		.register();
+
+	/** Wear mode: right-click a cylinder or a head to set its piston, rod or gasket right when the wear is light. Heavy wear needs the part replaced. */
+	public static final ItemEntry<Item> SERVICE_KIT = REGISTRATE.item("service_kit", p -> (Item) new com.createengines.content.ServiceKitItem(p))
+		.properties(p -> p.durability(com.createengines.content.WearService.KIT_USES))
+		.model((c, p) -> p.generated(c, p.modLoc("item/service_kit")))
+		.register();
+
+	/**
+	 * Wear mode: a fresh set of apex seals for a rotor housing, fitted by right-clicking it. It replaces the set there, worn or failed. With the
+	 * mode off a fitted set does nothing and a housing needs none: the stock set is not an item.
+	 */
+	public static final ItemEntry<Item> APEX_SEALS = REGISTRATE.item("apex_seals", Item::new)
+		.model((c, p) -> p.generated(c, p.modLoc("item/apex_seals")))
 		.register();
 
 	/** The triangular rotor of a Wankel engine, which goes in a rotor housing. */

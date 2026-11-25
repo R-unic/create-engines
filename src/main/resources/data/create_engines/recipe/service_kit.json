@@ -1,0 +1,14 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "category": "misc",
+  "ingredients": [
+    {"item": "create:brass_sheet"},
+    {"item": "create:iron_sheet"},
+    {"item": "minecraft:copper_ingot"},
+    {"item": "minecraft:paper"}
+  ],
+  "result": {
+    "count": 1,
+    "id": "create_engines:service_kit"
+  }
+}

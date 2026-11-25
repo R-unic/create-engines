@@ -194,6 +194,7 @@ public class BlackBoxBlockEntity extends SmartBlockEntity implements IHaveGoggle
 				sent.putIntArray("Warmth", readout.warmth());
 				sent.putIntArray("States", readout.states());
 				sent.putIntArray("Events", readout.flatEvents());
+				sent.putIntArray("Wear", readout.wear());
 				tag.put("Readout", sent);
 			}
 			FlightRecorder.Moment shown = moment;
@@ -207,6 +208,7 @@ public class BlackBoxBlockEntity extends SmartBlockEntity implements IHaveGoggle
 				sent.putInt("Warmth", shown.warmth());
 				sent.putInt("Fault", shown.fault()
 					.ordinal());
+				sent.putInt("Wear", shown.wear());
 				tag.put("Moment", sent);
 			}
 			return;
@@ -219,6 +221,7 @@ public class BlackBoxBlockEntity extends SmartBlockEntity implements IHaveGoggle
 		tape.putIntArray("States", saved.states());
 		tape.putIntArray("Changes", saved.changes());
 		tape.putIntArray("Faults", saved.faults());
+		tape.putIntArray("Wear", saved.wear());
 		tag.put("Tape", tape);
 		tag.putBoolean("Awarded", awarded);
 	}
@@ -230,7 +233,8 @@ public class BlackBoxBlockEntity extends SmartBlockEntity implements IHaveGoggle
 		if (clientPacket) {
 			CompoundTag sent = tag.getCompound("Readout");
 			readout = tag.contains("Readout") ? Readout.of(sent.getInt("Span"), sent.getIntArray("Rpm"),
-				sent.getIntArray("Load"), sent.getIntArray("Warmth"), sent.getIntArray("States"), sent.getIntArray("Events"))
+				sent.getIntArray("Load"), sent.getIntArray("Warmth"), sent.getIntArray("States"), sent.getIntArray("Events"),
+				sent.getIntArray("Wear"))
 				: null;
 			moment = tag.contains("Moment") ? momentOf(tag.getCompound("Moment")) : null;
 			return;
@@ -239,7 +243,7 @@ public class BlackBoxBlockEntity extends SmartBlockEntity implements IHaveGoggle
 			CompoundTag tape = tag.getCompound("Tape");
 			recorder.restore(new FlightRecorder.Saved(tape.getIntArray("Rpm"), tape.getIntArray("Load"),
 				tape.getIntArray("Warmth"), tape.getIntArray("States"), tape.getIntArray("Changes"),
-				tape.getIntArray("Faults")));
+				tape.getIntArray("Faults"), tape.getIntArray("Wear")));
 			readout = recorder.readout();
 			// A loaded block pins its replay again from the dial the first time it ticks
 			pinned = -1;
@@ -275,6 +279,12 @@ public class BlackBoxBlockEntity extends SmartBlockEntity implements IHaveGoggle
 			.style(warmthNow < 45 ? ChatFormatting.BLUE : ChatFormatting.RED), tooltip, 1);
 		GoggleLines.add(CELang.translate("goggles.recorder.states", marks(current.states()))
 			.style(ChatFormatting.GRAY), tooltip, 1);
+		// The wear mode's total for the whole build; no line at all when it was off for the whole tape
+		if (current.hasWear()) {
+			int wearNow = Math.max(0, current.wearNow());
+			GoggleLines.add(CELang.translate("goggles.recorder.wear", bars(clampedWear(current.wear()), 100), wearNow)
+				.style(wearNow >= 50 ? ChatFormatting.RED : wearNow >= 35 ? ChatFormatting.GOLD : ChatFormatting.GRAY), tooltip, 1);
+		}
 		replayLines(tooltip, isPlayerSneaking);
 
 		List<Event> events = current.events();
@@ -291,6 +301,14 @@ public class BlackBoxBlockEntity extends SmartBlockEntity implements IHaveGoggle
 				.component();
 			boolean bad = event.to() == EngineState.STALLED || event.to() == EngineState.OVERLOADED
 				|| event.to() == EngineState.BROKEN;
+			if (event.from() == event.to() && event.cause() != FlightRecorder.Cause.NONE) {
+				// A failure, not a change of state: the engine was in the same state before and after
+				GoggleLines.add(CELang.translate("goggles.recorder.event_failure", duration(event.secondsAgo()), CELang.translate(event.cause()
+						.langKey())
+					.component())
+					.style(ChatFormatting.RED), tooltip, 1);
+				continue;
+			}
 			if (event.cause() == FlightRecorder.Cause.NONE)
 				GoggleLines.add(CELang.translate("goggles.recorder.event", duration(event.secondsAgo()), from, to)
 					.style(bad ? ChatFormatting.RED : ChatFormatting.GRAY), tooltip, 1);
@@ -325,6 +343,9 @@ public class BlackBoxBlockEntity extends SmartBlockEntity implements IHaveGoggle
 					.toLowerCase(Locale.ROOT))
 				.component(), shown.rpm(), shown.load(), shown.warmth())
 			.style(bad ? ChatFormatting.RED : ChatFormatting.GRAY), tooltip, 2);
+		if (shown.wear() >= 0)
+			GoggleLines.add(CELang.translate("goggles.recorder.replay.wear", shown.wear())
+				.style(ChatFormatting.GRAY), tooltip, 2);
 		GoggleLines.add(CELang.translate("goggles.recorder.replay.fault", CELang.translate(shown.fault()
 					.displayKey())
 				.component())
@@ -336,7 +357,15 @@ public class BlackBoxBlockEntity extends SmartBlockEntity implements IHaveGoggle
 		Diagnosis.Cause[] causes = Diagnosis.Cause.values();
 		return new FlightRecorder.Moment(tag.getInt("Ago"), states[Math.clamp(tag.getInt("State"), 0, states.length - 1)],
 			tag.getInt("Rpm"), tag.getInt("Load"), tag.getInt("Warmth"),
-			causes[Math.clamp(tag.getInt("Fault"), 0, causes.length - 1)]);
+			causes[Math.clamp(tag.getInt("Fault"), 0, causes.length - 1)], tag.contains("Wear") ? tag.getInt("Wear") : -1);
+	}
+
+	/** A column of wear totals for drawing: a column with none recorded is drawn as no wear. */
+	private static int[] clampedWear(int[] wear) {
+		int[] drawn = new int[wear.length];
+		for (int i = 0; i < wear.length; i++)
+			drawn[i] = Math.max(0, wear[i]);
+		return drawn;
 	}
 
 	/** A value box on the side faces of the recorder's case. */

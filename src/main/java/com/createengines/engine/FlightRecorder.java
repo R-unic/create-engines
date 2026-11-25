@@ -7,6 +7,8 @@ import java.util.List;
 
 import org.jetbrains.annotations.Nullable;
 
+import com.createengines.engine.sim.WearTotal;
+
 /**
  * The last ten minutes of an engine's life, a sample a second, and the moments its state changed with the reason the
  * figures give for each. Pure bookkeeping: whatever owns the recorder feeds it one {@link Sample} a second and asks for a
@@ -30,7 +32,9 @@ public final class FlightRecorder {
 
 	/** What was wrong when the engine changed state, as far as the figures say. */
 	public enum Cause {
-		NONE, UNKNOWN, NO_FUEL, OVERLOAD, DRY;
+		NONE, UNKNOWN, NO_FUEL, OVERLOAD, DRY,
+		/** The wear mode's failures, appended so a tape saved before them still reads: a rod was thrown, a gasket blew, a piston seized, apex seals failed. */
+		ROD_THROWN, GASKET_BLOWN, PISTON_SEIZED, APEX_FAILED;
 
 		public String langKey() {
 			return "goggles.recorder.cause." + name().toLowerCase(java.util.Locale.ROOT);
@@ -47,17 +51,29 @@ public final class FlightRecorder {
 	 * @param lubrication how well oiled it is, 0 to 1
 	 */
 	public record Sample(EngineState state, float rpm, float load, float capacity, float temperature, float fuel,
-						 float lubrication, Diagnosis.Cause fault) {
+						 float lubrication, Diagnosis.Cause fault, float wear, int failures) {
 
 		/** A sample that blames nothing, for the places that only have the figures. */
 		public Sample(EngineState state, float rpm, float load, float capacity, float temperature, float fuel,
 					  float lubrication) {
-			this(state, rpm, load, capacity, temperature, fuel, lubrication, Diagnosis.Cause.NONE);
+			this(state, rpm, load, capacity, temperature, fuel, lubrication, Diagnosis.Cause.NONE, -1f);
+		}
+
+		/** A sample from before the wear total: there is none. */
+		public Sample(EngineState state, float rpm, float load, float capacity, float temperature, float fuel,
+					  float lubrication, Diagnosis.Cause fault) {
+			this(state, rpm, load, capacity, temperature, fuel, lubrication, fault, -1f);
+		}
+
+		/** A sample from before failures were counted: no reading, so it never reads as one more having failed. */
+		public Sample(EngineState state, float rpm, float load, float capacity, float temperature, float fuel,
+					  float lubrication, Diagnosis.Cause fault, float wear) {
+			this(state, rpm, load, capacity, temperature, fuel, lubrication, fault, wear, -1);
 		}
 
 		public static Sample of(EngineSummary summary) {
 			return new Sample(summary.state(), summary.rpm(), summary.loadTorque(), summary.availableTorque(),
-				summary.temperature(), summary.fuelPerMinute(), summary.lubrication(), summary.cause());
+				summary.temperature(), summary.fuelPerMinute(), summary.lubrication(), summary.cause(), summary.wear(), summary.failures());
 		}
 	}
 
@@ -68,8 +84,14 @@ public final class FlightRecorder {
 	 * @param load       percent of what the engine could give that the network asked for
 	 * @param warmth     percent of the 0.7 a warm engine sits at
 	 * @param fault      the one thing the engine's health line blamed at the time, or NONE
+	 * @param wear       the whole build's wear total at the time, in percent, or -1 when there was none (the wear mode was off)
 	 */
-	public record Moment(int secondsAgo, EngineState state, int rpm, int load, int warmth, Diagnosis.Cause fault) {
+	public record Moment(int secondsAgo, EngineState state, int rpm, int load, int warmth, Diagnosis.Cause fault, int wear) {
+
+		/** A moment from before the wear total: there is none. */
+		public Moment(int secondsAgo, EngineState state, int rpm, int load, int warmth, Diagnosis.Cause fault) {
+			this(secondsAgo, state, rpm, load, warmth, fault, -1);
+		}
 	}
 
 	/**
@@ -89,10 +111,30 @@ public final class FlightRecorder {
 	 * @param warmth   mean temperature in each column, in percent of the 0.7 a warm engine sits at
 	 * @param states   the state the engine ended each column in, by {@link EngineState#ordinal()}
 	 * @param events   state changes, oldest first
+	 * @param wear     the whole build's mean wear total in each column, in percent, -1 where it was not recorded (the wear mode was off), or no
+	 *                 columns at all for a readout from before the wear total
 	 */
-	public record Readout(int span, int[] rpm, int[] load, int[] warmth, int[] states, List<Event> events) {
+	public record Readout(int span, int[] rpm, int[] load, int[] warmth, int[] states, List<Event> events, int[] wear) {
+
+		/** A readout from before the wear total: no wear columns. */
+		public Readout(int span, int[] rpm, int[] load, int[] warmth, int[] states, List<Event> events) {
+			this(span, rpm, load, warmth, states, events, new int[0]);
+		}
 
 		public static final Readout EMPTY = new Readout(0, new int[0], new int[0], new int[0], new int[0], List.of());
+
+		/** The wear total now, in percent: the last column, or -1 when there is none. */
+		public int wearNow() {
+			return wear.length == 0 ? -1 : wear[wear.length - 1];
+		}
+
+		/** Whether any column has a wear total, which is when a wear line is worth showing. */
+		public boolean hasWear() {
+			for (int w : wear)
+				if (w >= 0)
+					return true;
+			return false;
+		}
 
 		public boolean isEmpty() {
 			return rpm.length == 0;
@@ -106,6 +148,10 @@ public final class FlightRecorder {
 				if (Math.abs(rpm[i] - other.rpm[i]) > Math.max(1, other.rpm[i] / 50)
 					|| Math.abs(load[i] - other.load[i]) > 2 || Math.abs(warmth[i] - other.warmth[i]) > 1
 					|| states[i] != other.states[i])
+					return true;
+			// A column with no wear total and no column at all are the same thing: a readout from before the total is not a changed one
+			for (int i = 0; i < Math.max(wear.length, other.wear.length); i++)
+				if ((i < wear.length ? wear[i] : -1) != (i < other.wear.length ? other.wear[i] : -1))
 					return true;
 			return false;
 		}
@@ -125,13 +171,18 @@ public final class FlightRecorder {
 
 		/** A readout from the numbers {@link #flatEvents()} and the columns were sent as. */
 		public static Readout of(int span, int[] rpm, int[] load, int[] warmth, int[] states, int[] flat) {
+			return of(span, rpm, load, warmth, states, flat, new int[0]);
+		}
+
+		/** As above, with the wear columns the readout was sent with. */
+		public static Readout of(int span, int[] rpm, int[] load, int[] warmth, int[] states, int[] flat, int[] wear) {
 			List<Event> events = new ArrayList<>();
 			EngineState[] values = EngineState.values();
 			Cause[] causes = Cause.values();
 			for (int i = 0; i + 3 < flat.length; i += 4)
 				events.add(new Event(flat[i], values[Math.clamp(flat[i + 1], 0, values.length - 1)],
 					values[Math.clamp(flat[i + 2], 0, values.length - 1)], causes[Math.clamp(flat[i + 3], 0, causes.length - 1)]));
-			return new Readout(span, rpm, load, warmth, states, events);
+			return new Readout(span, rpm, load, warmth, states, events, wear);
 		}
 	}
 
@@ -143,6 +194,8 @@ public final class FlightRecorder {
 	private final float[] warmth = new float[CAPACITY];
 	private final byte[] states = new byte[CAPACITY];
 	private final byte[] faults = new byte[CAPACITY];
+	/** The wear total at each sample, in percent, or -1 where there was none. */
+	private final byte[] wear = new byte[CAPACITY];
 	/** Samples taken since the recorder began. */
 	private long count;
 	private final Deque<Change> changes = new ArrayDeque<>();
@@ -161,12 +214,21 @@ public final class FlightRecorder {
 			while (changes.size() > MAX_EVENTS)
 				changes.removeFirst();
 		}
+		// A part that has failed since the last look is an event of its own, at the state the engine was in: the Black Box says what broke and when
+		if (previous != null)
+			for (com.createengines.engine.sim.WearFailures.Kind kind : com.createengines.engine.sim.WearFailures.Kind.values())
+				if (com.createengines.engine.sim.WearFailures.rose(previous.failures, sample.failures, kind)) {
+					changes.addLast(new Change(count, sample.state, sample.state, Cause.values()[Cause.ROD_THROWN.ordinal() + kind.ordinal()]));
+					while (changes.size() > MAX_EVENTS)
+						changes.removeFirst();
+				}
 		int slot = (int) (count % CAPACITY);
 		rpm[slot] = sample.rpm;
 		load[slot] = sample.capacity > 0 ? sample.load / sample.capacity : 0;
 		warmth[slot] = sample.temperature;
 		states[slot] = (byte) sample.state.ordinal();
 		faults[slot] = (byte) sample.fault.ordinal();
+		wear[slot] = (byte) WearTotal.percent(sample.wear);
 		count++;
 		last = sample;
 	}
@@ -230,7 +292,7 @@ public final class FlightRecorder {
 		Diagnosis.Cause[] causes = Diagnosis.Cause.values();
 		return new Moment((int) (count - 1 - number), values[Math.clamp(states[slot], 0, values.length - 1)],
 			Math.round(rpm[slot]), Math.round(load[slot] * 100), Math.round(warmth[slot] / 0.7f * 100),
-			causes[Math.clamp(faults[slot], 0, causes.length - 1)]);
+			causes[Math.clamp(faults[slot], 0, causes.length - 1)], wear[slot]);
 	}
 
 	/** Where in the arrays the {@code sampleNumber}th sample since the recorder began is kept. */
@@ -248,39 +310,52 @@ public final class FlightRecorder {
 		int[] outLoad = new int[columns];
 		int[] outWarmth = new int[columns];
 		int[] outStates = new int[columns];
+		int[] outWear = new int[columns];
 		for (int column = 0; column < columns; column++) {
 			long from = first + (long) column * size / columns;
 			long to = first + (long) (column + 1) * size / columns;
 			double rpmSum = 0;
 			double loadSum = 0;
 			double warmthSum = 0;
+			double wearSum = 0;
+			int wearSamples = 0;
 			for (long n = from; n < to; n++) {
 				int slot = slot(n);
 				rpmSum += rpm[slot];
 				loadSum += load[slot];
 				warmthSum += warmth[slot];
+				if (wear[slot] >= 0) {
+					wearSum += wear[slot];
+					wearSamples++;
+				}
 			}
 			int samples = (int) Math.max(1, to - from);
 			outRpm[column] = Math.round((float) (rpmSum / samples));
 			outLoad[column] = Math.round((float) (loadSum / samples * 100));
 			outWarmth[column] = Math.round((float) (warmthSum / samples / 0.7 * 100));
 			outStates[column] = states[slot(to - 1)];
+			outWear[column] = wearSamples == 0 ? -1 : Math.round((float) (wearSum / wearSamples));
 		}
 		List<Event> events = new ArrayList<>();
 		for (Change change : changes)
 			if (change.at >= first)
 				events.add(new Event((int) (count - change.at), change.from, change.to, change.cause));
-		return new Readout((int) Math.max(1, size), outRpm, outLoad, outWarmth, outStates, events);
+		return new Readout((int) Math.max(1, size), outRpm, outLoad, outWarmth, outStates, events, outWear);
 	}
 
 	// Saving
 
 	/** Everything the recorder holds, as plain arrays: samples oldest first, and the changes as four numbers each. */
-	public record Saved(int[] rpm, int[] load, int[] warmth, int[] states, int[] changes, int[] faults) {
+	public record Saved(int[] rpm, int[] load, int[] warmth, int[] states, int[] changes, int[] faults, int[] wear) {
 
 		/** A tape saved before faults were kept: it blames nothing. */
 		public Saved(int[] rpm, int[] load, int[] warmth, int[] states, int[] changes) {
-			this(rpm, load, warmth, states, changes, new int[0]);
+			this(rpm, load, warmth, states, changes, new int[0], new int[0]);
+		}
+
+		/** A tape saved before the wear total was kept: it has none. */
+		public Saved(int[] rpm, int[] load, int[] warmth, int[] states, int[] changes, int[] faults) {
+			this(rpm, load, warmth, states, changes, faults, new int[0]);
 		}
 	}
 
@@ -291,6 +366,7 @@ public final class FlightRecorder {
 		int[] savedWarmth = new int[size];
 		int[] savedStates = new int[size];
 		int[] savedFaults = new int[size];
+		int[] savedWear = new int[size];
 		long first = count - size;
 		for (int i = 0; i < size; i++) {
 			int slot = slot(first + i);
@@ -299,6 +375,7 @@ public final class FlightRecorder {
 			savedWarmth[i] = Math.round(warmth[slot] * 1000);
 			savedStates[i] = states[slot];
 			savedFaults[i] = faults[slot];
+			savedWear[i] = wear[slot];
 		}
 		int[] flat = new int[changes.size() * 4];
 		int i = 0;
@@ -308,7 +385,7 @@ public final class FlightRecorder {
 			flat[i++] = change.to.ordinal();
 			flat[i++] = change.cause.ordinal();
 		}
-		return new Saved(savedRpm, savedLoad, savedWarmth, savedStates, flat, savedFaults);
+		return new Saved(savedRpm, savedLoad, savedWarmth, savedStates, flat, savedFaults, savedWear);
 	}
 
 	public void restore(Saved saved) {
@@ -324,6 +401,8 @@ public final class FlightRecorder {
 			warmth[i] = saved.warmth[i] / 1000f;
 			states[i] = (byte) Math.clamp(saved.states[i], 0, values.length - 1);
 			faults[i] = (byte) (i < saved.faults.length ? Math.clamp(saved.faults[i], 0, Diagnosis.Cause.values().length - 1) : 0);
+			// A tape from before the wear total, or a damaged one, has none; a saved figure is kept to 0 to 100
+			wear[i] = (byte) (i < saved.wear.length && saved.wear[i] >= 0 ? Math.min(100, saved.wear[i]) : -1);
 		}
 		count = size;
 		Cause[] causes = Cause.values();

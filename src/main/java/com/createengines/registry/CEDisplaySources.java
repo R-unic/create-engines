@@ -43,6 +43,10 @@ public final class CEDisplaySources {
 	public static final RegistryEntry<DisplaySource, EngineFillDisplaySource> ENGINE_SMOOTHNESS =
 		REGISTRATE.displaySource("engine_smoothness", () -> new EngineFillDisplaySource(EngineReadout::smoothness))
 			.register();
+	/** The wear mode's total for the whole build, as a percentage or a bar (the plain mean of every part that wears). */
+	public static final RegistryEntry<DisplaySource, EngineFillDisplaySource> ENGINE_WEAR =
+		REGISTRATE.displaySource("engine_wear", () -> new EngineFillDisplaySource(EngineReadout::wear))
+			.register();
 	public static final RegistryEntry<DisplaySource, SumpDisplaySource> SUMP_LEVELS =
 		REGISTRATE.displaySource("sump_levels", SumpDisplaySource::new)
 			.register();

@@ -180,5 +180,53 @@
         "attenuation_distance": 20
       }
     ]
+  },
+  "rod_thrown": {
+    "sounds": [
+      {
+        "name": "create_engines:rod_thrown1",
+        "attenuation_distance": 48
+      },
+      {
+        "name": "create_engines:rod_thrown2",
+        "attenuation_distance": 48
+      }
+    ]
+  },
+  "gasket_blow": {
+    "sounds": [
+      {
+        "name": "create_engines:gasket_blow1",
+        "attenuation_distance": 24
+      },
+      {
+        "name": "create_engines:gasket_blow2",
+        "attenuation_distance": 24
+      }
+    ]
+  },
+  "piston_seize": {
+    "sounds": [
+      {
+        "name": "create_engines:piston_seize1",
+        "attenuation_distance": 32
+      },
+      {
+        "name": "create_engines:piston_seize2",
+        "attenuation_distance": 32
+      }
+    ]
+  },
+  "apex_fail": {
+    "sounds": [
+      {
+        "name": "create_engines:apex_fail1",
+        "attenuation_distance": 32
+      },
+      {
+        "name": "create_engines:apex_fail2",
+        "attenuation_distance": 32
+      }
+    ]
   }
 }

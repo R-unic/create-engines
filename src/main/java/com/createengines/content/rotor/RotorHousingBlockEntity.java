@@ -19,7 +19,9 @@ import com.createengines.engine.sim.CamProfile;
 import com.createengines.engine.sim.CycleResult;
 import com.createengines.engine.sim.CylinderModel;
 import com.createengines.engine.sim.Mixture;
+import com.createengines.engine.sim.Wear;
 import com.createengines.engine.topology.CylinderFault;
+import com.createengines.engine.topology.EngineTopology;
 import com.createengines.registry.CEDataMaps;
 import com.createengines.registry.CEFluids;
 import com.createengines.registry.CELang;
@@ -178,6 +180,68 @@ public class RotorHousingBlockEntity extends CrankshaftBlockEntity implements Ga
 		return combined;
 	}
 
+	// Wear (opt-in, see ApexSeals): how worn the set of apex seals is, 0 new to 1 spent, and whether it has failed. Saved only once there is
+	// something to save, so a housing that never wore saves what it always did.
+	private double apexWear;
+	private boolean apexFailed;
+
+	public double apexWear() {
+		return apexWear;
+	}
+
+	/** The seals have failed: the housing is stopped until a new set is fitted. */
+	public boolean apexFailed() {
+		return apexFailed;
+	}
+
+	/**
+	 * Adds wear to the seals. Returns whether it moved to a new 5% step, which is when clients are told, so a slowly wearing engine does not
+	 * send a packet a second.
+	 */
+	public boolean addApexWear(double wear) {
+		int before = (int) Math.round(apexWear * 20);
+		apexWear = Wear.clamp(apexWear + wear);
+		setChanged();
+		boolean visible = before != (int) Math.round(apexWear * 20);
+		if (visible)
+			sendData();
+		return visible;
+	}
+
+	/** The seals fail: the housing stops, and the engine is looked at again. */
+	public void failApex() {
+		if (apexFailed)
+			return;
+		apexFailed = true;
+		setChanged();
+		sendData();
+		EngineTopology.wearChanged(level, worldPosition);
+	}
+
+	/** A new set of seals is fitted: the old set's wear, and its failure, go with it. Returns whether anything changed. */
+	public boolean fitSeals() {
+		if (apexWear == 0 && !apexFailed)
+			return false;
+		boolean wasFailed = apexFailed;
+		apexWear = 0;
+		apexFailed = false;
+		setChanged();
+		sendData();
+		if (wasFailed)
+			EngineTopology.wearChanged(level, worldPosition);
+		return true;
+	}
+
+	/** Sets right light wear (see {@link Wear#repairable}). A failed set is cured only by a new one. Returns whether anything changed. */
+	public boolean service() {
+		if (apexFailed || !Wear.repairable(apexWear))
+			return false;
+		apexWear = Wear.repaired(apexWear);
+		setChanged();
+		sendData();
+		return true;
+	}
+
 	// Status of the three chambers
 
 	public @Nullable CylinderStatus chamber(int index) {
@@ -206,6 +270,10 @@ public class RotorHousingBlockEntity extends CrankshaftBlockEntity implements Ga
 	@Override
 	protected void write(CompoundTag tag, HolderLookup.Provider registries, boolean clientPacket) {
 		super.write(tag, registries, clientPacket);
+		if (apexWear > 0)
+			tag.putDouble("ApexWear", apexWear);
+		if (apexFailed)
+			tag.putBoolean("ApexFailed", true);
 		if (clientPacket)
 			for (int i = 0; i < chambers.length; i++)
 				if (chambers[i] != null)
@@ -215,6 +283,9 @@ public class RotorHousingBlockEntity extends CrankshaftBlockEntity implements Ga
 	@Override
 	protected void read(CompoundTag tag, HolderLookup.Provider registries, boolean clientPacket) {
 		super.read(tag, registries, clientPacket);
+		// Absent in a world from before wear existed; a damaged save must not hand the model NaN (clamp reads it as new)
+		apexWear = Wear.clamp(tag.getDouble("ApexWear"));
+		apexFailed = tag.getBoolean("ApexFailed");
 		if (clientPacket)
 			for (int i = 0; i < chambers.length; i++)
 				chambers[i] = tag.contains("Chamber" + i) ? CylinderStatus.read(tag.getCompound("Chamber" + i)) : null;
@@ -229,12 +300,25 @@ public class RotorHousingBlockEntity extends CrankshaftBlockEntity implements Ga
 			tickClient();
 	}
 
+	/** A housing whose seals have failed keeps smoking, and now and then spits a spark. Only ever the wear mode's, and it needs no turning. */
+	private void wearEffects() {
+		if (!apexFailed || level.random.nextInt(8) != 0)
+			return;
+		double x = worldPosition.getX() + 0.2 + level.random.nextDouble() * 0.6;
+		double y = worldPosition.getY() + 0.8 + level.random.nextDouble() * 0.3;
+		double z = worldPosition.getZ() + 0.2 + level.random.nextDouble() * 0.6;
+		level.addParticle(ParticleTypes.SMOKE, x, y, z, 0, 0.04, 0);
+		if (level.random.nextInt(6) == 0)
+			level.addParticle(ParticleTypes.ELECTRIC_SPARK, x, y - 0.3, z, 0, 0.02, 0);
+	}
+
 	/**
 	 * The bang, the draught at the intake and what the exhaust throws out, driven by the drawn shaft so they stay in step
 	 * with the turning rotor: each chamber's cycle angle is two-thirds of the shaft's, a third of the way round from the
 	 * last. The heat off the housing needs no turning.
 	 */
 	private void tickClient() {
+		wearEffects();
 		if (((level.getGameTime() + worldPosition.asLong()) & 3) == 0)
 			EngineEffects.heat(level, worldPosition, engineSummary());
 		if (getTheoreticalSpeed() == 0) {
@@ -340,6 +424,8 @@ public class RotorHousingBlockEntity extends CrankshaftBlockEntity implements Ga
 			faults |= CylinderFault.NO_INJECTOR.bit();
 		if (!state.getValue(RotorHousingBlock.HAS_SPARK_PLUG))
 			faults |= CylinderFault.NO_PLUG.bit();
+		if (apexFailed)
+			faults |= CylinderFault.APEX_FAILED.bit();
 
 		if (!CylinderFault.disables(faults)) {
 			// Chambers that all report the same say it once: three identical lines said nothing the first did not
@@ -411,6 +497,14 @@ public class RotorHousingBlockEntity extends CrankshaftBlockEntity implements Ga
 		if (oilTank().isEmpty() && isPlayerSneaking)
 			GoggleLines.add(CELang.translate("goggles.head.oil")
 				.style(ChatFormatting.GRAY), tooltip, 1);
+		int worn = (int) Math.round(apexWear * 100);
+		if (!apexFailed && worn >= 5) {
+			GoggleLines.add(CELang.translate("goggles.wear.apex", worn)
+				.style(apexWear >= Wear.FAILURE_FROM ? ChatFormatting.RED : apexWear >= Wear.REPAIRABLE ? ChatFormatting.GOLD : ChatFormatting.GRAY), tooltip, 1);
+			if (isPlayerSneaking)
+				GoggleLines.add(CELang.translate(Wear.repairable(apexWear) ? "goggles.wear.light" : "goggles.wear.heavy_seals")
+					.style(ChatFormatting.DARK_GRAY), tooltip, 2);
+		}
 		containedFluidTooltip(tooltip, isPlayerSneaking, fluidCapability());
 		super.addToGoggleTooltip(tooltip, isPlayerSneaking);
 		return true;

@@ -2,6 +2,7 @@ package com.createengines.content.effects;
 
 import com.createengines.engine.sim.CycleResult;
 import com.createengines.engine.sim.FuelSpec;
+import com.createengines.engine.sim.Knock;
 import com.createengines.engine.sim.Mixture;
 import com.createengines.engine.sim.Thermal;
 
@@ -167,6 +168,17 @@ public record ExhaustLook(int puffs, float red, float green, float blue, float a
 		if (preignition < 0.01f)
 			return 0;
 		return 0.25f + 0.6f * clamp(preignition / (float) FuelSpec.PREIGNITION_MAX_LOSS, 0, 1);
+	}
+
+	/**
+	 * Chance, 0 to 0.5, that a firing of a cylinder knocking loudly enough to hear (wear mode, see {@link Knock}) pings from
+	 * its block. Past four cylinders each is heard less often, so a big engine pings no more than a four does.
+	 */
+	public static float knockPing(float preignition, int cylinders) {
+		if (!Knock.audible(preignition))
+			return 0;
+		float chance = 0.2f + 0.3f * (float) Knock.intensity(preignition);
+		return cylinders > 4 ? chance * 4 / cylinders : chance;
 	}
 
 	private static float clamp(float value, float low, float high) {
