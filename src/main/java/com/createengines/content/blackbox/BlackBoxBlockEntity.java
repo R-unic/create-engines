@@ -279,15 +279,20 @@ public class BlackBoxBlockEntity extends SmartBlockEntity implements IHaveGoggle
 			.style(warmthNow < 45 ? ChatFormatting.BLUE : ChatFormatting.RED), tooltip, 1);
 		GoggleLines.add(CELang.translate("goggles.recorder.states", marks(current.states()))
 			.style(ChatFormatting.GRAY), tooltip, 1);
-		// The wear mode's total for the whole build; no line at all when it was off for the whole tape
-		if (current.hasWear()) {
+		// The wear mode's total for the whole build; no line with the mode off, or when it was off for the whole tape
+		boolean wearShown = com.createengines.engine.sim.Tuning.wearMode;
+		if (wearShown && current.hasWear()) {
 			int wearNow = Math.max(0, current.wearNow());
 			GoggleLines.add(CELang.translate("goggles.recorder.wear", bars(clampedWear(current.wear()), 100), wearNow)
 				.style(wearNow >= 50 ? ChatFormatting.RED : wearNow >= 35 ? ChatFormatting.GOLD : ChatFormatting.GRAY), tooltip, 1);
 		}
 		replayLines(tooltip, isPlayerSneaking);
 
-		List<Event> events = current.events();
+		// A failure the tape holds from when the mode was on is kept, and not listed while it is off
+		List<Event> events = wearShown ? current.events() : current.events()
+			.stream()
+			.filter(event -> !(event.from() == event.to() && event.cause() != FlightRecorder.Cause.NONE))
+			.toList();
 		int shown = Math.min(events.size(), isPlayerSneaking ? 8 : 3);
 		for (int i = events.size() - shown; i < events.size(); i++) {
 			Event event = events.get(i);
@@ -343,7 +348,7 @@ public class BlackBoxBlockEntity extends SmartBlockEntity implements IHaveGoggle
 					.toLowerCase(Locale.ROOT))
 				.component(), shown.rpm(), shown.load(), shown.warmth())
 			.style(bad ? ChatFormatting.RED : ChatFormatting.GRAY), tooltip, 2);
-		if (shown.wear() >= 0)
+		if (com.createengines.engine.sim.Tuning.wearMode && shown.wear() >= 0)
 			GoggleLines.add(CELang.translate("goggles.recorder.replay.wear", shown.wear())
 				.style(ChatFormatting.GRAY), tooltip, 2);
 		GoggleLines.add(CELang.translate("goggles.recorder.replay.fault", CELang.translate(shown.fault()

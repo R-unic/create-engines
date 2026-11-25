@@ -25,7 +25,7 @@ import net.minecraft.world.level.block.state.BlockState;
 /**
  * What a player does about wear with an item: fit a gasket on a head (which replaces whatever gasket was there, a blown one too) and
  * set right light wear with a Service Kit. Heavy wear and failures are cured by replacing the part, which is the ordinary way a piston,
- * rod or gasket goes in. Nothing here needs the wear mode on; with it off the parts simply never wear.
+ * rod or gasket goes in. Nothing here needs the wear mode on; with it off the parts never wear, and saved failures do not count.
  */
 public final class WearService {
 
@@ -78,7 +78,7 @@ public final class WearService {
 		if (tier == null && !kit)
 			return ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION;
 		if (!level.isClientSide && LoadedBlocks.blockEntity(level, pos) instanceof CylinderHeadBlockEntity head) {
-			if (head.broken()) {
+			if (head.showsBroken()) {
 				// A head a rod went through cannot be mended or fitted: it is replaced
 				player.displayClientMessage(Component.translatable("create_engines.message.wear.head_broken"), true);
 				return ItemInteractionResult.sidedSuccess(false);
@@ -86,7 +86,7 @@ public final class WearService {
 				if (tier != null) {
 				double carried = wearOf(stack);
 				// A gasket that is no better than the one in is not worth swapping for it
-				if (tier == head.gasket() && !head.blown() && head.gasketWear() <= carried)
+				if (tier == head.gasket() && !head.showsBlown() && head.gasketWear() <= carried)
 					return ItemInteractionResult.sidedSuccess(false);
 				// The old one comes out with the wear it had (a blown one as spent), and is the player's to repair or scrap
 				ItemStack old = head.fit(tier, carried);
@@ -113,7 +113,7 @@ public final class WearService {
 		return ItemInteractionResult.sidedSuccess(level.isClientSide);
 	}
 
-	/** A Service Kit used on a cylinder: it sets right the light wear of the piston and rod fitted. */
+	/** A Service Kit used on a cylinder: it pulls a seized piston out, or else sets right the light wear of the piston and rod fitted. */
 	public static ItemInteractionResult onCylinder(ItemStack stack, Level level, BlockPos pos, Player player, InteractionHand hand) {
 		boolean part = CEItems.PISTON.isIn(stack) || CEItems.FORGED_PISTON.isIn(stack) || CEItems.CONNECTING_ROD.isIn(stack);
 		if (!CEItems.SERVICE_KIT.isIn(stack) && !part)
@@ -121,15 +121,40 @@ public final class WearService {
 		if (!level.isClientSide && LoadedBlocks.blockEntity(level, pos) instanceof CylinderBlockEntity body) {
 			if (part) {
 				// The wreck of a thrown rod is still in: no new part goes in until a Service Kit has cleared it
-				if (!body.thrown())
+				if (!body.showsThrown())
 					return ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION;
 				player.displayClientMessage(Component.translatable("create_engines.message.wear.clear_the_wreck"), true);
 				return ItemInteractionResult.sidedSuccess(false);
 			}
-			service(stack, level, pos, player, hand, body.service());
+			if (body.showsSeized() && body.getBlockState()
+				.getValue(CylinderBlock.HAS_PISTON))
+				pullSeizedPiston(stack, level, pos, player, hand, body);
+			else
+				service(stack, level, pos, player, hand, body.service());
 		} else if (part)
 			return ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION;
 		return ItemInteractionResult.sidedSuccess(level.isClientSide);
+	}
+
+	/**
+	 * A seized piston cannot be mended where it is: a Service Kit knocks it out of the bore for one use, and it is the player's, as worn as
+	 * the seizure left it. The connecting rod stays in, and the seizure and the piston's wear leave the cylinder with the piston.
+	 */
+	private static void pullSeizedPiston(ItemStack kit, Level level, BlockPos pos, Player player, InteractionHand hand, CylinderBlockEntity body) {
+		BlockState before = body.getBlockState();
+		ItemStack piston = withWear(before.getValue(CylinderBlock.FORGED_PISTON) ? CEItems.FORGED_PISTON.asStack() : CEItems.PISTON.asStack(),
+			body.pistonWear());
+		BlockState after = before.setValue(CylinderBlock.HAS_PISTON, false)
+			.setValue(CylinderBlock.FORGED_PISTON, false);
+		level.setBlockAndUpdate(pos, after);
+		partsChanged(level, pos, before, after);
+		if (!player.isCreative()) {
+			// The kit first: a Deployer's hand is its inventory too, and the piston must not land in the slot of a kit about to break
+			kit.hurtAndBreak(1, player, LivingEntity.getSlotForHand(hand));
+			player.getInventory()
+				.placeItemBackInInventory(piston);
+		}
+		done(level, pos, player, "message.wear.seized_piston_out");
 	}
 
 	/** A Service Kit used on a battery: it sets right light wear (the battery's capacity comes back to what a lightly worn one held). */
@@ -229,13 +254,17 @@ public final class WearService {
 			body.resetPiston();
 			// A seized piston that comes out takes the seizure with it
 			body.unseize();
-			if (after.getValue(CylinderBlock.HAS_PISTON))
+			if (after.getValue(CylinderBlock.HAS_PISTON)) {
+				body.dropHiddenWreck();
 				body.fitPiston(carried);
+			}
 		}
 		if (rod) {
 			body.resetRod();
-			if (after.getValue(CylinderBlock.HAS_ROD))
+			if (after.getValue(CylinderBlock.HAS_ROD)) {
+				body.dropHiddenWreck();
 				body.fitRod(carried);
+			}
 		}
 	}
 

@@ -535,6 +535,7 @@ reg:CESounds:gasket_blow
 reg:CESounds:intake_roar
 reg:CESounds:metal_tick
 reg:CESounds:piston_seize
+reg:CESounds:seize_warning
 reg:CESounds:preignition_knock
 reg:CESounds:rod_thrown
 reg:CESounds:soot_catch

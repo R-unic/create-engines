@@ -107,7 +107,7 @@ public final class WearScenes {
 			.showText(140)
 			.attachKeyFrame()
 			.colored(PonderPalette.RED)
-			.text("Run a piston without oil for about twenty seconds and it seizes: the cylinder locks and drags on the crank, and the piston is left badly worn. A Service Kit frees it, or take the piston out. Keep the oil in, and the goggles will warn you before it comes to that.")
+			.text("Run a piston without oil for a few minutes and it seizes, a forged one far later: the cylinder locks and drags on the crank, and the piston is left badly worn. A Service Kit takes it out, ready for a new one. Keep the oil in, and the goggles will warn you before it comes to that.")
 			.pointAt(util.vector()
 				.centerOf(2, 2, 3))
 			.placeNearTarget();

@@ -323,6 +323,7 @@ public final class CELang {
 		raw("goggles.wear.piston", "Piston wear: %1$s%%");
 		raw("goggles.wear.rod", "Connecting rod wear: %1$s%%");
 		raw("goggles.wear.gasket", "%1$s gasket wear: %2$s%%");
+		raw("goggles.gasket_fitted", "%1$s gasket fitted");
 		raw("goggles.wear.gasket.stock", "Stock");
 		raw("goggles.wear.gasket.cardboard", "Cardboard");
 		raw("goggles.wear.gasket.rubber", "Rubber");
@@ -340,11 +341,12 @@ public final class CELang {
 		raw("goggles.fault.blown_gasket", "Head gasket blown or missing: fit a gasket to run this cylinder again");
 		raw("goggles.fault.thrown_rod", "A rod was thrown: clear the wreck with a Service Kit, then fit a new piston and rod");
 		raw("goggles.fault.broken_head", "Head broken by a thrown rod: replace the head");
-		raw("goggles.fault.seized", "Piston seized from running dry: free it with a Service Kit, then fix the oil, and replace the piston soon");
-		raw("goggles.wear.seized", "Piston seized from running dry: a Service Kit frees it, and it is badly worn");
+		raw("goggles.fault.seized", "Piston seized from running dry: take it out with a Service Kit, fix the oil, and fit a new piston");
+		raw("goggles.wear.seized", "Piston seized from running dry: a Service Kit takes it out, badly worn");
 		raw("goggles.wear.thrown", "The wreck of a thrown rod is in the cylinder: a Service Kit clears it");
 		raw("goggles.wear.head_broken", "Head broken by a thrown rod: it has to be replaced");
 		raw("message.wear.head_broken", "This head is broken: replace it");
+		raw("message.wear.seized_piston_out", "Seized piston taken out: fit a new one");
 		raw("message.wear.clear_the_wreck", "The wreck of a thrown rod is still in: clear it with a Service Kit first");
 		raw("goggles.wear.battery", "Battery wear: %1$s%%, holds %2$s%% of what it did new");
 		raw("goggles.wear.heavy_battery", "Heavy wear: only a new battery cures it. It holds less, and still works");

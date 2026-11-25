@@ -120,9 +120,19 @@ class WearTableTest {
 			+ " back to " + f(Wear.REPAIRED_TO, 2) + "; heavier wear needs a new part.\n\n");
 
 		out.append("## Running dry\n\n");
-		out.append("A running engine whose oil film is below " + f(Wear.SEIZE_FILM, 2) + " counts up the seconds a cylinder has run dry, oil takes it down "
-			+ f(Wear.SEIZE_RECOVERY, 0) + " times as fast, and at " + f(Wear.SEIZE_AFTER, 0) + " seconds the piston seizes (it is left at least "
-			+ f(Wear.SEIZED_WEAR, 2) + " worn and the cylinder drags " + f(Wear.SEIZED_DRAG, 0) + " times as hard). It squeals at half that.\n");
+		out.append("A running engine whose oil film is below " + f(Wear.SEIZE_FILM, 2) + " counts a cylinder towards seizing, and oil takes the count down "
+			+ f(Wear.SEIZE_RECOVERY, 0) + " seconds for each second. A seized piston is left at least " + f(Wear.SEIZED_WEAR, 2) + " worn and its cylinder drags "
+			+ f(Wear.SEIZED_DRAG, 0) + " times as hard. It cries out from half way, more often the nearer it is. A forged (precision) piston lasts "
+			+ f(Wear.PRECISION_LIFE, 1) + " times as long.\n\n");
+		out.append("Seconds of running dry before a piston seizes:\n\n");
+		out.append("| Piston | 32 RPM | 64 RPM | 100 RPM | 128 RPM | 192 RPM | 256 RPM |\n");
+		out.append("| --- | ---: | ---: | ---: | ---: | ---: | ---: |\n");
+		for (boolean forged : new boolean[] {false, true}) {
+			out.append(forged ? "| Forged (precision) |" : "| Standard |");
+			for (double rpm : new double[] {32, 64, 100, 128, 192, 256})
+				out.append(" " + f(Wear.SEIZE_AFTER / Wear.dryTime(0, 0, rpm, 1, forged), 0) + " |");
+			out.append('\n');
+		}
 		return out.toString();
 	}
 

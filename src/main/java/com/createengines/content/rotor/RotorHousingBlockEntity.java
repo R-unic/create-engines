@@ -194,6 +194,11 @@ public class RotorHousingBlockEntity extends CrankshaftBlockEntity implements Ga
 		return apexFailed;
 	}
 
+	/** Whether the failed seals count now: with the wear mode off the failure stays saved, and is neither shown nor stops anything. */
+	public boolean showsApexFailed() {
+		return com.createengines.engine.sim.Tuning.wearMode && apexFailed;
+	}
+
 	/**
 	 * Adds wear to the seals. Returns whether it moved to a new 5% step, which is when clients are told, so a slowly wearing engine does not
 	 * send a packet a second.
@@ -302,7 +307,7 @@ public class RotorHousingBlockEntity extends CrankshaftBlockEntity implements Ga
 
 	/** A housing whose seals have failed keeps smoking, and now and then spits a spark. Only ever the wear mode's, and it needs no turning. */
 	private void wearEffects() {
-		if (!apexFailed || level.random.nextInt(8) != 0)
+		if (!showsApexFailed() || level.random.nextInt(8) != 0)
 			return;
 		double x = worldPosition.getX() + 0.2 + level.random.nextDouble() * 0.6;
 		double y = worldPosition.getY() + 0.8 + level.random.nextDouble() * 0.3;
@@ -424,7 +429,7 @@ public class RotorHousingBlockEntity extends CrankshaftBlockEntity implements Ga
 			faults |= CylinderFault.NO_INJECTOR.bit();
 		if (!state.getValue(RotorHousingBlock.HAS_SPARK_PLUG))
 			faults |= CylinderFault.NO_PLUG.bit();
-		if (apexFailed)
+		if (showsApexFailed())
 			faults |= CylinderFault.APEX_FAILED.bit();
 
 		if (!CylinderFault.disables(faults)) {
@@ -498,7 +503,7 @@ public class RotorHousingBlockEntity extends CrankshaftBlockEntity implements Ga
 			GoggleLines.add(CELang.translate("goggles.head.oil")
 				.style(ChatFormatting.GRAY), tooltip, 1);
 		int worn = (int) Math.round(apexWear * 100);
-		if (!apexFailed && worn >= 5) {
+		if (com.createengines.engine.sim.Tuning.wearMode && !apexFailed && worn >= 5) {
 			GoggleLines.add(CELang.translate("goggles.wear.apex", worn)
 				.style(apexWear >= Wear.FAILURE_FROM ? ChatFormatting.RED : apexWear >= Wear.REPAIRABLE ? ChatFormatting.GOLD : ChatFormatting.GRAY), tooltip, 1);
 			if (isPlayerSneaking)

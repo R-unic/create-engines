@@ -1,5 +1,6 @@
 package com.createengines.gametest;
 
+import net.minecraft.world.level.block.state.BlockState;
 import com.createengines.CreateEngines;
 import com.createengines.content.WearService;
 import com.createengines.content.blackbox.BlackBoxBlockEntity;
@@ -13,7 +14,6 @@ import com.createengines.content.head.CylinderHeadBlockEntity;
 import com.createengines.engine.EngineState;
 import com.createengines.engine.EngineSummary;
 import com.createengines.engine.WearKeeper;
-import com.createengines.engine.sim.Tuning;
 import com.createengines.engine.sim.Wear;
 import com.createengines.engine.topology.CylinderFault;
 import com.createengines.registry.CEItems;
@@ -47,6 +47,8 @@ public class WearGameTests {
 	// The film override is one setting for the whole server, so each test that sets it runs alone in its own batch, or it would run every other test dry too
 	private static final String DRY = "wear-dry";
 	private static final String OILED = "wear-oiled";
+	// Alone, so that no other test finishing can take the forced roll away while this one still relies on it
+	private static final String STOPPED = "wear-stopped";
 
 	private static final BlockPos PRIMARY = TestEngine.PRIMARY;
 	private static final BlockPos CYLINDER = TestEngine.CYLINDER;
@@ -80,33 +82,39 @@ public class WearGameTests {
 
 	@AfterBatch(batch = ON)
 	public static void restoreTheModeAfterOn(ServerLevel level) {
-		Tuning.wearMode = false;
+		GameTestConfig.wearMode(false);
 		WearKeeper.roller = null;
 		WearKeeper.filmOverride = null;
 	}
 
 	@AfterBatch(batch = DRY)
 	public static void restoreTheModeAfterDry(ServerLevel level) {
-		Tuning.wearMode = false;
+		GameTestConfig.wearMode(false);
 		WearKeeper.filmOverride = null;
 	}
 
 	@AfterBatch(batch = OILED)
 	public static void restoreTheModeAfterOiled(ServerLevel level) {
-		Tuning.wearMode = false;
+		GameTestConfig.wearMode(false);
 		WearKeeper.filmOverride = null;
+	}
+
+	@AfterBatch(batch = STOPPED)
+	public static void restoreTheModeAfterStopped(ServerLevel level) {
+		GameTestConfig.wearMode(false);
+		WearKeeper.roller = null;
 	}
 
 	@AfterBatch(batch = PARTS)
 	public static void restoreTheModeAfterParts(ServerLevel level) {
-		Tuning.wearMode = false;
+		GameTestConfig.wearMode(false);
 	}
 
 	// --- Off: nothing changes ---
 
 	@GameTest(template = "empty", timeoutTicks = 500, batch = OFF)
 	public static void withTheModeOffNothingWearsAndAFittedGasketDoesNotWear(GameTestHelper helper) {
-		Tuning.wearMode = false;
+		GameTestConfig.wearMode(false);
 		build(helper);
 		head(helper).fit(Wear.Gasket.COPPER);
 		helper.runAtTickTime(400, () -> {
@@ -121,7 +129,7 @@ public class WearGameTests {
 
 	@GameTest(template = "empty", timeoutTicks = 500, batch = ON)
 	public static void withTheModeOnARunningEngineWearsItsParts(GameTestHelper helper) {
-		Tuning.wearMode = true;
+		GameTestConfig.wearMode(true);
 		build(helper);
 		helper.runAtTickTime(450, () -> {
 			helper.assertTrue(cylinder(helper).pistonWear() > 0, "The piston wore: " + cylinder(helper).pistonWear());
@@ -134,7 +142,7 @@ public class WearGameTests {
 
 	@GameTest(template = "empty", timeoutTicks = 600, batch = ON)
 	public static void aSpentRodIsThrownLeavesItsWreckAndBreaksTheHead(GameTestHelper helper) {
-		Tuning.wearMode = true;
+		GameTestConfig.wearMode(true);
 		WearKeeper.roller = () -> 0;
 		build(helper);
 		cylinder(helper).addWear(0, 0.99);
@@ -153,9 +161,30 @@ public class WearGameTests {
 		});
 	}
 
+	@GameTest(template = "empty", timeoutTicks = 500, batch = STOPPED)
+	public static void aStoppedEngineThrowsNoRodAndBlowsNoGasketUntilItTurns(GameTestHelper helper) {
+		GameTestConfig.wearMode(true);
+		WearKeeper.roller = () -> 0;
+		build(helper);
+		// The starter is not engaged, so the engine stands still
+		helper.setBlock(TestEngine.STARTER_POWER, Blocks.AIR);
+		cylinder(helper).addWear(0, 0.99);
+		head(helper).addGasketWear(0.99);
+		helper.runAtTickTime(200, () -> {
+			var state = helper.getBlockState(CYLINDER);
+			helper.assertTrue(state.getValue(CylinderBlock.HAS_ROD) && !cylinder(helper).thrown(), "No rod is thrown standing still: " + summary(helper));
+			helper.assertTrue(!head(helper).blown() && !head(helper).broken(), "and the gasket holds");
+			helper.setBlock(TestEngine.STARTER_POWER, Blocks.REDSTONE_BLOCK);
+		});
+		helper.runAtTickTime(450, () -> {
+			helper.assertTrue(cylinder(helper).thrown(), "Once it turns, the spent rod goes: " + summary(helper));
+			helper.succeed();
+		});
+	}
+
 	@GameTest(template = "empty", batch = PARTS)
 	public static void aThrownRodsWreckIsClearedByAServiceKitAndNothingNewGoesInUntilThen(GameTestHelper helper) {
-		Tuning.wearMode = true;
+		GameTestConfig.wearMode(true);
 		build(helper);
 		cylinder(helper).throwRod();
 		helper.setBlock(CYLINDER, helper.getBlockState(CYLINDER)
@@ -176,7 +205,7 @@ public class WearGameTests {
 
 	@GameTest(template = "empty", batch = PARTS)
 	public static void aBrokenHeadTakesNeitherAGasketNorAServiceKit(GameTestHelper helper) {
-		Tuning.wearMode = true;
+		GameTestConfig.wearMode(true);
 		build(helper);
 		head(helper).breakHead();
 		ItemStack gasket = new ItemStack(CEItems.RUBBER_GASKET.get());
@@ -190,7 +219,7 @@ public class WearGameTests {
 
 	@GameTest(template = "empty", batch = PARTS)
 	public static void aServiceKitHasDurabilityAndBreaksOnItsLastUse(GameTestHelper helper) {
-		Tuning.wearMode = true;
+		GameTestConfig.wearMode(true);
 		build(helper);
 		ItemStack kit = new ItemStack(CEItems.SERVICE_KIT.get());
 		helper.assertTrue(kit.isDamageableItem() && kit.getMaxDamage() == com.createengines.content.WearService.KIT_USES, "A kit has uses: " + kit.getMaxDamage());
@@ -203,10 +232,12 @@ public class WearGameTests {
 	}
 
 	@GameTest(template = "empty", timeoutTicks = 900, batch = DRY)
-	public static void aPistonRunDryForTwentySecondsSeizesAndTheEngineSaysSo(GameTestHelper helper) {
-		Tuning.wearMode = true;
+	public static void aPistonRunDryLongEnoughSeizesAndTheEngineSaysSo(GameTestHelper helper) {
+		GameTestConfig.wearMode(true);
 		WearKeeper.filmOverride = () -> 0;
 		build(helper);
+		// All but a few seconds of the way there already: the whole time is the unit tests' to check
+		cylinder(helper).setDryTime(Wear.SEIZE_AFTER - 5);
 		helper.runAtTickTime(800, () -> {
 			helper.assertTrue(cylinder(helper).seized(), "The piston seized");
 			helper.assertTrue(cylinder(helper).pistonWear() >= Wear.SEIZED_WEAR, "and is left badly worn: " + cylinder(helper).pistonWear());
@@ -221,7 +252,7 @@ public class WearGameTests {
 
 	@GameTest(template = "empty", timeoutTicks = 900, batch = OILED)
 	public static void aWellOiledEngineNeverSeizesHoweverLongItRuns(GameTestHelper helper) {
-		Tuning.wearMode = true;
+		GameTestConfig.wearMode(true);
 		WearKeeper.filmOverride = () -> 1;
 		build(helper);
 		helper.runAtTickTime(800, () -> {
@@ -231,17 +262,49 @@ public class WearGameTests {
 		});
 	}
 
-	@GameTest(template = "empty", batch = PARTS)
-	public static void aSeizedPistonIsFreedByAKitAndStaysWornAndANewPistonAlsoEndsIt(GameTestHelper helper) {
-		Tuning.wearMode = true;
+	@GameTest(template = "empty", timeoutTicks = 500, batch = DRY)
+	public static void aPistonKeepsHowFarItHasRunDryWhenTheEngineIsBuiltAgain(GameTestHelper helper) {
+		GameTestConfig.wearMode(true);
+		WearKeeper.filmOverride = () -> 0;
 		build(helper);
+		cylinder(helper).setDryTime(30);
+		helper.runAtTickTime(100, () -> {
+			((CrankshaftBlockEntity) helper.getBlockEntity(PRIMARY)).rebuildEngine();
+			double banked = cylinder(helper).dryTime();
+			helper.assertTrue(banked > 30, "It has run dry further: " + banked);
+			helper.runAfterDelay(100, () -> {
+				helper.assertTrue(cylinder(helper).dryTime() > banked, "and carries on from there: " + cylinder(helper).dryTime());
+				WearKeeper.filmOverride = null;
+				helper.succeed();
+			});
+		});
+	}
+
+	@GameTest(template = "empty", batch = PARTS)
+	public static void aKitTakesASeizedPistonOutAndSoDoesAnEmptyHand(GameTestHelper helper) {
+		GameTestConfig.wearMode(true);
+		build(helper);
+		cylinder(helper).setDryTime(Wear.SEIZE_AFTER);
 		cylinder(helper).seize();
 		helper.assertTrue(cylinder(helper).seized() && cylinder(helper).pistonWear() >= Wear.SEIZED_WEAR, "Seized and worn");
+		helper.assertTrue(cylinder(helper).dryTime() == 0, "A freed piston does not seize again at once: " + cylinder(helper).dryTime());
+		boolean forged = helper.getBlockState(CYLINDER).getValue(CylinderBlock.FORGED_PISTON);
+		double left = cylinder(helper).pistonWear();
 		ItemStack kit = new ItemStack(CEItems.SERVICE_KIT.get());
-		helper.useBlock(CYLINDER, player(helper, kit));
-		helper.assertTrue(!cylinder(helper).seized(), "A Service Kit frees it");
-		helper.assertTrue(cylinder(helper).pistonWear() >= Wear.SEIZED_WEAR, "but the piston is as worn as it was left: " + cylinder(helper).pistonWear());
+		Player mechanic = player(helper, kit);
+		helper.useBlock(CYLINDER, mechanic);
+		BlockState after = helper.getBlockState(CYLINDER);
+		helper.assertTrue(!after.getValue(CylinderBlock.HAS_PISTON) && !after.getValue(CylinderBlock.FORGED_PISTON), "A Service Kit takes the piston out");
+		helper.assertTrue(after.getValue(CylinderBlock.HAS_ROD), "and leaves the rod in");
+		helper.assertTrue(!cylinder(helper).seized() && cylinder(helper).pistonWear() == 0, "with no seizure or piston wear left behind: " + cylinder(helper).pistonWear());
+		var wanted = forged ? CEItems.FORGED_PISTON.get() : CEItems.PISTON.get();
+		helper.assertTrue(mechanic.getInventory().items.stream()
+			.anyMatch(stack -> stack.is(wanted) && Math.abs(WearService.wearOf(stack) - left) < 1e-9), "the player has it, as worn as it was left");
 		helper.assertTrue(kit.getDamageValue() == 1, "for one use of the kit");
+
+		helper.useBlock(CYLINDER, player(helper, CEItems.PISTON.asStack()));
+		helper.assertTrue(helper.getBlockState(CYLINDER).getValue(CylinderBlock.HAS_PISTON) && cylinder(helper).pistonWear() == 0,
+			"A new piston goes in with no wear: " + cylinder(helper).pistonWear());
 
 		cylinder(helper).seize();
 		Player sneaking = player(helper, ItemStack.EMPTY);
@@ -256,7 +319,7 @@ public class WearGameTests {
 
 	@GameTest(template = "empty", timeoutTicks = 600, batch = ON)
 	public static void aPartThatIsNotWornEnoughIsNeverThrownEvenWithEveryRollAgainstIt(GameTestHelper helper) {
-		Tuning.wearMode = true;
+		GameTestConfig.wearMode(true);
 		WearKeeper.roller = () -> 0;
 		build(helper);
 		cylinder(helper).addWear(0.4, 0.4);
@@ -272,7 +335,7 @@ public class WearGameTests {
 
 	@GameTest(template = "empty", timeoutTicks = 600, batch = ON)
 	public static void aSpentGasketBlowsAndStopsItsCylinder(GameTestHelper helper) {
-		Tuning.wearMode = true;
+		GameTestConfig.wearMode(true);
 		WearKeeper.roller = () -> 0;
 		build(helper);
 		head(helper).addGasketWear(0.99);
@@ -290,7 +353,7 @@ public class WearGameTests {
 
 	@GameTest(template = "empty", timeoutTicks = 600, batch = ON)
 	public static void aBlownGasketStaysBlownWhenTheEngineIsBuiltAgain(GameTestHelper helper) {
-		Tuning.wearMode = true;
+		GameTestConfig.wearMode(true);
 		build(helper);
 		head(helper).blow();
 		helper.runAtTickTime(300, () -> {
@@ -301,7 +364,7 @@ public class WearGameTests {
 
 	@GameTest(template = "empty", timeoutTicks = 800, batch = ON)
 	public static void aNewGasketGetsABlownCylinderRunningAgain(GameTestHelper helper) {
-		Tuning.wearMode = true;
+		GameTestConfig.wearMode(true);
 		build(helper);
 		head(helper).blow();
 		helper.runAtTickTime(200, () -> {
@@ -321,7 +384,7 @@ public class WearGameTests {
 
 	@GameTest(template = "empty", batch = PARTS)
 	public static void aServiceKitSetsLightWearRightAndHeavyWearIsLeftAlone(GameTestHelper helper) {
-		Tuning.wearMode = true;
+		GameTestConfig.wearMode(true);
 		build(helper);
 		cylinder(helper).addWear(0.3, 0.3);
 		ItemStack kit = new ItemStack(CEItems.SERVICE_KIT.get());
@@ -339,7 +402,7 @@ public class WearGameTests {
 
 	@GameTest(template = "empty", batch = PARTS)
 	public static void aServiceKitSetsALightlyWornGasketRightButNotABlownOne(GameTestHelper helper) {
-		Tuning.wearMode = true;
+		GameTestConfig.wearMode(true);
 		build(helper);
 		head(helper).addGasketWear(0.3);
 		ItemStack kit = new ItemStack(CEItems.SERVICE_KIT.get());
@@ -480,7 +543,7 @@ public class WearGameTests {
 
 	@GameTest(template = "empty", batch = PARTS)
 	public static void aGasketReplacedComesBackWithItsWearAndABlownOneAsSpent(GameTestHelper helper) {
-		Tuning.wearMode = true;
+		GameTestConfig.wearMode(true);
 		build(helper);
 		head(helper).fit(Wear.Gasket.RUBBER, 0.5);
 		Player first = player(helper, WearService.withWear(CEItems.COPPER_GASKET.asStack(), 0.2));
@@ -501,7 +564,7 @@ public class WearGameTests {
 
 	@GameTest(template = "empty", batch = PARTS)
 	public static void aKitSneakUsedOnAHeadTakesTheGasketOutAndTheHeadStopsUntilOneIsFitted(GameTestHelper helper) {
-		Tuning.wearMode = true;
+		GameTestConfig.wearMode(true);
 		build(helper);
 		ItemStack kit = new ItemStack(CEItems.SERVICE_KIT.get());
 		Player sneaking = player(helper, kit);
@@ -566,7 +629,7 @@ public class WearGameTests {
 
 	@GameTest(template = "empty", timeoutTicks = 800, batch = ON)
 	public static void theSummaryCarriesTheMeanWearOfEveryPartAndTheBlackBoxAndDisplayLinkShowIt(GameTestHelper helper) {
-		Tuning.wearMode = true;
+		GameTestConfig.wearMode(true);
 		build(helper);
 		BlockPos box = new BlockPos(2, 2, 1);
 		helper.setBlock(box, CEBlocks.BLACK_BOX.getDefaultState());
@@ -588,7 +651,7 @@ public class WearGameTests {
 
 	@GameTest(template = "empty", timeoutTicks = 800, batch = ON)
 	public static void aThrownRodAndABrokenHeadCountAsSpentPartsInTheTotal(GameTestHelper helper) {
-		Tuning.wearMode = true;
+		GameTestConfig.wearMode(true);
 		build(helper);
 		cylinder(helper).throwRod();
 		head(helper).breakHead();
@@ -601,7 +664,7 @@ public class WearGameTests {
 
 	@GameTest(template = "empty", timeoutTicks = 500, batch = OFF)
 	public static void withTheModeOffThereIsNoWearTotalAndADisplayLinkReadsNothingWorn(GameTestHelper helper) {
-		Tuning.wearMode = false;
+		GameTestConfig.wearMode(false);
 		build(helper);
 		BlockPos box = new BlockPos(2, 2, 1);
 		helper.setBlock(box, CEBlocks.BLACK_BOX.getDefaultState());
@@ -643,7 +706,7 @@ public class WearGameTests {
 
 	@GameTest(template = "empty_large", timeoutTicks = 1200, batch = OFF)
 	public static void aFittedGasketGivesMorePowerWithTheModeOffAndTakingItOutGivesItBack(GameTestHelper helper) {
-		Tuning.wearMode = false;
+		GameTestConfig.wearMode(false);
 		TestEngine.build(helper.getLevel(), helper.absolutePos(BlockPos.ZERO), true);
 		TestEngine.build(helper.getLevel(), helper.absolutePos(SECOND), true);
 		CylinderHeadBlockEntity head = helper.getBlockEntity(HEAD.offset(SECOND));
@@ -666,7 +729,7 @@ public class WearGameTests {
 
 	@GameTest(template = "empty_large", timeoutTicks = 900, batch = ON)
 	public static void aFittedGasketGivesMorePowerWithTheModeOnAndAHeadWithNoneFittedIsReadAsBefore(GameTestHelper helper) {
-		Tuning.wearMode = true;
+		GameTestConfig.wearMode(true);
 		TestEngine.build(helper.getLevel(), helper.absolutePos(BlockPos.ZERO), true);
 		TestEngine.build(helper.getLevel(), helper.absolutePos(SECOND), true);
 		CylinderHeadBlockEntity head = helper.getBlockEntity(HEAD.offset(SECOND));
@@ -712,7 +775,7 @@ public class WearGameTests {
 
 	@GameTest(template = "empty", timeoutTicks = 900, batch = ON)
 	public static void aBlackBoxRecordsAThrownRodAsAnEventOfItsOwn(GameTestHelper helper) {
-		Tuning.wearMode = true;
+		GameTestConfig.wearMode(true);
 		WearKeeper.roller = () -> 0;
 		build(helper);
 		BlockPos box = new BlockPos(2, 2, 1);

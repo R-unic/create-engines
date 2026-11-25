@@ -56,8 +56,8 @@ public class CylinderHeadVisual extends AbstractBlockEntityVisual<CylinderHeadBl
 
 	/** Lays the wreck or the blown gasket when the head breaks or blows, and takes them away when it is replaced; nothing in between. */
 	private void overlay() {
-		boolean broken = blockEntity.broken();
-		boolean blown = blockEntity.blown() && !broken;
+		boolean broken = blockEntity.showsBroken();
+		boolean blown = blockEntity.showsBlown() && !broken;
 		if (lastBroken != null && lastBroken == broken && lastBlown == blown)
 			return;
 		lastBroken = broken;

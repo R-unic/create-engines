@@ -25,6 +25,11 @@ public final class ApexSeals {
 	public static final double DRY_STRESS = 6;
 	/** A completely worn set costs each chamber this much of its burn (the leak between chambers). */
 	public static final double SEAL_LOSS = 0.35;
+	/**
+	 * How many times a plain cylinder's static friction each chamber of a failed set grips the shaft with: the broken seal is wedged between the
+	 * rotor and its housing, so a lone rotor stops within a few seconds instead of coasting. It adds no inertia (that would keep it turning longer).
+	 */
+	public static final double WRECK_GRIP = 40;
 
 	private ApexSeals() {
 	}

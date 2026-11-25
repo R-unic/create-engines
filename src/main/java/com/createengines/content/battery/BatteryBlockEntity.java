@@ -122,12 +122,12 @@ public class BatteryBlockEntity extends SmartBlockEntity implements IHaveGoggleI
 	private void wearBy(double amount) {
 		if (!(amount > 0))
 			return;
-		int before = (int) Math.round(wear * 20);
+		int before = BatteryWear.shownStep(wear);
 		wear = Wear.clamp(wear + amount);
 		// What it held above its new, smaller capacity is gone
 		charge = Math.min(charge, capacity());
-		// Clients are told, and the save marked, when wear moves to a new 5% step: a draw happens many times a second
-		if (before != (int) Math.round(wear * 20)) {
+		// Clients are told, and the save marked, when the wear the goggles show moves: a draw happens many times a second
+		if (before != BatteryWear.shownStep(wear)) {
 			setChanged();
 			if (level != null && !level.isClientSide)
 				sendData();
@@ -405,11 +405,13 @@ public class BatteryBlockEntity extends SmartBlockEntity implements IHaveGoggleI
 			.style(percent == 0 ? ChatFormatting.RED : percent < 20 ? ChatFormatting.GOLD : ChatFormatting.GREEN), tooltip, 1);
 		GoggleLines.add(CELang.translate("goggles.battery.size", Math.round(capacity()))
 			.style(ChatFormatting.GRAY), tooltip, 1);
-		if (Tuning.wearMode && wear >= 0.05) {
-			GoggleLines.add(CELang.translate("goggles.wear.battery", Math.round(wear * 100), Math.round(BatteryWear.capacityShare(wear) * 100))
+		// Shown from new on, so that a player can see it has started to move
+		if (Tuning.wearMode) {
+			GoggleLines.add(CELang.translate("goggles.wear.battery", BatteryWear.percentText(wear), Math.round(BatteryWear.capacityShare(wear) * 100))
 				.style(wear >= Wear.FAILURE_FROM ? ChatFormatting.RED : wear >= Wear.REPAIRABLE ? ChatFormatting.GOLD : ChatFormatting.GRAY), tooltip, 1);
-			if (isPlayerSneaking)
-				GoggleLines.add(CELang.translate(BatteryWear.repairable(wear) ? "goggles.wear.light" : "goggles.wear.heavy_battery")
+			// A battery too little worn for a kit to change has neither hint
+			if (isPlayerSneaking && (BatteryWear.repairable(wear) || BatteryWear.heavy(wear)))
+				GoggleLines.add(CELang.translate(BatteryWear.heavy(wear) ? "goggles.wear.heavy_battery" : "goggles.wear.light")
 					.style(ChatFormatting.DARK_GRAY), tooltip, 2);
 		}
 		if (bank.size() > 1)

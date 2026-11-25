@@ -42,11 +42,16 @@ public final class Wear {
 	 * ({@code Diagnosis.SEIZING_BELOW}), so the readout warns before a piston seizes.
 	 */
 	public static final double SEIZE_FILM = 0.15;
-	/** Seconds of running dry, kept up, after which a piston seizes (first-pass; the author's to tune). */
-	public static final double SEIZE_AFTER = 20;
+	/** Seconds of running dry at the reference speed, kept up, after which a standard piston seizes (first-pass; the author's to tune). */
+	public static final double SEIZE_AFTER = 120;
+	/** A slow engine scores its bore more slowly and a fast one faster, but never by less or more than these shares of the reference rate. */
+	public static final double SEIZE_SLOWEST = 0.5;
+	public static final double SEIZE_FASTEST = 2;
+	/** Shares of {@link #SEIZE_AFTER} at which a piston running dry cries out: from half way, closer together the nearer it is. */
+	private static final double[] WARNINGS = {0.5, 0.68, 0.81, 0.9, 0.96};
 	/** Oil brings the dryness back down this many times faster than running dry builds it. */
 	public static final double SEIZE_RECOVERY = 2;
-	/** A seized piston is left at least this worn: it needs replacing soon, and a Service Kit only frees it. */
+	/** A seized piston is left at least this worn: it needs replacing soon, and a Service Kit only pulls it out. */
 	public static final double SEIZED_WEAR = 0.75;
 	/** How many times a plain cylinder's drag on the crank a seized one has: it locks, and a small engine with one may stall. */
 	public static final double SEIZED_DRAG = 4;
@@ -166,29 +171,38 @@ public final class Wear {
 	}
 
 	/**
-	 * How many seconds a cylinder has been running dry, after {@code dt} more seconds at this oil film and speed. Running below
-	 * {@link #SEIZE_FILM} adds the time; oil takes it off {@link #SEIZE_RECOVERY} times as fast; a stopped engine neither gains nor loses
-	 * (nothing is turning, so nothing is scoring). Never negative, never above the seizing point, and nonsense in leaves it unchanged.
+	 * How far a cylinder has run dry, after {@code dt} more seconds at this oil film and speed, counted in seconds at the reference speed on a
+	 * standard piston. Running below {@link #SEIZE_FILM} adds to it, faster the faster the crank turns (between {@link #SEIZE_SLOWEST} and
+	 * {@link #SEIZE_FASTEST} times), and {@link #PRECISION_LIFE} times as slowly on a forged precision piston; oil takes it off
+	 * {@link #SEIZE_RECOVERY} times as fast as time passes; a stopped engine neither gains nor loses (nothing is turning, so nothing is
+	 * scoring). Never negative, never above the seizing point, and nonsense in leaves it unchanged.
 	 */
-	public static double dryTime(double before, double film, double rpm, double dt) {
+	public static double dryTime(double before, double film, double rpm, double dt, boolean precision) {
 		double was = Double.isFinite(before) ? Math.min(SEIZE_AFTER, Math.max(0, before)) : 0;
 		if (!Double.isFinite(dt) || !(rpm > 0))
 			return was;
 		// A span of time below nothing is none
 		double span = Math.max(0, dt);
-		if (finite(film, 1) < SEIZE_FILM)
-			return Math.min(SEIZE_AFTER, was + span);
+		if (finite(film, 1) < SEIZE_FILM) {
+			double rate = Math.clamp(rpm / REFERENCE_RPM, SEIZE_SLOWEST, SEIZE_FASTEST) / (precision ? PRECISION_LIFE : 1);
+			return Math.min(SEIZE_AFTER, was + span * rate);
+		}
 		return Math.max(0, was - SEIZE_RECOVERY * span);
 	}
 
-	/** Whether a cylinder that has run dry this long has seized. */
+	/** Whether a cylinder that has run dry this far has seized. */
 	public static boolean seizes(double dryTime) {
 		return dryTime >= SEIZE_AFTER;
 	}
 
-	/** Whether it has run dry long enough that the engine squeals: half way to seizing. */
-	public static boolean squeals(double dryTime) {
-		return dryTime >= SEIZE_AFTER / 2;
+	/** Whether the step from {@code before} to {@code after} passed one of the points at which a dry piston cries out. */
+	public static boolean warns(double before, double after) {
+		for (double share : WARNINGS) {
+			double at = share * SEIZE_AFTER;
+			if (before < at && after >= at)
+				return true;
+		}
+		return false;
 	}
 
 	private static double step(double dt, double life, double factor) {

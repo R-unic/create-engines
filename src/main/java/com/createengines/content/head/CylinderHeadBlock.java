@@ -129,7 +129,7 @@ public class CylinderHeadBlock extends DirectionalBlock
 	@Override
 	public ItemRequirement getRequiredItems(BlockState state, @Nullable BlockEntity blockEntity) {
 		ItemRequirement needed = PartInstallation.requirement(state, PARTS);
-		if (blockEntity instanceof CylinderHeadBlockEntity head && head.hasGasketItem() && !head.broken())
+		if (blockEntity instanceof CylinderHeadBlockEntity head && head.hasGasketItem() && !head.showsBroken())
 			needed = needed.union(new ItemRequirement(ItemRequirement.ItemUseType.CONSUME, WearService.itemFor(head.gasket())));
 		return needed;
 	}
@@ -172,7 +172,7 @@ public class CylinderHeadBlock extends DirectionalBlock
 	@Override
 	protected java.util.List<ItemStack> getDrops(BlockState state, net.minecraft.world.level.storage.loot.LootParams.Builder params) {
 		if (params.getOptionalParameter(net.minecraft.world.level.storage.loot.parameters.LootContextParams.BLOCK_ENTITY) instanceof CylinderHeadBlockEntity head
-			&& head.broken())
+			&& head.showsBroken())
 			return java.util.List.of();
 		return super.getDrops(state, params);
 	}
@@ -181,7 +181,7 @@ public class CylinderHeadBlock extends DirectionalBlock
 	protected void onRemove(BlockState state, Level level, BlockPos pos, BlockState newState, boolean movedByPiston) {
 		// A gasket that was fitted comes out with the head when it is broken up, as worn as it was (a broken head's is lost with it)
 		if (!level.isClientSide && !state.is(newState.getBlock())
-			&& level.getBlockEntity(pos) instanceof CylinderHeadBlockEntity head && !head.broken()) {
+			&& level.getBlockEntity(pos) instanceof CylinderHeadBlockEntity head && !head.showsBroken()) {
 			ItemStack gasket = head.gasketStack();
 			if (!gasket.isEmpty())
 				Block.popResource(level, pos, gasket);

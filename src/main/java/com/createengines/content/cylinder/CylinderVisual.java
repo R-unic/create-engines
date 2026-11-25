@@ -86,7 +86,7 @@ public class CylinderVisual extends AbstractBlockEntityVisual<CylinderBlockEntit
 		BlockPos origin = getVisualPosition();
 		boolean forged = blockEntity.getBlockState().getValue(CylinderBlock.FORGED_PISTON);
 		// Piston and rod that have not moved since the last frame (a stopped engine) keep their pose and are not re-uploaded
-		boolean seized = blockEntity.seized();
+		boolean seized = blockEntity.showsSeized();
 		if (lastForged == null || lastForged != forged || !pose.equals(lastPose) || seized != lastSeized) {
 			pose(forged ? forgedPiston : piston, pose.showPiston(), origin, pose.piston());
 			pose(rod, pose.showRod(), origin, pose.rod());
@@ -96,7 +96,7 @@ public class CylinderVisual extends AbstractBlockEntityVisual<CylinderBlockEntit
 			lastPose = pose;
 		}
 		// A thrown rod's wreck is laid once, when it appears or goes
-		boolean thrown = blockEntity.thrown();
+		boolean thrown = blockEntity.showsThrown();
 		if (lastThrown == null || lastThrown != thrown) {
 			pose(wreck, thrown, origin, EnginePoses.facingFrame(blockEntity.getBlockState()
 				.getValue(CylinderBlock.FACING)));

@@ -126,6 +126,44 @@ class BatteryWearTest {
 	}
 
 	@Test
+	void wearIsWordedFromNewWithADecimalWhileItIsSmall() {
+		assertEquals("0", BatteryWear.percentText(0));
+		assertEquals("0.0", BatteryWear.percentText(0.0001));
+		assertEquals("0.3", BatteryWear.percentText(0.003));
+		assertEquals("4.9", BatteryWear.percentText(0.049));
+		assertEquals("9.9", BatteryWear.percentText(0.099));
+		assertEquals("10", BatteryWear.percentText(0.09999), "never 10.0");
+		assertEquals("35", BatteryWear.percentText(0.35));
+		assertEquals("100", BatteryWear.percentText(7));
+		assertEquals("0", BatteryWear.percentText(Double.NaN));
+	}
+
+	@Test
+	void everyChangeOfTheShownWearBelowTenPercentIsOneThatClientsAreTold() {
+		String text = BatteryWear.percentText(0);
+		int step = BatteryWear.shownStep(0);
+		for (int i = 1; i <= 100_000; i++) {
+			double wear = i * 1e-6;
+			String nextText = BatteryWear.percentText(wear);
+			int nextStep = BatteryWear.shownStep(wear);
+			// "0" to "0.0" is the same figure, written once there is any wear at all
+			if (!nextText.equals(text) && !text.equals("0"))
+				assertTrue(nextStep != step, "at " + wear + ": " + text + " became " + nextText + " with no step");
+			text = nextText;
+			step = nextStep;
+		}
+	}
+
+	@Test
+	void onlyWearPastWhatAKitSetsRightIsHeavy() {
+		assertFalse(BatteryWear.heavy(0));
+		assertFalse(BatteryWear.heavy(0.07), "too little for a kit to change is not heavy");
+		assertFalse(BatteryWear.heavy(Wear.REPAIRABLE));
+		assertTrue(BatteryWear.heavy(0.36));
+		assertFalse(BatteryWear.heavy(Double.NaN));
+	}
+
+	@Test
 	void aLightWornBatteryCanBeSetRightAndAHeavyOneCannot() {
 		assertTrue(BatteryWear.repairable(0.3));
 		assertEquals(Wear.REPAIRED_TO, BatteryWear.repaired(0.3), 0);

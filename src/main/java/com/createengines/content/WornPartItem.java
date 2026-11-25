@@ -2,6 +2,7 @@ package com.createengines.content;
 
 import java.util.List;
 
+import com.createengines.engine.sim.Tuning;
 import com.createengines.registry.CELang;
 
 import net.minecraft.ChatFormatting;
@@ -23,7 +24,7 @@ public class WornPartItem extends Item {
 
 	@Override
 	public boolean isBarVisible(ItemStack stack) {
-		return WearService.wearOf(stack) > 0;
+		return Tuning.wearMode && WearService.wearOf(stack) > 0;
 	}
 
 	/** The bar is the life that is left: full for a new part, empty for a spent one. */
@@ -53,7 +54,7 @@ public class WornPartItem extends Item {
 				.copy()
 				.withStyle(ChatFormatting.AQUA));
 		double wear = WearService.wearOf(stack);
-		if (wear > 0)
+		if (Tuning.wearMode && wear > 0)
 			tooltip.add(CELang.translate("tooltip.wear", Math.round(wear * 100))
 				.component()
 				.copy()

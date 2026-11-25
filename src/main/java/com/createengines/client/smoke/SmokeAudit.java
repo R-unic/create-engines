@@ -72,12 +72,12 @@ public final class SmokeAudit {
 	private static final Map<ResourceLocation, Integer> SOUNDS_PLAYED = new TreeMap<>();
 	/**
 	 * Sounds the fleet cannot be relied on to start, so the end of {@link #fleet} starts any it did not by hand: the three that fire by chance, and the wear
-	 * mode's three failures (a rod thrown, a gasket blown, a piston seized), which only happen with the wear mode on and a part worn out, and a fleet that
+	 * mode's three failures (a rod thrown, a gasket blown, a piston seized) and its dry-piston cry, which only happen with the wear mode on and a part worn out, and a fleet that
 	 * wore parts out on purpose would fail every check that its engines are running. Their triggers are tested by the wear GameTests; this proves the events
 	 * and their files play on a real sound card.
 	 */
 	private static final java.util.List<String> CHANCE_SOUNDS = java.util.List.of("metal_tick", "preignition_knock", "flare_whoosh",
-		"rod_thrown", "gasket_blow", "piston_seize", "apex_fail");
+		"rod_thrown", "gasket_blow", "seize_warning", "piston_seize", "apex_fail");
 	private static final java.util.List<String> startedByHand = new java.util.ArrayList<>();
 	private static final Pattern SOUND_DEBUG = Pattern.compile("(\\d+)/(\\d+) \\+ (\\d+)/(\\d+)");
 

@@ -237,40 +237,40 @@ class WearTest {
 	void runningDryBuildsUpTimeAndOilTakesItBackTwiceAsFast() {
 		double t = 0;
 		for (int i = 0; i < 5; i++)
-			t = Wear.dryTime(t, 0.05, 128, 1);
+			t = Wear.dryTime(t, 0.05, 128, 1, false);
 		assertEquals(5, t, 1e-12);
-		t = Wear.dryTime(t, 0.9, 128, 1);
+		t = Wear.dryTime(t, 0.9, 128, 1, false);
 		assertEquals(5 - Wear.SEIZE_RECOVERY, t, 1e-12);
-		assertEquals(0, Wear.dryTime(1, 0.9, 128, 100), 0, "never below nothing");
+		assertEquals(0, Wear.dryTime(1, 0.9, 128, 100, false), 0, "never below nothing");
 	}
 
 	@Test
 	void aPistonSeizesOnlyAfterTheFullTimeRunningDryAndNeverBeforeOrWithOil() {
 		double t = 0;
 		for (int i = 0; i < Wear.SEIZE_AFTER - 1; i++)
-			t = Wear.dryTime(t, 0, 128, 1);
+			t = Wear.dryTime(t, 0, 128, 1, false);
 		assertFalse(Wear.seizes(t), "one second short");
-		assertTrue(Wear.squeals(t), "but it has squealed by then");
-		t = Wear.dryTime(t, 0, 128, 1);
+		assertTrue(Wear.warns(0, t), "but it has cried out by then");
+		t = Wear.dryTime(t, 0, 128, 1, false);
 		assertTrue(Wear.seizes(t));
-		assertEquals(Wear.SEIZE_AFTER, Wear.dryTime(t, 0, 128, 1000), 0, "and the count stops at the seizing point");
+		assertEquals(Wear.SEIZE_AFTER, Wear.dryTime(t, 0, 128, 1000, false), 0, "and the count stops at the seizing point");
 		double oiled = 0;
 		for (int i = 0; i < 100000; i++)
-			oiled = Wear.dryTime(oiled, 1, 128, 1);
+			oiled = Wear.dryTime(oiled, 1, 128, 1, false);
 		assertFalse(Wear.seizes(oiled));
 	}
 
 	@Test
 	void aStoppedEngineNeitherSeizesNorRecoversAndNonsenseChangesNothing() {
-		assertEquals(7, Wear.dryTime(7, 0, 0, 1), 0);
-		assertEquals(7, Wear.dryTime(7, 0, -5, 1), 0);
-		assertEquals(7, Wear.dryTime(7, 0, 128, Double.NaN), 0);
-		assertEquals(7, Wear.dryTime(7, 0, 128, -1), 0);
-		assertEquals(7, Wear.dryTime(7, 0, 128, Double.POSITIVE_INFINITY), 0);
-		assertEquals(0, Wear.dryTime(Double.NaN, 0, 0, 1), 0);
-		assertEquals(0, Wear.dryTime(-3, 0, 0, 1), 0);
+		assertEquals(7, Wear.dryTime(7, 0, 0, 1, false), 0);
+		assertEquals(7, Wear.dryTime(7, 0, -5, 1, false), 0);
+		assertEquals(7, Wear.dryTime(7, 0, 128, Double.NaN, false), 0);
+		assertEquals(7, Wear.dryTime(7, 0, 128, -1, false), 0);
+		assertEquals(7, Wear.dryTime(7, 0, 128, Double.POSITIVE_INFINITY, false), 0);
+		assertEquals(0, Wear.dryTime(Double.NaN, 0, 0, 1, false), 0);
+		assertEquals(0, Wear.dryTime(-3, 0, 0, 1, false), 0);
 		// A film that is not a number reads as well oiled, so nothing is seized on a bad reading
-		assertEquals(0, Wear.dryTime(0, Double.NaN, 128, 1), 0);
+		assertEquals(0, Wear.dryTime(0, Double.NaN, 128, 1, false), 0);
 	}
 
 	@Test
@@ -280,6 +280,38 @@ class WearTest {
 		assertTrue(Wear.SEIZED_DRAG > 1);
 		assertEquals(0, com.createengines.engine.topology.CylinderFault.dragOnCrank(seized | com.createengines.engine.topology.CylinderFault.NOT_ON_THROW.bit()));
 		assertEquals(1, com.createengines.engine.topology.CylinderFault.dragOnCrank(0));
+	}
+
+	@Test
+	void onlyAFailedSetOfSealsGripsTheCrankAndItAddsNoWeight() {
+		for (com.createengines.engine.topology.CylinderFault fault : com.createengines.engine.topology.CylinderFault.values()) {
+			boolean apex = fault == com.createengines.engine.topology.CylinderFault.APEX_FAILED;
+			assertEquals(apex ? ApexSeals.WRECK_GRIP : 1, com.createengines.engine.topology.CylinderFault.gripOnCrank(fault.bit()), fault.name());
+		}
+		assertEquals(1, com.createengines.engine.topology.CylinderFault.gripOnCrank(0));
+		assertEquals(1, com.createengines.engine.topology.CylinderFault.dragOnCrank(com.createengines.engine.topology.CylinderFault.APEX_FAILED.bit()));
+	}
+
+	/** Ticks a lone rotor with nothing burning takes to stop from {@code rpm}, with {@code flywheel} more inertia and its friction gripped this much. */
+	private static int ticksToStop(double rpm, double flywheel, double grip) {
+		double inertia = 3 * CylinderSpec.CRUDE.inertia() + 0.55 + flywheel;
+		double friction = 3 * CylinderSpec.CRUDE.frictionStatic() * grip + 0.03;
+		EngineSimulation sim = new EngineSimulation(java.util.List.of(), inertia, friction, 3 * CylinderSpec.CRUDE.frictionViscous());
+		sim.restore(0, EngineSimulation.rpmToOmega(rpm), 1);
+		int ticks = 0;
+		while (!sim.isStopped() && ticks < 10_000) {
+			sim.tickFree(0, EngineSimulation.rpmToOmega(256));
+			ticks++;
+		}
+		return ticks;
+	}
+
+	@Test
+	void aWreckedRotorStopsInSecondsWhereAnUnfiredOneCoasts() {
+		assertTrue(ticksToStop(256, 0, 1) > 20 * 20, "unfired, it coasts: " + ticksToStop(256, 0, 1));
+		assertTrue(ticksToStop(256, 0, ApexSeals.WRECK_GRIP) <= 4 * 20, "wrecked: " + ticksToStop(256, 0, ApexSeals.WRECK_GRIP));
+		assertTrue(ticksToStop(256, 2.5, ApexSeals.WRECK_GRIP) <= 12 * 20,
+			"wrecked, behind a flywheel: " + ticksToStop(256, 2.5, ApexSeals.WRECK_GRIP));
 	}
 
 	@Test
@@ -347,14 +379,53 @@ class WearTest {
 	}
 
 	@Test
-	void theSqueakHappensAtHalfwayExactlyAndNotBefore() {
+	void aDryPistonCriesOutFromHalfWayAndCloserTogetherAfter() {
 		double half = Wear.SEIZE_AFTER / 2;
-		assertTrue(Wear.squeals(half), "exactly half way");
-		assertTrue(Wear.squeals(half + 1e-9));
-		assertFalse(Wear.squeals(half - 1e-9), "just short of it");
-		assertFalse(Wear.squeals(0));
-		assertFalse(Wear.squeals(1));
-		assertTrue(Wear.squeals(Wear.SEIZE_AFTER));
+		assertTrue(Wear.warns(half - 1, half), "on reaching half way exactly");
+		assertFalse(Wear.warns(half, half + 1), "and not again for the same point");
+		assertFalse(Wear.warns(0, half - 1e-9), "just short of it");
+		assertFalse(Wear.warns(half + 1, half - 1), "not on the way back down");
+		java.util.List<Double> at = new java.util.ArrayList<>();
+		for (double t = 0; t < Wear.SEIZE_AFTER - 1; t++)
+			if (Wear.warns(t, t + 1))
+				at.add(t + 1);
+		assertEquals(5, at.size(), "five cries before it seizes: " + at);
+		for (int i = 2; i < at.size(); i++)
+			assertTrue(at.get(i) - at.get(i - 1) < at.get(i - 1) - at.get(i - 2), "each sooner than the last: " + at);
+	}
+
+	@Test
+	void aStandardPistonAtTheReferenceSpeedTakesTwoMinutesDry() {
+		assertEquals(120, secondsToSeize(Wear.REFERENCE_RPM, false), 0);
+	}
+
+	@Test
+	void aSlowerEngineTakesLongerToSeizeAndAFasterOneLessWithinLimits() {
+		assertTrue(secondsToSeize(100, false) > secondsToSeize(128, false));
+		assertTrue(secondsToSeize(192, false) < secondsToSeize(128, false));
+		assertEquals(secondsToSeize(64, false), secondsToSeize(1, false), 0, "no slower than the slowest rate");
+		assertEquals(secondsToSeize(256, false), secondsToSeize(4000, false), 0, "no faster than the fastest");
+		assertEquals(240, secondsToSeize(32, false), 0);
+		assertEquals(60, secondsToSeize(512, false), 0);
+	}
+
+	@Test
+	void aForgedPistonRunsDryAsMuchLongerAsItWearsLonger() {
+		for (double rpm : new double[] {32, 100, 128, 256})
+			assertEquals(Wear.PRECISION_LIFE * secondsToSeize(rpm, false), secondsToSeize(rpm, true), 1, "at " + rpm);
+		assertEquals(300, secondsToSeize(128, true), 0);
+		// Oil clears a forged piston no slower than a standard one
+		assertEquals(Wear.dryTime(50, 1, 128, 5, false), Wear.dryTime(50, 1, 128, 5, true), 0);
+	}
+
+	private static int secondsToSeize(double rpm, boolean precision) {
+		double t = 0;
+		int seconds = 0;
+		while (!Wear.seizes(t) && seconds < 100000) {
+			t = Wear.dryTime(t, 0, rpm, 1, precision);
+			seconds++;
+		}
+		return seconds;
 	}
 
 	@Test
@@ -367,23 +438,23 @@ class WearTest {
 	@Test
 	void anOilFilmExactlyAtTheLimitIsNotRunningDry() {
 		// Below the figure adds time; at it and above it takes time off
-		assertEquals(5 + 1, Wear.dryTime(5, Wear.SEIZE_FILM - 1e-9, 128, 1), 1e-9);
-		assertEquals(5 - Wear.SEIZE_RECOVERY, Wear.dryTime(5, Wear.SEIZE_FILM, 128, 1), 1e-12);
-		assertEquals(5 - Wear.SEIZE_RECOVERY, Wear.dryTime(5, Wear.SEIZE_FILM + 1e-9, 128, 1), 1e-6);
+		assertEquals(5 + 1, Wear.dryTime(5, Wear.SEIZE_FILM - 1e-9, 128, 1, false), 1e-9);
+		assertEquals(5 - Wear.SEIZE_RECOVERY, Wear.dryTime(5, Wear.SEIZE_FILM, 128, 1, false), 1e-12);
+		assertEquals(5 - Wear.SEIZE_RECOVERY, Wear.dryTime(5, Wear.SEIZE_FILM + 1e-9, 128, 1, false), 1e-6);
 	}
 
 	@Test
 	void theDryCountHoldsItsRangeWhateverItStartsFrom() {
-		assertEquals(0, Wear.dryTime(0, 1, 128, 1), 0, "from nothing, oiled, it stays at nothing");
-		assertEquals(1, Wear.dryTime(0, 0, 128, 1), 0, "from nothing, dry, it gains the second");
-		assertEquals(3, Wear.dryTime(3, 0, 128, 0), 0, "no time passing changes nothing");
-		assertEquals(3, Wear.dryTime(3, 1, 128, 0), 0);
-		assertEquals(0, Wear.dryTime(-3, 0, 0, 1), 0, "a count below nothing is nothing");
-		assertEquals(0, Wear.dryTime(-3, 1, 128, 1), 0);
-		assertEquals(Wear.SEIZE_AFTER, Wear.dryTime(Wear.SEIZE_AFTER + 50, 0, 128, 1), 0, "a count past the limit is held at it");
-		assertEquals(3, Wear.dryTime(3, 0, 128, -4), 0, "a span of time below nothing is none");
-		assertEquals(0, Wear.dryTime(Double.POSITIVE_INFINITY, 0, 128, 1), 1, "an infinite count is read as none and then gains the second");
-		assertEquals(4, Wear.dryTime(3, 0, 1e-9, 1), 0, "an engine barely turning still counts");
+		assertEquals(0, Wear.dryTime(0, 1, 128, 1, false), 0, "from nothing, oiled, it stays at nothing");
+		assertEquals(1, Wear.dryTime(0, 0, 128, 1, false), 0, "from nothing, dry, it gains the second");
+		assertEquals(3, Wear.dryTime(3, 0, 128, 0, false), 0, "no time passing changes nothing");
+		assertEquals(3, Wear.dryTime(3, 1, 128, 0, false), 0);
+		assertEquals(0, Wear.dryTime(-3, 0, 0, 1, false), 0, "a count below nothing is nothing");
+		assertEquals(0, Wear.dryTime(-3, 1, 128, 1, false), 0);
+		assertEquals(Wear.SEIZE_AFTER, Wear.dryTime(Wear.SEIZE_AFTER + 50, 0, 128, 1, false), 0, "a count past the limit is held at it");
+		assertEquals(3, Wear.dryTime(3, 0, 128, -4, false), 0, "a span of time below nothing is none");
+		assertEquals(0, Wear.dryTime(Double.POSITIVE_INFINITY, 0, 128, 1, false), 1, "an infinite count is read as none and then gains the second");
+		assertEquals(3 + Wear.SEIZE_SLOWEST, Wear.dryTime(3, 0, 1e-9, 1, false), 1e-12, "an engine barely turning still counts, at the slowest rate");
 	}
 
 	@Test

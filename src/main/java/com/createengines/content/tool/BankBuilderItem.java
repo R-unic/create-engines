@@ -393,7 +393,7 @@ public class BankBuilderItem extends Item {
 				// A head with no gasket of its own gets the best new one the builder carries (never a worn one: a worn
 				// part keeps its wear on the item, and the builder would otherwise hand back a new one)
 				if (level.getBlockEntity(headPos) instanceof com.createengines.content.head.CylinderHeadBlockEntity gasketHead
-					&& !gasketHead.broken() && !gasketHead.hasGasketItem()) {
+					&& !gasketHead.showsBroken() && !gasketHead.hasGasketItem()) {
 					for (ItemEntry<Item> gasket : new ItemEntry[] {CEItems.COPPER_GASKET, CEItems.RUBBER_GASKET,
 						CEItems.CARDBOARD_GASKET, CEItems.STOCK_GASKET}) {
 						if (supplies.takeExtra(gasket.get())) {

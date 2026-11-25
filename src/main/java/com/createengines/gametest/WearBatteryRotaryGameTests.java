@@ -4,6 +4,7 @@ import com.createengines.CreateEngines;
 import com.createengines.content.battery.BatteryBlockEntity;
 import com.createengines.content.crankshaft.CrankshaftBlockEntity;
 import com.createengines.content.rotor.RotorHousingBlockEntity;
+import com.createengines.engine.EngineState;
 import com.createengines.engine.EngineSummary;
 import com.createengines.engine.WearKeeper;
 import com.createengines.engine.sim.BatteryTier;
@@ -40,6 +41,8 @@ public class WearBatteryRotaryGameTests {
 	private static final String ON = "wear-battery-on";
 	private static final String APEX_ON = "wear-apex-on";
 	private static final String APEX_OFF = "wear-apex-off";
+	// Alone, so that no other test finishing can take the forced roll away while this one still relies on it
+	private static final String APEX_STOPPED = "wear-apex-stopped";
 
 	private static final BlockPos A = new BlockPos(6, 1, 1);
 	private static final BlockPos B = new BlockPos(6, 1, 3);
@@ -47,12 +50,18 @@ public class WearBatteryRotaryGameTests {
 
 	@AfterBatch(batch = ON)
 	public static void restoreTheModeAfterOn(ServerLevel level) {
-		Tuning.wearMode = false;
+		GameTestConfig.wearMode(false);
 	}
 
 	@AfterBatch(batch = APEX_ON)
 	public static void restoreTheModeAfterApex(ServerLevel level) {
-		Tuning.wearMode = false;
+		GameTestConfig.wearMode(false);
+		WearKeeper.roller = null;
+	}
+
+	@AfterBatch(batch = APEX_STOPPED)
+	public static void restoreTheModeAfterApexStopped(ServerLevel level) {
+		GameTestConfig.wearMode(false);
 		WearKeeper.roller = null;
 	}
 
@@ -85,7 +94,7 @@ public class WearBatteryRotaryGameTests {
 
 	@GameTest(template = "empty", batch = OFF)
 	public static void withTheModeOffABatteryNeverWearsHoweverDeepItIsDrawn(GameTestHelper helper) {
-		Tuning.wearMode = false;
+		GameTestConfig.wearMode(false);
 		BatteryBlockEntity plain = battery(helper, A, CEBlocks.BATTERY.getDefaultState(), 200);
 		for (int i = 0; i < 40; i++)
 			plain.draw(5);
@@ -99,7 +108,7 @@ public class WearBatteryRotaryGameTests {
 
 	@GameTest(template = "empty", batch = OFF)
 	public static void withTheModeOffASavedWearChangesNothingAboutWhatABatteryHolds(GameTestHelper helper) {
-		Tuning.wearMode = false;
+		GameTestConfig.wearMode(false);
 		BatteryBlockEntity plain = battery(helper, A, CEBlocks.BATTERY.getDefaultState(), 0);
 		var registries = helper.getLevel()
 			.registryAccess();
@@ -113,7 +122,7 @@ public class WearBatteryRotaryGameTests {
 
 	@GameTest(template = "empty", batch = ON)
 	public static void withTheModeOnDrawingOnABatteryWearsItAndAShallowDrawWearsLessThanADeepOne(GameTestHelper helper) {
-		Tuning.wearMode = true;
+		GameTestConfig.wearMode(true);
 		BatteryBlockEntity shallow = battery(helper, A, CEBlocks.BATTERY.getDefaultState(), 200);
 		BatteryBlockEntity deep = battery(helper, B, CEBlocks.BATTERY.getDefaultState(), 10);
 		shallow.draw(10);
@@ -127,7 +136,7 @@ public class WearBatteryRotaryGameTests {
 
 	@GameTest(template = "empty", batch = ON)
 	public static void aSpentBatteryHoldsHalfAndStillWorks(GameTestHelper helper) {
-		Tuning.wearMode = true;
+		GameTestConfig.wearMode(true);
 		BatteryBlockEntity plain = battery(helper, A, CEBlocks.BATTERY.getDefaultState(), 200);
 		var registries = helper.getLevel()
 			.registryAccess();
@@ -143,7 +152,7 @@ public class WearBatteryRotaryGameTests {
 
 	@GameTest(template = "empty", batch = ON)
 	public static void aServiceKitSetsALightlyWornBatteryRightAndLeavesAHeavyOneAlone(GameTestHelper helper) {
-		Tuning.wearMode = true;
+		GameTestConfig.wearMode(true);
 		BatteryBlockEntity plain = battery(helper, A, CEBlocks.BATTERY.getDefaultState(), 200);
 		var registries = helper.getLevel()
 			.registryAccess();
@@ -164,7 +173,7 @@ public class WearBatteryRotaryGameTests {
 
 	@GameTest(template = "empty", batch = ON)
 	public static void batteryWearIsSavedAndADamagedSaveReadsAsNewOrSpent(GameTestHelper helper) {
-		Tuning.wearMode = true;
+		GameTestConfig.wearMode(true);
 		BatteryBlockEntity dry = battery(helper, A, CEBlocks.DRY_CELL.getDefaultState(), 100);
 		dry.draw(100);
 		double worn = dry.wear();
@@ -190,7 +199,7 @@ public class WearBatteryRotaryGameTests {
 
 	@GameTest(template = "empty", batch = ON)
 	public static void aDryCellIsNotWornByTheColdButAPlainBatteryIs(GameTestHelper helper) {
-		Tuning.wearMode = true;
+		GameTestConfig.wearMode(true);
 		Tuning.batteryCold = true;
 		BatteryBlockEntity.biomeTemperatureOverride = 0f;
 		BatteryBlockEntity plain = battery(helper, A, CEBlocks.BATTERY.getDefaultState(), 100);
@@ -219,7 +228,7 @@ public class WearBatteryRotaryGameTests {
 
 	@GameTest(template = "empty", timeoutTicks = 600, batch = APEX_OFF)
 	public static void withTheModeOffARotorsSealsNeverWear(GameTestHelper helper) {
-		Tuning.wearMode = false;
+		GameTestConfig.wearMode(false);
 		TestEngine.buildRotary(helper.getLevel(), helper.absolutePos(BlockPos.ZERO), true);
 		helper.runAtTickTime(450, () -> {
 			helper.assertTrue(summary(helper).firing() >= 1, "The rotor is firing: " + summary(helper));
@@ -233,7 +242,7 @@ public class WearBatteryRotaryGameTests {
 
 	@GameTest(template = "empty", timeoutTicks = 600, batch = APEX_ON)
 	public static void withTheModeOnARunningRotorWearsItsSeals(GameTestHelper helper) {
-		Tuning.wearMode = true;
+		GameTestConfig.wearMode(true);
 		TestEngine.buildRotary(helper.getLevel(), helper.absolutePos(BlockPos.ZERO), true);
 		helper.runAtTickTime(450, () -> {
 			helper.assertTrue(housing(helper).apexWear() > 0, "The seals wore: " + housing(helper).apexWear());
@@ -244,7 +253,7 @@ public class WearBatteryRotaryGameTests {
 
 	@GameTest(template = "empty", timeoutTicks = 700, batch = APEX_ON)
 	public static void aSpentSetOfSealsFailsAndStopsAllThreeChambers(GameTestHelper helper) {
-		Tuning.wearMode = true;
+		GameTestConfig.wearMode(true);
 		WearKeeper.roller = () -> 0;
 		TestEngine.buildRotary(helper.getLevel(), helper.absolutePos(BlockPos.ZERO), true);
 		housing(helper).addApexWear(0.99);
@@ -265,9 +274,43 @@ public class WearBatteryRotaryGameTests {
 		});
 	}
 
+	@GameTest(template = "empty", timeoutTicks = 800, batch = APEX_ON)
+	public static void aRunningRotorWhoseSealsFailStallsWithinSeconds(GameTestHelper helper) {
+		GameTestConfig.wearMode(true);
+		TestEngine.buildRotary(helper.getLevel(), helper.absolutePos(BlockPos.ZERO), true);
+		// The starter lets go, and the rotor is left running on its own
+		helper.runAtTickTime(450, () -> helper.setBlock(TestEngine.STARTER_POWER, net.minecraft.world.level.block.Blocks.AIR));
+		helper.runAtTickTime(550, () -> {
+			helper.assertTrue(summary(helper).firing() >= 1 && summary(helper).rpm() > 20, "It runs on its own: " + summary(helper));
+			housing(helper).failApex();
+		});
+		helper.runAtTickTime(650, () -> {
+			helper.assertTrue(summary(helper).state() == EngineState.STALLED && summary(helper).rpm() == 0, "and has stopped: " + summary(helper));
+			helper.succeed();
+		});
+	}
+
+	@GameTest(template = "empty", timeoutTicks = 500, batch = APEX_STOPPED)
+	public static void aStoppedRotorsSpentSealsHoldUntilItTurns(GameTestHelper helper) {
+		GameTestConfig.wearMode(true);
+		WearKeeper.roller = () -> 0;
+		TestEngine.buildRotary(helper.getLevel(), helper.absolutePos(BlockPos.ZERO), true);
+		// The starter is not engaged, so the engine stands still
+		helper.setBlock(TestEngine.STARTER_POWER, net.minecraft.world.level.block.Blocks.AIR);
+		housing(helper).addApexWear(0.99);
+		helper.runAtTickTime(200, () -> {
+			helper.assertTrue(!housing(helper).apexFailed(), "No set of seals fails standing still: " + summary(helper));
+			helper.setBlock(TestEngine.STARTER_POWER, net.minecraft.world.level.block.Blocks.REDSTONE_BLOCK);
+		});
+		helper.runAtTickTime(450, () -> {
+			helper.assertTrue(housing(helper).apexFailed(), "Once it turns, the spent set goes: " + summary(helper));
+			helper.succeed();
+		});
+	}
+
 	@GameTest(template = "empty", timeoutTicks = 1100, batch = APEX_ON)
 	public static void aNewSetOfSealsGetsAFailedRotorRunningAgain(GameTestHelper helper) {
-		Tuning.wearMode = true;
+		GameTestConfig.wearMode(true);
 		TestEngine.buildRotary(helper.getLevel(), helper.absolutePos(BlockPos.ZERO), true);
 		housing(helper).addApexWear(0.9);
 		housing(helper).failApex();
@@ -286,7 +329,7 @@ public class WearBatteryRotaryGameTests {
 
 	@GameTest(template = "empty", batch = APEX_ON)
 	public static void aServiceKitSetsLightlyWornSealsRightButNotAFailedSet(GameTestHelper helper) {
-		Tuning.wearMode = true;
+		GameTestConfig.wearMode(true);
 		TestEngine.buildRotary(helper.getLevel(), helper.absolutePos(BlockPos.ZERO), true);
 		housing(helper).addApexWear(0.3);
 		ItemStack kit = new ItemStack(CEItems.SERVICE_KIT.get());

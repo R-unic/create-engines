@@ -3,6 +3,7 @@ package com.createengines.content.head;
 import java.util.List;
 
 import com.createengines.content.WearService;
+import com.createengines.engine.sim.Tuning;
 import com.createengines.engine.sim.Wear;
 import com.createengines.engine.topology.EngineTopology;
 import com.createengines.registry.CEDataMaps;
@@ -96,6 +97,16 @@ public class CylinderHeadBlockEntity extends SmartBlockEntity implements IHaveGo
 		return broken;
 	}
 
+	/** Whether the blown gasket counts now: with the wear mode off it stays saved, and is neither shown nor stops anything. */
+	public boolean showsBlown() {
+		return Tuning.wearMode && blown;
+	}
+
+	/** Whether the broken head counts now (see {@link #showsBlown}). */
+	public boolean showsBroken() {
+		return Tuning.wearMode && broken;
+	}
+
 	/** A rod went through the head: it is broken, and the gasket under it is lost with it. */
 	public void breakHead() {
 		if (broken)
@@ -116,9 +127,10 @@ public class CylinderHeadBlockEntity extends SmartBlockEntity implements IHaveGo
 	@Override
 	public void tick() {
 		super.tick();
-		if (level == null || !level.isClientSide || !(blown || broken))
+		if (level == null || !level.isClientSide || !(showsBlown() || showsBroken()))
 			return;
 		var random = level.random;
+		boolean broken = showsBroken();
 		if (random.nextInt(broken ? 7 : 5) != 0)
 			return;
 		double x = worldPosition.getX() + 0.3 + random.nextDouble() * 0.4;
@@ -314,13 +326,19 @@ public class CylinderHeadBlockEntity extends SmartBlockEntity implements IHaveGo
 		} else if (isPlayerSneaking)
 			GoggleLines.add(CELang.translate("goggles.head.no_spark_plug")
 				.style(ChatFormatting.DARK_GRAY), tooltip, 1);
-		if (broken)
+		if (showsBroken())
 			GoggleLines.add(CELang.translate("goggles.wear.head_broken")
 				.style(ChatFormatting.RED), tooltip, 1);
-		else if (blown)
+		else if (showsBlown())
 			GoggleLines.add(CELang.translate("goggles.wear.gasket_blown")
 				.style(ChatFormatting.RED), tooltip, 1);
-		else if (gasketWear > 0 || gasket != Wear.Gasket.STOCK) {
+		else if (!Tuning.wearMode) {
+			// A fitted gasket still seals with the mode off, so it is named, with no wear figure
+			if (hasGasketItem())
+				GoggleLines.add(CELang.translate("goggles.gasket_fitted", CELang.translate("goggles.wear.gasket." + gasket.name().toLowerCase(java.util.Locale.ROOT))
+						.string())
+					.style(ChatFormatting.GRAY), tooltip, 1);
+		} else if (gasketWear > 0 || gasket != Wear.Gasket.STOCK) {
 			int percent = (int) Math.round(gasketWear * 100);
 			GoggleLines.add(CELang.translate("goggles.wear.gasket", CELang.translate("goggles.wear.gasket." + gasket.name().toLowerCase(java.util.Locale.ROOT))
 					.string(), percent)

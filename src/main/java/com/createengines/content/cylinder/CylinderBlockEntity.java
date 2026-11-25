@@ -95,11 +95,44 @@ public class CylinderBlockEntity extends SmartBlockEntity implements IHaveGoggle
 		return thrown;
 	}
 
-	/** The piston has seized from running dry (the wear mode's): saved only while it has, freed by a Service Kit or a new piston. */
+	/** The piston has seized from running dry (the wear mode's): saved only while it has, and over once the piston comes out. */
 	private boolean seized;
+
+	/**
+	 * How far this cylinder's piston has run dry (see {@code Wear.dryTime}). Kept here so it outlasts the engine being rebuilt, as it is when a
+	 * neighbour seizes; not saved, so a reloaded world starts clean, which is the kinder way to be wrong.
+	 */
+	private double dryTime;
+
+	public double dryTime() {
+		return dryTime;
+	}
+
+	public void setDryTime(double dryTime) {
+		this.dryTime = dryTime;
+	}
 
 	public boolean seized() {
 		return seized;
+	}
+
+	/** Whether the thrown rod counts now: with the wear mode off its wreck stays saved, and is neither shown nor in the way. */
+	public boolean showsThrown() {
+		return Tuning.wearMode && thrown;
+	}
+
+	/** Whether the seizure counts now (see {@link #showsThrown}). */
+	public boolean showsSeized() {
+		return Tuning.wearMode && seized;
+	}
+
+	/** A part went in with the wear mode off, over a wreck nobody can see: the wreck goes, or the new part would share the bore with it later. */
+	public void dropHiddenWreck() {
+		if (Tuning.wearMode || !thrown)
+			return;
+		thrown = false;
+		setChanged();
+		sendData();
 	}
 
 	/** The piston seizes: it is left badly worn, the cylinder locks, and the engine is rebuilt around it. */
@@ -107,13 +140,14 @@ public class CylinderBlockEntity extends SmartBlockEntity implements IHaveGoggle
 		if (seized)
 			return;
 		seized = true;
+		dryTime = 0;
 		pistonWear = Math.max(pistonWear, Wear.SEIZED_WEAR);
 		setChanged();
 		sendData();
 		EngineTopology.wearChanged(level, worldPosition);
 	}
 
-	/** The seizure ends without a kit, because the seized piston came out. Returns whether there was one. */
+	/** The seizure ends, because the seized piston came out. Returns whether there was one. */
 	public boolean unseize() {
 		if (!seized)
 			return false;
@@ -198,9 +232,9 @@ public class CylinderBlockEntity extends SmartBlockEntity implements IHaveGoggle
 			EngineTopology.wearChanged(level, worldPosition);
 			return true;
 		}
-		// A seized piston is freed (not made new: it stays as worn as the seizure left it, so it is soon replaced)
-		if (unseize())
-			return true;
+		// A seized piston is not set right where it is: it has to come out (see WearService)
+		if (seized)
+			return false;
 		BlockState state = getBlockState();
 		double piston = state.getValue(CylinderBlock.HAS_PISTON) ? Wear.repaired(pistonWear) : pistonWear;
 		double rod = state.getValue(CylinderBlock.HAS_ROD) ? Wear.repaired(rodWear) : rodWear;
@@ -287,12 +321,12 @@ public class CylinderBlockEntity extends SmartBlockEntity implements IHaveGoggle
 	 */
 	/** A piston that has seized keeps smoking from the hot metal, and a thrown rod's wreck leaks a little oil smoke. Only ever the wear mode's. */
 	private void wearEffects() {
-		if (!(seized || thrown) || level.random.nextInt(seized ? 6 : 14) != 0)
+		if (!(showsSeized() || showsThrown()) || level.random.nextInt(showsSeized() ? 6 : 14) != 0)
 			return;
 		double x = worldPosition.getX() + 0.3 + level.random.nextDouble() * 0.4;
 		double y = worldPosition.getY() + 0.7 + level.random.nextDouble() * 0.3;
 		double z = worldPosition.getZ() + 0.3 + level.random.nextDouble() * 0.4;
-		level.addParticle(seized ? net.minecraft.core.particles.ParticleTypes.LARGE_SMOKE : net.minecraft.core.particles.ParticleTypes.SMOKE, x, y, z, 0, 0.03, 0);
+		level.addParticle(showsSeized() ? net.minecraft.core.particles.ParticleTypes.LARGE_SMOKE : net.minecraft.core.particles.ParticleTypes.SMOKE, x, y, z, 0, 0.03, 0);
 	}
 
 	private void tickClient() {
@@ -714,10 +748,10 @@ public class CylinderBlockEntity extends SmartBlockEntity implements IHaveGoggle
 			if (fault.in(faults))
 				GoggleLines.add(CELang.translate(fault.langKey())
 					.style(fault.disablesCylinder ? ChatFormatting.RED : ChatFormatting.GOLD), tooltip, 1);
-		if (thrown)
+		if (showsThrown())
 			GoggleLines.add(CELang.translate("goggles.wear.thrown")
 				.style(ChatFormatting.RED), tooltip, 1);
-		if (seized)
+		if (showsSeized())
 			GoggleLines.add(CELang.translate("goggles.wear.seized")
 				.style(ChatFormatting.RED), tooltip, 1);
 		wearLine(tooltip, "goggles.wear.piston",state.getValue(CylinderBlock.HAS_PISTON), pistonWear, isPlayerSneaking);
@@ -725,10 +759,10 @@ public class CylinderBlockEntity extends SmartBlockEntity implements IHaveGoggle
 		return true;
 	}
 
-	/** How worn a part is, only once it has any (wear is opt-in, so a cylinder that never wore says nothing). */
+	/** How worn a part is, only with the wear mode on and once it has any (a cylinder that never wore says nothing). */
 	static void wearLine(List<Component> tooltip, String key, boolean fitted, double wear, boolean sneaking) {
 		int percent = (int) Math.round(wear * 100);
-		if (!fitted || percent < 5)
+		if (!Tuning.wearMode || !fitted || percent < 5)
 			return;
 		GoggleLines.add(CELang.translate(key, percent)
 			.style(wear >= Wear.FAILURE_FROM ? ChatFormatting.RED : wear >= Wear.REPAIRABLE ? ChatFormatting.GOLD : ChatFormatting.GRAY), tooltip, 1);

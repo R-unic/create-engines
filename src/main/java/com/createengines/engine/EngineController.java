@@ -163,6 +163,8 @@ public final class EngineController {
 	private final WearKeeper wear;
 	/** Whether the cylinders' models carry the state their saved wear gives, so switching the mode off knows to put them back. */
 	private boolean wearApplied;
+	/** The wear mode as this engine was built: changing it has the engine built again, since its failures are read then. */
+	private final boolean builtWithWear = com.createengines.engine.sim.Tuning.wearMode;
 	/** The wear mode's faults by cylinder (blown gasket, broken head, thrown rod), when the mode is on; read when the engine is built, and a failure has it rebuilt. */
 	private final Map<BlockPos, Integer> wearFaults;
 	/** The wear mode's total for the whole build (see {@code WearTotal}), refreshed with each wearing step; -1 with the mode off. */
@@ -297,7 +299,7 @@ public final class EngineController {
 				models.add(null);
 				double weight = CylinderFault.dragOnCrank(faultsOf(cylinder));
 				idleInertia += weight * CylinderSpec.CRUDE.inertia();
-				idleStatic += weight * CylinderSpec.CRUDE.frictionStatic();
+				idleStatic += weight * CylinderSpec.CRUDE.frictionStatic() * CylinderFault.gripOnCrank(faultsOf(cylinder));
 				idleViscous += weight * CylinderSpec.CRUDE.frictionViscous();
 				parts += weight;
 				continue;
@@ -599,6 +601,8 @@ public final class EngineController {
 		if (level == null)
 			return;
 		ticks++;
+		if (builtWithWear != com.createengines.engine.sim.Tuning.wearMode)
+			com.createengines.engine.topology.EngineTopology.rebuildNear(level, primary.getBlockPos(), 0);
 		if (ticks % AIR_INTERVAL == 0 && com.createengines.compat.sable.SableCompat.installed()) {
 			sim.setAmbientDensity(airDensity());
 			watchWorldWater(level);

@@ -44,18 +44,18 @@ public final class WearKeeper {
 
 	/** Server ticks between one wearing step and the next. Wear is slow, so it is worked out in lumps and not every tick. */
 	public static final int INTERVAL = 20;
-	/** Crank speed under which nothing knocks: an engine that has all but stopped is not firing, whatever its last cycle says. */
-	private static final double KNOCK_FROM_RPM = 1;
+	/**
+	 * Crank speed under which an engine counts as stopped: nothing knocks (it is not firing, whatever its last cycle says) and no part
+	 * fails (a rod is not thrown, nor a gasket or a set of apex seals lost, in an engine that is standing still).
+	 */
+	private static final double TURNING_FROM_RPM = 1;
 
 	private final EngineLayout layout;
 	private final List<CylinderModel> models;
-	/** Seconds each cylinder has been running dry (see {@link Wear#dryTime}). Not saved: an engine that is rebuilt starts clean, which is the kinder way to be wrong. */
-	private final double[] dry;
 
 	public WearKeeper(EngineLayout layout, List<CylinderModel> models) {
 		this.layout = layout;
 		this.models = models;
-		this.dry = new double[models.size()];
 	}
 
 	/** A film that is used in place of the engine's own, or null: a test sets it to run an engine dry or keep it oiled. */
@@ -215,6 +215,8 @@ public final class WearKeeper {
 		DoubleSupplier forcedFilm = filmOverride;
 		if (forcedFilm != null)
 			film = forcedFilm.getAsDouble();
+		// One cry a step, however many cylinders are running dry together
+		boolean cried = false;
 		for (int i = 0; i < models.size(); i++) {
 			CylinderModel model = models.get(i);
 			Cylinder cylinder = layout.cylinders()
@@ -236,18 +238,30 @@ public final class WearKeeper {
 			boolean forged = state.getValue(CylinderBlock.FORGED_PISTON);
 			// A stopped crank's cylinders keep the figures of their last cycle, which is not knocking now
 			CycleStats last = model.lastCycle();
-			double early = rpm >= KNOCK_FROM_RPM && last.result.fired() ? last.preignition : 0;
+			double early = rpm >= TURNING_FROM_RPM && last.result.fired() ? last.preignition : 0;
 			body.addWear(piston ? Wear.pistonWear(rpm, temperature, film, dt, forged) + Knock.pistonWear(early, rpm, dt, forged) : 0,
 				rod ? Wear.rodWear(rpm, film, dt) : 0);
 			head.addGasketWear(Wear.gasketWear(head.gasket(), rpm, temperature, model.intakePressure, dt));
 			model.wear = Wear.of(body.pistonWear(), head.gasket(), head.gasketWear(), head.hasGasketItem());
-			if (piston && dryRun(level, i, cylinder, body, rpm, film, dt))
-				return true;
-			if (roll(level, Wear.failureChance(body.rodWear(), rpm, dt))) {
+			if (!piston)
+				body.setDryTime(0);
+			else {
+				double before = body.dryTime();
+				body.setDryTime(Wear.dryTime(before, film, rpm, dt, forged));
+				if (Wear.seizes(body.dryTime())) {
+					seize(level, cylinder, body);
+					return true;
+				}
+				if (!cried && Wear.warns(before, body.dryTime())) {
+					warnDry(level, cylinder, body.dryTime() / Wear.SEIZE_AFTER);
+					cried = true;
+				}
+			}
+			if (rpm >= TURNING_FROM_RPM && roll(level, Wear.failureChance(body.rodWear(), rpm, dt))) {
 				throwRod(level, cylinder, body);
 				return true;
 			}
-			if (roll(level, Wear.failureChance(head.gasketWear(), rpm, dt))) {
+			if (rpm >= TURNING_FROM_RPM && roll(level, Wear.failureChance(head.gasketWear(), rpm, dt))) {
 				blowGasket(level, cylinder, head);
 				return true;
 			}
@@ -267,7 +281,7 @@ public final class WearKeeper {
 		if (first)
 			housing.addApexWear(ApexSeals.wear(rpm, temperature, film, dt));
 		model.wear = ApexSeals.state(housing.apexWear());
-		if (first && roll(level, ApexSeals.failureChance(housing.apexWear(), rpm, dt))) {
+		if (first && rpm >= TURNING_FROM_RPM && roll(level, ApexSeals.failureChance(housing.apexWear(), rpm, dt))) {
 			failApex(level, cylinder, housing);
 			return true;
 		}
@@ -284,17 +298,9 @@ public final class WearKeeper {
 			server.sendParticles(ParticleTypes.ELECTRIC_SPARK, pos.getX() + 0.5, pos.getY() + 0.7, pos.getZ() + 0.5, 20, 0.35, 0.35, 0.35, 0.2);
 	}
 
-	/** Keeps this cylinder's count of seconds run dry; squeals half way to seizing, and seizes the piston at the end. Returns whether it seized. */
-	private boolean dryRun(Level level, int index, Cylinder cylinder, CylinderBlockEntity body, double rpm, double film, double dt) {
-		double before = dry[index];
-		dry[index] = Wear.dryTime(before, film, rpm, dt);
-		if (Wear.seizes(dry[index])) {
-			seize(level, cylinder, body);
-			return true;
-		}
-		if (Wear.squeals(dry[index]) && !Wear.squeals(before))
-			level.playSound(null, cylinder.pos(), CESounds.BEARING_SQUEAL.get(), SoundSource.BLOCKS, 1.0f, 1.0f);
-		return false;
+	/** A dry piston crying out before it seizes: higher the nearer it is, {@code share} being how far it has got. */
+	private static void warnDry(Level level, Cylinder cylinder, double share) {
+		level.playSound(null, cylinder.pos(), CESounds.SEIZE_WARNING.get(), SoundSource.BLOCKS, 0.6f, (float) (0.8 + 0.3 * share));
 	}
 
 	/** The piston welds itself to the bore: a screech, a clunk, a puff of smoke. The parts stay; the cylinder locks and drags on the crank. */

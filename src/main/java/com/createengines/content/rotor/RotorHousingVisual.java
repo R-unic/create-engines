@@ -41,7 +41,7 @@ public class RotorHousingVisual extends AbstractBlockEntityVisual<RotorHousingBl
 			.createInstance();
 		wreck = instancerProvider().instancer(InstanceTypes.TRANSFORMED, Models.partial(CEPartialModels.ROTOR_WRECK))
 			.createInstance();
-		wrecked = blockEntity.apexFailed();
+		wrecked = blockEntity.showsApexFailed();
 		layWreck();
 		animate();
 	}
@@ -64,7 +64,7 @@ public class RotorHousingVisual extends AbstractBlockEntityVisual<RotorHousingBl
 	}
 
 	private void animate() {
-		if (wrecked != blockEntity.apexFailed()) {
+		if (wrecked != blockEntity.showsApexFailed()) {
 			wrecked = !wrecked;
 			layWreck();
 			relight(wreck);

@@ -37,7 +37,7 @@ public enum CylinderFault {
 	THROWN_ROD(true),
 	/** The wear mode's: the head broke when a rod was thrown, and has to be replaced. */
 	BROKEN_HEAD(true),
-	/** The wear mode's: a piston seized from running dry, which locks the cylinder and drags on the crank until a Service Kit frees it or the piston is replaced. */
+	/** The wear mode's: a piston seized from running dry, which locks the cylinder and drags on the crank until the piston comes out, by hand or with a Service Kit. */
 	SEIZED(true),
 	/** The wear mode's: a rotor housing's apex seals have failed, which stops all three chambers until a new set is fitted. */
 	APEX_FAILED(true);
@@ -94,5 +94,13 @@ public enum CylinderFault {
 		if (SEIZED.in(faults))
 			return com.createengines.engine.sim.Wear.SEIZED_DRAG;
 		return NO_PISTON.in(faults) ? 0.5 : 1;
+	}
+
+	/**
+	 * How many times harder than its weight says the static friction of a cylinder that isn't working holds the crank back: more than 1
+	 * only for the wreck of a failed set of apex seals. Used on top of {@link #dragOnCrank}, so it is nothing where that is nothing.
+	 */
+	public static double gripOnCrank(int faults) {
+		return APEX_FAILED.in(faults) ? com.createengines.engine.sim.ApexSeals.WRECK_GRIP : 1;
 	}
 }

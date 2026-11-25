@@ -87,6 +87,26 @@ public final class BatteryWear {
 		return Math.min(1, Math.max(0, drawn) * perSpark * depthFactor(tier, share) * coldFactor(tier, cold));
 	}
 
+	/** The wear as goggles word it, in percent: a decimal below 10, where a whole number would sit still for minutes of running. */
+	public static String percentText(double wear) {
+		double worn = Wear.clamp(wear);
+		// Worded from the step that clients are told at, so the two never round apart
+		int step = shownStep(worn);
+		if (worn == 0 || step >= 100)
+			return Long.toString(Math.round(worn * 100));
+		return step / 10 + "." + step % 10;
+	}
+
+	/** The wear in tenths of a percent, the finest {@link #percentText} shows: clients are told, and the save marked, when it moves. */
+	public static int shownStep(double wear) {
+		return (int) Math.round(Wear.clamp(wear) * 1000);
+	}
+
+	/** Whether the wear is past what a Service Kit sets right, so that only a new battery cures it. */
+	public static boolean heavy(double wear) {
+		return Wear.clamp(wear) > Wear.REPAIRABLE;
+	}
+
 	/** Whether the wear is light enough for a Service Kit to set right (the same rule as every other part). */
 	public static boolean repairable(double wear) {
 		return Wear.repairable(wear);
