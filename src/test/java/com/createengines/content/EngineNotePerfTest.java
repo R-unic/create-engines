@@ -26,6 +26,22 @@ class EngineNotePerfTest {
 
 	private static final int BLOCK = 2205;
 
+	/**
+	 * Renders every scenario before any is timed, so the compiler has finished with the synth and every path through it. Without
+	 * this the first scenarios were timed while it was still being compiled: on a shared build agent one cylinder, timed first,
+	 * cost twice what sixteen did, and went over the budget on some runs.
+	 */
+	private static void warmUp(Object[][] scenarios) {
+		short[] out = new short[BLOCK];
+		for (int pass = 0; pass < 3; pass++)
+			for (Object[] scenario : scenarios) {
+				EngineNoteSynth synth = new EngineNoteSynth(7);
+				synth.set((Params) scenario[1]);
+				for (int i = 0; i < 100; i++)
+					synth.render(out, 0, BLOCK);
+			}
+	}
+
 	private static double bestNanosPerSample(Params params, long[] checksum) {
 		EngineNoteSynth synth = new EngineNoteSynth(7);
 		synth.set(params);
@@ -57,6 +73,7 @@ class EngineNotePerfTest {
 			{ "16 cyl @ 8000 rpm", new Params(8000, even(16), 1, 1, 1) },
 			{ "idle coast @ 400 rpm", new Params(400, even(6), 1, 0, 0.25f) },
 		};
+		warmUp(scenarios);
 		for (Object[] scenario : scenarios) {
 			long[] checksum = new long[1];
 			double ns = bestNanosPerSample((Params) scenario[1], checksum);
