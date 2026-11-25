@@ -130,20 +130,29 @@ public class PollutionGameTests {
 			return;
 		}
 		boolean was = com.createengines.config.CEConfig.POLLUTION.get();
-		com.createengines.config.CEConfig.POLLUTION.set(false);
+		setPollution(false);
 		try {
 			TestEngine.build(helper.getLevel(), helper.absolutePos(BlockPos.ZERO), true);
 			runAndWatch(helper, watch -> {
-				com.createengines.config.CEConfig.POLLUTION.set(was);
+				setPollution(was);
 				helper.assertTrue(watch.lastState == EngineState.RUNNING, "the engine should be running, it is " + watch.lastState);
 				helper.assertTrue(watch.carbon == 0 && watch.sulfur == 0,
 					"with pollution off nothing should be released: " + watch.carbon + " carbon, " + watch.sulfur + " sulfur");
 				helper.succeed();
 			});
 		} catch (RuntimeException e) {
-			com.createengines.config.CEConfig.POLLUTION.set(was);
+			setPollution(was);
 			throw e;
 		}
+	}
+
+	/**
+	 * Sets the switch in the file as well as in memory. The file is read again a moment after anything writes it, and this
+	 * test runs over many ticks, so a value set only in memory can be put back by an earlier test's save.
+	 */
+	private static void setPollution(boolean on) {
+		com.createengines.config.CEConfig.POLLUTION.set(on);
+		com.createengines.config.CEConfig.POLLUTION.save();
 	}
 
 	/** Ethanol burns clean and carries no sulfur, so its engine puts out carbon only: sulfur follows the fuel's own value. */

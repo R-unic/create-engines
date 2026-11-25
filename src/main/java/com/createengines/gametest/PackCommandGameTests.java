@@ -276,6 +276,8 @@ public class PackCommandGameTests {
 		} finally {
 			before.forEach((path, raw) -> ((ModConfigSpec.ConfigValue) CEConfig.values()
 				.get(path)).set(raw));
+			// Applying a preset saves it to the file, so the file gets the values back too (see the command's test)
+			CEConfig.FUEL_CONSUMPTION.save();
 			CEConfig.applyTuning();
 		}
 		helper.succeed();
@@ -305,6 +307,9 @@ public class PackCommandGameTests {
 		} finally {
 			before.forEach((path, raw) -> ((ModConfigSpec.ConfigValue) CEConfig.values()
 				.get(path)).set(raw));
+			// The command saved the preset to the file, and the file is read again a moment later, in whatever test is
+			// running by then: the file gets the values back too
+			CEConfig.FUEL_CONSUMPTION.save();
 			CEConfig.applyTuning();
 		}
 		helper.succeed();
