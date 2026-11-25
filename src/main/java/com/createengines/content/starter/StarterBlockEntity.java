@@ -221,7 +221,7 @@ public class StarterBlockEntity extends KineticBlockEntity implements EngineMemb
 	@Override
 	protected void read(CompoundTag tag, HolderLookup.Provider registries, boolean clientPacket) {
 		super.read(tag, registries, clientPacket);
-		drag = tag.getFloat("Drag");
+		drag = com.createengines.content.SavedNumbers.read(tag, "Drag", 0);
 		smoothedDrag = drag;
 		cranking = tag.getBoolean("Cranking");
 		turning = tag.getBoolean("Turning");

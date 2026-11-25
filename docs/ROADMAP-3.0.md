@@ -18,7 +18,7 @@ dual-mass flywheel; everything else is proposed, and each proposal says what nee
 - **Debts first.** 2.0 was tagged with five listed exceptions and nine open hands-on boxes (the author resolved them as
   exceptions on 2026-11-21). 2.0.x pays down what can be paid by test, and the rest is looked at by eye before 2.1 piles on.
 - The Declined list in [ROADMAP.md](ROADMAP.md) ("Not on this roadmap") stands: no new failure modes or wear in the default game (an opt-in wear mode is allowed, and is all of 2.3), no new fuels, no
-  knock outside that mode (approved for it 2026-11-24), cooling blocks, snorkels, turbines or two-strokes, no mixins into Create's trains. Nothing below breaks it.
+  knock outside that mode (approved for it 2026-11-24), cooling blocks (the Radiator alone reopened for 2.4, author 2026-11-25), snorkels, turbines or two-strokes, no mixins into Create's trains. Nothing below breaks it, except where the author reopened an entry by name (dated where it is).
 
 ## Rules every release keeps
 
@@ -34,16 +34,17 @@ question, not an obstacle ([CLAUDE.md](../CLAUDE.md)).
 | --- | --- | --- | --- |
 | 2.0.x | Shakedown II | Pay down 2.0's listed exceptions and unseen parts; no features | Small |
 | 2.1 | Twin Mass | **Dual-mass flywheel**, the readouts that make a flywheel choice legible, and sharper niches for the existing fuels | Medium to large |
-| 2.2 | Proving Ground | Verification debts: goldens, soak, server-from-jar, the step-size finding; **the battery tiers**, then **charge priority, electric injector assist and ignition coils**, with electrolysis to be decided (author, 2026-11-23) | Medium |
+| 2.2 | Proving Ground | Verification debts: server-from-jar, the step-size finding; **the battery tiers**, then **charge priority, electric injector assist and ignition coils**, with electrolysis to be decided (author, 2026-11-23) | Medium |
 | 2.3 | Wear and Tear | **The opt-in wear mode and nothing else** (author, 2026-11-24): pistons, rods, gaskets (stock and three tiers), rotary apex seals and batteries wear, precision parts wear slower, a rod can be thrown (a flag, a misfire, a broken head, with spectacle) and a gasket can blow, light wear is repaired by an automatable, durable Service Kit and the rest by replacing the part, worn parts keep their wear as items, and the Black Box and Display Link report each part and a total; off by default, nothing runs with it off, and gaskets and seals are not required with it off | Medium to large |
-| 2.4 | Open Garage | Reach: API 1.2, energy and probe mods, the next Create, a second example addon; **piston rings**, **polluted intake air**, **high- and low-compression piston variants**, **rotor variants (a precision rotor among them) with an exhaust niche**, and **nitrous oxide** (liquid, a vaporiser and a gas in the intake manifolds) (author, 2026-11-23), a **W layout for the Bank Builder** (author, 2026-11-24), then **look, sound and performance** only where the 2.0.x pass found something (all of it was 2.3 until the author moved it, 2026-11-24) | Medium to large |
+| 2.4 | Running Hot | **Temperature in degrees, overheating you can reach** (a soft power loss in both modes, an exception the author approved on 2026-11-25), heat that follows work, **the Radiator** (closed loop, sheds more with a fan or on a moving contraption), and **the wear overhaul, part 2** (heat drives wear and failures, rod wear from load, plug and turbo wear wired, gasket recipes) (author, 2026-11-25) | Medium to large |
+| 2.5 | Open Garage (was 2.4 until 2026-11-25) | Reach: API 1.2, energy and probe mods, the next Create, a second example addon; **piston rings**, **polluted intake air**, **high- and low-compression piston variants**, **rotor variants (a precision rotor among them) with an exhaust niche**, and **nitrous oxide** (liquid, a vaporiser and a gas in the intake manifolds) (author, 2026-11-23), a **W layout for the Bank Builder** (author, 2026-11-24), then **look, sound and performance** only where the 2.0.x pass found something (all of it was 2.3 until the author moved it, 2026-11-24) | Medium to large |
 | 3.0 | Clean Slate | The second breaking cleanup: drop 1.x migrations, regenerate baselines, API 2.0 | Large |
 
-**Shipped so far (tags):** 2.0.0 (2026-11-21), 2.0.1 and 2.0.2 (2026-11-22), 2.1.0 (2026-11-23) and 2.2.0 (2026-11-24). 2.3 is built in the working tree and not yet
-released; 2.4 and 3.0 are not started. Each shipped release has its sign-off record in [releases](releases), which lists what the machine gate did not see in a running
+**Shipped so far (tags):** 2.0.0 (2026-11-21), 2.0.1 and 2.0.2 (2026-11-22), 2.1.0 (2026-11-23), 2.2.0 (2026-11-24) and 2.3.0 (2026-11-25). 2.4, 2.5 and 3.0
+are not started; 2.3.1 was dropped by the author on 2026-11-25 and its fixes go out in 2.4. Each shipped release has its sign-off record in [releases](releases), which lists what the machine gate did not see in a running
 game and what the author's Part 3 pass covered; the "built, not seen in game" notes below are the state at the time of building, kept for the record.
 
-2.2, 2.3 and 2.4 are independent of 2.1 and of each other; they can swap places or be cut, and 2.1 does not wait on either.
+2.2 to 2.5 are independent of 2.1 and of each other; they can swap places or be cut, and 2.1 does not wait on either.
 
 ## 2.0.x Shakedown II
 
@@ -51,7 +52,7 @@ The point is to find out what is wrong with 2.0 before building on it. Nothing h
 number is listed as an exception with the author's name on it, as always.
 
 **Status: shipped as v2.0.1 and v2.0.2 (2026-11-22).** What those two records leave ticked by the author or named as an exception is settled there; anything they list as still
-owed stays owed (the unattended soak and the unseen-by-eye items among them).
+owed stays owed (the unseen-by-eye items among them).
 
 - **Look at what only tests have seen** (the 3.1 to 3.9 boxes of the v2.0.0 record): the advancement tab layout and that no
   toast plays for carried-over progress, thin air above y 128, the pollution amounts, headphones by ear (`Muffle.GAIN` 0.5 and
@@ -256,7 +257,7 @@ running engine on the rain cap schematic, so no new schematic); the client audit
 **Proposed 2026-11-22, in 2.1 because it is the release with player-facing features; the items are the author's pick from a longer list, the details are not yet decided.** This is not new
 fuels: the Declined list stands, and so does the author's 2026-11-21 answer (no more fuels beyond methanol, no gases, nitrous,
 heavy fuel oil, turbine or two-stroke), **except that the author reversed "no gases, nitrous" on 2026-11-23**: nitrous oxide is
-now proposed in 2.4 (see "Nitrous oxide" there). It gives the seven fuels that exist (plant oil, diesel, gasoline, ethanol, biodiesel,
+now proposed in 2.5 (see "Nitrous oxide" there). It gives the seven fuels that exist (plant oil, diesel, gasoline, ethanol, biodiesel,
 kerosene, methanol) a clearer reason to be picked, the way 1.x gave ethanol its boost niche. The ethanol distillery, which was
 also on the list, is not included here.
 
@@ -325,14 +326,8 @@ and the starters; the starter's goggles now say when it is spending battery char
   explains the tiers (the part that was owed). Tests: `BatteryTierTest` (three new), `BatteryTierBlocksGameTests` (capacity, mixed bank, saved charge, lamps, engine reaches a mixed bank, cold).
 - **Guards:** `compat/manifest.txt` appended (the tiers, a starter's `DrawingCharge` key, and 2.1 saved keys that were not yet in it), `compat/behaviour.txt` 67 BIODIESEL lines appended (a 2.1 fuel that had no baseline), no line changed.
 
-- **Goldens** (item 13 of the verification track, set aside until now): the visual set (fixed-camera shots of every casing and part
-  model, plus a few Ponder frames, compared per region with a tolerance) and the audio set (synth-level scenarios recording
-  loudness, peak, clipping and a coarse spectrum). `./gradlew updateGoldens`; the commit is the approval; no tolerance is ever
-  widened to make one pass. The commands go in [SMOKE.md](SMOKE.md) the day they exist, and [CLAUDE.md](../CLAUDE.md)'s "Goldens"
-  section is made true.
-- **The 60-minute unattended soak** (STABILITY 2.4, Exception 2.4): automate it, so nobody has to run it by hand and the
-  exception stops being needed.
-- **A server booted from the jar** (verification item 5): needs a NeoForge server install in the build.
+- **A server booted from the jar** (verification item 5): **built 2026-11-25** as `./gradlew jarServer`, run against a server
+  install made by hand ([SMOKE.md](SMOKE.md)).
 - **The step-size finding.** Above about 1500 RPM the per-cycle net torque and fuel rate move with the step (`StepIndependenceTest`).
   Create's limit is 256 RPM so nothing shipped is near it, but a raised limit is the recommendation in the high-RPM notes. Fixing
   the cycle bookkeeping moves guarded numbers only above that speed; if it moves any baseline it is a 3.0 item, otherwise it ships
@@ -394,14 +389,14 @@ that:
    no gameplay output. Cheap and safe, but it gives nothing back.
 Open questions for the author: which of the three (or none); whether a fluid is made at all (it would be the first the mod invents
 that is not a fuel); the efficiency that keeps any loop a net loss (to be fixed by test, with a `BatteryEnergy`-style balance check);
-the draw it asks of the Large Battery; and whether it waits for the energy-mod bridge (Forge Energy) in 2.4, since an electrolyser
+the draw it asks of the Large Battery; and whether it waits for the energy-mod bridge (Forge Energy) in 2.5, since an electrolyser
 fed from another mod's power is the same temptation that got the motor dropped.
 
 ## 2.3 Wear and Tear
 
 **The whole of 2.3 (the author, 2026-11-24): the opt-in wear mode, and nothing else.** Everything else this release held (API 1.2,
 energy and probe mods, the next Create, the second example addon, piston and rotor variants, nitrous oxide, polluted intake air, the W
-layout, look and sound) moved to 2.4 below. **Gaskets stay**, because they are a part that wears; **piston rings go to 2.4** with the
+layout, look and sound) moved to 2.4 below (now 2.5, 2026-11-25). **Gaskets stay**, because they are a part that wears; **piston rings go to 2.4** (now 2.5) with the
 other upgrades, since they never wear and need no mode. Wear is one system with a lot of surface (parts, items, readouts, failures,
 saved data), and it has to be tested to the standard of the release record before anything is stacked on it.
 
@@ -460,7 +455,7 @@ over anything in "Build status" that says otherwise)**:
   the engine to read it. **A gasket taken out is dropped as an item, and carries its wear and a durability, so it can be
   repaired** with a Service Kit (the same light-wear rule as in the engine) and fitted again. **The Bank Builder builds gaskets too**,
   from what it carries, as it does pistons and rods.
-  **Piston rings moved to 2.4** (author, 2026-11-24): up to three, each a small power gain, no wear, and they work with the mode off, so they are not wear.
+  **Piston rings moved to 2.4** (author, 2026-11-24; now 2.5): up to three, each a small power gain, no wear, and they work with the mode off, so they are not wear.
 - **Worn parts carry their wear as items, and the kit can be automated** (author, 2026-11-24): a piston, rod, forged piston, gasket or
   apex seal taken out of an engine keeps its wear on the item (a worn stack shows it as a damage bar; a stack with no wear data reads as
   new, so every existing item stays valid), so a factory can take worn parts out, repair them with the kit, and put them back. That asks
@@ -657,6 +652,8 @@ design section, the design section is the target and the build is to be changed:
 
 ### Fix in 2.3.1: breaking a block resets its wear (author, 2026-11-25)
 
+**Moved to 2.4** (author, 2026-11-25: 2.3.1 is dropped and everything planned for it ships in 2.4; see "Fixes carried over" there).
+
 **Known bug, not fixed in 2.3.0.** With the wear mode on, a worn battery or rotor housing that is broken and placed again comes back
 as new. Wear is saved on the block entity (`Wear` on a battery; `ApexWear` and `ApexFailed` on a rotor housing) and nothing carries
 it onto the dropped item. Found by reading the code while writing tests; **not reproduced in game, and no test covers it yet**.
@@ -665,13 +662,197 @@ it onto the dropped item. Found by reading the code while writing tests; **not r
 - **Rotor housing:** the apex seals come back new, **a failed set included**, so no Apex Seals item is ever needed.
 - **To check in the same fix:** a cylinder's thrown-rod wreck (`Thrown`) is also only on the block entity, so breaking and replacing
   the cylinder looks likely to clear it without the Service Kit. The rod and piston stay lost.
-- **Already right:** a cylinder's piston and rod and a head's gasket drop with their wear.
+- **Already right:** a cylinder's piston and rod and a head's gasket drop with their wear. A GameTest covers the piston and rod
+  (`WearHandEdgeGameTests.breakingACylinderDropsItsPartsAsWornAsTheyWere`).
 
 **Done when:** each case has a GameTest that breaks the block, places the dropped item and finds the wear or failure still there; an
 item with no wear data still places as new, so existing items stay valid; and worn state is kept with the mode off, as other saved
 wear is. How it is carried (on the block's item, or by dropping the seals as their own worn item) is still to be chosen.
 
-## 2.4 Open Garage
+## 2.4 Running Hot (author, 2026-11-25)
+
+**Asked for by the author on 2026-11-25**, with SilverThorn's wear feedback thread (Discord, "wear and tear mode Feedback and tuning sugestions",
+2026-11-25) as input: expand and overhaul wear and tear, a radiator "like the sump but for coolant", a temperature readout in place of
+cold/warm, and "make sure overheating is a point you can reach". The author put it all in a new 2.4 and moved Open Garage to 2.5, and the same day **dropped 2.3.1**: its fixes ship here too.
+**Nothing new is built; this is a first design.**
+
+### Fixes carried over (2.3.1 dropped, author 2026-11-25)
+
+These were the 2.3.1 patch. They go out with 2.4 and are listed first in its changelog.
+
+- **Breaking a block resets its wear** (battery, rotor housing, and a thrown-rod cylinder to check). Design and "done when" are under
+  "Fix in 2.3.1" in 2.3 above.
+- **The 2.3.0 audit fixes**, already done in the working tree and written up in `docs/LISTING.md` (the changelog block that was "2.3.1" is now
+  "2.4.0"). Exceptions owed in the 2.4.0 record, each with the author's name: `limits.maxBankBatteries` splitting very large banks, the
+  Black Box noticing up to 10 s late, the pollution cap read every 3 s, and the changed `WearToggle` assertion. Still open from the audit: the
+  slower coupling walk (needs the author) and a mid-session `wearMode` toggle not reaching connected players.
+- **The Copper Gasket cannot be crafted in 2.3.0.** Its shipped recipe (`recipe/copper_gasket.json`) has the pattern `"C", "CC", "C"`, rows of
+  different widths, which vanilla refuses ("Invalid pattern: each row must be the same width", `ShapedRecipePattern`), so the recipe never
+  loads and the best gasket is creative-only. Found while triaging SilverThorn's gasket feedback (Discord, 2026-11-25). With 2.3.1 gone there
+  is one change, not two: the staged Create craft in the wear section below becomes its recipe. It moves a pinned recipe
+  (`compat/manifest.txt`); no world could ever have used the broken one, so nothing that worked stops working, but it is listed under
+  Exceptions with the author's name. **Test:** a unit test that parses every shaped recipe in `data/create_engines/recipe` and fails on
+  unequal rows or unknown keys, so this cannot ship again.
+- **Explain fuel shut-off in Ponder** (see below).
+
+### Shutting an engine down: the Ponder explanation
+
+**Why:** players asked for a block that cuts the fuel to stop an engine (MachinaCafe, Discord "Fuel injection shutoff", 2026-11-24), and the
+author was using a valve on the fuel line. The mod already has it: a redstone signal on any block of a camshaft line closes that line's
+fuel rack (`EngineController.readFuelRacks`, one rack per camshaft line, read every 10 ticks), and strength 15 cuts the fuel, so the
+engine stops with no fuel injected. SilverThorn knew; the author agreed the Ponder does not explain it well. Today it is one line at the
+very end of the Camshaft page ("A redstone signal on the camshaft closes the fuel rack..."), and the pages players read first (cylinder
+head, injector, building an engine) never mention it.
+
+**What changes (no new block, no behaviour change):**
+
+- **Camshaft page:** the rack becomes its own keyframed section, "Shutting the engine down", not a closing line. A lever is placed on one
+  camshaft block and switched on; the engine is shown slowing to a stop. The text says: any block of the line will do; the signal's
+  strength closes the rack in proportion (a weak signal trims fuel, 15 cuts it); the fuel stays in the pipes and tanks rather than being
+  drained; and an engine with two camshaft lines (a V or a flat engine with a cam per bank) needs a signal on each line. A sensor's own
+  output does not count (as today).
+- **Cylinder head and injector pages:** one closing step that points to the camshaft for stopping the engine, so a player reading about fuel
+  finds it.
+- **Tooltip:** the camshaft's item summary gains "Redstone on any block closes the fuel rack; 15 stops the engine".
+- **Goggles:** when a line's rack is shut by redstone, the head says so ("Fuel cut: redstone on the camshaft") instead of only "Fuel rack: 0%".
+- **Docs:** the README's "Feed and tune it" list says the same (done 2026-11-25, since it is already true in 2.3.0).
+- **Tests:** the smoke Ponder run (`-PsmokeScenes`) plays the new steps; a GameTest that a signal on one block of a line stops every
+  cylinder on that line and leaves another line running; lang keys checked by the existing lang tests.
+
+### What is wrong today (measured 2026-11-25)
+
+A probe ran engines driven at a fixed speed for 400 simulated seconds and read where the block settled (internal units: 0 is ambient,
+`Thermal.NORMAL` 0.7 is "warm"; no coolant, then plain water and Engine Coolant with the coolant each spends):
+
+| Engine | 128 RPM | 256 RPM | 512 RPM | 640 RPM | Water at 640 | Coolant at 640 |
+| --- | --- | --- | --- | --- | --- | --- |
+| Crude I4, diesel | 0.73 | 1.00 | 1.52 | 1.80 | 0.68 (17 mB/s) | 0.55 (9 mB/s) |
+| Crude V16, diesel | 0.72 | 0.99 | 1.50 | 1.78 | 0.68 (66 mB/s) | 0.55 (35 mB/s) |
+| Precision W24, gasoline, no boost | 0.75 | 1.00 | 1.33 | 1.51 | 0.60 (71 mB/s) | 0.50 (37 mB/s) |
+| Precision W24, gasoline, two turbos to 1.5 bar | 0.99 | 1.19 | 1.56 | 1.73 | 0.66 (94 mB/s) | 0.54 (50 mB/s) |
+| The same, with an intercooler | 0.99 | 1.40 | 1.59 | 1.75 | 0.67 (96 mB/s) | 0.54 (51 mB/s) |
+
+Three findings, each a part of the fix:
+
+1. **Engines already get hot; nothing says so.** Uncooled engines settle at up to 2.5 times "warm", but the goggles call everything from 0.65
+   up "Warm" (`CrankshaftBlockEntity.addTemperature`), and nothing happens there except a slightly faster wear rate with the wear mode on
+   (`Wear.heatFactor`). That is the "8 turbos on an I4, flat out for 10 minutes, still Warm" report.
+2. **Heat follows speed, not work.** A crude I4 on diesel at 512 RPM is as hot as a twin-turbo precision W24; boost adds a little and an
+   intercooler nothing. Heat is counted per cylinder from exhaust heat and friction, so a cylinder making three times the power is not
+   three times as hot. SilverThorn: heat should come from "how much fuel and what type got burned".
+3. **Coolant always wins and costs a lot.** Even plain water holds the hottest engine under "warm", so coolant never saves an engine from
+   anything; its only reward is the 3% charge bonus. The pan's coolant boils off, at 50 to 96 mB a second on a big engine, so a 500 mB pan
+   lasts seconds. Too cheap to matter and too thirsty to bother with.
+
+### Temperature in degrees
+
+- **A number everywhere a word was:** goggles, the Display Link Engine Temperature source (today "Temp n%"), and the Black Box's
+  Warmth column. The scale: **°C = 20 + 100 × internal**, so ambient is 20 °C, warm (`NORMAL`) 90 °C, the thermostat 60 °C, and
+  today's hottest uncooled engine about 200 °C. The internal unit and the saved `Temperature` key are unchanged; only the text moves.
+- **Bands** shown with the number: Cold (below 50 °C, drags), Cool (breathes better), Warm, **Hot** (from 120 °C), **Overheating**
+  (from 150 °C, red, the penalties below), **Critical** (from 180 °C, flashing; with the wear mode on, failures start here). First-pass
+  numbers, to be set from a new probe once heat follows work.
+- **A Fahrenheit toggle** in the client config, so the readout suits the player. Open: whether the author wants it.
+- **Open:** the Display Link source gives °C to nixie tubes, so a board built on 2.3 shows a different number. That is a readout, not a
+  build's behaviour, but it is listed in the release record.
+
+### Heat that follows work
+
+- Heat into the block comes from **the fuel energy burned that did not leave as work or through the exhaust**, so more boost, more fuel and
+  a hotter-burning fuel all mean more heat; a lean or lightly loaded engine runs cooler. Fuels get an optional `heat_factor` in the fuel
+  data map (default 1) for pack makers; the built-in fuels keep 1 unless the author picks values.
+- **Running dry makes heat** (SilverThorn): with the oil film below the "failing: dry oil" mark, friction heat rises steeply, so an engine
+  starved of oil overheats before it seizes. A warning with the mode off, the road to seizure with it on.
+- The `PASSIVE` air-loss law and `CAPACITY` are kept, so warm-up times stay what they are; the calibration point stays "a crude engine
+  near 100 RPM at full rack settles at warm".
+
+### Overheating (both modes, soft with the mode off; author, 2026-11-25)
+
+**The author chose "soft power loss with wear off too"** on 2026-11-25. This moves existing builds' numbers (a hot uncooled engine makes
+less power than it did in 2.3), so it is **an exception under COMPATIBILITY.md rule 2**, recorded in the 2.4.0 record with the author's name,
+and `compat/behaviour.txt` and `compat/trajectories.txt` move by hand in the same change with the diff shown. The heat-from-work change above
+moves the same guards and is listed with it.
+
+- **With the mode off:** from Overheating up, the hot block heats the charge (less dense, so less power, and nearer pre-ignition on a spark
+  fuel, which the existing autoignition rule already turns into lost burn). The loss grows to **at most 25% at Critical** and stops there.
+  Nothing breaks, stalls or stops, and it goes away as the engine cools. A server setting `balance.overheatPenalty` (1 by default; 0 turns
+  it off) goes through `Tuning`, for packs that want the old feel.
+- **With the mode on:** the same, plus heat as a wear driver (below).
+- **What it means for existing builds**, from the table: an uncooled crude engine overheats above about 400 RPM, and every big boosted
+  build without coolant overheats. One pan of water still fixes any of them, which is the point: coolant now earns its place.
+- **Effects:** the existing exhaust glow and cooling ticks continue; from Overheating up, steam from the block, and a boiling hiss at
+  Critical (a new sound, made with `tools/generate_sounds.py`).
+
+### The Radiator (author, 2026-11-25)
+
+**A cooling block, reopened from the Declined list by the author on 2026-11-25** for this release; it is a new block, so no existing build
+changes. The author's spec: **a closed loop, touching the engine like the oil pan, and it sheds more on a moving Aeronautics contraption
+with air going over it fast**. SilverThorn asked for the same, with a fan as the other way to blow air through it.
+
+- **Joins the engine like a sump:** a Radiator touching any engine block is found by `EngineLayout`, and an engine may have several.
+- **Closed loop:** it holds coolant (Engine Coolant or water, 1000 mB, filled by pipe or bucket) and **does not spend it** while the engine is
+  below Critical; at Critical it boils some off, so a radiator alone is not a way to ignore heat. Pan coolant still works exactly as in 2.3
+  (boil-off), so old builds are unchanged.
+- **Sheds heat to the air**: `conductance × quality × (T − thermostat) × airflow`. Still air is enough for about four crude cylinders at speed.
+  **A Create Encased Fan blowing at it** multiplies airflow by the fan's speed, and **on a moving Sable or Aeronautics structure** airflow grows
+  with the structure's speed through the air (`SableCompat`), capped. A W24 flying flat out should need two or three radiators, a parked one
+  with a fan about the same.
+- **Readouts:** goggles show coolant, the heat it is shedding and the airflow ("still air", "fan", "ram air"); a comparator reads its fill.
+  A Display Link source only if the author wants one.
+- **Look:** Create's chunky style, a copper core with fins, casing styles like the sump; Ponder page "Radiator"; recipe from copper sheets,
+  fluid pipes and an iron frame (open). It goes in the trailer (pad, shot, caption, cut, `trailer-parts.txt`).
+- **Open:** whether its waste heat can warm a basin above it like the heat exchanger (the author left that out on 2026-11-25), and whether a
+  heat source against the exchanger (preheat) should still count when an engine is already hot.
+
+### The wear overhaul, part 2 (wear mode only)
+
+Everything here is the opt-in mode: with it off, nothing in this list runs. From the author's picks (heat drives wear, wire the plug and
+turbo rules, SilverThorn's thread) on 2026-11-25:
+
+1. **Heat drives wear and failures.** `Wear.heatFactor` today adds 2.5 per unit above warm on pistons and gaskets. It keeps that up to Hot,
+   then rises steeply, and **rods get it too** (SilverThorn: heat and no oil should wear rods; today a rod ignores heat). From Critical: a
+   **gasket can blow from heat** (the existing failure, a new cause), a **piston seizes from heat** (the existing seizure count, with heat as a
+   second input beside dry oil), and **a new failure, the warped head**: a head that ran past Critical long enough leaks a share of every burn,
+   like a partly blown gasket, and is cured only by a new head (the kit cannot flatten it). New fault value, appended; new Black Box event;
+   its own sound and a model partial.
+2. **Rod wear from load** (SilverThorn): `Wear.rodWear` gains a load factor (the share of rated torque the engine is giving), so an engine
+   lugging hard wears its rods faster than one spinning free at the same speed.
+3. **Light and heavy connecting rods** (SilverThorn; new items, the author's say needed): light rods favour high RPM (less reciprocating
+   mass, a little less friction at speed) but wear fast under load; heavy rods take load but cost a little at speed; today's rod is the
+   middle. The gasket rule applies: **each must do something with the mode off**, so the speed and friction difference is real in both
+   modes and only the wear difference belongs to the mode. They join the Bank Builder, the kit and the item-wear rules like the rod.
+4. **Wire the plug and turbo wear.** `PlugWear` and `TurboWear` are written and unit-tested in 2.3 but no engine reads them. Plugs foul and
+   wear with soot and hours and misfire more as they go; a turbo wears with speed and heat and loses boost as it does. Repair, readouts and
+   Black Box events like the other parts.
+5. **Gasket recipes** (SilverThorn): the **Cardboard Gasket from Create's Cardboard**, added beside today's paper recipe (replacing it would
+   move a pinned recipe; adding one does not). The **Copper Gasket as a staged Create craft** (copper sheets, cut on a Mechanical Saw, finished
+   by a Mechanical Press, as a sequenced assembly), so the cheaper tiers have a reason to exist. Since the 2.3.0 copper recipe never loaded,
+   this is its only recipe (see "Fixes carried over").
+6. **The failure curve.** [WEAR.md](WEAR.md) shows a part at 0.8 wear at 256 RPM is certain to fail within a minute. Retune with the new heat
+   input in place, so Hot plus heavy wear is the warning and Critical plus heavy wear is the risk. Numbers by probe, pinned in `WearTableTest`.
+
+### Tests and guards
+
+- Unit: the °C scale and bands; heat from work (more boost, more heat; a lean engine cooler); dry-running heat; the overheat penalty
+  (none below Overheating, capped at Critical, nothing with `overheatPenalty` 0); the radiator's shed against airflow (still, fan, structure
+  speed, capped) and that it spends nothing below Critical; every new wear rule, each giving exactly nothing with the mode off.
+- GameTests: a radiator joins an engine and holds it under Overheating where the same engine without one overheats; a fan raises its shed;
+  a radiator on a moving Sable structure sheds more (Sable batch); pan coolant unchanged; a warped head appears only with the mode on.
+- Guards moved by hand in the same change, with the diff in the commit and changelog: `behaviour.txt`, `trajectories.txt`, the manifest
+  (new IDs appended), `WearTableTest`'s table. pitest re-run on `engine/sim`.
+- Docs: CONFIG.md and WEAR.md regenerated; DESIGN.md's "nothing wears out or breaks, no overheating failure" rule rewritten to say what is
+  true now; LISTING.md and the README's feature list; the Declined list in ROADMAP.md (cooling blocks reopened for the Radiator).
+
+### Open for the author
+
+- The band temperatures and the 25% cap, once heat follows work and the probe is re-run.
+- Fahrenheit toggle: yes or no.
+- Radiator: basin heat or not; recipe; Display Link source.
+- Light and heavy rods: in or not (new items that change performance with the mode off).
+
+## 2.5 Open Garage
+
+**Was 2.4 until the author moved it on 2026-11-25** to make room for 2.4 Running Hot; nothing in it changed. Older notes below that say "2.4" for these items mean this release.
 
 Reach, in the order the author's direction names (other Create addons and pack makers). Everything is optional and compiled
 against without being required.
@@ -691,7 +872,7 @@ against without being required.
 
 ### Piston variants: high and low compression (author, 2026-11-23; proposed)
 
-**Chosen by the author on 2026-11-23, from a list of end-game power ideas, and placed in 2.3 (not 2.1) by the author the same day; moved to 2.4 on 2026-11-24 when 2.3 became the wear release. Nothing is built; the details below are a first design.**
+**Chosen by the author on 2026-11-23, from a list of end-game power ideas, and placed in 2.3 (not 2.1) by the author the same day; moved to 2.4 on 2026-11-24 when 2.3 became the wear release (now 2.5). Nothing is built; the details below are a first design.**
 The end-game power path is one chain (air, boost, fuel, oil), so more power today means a longer chain. This adds a choice instead:
 two piston variants that trade naturally aspirated (NA) output against boost headroom.
 
@@ -730,7 +911,7 @@ and a `LegacyWorldGameTests` case showing a 2.0 world runs the same. `pitest` is
 
 ### Nitrous oxide: a liquid, a vaporiser and a gas in the intake (author, 2026-11-23; proposed)
 
-**Requested by the author on 2026-11-23 and placed in 2.3 with the piston variants (both now 2.4), which it depends on for its trade-off. Nothing is built; this is a first design.**
+**Requested by the author on 2026-11-23 and placed in 2.3 with the piston variants (both now 2.5), which it depends on for its trade-off. Nothing is built; this is a first design.**
 It **reverses the 2026-11-21 answer** quoted under "Fuel character" ("no gases, nitrous"), by the author's own say-so. It is not a fuel (nothing in it burns by
 itself; it carries oxygen), so the Declined entry "new fuels" is not what it touches. It is the first fluid the mod invents that is not a fuel, and the first gas
 (see the open questions). It is the end-game power item the "high and low compression" list was missing: a short, strong, supplied burst of power instead of a longer chain.
@@ -790,7 +971,7 @@ re-run, since `engine/sim` changes. The fluid joins `compat/manifest.txt` when i
 
 **The author accepted these on 2026-11-23, from a list of rotary ideas; nothing is built.** (Port variants, the first idea on that
 list, were not taken. Apex seals are under Wear mode below, the Timing Tool for rotors and the weight check are in 2.1 "Around it",
-and the rotary's sound and look are under "Look, sound and performance" at the end of 2.4.) A rotary today is one block with one set of numbers: a Rotor Housing on the crank line,
+and the rotary's sound and look are under "Look, sound and performance" at the end of 2.5.) A rotary today is one block with one set of numbers: a Rotor Housing on the crank line,
 three ported chambers, spark only, with its rotor fitted by hand and its port timing in `cam_profiles/rotary.json`.
 
 - **Rotor variants.** The counterpart to the piston variants above, and built on the same compression factor so the work is done
@@ -828,7 +1009,7 @@ since `engine/sim` changes.
 ### Polluted intake air (author, 2026-11-23; opt-in)
 
 Suggested by SilverThorn on Discord ("pollution of the realms chunk pollution effecting engine air", marked "not needed but could
-be cool"); the author accepted it for 2.3 (now 2.4). Today the Pollution of the Realms compat only writes: engines put carbon and sulfur into
+be cool"); the author accepted it for 2.3 (now 2.5). Today the Pollution of the Realms compat only writes: engines put carbon and sulfur into
 the air and nothing is read back into an engine. This is the other direction. **Opt-in only: a config switch, off by default**, so
 no existing build or world changes (rule 1), and nothing is read without the pollution mod installed.
 
@@ -892,7 +1073,7 @@ saved on 2.x keeps its layout), so no existing build changes (rule 1).
   W blueprint round trip). The Ponder step went on the Bank Builder page only, not the firing-order page. Not yet seen in
   game, and the changelog line is owed when the release that carries it is prepared.
 
-### Look, sound and performance (was 2.4 Paint and Polish; merged into 2.3 by the author on 2026-11-23, then moved with the rest to 2.4 on 2026-11-24)
+### Look, sound and performance (was 2.4 Paint and Polish; merged into 2.3 by the author on 2026-11-23, then moved with the rest to 2.4 on 2026-11-24, and to 2.5 on 2026-11-25)
 
 Held until 2.0.x has looked at what 2.0 added. Contents are whatever that pass finds, plus these, each only if a profile or an eye
 asks for it:

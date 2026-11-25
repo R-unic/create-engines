@@ -19,13 +19,34 @@ Run it in a private copy of the checkout (see "Running it"): other Gradle runs a
 | Layer | Command | Time | Catches |
 |---|---|---|---|
 | Unit tests | `./gradlew test` | seconds | simulation maths, parsers, sound synthesis, **the harness's own logic** (the tests in the `smoke` package) |
-| GameTests | `./gradlew runGameTestServer` (verified by `verifyGameTests`) | ~1 min | engine behaviour; **every block, item, fluid, recipe, loot table and advancement complete; every block entity placed, ticked, saved, loaded, fed garbage and broken in every sampled state; 16 engines at once under a tick budget; engines whose chunks unload, load staggered, stop ticking, or straddle a border; every tuning setting at both ends of its range** |
-| Client audit | `./gradlew runSmokeAudit` (verified by `verifyClientSmoke`) | ~2 min | **every block state's model and sprites, every item model, translation, sound, particle sheet and Flywheel partial; all 99 Ponder storyboards played to their end; six engines, a refinery, a turbo and a supercharger run for a minute with heap, direct memory, particles, sound voices and frame times tracked; the player walking 3000 blocks away and back; screenshots judged by pixels** |
+| GameTests | `./gradlew runGameTestServer` (verified by `verifyGameTests`) | ~1 min | engine behaviour; **every block, item, fluid, recipe, loot table and advancement complete; every block entity placed, ticked, saved, loaded, fed garbage and broken in every sampled state; 16 engines at once under a tick budget; engines whose chunks unload, load staggered, stop ticking, or straddle a border; every tuning and config setting at both ends of its range (a setting left out of the sweep fails it); the lifecycle sweep again with the wear mode on; NaN, infinities and the ends of each number type in place of every saved number, on single blocks and on running diesel, spark and rotary engines** |
+| Client audit | `./gradlew runSmokeAudit` (verified by `verifyClientSmoke`) | ~2 min | **every item's tooltip with the wear mode both ways; every goggle and hover readout of the fleet and the gallery; every block state's model and sprites, every item model, translation, sound, particle sheet and Flywheel partial; all 128 Ponder storyboards played to their end; six engines, a refinery, a turbo and a supercharger run for a minute with heap, direct memory, particles, sound voices and frame times tracked; the player walking 3000 blocks away and back; screenshots judged by pixels; then about a minute of thread churn (below)** |
+| Jar server | `./gradlew jarServer` (not part of `smoke`, see "The jar server") | 2-10 min | **a real NeoForge dedicated server booted from the built jar with Create alone: every block the jar has a blockstate for is placed and left ticking, the three newest engine fixtures are built from console commands and must turn, and a second boot must find the same blocks and engines; both logs are scanned** |
 | Log check | automatic after each run above | seconds | errors the game does not call failures: missing model/texture/sound/recipe messages, stack traces, `OutOfMemoryError`, stale classes, anything logged at ERROR, a crash report |
 | Visual smoke | `./gradlew runVisualSmokeTest [-PsmokeEffects ...]` | 2-10 min | the original picture-taking runs, for a person (or Claude) to *look* at: composition, colour, whether it reads as Create. Their log is scanned too, as warnings only |
 
 The first four are assertions. The last is evidence for a human. A green `smoke` says nothing about whether the pictures
 look good; it says nothing is broken in ways a machine can name.
+
+### Thread churn
+
+The audit's `threads` phase (`ThreadChurnAudit`) is for what no unit test reaches: the real sound engine and its thread,
+and the render thread working while the integrated server ticks on its own. Beside running engines the client reloads the
+sound engine, stops and pauses its sounds, reloads the resource packs and throws away what it has drawn, while the server
+thread breaks and rebuilds two of the engines and runs `/reload`. An engine note has to come back within 100 ticks of each
+sound break, and the engines, both threads, the voice counts and direct memory have to be sound afterwards. An exception on
+any thread fails the log check. A pass does not prove there is no race: it gives one many chances to happen. Nothing is
+judged by ear.
+
+## The jar server
+
+`./gradlew jarServer` needs a NeoForge server install, which it never downloads. Make one once: run the NeoForge installer
+with `--installServer` into a folder, and accept the EULA in that folder yourself. The task looks in
+`../ce-server-test/server` unless `-PserverInstall=FOLDER` says otherwise, and takes the Create jar from the install's
+`mods` folder or the `dl` folder beside it. It copies the libraries and `eula.txt` into `run/jar-server` and runs there, on
+a free local port, so the install's own world and mods are not touched. The report is `run/jar-server/report/report.txt`,
+and each boot's log is kept in `run/jar-server/server/logs`. A server that does not stop within 120 seconds fails the run,
+and its thread dump is saved. CI has no install, so this does not run there. No client joins and no player is simulated.
 
 ## Reading a result
 
@@ -60,9 +81,10 @@ anything under `src/generated`.
 
 ## Proof it can fail
 
-A harness that has only ever passed has proved nothing. `scripts/smoke-mutations.ps1` breaks a *copy* of the mod in twelve
-known ways and lists what must turn red. The first ten were verified 2026-11-16 and the last two on 2026-11-18 (the client
-set, in a private copy: every EXPECT line appeared among the failures), each caught by the check named:
+A harness that has only ever passed has proved nothing. `scripts/smoke-mutations.ps1` breaks a *copy* of the mod in
+known ways and lists what must turn red. The first ten rows below were verified 2026-11-16, the next two on 2026-11-18 (the
+client set, in a private copy: every EXPECT line appeared among the failures), and the last two (the `threads` and `jar`
+sets) on 2026-11-25, each caught by the check named:
 
 | Break | Caught by |
 |---|---|
@@ -78,11 +100,17 @@ set, in a private copy: every EXPECT line appeared among the failures), each cau
 | a particle description missing (crashes the game) | `[particles] gas has a particle description` + `the run did not complete` |
 | the multipart models no longer shared (1.4.0: every pipe state holds its own copy again, about 440 MB) | `[models] every multipart state of the mod shares its block's one baked model` |
 | a model face whose texture coordinates run past the edge of its sprite (the 1.4.0 purple rockers and pushrods) | `[models] partial model ROCKER keeps its texture coordinates inside its sprites` (the baked quads), and `ModelUvAssetsTest` for the model files |
+| an engine note the sound engine dropped is never replaced | `[threads] an engine note comes back after the sound engine reloaded` |
+| a package the server needs left out of the jar | `[server] the run stopped` (`jarServer`) |
 
 Building this found real holes in the harness itself, all fixed: an empty tag does not look empty (vanilla swaps in a
 barrier named "Empty Tag", so a naive check passes it), a crash lost every finding made before it, and a run that died
 at launch was judged by the previous run's stale report. If a mutation stops being caught, a check has been weakened:
 fix the check, not the list. Re-run it after changing any audit.
+
+The script also makes four breaks that **have not been verified** yet, for the checks added 2026-11-25: a loader that throws on
+a NaN, a `Tuning` field left out of the sweep, an untranslated line in an item tooltip, and a goggle readout that claims
+lines it did not write. Run the `server` and `client` sets, then add them to the table.
 
 ## Found and fixed: the engine that stayed dead
 
@@ -116,7 +144,16 @@ client audit is the guard.
   not mistaken for a leak; frame times are judged by percentiles because a stutter lives in p99, not the mean.
 * **Hostile input.** Block entities are loaded from empty tags, from tags whose every value is the wrong type, and from
   tags with unexpected keys, because a world saved by another version or edited by a person looks like that.
-* **Both ends of every setting.** Players edit the config file; the value nobody tried is the one somebody types.
+* **Bad numbers, then ticked.** Text where a number should be is read back as zero, so it proves little. A NaN has the
+  right type: a loader with no clamp takes it, it spreads through the simulation, and it is saved into the world. So
+  `HostileSaves` replaces every number (Create's own kinetic keys excepted), loads it into the placed block, ticks it, and
+  requires that nothing throws and nothing that is not finite is saved back.
+* **Readouts are read.** A goggle readout runs only when somebody looks, and one that claims lines it did not write
+  crashes the client (the Cast Flywheel, 2.1.0). `ReadoutAudit` reads every one the client holds, and every item tooltip,
+  including wear values no one meant to put on a part.
+* **Both ends of every setting.** Players edit the config file; the value nobody tried is the one somebody types. The
+  sweeps check their own coverage against `Tuning`'s fields and `CEConfig.values()`, because by 2.3 the tuning sweep had
+  quietly fallen nine settings behind, the wear mode among them.
 * **Lifecycle, not just life.** Engines are built, run, unloaded with their chunk, reloaded, walked away from and returned
   to. Bugs cluster at those transitions, and the finding above was one.
 * **The harness is tested.** `LogScannerTest`, `PixelChecksTest`, `PerfSamplerTest` and `SmokeReportAndVerifyTest` prove
@@ -146,7 +183,7 @@ after "All N required tests passed" until Gradle's 20-minute timeout kills it. N
 in a fresh copy pass with a peak under 2 GB). Delete `run/gametest/world` before each gate run in a reused copy, or make a fresh copy
 for the gate; the release gate always uses a fresh one.
 
-To re-prove the harness: make a *separate* copy, run `./scripts/smoke-mutations.ps1 -Copy <copy> -Set server|client|crash`,
+To re-prove the harness: make a *separate* copy, run `./scripts/smoke-mutations.ps1 -Copy <copy> -Set server|client|crash|threads|jar`,
 run the Gradle task it names, and check every `EXPECT` line appears among the failures. It refuses to run in a folder with
 `.git`.
 
@@ -163,10 +200,17 @@ python tools/trailer/record.py --post-only  # cuts the last recordings again (ne
 - **What it records.** `ShowcaseRun` with `-PshowcaseSet=trailer` builds eleven walled pads (the five plain engines; a
   pad with the battery sizes, an ignition coil and an injector assist on every head; a blown inline six; the test-bed diesel with its
   instruments; a diesel driving a row of Create machines, two presses stamping iron and a fan smoking beef over a campfire; and a refining column with its flare
-  stack), runs them, goes fullscreen and flies a camera past them for about two minutes, smoothly, every frame. The shots are the
+  stack), runs them, goes fullscreen and flies a camera past them for a little over two and a half minutes of footage, smoothly, every frame. The shots are the
   `Shot` records in that class, and every length is a whole number of bars of the music (three seconds) so the cuts land on the beat.
   The run leaves one still from the middle of each shot in `run/showcase-shaders/screenshots`, to check the framing without watching
   it, and `-PtrailerShots=a,b` keeps only the named shots, so a new pad can be looked at in a short run.
+- **Framing.** No camera distance is typed in. Each `Shot` gives a box round its subject, in blocks from the pad's corner, with
+  the angles it is seen from and how much of the frame it should take up at the start and at the end (more at the end is a push
+  in, less is a pull back). `client/ShowcaseRunFraming` works out where the camera stands so the whole box lies inside the safe
+  area: clear of the letterbox and the caption, a little above the middle (`TrailerFramingTest`). The run films with one 60 degree
+  lens, whatever the game's setting is. A shot whose camera a courtyard wall pulls more than 0.75 of a block off its framing
+  logs a warning (`held inside the walls`): look at its still. The shot list is in the order of the cut, so the light only moves
+  on from day to dusk.
 - **The wheeled car.** With Create Aeronautics (its Offroad wheels) and Sable in the run, pad 11 has a turbocharged precision diesel
   inline eight with one driven Offroad wheel (the crank line runs out of the east end through a gearbox, a shaft down and a second
   gearbox into a wheel mount), three more wheels that roll free on a casing frame, and no walls. The pad's blocks are lifted into a
@@ -177,7 +221,7 @@ python tools/trailer/record.py --post-only  # cuts the last recordings again (ne
   `--no-shaders`); `--no-aeronautics` leaves it, and the shots, out. Lessons for changing the car: a wheel mount costs 16 stress per
   rpm and takes drive from the block behind it; a large cogwheel meshes a small one diagonally; blocks that touch nothing are split off
   into structures of their own when it is lifted.
-- **Gameplay clip.** `grow_engine` is seen through the player's own eyes, standing still (creative mode, the hotbar showing, the Bank
+- **Gameplay clip.** `grow_engine` is seen through the player's own eyes, standing still (creative mode, the Bank
   Builder in hand). One engine grows on a bare pad in six steps, two seconds apart, each the Bank Builder's work on a fresh crank line:
   one cylinder, an inline four, a V8, a V16, the V16 in precision parts, and the V16 boosted. It is driven by `Cue`s (seconds into
   a shot) in `ShowcaseRun.defineCues`; the other shots are a spectator's camera. The engine is rebuilt, not swapped, so no part items
@@ -197,7 +241,7 @@ python tools/trailer/record.py --post-only  # cuts the last recordings again (ne
   charcoal or clay the basin cokes it, which is the mod's own recipe. The toasts and chat the first-person clips earn are cleared
   every frame, and this mod's advancement sting and the game's toast sounds are dropped from the run's sound.
 - **Sound and walls.** Only the courtyard the camera is in is heard (sounds from other pads are cancelled as they start and stopped when
-  the camera moves on), and the camera is held inside the walls so no shot comes out of one.
+  the camera moves on); the camera is held inside the walls (see Framing).
 - **How it is recorded.** `record.py` copies the project to a private folder beside it (as every client run should be), starts
   `ffmpeg` on the whole screen when the game logs `Showcase trailer ready`, and stops it after the last shot. The game runs with
   Iris, Sodium and a shader pack (`runShowcaseShaders`; the pack is the first .zip in `tools/trailer/shaderpacks`, which is not
@@ -212,21 +256,36 @@ python tools/trailer/record.py --post-only  # cuts the last recordings again (ne
 - **A steady crank.** The showcase engines turn at 40 to 70 rpm, where a light crank's speed ripples by several percent each cycle and the
   network shows it as shafts and presses that surge and jump. `record.py` gives the trailer's private game folder five times the
   inertia on the crank blocks and flywheels (`TRAILER_CONFIG`; a ripple goes as one over the inertia). It touches nothing in the mod.
-- **How it is cut.** `post.py` puts a title card (the mod's round icon, `docs/images/icon.png`, "CREATE" in Minecraft's title font (cut from the game's own logo texture, kept grey, by `tools/create_lettering.py`) and the gold wordmark `docs/images/wordmark.png` directly under it, and a subtitle; the 16:9 thumbnail uses the same pair; `tools/listing_art.py` makes the golden listing tile `docs/images/listing_gold.png`), a caption over each
-  shot, an end card (with the version line from `gradle.properties` and the AI notice, `outro_notice` in `captions.txt`), the game's sound and music around the recording, with a light
-  colour grade and vignette on the footage. All the text is drawn in Minecraft's own font by `mcfont.py`, from the game's font bitmap.
-  The words are in `tools/trailer/captions.txt`, in the order of the shots, so they read as one story. The music is the first file in
-  `tools/trailer/music/` if there is one, otherwise a backing track that `tools/trailer/music.py` synthesises (original, so nothing to
-  license; a placeholder for a real track; 80 beats a minute, a bar of three seconds).
-- **The cuts.** The full trailer, a teaser (four three-second shots named by `short_shots` in `captions.txt`, with a few words each)
-  and the teaser cropped to 9:16 for phones, each with a `.srt` of its captions, a thumbnail from the shot `thumbnail:` names, and a 9:16 thumbnail for Shorts from the shot `vertical_thumbnail:` names (`vertical_thumbnail_at:` seconds in, with `vertical_title:` and `vertical_sub:` for its words).
+- **How it is cut.** `post.py` takes the order and the length of every piece of the full cut from `tools/trailer/edit.txt`
+  (`<shot> <seconds> [at=] [speed=] [engine] [quiet] [cold]`; every piece a whole number of half bars, 1.5 s at the music's 80
+  beats a minute, so the cuts fall on the beat). It renders each piece on its own: its stretch of the recording (sped up when the
+  line says so), a light grade (a slight S-curve, a hint of warm highlights and cool shadows, a faint vignette), a 2.2:1 letterbox, and a caption at
+  the lower left that slides in, with its chapter's name over it in gold (`chapter <shot>` lines of `captions.txt`; a `quiet`
+  piece keeps the caption before it). A chapter starts with a white flash and a hit. The full cut opens cold on the single
+  cylinder with only the game's sound, slams the title (the mod's round icon, `docs/images/icon.png`, "CREATE" in Minecraft's
+  title font, cut from the game's own logo texture by `tools/create_lettering.py`, and the gold wordmark `docs/images/wordmark.png`)
+  over the title shot with a flash and a boom as the music comes in, and ends with a riser into the last shot, a fade through black
+  and an end card (the version line from `gradle.properties`, "Links in the description" and the AI notice, `outro_notice`) with a
+  sting. The 16:9 thumbnail uses the same title; `tools/listing_art.py` makes the golden listing tile `docs/images/listing_gold.png`.
+  All the text is drawn in Minecraft's own font by `mcfont.py`, from the game's font bitmap.
+- **The sound.** Mixed in numpy: the game's sound of each piece (sped pieces keep their pitch), brought to one level; the music
+  from the title on, which drops to 40% under an `engine` piece while the engines come up; and the hits (`tools/trailer/sfx.py`,
+  synthesised: an impact, a riser, a sting). The mix is brought to -14 LUFS, a true peak of -2 dB, by a two-pass loudnorm. The
+  music is the first file in `tools/trailer/music/` if there is one, otherwise a backing track that `tools/trailer/music.py`
+  synthesises (original, so nothing to license; a placeholder for a real track; 80 beats a minute, a bar of three seconds).
+- **The cuts.** The full trailer, a teaser (a title card, four three-second shots named by `short_shots` in `captions.txt` with a
+  few big words each, and the end card) and the teaser cropped to 9:16 for phones, each with a `.srt` of its captions, a thumbnail
+  from the shot `thumbnail:` names, and a 9:16 thumbnail for Shorts from the shot `vertical_thumbnail:` names
+  (`vertical_thumbnail_at:` seconds in, with `vertical_title:` and `vertical_sub:` for its words).
+- **The gameplay clips.** The first-person shots keep the player's hand and the item in it; the recorder hides the hotbar, the
+  crosshair and the picked item's name (`ShowcaseRun.onRenderGuiLayer`).
 - **The video description.** Every full cut also writes `run/trailer/description.txt` (`post.py`, so `--post-only` too): the pitch, the links, chapters from the `chapter <shot>` lines (a chapter under ten seconds long is dropped, as YouTube would ignore it), the version line and the AI notice. The words, links and chapters are in `captions.txt`; the Modrinth and CurseForge addresses are not there yet (post.py does not guess them).
 - **Output.** `run/trailer/trailer.mp4`, `trailer_teaser.mp4`, `trailer_vertical.mp4`, `thumbnail.png` and `thumbnail_vertical.png`, with the raw recordings and the shot timings beside them.
 - **Keeping it current.** `src/smoke/trailer-parts.txt` has a line for every block and item saying which shot shows it, or why none
-  does. `TrailerCoverageTest` fails when a new part has no line, when a line names a shot that does not exist, and when a shot has no
-  caption. A significant new part goes on a pad (or a new one) in `ShowcaseRun`, gets a shot and a caption, and its line names the
+  does. `TrailerCoverageTest` fails when a new part has no line, when a line names a shot that does not exist, when a shot has no
+  caption, and when a shot is missing from `edit.txt`, is there twice, or has a piece that is not a whole number of half bars. A significant new part goes on a pad (or a new one) in `ShowcaseRun`, gets a shot, a caption and a line in `edit.txt`, and its line names the
   shot. A `later` line is a part that is significant and not in the trailer yet: a debt, kept in the open.
-- **Length budget.** The full trailer may run up to 180 seconds (title shot and end card included; the last cut was 162 s). It is a
+- **Length budget.** The full trailer may run up to 180 seconds (title shot and end card included; the last cut was 127.5 s). It is a
   limit for the author and for whoever adds shots, not something a test enforces: when new parts would push it past, trim or shorten
   shots rather than let it grow.
 - **What it cannot see.** The test cannot tell that a part is really on screen in its shot, and nobody has heard the synthesised music
@@ -253,6 +312,9 @@ reason no longer holds.
 * New block, item, fluid, recipe, sound or particle: nothing to do. The audits walk the registries, so new content is
   covered the moment it registers; a gap (no loot table, no translation, no item model) fails on its own. A block that is
   *meant* to have no item or no Ponder page goes in `ServerAudit.NO_ITEM` / `PonderAudit.NO_PAGE_NEEDED` with a reason.
+* New setting: add it to the tuning or config sweep in `SmokeAuditGameTests`; the sweep fails and names it until you do.
+* New goggle readout or item tooltip: nothing to do. A readout that only appears in a state the fleet and gallery never
+  reach (a failed part, say) is not read; put that state in the fleet or give it its own GameTest.
 * New block entity: it is swept automatically. If its save is legitimately not stable across a load, add the changing key
   to `ServerAudit.VOLATILE_KEYS` with a reason.
 * New engine behaviour worth guarding: add a GameTest as before. Add a scenario to `SmokeAuditGameTests` only if it is
@@ -274,7 +336,7 @@ reason no longer holds.
 * Multiplayer, other mods, other GPUs, Linux and macOS. Everything here runs one machine's dev environment, single
   player, with Create and Flywheel only.
 * Behaviour over a *real* long session (hours). The fleet runs about a minute; slower leaks need a longer soak.
-* A real dedicated server. The GameTest server loads the mod's common code on a server-only JVM, which catches client
-  classes leaking into common code, but it does not run `runServer` with real players and the real tick loop.
+* A dedicated server with real players. `jarServer` boots one from the built jar and runs engines on it, but no client
+  joins, so nothing sent to a client from a dedicated server is exercised.
 * Save and reload of a whole world through the title screen. Block entities are save-and-load round-tripped, and chunks are
   unloaded and loaded, but the world is never closed and reopened from disk in one run.

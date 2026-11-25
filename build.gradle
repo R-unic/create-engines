@@ -724,6 +724,23 @@ tasks.matching { it.name == 'runGameTestServerTfmg' }.configureEach {
     }
 }
 
+// Verification track item 5: a real NeoForge dedicated server, booted twice from the built jar with Create alone. It needs a
+// server install made once by the NeoForge installer (nothing is downloaded here), so it is not part of `smoke` or CI.
+tasks.register('jarServer', JavaExec) {
+    group = 'verification'
+    description = 'Boots a dedicated server from the built jar, builds engines on it, restarts it and checks them. -PserverInstall=DIR'
+    classpath = verifyOutput
+    mainClass = 'com.createengines.smoke.JarServer'
+    args '--install', file(providers.gradleProperty('serverInstall').getOrElse('../ce-server-test/server')).path,
+            '--jar', tasks.named('jar', Jar).get().archiveFile.get().asFile.path,
+            '--create', create_version,
+            '--work', file('run/jar-server').path,
+            '--fixtures', file('src/test/resources/compat/world').path,
+            '--allow', smokeAllowlist.path
+    timeout = java.time.Duration.ofMinutes(20)
+    dependsOn 'classes', 'jar'
+}
+
 // One command for everything unattended: unit tests, the GameTests with their log check, and the client audit.
 tasks.register('smoke') {
     group = 'verification'

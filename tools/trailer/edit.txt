@@ -1,0 +1,50 @@
+# The edit of the full trailer: which shots it uses, in what order, for how long. post.py reads it; TrailerCoverageTest checks
+# that every shot of client/ShowcaseRun is here exactly once and nothing else is. The words are in captions.txt.
+#
+#   <shot> <seconds> [at=<s>] [speed=<x>] [engine] [quiet] [cold]
+#
+# seconds   how long the piece runs in the cut. Keep it a multiple of 1.5 (half a bar of the music at 80 beats a minute), so
+#           every cut falls on the beat.
+# at=       where in the shot the piece starts, in seconds of the shot (default: the middle of the shot)
+# speed=    plays the shot faster (the sound too, at its own pitch); a slow shot fits in fewer seconds
+# engine    the engine is the point here: the music drops and the game's sound comes up
+# quiet     no caption of its own; the caption of the piece before stays up over it (montages)
+# cold      before the title: game sound only, no music. Only at the start.
+#
+# A shot that is not in this run (the Aeronautics shots without Sable) is left out of the cut. A chapter (captions.txt
+# `chapter <shot>:`) starts with a flash and a hit, and its name is the small gold line over the captions in it.
+
+# The order follows ShowcaseRun's shot list, so the light only moves on. at= and speed= are chosen so that what happens in a
+# shot lands on a beat (grow_engine's six stages, two seconds apart in the shot, change every half bar of the cut).
+first_rises           4.5   at=0.75   engine cold
+title_sequence        6     at=0
+hero_v8               4.5   at=2.25
+inline6_pass          1.5
+flat6_track           1.5   quiet
+rotary_orbit          3     at=0      engine
+inline6_turbo         4.5   at=0.75   engine
+blown_i6_blower       3     at=0
+grow_engine           9     at=0.2    speed=1.333333
+heavy_starter         6     at=0      engine
+headphones_on         3     at=0.5
+instruments_dyno      3
+instruments_governor  3
+electric_alternator   3
+electric_battery      3
+electric_heads        3
+service_sump          3
+service_oil           3
+service_cans          3     at=1.5
+casing_styles         3
+casing_dye            3     at=0.5
+factory_flywheel      3
+factory_gearbox       3     at=1.5
+factory_line          4.5
+rover_departs         6     at=0      speed=1.5   engine
+rover_wheels          3     engine
+v8_exhaust_dusk       3     engine
+refinery_column       4.5   at=0.75
+refinery_base         1.5   quiet
+refinery_tops         1.5   quiet
+refinery_flare        3     at=0
+factory_wide          9     at=0

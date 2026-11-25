@@ -169,6 +169,7 @@ class ConfigMatrixTest {
 		java.util.Map.entry("maxManifoldBlocks", "GameTest: SmokeAuditGameTests.everyConfigSettingAtItsExtremesLeavesAnEngineSane"),
 		java.util.Map.entry("maxCoupledLines", "GameTest: SmokeAuditGameTests.everyConfigSettingAtItsExtremesLeavesAnEngineSane"),
 		java.util.Map.entry("maxCouplingWalk", "GameTest: SmokeAuditGameTests.everyConfigSettingAtItsExtremesLeavesAnEngineSane"),
+		java.util.Map.entry("maxBankBatteries", "GameTest: BatteryBankLookGameTests.aBankBiggerThanTheLimitActsAsMoreThanOne, at 1 and at 32768"),
 		java.util.Map.entry("alternatorEnergy", "GameTest: SmokeAuditGameTests.everyConfigSettingAtItsExtremesLeavesAnEngineSane"),
 		java.util.Map.entry("throttleIdleMin", "GameTest: SmokeAuditGameTests.everyConfigSettingAtItsExtremesLeavesAnEngineSane; it only bounds the value box"),
 		java.util.Map.entry("throttleIdleMax", "GameTest: SmokeAuditGameTests.everyConfigSettingAtItsExtremesLeavesAnEngineSane; it only bounds the value box"),

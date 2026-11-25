@@ -6,6 +6,7 @@ import com.createengines.config.CEConfig;
 import com.createengines.content.airflow.PortOpeningBlock;
 import com.mojang.logging.LogUtils;
 
+import net.createmod.catnip.data.WorldAttached;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.server.level.ServerLevel;
@@ -25,6 +26,9 @@ public final class PollutionCompat {
 	private static final Logger LOGGER = LogUtils.getLogger();
 
 	private static boolean broken;
+
+	/** The area cap's last reading at each outlet, by level (and dropped with it). */
+	private static final WorldAttached<AreaCapCache<BlockPos>> AIR = new WorldAttached<>(level -> new AreaCapCache<>());
 
 	private PollutionCompat() {
 	}
@@ -54,9 +58,13 @@ public final class PollutionCompat {
 			return;
 		try {
 			int cap = CEConfig.POLLUTION_AREA_CAP.get();
-			if (cap > 0 && PollutionBridge.airHolds(level, outlet.relative(facing)) >= cap)
+			if (cap > 0 && AIR.get(level)
+				.full(outlet.immutable(), level.getGameTime(), cap, () -> PollutionBridge.airHolds(level, outlet.relative(facing))))
 				return;
 			PollutionBridge.release(level, outlet, facing, carbon, sulfur);
+			if (cap > 0)
+				AIR.get(level)
+					.added(outlet, (long) Math.max(0, carbon) + Math.max(0, sulfur));
 		} catch (LinkageError | RuntimeException e) {
 			broken = true;
 			LOGGER.warn("Pollution of the Realms did not take our gas; engines will not release any this session", e);

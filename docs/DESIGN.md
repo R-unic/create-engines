@@ -191,7 +191,7 @@ mix, not a better piston engine.
   injectors from the player's inventory, on the clicked face of every throw: inline (that face), vee (and the face a
   quarter turn round the crank), flat (and the opposite face), W (and both faces a quarter turn either side: three banks)
   or X (all four faces). The layout is saved on the item by its place in `Layout`, so new layouts are only appended. Pipes and fuel stay the builder's; spark plugs and the cam line are laid only if the builder carries them (see "Boiler heat, readouts, builder extras, muffler and casing").
-  Sneak-use cycles the layouts and then between standard and precision parts: a precision build places precision cylinders, heads, forged pistons and precision injectors, and swaps them in for standard parts already on the throws, handing the old ones back. Blocked places and missing blocks are reported.
+  Sneak-use cycles the layouts and then between standard and precision parts: a precision build places precision cylinders, heads, forged pistons and precision injectors, and swaps them in for standard parts already on the throws, handing the old ones back (a worn piston with its wear). Blocked places and missing blocks are reported. It places no cams: a vee's valley camshaft (see *Valley cam lobes*) is added by hand.
 - **Dynamometer block** (`DynoBlock`): set against any block of an engine, goggles draw its torque and power curves as
   bars, with peaks and the powerband, from the rating the engine itself uses. Redstone rises as the engine climbs to the
   speed of its peak power.
@@ -491,7 +491,8 @@ faces; and anything that needs doing regularly (an oil change) can be automated 
 ### Flight recorder and the engine note (2026-11-02)
 
 - **Black Box** (`content.blackbox`, `engine.FlightRecorder`). A block set against any block of an engine, as the dynamometer
-  is. Once a second the server reads the engine's synced `EngineSummary` (from the crank it touches, or that crank's
+  is. It remembers the crank it found, and searches its faces again only when that crank no longer answers, when a block beside it
+  changes, and every ten samples (a pipe broken further along changes neither). Once a second the server reads the engine's synced `EngineSummary` (from the crank it touches, or that crank's
   primary) and hands a `Sample` (state, speed, load, rated capacity, temperature, fuel, lubrication) to a pure-Java ring of
   600 samples, ten minutes. A change of state is logged as an event with the cause the figures before it point to: a stall
   with no fuel injected is `NO_FUEL`, with the oil gone `DRY`, with a load above capacity `OVERLOAD`, else `UNKNOWN`; going
@@ -832,8 +833,9 @@ one per plug firing and refilled by an alternator; what changed is below. The nu
 
 - **Banks.** Batteries that touch are one bank (`BatteryBank`): capacity is the sum, charging and drawing are shared out in proportion
   (a draw in proportion to what each can deliver, a charge in proportion to the room each has), so a bank runs down and fills evenly.
-  Nothing about a bank is stored: it is found by walking over touching batteries, cached for a second per battery and looked for again
-  whenever a battery is placed or removed (`BatteryBlock.TOPOLOGY`). An engine or alternator touching one member reaches all of them:
+  Nothing about a bank is stored: it is found by walking over touching batteries. One walk serves the whole bank for a second
+  (`BatteryBank.look`), and a battery placed or removed marks only the walks of the batteries it touches as out of date. The walk stops
+  at `limits.maxBankBatteries`. An engine or alternator touching one member reaches all of them:
   the scanner adds the whole bank to `layout.batteries()` and to the engine's members, so a blueprint records it and a change to any
   member rescans the engine. A member in an unloaded chunk is left out until it loads rather than stopping the engine. A lone battery
   is a bank of one, with the numbers it always had.

@@ -1,5 +1,8 @@
 package com.createengines.engine.topology;
 
+import java.lang.invoke.MethodHandle;
+import java.lang.invoke.MethodHandles;
+import java.lang.invoke.MethodType;
 import java.lang.reflect.Method;
 import java.util.ArrayDeque;
 import java.util.Collection;
@@ -35,19 +38,35 @@ final class CrankCoupling {
 	/** How close to exactly one a speed ratio has to be to count. */
 	private static final float TOLERANCE = 1e-3f;
 
-	/** Create keeps these private; they are called by reflection, and coupling is switched off if they are not there. */
-	private static final @Nullable Method NEIGHBOURS = method("getConnectedNeighbours", KineticBlockEntity.class);
-	private static final @Nullable Method MODIFIER =
-		method("getRotationSpeedModifier", KineticBlockEntity.class, KineticBlockEntity.class);
+	/**
+	 * Create keeps these private; they are called by method handle, and coupling is switched off if they are not there. A walk calls
+	 * them for every block it passes, and every engine walks again at each revalidation.
+	 */
+	private static final @Nullable MethodHandle NEIGHBOURS = handle("getConnectedNeighbours",
+		MethodType.methodType(List.class, KineticBlockEntity.class));
+	private static final @Nullable MethodHandle MODIFIER = handle("getRotationSpeedModifier",
+		MethodType.methodType(float.class, KineticBlockEntity.class, KineticBlockEntity.class));
+
+	/** The working maps of a walk, kept from one to the next; one set for each thread, and empty between walks. */
+	private static final class Scratch {
+		/** Speed of each block as a multiple of the reference speed, signed. */
+		final Map<BlockPos, Float> ratio = new HashMap<>();
+		final Deque<KineticBlockEntity> queue = new ArrayDeque<>();
+	}
+
+	private static final ThreadLocal<Scratch> SCRATCH = ThreadLocal.withInitial(Scratch::new);
 
 	private CrankCoupling() {
 	}
 
-	private static @Nullable Method method(String name, Class<?>... parameters) {
+	private static @Nullable MethodHandle handle(String name, MethodType type) {
 		try {
-			Method method = RotationPropagator.class.getDeclaredMethod(name, parameters);
+			Method method = RotationPropagator.class.getDeclaredMethod(name, type.parameterArray());
 			method.setAccessible(true);
-			return method;
+			// asType fails here, and not at a call, if Create's method no longer returns what is asked of it
+			return MethodHandles.lookup()
+				.unreflect(method)
+				.asType(type);
 		} catch (ReflectiveOperationException | RuntimeException e) {
 			LOGGER.warn("Create's RotationPropagator.{} is not available ({}); coupled crankshafts are switched off", name, e.toString());
 			return null;
@@ -65,10 +84,19 @@ final class CrankCoupling {
 		Map<BlockPos, Integer> found = new HashMap<>();
 		if (NEIGHBOURS == null || MODIFIER == null)
 			return found;
+		Scratch scratch = SCRATCH.get();
+		try {
+			walk(level, from, limit, scratch.ratio, scratch.queue, found);
+		} finally {
+			// Nothing is held between walks: these refer to block entities, and through them to the level
+			scratch.ratio.clear();
+			scratch.queue.clear();
+		}
+		return found;
+	}
 
-		// Speed of each block as a multiple of the reference speed, signed
-		Map<BlockPos, Float> ratio = new HashMap<>();
-		Deque<KineticBlockEntity> queue = new ArrayDeque<>();
+	private static void walk(Level level, Collection<BlockPos> from, int limit, Map<BlockPos, Float> ratio,
+							 Deque<KineticBlockEntity> queue, Map<BlockPos, Integer> found) {
 		for (BlockPos pos : from)
 			if (level.getBlockEntity(pos) instanceof KineticBlockEntity be) {
 				ratio.put(pos.immutable(), 1f);
@@ -101,7 +129,6 @@ final class CrankCoupling {
 				.getBlock() instanceof CrankshaftBlock)
 				found.put(entry.getKey(), speed > 0 ? 1 : -1);
 		}
-		return found;
 	}
 
 	static boolean surroundingsLoaded(Level level, BlockPos pos) {
@@ -111,17 +138,25 @@ final class CrankCoupling {
 
 	@SuppressWarnings("unchecked")
 	static List<KineticBlockEntity> neighbours(KineticBlockEntity be) {
+		if (NEIGHBOURS == null)
+			return List.of();
 		try {
-			return (List<KineticBlockEntity>) NEIGHBOURS.invoke(null, be);
-		} catch (ReflectiveOperationException | RuntimeException e) {
+			return (List<KineticBlockEntity>) (List<?>) NEIGHBOURS.invokeExact(be);
+		} catch (VirtualMachineError e) {
+			throw e;
+		} catch (Throwable e) {
 			return List.of();
 		}
 	}
 
 	static float modifier(KineticBlockEntity from, KineticBlockEntity to) {
+		if (MODIFIER == null)
+			return 0;
 		try {
-			return (float) MODIFIER.invoke(null, from, to);
-		} catch (ReflectiveOperationException | RuntimeException e) {
+			return (float) MODIFIER.invokeExact(from, to);
+		} catch (VirtualMachineError e) {
+			throw e;
+		} catch (Throwable e) {
 			return 0;
 		}
 	}

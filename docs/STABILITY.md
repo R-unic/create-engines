@@ -38,10 +38,10 @@ These apply to every commit, not just at release time. The author does not need 
 ### 1.2 Old worlds and old factories are protected
 
 - No registry ID, block state property, NBT key, config key, recipe result, advancement ID or data-map format is renamed
-  or removed in 1.x. New saved keys have a default that reproduces the old behaviour when the key is missing.
-- Anything that changes how an existing engine behaves is a behaviour change, not a fix. In 1.x it goes behind a new
-  block, item or config option that existing builds do not use, or it waits for 2.0. If a fix truly must move numbers,
-  stop and ask the author first.
+  or removed within a major version (1.x, now 2.x until 3.0). New saved keys have a default that reproduces the old behaviour when the key is missing.
+- Anything that changes how an existing engine behaves is a behaviour change, not a fix. Within a major version it goes behind a
+  new block, item or config option that existing builds do not use, or it waits for the next major. If a fix truly must
+  move numbers, stop and ask the author first; their approval names the change and is recorded as an exception.
 - New blocks, items and saved keys are appended to `compat/manifest.txt` in the same commit
   (`COMPAT_REGEN=1 ./gradlew test --offline`). Existing lines are never edited or deleted.
 - A failing compatibility test is a question ("does this break an old world?"), answered by changing the code, never
@@ -92,6 +92,13 @@ cd <copy>
       the fleet run with heap, direct memory, voices and frame-time trends; the walk-away-and-back.
 - [ ] Log check: no ERROR, no stack trace, no `OutOfMemoryError`, no missing model, texture, sound or recipe message,
       no crash report, nothing not on the allowlist.
+- [ ] `./gradlew pitest --offline`: live mutants (survived plus no coverage) within `src/smoke/mutation-ratchet.txt`. The
+      result may come from PIT's incremental history: mutants in classes whose code and covering tests are unchanged
+      since the history was written keep their earlier result. The record states how many results were reused, or that
+      the run was fresh. Delete the history file whenever pitest's settings, its test exclusions or the PIT version change.
+      `partEffectsSwappedFromAnotherThreadNeverBreaksAnEngine` is left out of pitest, because it kills a few mutants
+      only by luck and made the count swing by about 3. It still runs as a unit test. Both rules approved by the author
+      on 2026-11-25.
 - [ ] `./scripts/smoke-mutations.ps1` re-run if any audit or checker changed since the last release. Every `EXPECT` line
       must still turn red.
 - [ ] Every WARN in the reports is read. Each is fixed, or is already a documented exception. (The supercharged spark
@@ -120,39 +127,30 @@ cd <copy>
       `datagen-idempotence` job, which starts from a fresh checkout, caught it).
 - [ ] `./gradlew build --offline` produces `create_engines-VERSION-MCVERSION.jar`. The version in `gradle.properties`,
       the jar name, the changelog heading and the tag all agree.
-- [ ] **The jar, not the dev classpath, is what gets run.** Drop the built jar into a clean instance with the supported
-      Create, Flywheel and NeoForge, and start a dedicated server and a client from it (the machine does the server boot;
-      the author's 3.1 runs from the same jar). A dev classpath hides
+- [ ] **The jar, not the dev classpath, is what gets run.** `./gradlew jarServer --offline` boots a dedicated server from
+      the built jar twice on the supported NeoForge and Create ([SMOKE.md](SMOKE.md), "The jar server"). The client is
+      started from the same jar by the author in 3.1. A dev classpath hides
       client classes loaded on a server and resources missing from the jar.
 - [ ] The jar contains no development leftovers (no `run/` data, no test classes, no scratch files) and nothing
       unexpectedly large.
 
-### 2.4 Unattended soak
+### 2.4 (removed)
 
-Run in the private copy while the author does something else. The audit's fleet run is only about a minute today, so
-**a longer fleet run is the first thing to build for this contract**: the same six engines, refinery, turbo and
-supercharger, for 60 minutes, with the same heap, direct-memory, voice, particle and frame-time trends as the one-minute
-run, plus engines stopped, restarted, fed the wrong fluid, overloaded and driven by a fast redstone clock on a schedule,
-and the walk-away-and-back repeated.
-
-**Status: not built yet.** It is part of the contract, to be built later. Until it exists, the item is recorded in the
-sign-off as "soak not yet automated", counts as a known exception (not a blocked release), and nobody runs it by hand.
-The one-minute fleet run in 2.1 is the only leak check in the meantime. Once built, it becomes a hard gate.
-
-- [ ] 60-minute fleet soak: no climbing heap or direct memory, no growth in sound voices or particles, p99 frame time
-      within budget at the end, nothing in the log.
-- [ ] The soak's final numbers are copied into the record.
+The 60-minute unattended soak was dropped by the author on 2026-11-25. It was never built. The one-minute fleet run in 2.1 is
+the leak check. The number is kept so that older release records still point somewhere.
 
 ### 2.5 Review checks
 
 - [ ] The changelog is written from the **real diff** (`git diff <last tag>..HEAD`, including data and lang), not from
       commit names. Every changed existing behaviour is named. Every new ID, config key and file format is listed
-      (they join the 1.x promise the day the release ships).
+      (they join the compatibility promise the day the release ships).
 - [ ] A diff review for the usual suspects: anything allocating on a tick, sound or render path; anything iterating all
       loaded blocks; anything calling into client classes from common code; saved data read without a default.
 - [ ] No open `TODO`, `FIXME`, debug logging or debug keybind left in the shipped code.
-- [ ] Docs match the release: `docs/SMOKE.md` numbers (tests, storyboards, mutations), `docs/ADVANCEMENTS.md`,
-      `docs/COMPATIBILITY.md` known gaps, and this file's checklist if the process changed.
+- [ ] Docs match the release: every page under `docs/` and the README that the diff touches says what the code now does
+      (search the docs for each changed name, number and behaviour, not only the pages listed here); `docs/SMOKE.md`
+      numbers (tests, storyboards, mutations), `docs/ADVANCEMENTS.md`, `docs/COMPATIBILITY.md` known gaps, the README's
+      feature list and versions, and this file's checklist if the process changed.
 
 ---
 
@@ -162,7 +160,7 @@ Only what a machine cannot judge, or what the machine cannot yet do. Run from th
 (supported Create, Flywheel and NeoForge only), at the shipped default config. Each item has a pass condition; "looks
 fine" is not one. Anything odd is written down even if it does not look like a bug.
 
-The long soak, churn and hostile-play runs are **not** done by hand. They run unattended in the Part 2 gate (2.5), so
+Churn and hostile-play runs are **not** done by hand. They run in the Part 2 gate, so
 the author's time goes on seeing and hearing.
 
 ### 3.1 Build an engine (every release, about 4 minutes)
@@ -234,9 +232,9 @@ too big or a check is missing, and Claude says so.
 
 ### 4.3 Patch releases
 
-A patch release (`1.N.x`) follows the whole contract. The only permitted shortcut is in Part 3: only the items its
+A patch release (`X.Y.Z` with Z above 0) follows the whole contract. The only permitted shortcut is in Part 3: only the items its
 diff could affect need a hands-on run, plus 3.3 (old world) and any item a reported bug touches. Parts 1 and 2 are
-never shortened, and a hotfix cannot skip the old-world check or the soak.
+never shortened, and a hotfix cannot skip the old-world check.
 
 ---
 
@@ -245,12 +243,12 @@ never shortened, and a hotfix cannot skip the old-world check or the soak.
 Said plainly so nobody thinks a tick in a box means more than it does.
 
 - Other GPUs, drivers, operating systems, Java versions and mod combinations beyond the supported rows were not run.
-- A soak of an hour does not find a leak that takes a day. Players will run bigger and longer than we do.
+- The one-minute fleet run does not find a slow leak. Players will run bigger and longer than we do.
 - Sound that is technically correct can still be unpleasant. Only the hands-on pass catches that.
-- Ten minutes by hand cannot find what needs a long session or a second player. Those are covered by the unattended
-  soak and the server boot, which only see what they were written to see.
+- Ten minutes by hand cannot find what needs a long session or a second player. Those are only partly covered, by the
+  GameTests and the server boot, which only see what they were written to see.
 - A green gate means nothing is broken in ways we know how to look for. The 1.2.0 bug was one nobody knew to look for.
-  This is why every escaped bug adds a check (rule 1.1) and why the soak (2.4) is not skipped.
+  This is why every escaped bug adds a check (rule 1.1).
 
 ## Items that depend on the verification track
 
@@ -259,15 +257,13 @@ When one lands, move its item out of Part 3 into Part 2 so it ticks automaticall
 
 | Today | Automated by (roadmap item) |
 |---|---|
-| Boot the packaged jar on a dedicated server (2.3, 3.4) | 5, dedicated-server and packaged-jar run |
+| A second client joining that server (3.4) | not automated: `jarServer` (item 5) boots the server but nothing joins it |
 | Old-world check with real saves (3.3) | 4, world corpus |
 | Config at min and max (2.2) | 9, config matrix |
 | Supported Create and addon rows (2.2, 3.4) | 10, compatibility matrix |
 | Datagen has no diff (2.3) | 11, datagen idempotence |
 | Metrics compared by eye (2.1) | 7, performance budgets |
-| Sound and look judged by ear and eye (3.2) | 13, golden checks (what changed by accident only; taste stays manual) |
-| 60-minute unattended soak (2.4), not built | listed under "Not started" in the roadmap's verification track |
-| Hostile play and churn inside the soak (2.4) | 3, monkey GameTest |
+| Hostile play and churn | 3, monkey GameTest |
 | Network or sound-thread races | 6, concurrency tests; 8, network and codec fuzz |
 | Test quality (1.1) | 1, mutation testing; 2, property tests |
 

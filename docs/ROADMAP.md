@@ -37,7 +37,7 @@ Set by the author on 2026-11-14:
 8. **Old worlds keep loading.** Before each release a world saved on 1.0 is opened in the new build. A test holds
    the list of every ID and config key that 1.0 shipped, and fails the build if one goes missing.
 9. **The stability contract.** No release is tagged until the checklist in [STABILITY.md](STABILITY.md) is signed off:
-   tests with every change, the machine gate, and the author's hands-on pass (build an engine, soak, old world).
+   tests with every change, the machine gate, and the author's hands-on pass (build an engine, old world).
 
 ## At a glance
 
@@ -906,8 +906,13 @@ looks and feels. Tests only guard against those changing by accident.
   JEI row run by hand (JEI wants a newer NeoForge than this build) and an Aeronautics row that is not in `compatMatrix`
   while it is red (`build.gradle` and `docs/COMPAT.md` say why); there is one supported Create version today.
 
-**Not started:** 13 (goldens, set aside by request), and the 60-minute unattended soak of `STABILITY.md` 2.4. Still open
-inside done items: a server booted from the jar (item 5), the config matrix through the client audit's fleet (item 9), the
+**Added 2026-11-25:** the server half of item 5, `./gradlew jarServer` (a dedicated server booted twice from the built jar,
+with engines built and run on it), and for item 6 the client audit's `threads` phase, which churns the real sound engine and
+the render thread against the integrated server's tick. Both are described in [SMOKE.md](SMOKE.md). Neither runs on GitHub,
+no client joins the jar server, and the churn can find a race but cannot prove there is none.
+
+**Dropped 2026-11-25 (author):** item 13 (golden checks) and the 60-minute unattended soak. Neither will be built. Still open
+inside done items: the config matrix through the client audit's fleet (item 9), the
 PIT survivors that are not equivalent mutants (item 1, 134 live), and the engine figures that move with the step above 1500 RPM (item 2).
 
 1. **Mutation testing (PIT) on `engine/sim`.** Small changes to the code (a flipped comparison, a dropped term) must make
@@ -946,30 +951,12 @@ PIT survivors that are not equivalent mutants (item 1, 134 live), and the engine
 12. **Coverage with a ratchet (JaCoCo).** Coverage is merged across the unit tests, GameTests and smoke audit. It is a
     map of code that no layer runs, to aim the other items at, not a goal in itself. The build fails only if the total
     drops below the last recorded number, which is raised by hand when it improves.
-13. **Golden checks (visual and audio).** Stored reference images and measurements, compared with a tolerance, so a
-    change nobody meant fails the build and a change somebody meant costs one command.
-    - **Updating.** `./gradlew updateGoldens` rewrites the references. The git diff of the images and numbers is the
-      review, and the commit is the approval. A failing run writes a side-by-side image or a numeric diff.
-    - **Visual.** Fixed-camera shots of the casing and part models and a few Ponder frames, taken by the showcase
-      harness. Compared per region with a tolerance, so anti-aliasing and driver noise pass and a change of shape or
-      colour fails. Particles, animation frames and the surrounding world are left out.
-    - **Audio, from the game as well as the synthesizer.** Two levels. The synth level renders scenarios directly
-      (idle, load, boost, lean, fouled, limiter-free redline) and records loudness, peak, clipping and a coarse
-      spectrum, never raw sample hashes, so a deliberate retune moves the numbers inside a band and a bug that clips or
-      goes silent fails. The in-game level runs the smoke client with real engines and captures the PCM the sound
-      engine is actually handed, which covers what the synth test cannot see: the streaming path, pitch and volume
-      from live engine state, voice limits, and the click-free note. It is measured with the same figures.
-    - **To settle when building it:** whether the capture point can be the final mix (an OpenAL loopback device in the
-      smoke client) or has to be the stream hand-off before the mixer. The hand-off is the fallback and still catches
-      the streaming and engine-state bugs. Determinism matters, so scenarios run on fixed engine states and a fixed
-      tick count, and a flaky capture is fixed or dropped, never given a looser tolerance to make it pass.
-    - Deliberate art changes update their goldens as part of the change.
-
 ## Not on this roadmap
 
 **Declined, and not to be proposed again without a new reason:** knock as a mechanic in the default game (**approved by the
 author 2026-11-24 as part of the opt-in wear mode only: it wears the piston faster and never breaks a part by itself, see
-"2.3 Wear and Tear" in ROADMAP-3.0.md**), cooling blocks or radiators,
+"2.3 Wear and Tear" in ROADMAP-3.0.md**), cooling blocks or radiators (**the Radiator reopened by the author 2026-11-25 for 2.4, a closed-loop block,
+together with a soft overheating power loss in the default game, which is a penalty and not a failure; see "2.4 Running Hot" in ROADMAP-3.0.md**),
 parallel throttles, snorkels or any way to run underwater, a power cost on the Muffler, parts that wear out or break
 in the default game (**reopened 2026-11-23 as an opt-in mode only, placed in 2.3, which is the wear release, see "2.3 Wear and Tear" in ROADMAP-3.0.md**),
 new failure modes of any kind in the default game (runaway, blown gaskets, seizure, valve float; the same opt-in exception covers a thrown rod and worn gaskets), new fuels (kerosene and methanol were added in 2.0 at the author's say, and no more are wanted), mixins into Create's trains,

@@ -158,6 +158,8 @@ public final class ShowcaseRun {
 		{
 			NeoForge.EVENT_BUS.addListener(ShowcaseRun::onRenderFrame);
 			NeoForge.EVENT_BUS.addListener(ShowcaseRun::onPlaySound);
+			NeoForge.EVENT_BUS.addListener(ShowcaseRun::onRenderGuiLayer);
+			NeoForge.EVENT_BUS.addListener(ShowcaseRun::onFov);
 		}
 		schedule();
 	}
@@ -1682,13 +1684,18 @@ public final class ShowcaseRun {
 	// -----------------------------------------------------------------------------------------------------------------
 
 	/**
-	 * One trailer shot. The camera orbits a view's target (a view of the scene's own list, so the framing is the one already
-	 * checked for the stills), its heading, height and distance drifting from the first value to the second over
-	 * {@code seconds}, while the target itself travels {@code travelX} blocks along the crank's line. {@code time} is the
-	 * time of day the shot cuts to, or {@link #NO_TIME}.
+	 * One trailer shot. The camera arcs round a {@link ShowcaseRunFraming.Box} (in blocks from the pad's corner), its heading and
+	 * height drifting from the first value to the second over {@code seconds}. How far it stands is worked out, not set: just far
+	 * enough for the box to take up {@code fill0}, drifting to {@code fill1}, of the frame's safe area (more is a push in, less a
+	 * pull back). The box itself travels {@code travelX} blocks along the crank's line. {@code time} is the time of day the shot
+	 * cuts to, or {@link #NO_TIME}.
 	 */
-	private record Shot(String name, String scene, String view, float yaw0, float yaw1, float pitch0, float pitch1,
-		double dist0, double dist1, double travelX, double seconds, int time) {
+	private record Shot(String name, String scene, ShowcaseRunFraming.Box subject, float yaw0, float yaw1, float pitch0,
+		float pitch1, double fill0, double fill1, double travelX, double seconds, int time) {
+	}
+
+	private static ShowcaseRunFraming.Box box(double x0, double y0, double z0, double x1, double y1, double z1) {
+		return new ShowcaseRunFraming.Box(x0, y0, z0, x1, y1, z1);
 	}
 
 	private static final int NO_TIME = -1;
@@ -1758,59 +1765,64 @@ public final class ShowcaseRun {
 	}
 
 	private static void defineTrailer() {
-		// The story, in the order the captions tell it: one cylinder, then building bigger (the Bank Builder, the layouts and the
-		// parts that make an engine breathe), forced induction, the instruments, the electrical parts, the work the power does,
-		// fuels and the refinery as the sun goes down, and the factory as the finale. Every length is a whole number of bars at
-		// the backing track's tempo (tools/trailer/music.py: 80 beats a minute, a bar of three seconds) so the cuts land on the beat.
-		// Open on the hero shot: a V8 at golden hour, the camera sweeping from behind its exhaust round to its front
-		// The title sequence: a high, wide pull-back on the V8 at golden hour, with the title laid over it (tools/trailer/post.py)
-		SHOTS.add(new Shot("title_sequence", "v8", "hero", -150, -125, 22, 8, 22, 14, 3, 6, GOLDEN_HOUR));
-		SHOTS.add(new Shot("hero_v8", "v8", "hero", -125, -35, 5, 14, 12.5, 8.5, 5, 9, GOLDEN_HOUR));
-		SHOTS.add(new Shot("first_rises", "first", "hero", -80, -35, 6, 16, 8, 5.5, 0, 6, DAY));
+		// In the order of the cut (tools/trailer/edit.txt), so the light only ever moves on: one cylinder, the title, the layouts,
+		// forced induction, the engine grown to a V16 and the V16 cold-started, the instruments, the electrical parts, the service
+		// bay, the casings, the drivetrain at work, the car, then fuels and the refinery as the sun goes down and the factory as
+		// the finale. Every length is a whole number of bars at the backing track's tempo (tools/trailer/music.py: 80 beats a
+		// minute, a bar of three seconds).
+		// The subjects, in blocks from each pad's corner
+		ShowcaseRunFraming.Box v8 = box(0.5, 1, 2.5, 10, 6.5, 7);
+		ShowcaseRunFraming.Box bigV16 = box(0, 1, 2.5, 14, 7, 7);
+		SHOTS.add(new Shot("first_rises", "first", box(1, 1, 1.4, 5, 5, 3.6), -62, -34, 8, 16, 0.94, 1.06, 0, 6, DAY));
+		// The title lies over a high pull-in on the V8 at golden hour, and the next shot carries the same move on
+		SHOTS.add(new Shot("title_sequence", "v8", v8, -130, -112, 13, 10, 0.82, 0.92, 0, 6, GOLDEN_HOUR));
+		SHOTS.add(new Shot("hero_v8", "v8", v8, -54, -28, 12, 16, 1.02, 1.16, 0, 9, NO_TIME));
+		// The layouts, quick cuts: the inline six, the flat six, the rotary circled
+		SHOTS.add(new Shot("inline6_pass", "inline6", box(0.5, 1, 3.5, 12.5, 7, 7), -54, -34, 11, 13, 1.08, 1.16, 0, 3, DAY));
+		SHOTS.add(new Shot("flat6_track", "flat6", box(0.5, 1, 3, 9.5, 5.2, 8), -18, 6, 14, 16, 0.94, 1.02, 0, 3, NO_TIME));
+		SHOTS.add(new Shot("rotary_orbit", "rotary", box(1, 1.8, 1.2, 7, 4.6, 3.8), -62, -18, 16, 24, 1.04, 1.18, 0, 3, NO_TIME));
+		// Forced induction: the turbocharger from its own side, clear of the cam's cogwheel, then the blower
+		SHOTS.add(new Shot("inline6_turbo", "inline6", box(6.5, 3.5, 4.5, 10.5, 7.2, 7), -168, -142, 11, 14, 0.98, 1.14, 0, 6, NO_TIME));
+		SHOTS.add(new Shot("blown_i6_blower", "blown_i6", box(0, 3.4, 1.5, 3.5, 6.4, 5.5), -68, -48, 14, 16, 1, 1.12, 0, 3, NO_TIME));
 		// Gameplay: first person, standing still, the Bank Builder in hand: one cylinder grown into a boosted precision V16
-		SHOTS.add(new Shot("grow_engine", "grow", "stand", -20, -20, 14, 14, 12, 12, 0, 15, DAY));
-		// The layouts, quick cuts: the inline six along its length, the flat six sliding past, the rotary circled
-		SHOTS.add(new Shot("inline6_pass", "inline6", "hero", -85, -30, 7, 12, 10, 8, 6, 3, NO_TIME));
-		SHOTS.add(new Shot("flat6_track", "flat6", "side", -20, 35, 6, 10, 9, 7.5, 5, 3, NO_TIME));
-		SHOTS.add(new Shot("rotary_orbit", "rotary", "hero", -80, 20, 12, 28, 7, 4.8, 0, 3, NO_TIME));
-		// Forced induction: round the turbocharger, then the blower
-		SHOTS.add(new Shot("inline6_turbo", "inline6", "turbo", 70, 150, 10, 16, 5.5, 4.2, 0, 6, NO_TIME));
-		SHOTS.add(new Shot("blown_i6_blower", "blown_i6", "blower", -85, -45, 10, 16, 7.5, 5.5, 0, 3, NO_TIME));
+		SHOTS.add(new Shot("grow_engine", "grow", box(0, 1, 2.5, 14.5, 7, 7), -22, -22, 14, 14, 1.17, 1.17, 0, 15, NO_TIME));
 		// The big block: the heavy starter turns a cold V16 over until it catches, and the player, standing by it, puts on headphones
-		SHOTS.add(new Shot("heavy_starter", "bigblock", "starter", 150, 175, 8, 12, 5.5, 6.5, 0, 6, NO_TIME));
-		SHOTS.add(new Shot("headphones_on", "bigblock", "stand", -15, -15, 8, 8, 10, 10, 0, 6, NO_TIME));
+		SHOTS.add(new Shot("heavy_starter", "bigblock", bigV16, -62, -44, 8, 11, 1.08, 1.18, 0, 6, NO_TIME));
+		SHOTS.add(new Shot("headphones_on", "bigblock", bigV16, -32, -32, 10, 10, 1, 1, 0, 6, NO_TIME));
 		// The test bed's instruments
-		SHOTS.add(new Shot("instruments_dyno", "instruments_i4", "dyno", -85, -35, 14, 20, 6.5, 4.5, 0, 3, NO_TIME));
-		SHOTS.add(new Shot("instruments_governor", "instruments_i4", "governor", 105, 145, 12, 18, 6.5, 4.8, 0, 3, NO_TIME));
+		SHOTS.add(new Shot("instruments_dyno", "instruments_i4", box(-0.5, 2, 3.5, 4.5, 6.2, 6.5), -62, -42, 15, 18, 1, 1.12, 0, 3,
+			NO_TIME));
+		SHOTS.add(new Shot("instruments_governor", "instruments_i4", box(4.5, 2, 3.8, 9, 5.8, 7), 128, 148, 14, 17, 0.9, 1.02, 0, 3,
+			NO_TIME));
 		// The electrical chain: the alternator, the joined batteries it fills, then a coil and an assist on every head
-		SHOTS.add(new Shot("electric_alternator", "electric", "alternator", -70, -30, 10, 14, 5, 3.8, 1.5, 3, NO_TIME));
-		SHOTS.add(new Shot("electric_battery", "electric", "battery", -75, -30, 8, 14, 6.5, 4.6, 0, 3, NO_TIME));
-		SHOTS.add(new Shot("electric_heads", "electric", "heads", -60, -10, 34, 26, 6.5, 5, 2, 3, NO_TIME));
-		// The casing styles: the Maker's Plate and the four styles passed, then the player dyeing the pillars (gameplay)
-		SHOTS.add(new Shot("casing_styles", "casing", "plate", -30, 10, 10, 12, 6, 6.5, 12, 3, NO_TIME));
-		SHOTS.add(new Shot("casing_dye", "casing", "row", -10, -10, 9, 9, 13, 13, 0, 6, NO_TIME));
-		// The drivetrain: the dual-mass flywheel on the diesel crank, then the transmission the power leaves through
-		SHOTS.add(new Shot("factory_flywheel", "factory", "flywheel", 20, 85, 10, 16, 7, 5, 0, 3, NO_TIME));
-		SHOTS.add(new Shot("factory_gearbox", "factory", "gearbox", 25, -35, 14, 18, 5.5, 3.8, 0, 6, NO_TIME));
-		// What the power is for: the row of Create machines off a diesel crank
-		SHOTS.add(new Shot("factory_line", "factory", "line", -70, -20, 10, 14, 7.5, 5.5, 2, 6, NO_TIME));
+		SHOTS.add(new Shot("electric_alternator", "electric", box(-0.5, 2, 4, 3, 7, 6), -72, -52, 11, 13, 0.98, 1.08, 0, 3, NO_TIME));
+		SHOTS.add(new Shot("electric_battery", "electric", box(0, 3.5, 4, 3, 7, 6), -62, -42, 10, 14, 0.84, 0.98, 0, 3, NO_TIME));
+		SHOTS.add(new Shot("electric_heads", "electric", box(1.5, 4, 3.5, 6.5, 6.8, 7), -46, -26, 11, 10, 0.94, 1.06, 0, 3, NO_TIME));
 		// The service bay: the player fits an oil filter and tops up the pan (gameplay), then the line that cleans the used oil and fills cans
-		SHOTS.add(new Shot("service_sump", "service", "sump", -40, -40, 14, 14, 6, 6, 0, 3, NO_TIME));
-		SHOTS.add(new Shot("service_oil", "service", "mixer", -50, -20, 14, 16, 7.5, 6, 0, 3, NO_TIME));
-		SHOTS.add(new Shot("service_cans", "service", "station", 165, 195, 14, 16, 9.5, 8, 2, 6, NO_TIME));
+		SHOTS.add(new Shot("service_sump", "service", box(-0.5, 1.5, 3, 4, 5, 6), -40, -40, 15, 15, 0.9, 0.9, 0, 3, NO_TIME));
+		SHOTS.add(new Shot("service_oil", "service", box(-4.5, 0, 3, 1.5, 5, 6.5), -28, -10, 15, 17, 1, 1.08, 0, 3, NO_TIME));
+		SHOTS.add(new Shot("service_cans", "service", box(-6, 0, 6, 5, 6, 10.5), 118, 138, 12, 13, 1.08, 1.14, 0, 6, NO_TIME));
+		// The casing styles: the Maker's Plate and the four styles passed, then the player dyeing the pillars (gameplay)
+		SHOTS.add(new Shot("casing_styles", "casing", box(5.5, 1, 4.5, 13.5, 6, 6), -22, -8, 10, 12, 1, 1, 8, 3, NO_TIME));
+		SHOTS.add(new Shot("casing_dye", "casing", box(2, 1, 4.5, 18, 6, 6), -10, -10, 9, 9, 1, 1, 0, 6, NO_TIME));
+		// The drivetrain: the dual-mass flywheel on the diesel crank, then the transmission the power leaves through
+		SHOTS.add(new Shot("factory_flywheel", "factory", box(8, 1.5, 3.5, 11, 5, 6.8), 40, 64, 10, 14, 0.86, 0.98, 0, 3, NO_TIME));
+		SHOTS.add(new Shot("factory_gearbox", "factory", box(-2, 1.5, 4, 2.5, 6.8, 6.5), 22, -4, 14, 17, 0.92, 1.04, 0, 6, NO_TIME));
+		// What the power is for: the row of Create machines off a diesel crank
+		SHOTS.add(new Shot("factory_line", "factory", box(-6, 0, 4, 3, 5.8, 6), -28, -8, 12, 15, 1.02, 1.1, 0, 6, NO_TIME));
 		// The engine on wheels: only with Create Aeronautics and Sable in the run (-PshowcaseSet=trailer on runShowcaseAeronautics)
 		if (aero()) {
-			SHOTS.add(new Shot("rover_departs", "rover", "hero", -70, -20, 8, 14, 15, 17, 0, 9, DAY));
-			SHOTS.add(new Shot("rover_wheels", "rover", "wheel", -70, -40, 6, 10, 8, 9, 0, 3, NO_TIME));
+			SHOTS.add(new Shot("rover_departs", "rover", box(-6, 0, 2, 19, 8, 8), -34, -6, 9, 13, 1.16, 1, 0, 9, GOLDEN_HOUR));
+			SHOTS.add(new Shot("rover_wheels", "rover", box(12.8, 0, 2, 16.8, 3.6, 4.5), -22, 0, 6, 10, 0.9, 1.04, 0, 3, NO_TIME));
 		}
-		// Fuels and the refinery as the sun goes down (the exhaust-side shots are early, they face away from the light)
-		SHOTS.add(new Shot("v8_exhaust_dusk", "v8", "exhaust", 130, 170, 8, 12, 7, 8.5, 0, 3, GOLDEN_HOUR));
-		SHOTS.add(new Shot("refinery_column", "refinery", "column", -75, -20, 8, 20, 15, 11, 0, 6, DUSK));
-		SHOTS.add(new Shot("refinery_base", "refinery", "base", -65, -20, 14, 12, 8.5, 6.5, 0, 3, NO_TIME));
-		SHOTS.add(new Shot("refinery_tops", "refinery", "tops", -70, -25, 12, 10, 8.5, 7, 0, 3, NO_TIME));
-		SHOTS.add(new Shot("refinery_flare", "refinery", "flare", 20, 75, -6, 6, 7.5, 5.5, 0, 3, NIGHTFALL));
-		// The finale, wide on the factory
-		SHOTS.add(new Shot("factory_wide", "factory", "wide", -40, -75, 14, 20, 8, 11.5, 0, 9, DUSK));
+		// Fuels and the refinery as the sun goes down (the exhaust-side shot is early, it faces away from the light)
+		SHOTS.add(new Shot("v8_exhaust_dusk", "v8", v8, 136, 158, 10, 12, 1.08, 1.2, 0, 3, GOLDEN_HOUR));
+		SHOTS.add(new Shot("refinery_column", "refinery", box(5, 0, 2, 10, 9, 6), -48, -24, 4, 7, 1.08, 1.18, 0, 6, DUSK));
+		SHOTS.add(new Shot("refinery_base", "refinery", box(4.5, 0, 1, 8.5, 3.5, 5), -58, -40, 16, 14, 0.9, 1.02, 0, 3, NO_TIME));
+		SHOTS.add(new Shot("refinery_tops", "refinery", box(5, 5, 3, 10, 9, 5), -58, -38, 0, 3, 0.9, 1.02, 0, 3, NO_TIME));
+		SHOTS.add(new Shot("refinery_flare", "refinery", box(5.5, 5, 2.5, 9.5, 9.5, 5.5), 24, 52, -10, -4, 0.86, 1, 0, 3, NIGHTFALL));
+		// The finale: from close on the factory, pulling back to the whole row
+		SHOTS.add(new Shot("factory_wide", "factory", box(-6, 0, 3, 11, 6, 7), -12, -34, 12, 14, 1.16, 0.98, 0, 9, DUSK));
 		defineCues();
 		filterShots();
 	}
@@ -1855,45 +1867,49 @@ public final class ShowcaseRun {
 			.filter(s -> s.name().equals(shot.scene()))
 			.findFirst()
 			.orElseThrow();
-		View view = scene.views()
-			.stream()
-			.filter(v -> v.label().equals(shot.view()))
-			.findFirst()
-			.orElseThrow();
 		BlockPos pad = pad(scene.bay());
 		// Half linear and half eased: the shot starts and ends gently without crawling in the middle
 		double e = 0.5 * t + 0.5 * t * t * (3 - 2 * t);
-		double yaw = Math.toRadians(shot.yaw0() + (shot.yaw1() - shot.yaw0()) * e);
-		double pitch = Math.toRadians(shot.pitch0() + (shot.pitch1() - shot.pitch0()) * e);
-		double distance = shot.dist0() + (shot.dist1() - shot.dist0()) * e;
-		double tx = pad.getX() + view.x() + shot.travelX() * (e - 0.5);
-		double ty = pad.getY() + view.y();
-		double tz = pad.getZ() + view.z();
-		double x = tx + Math.sin(yaw) * Math.cos(pitch) * distance;
-		double y = Math.max(ty + Math.sin(pitch) * distance, pad.getY() + 1.8);
-		double z = tz - Math.cos(yaw) * Math.cos(pitch) * distance;
+		double yaw = shot.yaw0() + (shot.yaw1() - shot.yaw0()) * e;
+		double pitch = shot.pitch0() + (shot.pitch1() - shot.pitch0()) * e;
+		double fill = shot.fill0() + (shot.fill1() - shot.fill0()) * e;
+		ShowcaseRunFraming.Placing placing = ShowcaseRunFraming.place(shot.subject(), yaw, pitch, fill);
+		double tx = pad.getX() + placing.aimX() + shot.travelX() * (e - 0.5);
+		double ty = pad.getY() + placing.aimY();
+		double tz = pad.getZ() + placing.aimZ();
+		double x = pad.getX() + placing.eyeX() + shot.travelX() * (e - 0.5);
+		double y = Math.max(pad.getY() + placing.eyeY(), pad.getY() + 1.8);
+		double z = pad.getZ() + placing.eyeZ();
 		if (scene.bay() == AERO_BAY) {
 			// Open ground, no walls to stay inside: the camera follows the craft by however far it has moved since it left its pad
 			double[] moved = followedMove();
 			tx += moved[0];
 			ty += moved[1];
 			tz += moved[2];
-			x = tx + Math.sin(yaw) * Math.cos(pitch) * distance;
-			y = Math.max(ty + Math.sin(pitch) * distance, pad.getY() + 1.8);
-			z = tz - Math.cos(yaw) * Math.cos(pitch) * distance;
-			double lookPitch = Math.toDegrees(Math.atan2(y - ty, Math.hypot(x - tx, z - tz)));
-			double lookYaw = Math.toDegrees(Math.atan2(x - tx, tz - z));
-			return new double[] { x, y, z, lookYaw, lookPitch };
+			x += moved[0];
+			y = Math.max(y + moved[1], pad.getY() + 1.8);
+			z += moved[2];
+		} else {
+			// Stay inside the courtyard: a wall is a block thick and the camera must not come out of it or look through it
+			double inX = Math.max(pad.getX() + PAD_X0 + 1.6, Math.min(pad.getX() + PAD_X1 - 0.6, x));
+			double inZ = Math.max(pad.getZ() + PAD_Z0 + 1.6, Math.min(pad.getZ() + PAD_Z1 - 0.6, z));
+			double inY = Math.min(y, pad.getY() + WALL - 1.5);
+			// A camera held in by a wall stands nearer than the framing asked, so say so: the shot's angle wants changing
+			if (Math.abs(inX - x) + Math.abs(inY - y) + Math.abs(inZ - z) > 0.75 && CLAMPED.add(shot.name()))
+				CreateEngines.LOGGER.warn("Showcase trailer shot {}: held inside the walls, {} blocks from its framing", shot.name(),
+					String.format(Locale.ROOT, "%.1f", Math.abs(inX - x) + Math.abs(inY - y) + Math.abs(inZ - z)));
+			x = inX;
+			y = inY;
+			z = inZ;
 		}
-		// Stay inside the courtyard: a wall is a block thick and the camera must not come out of it or look through it
-		x = Math.max(pad.getX() + PAD_X0 + 1.6, Math.min(pad.getX() + PAD_X1 - 0.6, x));
-		z = Math.max(pad.getZ() + PAD_Z0 + 1.6, Math.min(pad.getZ() + PAD_Z1 - 0.6, z));
-		y = Math.min(y, pad.getY() + WALL - 1.5);
-		// Look back at the target from where the camera ended up, so the clamps do not turn it away
+		// Look at the aim from where the camera ended up, so the clamps do not turn it away
 		double lookPitch = Math.toDegrees(Math.atan2(y - ty, Math.hypot(x - tx, z - tz)));
-		double lookYaw = Math.hypot(x - tx, z - tz) < 0.01 ? Math.toDegrees(yaw) : Math.toDegrees(Math.atan2(x - tx, tz - z));
+		double lookYaw = Math.hypot(x - tx, z - tz) < 0.01 ? yaw : Math.toDegrees(Math.atan2(x - tx, tz - z));
 		return new double[] { x, y, z, lookYaw, lookPitch };
 	}
+
+	/** The shots already reported as held in by a wall, so each is said once. */
+	private static final java.util.Set<String> CLAMPED = new java.util.HashSet<>();
 
 	private static double[] seenAt;
 	private static long seenNanos;
@@ -1984,7 +2000,7 @@ public final class ShowcaseRun {
 
 	private static final List<Cue> CUES = new ArrayList<>();
 	private static final java.util.Set<Cue> FIRED = new java.util.HashSet<>();
-	/** Shots seen through the player's own eyes, with the hotbar and the Bank Builder in hand, not a spectator's camera. */
+	/** Shots seen through the player's own eyes, with the shot's item (the Bank Builder, a filter, a dye) in hand, not a spectator's camera. */
 	private static final java.util.Map<String, java.util.function.Supplier<ItemStack>> FIRST_PERSON = java.util.Map.of(
 		"grow_engine", () -> new ItemStack(CEItems.BANK_BUILDER.get()),
 		"headphones_on", () -> new ItemStack(CEItems.HEADPHONES.get()),
@@ -2107,7 +2123,7 @@ public final class ShowcaseRun {
 
 	/**
 	 * A shot starts: the camera is a spectator's, with no interface, except in the gameplay clips, where it is the player's own
-	 * eyes with the hotbar showing and the Bank Builder in hand.
+	 * eyes with the Bank Builder in hand (the hotbar and crosshair are hidden by {@link #onRenderGuiLayer}).
 	 */
 	private static void startShot(Shot shot, Minecraft minecraft) {
 		boolean firstPerson = FIRST_PERSON.containsKey(shot.name());
@@ -2170,6 +2186,27 @@ public final class ShowcaseRun {
 		BlockPos pad = pad(scene.bay());
 		return sound.getX() >= pad.getX() + PAD_X0 && sound.getX() <= pad.getX() + PAD_X1 + 1
 			&& sound.getZ() >= pad.getZ() + PAD_Z0 && sound.getZ() <= pad.getZ() + PAD_Z1 + 1;
+	}
+
+	/**
+	 * The gameplay clips keep the player's hand and the item in it, but not the hotbar, the crosshair or the name of the item
+	 * picked: they read as a game's interface over the footage and the tall cut of the trailer shows them.
+	 */
+	private static void onRenderGuiLayer(net.neoforged.neoforge.client.event.RenderGuiLayerEvent.Pre event) {
+		var name = event.getName();
+		if (name.equals(net.neoforged.neoforge.client.gui.VanillaGuiLayers.HOTBAR)
+			|| name.equals(net.neoforged.neoforge.client.gui.VanillaGuiLayers.CROSSHAIR)
+			|| name.equals(net.neoforged.neoforge.client.gui.VanillaGuiLayers.SELECTED_ITEM_NAME))
+			event.setCanceled(true);
+	}
+
+	/**
+	 * The trailer is filmed with one lens, whatever the player's setting or the flying camera's widening would make it, so the
+	 * framing's sums hold. The hand in the first-person clips keeps its own.
+	 */
+	private static void onFov(net.neoforged.neoforge.client.event.ViewportEvent.ComputeFov event) {
+		if (event.usedConfiguredFov() && trailerStart >= 0)
+			event.setFOV(ShowcaseRunFraming.FOV);
 	}
 
 	/** A sound from another pad never starts: the engines of the other courtyards are not heard in this one. */

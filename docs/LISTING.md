@@ -209,7 +209,8 @@ in-world GameTests. If something breaks, please report it on the
 [issue tracker](https://github.com/R-unic/create-engines/issues). Block, item and fluid IDs, config keys and ranges,
 advancement IDs, the data-map formats and the public API stay stable within a major version. 2.0 was the one release that
 renamed things (advancement IDs, config files); it carries your advancements, config and casing dye across, and a release
-that changes how an existing engine behaves says so in its changelog.
+that changes how an existing engine behaves says so in its changelog. More on
+[how AI is used and what is guaranteed](https://github.com/R-unic/create-engines/blob/master/docs/AI.md).
 
 ## 🔗 Links
 
@@ -217,6 +218,36 @@ that changes how an existing engine behaves says so in its changelog.
 - [Source and issue tracker](https://github.com/R-unic/create-engines)
 - [Design notes](https://github.com/R-unic/create-engines/blob/master/docs/DESIGN.md), how the simulation works
 ```
+
+## Changelog for 2.4.0
+
+Unreleased; being written as 2.4 "Running Hot" is built. So far: fixes to the wear mode, and less work for a server. No ID, key or saved
+format changes. Changes to existing builds are listed first.
+- Changed, very large battery banks: a new setting, `limits.maxBankBatteries` (see [CONFIG.md](CONFIG.md)), limits how many touching batteries act as
+  one bank. A bank bigger than that now acts as more than one.
+- Changed, Black Box: it remembers the engine it found instead of searching for it again every second. It searches again when that engine is gone,
+  when a block beside the box changes, and every ten seconds, so after a pipe is broken further along it can take that long to notice that it no
+  longer touches the engine.
+- Changed, Pollution of the Realms with `pollutionAreaCap` set: an outlet reads the air every 3 seconds, not at every release, and counts what it has
+  released since. Gas that has thinned, or that another outlet put there, is seen at the next reading.
+- Fixed (wear mode): a new piston no longer takes over the old one's dry-running time and seizes early.
+- Fixed (wear mode), Bank Builder: swapping a standard piston for a Forged Piston now hands the old one back with its wear. Before, it came back as new,
+  and the Forged Piston took over its wear.
+- Fixed (wear mode): a gasket fitted while the mode is off, on a head that a thrown rod had broken, now leaves a sound head. Before, the head was
+  broken again when the mode came back on, and the gasket was lost with it.
+- Fixed (wear mode): a stock gasket that was fitted by hand is now lost with a head a rod goes through. Before, it could be had back, new, by breaking
+  the head with the mode off.
+- Fixed (wear mode): an engine no longer runs for a tick without its saved failures after the mode is switched.
+- Fixed (wear mode): battery wear is sent to players only when the figure their goggles show moves.
+- Faster on servers: a battery bank is walked once a second for the whole bank (before, once for every battery in it), and placing or breaking a battery
+  no longer has every other bank walked again. Switching the wear mode no longer has every engine search every other. An engine with nothing loaded
+  to wear is no longer read every tick, a Transmission no longer reads its neighbours' redstone to decide on a shift, and an engine that has not changed
+  costs less to check, as does finding geared cranks. None of these was timed.
+- Fixed, damaged saves: a starter, supercharger, crankshaft, crank throw, rotor housing, governor, MAF sensor, heat exchanger, reboiler or condenser
+  whose save held a number that is not a number (NaN) or an infinity now reads it as zero (a governor's rack position as wide open) instead of
+  running with it and writing it back. Sound saves read exactly as before.
+- Added, Bank Builder: W and X layouts. W lays three banks (the base face and the faces a quarter turn either side), X all four faces; sneak-use
+  cycles inline, vee, flat, W and X before the grade of parts. Inline, vee and flat build exactly as before.
 
 ## Changelog for 2.3.0
 

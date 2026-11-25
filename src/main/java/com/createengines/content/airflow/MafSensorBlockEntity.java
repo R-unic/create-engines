@@ -113,9 +113,9 @@ public class MafSensorBlockEntity extends SensorBlockEntity {
 	protected void read(CompoundTag tag, HolderLookup.Provider registries, boolean clientPacket) {
 		super.read(tag, registries, clientPacket);
 		onEngine = tag.getBoolean("OnEngine");
-		charge = tag.getFloat("Charge");
-		cut = tag.getFloat("Cut");
-		added = tag.getFloat("Added");
+		charge = com.createengines.content.SavedNumbers.read(tag, "Charge", 0);
+		cut = com.createengines.content.SavedNumbers.read(tag, "Cut", 0);
+		added = com.createengines.content.SavedNumbers.read(tag, "Added", 0);
 	}
 
 	@Override

@@ -6,7 +6,7 @@ An addon for [Create](https://github.com/Creators-of-Create/Create) that lets yo
 engines out of individual parts and turn them into Create rotational force. Start with a crude single cylinder, finish
 with a boosted, precision-built V12.
 
-Minecraft 1.21.1 · NeoForge 21.1.219 · Create 6.0.10
+Minecraft 1.21.1 · NeoForge 21.1.219 or newer · Create 6.0.10 (build 257 or newer, not 6.1)
 
 [Discord](https://discord.gg/QYVpy2dqGE)
 
@@ -17,7 +17,7 @@ Minecraft 1.21.1 · NeoForge 21.1.219 · Create 6.0.10
 > does, please report it on the issue tracker. Block, item and fluid IDs, config keys and ranges, advancement IDs, the
 > data-map formats and the public API stay stable within a major version. 2.0 was the one release that renamed things
 > (advancement IDs, config files): it carries your advancements, config and casing dye across, and a release that changes how
-> an existing engine behaves says so in its changelog.
+> an existing engine behaves says so in its changelog. [How AI is used, and what is guaranteed](docs/AI.md).
 
 ## Preview
 
@@ -53,6 +53,8 @@ Minecraft 1.21.1 · NeoForge 21.1.219 · Create 6.0.10
   with spark ignition for the ones that need it. Kerosene is the all-rounder between diesel and gasoline that holds out
   against boost better than gasoline; methanol carries the least in the bucket and cools the charge most, so it is the
   fuel to push a boosted build with, at a heavy fuel bill
+- Stopping an engine: a redstone signal on any block of a camshaft line closes that line's fuel rack, and full strength cuts
+  the fuel, so a lever stops the engine without emptying anything (an engine with a camshaft per bank needs a signal on each)
 - A craftable fuel chain: seeds (or saplings, sunflowers, cocoa beans, dried kelp) to plant oil to diesel, diesel to kerosene with glowstone, sugar crops to ethanol, logs and
   water to methanol over a superheated base, and biodiesel with glycerin on the
   side, all in Create basins. The loop closes: glycerin goes into engine oil and coolant, and used oil is burned as fuel or recycled into oil or charcoal
@@ -74,7 +76,7 @@ Minecraft 1.21.1 · NeoForge 21.1.219 · Create 6.0.10
 - **Oil that goes off**: a spent charge drags a little more (never stops or damages anything). Set the sump's Oil
   Exchange dial and a running engine changes its own oil, pushing out **Used Oil** that you burn, refine, coke into
   charcoal or let go. An Oil Filter slows the ageing and cleans fuel out of the oil
-- **Engine temperature**: a cold engine drags until it warms through, and a cooled one breathes better (about 4 to 9
+- **Engine temperature**: a cold engine drags until it warms through, and a cooled one breathes better (about 6 to 9
   percent more power). Coolant, or just water, goes into the same sump and is spent carrying heat away, so there is no
   radiator to fit. Nothing ever overheats, and nothing wears out unless the wear mode is on
 - **Warm-up and cooling**: a cold block burns fuel a little worse (ethanol and pressed oil most, gasoline least) and
@@ -96,6 +98,11 @@ Minecraft 1.21.1 · NeoForge 21.1.219 · Create 6.0.10
   other hand lays the engine out from the parts you carry, it exports as a Create schematic, it copies out as text and pastes
   in again (the server checks every block and dial), and a Framed Blueprint hangs it on a wall
 - Governors and MAF sensors for the late game
+- **Wear and tear, opt-in** (`features.wearMode`, off by default): pistons, connecting rods, head gaskets, apex seals and
+  batteries wear with speed, heat, boost and lack of oil. A badly worn rod can be thrown, a gasket blown, a dry piston
+  seized, and a spark engine that knocks wears faster. Four head gaskets (stock, cardboard, rubber, copper), Apex Seals and
+  a Service Kit to put light wear right. Off, nothing wears and every engine runs as before. The numbers are in
+  [docs/WEAR.md](docs/WEAR.md)
 - **Engine readouts**: a Display Link set against a crankshaft shows an engine's state, speed, load, temperature and
   oil on a display board or nixie tubes, and a comparator reads any of an oil sump's tanks, so a pump or an alarm can
   keep the oil topped up
@@ -144,10 +151,13 @@ Minecraft 1.21.1 · NeoForge 21.1.219 · Create 6.0.10
 
 The server config (`serverconfig/create_engines-v2-server.toml` in the world) is grouped into `[calibration]`
 (`stressPerTorque`, the inertia and friction values), `[limits]` (how far the scanner follows a crankshaft, a manifold or a
-coupling), `[balance]` multipliers (`fuelConsumption`, `precisionBonus`, `boostStrength`, `rotaryPower`, `heatRecoveryOutput`,
+coupling, how big a battery bank gets, and the range a Throttle Body's dial offers), `[balance]` multipliers (`fuelConsumption`, `precisionBonus`, `boostStrength`, `rotaryPower`, `heatRecoveryOutput`,
 `coolingBonus`, `torsionalFlex`, `alternatorEnergy`), `[features]` switches (`forcedInduction`, `sparkFouling`, `oilDilution`,
-`oilAgeing`, `engineTemperature`, `pilotInjection`, `rotaryEngines`, `heatRecovery`, `batteryCold`, `crankingDraw`) and `[compat]` (`altitudeThinning`, `sableAirPressure`, `altitudeStart`, `altitudeScale`, `altitudeFloor`, and
-`pollution`, `pollutionRate`, `carbonRate` and `sulfurRate` for Pollution of the Realms), so a modpack can rebalance without code. Turning a feature off
+`oilAgeing`, `engineTemperature`, `pilotInjection`, `rotaryEngines`, `heatRecovery`, `batteryCold`, `crankingDraw`, `meterAllHeads`,
+`wearMode`) and `[compat]` (`altitudeThinning`, `sableAirPressure`, `altitudeStart`, `altitudeScale`, `altitudeFloor`, `fuelFire`,
+`fuelFireByVolatility`, and `pollution`, `pollutionRate`, `carbonRate`, `sulfurRate`, `pollutionAreaCap` and
+`pollutionEngineCeiling` for Pollution of the Realms; every setting with its default and range is in
+[docs/CONFIG.md](docs/CONFIG.md)), so a modpack can rebalance without code. Turning a feature off
 never removes blocks; they stop doing that job. The first time a world loads in 2.0 it reads the 1.x file
 (`create_engines-server.toml`) beside it and carries every value over, and the log says what moved. The client config
 (`create_engines-v2-client.toml`: `[effects]` `particles`, `density` and `photosensitive`, `[volume]` `bang`, `engineNote`, `mechanical` and
@@ -156,7 +166,7 @@ takes out everything that flashes or flickers (firing flashes, flame and sparks,
 Fuel properties are a datapack data map (`data_maps/fluid/fuel.json`), so other mods' fluids can be made into fuels.
 
 For pack makers, three config presets ship in the jar (`config_presets/casual.toml`, `standard.toml`, `expert.toml`): copy
-their `[balance]` and `[features]` tables over the ones in the config. **Frozen at 2.0 (API version 1.1.0, see docs/API.md):**
+their `[balance]` and `[features]` tables over the ones in the config. **Frozen at 2.0 and only added to since (the API's own version is in docs/API.md):**
 parts as data (`part_effects/<part>.json` for the four precision parts, and a part stats data map,
 `data_maps/block/part_stats.json`, with optional scales on a cylinder's stats, keyed by `create_engines:cylinder`,
 `create_engines:precision_cylinder` or `create_engines:rotor_housing`), and a public API (`com.createengines.api`:

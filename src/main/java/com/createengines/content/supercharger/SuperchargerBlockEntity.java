@@ -202,9 +202,9 @@ public class SuperchargerBlockEntity extends KineticBlockEntity implements Engin
 	protected void read(CompoundTag tag, HolderLookup.Provider registries, boolean clientPacket) {
 		super.read(tag, registries, clientPacket);
 		served = tag.getInt("Served");
-		boost = tag.getFloat("Boost");
-		bypass = tag.getFloat("Bypass");
-		drag = tag.getFloat("Drag");
+		boost = com.createengines.content.SavedNumbers.read(tag, "Boost", 0);
+		bypass = com.createengines.content.SavedNumbers.read(tag, "Bypass", 0);
+		drag = com.createengines.content.SavedNumbers.read(tag, "Drag", 0);
 		primaryPos = NbtUtils.readBlockPos(tag, "Primary")
 			.orElse(null);
 	}

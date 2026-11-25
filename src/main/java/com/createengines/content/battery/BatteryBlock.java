@@ -85,11 +85,8 @@ public class BatteryBlock extends Block implements IWrenchable, IBE<BatteryBlock
 			&& (property == CHARGE || property == NORTH || property == EAST || property == SOUTH || property == WEST || property == UP);
 	}
 
-	/**
-	 * Bumped whenever a battery is placed or removed, so a battery that has worked out its bank knows to do it again. Shared by
-	 * every level and both sides: a change anywhere only costs the banks elsewhere one more search.
-	 */
-	static final AtomicInteger TOPOLOGY = new AtomicInteger();
+	/** Bumped whenever a battery is placed or removed. Nothing in play reads it: it is how a test tells that from a change of state. */
+	private static final AtomicInteger TOPOLOGY = new AtomicInteger();
 
 	/** How many times a battery has been placed or removed since the game started, for the tests. */
 	public static int topologyForTests() {
@@ -177,11 +174,20 @@ public class BatteryBlock extends Block implements IWrenchable, IBE<BatteryBlock
 		if (oldState.is(state.getBlock()))
 			return;
 		TOPOLOGY.incrementAndGet();
+		// The banks this one joins are walked again. Its own block entity may not be there yet, and has walked nothing
+		for (Direction direction : Direction.values())
+			BatteryBank.forget(level, pos.relative(direction));
 		EngineTopology.markDirty(level, pos);
 	}
 
 	@Override
 	protected void onRemove(BlockState state, Level level, BlockPos pos, BlockState newState, boolean movedByPiston) {
+		// The bank it leaves is walked again, which takes asking it while it is still here. Banks elsewhere are left alone
+		if (!newState.is(state.getBlock())) {
+			BatteryBank.forget(level, pos);
+			for (Direction direction : Direction.values())
+				BatteryBank.forget(level, pos.relative(direction));
+		}
 		IBE.onRemove(state, level, pos, newState);
 		if (newState.is(state.getBlock()))
 			return;

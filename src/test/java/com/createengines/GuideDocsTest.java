@@ -169,4 +169,24 @@ class GuideDocsTest {
 		}
 		assertEquals(List.of(), broken);
 	}
+
+	/**
+	 * The API version is said in one place, the first line of docs/API.md, and other pages point there instead of copying it.
+	 * It drifted before: the README and the addon guide said 1.1.0 for a while after the API reached 1.2.0.
+	 */
+	@Test
+	void theApiPageNamesTheApiVersionTheCodeHasAndNoOtherPageCopiesIt() throws IOException {
+		String version = com.createengines.api.ApiVersion.VERSION;
+		String firstLine = text(Path.of("docs/API.md")).lines().findFirst().orElse("");
+		assertTrue(firstLine.contains("API version " + version),
+			"docs/API.md should open with \"API version " + version + "\", the version in ApiVersion: " + firstLine);
+		Pattern copy = Pattern.compile("API (?:version )?\\d+\\.\\d+\\.\\d+");
+		List<String> copies = new ArrayList<>();
+		for (Path page : List.of(Path.of("README.md"), ADDONS, DATA, Path.of("docs/PACKS.md"), Path.of("docs/CONFIG.md"))) {
+			Matcher m = copy.matcher(text(page));
+			while (m.find())
+				copies.add(page + ": " + m.group());
+		}
+		assertEquals(List.of(), copies, "say the API version only in docs/API.md and link to it");
+	}
 }

@@ -172,7 +172,7 @@ public class HeatExchangerBlockEntity extends SensorBlockEntity {
 	protected void read(CompoundTag tag, HolderLookup.Provider registries, boolean clientPacket) {
 		super.read(tag, registries, clientPacket);
 		onEngine = tag.getBoolean("OnEngine");
-		heat = tag.getFloat("Heat");
+		heat = com.createengines.content.SavedNumbers.read(tag, "Heat", 0);
 		heatLevel = Math.clamp(tag.getInt("HeatLevel"), HeatRecovery.NONE, HeatRecovery.SEETHE);
 	}
 

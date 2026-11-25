@@ -450,7 +450,7 @@ public class ColumnPortBlockEntity extends SmartBlockEntity implements IHaveGogg
 			tag.getInt("BlockedZ"));
 		heat = Heat.values()[Math.clamp(tag.getInt("Heat"), 0, Heat.values().length - 1)];
 		limit = Limit.values()[Math.clamp(tag.getInt("Limit"), 0, Limit.values().length - 1)];
-		rate = tag.getFloat("Rate");
+		rate = com.createengines.content.SavedNumbers.read(tag, "Rate", 0);
 		wrongCatalyst = tag.getBoolean("WrongCatalyst");
 		if (tag.contains("Catalyst")) {
 			// Only the stack in the one slot is read: a saved size from a damaged file must not size the handler

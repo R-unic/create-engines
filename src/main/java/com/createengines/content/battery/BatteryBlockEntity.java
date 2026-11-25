@@ -47,7 +47,7 @@ public class BatteryBlockEntity extends SmartBlockEntity implements IHaveGoggleI
 	private static final int SYNC_INTERVAL = 10;
 	/** Ticks between looking at the weather and the blocks beside the battery. */
 	private static final int COLD_INTERVAL = 40;
-	/** Ticks a bank, once found, is used before it is looked for again (a change to any battery looks sooner). */
+	/** Ticks a bank, once found, is used before it is looked for again (a change to the bank looks sooner). */
 	private static final int BANK_REFRESH = 20;
 	/** How quickly the charge rate follows the last tick's change: about the last second. */
 	private static final float RATE_SMOOTHING = 0.05f;
@@ -70,9 +70,8 @@ public class BatteryBlockEntity extends SmartBlockEntity implements IHaveGoggleI
 	private float lastCharge = -1;
 	private int lastSignal = -1;
 
-	private List<BatteryBlockEntity> bank = List.of();
-	private int bankTopology = -1;
-	private long bankTime = Long.MIN_VALUE / 2;
+	/** The last walk of this battery's bank, shared with the rest of the bank (see {@link BatteryBank#look}). */
+	@Nullable BatteryBank.Look look;
 
 	public BatteryBlockEntity(BlockEntityType<?> type, BlockPos pos, BlockState state) {
 		super(type, pos, state);
@@ -237,19 +236,18 @@ public class BatteryBlockEntity extends SmartBlockEntity implements IHaveGoggleI
 		}
 	};
 
-	/** The batteries that touch this one, and those that touch them, this one included. Looked for again about once a second. */
+	/**
+	 * The batteries that touch this one, and those that touch them, this one included. Looked for again about once a second, by
+	 * whichever of them asks first, for them all.
+	 */
 	public List<BatteryBlockEntity> bank() {
 		if (level == null)
 			return List.of(this);
 		long now = level.getGameTime();
-		if (bankTopology != BatteryBlock.TOPOLOGY.get() || now - bankTime >= BANK_REFRESH || now < bankTime) {
-			bank = List.copyOf(BatteryBank.around(level, worldPosition));
-			if (bank.isEmpty())
-				bank = List.of(this);
-			bankTopology = BatteryBlock.TOPOLOGY.get();
-			bankTime = now;
-		}
-		return bank;
+		BatteryBank.Look current = look;
+		if (current == null || current.stale || now - current.time >= BANK_REFRESH || now < current.time)
+			current = BatteryBank.look(level, this, now);
+		return current.members;
 	}
 
 	/** What a comparator beside this battery reads: the charge of its whole bank, 0 to 15. */

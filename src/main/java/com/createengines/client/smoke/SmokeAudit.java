@@ -90,6 +90,8 @@ public final class SmokeAudit {
 	private static boolean measuring;
 	private static long lastFrame;
 	private static PonderAudit ponder;
+	private static ThreadChurnAudit churn;
+	private static final int LAST_PHASE = 5;
 	private static final Path DIRECTORY = Path.of("smoke", "client");
 
 	private SmokeAudit() {
@@ -158,14 +160,15 @@ public final class SmokeAudit {
 				case 1 -> content(t);
 				case 2 -> ponderPhase(t);
 				case 3 -> fleet(t);
-				case 4 -> gallery(t);
+				case 4 -> threads(t);
+				case 5 -> gallery(t);
 				default -> true;
 			};
 			if (done) {
 				phase++;
 				checkpoint();
 				phaseStart = ticksInWorld + 1;
-				if (phase > 4)
+				if (phase > LAST_PHASE)
 					finish(true);
 			}
 		} catch (Throwable throwable) {
@@ -174,7 +177,7 @@ public final class SmokeAudit {
 			phase++;
 			checkpoint();
 			phaseStart = ticksInWorld + 1;
-			if (phase > 4)
+			if (phase > LAST_PHASE)
 				finish(true);
 		}
 	}
@@ -221,6 +224,13 @@ public final class SmokeAudit {
 		}
 		ponder.coverage(REPORT);
 		return true;
+	}
+
+	private static boolean threads(int t) {
+		phaseName = "threads";
+		if (churn == null)
+			churn = new ThreadChurnAudit(REPORT, origin, FLEET);
+		return churn.tick(t);
 	}
 
 	/** Where each engine of the fleet stands, relative to the first. */
@@ -545,6 +555,8 @@ public final class SmokeAudit {
 			sample(true);
 			measuring = false;
 			conclusions();
+			// After the last heap reading and frame: reading every readout allocates, and inside the measured run it showed as heap growth
+			ReadoutAudit.blockReadouts(REPORT, "on the running fleet");
 			return true;
 		}
 		return false;
@@ -727,6 +739,7 @@ public final class SmokeAudit {
 			}
 		}
 		if (t == 40 + shots * 30 + 10) {
+			ReadoutAudit.blockReadouts(REPORT, "in the gallery");
 			measuring = false;
 			return true;
 		}

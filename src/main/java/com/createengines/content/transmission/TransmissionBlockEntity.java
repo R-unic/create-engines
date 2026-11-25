@@ -134,9 +134,13 @@ public class TransmissionBlockEntity extends SplitShaftBlockEntity {
 		return gear;
 	}
 
-	/** Whether auto is in charge: picked by a redstone signal, or on the panel with no signal. */
+	/**
+	 * Whether auto is in charge: picked by a redstone signal, or on the panel with no signal. It reads the signal as {@link #updateGear} last
+	 * saw it (at each neighbour change, and again each lazy tick), which on a client is the one the server sent, so it costs no look at
+	 * the neighbours.
+	 */
 	public boolean isAuto() {
-		return panel != null && settingUnder(signalNow()) == Gears.AUTO;
+		return panel != null && settingUnder(signalSetting) == Gears.AUTO;
 	}
 
 	/** A signal's setting if there is one, otherwise the panel's. */
@@ -324,8 +328,7 @@ public class TransmissionBlockEntity extends SplitShaftBlockEntity {
 	public boolean addToGoggleTooltip(List<Component> tooltip, boolean isPlayerSneaking) {
 		CELang.translate("goggles.transmission")
 			.forGoggles(tooltip);
-		// The synced signal rather than a live look, as the client is told what the server saw
-		boolean auto = panel != null && settingUnder(signalSetting) == Gears.AUTO;
+		boolean auto = isAuto();
 		if (gear == Gears.NEUTRAL)
 			GoggleLines.add(CELang.translate("goggles.transmission.neutral")
 				.style(ChatFormatting.GOLD), tooltip, 1);

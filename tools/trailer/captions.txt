@@ -1,20 +1,21 @@
 # The words of the trailer, read by post.py and set in Minecraft's own font. TrailerCoverageTest keeps this in step with the
-# shots of client/ShowcaseRun. The captions run in the order of the shots there, so they read as one story.
+# shots of client/ShowcaseRun. The order and length of the full cut are in edit.txt; the captions read as one story in that order.
 #
 # title, subtitle        the opening card (under the logo); the full cut opens instead on the title_sequence shot, with the title
 #                        over it and that shot's caption as the line under it
 # outro, outro_sub       the closing card (post.py adds the version line from gradle.properties)
 # outro_links         the line under that telling viewers the download links are in the video description
 # outro_notice           the AI notice at the foot of the closing card
-# caption <shot>         a line shown over that shot in the full trailer (every shot has one)
+# caption <shot>         the line shown over that shot in the full trailer (every shot has one; a `quiet` piece of edit.txt
+#                        does not show its own, the one before stays up)
 # short_shots            the shots of the teaser and the vertical cut, in order, three seconds each
-# short_caption <shot>   the few words over each of those
+# short_caption <shot>   the few big words over each of those
 # thumbnail              the shot the thumbnail is taken from
 # vertical_thumbnail     the shot the 9:16 thumbnail (Shorts) is taken from, vertical_thumbnail_at seconds into it; vertical_title is its two big lines split by |, vertical_sub the small one
 # description            the pitch at the top of the video description (post.py writes run/trailer/description.txt with every full cut)
 # link <name>            a line of the description's Links list: "link GitHub: https://..." (add the Modrinth and CurseForge pages here
 #                        once their addresses are fixed; post.py never guesses them)
-# chapter <shot>         a chapter of the description starting at that shot (a shot a run lacks is skipped; chapters under ten seconds are folded into the one before)
+# chapter <shot>         a chapter: the gold line over its captions, a flash and a hit where it starts in the cut, and a chapter of the description starting at that shot (a shot a run lacks is skipped; chapters under ten seconds are folded into the one before)
 # Keep captions to one line (about 60 characters at 1080p), plain ASCII (the font's own characters), and true: say only what
 # the mod does.
 
@@ -30,57 +31,58 @@ link GitHub: https://github.com/R-unic/create-engines
 link Report a bug: https://github.com/R-unic/create-engines/issues
 link Discord: https://discord.gg/QYVpy2dqGE
 
+chapter first_rises: One cylinder
 chapter title_sequence: Create: Engine Engineer
-chapter first_rises: Building an engine
-chapter inline6_pass: Layouts
+chapter hero_v8: Layouts
 chapter inline6_turbo: Forced induction
-chapter heavy_starter: The big block
+chapter grow_engine: Build it big
 chapter instruments_dyno: Instruments
 chapter electric_alternator: The electrical chain
+chapter service_sump: The service bay
 chapter casing_styles: Casing styles
 chapter factory_flywheel: Drivetrain and factory
-chapter service_sump: The service bay
 chapter rover_departs: Engine on wheels
 chapter v8_exhaust_dusk: Fuels and the refinery
+chapter factory_wide: All together
 
 caption title_sequence: Real combustion engines for Create
-caption hero_v8: Real combustion engines, built in Create.
-caption first_rises: One cylinder. One flywheel. Where every engine starts.
-caption grow_engine: One cylinder to a boosted precision V16, a click at a time.
-caption inline6_pass: Manifolds, throttles and mufflers shape how it breathes.
-caption flat6_track: Inline, flat or V. The layout is yours to choose.
-caption rotary_orbit: Or go rotary, with a twin-rotor Wankel.
-caption inline6_turbo: Turbocharged, with a rain cap flapping on the stack.
-caption blown_i6_blower: Prefer a blower? Drive it, then cool the charge.
-caption heavy_starter: A heavy starter cranks a cold V16 until it catches.
-caption headphones_on: Noise-cancelling headphones take the edge off the roar.
-caption instruments_dyno: Strap it to the dynamometer and read the truth.
-caption instruments_governor: A governor holds the speed you ask of it.
+caption first_rises: Every engine starts with one cylinder.
+caption hero_v8: A V8, built in Create.
+caption grow_engine: Grow it a click at a time, up to a boosted V16.
+caption inline6_pass: Inline, flat, V or rotary.
+caption flat6_track: Flat, opposed cylinders.
+caption rotary_orbit: Even a twin-rotor Wankel.
+caption inline6_turbo: Bolt on a turbocharger.
+caption blown_i6_blower: Or drive a supercharger, then cool the charge.
+caption heavy_starter: A heavy starter cranks a cold V16 to life.
+caption headphones_on: Too loud? Noise-cancelling headphones.
+caption instruments_dyno: Put it on the dynamometer and read the truth.
+caption instruments_governor: A governor holds the speed you set.
 caption electric_alternator: An alternator turns crank power into charge.
 caption electric_battery: Batteries in three sizes join into one bank.
-caption electric_heads: Spend that charge on ignition coils and injector assists.
-caption casing_styles: Four casing styles dress the shafts and cogs of the line.
-caption casing_dye: Dye the casing any of sixteen colours.
-caption factory_flywheel: A dual-mass flywheel smooths the ripple out of the crank.
-caption factory_gearbox: Thirteen gears, picked by hand or shifted for you.
-caption factory_line: Then put the power to work on Create's own machines.
+caption electric_heads: Spend it on ignition coils and injector assists.
+caption casing_styles: Four casing styles for the shafts and cogs.
+caption casing_dye: In any of sixteen colours.
+caption factory_flywheel: A dual-mass flywheel smooths out the crank.
+caption factory_gearbox: Thirteen gears, by hand or shifted for you.
+caption factory_line: Then put the power to work on Create's machines.
 caption service_sump: Fit an oil filter in the pan.
-caption service_oil: Pumps take used oil to a heated mixer and return it clean.
-caption service_cans: Fill cans, belt them along, drain them into the engine's tank.
-caption rover_departs: Put it on wheels with Create Aeronautics, and it drives.
-caption rover_wheels: The crank line turns the axles through gearboxes.
-caption v8_exhaust_dusk: Diesel, gasoline, ethanol, kerosene or methanol.
+caption service_oil: Used oil goes through a heated mixer and comes back clean.
+caption service_cans: Fill cans, belt them along, drain them into the tank.
+caption rover_departs: With Create Aeronautics, put it on wheels and drive.
+caption rover_wheels: The crank drives a wheel through two gearboxes.
+caption v8_exhaust_dusk: Run diesel, gasoline, ethanol, kerosene or methanol.
 caption refinery_column: Refine your own fuel in a full-size column.
-caption refinery_base: A pump feeds the column and a funnel adds the coal catalyst.
-caption refinery_tops: A second pump draws the finished fuel out of the top.
-caption refinery_flare: One column. Diesel, kerosene, gasoline and methanol.
-caption factory_wide: From a single cylinder to a working factory.
+caption refinery_base: A pump feeds it, a funnel adds the coal catalyst.
+caption refinery_tops: A second pump draws the finished fuel off the top.
+caption refinery_flare: One column: diesel, kerosene, gasoline and methanol.
+caption factory_wide: From one cylinder to a working factory.
 
 short_shots: grow_engine inline6_turbo refinery_column factory_wide
-short_caption grow_engine: Build real engines.
-short_caption inline6_turbo: Add boost.
-short_caption refinery_column: Refine your own fuel.
-short_caption factory_wide: Power your factory.
+short_caption grow_engine: Build real engines
+short_caption inline6_turbo: Add boost
+short_caption refinery_column: Refine your fuel
+short_caption factory_wide: Power your factory
 
 thumbnail: hero_v8
 

@@ -486,6 +486,8 @@ public class BankBuilderItem extends Item {
 	private static void fillCylinder(Level level, BlockPos pos, BlockState state, Supplies supplies, boolean precision,
 									 int[] counts) {
 		boolean changed = false;
+		BlockState before = state;
+		boolean swapped = false;
 		if (!state.getValue(CylinderBlock.HAS_PISTON)) {
 			ItemEntry<Item> taken = precision ? supplies.takeItem(CEItems.FORGED_PISTON, CEItems.PISTON)
 				: supplies.takeItem(CEItems.PISTON, CEItems.FORGED_PISTON);
@@ -498,7 +500,10 @@ public class BankBuilderItem extends Item {
 		} else if (precision && !state.getValue(CylinderBlock.FORGED_PISTON)
 			&& supplies.takeItem(CEItems.FORGED_PISTON) != null) {
 			state = state.setValue(CylinderBlock.FORGED_PISTON, true);
-			supplies.giveBack(CEItems.PISTON.asStack());
+			// The piston that comes out is as worn as it was in the bore, like one taken out by hand
+			supplies.giveBack(WearService.withWear(CEItems.PISTON.asStack(),
+				level.getBlockEntity(pos) instanceof com.createengines.content.cylinder.CylinderBlockEntity worn ? worn.pistonWear() : 0));
+			swapped = true;
 			counts[1]++;
 			changed = true;
 		}
@@ -507,8 +512,13 @@ public class BankBuilderItem extends Item {
 			counts[0]++;
 			changed = true;
 		}
-		if (changed)
-			level.setBlockAndUpdate(pos, state);
+		if (!changed)
+			return;
+		level.setBlockAndUpdate(pos, state);
+		WearService.partsChanged(level, pos, before, state);
+		// A piston swapped for another leaves HAS_PISTON as it was, which partsChanged cannot see
+		if (swapped && level.getBlockEntity(pos) instanceof com.createengines.content.cylinder.CylinderBlockEntity body)
+			body.resetPiston();
 	}
 
 	private static boolean isCrank(BlockState state, Axis axis) {

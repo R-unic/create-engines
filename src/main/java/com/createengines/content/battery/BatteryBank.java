@@ -5,7 +5,9 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicInteger;
 
+import com.createengines.config.CEConfig;
 import com.createengines.engine.sim.ChargePriority;
 
 import net.minecraft.core.BlockPos;
@@ -26,14 +28,55 @@ public final class BatteryBank {
 	private BatteryBank() {
 	}
 
-	/** The batteries in the bank that includes the one at {@code start}, in the order the walk met them, {@code start}'s first. */
+	/** One walk of a bank, shared by every battery it found, so that a bank is walked once however many of its batteries ask. */
+	static final class Look {
+		final List<BatteryBlockEntity> members;
+		final long time;
+		/** Set when a battery is placed or taken out of this bank or beside it: whoever asks next walks it again. */
+		boolean stale;
+
+		Look(List<BatteryBlockEntity> members, long time) {
+			this.members = members;
+			this.time = time;
+		}
+	}
+
+	private static final AtomicInteger WALKS = new AtomicInteger();
+
+	/** How many times a bank has been walked since the game started, on either side, for the tests. */
+	public static int walksForTests() {
+		return WALKS.get();
+	}
+
+	/** Walks the bank {@code asker} is in and hands what was found to every battery in it. */
+	static Look look(Level level, BatteryBlockEntity asker, long now) {
+		List<BatteryBlockEntity> members = List.copyOf(around(level, asker.getBlockPos()));
+		Look look = new Look(members.isEmpty() ? List.of(asker) : members, now);
+		for (int i = 0, n = members.size(); i < n; i++)
+			members.get(i).look = look;
+		asker.look = look;
+		return look;
+	}
+
+	/** The walk the battery at {@code pos} holds, if there is one, is out of date, and so is every battery's that shares it. */
+	static void forget(Level level, BlockPos pos) {
+		if (level.isLoaded(pos) && level.getBlockEntity(pos) instanceof BatteryBlockEntity battery && battery.look != null)
+			battery.look.stale = true;
+	}
+
+	/**
+	 * The batteries in the bank that includes the one at {@code start}, in the order the walk met them, {@code start}'s first. The
+	 * walk stops at {@code limits.maxBankBatteries}: a bigger bank than that acts as more than one.
+	 */
 	public static List<BatteryBlockEntity> around(Level level, BlockPos start) {
+		WALKS.incrementAndGet();
+		int limit = CEConfig.MAX_BANK_BATTERIES.get();
 		List<BatteryBlockEntity> found = new ArrayList<>();
 		Set<BlockPos> seen = new HashSet<>();
 		ArrayDeque<BlockPos> queue = new ArrayDeque<>();
 		seen.add(start.immutable());
 		queue.add(start.immutable());
-		while (!queue.isEmpty()) {
+		while (!queue.isEmpty() && found.size() < limit) {
 			BlockPos at = queue.poll();
 			if (!level.isLoaded(at) || !(level.getBlockEntity(at) instanceof BatteryBlockEntity battery) || battery.isRemoved())
 				continue;

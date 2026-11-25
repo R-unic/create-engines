@@ -8,6 +8,7 @@ import com.createengines.content.cylinder.CylinderBlockEntity;
 import com.createengines.content.head.CylinderHeadBlockEntity;
 import com.createengines.content.rotor.RotorHousingBlockEntity;
 import com.createengines.engine.EngineSummary;
+import com.createengines.engine.WearKeeper;
 import com.createengines.registry.CEItems;
 
 import net.minecraft.gametest.framework.AfterBatch;
@@ -33,6 +34,13 @@ public class WearToggleGameTests {
 	private static final String WRECK = "wear-toggle-wreck";
 	private static final String ROTOR = "wear-toggle-rotor";
 	private static final String ITEMS = "wear-toggle-items";
+	private static final String SWITCH_TICK = "wear-toggle-tick";
+
+	@AfterBatch(batch = SWITCH_TICK)
+	public static void restoreAfterSwitchTick(ServerLevel level) {
+		WearKeeper.filmOverride = null;
+		GameTestConfig.wearMode(false);
+	}
 
 	@AfterBatch(batch = HEAD_AND_SEIZURE)
 	public static void restoreAfterHead(ServerLevel level) {
@@ -116,8 +124,46 @@ public class WearToggleGameTests {
 		helper.assertTrue(gasket.isEmpty(), "The head takes a gasket");
 		GameTestConfig.wearMode(true);
 		helper.assertTrue(!cylinder.showsThrown(), "The wreck the parts went in over does not come back");
-		helper.assertTrue(head.showsBroken(), "The broken head, which was not replaced, does");
+		helper.assertTrue(!head.showsBroken(), "Nor does the break the gasket went in over");
 		helper.succeed();
+	}
+
+	/**
+	 * The old controller is ticked past two wearing steps right after the switch, before its replacement is built. The film override is
+	 * read once by every wearing step, so it counts them.
+	 */
+	@GameTest(template = "empty", timeoutTicks = 400, batch = SWITCH_TICK)
+	public static void theTickThatSeesTheModeSwitchedOnWearsNothingAndTheRebuiltEngineHasTheSavedFault(GameTestHelper helper) {
+		GameTestConfig.wearMode(false);
+		TestEngine.build(helper.getLevel(), helper.absolutePos(net.minecraft.core.BlockPos.ZERO), true);
+		CylinderBlockEntity cylinder = helper.getBlockEntity(TestEngine.CYLINDER);
+		cylinder.seize();
+		helper.runAtTickTime(100, () -> {
+			CrankshaftBlockEntity crank = helper.getBlockEntity(TestEngine.PRIMARY);
+			var old = crank.controller();
+			helper.assertTrue(old != null && summary(helper).failures() == 0, "No failure counts with the mode off: " + summary(helper));
+			GameTestConfig.wearMode(true);
+			int[] steps = new int[1];
+			WearKeeper.filmOverride = () -> {
+				steps[0]++;
+				return 1;
+			};
+			try {
+				for (int tick = 0; tick < 2 * WearKeeper.INTERVAL; tick++)
+					old.tick();
+			} finally {
+				WearKeeper.filmOverride = null;
+			}
+			helper.assertTrue(steps[0] == 0, "An engine built with the mode off ran " + steps[0] + " wearing steps with it on");
+			helper.runAfterDelay(1, () -> {
+				helper.assertTrue(crank.controller() != old, "It is built again on the tick that saw the switch");
+				helper.runAfterDelay(12, () -> {
+					helper.assertTrue(summary(helper).failures() != 0 && summary(helper).firing() == 0,
+						"and the new one has the saved seizure: " + summary(helper));
+					helper.succeed();
+				});
+			});
+		});
 	}
 
 	@GameTest(template = "empty", timeoutTicks = 1200, batch = ROTOR)

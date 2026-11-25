@@ -1,33 +1,44 @@
-"""Cuts the trailer: a title card with the wordmark, the recording with a caption over each shot, an end card, the engine sound
-from the game and the music.
+"""Cuts the trailer from the recordings: the shots in the order and at the lengths of edit.txt, graded and letterboxed, a
+caption under each with its chapter's name over it, a flash and a hit where a chapter starts, the title over the title shot,
+an end card, and the game's sound mixed with the music, which drops when an engine is the point of a shot.
 
     python tools/trailer/post.py --raw RAW.mp4 --shots trailer_shots.json --offset SECONDS --out trailer.mp4
         [--cut full|teaser|vertical] [--audio GAME.wav --audio-offset SECONDS] [--music FILE] [--no-music]
         [--thumbnail thumbnail.png]   (with --cut full: the 16:9 still; with --cut vertical: the 9:16 one for Shorts)
 
 RAW.mp4 is the screen recording and --offset is how many seconds into it the first shot began (record.py measures that, and
-the same for the recording of the game's sound, GAME.wav). The words are in tools/trailer/captions.txt and are drawn in
-Minecraft's own font (mcfont.py), as pictures that ffmpeg lays over the footage. The music is, in order: --music, the first
-file in tools/trailer/music/, or a backing track that tools/trailer/music.py makes.
+the same for the recording of the game's sound, GAME.wav). The words are in tools/trailer/captions.txt, the edit in
+tools/trailer/edit.txt, and the words are drawn in Minecraft's own font (mcfont.py). The music is, in order: --music, the
+first file in tools/trailer/music/, or a backing track that tools/trailer/music.py makes; the hits come from sfx.py.
 
---cut full is the whole trailer. teaser is four three-second shots (the `short_shots` of captions.txt) between short cards,
-vertical is the same teaser cropped to 9:16 for phones. Every cut is a whole number of bars (three seconds, the music's tempo)
-and every shot starts on a bar, so the cuts fall on the beat. A .srt of the captions is written beside the video.
+--cut full is the whole trailer. teaser is a title card, four three-second shots (the `short_shots` of captions.txt) with a
+few big words each, and an end card; vertical is the same teaser cropped to 9:16 for phones. Every piece lasts a whole number
+of half bars of the music (80 beats a minute), so the cuts fall on the beat. A .srt of the captions is written beside the
+video, and the full cut also writes the video description.
 
-Needs ffmpeg (winget install Gyan.FFmpeg) and Pillow.
+How it is made: every piece of the cut is rendered on its own (its stretch of the recording, sped up if edit.txt says so,
+graded, letterboxed, with its flash, caption and fades), the pieces are joined, and the sound is mixed in numpy and brought to
+YouTube's loudness (-14 LUFS, true peak -2 dB, which leaves the AAC encoder room) by ffmpeg's loudnorm in two passes.
+
+Needs ffmpeg (winget install Gyan.FFmpeg), Pillow and numpy.
 """
 import argparse
 import json
 import os
+import re
 import shutil
 import subprocess
 import sys
 import tempfile
+import wave
+from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
+import numpy as np
 from PIL import Image, ImageDraw, ImageEnhance, ImageFilter
 
 import mcfont
+import sfx
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 import create_lettering  # noqa: E402  (Create's logo and the "CREATE" block letters, side by side)
@@ -37,21 +48,31 @@ ROOT = HERE.parents[1]
 LOGO = ROOT / "docs" / "images" / "icon.png"
 WORDMARK = ROOT / "docs" / "images" / "wordmark.png"  # the gold block-letter title, 2000x650 on transparent
 BAR = 3.0  # seconds of one bar at the music's tempo (music.py: 80 beats a minute)
-FADE = 1.0  # seconds a card and the footage cross-fade for
+FPS = 60
+RATE = sfx.RATE
 BACKGROUND = (14, 14, 17, 255)
 COPPER = (184, 115, 51, 255)
-GOLD = (255, 170, 0)  # Minecraft's gold, for the line under the title
+GOLD = (255, 170, 0)  # Minecraft's gold
 WHITE = (255, 255, 255)
 GREY = (170, 170, 170)
-SHORT_SHOT_SECONDS = BAR
-TITLE_SHOT = "title_sequence"  # the opening shot of the full cut: the title lies over it instead of a dark card before it
+INK = (20, 12, 8, 255)  # the dark outline of the big words
+TITLE_SHOT = "title_sequence"  # the shot the title lies over
+END_CARD = 2 * BAR  # seconds the end card holds in the full cut
+SHORT_SHOT = BAR  # seconds of each teaser shot
+# A light touch, close to the game's own look: a slight S-curve, a hint of warm highlights and cool shadows, a little more
+# colour and edge, and a faint vignette (a stronger grade was tried and judged too much)
+GRADE = ("curves=master='0/0 0.25/0.235 0.75/0.765 1/1',colorbalance=rs=-0.01:bs=0.015:rh=0.02:bh=-0.02,"
+         "eq=saturation=1.05,unsharp=5:5:0.2,vignette=angle=PI/8")
+LETTERBOX = 104  # pixels of black at the top and the bottom of the wide cut: 2.2:1, which also hides the hotbar's row
 
-# What differs between the wide and the tall cut: the picture, the cards' layout and the caption size
+# What differs between the wide and the tall cut: the picture, the cards' layout and the words' sizes
 LAYOUTS = {
-    "wide": dict(size=(1920, 1080), icon=120, icon_y=95, create=520, create_y=225, mark=1040, mark_y=372, rule_y=752, sub=5, sub_y=787, links=4, links_y=845, ver=3, ver_y=905, notice=3, notice_y=950, lone=65,
-                 caption=4, caption_pad=22, caption_bottom=110),
-    "tall": dict(size=(1080, 1920), icon=200, icon_y=330, create=640, create_y=545, mark=980, mark_y=725, rule_y=1085, sub=3, sub_y=1125, links=3, links_y=1165, ver=2, ver_y=1215, lone=0, notice=3, notice_y=1600,
-                 caption=3, caption_pad=16, caption_bottom=330),
+    "wide": dict(size=(1920, 1080), icon=120, icon_y=95, create=520, create_y=225, mark=1040, mark_y=372, rule_y=752, sub=5, sub_y=787,
+                 links=4, links_y=845, ver=3, ver_y=900, notice=3, notice_y=955, lone=65,
+                 caption=4, kicker=3, caption_x=110, caption_gap=28, letterbox=LETTERBOX, big=9, big_gap=56),
+    "tall": dict(size=(1080, 1920), icon=200, icon_y=330, create=640, create_y=545, mark=980, mark_y=725, rule_y=1085, sub=3, sub_y=1125,
+                 links=3, links_y=1165, ver=2, ver_y=1215, lone=0, notice=3, notice_y=1600,
+                 caption=3, kicker=2, caption_x=70, caption_gap=330, letterbox=0, big=8, big_gap=560),
 }
 
 
@@ -66,7 +87,7 @@ def find_ffmpeg():
 
 
 def read_captions():
-    words = {"captions": {}, "short_captions": {}}
+    words = {"captions": {}, "short_captions": {}, "chapters": {}}
     for line in (HERE / "captions.txt").read_text(encoding="utf-8").splitlines():
         if not line.strip() or line.startswith("#"):
             continue
@@ -76,9 +97,34 @@ def read_captions():
             words["captions"][key[len("caption "):]] = text
         elif key.startswith("short_caption "):
             words["short_captions"][key[len("short_caption "):]] = text
+        elif key.startswith("chapter "):
+            words["chapters"][key[len("chapter "):]] = text
         else:
             words[key] = text
     return words
+
+
+def read_edit():
+    """The lines of edit.txt: shot, seconds, and its options (at, speed, engine, quiet, cold)."""
+    lines = []
+    for number, line in enumerate((HERE / "edit.txt").read_text(encoding="utf-8").splitlines(), 1):
+        line = line.split("#", 1)[0].strip()
+        if not line:
+            continue
+        name, seconds, *options = line.split()
+        entry = dict(name=name, dur=float(seconds), at=None, speed=1.0, engine=False, quiet=False, cold=False)
+        for option in options:
+            key, _, value = option.partition("=")
+            if key in ("at", "speed") and value:
+                entry[key] = float(value)
+            elif key in ("engine", "quiet", "cold") and not value:
+                entry[key] = True
+            else:
+                sys.exit(f"edit.txt line {number}: unknown option {option!r}")
+        if abs(entry["dur"] / (BAR / 2) - round(entry["dur"] / (BAR / 2))) > 1e-6:
+            sys.exit(f"edit.txt line {number}: {seconds} s is not a whole number of half bars ({BAR / 2} s)")
+        lines.append(entry)
+    return lines
 
 
 def versions():
@@ -102,20 +148,36 @@ def pick_music(args, length, work):
         for file in sorted(folder.iterdir()):
             if file.suffix.lower() in (".mp3", ".wav", ".ogg", ".flac", ".m4a"):
                 return file
-    out = work / "music.wav"
-    subprocess.run([sys.executable, str(HERE / "music.py"), str(out), str(length + 2)], check=True)
+    out = work / "music_synth.wav"
+    subprocess.run([sys.executable, str(HERE / "music.py"), str(out), f"{length + 2:.2f}"], check=True)
     return out
 
+
+# ---------------------------------------------------------------------------------------------------------------- pictures
 
 def centred(image, layer, y):
     image.alpha_composite(layer, ((image.width - layer.width) // 2, y))
 
 
+def wrapped(text, scale, limit):
+    """Splits a line into the fewest lines that each fit in `limit` pixels."""
+    lines, line = [], ""
+    for word in text.split():
+        trial = f"{line} {word}".strip()
+        if mcfont.width(trial) * scale > limit and line:
+            lines.append(line)
+            line = word
+        else:
+            line = trial
+    return lines + [line]
+
+
 def card_image(title, lines, layout, path, footer=None, notice=None, links=None, overlay=False):
-    """The mod's icon, "CREATE" in Minecraft's title font and the wordmark under it (together the title), a copper rule, and the lines under it, in Minecraft's font on the dark card."""
+    """The mod's icon, "CREATE" in Minecraft's title font and the wordmark under it (together the title), a copper rule, and
+    the lines under it, in Minecraft's font on the dark card. An overlay is the same title on clear glass with a light shade,
+    to lie over footage."""
     lay = LAYOUTS[layout]
-    # An overlay is the same title on clear glass with a light shade, to lie over footage; a card is on the dark background
-    image = Image.new("RGBA", lay["size"], (0, 0, 0, 120) if overlay else BACKGROUND)
+    image = Image.new("RGBA", lay["size"], (0, 0, 0, 110) if overlay else BACKGROUND)
     dy = lay["lone"] if not (footer or notice) else 0  # a title card has no lines at the foot, so it sits lower
     mark = Image.open(WORDMARK).convert("RGBA")
     mark = mark.resize((lay["mark"], round(mark.height * lay["mark"] / mark.width)), Image.LANCZOS)
@@ -135,57 +197,382 @@ def card_image(title, lines, layout, path, footer=None, notice=None, links=None,
     if notice:
         # The AI notice: small, near the foot of the card, wrapped to the card's width
         scale, y = lay["notice"], lay["notice_y"]
-        for row in wrapped(notice, scale, lay["size"][0] - 160):
+        for row in wrapped(notice, scale, lay["size"][0] - 200):
             layer = mcfont.render(row, scale, GREY)
             centred(image, layer, y)
             y += layer.height + scale * 2
     (image if overlay else image.convert("RGB")).save(path)
 
 
-def wrapped(text, scale, limit):
-    """Splits a caption into the fewest lines that each fit in `limit` pixels."""
-    lines, line = [], ""
-    for word in text.split():
-        trial = f"{line} {word}".strip()
-        if mcfont.width(trial) * scale > limit and line:
-            lines.append(line)
-            line = word
-        else:
-            line = trial
-    return lines + [line]
+def soft_shadow(layer, reach=10, strength=150):
+    """A blurred dark halo under a layer of text, so it reads on a bright sky without a box behind it."""
+    pad = reach * 2
+    out = Image.new("RGBA", (layer.width + 2 * pad, layer.height + 2 * pad), (0, 0, 0, 0))
+    mask = Image.new("L", out.size, 0)
+    mask.paste(layer.getchannel("A"), (pad, pad))
+    mask = mask.filter(ImageFilter.MaxFilter(5)).filter(ImageFilter.GaussianBlur(reach))
+    mask = mask.point(lambda v: min(255, v * strength // 100))
+    out.paste(Image.new("RGBA", out.size, (0, 0, 0, 255)), (0, 0), mask)
+    out.alpha_composite(layer, (pad, pad))
+    return out, pad
 
 
-def caption_image(text, layout, path):
+def lower_third(kicker, text, layout, path):
+    """The caption: the chapter's name small in gold, the line under it in white, a copper bar down their left side. Returns
+    the offset of the text inside the picture (its soft shadow reaches past it)."""
     lay = LAYOUTS[layout]
-    scale, pad = lay["caption"], lay["caption_pad"]
-    rows = [mcfont.render(row, scale, WHITE) for row in wrapped(text, scale, lay["size"][0] - 2 * (pad + 40))]
-    width = max(r.width for r in rows) + 2 * pad
-    height = sum(r.height for r in rows) + 2 * pad
-    image = Image.new("RGBA", (width, height), (0, 0, 0, 120))
-    y = pad
+    rows = [mcfont.render(row, lay["caption"], WHITE) for row in wrapped(text, lay["caption"], lay["size"][0] - 2 * lay["caption_x"] - 40)]
+    head = mcfont.render(kicker.upper(), lay["kicker"], GOLD) if kicker else None
+    gap = lay["caption"] * 3
+    width = max([r.width for r in rows] + ([head.width] if head else []))
+    height = sum(r.height for r in rows) + ((head.height + gap) if head else 0)
+    bar = 6
+    block = Image.new("RGBA", (bar + 22 + width, height), (0, 0, 0, 0))
+    ImageDraw.Draw(block).rectangle((0, 0, bar - 1, height - 1), fill=COPPER)
+    y = 0
+    if head:
+        block.alpha_composite(head, (bar + 22, y))
+        y += head.height + gap
     for row in rows:
-        image.alpha_composite(row, ((width - row.width) // 2, y))
+        block.alpha_composite(row, (bar + 22, y))
         y += row.height
+    image, pad = soft_shadow(block)
     image.save(path)
+    return pad, image.size
 
 
-def plan(cut, shots, words):
-    """The pieces of the cut, each a stretch of the recording: its name, where it starts in the recording (seconds after the
-    first shot began), how long it lasts and the caption it carries."""
+def outlined(text, scale, color, outline, reach, drop):
+    """Big blocky text with a thick dark outline and a hard offset drop, so it reads at the size of a phone's shelf thumbnail."""
+    glyphs = mcfont.render(text, scale, color, shadow=False)
+    mask = glyphs.getchannel("A")
+    grown = mask.filter(ImageFilter.MaxFilter(2 * reach + 1))
+    out = Image.new("RGBA", (glyphs.width + 2 * reach + drop, glyphs.height + 2 * reach + drop), (0, 0, 0, 0))
+    out.paste(Image.new("RGBA", grown.size, (0, 0, 0, 255)), (drop, drop), grown)
+    out.paste(Image.new("RGBA", grown.size, outline), (0, 0), grown)
+    out.alpha_composite(glyphs, (reach, reach))
+    return out
+
+
+def big_words(text, layout, path):
+    """The teaser's few words: huge, white with a gold last word, outlined, centred low in the frame."""
+    lay = LAYOUTS[layout]
+    width = lay["size"][0]
+    scale = lay["big"]
+    while scale > 3 and mcfont.width(text.upper()) * scale > width - 140:
+        scale -= 1
+    reach = max(3, scale // 3)
+    first, _, last = text.upper().rpartition(" ")
+    parts = [outlined(first, scale, WHITE, INK, reach, reach)] if first else []
+    parts.append(outlined(last, scale, GOLD, INK, reach, reach))
+    space = mcfont.width(" ") * scale
+    image = Image.new("RGBA", (sum(p.width for p in parts) + space * (len(parts) - 1), max(p.height for p in parts)), (0, 0, 0, 0))
+    x = 0
+    for part in parts:
+        image.alpha_composite(part, (x, 0))
+        x += part.width + space
+    image.save(path)
+    return image.size
+
+
+# ---------------------------------------------------------------------------------------------------------------- the plan
+
+def plan_full(shots, words, edit):
+    """The pieces of the full cut, in order: each a stretch of the recording (or a card) with its length, speed, mix, flash,
+    fades and caption."""
     by_name = {s["name"]: s for s in shots["shots"]}
-    if cut == "full":
-        # The title shot carries the title, not a caption (its caption is the line under the title)
-        return [dict(name=s["name"], src=s["start"], dur=s["end"] - s["start"],
-                     text=None if s["name"] == TITLE_SHOT else words["captions"].get(s["name"]))
-                for s in shots["shots"]]
-    pieces = []
+    pieces, kicker = [], None
+    for entry in edit:
+        shot = by_name.get(entry["name"])
+        if shot is None:
+            print(f"post: {entry['name']} is not in this recording, left out")
+            continue
+        length = shot["end"] - shot["start"]
+        raw = entry["dur"] * entry["speed"]
+        if raw > length + 1e-6:
+            sys.exit(f"edit.txt: {entry['name']} needs {raw:.2f} s of a {length:.2f} s shot (shorten it or speed it up)")
+        at = (length - raw) / 2 if entry["at"] is None else min(entry["at"], length - raw)
+        chapter = words["chapters"].get(entry["name"])
+        if chapter:
+            kicker = None if entry["name"] == TITLE_SHOT else chapter
+        title = entry["name"] == TITLE_SHOT
+        pieces.append(dict(kind="shot", name=entry["name"], src=shot["start"] + at, dur=entry["dur"], speed=entry["speed"],
+                           mix="cold" if entry["cold"] else "engine" if entry["engine"] else "music",
+                           text=None if title else words["captions"].get(entry["name"]), quiet=entry["quiet"], kicker=kicker,
+                           flash=title or (bool(chapter) and bool(pieces) and not entry["cold"]), title=title,
+                           hit=1.0 if title else 0.5 if chapter and pieces and not entry["cold"] else 0.0,
+                           fade_in=0.6 if not pieces else 0.0, fade_out=0.0))
+    pieces[-1]["fade_out"] = 0.75  # the last shot goes to black, the end card comes up out of it
+    pieces[-1]["riser"] = True  # and a riser climbs into it from the piece before
+    pieces.append(dict(kind="card", name="close", dur=END_CARD, mix="card", fade_in=0.5, fade_out=0.0, sting=True))
+    return pieces
+
+
+def plan_short(shots, words):
+    by_name = {s["name"]: s for s in shots["shots"]}
+    pieces = [dict(kind="card", name="open", dur=BAR, mix="card", fade_in=0.3, fade_out=0.0)]
     for name in words["short_shots"].split():
         shot = by_name[name]
         # The middle three seconds of the shot: the camera is under way and has not finished
-        pieces.append(dict(name=name, src=shot["start"] + (shot["end"] - shot["start"] - SHORT_SHOT_SECONDS) / 2,
-                           dur=SHORT_SHOT_SECONDS, text=words["short_captions"].get(name)))
+        pieces.append(dict(kind="shot", name=name, src=shot["start"] + (shot["end"] - shot["start"] - SHORT_SHOT) / 2, dur=SHORT_SHOT,
+                           speed=1.0, mix="music", big=words["short_captions"].get(name), flash=True, hit=0.6,
+                           fade_in=0.0, fade_out=0.0, title=False))
+    pieces.append(dict(kind="card", name="close", dur=BAR, mix="card", fade_in=0.0, fade_out=0.0, sting=True, flash=True))
     return pieces
 
+
+def place(pieces):
+    at = 0.0
+    for piece in pieces:
+        piece["start"] = at
+        at += piece["dur"]
+    return at
+
+
+def captions_of(pieces):
+    """Gives every piece the stretch of caption it shows, in its own time, and returns the captions' times for the .srt. A
+    caption comes in a little after its piece starts and leaves a little before the last `quiet` piece after it ends."""
+    srt, i = [], 0
+    while i < len(pieces):
+        piece = pieces[i]
+        if piece["kind"] != "shot" or not piece.get("text") or piece.get("quiet"):
+            i += 1
+            continue
+        j = i
+        while j + 1 < len(pieces) and pieces[j + 1]["kind"] == "shot" and pieces[j + 1].get("quiet"):
+            j += 1
+        start, end = piece["start"] + 0.35, pieces[j]["start"] + pieces[j]["dur"] - 0.3
+        if pieces[j].get("fade_out"):
+            end -= pieces[j]["fade_out"]
+        srt.append((start, end, piece["text"]))
+        for k in range(i, j + 1):
+            pieces[k]["caption"] = dict(text=piece["text"], kicker=piece.get("kicker"),
+                                        start=max(0.0, start - pieces[k]["start"]), end=min(pieces[k]["dur"], end - pieces[k]["start"]),
+                                        enter=k == i, leave=k == j)
+        i = j + 1
+    for piece in pieces:
+        if piece.get("big"):
+            srt.append((piece["start"] + 0.1, piece["start"] + piece["dur"] - 0.2, piece["big"]))
+    return sorted(srt)
+
+
+# ---------------------------------------------------------------------------------------------------------------- rendering
+
+def render_piece(ffmpeg, args, layout, piece, index, work, card_paths):
+    """One piece of the cut to its own file, at full quality, with no sound."""
+    lay = LAYOUTS[layout]
+    width, height = lay["size"]
+    out = work / f"piece_{index:03d}.mp4"
+    frames = round(piece["dur"] * FPS)
+    graph, inputs = [], []
+
+    if piece["kind"] == "card":
+        inputs += ["-loop", "1", "-framerate", str(FPS), "-t", f"{piece['dur'] + 0.1:.3f}", "-i", str(card_paths[piece["name"]])]
+        graph.append(f"[0:v]fps={FPS},format=yuv420p[v0]")
+    else:
+        raw_len = piece["dur"] * piece["speed"]
+        inputs += ["-ss", f"{args.offset + piece['src']:.3f}", "-t", f"{raw_len + 0.2:.3f}", "-i", str(Path(args.raw).resolve())]
+        crop = f"crop=608:1080:(iw-608)/2:0,scale={width}:{height}:flags=lanczos" if layout == "tall" \
+            else f"scale={width}:{height}:flags=lanczos"
+        graph.append(f"[0:v]setpts=(PTS-STARTPTS)/{piece['speed']},fps={FPS},{crop},{GRADE},format=yuv420p[v0]")
+    last = "v0"
+    n = 1
+
+    def overlay_input(path, seconds):
+        nonlocal n
+        inputs.extend(["-loop", "1", "-framerate", str(FPS), "-t", f"{seconds:.3f}", "-i", str(path)])
+        n += 1
+        return n - 1
+
+    if piece.get("flash"):
+        inputs.extend(["-f", "lavfi", "-t", "0.6", "-i", f"color=c=white:s={width}x{height}:r={FPS}"])
+        source = n
+        n += 1
+        strength = 0.9 if piece.get("title") else 0.6
+        graph.append(f"[{source}:v]format=rgba,colorchannelmixer=aa={strength},fade=t=out:st=0.04:d=0.45:alpha=1[flash]")
+        graph.append(f"[{last}][flash]overlay=0:0:eof_action=pass[v1]")
+        last = "v1"
+    if lay["letterbox"] and piece["kind"] == "shot":
+        bar = lay["letterbox"]
+        graph.append(f"[{last}]drawbox=x=0:y=0:w=iw:h={bar}:color=black:t=fill,"
+                     f"drawbox=x=0:y=ih-{bar}:w=iw:h={bar}:color=black:t=fill[v2]")
+        last = "v2"
+    if piece.get("title"):
+        source = overlay_input(card_paths["title"], piece["dur"])
+        graph.append(f"[{source}:v]format=rgba,fade=t=in:st=0:d=0.12:alpha=1,fade=t=out:st={piece['dur'] - 1.3:.2f}:d=1.0:alpha=1[title]")
+        graph.append(f"[{last}][title]overlay=0:0[v3]")
+        last = "v3"
+    caption = piece.get("caption")
+    if caption:
+        png = work / f"caption_{index:03d}.png"
+        pad, (w, h) = lower_third(caption["kicker"], caption["text"], layout, png)
+        source = overlay_input(png, piece["dur"])
+        s, e = caption["start"], caption["end"]
+        fades = ["format=rgba"]
+        if caption["enter"]:
+            fades.append(f"fade=t=in:st={s:.3f}:d=0.4:alpha=1")
+        if caption["leave"]:
+            fades.append(f"fade=t=out:st={e - 0.3:.3f}:d=0.3:alpha=1")
+        graph.append(f"[{source}:v]{','.join(fades)}[cap]")
+        x0 = lay["caption_x"] - pad
+        y0 = height - lay["letterbox"] - lay["caption_gap"] - h + pad
+        x = f"{x0}-48*pow(max(0,1-(t-{s:.3f})/0.45),3)" if caption["enter"] else str(x0)
+        graph.append(f"[{last}][cap]overlay=x='{x}':y={y0}:enable='between(t,{s:.3f},{e:.3f})'[v4]")
+        last = "v4"
+    if piece.get("big"):
+        png = work / f"big_{index:03d}.png"
+        w, h = big_words(piece["big"], layout, png)
+        source = overlay_input(png, piece["dur"])
+        s, e = 0.12, piece["dur"] - 0.15
+        graph.append(f"[{source}:v]format=rgba,fade=t=in:st={s}:d=0.12:alpha=1,fade=t=out:st={e - 0.15:.3f}:d=0.15:alpha=1[big]")
+        y0 = height - lay["letterbox"] - lay["big_gap"] - h
+        graph.append(f"[{last}][big]overlay=x=(W-w)/2:y='{y0}+26*pow(max(0,1-(t-{s})/0.3),3)':"
+                     f"enable='between(t,{s},{e:.3f})'[v5]")
+        last = "v5"
+    fades = []
+    if piece.get("fade_in"):
+        fades.append(f"fade=t=in:st=0:d={piece['fade_in']}")
+    if piece.get("fade_out"):
+        fades.append(f"fade=t=out:st={piece['dur'] - piece['fade_out']:.3f}:d={piece['fade_out']}")
+    graph.append(f"[{last}]{','.join(fades + ['format=yuv420p', 'setsar=1'])}[v]")
+
+    script = work / f"graph_{index:03d}.txt"
+    script.write_text(";\n".join(graph), encoding="utf-8")
+    subprocess.run([ffmpeg, "-y", "-hide_banner", "-loglevel", "error", *inputs, "-/filter_complex", str(script), "-map", "[v]",
+                    "-frames:v", str(frames), "-r", str(FPS), "-c:v", "libx264", "-preset", "veryfast", "-crf", "12",
+                    "-pix_fmt", "yuv420p", "-an", str(out)], check=True)
+    return out
+
+
+# ---------------------------------------------------------------------------------------------------------------- sound
+
+def read_wav(path):
+    with wave.open(str(path), "rb") as f:
+        assert f.getsampwidth() == 2 and f.getframerate() == RATE, f"{path}: expected 16-bit {RATE} Hz"
+        data = np.frombuffer(f.readframes(f.getnframes()), dtype="<i2").astype(np.float64) / 32768
+        return data.reshape(-1, f.getnchannels())[:, :2] if f.getnchannels() >= 2 else np.repeat(data[:, None], 2, axis=1)
+
+
+def write_wav(path, audio):
+    with wave.open(str(path), "wb") as f:
+        f.setnchannels(2)
+        f.setsampwidth(2)
+        f.setframerate(RATE)
+        f.writeframes((np.clip(audio, -1, 1) * 32767).astype("<i2").tobytes())
+
+
+def decode(ffmpeg, source, out, start=0.0, seconds=None, speed=1.0):
+    command = [ffmpeg, "-y", "-hide_banner", "-loglevel", "error"]
+    if start > 0:
+        command += ["-ss", f"{start:.3f}"]
+    if seconds:
+        command += ["-t", f"{seconds:.3f}"]
+    command += ["-i", str(source), "-vn"]
+    if speed != 1.0:
+        command += ["-af", f"atempo={speed}"]
+    subprocess.run(command + ["-ar", str(RATE), "-ac", "2", "-c:a", "pcm_s16le", str(out)], check=True)
+    return read_wav(out)
+
+
+def active_rms(audio, floor_db=-65):
+    """The level of a track where it is sounding: the power of its tenth-of-a-second blocks above the floor."""
+    mono = audio.mean(axis=1)
+    block = RATE // 10
+    blocks = mono[: len(mono) // block * block].reshape(-1, block)
+    power = (blocks ** 2).mean(axis=1)
+    loud = power[power > 10 ** (floor_db / 10)]
+    return float(np.sqrt(loud.mean())) if len(loud) else 0.0
+
+
+def envelope(pieces, values, total, ramp=0.25):
+    """A gain that steps per piece, smoothed over `ramp` seconds so a change never clicks."""
+    env = np.zeros(total)
+    for piece in pieces:
+        a = int(piece["start"] * RATE)
+        env[a:a + int(piece["dur"] * RATE)] = values[piece["mix"]]
+    width = max(1, int(ramp * RATE))
+    padded = np.concatenate([np.full(width, env[0]), env, np.full(width, env[-1])])
+    cumulative = np.cumsum(padded)
+    smooth = (cumulative[width:] - cumulative[:-width]) / width
+    return smooth[width // 2: width // 2 + total]
+
+
+def add(track, at, sound, gain):
+    a = int(at * RATE)
+    if a >= len(track):
+        return
+    end = min(len(track), a + len(sound))
+    track[a:end] += sound[: end - a] * gain
+
+
+def mix_sound(ffmpeg, args, pieces, length, work):
+    """The game's sound under each piece, the music from the first piece that is not cold, and the hits; returns the path of
+    the mixed sound at -14 LUFS, or None when there is nothing to hear."""
+    total = int(length * RATE)
+    game = np.zeros((total, 2))
+    have_game = bool(args.audio) and Path(args.audio).is_file()
+    if have_game:
+        for i, piece in enumerate(pieces):
+            if piece["kind"] != "shot":
+                continue
+            raw_len = piece["dur"] * piece["speed"]
+            part = decode(ffmpeg, Path(args.audio).resolve(), work / f"game_{i:03d}.wav", max(0.0, args.audio_offset + piece["src"]),
+                          raw_len + 0.1, piece["speed"])
+            n = min(len(part), int(piece["dur"] * RATE))
+            fade = min(n, int(0.03 * RATE))  # a few milliseconds of fade at a cut, so it does not click
+            part = part[:n].copy()
+            part[:fade] *= np.linspace(0, 1, fade)[:, None]
+            part[n - fade:] *= np.linspace(1, 0, fade)[:, None]
+            add(game, piece["start"], part, 1.0)
+        level = active_rms(game)
+        if level > 0:
+            game *= min(10 ** (30 / 20), 10 ** (-21 / 20) / level)  # the engines' level where they sound, to -21 dBFS
+        game *= envelope(pieces, dict(cold=1.25, engine=1.25, music=0.8, card=0.0), total)[:, None]
+
+    music = np.zeros((total, 2))
+    first = next((p["start"] for p in pieces if p["mix"] != "cold"), 0.0)
+    source = pick_music(args, length - first, work)
+    if source:
+        track = decode(ffmpeg, Path(source).resolve(), work / "music.wav")
+        level = active_rms(track)
+        if level > 0:
+            track = track * (10 ** (-22 / 20) / level)
+        add(music, first, track, 1.0)
+        tail = min(total, int(2.5 * RATE))
+        music[total - tail:] *= np.linspace(1, 0, tail)[:, None]
+        music *= envelope(pieces, dict(cold=0.0, engine=0.4, music=1.0, card=1.0), total)[:, None]
+
+    hits = np.zeros((total, 2))
+    for piece in pieces:
+        if piece.get("hit"):
+            add(hits, piece["start"], sfx.impact(piece["hit"]), 0.55 * piece["hit"] + 0.1)
+        if piece.get("riser"):
+            rise = sfx.riser(BAR)
+            add(hits, piece["start"] - BAR, rise, 0.22)
+        if piece.get("sting"):
+            add(hits, piece["start"], sfx.sting(), 0.55)
+
+    if not have_game and not source:
+        return None
+    mixed = game + music + hits
+    level = active_rms(mixed)
+    if level > 0:
+        mixed *= 10 ** (-17 / 20) / level
+    mixed = 0.85 * np.tanh(mixed / 0.85)  # a soft ceiling for the hits' peaks
+    write_wav(work / "mix_raw.wav", mixed)
+
+    # Two-pass loudnorm: measure, then bring it to -14 LUFS with one gain, so the mix above is kept as it is
+    probe = subprocess.run([ffmpeg, "-hide_banner", "-i", str(work / "mix_raw.wav"), "-af", "loudnorm=I=-14:TP=-2.0:LRA=11:print_format=json",
+                            "-f", "null", "-"], capture_output=True, text=True, check=True).stderr
+    m = json.loads(re.search(r"\{[^{}]*\"input_i\"[^{}]*\}", probe, re.S).group(0))
+    final = work / "mix.wav"
+    subprocess.run([ffmpeg, "-y", "-hide_banner", "-loglevel", "error", "-i", str(work / "mix_raw.wav"), "-af",
+                    f"loudnorm=I=-14:TP=-2.0:LRA=11:measured_I={m['input_i']}:measured_TP={m['input_tp']}:measured_LRA={m['input_lra']}:"
+                    f"measured_thresh={m['input_thresh']}:offset={m['target_offset']}:linear=true,aresample={RATE}",
+                    "-c:a", "pcm_s16le", str(final)], check=True)
+    return final, have_game
+
+
+# ---------------------------------------------------------------------------------------------------------------- main
 
 def srt_time(seconds):
     ms = int(round(seconds * 1000))
@@ -210,110 +597,42 @@ def main():
     words = read_captions()
     shots = json.loads(Path(args.shots).read_text(encoding="utf-8-sig"))
     layout = "tall" if args.cut == "vertical" else "wide"
-    width, height = LAYOUTS[layout]["size"]
-    pieces = plan(args.cut, shots, words)
-    body = sum(p["dur"] for p in pieces)
-    titled = args.cut == "full" and bool(pieces) and pieces[0]["name"] == TITLE_SHOT
-    lead = 0 if titled else 2 * BAR if args.cut == "full" else BAR  # seconds of title card before the footage's first shot
-    tail = 2 * BAR if args.cut == "full" else BAR
-    card_len, outro_len = (pieces[0]["dur"] if titled else lead + FADE), tail + FADE
-    length = lead + body + tail
+    pieces = plan_full(shots, words, read_edit()) if args.cut == "full" else plan_short(shots, words)
+    length = place(pieces)
+    srt = captions_of(pieces)
 
     work = Path(tempfile.mkdtemp(prefix="trailer_post_"))
     try:
-        if titled:
-            card_image(words["title"], words["captions"].get(TITLE_SHOT, words.get("subtitle", "")), layout, work / "open.png", overlay=True)
-        else:
-            card_image(words["title"], words.get("subtitle", ""), layout, work / "open.png")
-        card_image(words.get("outro", words["title"]), words.get("outro_sub", ""), layout, work / "close.png", footer=versions(),
-                   links=words.get("outro_links"))
+        cards = {"title": work / "title.png", "open": work / "open.png", "close": work / "close.png"}
+        card_image(words["title"], words["captions"].get(TITLE_SHOT, words.get("subtitle", "")), layout, cards["title"], overlay=True)
+        card_image(words["title"], words.get("subtitle", ""), layout, cards["open"])
+        card_image(words.get("outro", words["title"]), words.get("outro_sub", ""), layout, cards["close"], footer=versions(),
+                   links=words.get("outro_links"), notice=words.get("outro_notice"))
 
-        command = [ffmpeg, "-y", "-hide_banner", "-ss", f"{args.offset:.3f}", "-i", str(Path(args.raw).resolve()),
-                   "-loop", "1", "-framerate", "60", "-t", f"{card_len}", "-i", "open.png",
-                   "-loop", "1", "-framerate", "60", "-t", f"{outro_len}", "-i", "close.png"]
-        grade = "eq=contrast=1.04:saturation=1.10,vignette=angle=PI/5"
-        crop = f"crop=608:1080:(iw-608)/2:0,scale={width}:{height}:flags=lanczos" if layout == "tall" \
-            else f"scale={width}:{height}:flags=lanczos"
-        graph = [
-            f"[0:v]fps=60,{crop},{grade},format=yuv420p,split={len(pieces)}" + "".join(f"[r{i}]" for i in range(len(pieces))),
-        ]
-        for i, piece in enumerate(pieces):
-            graph.append(f"[r{i}]trim=start={piece['src']:.3f}:duration={piece['dur']:.3f},setpts=PTS-STARTPTS[p{i}]")
-        graph.append("".join(f"[p{i}]" for i in range(len(pieces))) + f"concat=n={len(pieces)}:v=1:a=0[b0]")
-        graph += [
-            (f"[1:v]fps=60,format=rgba,fade=t=in:st=0.5:d=1.0:alpha=1,fade=t=out:st={card_len - 1.5:.2f}:d=1.0:alpha=1[open]" if titled else
-             f"[1:v]fps=60,format=yuv420p,fade=t=in:st=0:d=0.9,fade=t=out:st={card_len - 0.9:.2f}:d=0.9,settb=1/60[open]"),
-            f"[2:v]fps=60,format=yuv420p,fade=t=in:st=0:d=0.9,fade=t=out:st={outro_len - 0.9:.2f}:d=0.9,settb=1/60[close]",
-        ]
-        last, index, at = "b0", 0, 0.0
-        srt = []
-        margin_in, margin_out = (0.5, 0.4) if args.cut == "full" else (0.3, 0.3)
-        for piece in pieces:
-            if piece["text"]:
-                start, end = at + margin_in, at + piece["dur"] - margin_out
-                name = f"cap_{index:02d}.png"
-                caption_image(piece["text"], layout, work / name)
-                command += ["-loop", "1", "-framerate", "60", "-t", f"{end + 0.2:.2f}", "-i", name]
-                source = 3 + index
-                graph.append(
-                    f"[{source}:v]format=rgba,fade=t=in:st={start:.2f}:d=0.3:alpha=1,fade=t=out:st={end - 0.3:.2f}:d=0.3:alpha=1[c{index}]")
-                graph.append(f"[{last}][c{index}]overlay=x=(W-w)/2:y=H-h-{LAYOUTS[layout]['caption_bottom']}:"
-                             f"enable='between(t,{start:.2f},{end:.2f})':eof_action=pass[b{index + 1}]")
-                last = f"b{index + 1}"
-                srt.append((lead + start, lead + end, piece["text"]))
-                index += 1
-            at += piece["dur"]
-        graph.append(f"[{last}]trim=duration={body},setpts=PTS-STARTPTS,fps=60,settb=1/60[body]")
-        graph += [
-            (f"[body][open]overlay=0:0:eof_action=pass,format=yuv420p,settb=1/60[v1]" if titled else
-             f"[open][body]xfade=transition=fade:duration={FADE}:offset={lead}[v1]"),
-            f"[v1][close]xfade=transition=fade:duration={FADE}:offset={lead + body - FADE}[v]",
-        ]
+        with ThreadPoolExecutor(max_workers=3) as pool:
+            files = list(pool.map(lambda job: render_piece(ffmpeg, args, layout, job[1], job[0], work, cards), enumerate(pieces)))
+        (work / "pieces.txt").write_text("".join(f"file '{f.as_posix()}'\n" for f in files), encoding="utf-8")
 
-        inputs = 3 + index
-        have_game = bool(args.audio) and Path(args.audio).is_file()
-        if have_game:
-            command += ["-ss", f"{max(args.audio_offset, 0):.3f}", "-i", str(Path(args.audio).resolve())]
-            game = inputs
-            inputs += 1
-            graph.append(f"[{game}:a]aresample=48000,asplit={len(pieces)}" + "".join(f"[g{i}]" for i in range(len(pieces))))
-            for i, piece in enumerate(pieces):
-                graph.append(f"[g{i}]atrim=start={piece['src']:.3f}:duration={piece['dur']:.3f},asetpts=PTS-STARTPTS[ga{i}]")
-            graph.append("".join(f"[ga{i}]" for i in range(len(pieces)))
-                         + f"concat=n={len(pieces)}:v=0:a=1,loudnorm=I=-18:TP=-1.5:LRA=9,adelay={int(lead * 1000)}:all=1,"
-                         f"afade=t=in:st={lead:.2f}:d=0.5,afade=t=out:st={lead + body - 0.5:.2f}:d=0.5[game]")
-        music = pick_music(args, length, work)
-        if music:
-            command += ["-i", str(music.resolve())]
-            level = 0.5 if have_game else 0.9
-            graph.append(f"[{inputs}:a]aresample=48000,apad,atrim=0:{length:.2f},afade=t=in:st=0:d=2,"
-                         f"afade=t=out:st={length - 3:.2f}:d=3,volume={level}[music]")
-        if have_game and music:
-            graph.append(f"[music][game]amix=inputs=2:normalize=0:duration=longest,atrim=0:{length:.2f}[a]")
-        elif have_game:
-            graph.append(f"[game]apad,atrim=0:{length:.2f}[a]")
-        elif music:
-            graph.append("[music]anull[a]")
-        (work / "graph.txt").write_text(";\n".join(graph), encoding="utf-8")
-        command += ["-/filter_complex", "graph.txt", "-map", "[v]"]
-        if have_game or music:
-            command += ["-map", "[a]", "-c:a", "aac", "-b:a", "192k"]
-        command += ["-t", f"{length:.2f}", "-c:v", "libx264", "-preset", "slow", "-crf", "17", "-pix_fmt", "yuv420p",
+        sound = mix_sound(ffmpeg, args, pieces, length, work)
+        command = [ffmpeg, "-y", "-hide_banner", "-loglevel", "error", "-f", "concat", "-safe", "0", "-i", str(work / "pieces.txt")]
+        if sound:
+            command += ["-i", str(sound[0]), "-map", "0:v", "-map", "1:a", "-c:a", "aac", "-b:a", "256k"]
+        command += ["-t", f"{length:.3f}", "-c:v", "libx264", "-preset", "slow", "-crf", "17", "-pix_fmt", "yuv420p",
                     "-movflags", "+faststart", str(Path(args.out).resolve())]
         Path(args.out).resolve().parent.mkdir(parents=True, exist_ok=True)
-        subprocess.run(command, cwd=work, check=True)
+        subprocess.run(command, check=True)
 
         lines = []
         for n, (a, b, text) in enumerate(srt, 1):
             lines += [str(n), f"{srt_time(a)} --> {srt_time(b)}", text, ""]
         Path(args.out).with_suffix(".srt").write_text("\n".join(lines), encoding="utf-8")
         if args.cut == "full":
-            write_description(Path(args.out).with_name("description.txt"), pieces, words, lead)
+            write_description(Path(args.out).with_name("description.txt"), pieces, words)
         if args.thumbnail and args.cut == "full":
             thumbnail(ffmpeg, args, words, shots, work)
         if args.thumbnail and args.cut == "vertical":
             vertical_thumbnail(ffmpeg, args, words, shots, work)
-        print(f"trailer: {args.out} ({length:.1f} s, {args.cut}{', with game sound' if have_game else ''})")
+        print(f"trailer: {args.out} ({length:.1f} s, {args.cut}{', with game sound' if sound and sound[1] else ''})")
     finally:
         shutil.rmtree(work, ignore_errors=True)
 
@@ -323,17 +642,12 @@ def stamp(seconds):
     return f"{seconds // 60}:{seconds % 60:02d}"
 
 
-def write_description(path, pieces, words, lead):
+def write_description(path, pieces, words):
     """The video's description, written with every full cut so it always matches the cut: the pitch, the links, chapters
-    (`chapter <shot>:` lines of captions.txt, at the start of that shot; YouTube wants the first at 0:00, three or more and
-    each at least ten seconds long), the version line and the AI notice."""
-    starts, at = {}, 0.0
-    for piece in pieces:
-        starts[piece["name"]] = lead + at
-        at += piece["dur"]
-    chapters = [(starts[key[len("chapter "):]], text) for key, text in words.items()
-                if key.startswith("chapter ") and key[len("chapter "):] in starts]
-    chapters.sort()
+    (`chapter <shot>:` lines of captions.txt, at the start of that shot in the cut; YouTube wants the first at 0:00, three or
+    more and each at least ten seconds long), the version line and the AI notice."""
+    starts = {p["name"]: p["start"] for p in pieces if p["kind"] == "shot"}
+    chapters = sorted((starts[name], text) for name, text in words["chapters"].items() if name in starts)
     if chapters and chapters[0][0] > 0:
         chapters.insert(0, (0.0, "Intro"))
     kept = []
@@ -376,18 +690,6 @@ def thumbnail(ffmpeg, args, words, shots, work):
     image.convert("RGB").save(args.thumbnail)
 
 
-def outlined(text, scale, color, outline, reach, drop):
-    """Big blocky text with a thick dark outline and a hard offset drop, so it reads at the size of a phone's shelf thumbnail."""
-    glyphs = mcfont.render(text, scale, color, shadow=False)
-    mask = glyphs.getchannel("A")
-    grown = mask.filter(ImageFilter.MaxFilter(2 * reach + 1))
-    out = Image.new("RGBA", (glyphs.width + 2 * reach + drop, glyphs.height + 2 * reach + drop), (0, 0, 0, 0))
-    out.paste(Image.new("RGBA", grown.size, (0, 0, 0, 255)), (drop, drop), grown)
-    out.paste(Image.new("RGBA", grown.size, outline), (0, 0), grown)
-    out.alpha_composite(glyphs, (reach, reach))
-    return out
-
-
 def vertical_thumbnail(ffmpeg, args, words, shots, work):
     """A 1080x1920 still for YouTube Shorts and the like: one close frame at full height, hot colour, the title in huge outlined
     letters in the upper middle. The bottom fifth and the right edge are left clear, where the app draws its own buttons and
@@ -419,10 +721,10 @@ def vertical_thumbnail(ffmpeg, args, words, shots, work):
     reach = max(4, scale // 5)
     y = 1050
     for line, color in zip(title_lines, (WHITE, GOLD)):
-        art = outlined(line, scale, color, (20, 12, 8, 255), reach=reach, drop=reach)
+        art = outlined(line, scale, color, INK, reach=reach, drop=reach)
         image.alpha_composite(art, ((width - art.width) // 2, y))
         y += art.height - reach
-    sub = outlined(words["vertical_sub"].upper(), 7, (255, 255, 255), (20, 12, 8, 255), reach=5, drop=5)
+    sub = outlined(words["vertical_sub"].upper(), 7, (255, 255, 255), INK, reach=5, drop=5)
     image.alpha_composite(Image.new("RGBA", (sub.width, 12), COPPER), ((width - sub.width) // 2, y + 12))
     image.alpha_composite(sub, ((width - sub.width) // 2, y + 40))
 

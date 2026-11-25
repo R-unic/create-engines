@@ -16,6 +16,7 @@ Built from private copy at:
 - [ ] GameTests: "All N required tests passed"
 - [ ] Smoke audit: FAIL 0, WARN n (each listed under Exceptions or documented in the check), SKIP n (each explained)
 - [ ] Log check clean (or exceptions listed)
+- [ ] pitest: killed ___, survived ___, no coverage ___ (limit ___); fresh run, or ___ of ___ results reused from history
 - [ ] Mutation script re-run, or not needed because no audit changed (say which):
 - [ ] Metrics copied and compared with the previous release:
       frame p50/p99 ms ___ / ___, heap MB ___, direct MB ___, 16-engine ms/tick ___ (better / same / worse, explained:)
@@ -25,8 +26,7 @@ Built from private copy at:
 - [ ] Create range tested (oldest ___, newest ___) and matches the jar metadata
 - [ ] `runData` leaves no diff in `src/generated`
 - [ ] Jar built, named correctly, version/changelog/tag agree, no development leftovers
-- [ ] Dedicated server booted from the jar
-- [ ] Soak: not yet automated (known exception) / 60-minute soak result: ___
+- [ ] Dedicated server booted from the jar (`jarServer`: N passed, N failed)
 - [ ] Changelog written from the real diff; every changed behaviour and new ID/key named
 - [ ] Diff review done (tick/sound/render allocation, client classes in common code, saved data without defaults)
 - [ ] No TODO, FIXME or debug code left; docs match the release

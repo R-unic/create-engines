@@ -45,6 +45,8 @@ import net.minecraft.world.phys.Vec3;
 public class BlackBoxBlockEntity extends SmartBlockEntity implements IHaveGoggleInformation {
 
 	private static final int INTERVAL = 20;
+	/** Samples between searches for an engine while the one found before still answers, see {@link #findSummary}. */
+	private static final int SEARCH_EVERY = 10;
 	/** Samples between looks at what to send. */
 	private static final int SYNC_EVERY = 2;
 	private static final String BARS = "▁▂▃▄▅▆▇█";
@@ -56,6 +58,10 @@ public class BlackBoxBlockEntity extends SmartBlockEntity implements IHaveGoggle
 	private final FlightRecorder recorder = new FlightRecorder();
 	private @Nullable Readout readout;
 	private boolean engineFound;
+	/** The crank the last search ended at, or null to search again. Not saved. */
+	private @Nullable BlockPos crankFound;
+	private int sinceSearch;
+	private int searches;
 	private boolean awarded;
 	private int ticks;
 	private int samples;
@@ -162,23 +168,55 @@ public class BlackBoxBlockEntity extends SmartBlockEntity implements IHaveGoggle
 		}
 	}
 
-	/** What the engine against any of this block's faces says about itself. */
+	/**
+	 * What the engine against any of this block's faces says about itself. A search can walk a whole manifold from each face, so the
+	 * crank it ends at is remembered and asked again. It searches afresh when that crank no longer answers, when a block beside this
+	 * one changes ({@link #lookAgain}), and now and then regardless: a pipe broken further along changes neither, and leaves a
+	 * box that touches the engine no longer.
+	 */
 	private @Nullable EngineSummary findSummary() {
+		if (crankFound != null && ++sinceSearch < SEARCH_EVERY) {
+			EngineSummary known = summaryAt(crankFound);
+			if (known != null)
+				return known;
+		}
+		sinceSearch = 0;
+		searches++;
+		crankFound = null;
 		for (Direction face : Direction.values()) {
 			Set<BlockPos> seeds = EngineScanner.crankSeeds(level, worldPosition.relative(face));
 			if (seeds.isEmpty())
 				continue;
-			if (!(LoadedBlocks.blockEntity(level, seeds.iterator()
-				.next()) instanceof CrankshaftBlockEntity crank))
-				continue;
-			EngineSummary summary = crank.summary();
-			BlockPos primary = crank.primaryPos();
-			if (summary == null && primary != null && LoadedBlocks.blockEntity(level, primary) instanceof CrankshaftBlockEntity main)
-				summary = main.summary();
-			if (summary != null)
+			BlockPos seed = seeds.iterator()
+				.next();
+			EngineSummary summary = summaryAt(seed);
+			if (summary != null) {
+				crankFound = seed;
 				return summary;
+			}
 		}
 		return null;
+	}
+
+	/** The figures of the engine the crank at {@code pos} is part of, or null if no crank is there or it is in no engine. */
+	private @Nullable EngineSummary summaryAt(BlockPos pos) {
+		if (!(LoadedBlocks.blockEntity(level, pos) instanceof CrankshaftBlockEntity crank))
+			return null;
+		EngineSummary summary = crank.summary();
+		BlockPos primary = crank.primaryPos();
+		if (summary == null && primary != null && LoadedBlocks.blockEntity(level, primary) instanceof CrankshaftBlockEntity main)
+			summary = main.summary();
+		return summary;
+	}
+
+	/** A block beside this one changed: the next sample searches again rather than trusting the engine found before. */
+	public void lookAgain() {
+		crankFound = null;
+	}
+
+	/** How many times this box has searched its faces for an engine, for the tests. */
+	public int searchesForTests() {
+		return searches;
 	}
 
 	@Override

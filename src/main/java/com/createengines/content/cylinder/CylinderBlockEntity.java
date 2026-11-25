@@ -187,8 +187,9 @@ public class CylinderBlockEntity extends SmartBlockEntity implements IHaveGoggle
 		return (int) Math.round(wear * 20);
 	}
 
-	/** A new piston is in: the old one's wear goes with it. */
+	/** The piston changed: the old one's wear and how long it had run dry go with it. */
 	public void resetPiston() {
+		dryTime = 0;
 		if (pistonWear == 0)
 			return;
 		pistonWear = 0;

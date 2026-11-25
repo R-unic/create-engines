@@ -1,6 +1,6 @@
 <#
 .SYNOPSIS
-  Proves the smoke harness can fail: breaks a PRIVATE COPY of the mod in twelve known ways and checks each break is caught.
+  Proves the smoke harness can fail: breaks a PRIVATE COPY of the mod in sixteen known ways and checks each break is caught.
 
 .DESCRIPTION
   A harness that has only ever passed has proved nothing. This breaks things on purpose (a deleted loot table, a missing
@@ -16,6 +16,8 @@
   Then, from anywhere:
     ./scripts/smoke-mutations.ps1 -Copy <copy> -Set server    # GameTests: loot, hostile NBT, recipe, slow tick (about 6 min)
     ./scripts/smoke-mutations.ps1 -Copy <copy> -Set client    # client audit: lang, model, Ponder, sound, memory leak (about 3 min)
+    ./scripts/smoke-mutations.ps1 -Copy <copy> -Set threads   # client audit: a voice that never comes back after a sound reload
+    ./scripts/smoke-mutations.ps1 -Copy <copy> -Set jar       # jarServer: a class the server needs is missing from the jar
     ./scripts/smoke-mutations.ps1 -Copy <copy> -Set crash     # a missing particle sprite crashes the game; the cause must survive
   Read the output of each: every line starting EXPECT must appear among the failures. Re-run robocopy to undo.
 
@@ -23,7 +25,7 @@
 #>
 param(
     [Parameter(Mandatory = $true)][string]$Copy,
-    [Parameter(Mandatory = $true)][ValidateSet('server', 'client', 'crash')][string]$Set
+    [Parameter(Mandatory = $true)][ValidateSet('server', 'client', 'crash', 'threads', 'jar')][string]$Set
 )
 $ErrorActionPreference = 'Stop'
 $d = (Resolve-Path $Copy).Path
@@ -52,6 +54,10 @@ switch ($Set) {
         $expect += 'EXPECT [data] recipe mixing/biodiesel has no empty ingredient'
         Edit-File "$d\src\main\java\com\createengines\engine\EngineController.java" "public void tick() {`n`t`tLevel level = primary.getLevel();" "public void tick() {`n`t`tlong mutationEnd = System.nanoTime() + 700_000L; while (System.nanoTime() < mutationEnd) { }`n`t`tLevel level = primary.getLevel();"
         $expect += 'EXPECT [perf] 16 engines cost under 2 ms a tick'
+        Edit-File "$d\src\main\java\com\createengines\content\battery\BatteryBlockEntity.java" 'charge = tag.getFloat("Charge");' 'if (Float.isNaN(tag.getFloat("Charge"))) throw new IllegalStateException("mutation: bad number"); charge = tag.getFloat("Charge");'
+        $expect += 'EXPECT [hostile] battery state 0 NOT_A_NUMBER - IllegalStateException: mutation: bad number'
+        Edit-File "$d\src\main\java\com\createengines\engine\sim\Tuning.java" 'public static volatile boolean wearMode = false;' "public static volatile boolean wearMode = false;`n`tpublic static volatile boolean mutationUnswept = false;"
+        $expect += 'EXPECT [tuning] every Tuning setting is swept'
         $task = 'runGameTestServer'
     }
     'client' {
@@ -72,7 +78,24 @@ switch ($Set) {
         $expect += 'EXPECT [models] partial model ROCKER keeps its texture coordinates inside its sprites'
         Edit-File "$d\src\main\java\com\createengines\content\EngineNotePcm.java" 'ByteBuffer read(int size) {' "static final java.util.List<ByteBuffer> LEAK = new java.util.ArrayList<>();`n`tByteBuffer read(int size) {`n`t`tLEAK.add(ByteBuffer.allocateDirect(256 * 1024));"
         $expect += 'EXPECT [perf] direct memory does not climb while engines run'
+        Edit-File "$d\src\main\java\com\createengines\content\WornPartItem.java" 'super.appendHoverText(stack, context, tooltip, flag);' 'super.appendHoverText(stack, context, tooltip, flag); tooltip.add(net.minecraft.network.chat.Component.translatable("create_engines.mutation.missing"));'
+        $expect += 'EXPECT [gui] item piston tooltip'
+        Edit-File "$d\src\main\java\com\createengines\content\muffler\SootTrapBlockEntity.java" 'public boolean addToGoggleTooltip(List<Component> tooltip, boolean isPlayerSneaking) {' 'public boolean addToGoggleTooltip(List<Component> tooltip, boolean isPlayerSneaking) { if (tooltip != null) return true;'
+        $expect += 'EXPECT [gui] soot_trap readouts in the gallery'
         $task = 'runSmokeAudit'
+    }
+    'threads' {
+        # A note the sound engine dropped is never forgotten: the dead ones hold all three voices, silent after a reload.
+        # (Only stopping an engine from replacing its own note is not enough: another engine's clean-up forgets it.)
+        Edit-File "$d\src\main\java\com\createengines\content\EngineNoteSound.java" 'boolean dropped = VoiceClock.settled(now, note.startedAt) && (note.isStopped() || !sounds.isActive(note));' 'boolean dropped = false;'
+        $expect += 'EXPECT [threads] an engine note comes back after the sound engine reloaded'
+        $task = 'runSmokeAudit'
+    }
+    'jar' {
+        # A package the server needs is left out of the jar: the development runs never notice, the jar's server does not start
+        Edit-File "$d\build.gradle" "    exclude 'com/createengines/gametest/**', 'com/createengines/smoke/**'," "    exclude 'com/createengines/content/battery/**', 'com/createengines/gametest/**', 'com/createengines/smoke/**',"
+        $expect += 'EXPECT [server] the run stopped'
+        $task = 'jarServer'
     }
     'crash' {
         Rename-Item "$d\src\main\resources\assets\create_engines\particles\gas.json" 'gas.json.disabled'

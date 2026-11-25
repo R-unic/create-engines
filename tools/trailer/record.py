@@ -338,8 +338,6 @@ def main():
             command += ["--thumbnail", str(OUT / "thumbnail.png")]
         if cut == "vertical":
             command += ["--thumbnail", str(OUT / "thumbnail_vertical.png")]
-        if cut == "vertical":
-            command += ["--thumbnail", str(OUT / "thumbnail_vertical.png")]
         if args.no_music:
             command.append("--no-music")
         if args.music:

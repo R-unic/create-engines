@@ -113,37 +113,38 @@ public final class WearKeeper {
 	 * nothing for the one that is not there (an unfinished build is not a worn one).
 	 */
 	public static float total(Level level, EngineLayout layout) {
-		java.util.ArrayList<Double> parts = new java.util.ArrayList<>();
+		// A cylinder counts three parts at most (a rotor housing one) and a battery one
+		double[] parts = new double[3 * layout.cylinders()
+			.size() + layout.batteries()
+				.size()];
+		int count = 0;
 		for (Cylinder cylinder : layout.cylinders()) {
 			if (cylinder.rotary()) {
 				if (level.isLoaded(cylinder.pos()) && LoadedBlocks.blockEntity(level, cylinder.pos()) instanceof com.createengines.content.rotor.RotorHousingBlockEntity housing)
-					parts.add(housing.apexFailed() ? 1.0 : housing.apexWear());
+					parts[count++] = housing.apexFailed() ? 1.0 : housing.apexWear();
 				continue;
 			}
 			CylinderBlockEntity body = body(level, cylinder);
 			if (body != null) {
 				if (body.thrown()) {
-					parts.add(1.0);
-					parts.add(1.0);
+					parts[count++] = 1.0;
+					parts[count++] = 1.0;
 				} else {
 					BlockState state = body.getBlockState();
 					if (state.getValue(CylinderBlock.HAS_PISTON))
-						parts.add(body.pistonWear());
+						parts[count++] = body.pistonWear();
 					if (state.getValue(CylinderBlock.HAS_ROD))
-						parts.add(body.rodWear());
+						parts[count++] = body.rodWear();
 				}
 			}
 			CylinderHeadBlockEntity head = head(level, cylinder);
 			if (head != null)
-				parts.add(head.broken() || head.blown() ? 1.0 : head.gasketWear());
+				parts[count++] = head.broken() || head.blown() ? 1.0 : head.gasketWear();
 		}
 		for (BlockPos pos : layout.batteries())
 			if (level.isLoaded(pos) && LoadedBlocks.blockEntity(level, pos) instanceof com.createengines.content.battery.BatteryBlockEntity battery)
-				parts.add(battery.wear());
-		double[] wears = new double[parts.size()];
-		for (int i = 0; i < wears.length; i++)
-			wears[i] = parts.get(i);
-		return WearTotal.mean(wears);
+				parts[count++] = battery.wear();
+		return WearTotal.meanOfFirst(parts, count);
 	}
 
 	/**

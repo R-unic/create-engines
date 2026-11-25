@@ -33,6 +33,7 @@ class TrailerCoverageTest {
 	private static final Path PARTS = ROOT.resolve("src/smoke/trailer-parts.txt");
 	private static final Path SHOWCASE = ROOT.resolve("src/main/java/com/createengines/client/ShowcaseRun.java");
 	private static final Path CAPTIONS = ROOT.resolve("tools/trailer/captions.txt");
+	private static final Path EDIT = ROOT.resolve("tools/trailer/edit.txt");
 
 	private static final Pattern PART_KEY = Pattern.compile("\"(?:block|item)\\.create_engines\\.([a-z0-9_]+)\"");
 	private static final Pattern SHOT = Pattern.compile("new Shot\\(\"([a-z0-9_]+)\"");
@@ -116,6 +117,32 @@ class TrailerCoverageTest {
 		}
 		assertTrue(title, "tools/trailer/captions.txt has no title: line");
 		assertEquals(shots(), captions, "The shots of ShowcaseRun and the captions of tools/trailer/captions.txt must match");
+	}
+
+	/**
+	 * The full cut takes its order and lengths from tools/trailer/edit.txt: a shot missing there would silently fall out of the
+	 * trailer, and a line for a shot that is gone would cut nothing. Every piece is a whole number of half bars of the music, so
+	 * the cuts stay on the beat.
+	 */
+	@Test
+	void theEditUsesEveryShotOnceAndKeepsTheBeat() throws IOException {
+		List<String> edited = new ArrayList<>();
+		List<String> offBeat = new ArrayList<>();
+		for (String line : Files.readAllLines(EDIT, StandardCharsets.UTF_8)) {
+			String text = line.split("#", 2)[0].trim();
+			if (text.isEmpty())
+				continue;
+			String[] fields = text.split("\\s+");
+			assertTrue(fields.length >= 2, "A line of edit.txt is not \"<shot> <seconds> [options]\": " + line);
+			edited.add(fields[0]);
+			double halfBars = Double.parseDouble(fields[1]) / 1.5;
+			if (halfBars <= 0 || Math.abs(halfBars - Math.rint(halfBars)) > 1e-9)
+				offBeat.add(fields[0] + " " + fields[1]);
+		}
+		Set<String> once = new TreeSet<>(edited);
+		assertEquals(once.size(), edited.size(), "A shot is in tools/trailer/edit.txt twice: " + edited);
+		assertEquals(shots(), once, "The shots of ShowcaseRun and the lines of tools/trailer/edit.txt must match");
+		assertTrue(offBeat.isEmpty(), "Pieces of edit.txt that are not a whole number of half bars (1.5 s): " + offBeat);
 	}
 
 	@Test

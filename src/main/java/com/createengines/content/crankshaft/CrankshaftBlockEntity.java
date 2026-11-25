@@ -374,8 +374,8 @@ public class CrankshaftBlockEntity extends GeneratingKineticBlockEntity implemen
 	@Override
 	protected void read(CompoundTag tag, HolderLookup.Provider registries, boolean clientPacket) {
 		paint.read(tag, level, worldPosition, getBlockState());
-		publishedSpeed = tag.getFloat("EngineSpeed");
-		publishedCapacity = tag.getFloat("EngineCapacity");
+		publishedSpeed = com.createengines.content.SavedNumbers.read(tag, "EngineSpeed", 0);
+		publishedCapacity = com.createengines.content.SavedNumbers.read(tag, "EngineCapacity", 0);
 		primaryPos = NbtUtils.readBlockPos(tag, "Primary")
 			.orElse(null);
 		sense = tag.contains("Sense") && tag.getInt("Sense") < 0 ? -1 : 1;

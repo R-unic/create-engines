@@ -303,6 +303,76 @@ public final class ServerAudit {
 		}
 	}
 
+	/** How many states of one block the hostile-number sweep tries. */
+	private static final int POISON_STATES = 6;
+
+	/**
+	 * Every block entity of the mod, loaded with each kind of bad number in place of every number it saves (see
+	 * {@link HostileSaves}), then ticked where it stands. It must not throw, and must not save a value that is not finite
+	 * back into the world. Unlike {@link #lifecycle}'s garbage, the poisoned data is loaded into the placed block and run.
+	 */
+	public static void hostileNumbers(ServerLevel level, BlockPos origin, SmokeReport report) {
+		int cell = 0;
+		for (Block block : blocks()) {
+			if (!(block instanceof EntityBlock))
+				continue;
+			List<BlockState> states = sampleStates(block);
+			int step = Math.max(1, states.size() / POISON_STATES);
+			for (int i = 0; i < states.size(); i += step) {
+				BlockState state = states.get(i);
+				for (HostileSaves.Poison poison : HostileSaves.Poison.values()) {
+					BlockPos pos = origin.offset(cell % 14 * 3, 0, cell / 14 * 3);
+					cell++;
+					String label = id(block) + " state " + i + " " + poison;
+					guard(report, "hostile", label, () -> poisonOne(level, pos, state, poison, label, report));
+					level.removeBlock(pos, false);
+					level.setBlock(pos.below(), Blocks.STONE.defaultBlockState(), 2);
+				}
+			}
+		}
+	}
+
+	private static void poisonOne(ServerLevel level, BlockPos pos, BlockState state, HostileSaves.Poison poison, String label,
+		SmokeReport report) {
+		level.setBlock(pos.below(), Blocks.STONE.defaultBlockState(), 2);
+		level.setBlock(pos, state, 3);
+		BlockEntity entity = level.getBlockEntity(pos);
+		if (entity == null)
+			return; // the lifecycle sweep reports a block that gets no entity
+		tick(level, pos, 5);
+		entity = level.getBlockEntity(pos);
+		if (entity == null)
+			return;
+		var access = level.registryAccess();
+		entity.loadWithComponents(HostileSaves.poison(entity.saveWithFullMetadata(access), poison), access);
+		tick(level, pos, 20);
+		entity = level.getBlockEntity(pos);
+		if (entity == null) {
+			report.pass("hostile", label);
+			return;
+		}
+		level.getBlockState(pos)
+			.getAnalogOutputSignal(level, pos);
+		entity.getUpdateTag(access);
+		List<String> bad = HostileSaves.notFinite(entity.saveWithFullMetadata(access));
+		report.check("hostile", label + " saves only finite numbers", bad.isEmpty(),
+			"after loading bad numbers and ticking, it saves " + bad);
+	}
+
+	private static void tick(ServerLevel level, BlockPos pos, int ticks) {
+		for (int i = 0; i < ticks; i++) {
+			BlockEntity entity = level.getBlockEntity(pos);
+			if (entity == null)
+				return;
+			@SuppressWarnings("unchecked")
+			BlockEntityTicker<BlockEntity> ticker = (BlockEntityTicker<BlockEntity>) level.getBlockState(pos)
+				.getTicker(level, entity.getType());
+			if (ticker == null)
+				return;
+			ticker.tick(level, pos, level.getBlockState(pos), entity);
+		}
+	}
+
 	private static void sweep(ServerLevel level, BlockPos pos, BlockState state, String label, SmokeReport report) {
 		level.setBlock(pos.below(), Blocks.STONE.defaultBlockState(), 2);
 		level.setBlock(pos, state, 3);

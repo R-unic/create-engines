@@ -61,6 +61,7 @@ public final class ClientAudit {
 		ServerAudit.guard(report, "particles", "sprite sheets", () -> particles(report));
 		ServerAudit.guard(report, "models", "battery joins on the client", () -> batteryJoins(report));
 		ServerAudit.guard(report, "gui", "flywheel goggles", () -> flywheelGoggles(report));
+		ServerAudit.guard(report, "gui", "item tooltips", () -> ReadoutAudit.itemTooltips(report));
 		ServerAudit.guard(report, "tab", "creative tab", () -> creativeTab(report));
 		ServerAudit.guard(report, "compat", "viewer pages", () -> viewerPages(report));
 		ServerAudit.guard(report, "gui", "blueprint sheet", () -> {

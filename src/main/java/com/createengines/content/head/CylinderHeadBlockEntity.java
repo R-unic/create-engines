@@ -107,6 +107,18 @@ public class CylinderHeadBlockEntity extends SmartBlockEntity implements IHaveGo
 		return Tuning.wearMode && broken;
 	}
 
+	/**
+	 * A gasket is going in with the wear mode off, into a head whose break nobody can see: the break goes, or the head would be broken
+	 * again with the mode on, and the gasket lost with it (see {@code CylinderBlockEntity.dropHiddenWreck}).
+	 */
+	public void dropHiddenBreak() {
+		if (Tuning.wearMode || !broken)
+			return;
+		broken = false;
+		setChanged();
+		sendData();
+	}
+
 	/** A rod went through the head: it is broken, and the gasket under it is lost with it. */
 	public void breakHead() {
 		if (broken)
@@ -115,6 +127,8 @@ public class CylinderHeadBlockEntity extends SmartBlockEntity implements IHaveGo
 		blown = false;
 		gasket = Wear.Gasket.STOCK;
 		gasketWear = 0;
+		// Without this a stock gasket that had been fitted would still count as one, new, and come out of the wreck with the mode off
+		stockFitted = false;
 		setChanged();
 		sendData();
 		EngineTopology.wearChanged(level, worldPosition);
@@ -163,6 +177,7 @@ public class CylinderHeadBlockEntity extends SmartBlockEntity implements IHaveGo
 	 */
 	public ItemStack fit(Wear.Gasket tier, double wear) {
 		ItemStack old = gasketStack();
+		dropHiddenBreak();
 		gasket = tier;
 		gasketWear = Wear.clamp(wear);
 		stockFitted = true;

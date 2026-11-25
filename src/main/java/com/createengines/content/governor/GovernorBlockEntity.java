@@ -200,9 +200,9 @@ public class GovernorBlockEntity extends SmartBlockEntity implements IHaveGoggle
 		super.read(tag, registries, clientPacket);
 		signal = tag.getInt("Signal");
 		onEngine = tag.getBoolean("OnEngine");
-		rpm = tag.getFloat("Rpm");
-		position = tag.contains("Position") ? tag.getFloat("Position") : 1;
-		held = tag.getFloat("Held");
+		rpm = com.createengines.content.SavedNumbers.read(tag, "Rpm", 0);
+		position = com.createengines.content.SavedNumbers.read(tag, "Position", 1);
+		held = com.createengines.content.SavedNumbers.read(tag, "Held", 0);
 		// Saved before the target was exact: its value is in steps of 5 RPM
 		if (target != null && tag.contains("ScrollValue") && !tag.contains(EXACT_KEY))
 			target.value = Mth.clamp(target.value * COARSE_STEP, MIN_TARGET, MAX_TARGET);

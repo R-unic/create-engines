@@ -34,6 +34,7 @@ public final class CEConfig {
 	public static final ModConfigSpec.IntValue MAX_MANIFOLD_BLOCKS;
 	public static final ModConfigSpec.IntValue MAX_COUPLED_LINES;
 	public static final ModConfigSpec.IntValue MAX_COUPLING_WALK;
+	public static final ModConfigSpec.IntValue MAX_BANK_BATTERIES;
 	public static final ModConfigSpec.IntValue THROTTLE_IDLE_MIN;
 	public static final ModConfigSpec.IntValue THROTTLE_IDLE_MAX;
 	public static final ModConfigSpec.IntValue THROTTLE_WIDE_MIN;
@@ -131,6 +132,9 @@ public final class CEConfig {
 				"Most kinetic blocks the scanner looks through, from a crankshaft, for other",
 				"crankshafts geared to it.")
 			.defineInRange("maxCouplingWalk", 512, 1, 8192));
+		MAX_BANK_BATTERIES = value("limits.maxBankBatteries", builder.comment(
+				"Most touching batteries that act as one bank. A bigger bank acts as more than one.")
+			.defineInRange("maxBankBatteries", 4096, 1, 32768));
 		THROTTLE_IDLE_MIN = value("limits.throttleIdleMin", builder.comment(
 				"Smallest idle stop a Throttle Body's value box offers, as a percent open (a multiple of 5).",
 				"Raise it to stop players closing the valve down to a crack.")
@@ -287,7 +291,8 @@ public final class CEConfig {
 				"An outlet stops releasing while the air in the 7 by 7 by 7 block cube in front of it already holds this many",
 				"steps of gas (carbon and sulfur together; one block holds 3 of a gas at most). It starts again as the gas",
 				"thins or spreads, so a factory stays hazy rather than growing unlivable. 0, the default, turns the cap off; 150 is a",
-				"starting guess (about 15 percent of the cube's capacity), not a tuned figure.")
+				"starting guess (about 15 percent of the cube's capacity), not a tuned figure. Each outlet reads its air every 3",
+				"seconds and counts what it has released since.")
 			.defineInRange("pollutionAreaCap", 0, 0, 100000));
 		POLLUTION_ENGINE_CEILING = value("compat.pollutionEngineCeiling", builder.comment(
 				"The most steps of each gas one engine may release per minute of running, however much it burns. 0 turns the",

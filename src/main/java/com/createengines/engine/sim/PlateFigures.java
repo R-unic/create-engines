@@ -70,6 +70,9 @@ public record PlateFigures(float peakTorque, int torqueRpm, float peakPower, int
 				continue;
 			out.append(c);
 		}
+		// An emoji is two chars: a cut between them leaves half a character, so the half goes too
+		if (out.length() > 0 && Character.isHighSurrogate(out.charAt(out.length() - 1)))
+			out.setLength(out.length() - 1);
 		return out.toString()
 			.stripTrailing();
 	}

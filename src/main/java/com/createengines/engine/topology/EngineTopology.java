@@ -86,6 +86,15 @@ public final class EngineTopology {
 	}
 
 	/**
+	 * The engine whose primary crank is at {@code primary} is rebuilt at the end of the tick. For an engine that asks for itself:
+	 * unlike {@link #rebuildNear} it looks at no other engine, so every engine can ask in the same tick.
+	 */
+	public static void rebuild(Level level, BlockPos primary) {
+		if (!level.isClientSide())
+			TOPOLOGIES.get(level).rebuilds.add(primary.immutable());
+	}
+
+	/**
 	 * A block that an engine source provider watches was placed or broken at {@code pos}: every engine with a crank
 	 * segment within {@code reach} blocks of it is rebuilt at the end of the tick, so its providers are asked again. A
 	 * plain rescan would not do it, because an engine whose layout came back unchanged keeps its controller.
@@ -188,14 +197,21 @@ public final class EngineTopology {
 				covered.add(segment.pos());
 				Set<BlockPos> owners = enginesByMember.get(segment.pos());
 				if (owners != null)
-					for (BlockPos owner : Set.copyOf(owners))
+					for (BlockPos owner : owners)
 						retire(owner, previous, seeds);
 			}
 			rebuilt.put(layout.primary(), layout);
 		}
 
+		// An engine that came back exactly as it was keeps its entries in the member index, which is most of them most of the time
+		for (Map.Entry<BlockPos, EngineLayout> old : previous.entrySet())
+			if (!old.getValue()
+				.equals(rebuilt.get(old.getKey())))
+				unindex(old.getKey(), old.getValue());
 		for (EngineLayout layout : rebuilt.values()) {
 			layouts.put(layout.primary(), layout);
+			if (layout.equals(previous.get(layout.primary())))
+				continue;
 			for (BlockPos member : layout.members())
 				enginesByMember.computeIfAbsent(member, $ -> new HashSet<>())
 					.add(layout.primary());
@@ -266,12 +282,21 @@ public final class EngineTopology {
 		}
 	}
 
-	/** Forgets a known engine so it can be rescanned, remembering its old layout and crank as rescan seeds. */
+	/**
+	 * Forgets a known engine so it can be rescanned, remembering its old layout and crank as rescan seeds. Its entries in the member
+	 * index stay until the rescan shows whether it has changed (see {@link #unindex}).
+	 */
 	private void retire(BlockPos primary, Map<BlockPos, EngineLayout> previous, Seeds seeds) {
 		EngineLayout old = layouts.remove(primary);
 		if (old == null)
 			return;
 		previous.putIfAbsent(primary, old);
+		old.segments()
+			.forEach(s -> seeds.add(s.pos()));
+	}
+
+	/** Takes a retired engine's blocks out of the member index. */
+	private void unindex(BlockPos primary, EngineLayout old) {
 		for (BlockPos member : old.members()) {
 			Set<BlockPos> owners = enginesByMember.get(member);
 			if (owners == null)
@@ -280,7 +305,5 @@ public final class EngineTopology {
 			if (owners.isEmpty())
 				enginesByMember.remove(member);
 		}
-		old.segments()
-			.forEach(s -> seeds.add(s.pos()));
 	}
 }

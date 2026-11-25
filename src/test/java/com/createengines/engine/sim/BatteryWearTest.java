@@ -155,6 +155,28 @@ class BatteryWearTest {
 	}
 
 	@Test
+	void theShownStepMovesExactlyWhenTheWordingDoes() {
+		// From new to spent in steps far finer than a tenth of a percent, so that every boundary of the wording is crossed
+		String text = BatteryWear.percentText(0);
+		int step = BatteryWear.shownStep(0);
+		int moves = 0;
+		for (int i = 0; i <= 400_000; i++) {
+			double wear = i == 0 ? Double.MIN_VALUE : i * 2.5e-6;
+			String nextText = BatteryWear.percentText(wear);
+			int nextStep = BatteryWear.shownStep(wear);
+			assertEquals(!nextText.equals(text), nextStep != step,
+				"at " + wear + ": " + text + " and " + nextText + ", step " + step + " and " + nextStep);
+			if (nextStep != step)
+				moves++;
+			text = nextText;
+			step = nextStep;
+		}
+		assertEquals("100", text);
+		// Any wear at all, then 99 tenths up to 9.9, then every whole percent from 10 to 100
+		assertEquals(1 + 99 + 91, moves);
+	}
+
+	@Test
 	void onlyWearPastWhatAKitSetsRightIsHeavy() {
 		assertFalse(BatteryWear.heavy(0));
 		assertFalse(BatteryWear.heavy(0.07), "too little for a kit to change is not heavy");

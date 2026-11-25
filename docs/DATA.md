@@ -5,7 +5,7 @@ goes, every key, its range and what the key does. Settings in the TOML config fi
 common jobs with these files is in [PACKS.md](PACKS.md).
 
 Names, keys, defaults and ranges of the `fuel`, `part_stats` and `part_effect` data maps and the `part_effects` and `cam_profiles` files are **frozen at 2.0**
-(API version 1.0.0, see [API.md](API.md)): a key is never removed or renamed in 2.x, only added. A test
+(see [API.md](API.md) for the API's version): a key is never removed or renamed in 2.x, only added. A test
 (`ScriptAndDataSurfaceTest`) fails the build if one changes, and `GuideDocsTest` fails it if this page stops naming one.
 
 | File | Goes in | Purpose |

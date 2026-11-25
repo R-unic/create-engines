@@ -7,6 +7,7 @@ import com.simibubi.create.foundation.block.IBE;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.BlockGetter;
+import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
@@ -29,6 +30,14 @@ public class BlackBoxBlock extends Block implements IWrenchable, IBE<BlackBoxBlo
 	@Override
 	protected VoxelShape getShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext context) {
 		return SHAPE;
+	}
+
+	@Override
+	protected void neighborChanged(BlockState state, Level level, BlockPos pos, Block neighbourBlock, BlockPos neighbourPos,
+								   boolean movedByPiston) {
+		super.neighborChanged(state, level, pos, neighbourBlock, neighbourPos, movedByPiston);
+		if (!level.isClientSide)
+			withBlockEntityDo(level, pos, BlackBoxBlockEntity::lookAgain);
 	}
 
 	@Override

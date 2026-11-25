@@ -90,16 +90,28 @@ public final class BatteryWear {
 	/** The wear as goggles word it, in percent: a decimal below 10, where a whole number would sit still for minutes of running. */
 	public static String percentText(double wear) {
 		double worn = Wear.clamp(wear);
+		if (worn == 0)
+			return "0";
 		// Worded from the step that clients are told at, so the two never round apart
 		int step = shownStep(worn);
-		if (worn == 0 || step >= 100)
-			return Long.toString(Math.round(worn * 100));
+		if (step >= WHOLE_STEPS)
+			return Integer.toString(step - WHOLE_STEPS);
 		return step / 10 + "." + step % 10;
 	}
 
-	/** The wear in tenths of a percent, the finest {@link #percentText} shows: clients are told, and the save marked, when it moves. */
+	/** Added to a whole percent to make its step, so that no whole percent has the step of a tenth. */
+	private static final int WHOLE_STEPS = 100;
+
+	/**
+	 * A number that moves exactly when what {@link #percentText} shows does: clients are told, and the save marked, when it moves. It counts
+	 * tenths of a percent below 10 percent and whole percents from there; -1 is no wear at all, written apart from the first tenth.
+	 */
 	public static int shownStep(double wear) {
-		return (int) Math.round(Wear.clamp(wear) * 1000);
+		double worn = Wear.clamp(wear);
+		if (worn == 0)
+			return -1;
+		int tenths = (int) Math.round(worn * 1000);
+		return tenths < WHOLE_STEPS ? tenths : WHOLE_STEPS + (int) Math.round(worn * 100);
 	}
 
 	/** Whether the wear is past what a Service Kit sets right, so that only a new battery cures it. */

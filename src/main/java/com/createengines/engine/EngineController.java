@@ -161,14 +161,12 @@ public final class EngineController {
 	private final double oilParts;
 	/** The wear mode's reader and writer for this engine's cylinders (see {@link WearKeeper}); idle with the mode off. */
 	private final WearKeeper wear;
-	/** Whether the cylinders' models carry the state their saved wear gives, so switching the mode off knows to put them back. */
-	private boolean wearApplied;
 	/** The wear mode as this engine was built: changing it has the engine built again, since its failures are read then. */
 	private final boolean builtWithWear = com.createengines.engine.sim.Tuning.wearMode;
 	/** The wear mode's faults by cylinder (blown gasket, broken head, thrown rod), when the mode is on; read when the engine is built, and a failure has it rebuilt. */
 	private final Map<BlockPos, Integer> wearFaults;
-	/** The wear mode's total for the whole build (see {@code WearTotal}), refreshed with each wearing step; -1 with the mode off. */
-	private float wearTotal = -1f;
+	/** The wear mode's total for the whole build (see {@code WearTotal}), refreshed with each wearing step; none with the mode off. */
+	private final com.createengines.engine.sim.WearTotal.Held wearTotal = new com.createengines.engine.sim.WearTotal.Held();
 	/** How many parts of each kind have failed in this build (see {@code WearFailures}), counted when the engine is built: a failure has it rebuilt. */
 	private final int wearFailures;
 	/** Oil drawn from the pans and heads during the current tick, mB, and its smoothed rate in mB per minute: for goggles. */
@@ -331,10 +329,9 @@ public final class EngineController {
 
 		oilParts = parts;
 		wear = new WearKeeper(layout, models);
-		if (com.createengines.engine.sim.Tuning.wearMode) {
+		if (com.createengines.engine.sim.Tuning.wearMode)
 			wear.refresh(level);
-			wearApplied = true;
-		} else
+		else
 			wear.applyFitted(level);
 		int[] lineThrows = throwsPerLine(layout);
 		flexLoss = Torsion.loss(lineThrows);
@@ -601,8 +598,12 @@ public final class EngineController {
 		if (level == null)
 			return;
 		ticks++;
-		if (builtWithWear != com.createengines.engine.sim.Tuning.wearMode)
-			com.createengines.engine.topology.EngineTopology.rebuildNear(level, primary.getBlockPos(), 0);
+		if (builtWithWear != com.createengines.engine.sim.Tuning.wearMode) {
+			// The faults saved parts carry were read, or left unread, when this engine was built: it does nothing more, and the one
+			// built in its place at the end of this tick carries on
+			com.createengines.engine.topology.EngineTopology.rebuild(level, primary.getBlockPos());
+			return;
+		}
 		if (ticks % AIR_INTERVAL == 0 && com.createengines.compat.sable.SableCompat.installed()) {
 			sim.setAmbientDensity(airDensity());
 			watchWorldWater(level);
@@ -747,32 +748,19 @@ public final class EngineController {
 	}
 
 	/**
-	 * The wear mode's share of a tick (see {@link WearKeeper}). With the mode off, an engine that had it on is put back to running as it
-	 * did before. Returns whether a part failed, which has the engine rebuilt around the gap, so the caller leaves the rest of the tick.
+	 * The wear mode's share of a tick (see {@link WearKeeper}); nothing with the mode off, and an engine never sees the mode change, since
+	 * {@link #tick} has it built again first. Returns whether a part failed, which has the engine rebuilt around the gap, so the caller
+	 * leaves the rest of the tick.
 	 */
 	private boolean wearTick(Level level) {
-		if (!com.createengines.engine.sim.Tuning.wearMode) {
-			wearTotal = -1f;
-			if (wearApplied) {
-				wear.applyFitted(level);
-				wearApplied = false;
-			}
+		if (!com.createengines.engine.sim.Tuning.wearMode)
 			return false;
-		}
-		if (!wearApplied) {
-			wear.refresh(level);
-			wearApplied = true;
-		}
-		if (ticks % WearKeeper.INTERVAL != 0 && wearTotal >= 0)
-			return false;
-		wearTotal = WearKeeper.total(level, layout);
-		if (ticks % WearKeeper.INTERVAL != 0)
-			return false;
-		boolean failed = wear.tick(level, EngineSimulation.omegaToRpm(Math.abs(sim.omega())), sim.thermal()
+		boolean step = ticks % WearKeeper.INTERVAL == 0;
+		boolean failed = step && wear.tick(level, EngineSimulation.omegaToRpm(Math.abs(sim.omega())), sim.thermal()
 			.temperature(), sim.lubrication()
 			.film());
-		if (!failed)
-			wearTotal = WearKeeper.total(level, layout);
+		if (!failed && wearTotal.wanted(step))
+			wearTotal.read(WearKeeper.total(level, layout));
 		return failed;
 	}
 
@@ -1434,7 +1422,7 @@ public final class EngineController {
 			(float) sim.thermal()
 				.coolantRate(),
 			pilotLit(), filtered, (float) Torsion.scaled(flexLoss), longestLine, report.health(), report.cause(), muffling(),
-				inductionBoost(), sourceLines(), sim.isStopped() ? 0 : (float) oilRate, wearTotal, wearFailures);
+				inductionBoost(), sourceLines(), sim.isStopped() ? 0 : (float) oilRate, wearTotal.total(), wearFailures);
 	}
 
 	/**

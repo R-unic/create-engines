@@ -6,6 +6,7 @@ import static com.createengines.gametest.TestEngine.STARTER_POWER;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.TreeSet;
 
 import com.createengines.CreateEngines;
 import com.createengines.content.crankshaft.CrankshaftBlockEntity;
@@ -13,9 +14,11 @@ import com.createengines.engine.EngineState;
 import com.createengines.engine.EngineSummary;
 import com.createengines.engine.sim.Tuning;
 import com.createengines.smoke.SmokeReport;
+import com.createengines.smoke.audit.HostileSaves;
 import com.createengines.smoke.audit.ServerAudit;
 
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.gametest.framework.GameTest;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.server.level.ServerLevel;
@@ -94,6 +97,133 @@ public class SmokeAuditGameTests {
 			.offset(6000, 3, 6000);
 		ServerAudit.lifecycle(helper.getLevel(), origin, report);
 		conclude(helper, report);
+	}
+
+	/** The same sweep with the wear mode on, which adds saved fields, ticking work and goggle state to every part that wears. */
+	@GameTest(template = "empty", batch = "smoke-wear-lifecycle", timeoutTicks = 400)
+	public static void everyBlockSurvivesPlacementTickingSavingAndBreakingWithTheWearModeOn(GameTestHelper helper) {
+		SmokeReport report = new SmokeReport("lifecycle-wear");
+		BlockPos origin = helper.absolutePos(BlockPos.ZERO)
+			.offset(6400, 3, 6000);
+		GameTestConfig.wearMode(true);
+		try {
+			ServerAudit.lifecycle(helper.getLevel(), origin, report);
+		} finally {
+			GameTestConfig.wearMode(false);
+		}
+		conclude(helper, report);
+	}
+
+	/** Every block entity loaded with NaN, infinities and the ends of each number type, then ticked; see {@link ServerAudit#hostileNumbers}. */
+	@GameTest(template = "empty", batch = "smoke-hostile", timeoutTicks = 400)
+	public static void everyBlockEntitySurvivesBadNumbersInItsSave(GameTestHelper helper) {
+		SmokeReport report = new SmokeReport("hostile");
+		BlockPos origin = helper.absolutePos(BlockPos.ZERO)
+			.offset(6800, 3, 6000);
+		ServerAudit.hostileNumbers(helper.getLevel(), origin, report);
+		conclude(helper, report);
+	}
+
+	/**
+	 * A freshly placed block saves little. A running, wearing engine saves everything it keeps, so each kind is run, every block
+	 * entity of it is given the same kind of bad number at once, and it is left to tick as part of the engine. Whatever state it
+	 * ends in, its figures, what it tells Create and what it saves must all be finite.
+	 */
+	@GameTest(template = "empty", batch = "smoke-hostile-engines", timeoutTicks = 8000)
+	public static void aRunningEngineSurvivesBadNumbersInEverySaveOfIt(GameTestHelper helper) {
+		SmokeReport report = new SmokeReport("hostile-engines");
+		ServerLevel level = helper.getLevel();
+		BlockPos at = helper.absolutePos(new BlockPos(0, 1, 0));
+		String[] kinds = {"diesel", "spark", "rotary"};
+		HostileSaves.Poison[] poisons = HostileSaves.Poison.values();
+		int perVariant = 700;
+		int variants = kinds.length * poisons.length;
+		boolean[] done = {false};
+		GameTestConfig.wearMode(true);
+		helper.onEachTick(() -> {
+			long t = helper.getTick();
+			int index = (int) (t / perVariant);
+			int within = (int) (t % perVariant);
+			if (index >= variants) {
+				if (!done[0]) {
+					done[0] = true;
+					clearEngine(level, at);
+					GameTestConfig.wearMode(false);
+					conclude(helper, report);
+				}
+				return;
+			}
+			String kind = kinds[index / poisons.length];
+			HostileSaves.Poison poison = poisons[index % poisons.length];
+			String name = kind + " engine " + poison;
+			if (within == 0) {
+				clearEngine(level, at);
+				switch (kind) {
+					case "diesel" -> TestEngine.build(level, at, true);
+					case "spark" -> TestEngine.buildSpark(level, at, true);
+					default -> TestEngine.buildRotary(level, at, true);
+				}
+			}
+			if (within == 200)
+				level.removeBlock(at.offset(STARTER_POWER), false);
+			if (within == 500) {
+				// Logged first: a throw in a block entity's tick takes the server down, and this line is then the last word on which
+				CreateEngines.LOGGER.info("SMOKE hostile-engines: poisoning the {}", name);
+				var access = level.registryAccess();
+				int poisoned = 0;
+				for (BlockPos pos : engineArea(at)) {
+					var entity = level.getBlockEntity(pos);
+					if (entity == null || !ServerAudit.ours(BuiltInRegistries.BLOCK.getKey(level.getBlockState(pos)
+						.getBlock())))
+						continue;
+					poisoned++;
+					ServerAudit.guard(report, "hostile", name + " loads at " + pos.subtract(at)
+						.toShortString(), () -> entity.loadWithComponents(HostileSaves.poison(entity.saveWithFullMetadata(access), poison),
+							access));
+				}
+				report.check("hostile", name + " had block entities to poison", poisoned > 2, "only " + poisoned);
+			}
+			if (within == perVariant - 1) {
+				var access = level.registryAccess();
+				List<String> bad = new ArrayList<>();
+				for (BlockPos pos : engineArea(at)) {
+					var entity = level.getBlockEntity(pos);
+					if (entity == null || !ServerAudit.ours(BuiltInRegistries.BLOCK.getKey(level.getBlockState(pos)
+						.getBlock())))
+						continue;
+					for (String value : HostileSaves.notFinite(entity.saveWithFullMetadata(access)))
+						bad.add(BuiltInRegistries.BLOCK.getKey(level.getBlockState(pos)
+							.getBlock())
+							.getPath() + " " + value);
+				}
+				report.check("hostile", name + " saves only finite numbers", bad.isEmpty(), "it saves " + bad);
+				EngineSummary summary = summaryAt(level, at);
+				if (summary != null)
+					report.check("hostile", name + " keeps every figure finite", Float.isFinite(summary.rpm())
+						&& Float.isFinite(summary.availableTorque()) && Float.isFinite(summary.loadTorque())
+						&& Float.isFinite(summary.fuelPerMinute()) && Float.isFinite(summary.temperature())
+						&& Float.isFinite(summary.condition()), summary.toString());
+				if (level.getBlockEntity(at.offset(PRIMARY)) instanceof CrankshaftBlockEntity crank)
+					report.check("hostile", name + " gives Create finite speed and stress", Float.isFinite(crank.getSpeed())
+						&& Float.isFinite(crank.publishedCapacity()) && crank.publishedCapacity() >= 0,
+						"speed " + crank.getSpeed() + ", capacity " + crank.publishedCapacity());
+			}
+		});
+	}
+
+	/** Every position an engine from {@link TestEngine} may stand on. */
+	private static Iterable<BlockPos> engineArea(BlockPos at) {
+		List<BlockPos> area = new ArrayList<>();
+		for (int x = 0; x <= 7; x++)
+			for (int y = 0; y <= 6; y++)
+				for (int z = 0; z <= 6; z++)
+					area.add(at.offset(x, y, z));
+		return area;
+	}
+
+	private static void clearEngine(ServerLevel level, BlockPos at) {
+		for (BlockPos pos : engineArea(at))
+			level.removeBlock(pos, false);
 	}
 
 	// Crowds and long runs
@@ -407,7 +537,7 @@ public class SmokeAuditGameTests {
 	 * under each. Nothing may throw, go NaN or run away: settings are edited by players in a text file, where a value
 	 * that was never tried is the first one somebody types. In a batch of its own, because the settings are global.
 	 */
-	@GameTest(template = "empty", batch = "smoke-tuning", timeoutTicks = 20000)
+	@GameTest(template = "empty", batch = "smoke-tuning", timeoutTicks = 32000)
 	public static void everyTuningSettingAtItsExtremesLeavesAnEngineSane(GameTestHelper helper) {
 		SmokeReport report = new SmokeReport("tuning");
 		ServerLevel level = helper.getLevel();
@@ -417,7 +547,10 @@ public class SmokeAuditGameTests {
 			new Knob("fuelConsumption", v -> Tuning.fuelConsumption = v, 0.05, 20),
 			new Knob("torsionalFlex", v -> Tuning.torsionalFlex = v, 0, 2),
 			new Knob("coolingBonus", v -> Tuning.coolingBonus = v, 0, 3),
-			new Knob("heatRecovery", v -> Tuning.heatRecovery = v, 0.1, 10));
+			new Knob("heatRecovery", v -> Tuning.heatRecovery = v, 0.1, 10),
+			new Knob("altitudeStart", v -> Tuning.altitudeStart = v, -64, 100000),
+			new Knob("altitudeScale", v -> Tuning.altitudeScale = v, 1, 100000),
+			new Knob("altitudeFloor", v -> Tuning.altitudeFloor = v, 0.01, 1));
 		List<Knob> switches = List.of(new Knob("forcedInduction", v -> Tuning.forcedInduction = v > 0, 0, 1),
 			new Knob("sparkFouling", v -> Tuning.sparkFouling = v > 0, 0, 1),
 			new Knob("oilDilution", v -> Tuning.oilDilution = v > 0, 0, 1),
@@ -427,7 +560,23 @@ public class SmokeAuditGameTests {
 			new Knob("crankingDraw", v -> Tuning.crankingDraw = v > 0, 0, 1),
 			new Knob("pilotInjection", v -> Tuning.pilotInjection = v > 0, 0, 1),
 			new Knob("rotaryEngines", v -> Tuning.rotaryEngines = v > 0, 0, 1),
-			new Knob("heatRecoveryEnabled", v -> Tuning.heatRecoveryEnabled = v > 0, 0, 1));
+			new Knob("heatRecoveryEnabled", v -> Tuning.heatRecoveryEnabled = v > 0, 0, 1),
+			new Knob("altitudeThinning", v -> Tuning.altitudeThinning = v > 0, 0, 1),
+			new Knob("sableAirPressure", v -> Tuning.sableAirPressure = v > 0, 0, 1),
+			new Knob("fuelFire", v -> Tuning.fuelFire = v > 0, 0, 1),
+			new Knob("fuelFireByVolatility", v -> Tuning.fuelFireByVolatility = v > 0, 0, 1),
+			new Knob("meterAllHeads", v -> Tuning.meterAllHeads = v > 0, 0, 1),
+			new Knob("wearMode", v -> Tuning.wearMode = v > 0, 0, 1));
+		// A setting added later must be added above, or this sweep quietly stops being "every setting"
+		TreeSet<String> unswept = new TreeSet<>();
+		for (var field : Tuning.class.getDeclaredFields())
+			if (java.lang.reflect.Modifier.isStatic(field.getModifiers()) && !java.lang.reflect.Modifier.isFinal(field.getModifiers())
+				&& !field.isSynthetic())
+				unswept.add(field.getName());
+		for (List<Knob> group : List.of(knobs, switches))
+			for (Knob knob : group)
+				unswept.remove(knob.name());
+		report.check("tuning", "every Tuning setting is swept", unswept.isEmpty(), "not swept: " + unswept);
 		List<Runnable> variants = new ArrayList<>();
 		List<String> names = new ArrayList<>();
 		for (List<Knob> group : List.of(knobs, switches))
@@ -472,10 +621,11 @@ public class SmokeAuditGameTests {
 				}
 				return;
 			}
+			// Every tick, not once: a config file saved by an earlier batch is read back a moment later and would undo the setting
+			variants.get(index)
+				.run();
 			if (within == 0) {
 				variant[0] = index;
-				variants.get(index)
-					.run();
 				// A fresh engine for each setting, on the same spot
 				for (int x = 0; x <= 7; x++)
 					for (int y = 0; y <= 6; y++)
@@ -519,7 +669,7 @@ public class SmokeAuditGameTests {
 	 * limits at their minimum may stop an engine forming at all, which is fine; everything else must run, with finite figures
 	 * and finite speed and stress given to Create. Each value is put back afterwards (they live in the shared config).
 	 */
-	@GameTest(template = "empty", batch = "smoke-config", timeoutTicks = 20000)
+	@GameTest(template = "empty", batch = "smoke-config", timeoutTicks = 28000)
 	public static void everyConfigSettingAtItsExtremesLeavesAnEngineSane(GameTestHelper helper) {
 		SmokeReport report = new SmokeReport("config");
 		ServerLevel level = helper.getLevel();
@@ -537,11 +687,19 @@ public class SmokeAuditGameTests {
 			new ConfigKnob("maxManifoldBlocks", com.createengines.config.CEConfig.MAX_MANIFOLD_BLOCKS, 1, 4096, true),
 			new ConfigKnob("maxCoupledLines", com.createengines.config.CEConfig.MAX_COUPLED_LINES, 1, 64, true),
 			new ConfigKnob("maxCouplingWalk", com.createengines.config.CEConfig.MAX_COUPLING_WALK, 1, 8192, true),
+			new ConfigKnob("maxBankBatteries", com.createengines.config.CEConfig.MAX_BANK_BATTERIES, 1, 32768, false),
+
 			new ConfigKnob("throttleIdleMin", com.createengines.config.CEConfig.THROTTLE_IDLE_MIN, 5, 100, false),
 			new ConfigKnob("throttleIdleMax", com.createengines.config.CEConfig.THROTTLE_IDLE_MAX, 5, 100, false),
 			new ConfigKnob("throttleWideMin", com.createengines.config.CEConfig.THROTTLE_WIDE_MIN, 5, 100, false),
 			new ConfigKnob("throttleWideMax", com.createengines.config.CEConfig.THROTTLE_WIDE_MAX, 100, 150, false),
-			new ConfigKnob("alternatorEnergy", com.createengines.config.CEConfig.ALTERNATOR_ENERGY, 0, 100, false));
+			new ConfigKnob("alternatorEnergy", com.createengines.config.CEConfig.ALTERNATOR_ENERGY, 0, 100, false),
+			new ConfigKnob("pollutionRate", com.createengines.config.CEConfig.POLLUTION_RATE, 0, 10, false),
+			new ConfigKnob("carbonRate", com.createengines.config.CEConfig.CARBON_RATE, 0, 10, false),
+			new ConfigKnob("sulfurRate", com.createengines.config.CEConfig.SULFUR_RATE, 0, 10, false),
+			new ConfigKnob("pollutionAreaCap", com.createengines.config.CEConfig.POLLUTION_AREA_CAP, 0, 100000, false),
+			new ConfigKnob("pollutionEngineCeiling", com.createengines.config.CEConfig.POLLUTION_ENGINE_CEILING, 0, 100000, false));
+		configCoverage(report, knobs);
 		java.util.Map<ConfigKnob, Number> originals = new java.util.LinkedHashMap<>();
 		for (ConfigKnob knob : knobs)
 			originals.put(knob, knob.value().get());
@@ -621,6 +779,34 @@ public class SmokeAuditGameTests {
 						"speed " + crank.getSpeed() + ", capacity " + crank.publishedCapacity());
 			}
 		});
+	}
+
+	/**
+	 * Every setting in the config file is swept: here, or by the tuning sweep because {@code CEConfig.applyTuning} copies it to
+	 * {@link Tuning} (which checks its own fields are all swept). A new setting that is in neither fails by its path.
+	 */
+	private static void configCoverage(SmokeReport report, List<ConfigKnob> knobs) {
+		var config = com.createengines.config.CEConfig.class;
+		java.util.Set<Object> covered = java.util.Collections.newSetFromMap(new java.util.IdentityHashMap<>());
+		for (ConfigKnob knob : knobs)
+			covered.add(knob.value());
+		TreeSet<String> tuningNames = new TreeSet<>();
+		for (var field : Tuning.class.getDeclaredFields())
+			tuningNames.add(field.getName()
+				.toLowerCase(java.util.Locale.ROOT));
+		TreeSet<String> missed = new TreeSet<>();
+		for (var entry : com.createengines.config.CEConfig.values()
+			.entrySet()) {
+			String path = entry.getKey();
+			String key = path.substring(path.lastIndexOf('.') + 1)
+				.toLowerCase(java.util.Locale.ROOT);
+			// Two keys are not spelled like their field: the output scale and the switch of heat recovery
+			boolean tuned = tuningNames.contains(key) || path.equals("balance.heatRecoveryOutput");
+			// The pollution switch only gates another mod's gas, which the rates swept here at 0 cover
+			if (!covered.contains(entry.getValue()) && !tuned && !path.equals("compat.pollution"))
+				missed.add(path);
+		}
+		report.check("config", "every setting of " + config.getSimpleName() + " is swept", missed.isEmpty(), "not swept: " + missed);
 	}
 
 	@SuppressWarnings({"unchecked", "rawtypes"})

@@ -53,6 +53,7 @@ How far the engine scanner looks. Bigger builds need bigger limits and cost more
 | `maxManifoldBlocks` | `256` | 1 to 4096 | Largest intake or exhaust manifold network the scanner will follow. |
 | `maxCoupledLines` | `8` | 1 to 64 | Most crankshafts that can be geared together, one to one, into a single engine. 1 turns coupled crankshafts off: each crank line is then an engine of its own. |
 | `maxCouplingWalk` | `512` | 1 to 8192 | Most kinetic blocks the scanner looks through, from a crankshaft, for other crankshafts geared to it. |
+| `maxBankBatteries` | `4096` | 1 to 32768 | Most touching batteries that act as one bank. A bigger bank acts as more than one. |
 | `throttleIdleMin` | `5` | 5 to 100 | Smallest idle stop a Throttle Body's value box offers, as a percent open (a multiple of 5). Raise it to stop players closing the valve down to a crack. |
 | `throttleIdleMax` | `100` | 5 to 100 | Largest idle stop a Throttle Body's value box offers, as a percent open (a multiple of 5). Never below throttleIdleMin: if it is, the minimum is used. |
 | `throttleWideMin` | `100` | 5 to 100 | Smallest wide-open bore a Throttle Body's value box offers, as a percent of the plain intake (a multiple of 5). 100 is the plain intake; lower lets a throttle body pinch the intake even at full signal. |
@@ -107,7 +108,7 @@ Other mods, and how the world around an engine answers it.
 | `pollutionRate` | `0.25` | 0.0 to 10.0 | Scales how much gas an engine puts out. 1 is the full amount the engine would release; the default is a quarter of that. 0 is the same as turning pollution off. |
 | `carbonRate` | `1.0` | 0.0 to 10.0 | Scales the carbon an engine puts out, on top of pollutionRate. 0 means no carbon, only sulfur. |
 | `sulfurRate` | `1.0` | 0.0 to 10.0 | Scales the sulfur an engine puts out, on top of pollutionRate. 0 means no sulfur, only carbon. |
-| `pollutionAreaCap` | `0` | 0 to 100000 | An outlet stops releasing while the air in the 7 by 7 by 7 block cube in front of it already holds this many steps of gas (carbon and sulfur together; one block holds 3 of a gas at most). It starts again as the gas thins or spreads, so a factory stays hazy rather than growing unlivable. 0, the default, turns the cap off; 150 is a starting guess (about 15 percent of the cube's capacity), not a tuned figure. |
+| `pollutionAreaCap` | `0` | 0 to 100000 | An outlet stops releasing while the air in the 7 by 7 by 7 block cube in front of it already holds this many steps of gas (carbon and sulfur together; one block holds 3 of a gas at most). It starts again as the gas thins or spreads, so a factory stays hazy rather than growing unlivable. 0, the default, turns the cap off; 150 is a starting guess (about 15 percent of the cube's capacity), not a tuned figure. Each outlet reads its air every 3 seconds and counts what it has released since. |
 | `pollutionEngineCeiling` | `0.0` | 0.0 to 100000.0 | The most steps of each gas one engine may release per minute of running, however much it burns. 0 turns the ceiling off. |
 <!-- /generated:server-settings -->
 
