@@ -441,7 +441,7 @@ over anything in "Build status" that says otherwise)**:
   up the seconds a cylinder has run dry; oil brings the count down twice as fast, a stopped engine neither gains nor loses; at **20 seconds** the piston
   seizes, and half way (10 seconds) the engine squeals. A seized cylinder is **locked** (new fault `SEIZED`, appended after `BROKEN_HEAD`; it drags on
   the crank 4 times a plain cylinder, so a small engine with one may stall), keeps all its parts, and its piston is left **at least 0.75 worn**. A
-  **Service Kit frees it** but the piston stays as worn as the seizure left it, so it is replaced soon; **taking the piston out** also ends the seizure,
+  **Service Kit takes the piston out** (author, 2026-11-25; it used to free it in place), as worn as the seizure left it; taking it out by hand also ends the seizure,
   and a new piston starts new. Deterministic, no roll (the count is the warning), the count is not saved (an engine rebuilt starts clean), the flag is
   saved only while set (`Seized`). All numbers are first-pass (`Wear.SEIZE_*`). Tests: `WearTest` (the count, the threshold, nonsense in, drag), and
   GameTests run dry, run oiled, and freed by a kit or a new piston, each in its own batch because the film override is global.
@@ -609,7 +609,7 @@ design section, the design section is the target and the build is to be changed:
      renderers, using `EnginePoses.facingFrame` to stand the upright models on whichever way a block faces. Models come from `tools/generate_models.py` (`wear_wrecks`).
    - **Sounds**, synthesised in `tools/generate_sounds.py` and encoded only for these six (every other recording untouched): `rod_thrown1..2` (a flat crack, the clang of the cast
      head splitting, a grind of the wreck, the ring of the casting; 1.7 s), `gasket_blow1..2` (a hard pop and hot gas hissing out, sputtering; 1.3 s) and `piston_seize1..2` (a rising
-     dry shriek cut off by a clunk and a low shudder; 1.4 s), registered in `CESounds` and `sounds.json`. The warning squeal half way to seizing is the existing `bearing_squeal`.
+     dry shriek cut off by a clunk and a low shudder; 1.4 s), registered in `CESounds` and `sounds.json`. Changed 2026-11-25 after the author found 20 seconds too fast and the sounds janky: a piston now takes 120 seconds dry at 128 RPM (slower below, faster above, 2.5 times as long forged), cries out with its own one-off `seize_warning1..2` from half way (it was the `bearing_squeal` loop played once), the seizure clunk comes 0.14 s in and not 0.62 s, and the gasket chatter and seizure rasp no longer switch hard on and off.
      Checked by the numbers (levels, no clipping, the envelope in time) and by `SoundAssetsTest`, not by ear: **they need listening to**.
    - **Failed apex seals. Built 2026-11-24 (not seen or heard in game):** sounds of their own (`apex_fail1..2`: a snap, the loose strip clattering round the chamber, the
      wheeze of blow-by; 1.6 s), a burst of sparks and smoke, `rotor_housing/wreck` (sprung seal strips out between the posts on all four sides, soot on both rims, clear of
@@ -654,6 +654,22 @@ design section, the design section is the target and the build is to be changed:
    removed, not tolerated), and the rest are in the other session's new classes. The limit is not moved. **Still to run:** `pitest` again once those are down, the Sable and Aeronautics matrix rows
    with the mode on, and the release gate itself. The trailer has `later` lines in `trailer-parts.txt` for the wear items; the changelog, README and release record are not written (they wait
    for the other session's plug, turbo and knock work and for the author's say on the failure curve).
+
+### Fix in 2.3.1: breaking a block resets its wear (author, 2026-11-25)
+
+**Known bug, not fixed in 2.3.0.** With the wear mode on, a worn battery or rotor housing that is broken and placed again comes back
+as new. Wear is saved on the block entity (`Wear` on a battery; `ApexWear` and `ApexFailed` on a rotor housing) and nothing carries
+it onto the dropped item. Found by reading the code while writing tests; **not reproduced in game, and no test covers it yet**.
+
+- **Battery:** a free repair of any wear, with no Service Kit, past the 0.35 a kit can mend.
+- **Rotor housing:** the apex seals come back new, **a failed set included**, so no Apex Seals item is ever needed.
+- **To check in the same fix:** a cylinder's thrown-rod wreck (`Thrown`) is also only on the block entity, so breaking and replacing
+  the cylinder looks likely to clear it without the Service Kit. The rod and piston stay lost.
+- **Already right:** a cylinder's piston and rod and a head's gasket drop with their wear.
+
+**Done when:** each case has a GameTest that breaks the block, places the dropped item and finds the wear or failure still there; an
+item with no wear data still places as new, so existing items stay valid; and worn state is kept with the mode off, as other saved
+wear is. How it is carried (on the block's item, or by dropping the seals as their own worn item) is still to be chosen.
 
 ## 2.4 Open Garage
 

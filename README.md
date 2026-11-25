@@ -76,7 +76,7 @@ Minecraft 1.21.1 · NeoForge 21.1.219 · Create 6.0.10
   charcoal or let go. An Oil Filter slows the ageing and cleans fuel out of the oil
 - **Engine temperature**: a cold engine drags until it warms through, and a cooled one breathes better (about 4 to 9
   percent more power). Coolant, or just water, goes into the same sump and is spent carrying heat away, so there is no
-  radiator to fit. Nothing ever overheats or wears out
+  radiator to fit. Nothing ever overheats, and nothing wears out unless the wear mode is on
 - **Warm-up and cooling**: a cold block burns fuel a little worse (ethanol and pressed oil most, gasoline least) and
   warms quickest at idle. A Blaze Burner against the heat exchanger preheats it. A stopped engine ticks, shimmers and
   its turbine wheel glows red as it cools, and goggles call it Cooling down

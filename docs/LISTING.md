@@ -68,7 +68,7 @@ and valves yourself, pipe in air and fuel, and the engine you built fires in ord
 
 | Stage | What you build |
 |---|---|
-| **Start** | A single diesel cylinder and a flywheel. The early game is forgiving, and nothing ever overheats or wears out |
+| **Start** | A single diesel cylinder and a flywheel. The early game is forgiving: nothing ever overheats, and nothing wears out unless you switch on the wear mode |
 | **Grow** | An inline six or a V8, laid out in one click with the Bank Builder, fed by your own plant-oil and ethanol chain |
 | **Tune** | Turbos, superchargers, precision parts, a transmission, and the Dynamometer to prove it worked |
 | **Master** | Coupled-crank V12s, Wankel rotaries, a Refinery column, and engines that heat your boilers and basins |
@@ -230,25 +230,34 @@ with no gasket fitted runs exactly as it did. Changes to existing builds are lis
 - Changed, spectators: a player in spectator mode now sees exhaust, steam and sparks.
 - Changed, casings: riveted, louvred and window casings, and casing-clad shafts and cogwheels, now draw their seams by the plate they wear, so a seam no
   longer appears on one side of a joint only.
+- **Changed, transmission redstone (existing builds are affected):** Auto can now be picked by redstone, at strength 15. Strength 1 to 13 is now that gear
+  (before, 1 was neutral and 2 to 14 were first to thirteenth), 14 is reverse (before, 15), and 15 is Auto. No strength picks neutral any more: set it on the
+  panel, with no signal. Check any redstone wired to a Transmission after updating; a lever or torch on one, which gave reverse, now gives Auto.
+- Fixed, transmission: while a redstone signal picks Auto, goggles and Display Links say so, and an Auto panel overridden by a signal no longer reads as automatic.
 - Fixed, transmission: while a redstone signal picks the gear, the gear dial now shows that gear. The hand setting is kept and shown again when the signal
   goes.
 - New setting, `features.wearMode` (default off). On: pistons, connecting rods, head gaskets, apex seals and batteries wear. Wear grows with speed, heat,
   lack of oil and (for gaskets) boost. Worn parts cost power and drag. Every number is a first pass; the tables are in `docs/WEAR.md`.
+- Switching the wear mode off puts running engines back at once: saved wear and failures stop counting and are no longer shown, so failed cylinders and
+  rotors run again. A fitted gasket is still named and still adds its power. What was saved comes back if the mode is switched on again, except a wreck
+  that a new piston or rod went in over while it was off.
 - New, head gaskets: `stock_gasket`, `cardboard_gasket`, `rubber_gasket`, `copper_gasket`, right-clicked onto a head. **A fitted gasket adds power with
   the wear mode on or off** (1%, 2.5%, 4% and 6% of each burn's heat when new). With the mode on a head with none ever fitted counts as holding a stock
   one; better gaskets last longer and hold more boost.
 - New, failures (wear mode only). A badly worn rod can be thrown: the piston and rod are lost, the head breaks and must be replaced, and the wreck is
-  cleared with a Service Kit. A gasket can blow, stopping its cylinder until a new one is fitted. A piston run dry for 20 seconds seizes; a Service Kit
-  frees it, still badly worn. A rotor's apex seals can fail, stopping all three chambers until new ones are fitted. Each has its own sound, particles and
-  wreck model; a thrown rod burns where there is fuel only with `fuelFire` on.
+  cleared with a Service Kit. A gasket can blow, stopping its cylinder until a new one is fitted. A piston run dry seizes, after about two minutes at 128 RPM (longer
+  when slower, and 2.5 times as long for a forged piston), crying out from half way; a Service Kit
+  takes the piston out, still badly worn. A rotor's apex seals can fail, stopping all three chambers until new ones are fitted; the wreck drags
+  on the shaft, so a single rotor stops within seconds, while a second sound rotor can keep the engine running. Each has its own sound, particles and
+  wreck model; a thrown rod burns where there is fuel only with `fuelFire` on. Nothing is thrown, blown or failed on a stopped engine.
 - New, Service Kit (`service_kit`, 24 uses): sets light wear (35% or less) back to 10% on a piston, rod, gasket, set of seals or battery, clears a thrown
-  rod, frees a seized piston, and sneak-removes a gasket. A Create Deployer holding one repairs a lightly worn part on a belt, depot or basin. Held with a
+  rod, pulls out a seized piston, and sneak-removes a gasket. A Create Deployer holding one repairs a lightly worn part on a belt, depot or basin. Held with a
   worn part in the other hand it repairs that part.
 - New, Apex Seals (`apex_seals`): right-clicked onto a rotor housing, a new set replaces whatever is there.
 - New, worn parts keep their wear as items (component `create_engines:wear`; a part without it is new). Forged Pistons last 2.5 times as long as standard
   ones. The Bank Builder fits gaskets and uses only unworn parts. A schematic of a head with a gasket prices the gasket.
 - New, batteries (wear mode only): drawing on one slowly lowers what it holds, down to half at worst, never to nothing; each size has its own weakness.
-  A worn battery does not yet carry its wear when broken and placed again.
+  Its goggles show the wear from 0%, with a decimal below 10%.
 - New, readouts: goggles show each part's wear; the Display Link has an engine wear source (`engine_wear`); the Black Box records the build's wear and
   each failure.
 - New, Ponder: "Wear and Tear".
@@ -257,9 +266,15 @@ with no gasket fitted runs exactly as it did. Changes to existing builds are lis
 - New, knock (wear mode only): a spark engine whose boost lights the charge early wears its pistons faster, from 4% of the burn lost; from 7% the
   cylinder pings, and goggles say the piston is knocking. At the worst knock and 128 RPM a standard piston wears out from knock in 20 minutes, a Forged
   Piston in 50. Knock never breaks a part by itself. A rotor does not knock.
+- Known limit (wear mode), to be fixed in 2.3.1: a worn battery or rotor housing that is broken and placed again comes back as new, failed apex seals
+  included. A thrown rod's wreck is likely cleared the same way; its rod and piston stay lost.
+- Known issues (wear mode only), found by reading the code and to be fixed in 2.3.1: a new piston can take over the old one's dry-running time and
+  seize early; a gasket fitted to a head that broke before the mode was switched off can be lost when the mode comes back on; and for one tick after
+  the mode is switched, an engine can run without its saved failures.
+- New sound events: `apex_fail`, `gasket_blow`, `piston_seize`, `rod_thrown` and `seize_warning`.
 - Not in this release: spark plug wear and turbocharger wear (their rules are written and tested but no engine reads them).
 - New logo.
-- `compat/manifest.txt` has 47 lines added and none changed or removed; `compat/behaviour.txt` has 61 lines added (the `wearMode` default and naphtha,
+- `compat/manifest.txt` has 48 lines added and none changed or removed; `compat/behaviour.txt` has 61 lines added (the `wearMode` default and naphtha,
   which had no baseline) and none changed.
 
 ## Changelog for 2.2.0

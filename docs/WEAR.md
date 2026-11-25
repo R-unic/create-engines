@@ -83,4 +83,11 @@ A Service Kit has 24 uses. It sets wear above 0.10 and up to 0.35 back to 0.10; 
 
 ## Running dry
 
-A running engine whose oil film is below 0.15 counts up the seconds a cylinder has run dry, oil takes it down 2 times as fast, and at 20 seconds the piston seizes (it is left at least 0.75 worn and the cylinder drags 4 times as hard). It squeals at half that.
+A running engine whose oil film is below 0.15 counts a cylinder towards seizing, and oil takes the count down 2 seconds for each second. A seized piston is left at least 0.75 worn and its cylinder drags 4 times as hard. It cries out from half way, more often the nearer it is. A forged (precision) piston lasts 2.5 times as long.
+
+Seconds of running dry before a piston seizes:
+
+| Piston | 32 RPM | 64 RPM | 100 RPM | 128 RPM | 192 RPM | 256 RPM |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| Standard | 240 | 240 | 154 | 120 | 80 | 60 |
+| Forged (precision) | 600 | 600 | 384 | 300 | 200 | 150 |
