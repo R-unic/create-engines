@@ -302,6 +302,9 @@ key or saved format is renamed or removed. Changes to existing builds are listed
   as a heated source. It has its own Ponder page. Engines without one run as before.
 - Added, Bank Builder: W and X layouts. W lays three banks (the base face and the faces a quarter turn either side), X all four faces; sneak-use
   cycles inline, vee, flat, W and X before the grade of parts. Inline, vee and flat build exactly as before.
+- Changed (wear mode), easier to spot from a distance: a **blown gasket** is now a bright red one, squeezed out all round the head with torn
+  tongues sticking out and a glowing hole above it. **Failed apex seals** are now thick pale strips sprung out across all four sides of the
+  rotor housing, with a bent length of copper rim. Looks only.
 
 ## Changelog for 2.3.0
 

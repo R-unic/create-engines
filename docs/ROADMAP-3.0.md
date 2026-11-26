@@ -612,6 +612,9 @@ design section, the design section is the target and the build is to be changed:
      wheeze of blow-by; 1.6 s), a burst of sparks and smoke, `rotor_housing/wreck` (sprung seal strips out between the posts on all four sides, soot on both rims, clear of
      the rotor's sweep, `ApexWreckAssetsTest`), drawn until a new set is fitted, and a housing that keeps smoking. The explosion stand-in is gone. No fire: the author's
      fire was for the thrown rod. `./gradlew runVisualSmokeTest -PsmokeWear` now photographs a failed rotor too.
+     **Redrawn 2026-11-26** (author: the models were the weak point at range, blown gaskets and apex seals most): the gasket is red, with torn tongues past
+     the head's outline and a glowing hole; the seals are thick pale ceramic strips past the housing's outline, with a bent copper rim and more soot.
+     `DamageReadsAfarAssetsTest` holds both. Checked in `tools/preview_models.py` renders and in `-PsmokeWear` at close range, not from far off; this replaces what the two entries above describe.
    - **Not yet:** spark plug and turbo failures have no wreck or sound because they are not wired into an engine (knock breaks nothing, so has no wreck). Open: a first look at the in-game wreck colours (the head's top and the soot are the first guess).
    - **Also open from "seen in game":** the goggles lines, the gasket and kit textures (flat items, first pass), and the four spectacle effects' timing.
 6. **Readouts. Built 2026-11-24 (not seen in game).** `EngineSummary` carries a new `wear` figure (the **plain mean** of every part that wears: each fitted piston and rod,
