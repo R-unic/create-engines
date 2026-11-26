@@ -281,7 +281,10 @@ def record(ffmpeg, raw, sound_path, task, run_dir, extra=()):
         video.stdin.flush()
     video.wait(timeout=60)
     sound_started = sound.finish(sound_path)
-    shots = json.loads((PRIVATE / run_dir / "trailer_shots.json").read_text(encoding="utf-8"))
+    if not ended:
+        sys.exit("the game closed before the tour ended (closed by hand, or it crashed): nothing was cut from the partial take. "
+                 "The game's log is in " + str(PRIVATE / run_dir / "logs"))
+    shots =json.loads((PRIVATE / run_dir / "trailer_shots.json").read_text(encoding="utf-8"))
     shutil.copy(PRIVATE / run_dir / "trailer_shots.json", raw.parent / "trailer_shots.json")
     first_shot = shots["startEpochMs"] / 1000.0
     picture = first_shot - (video_started[0] or time.time())
