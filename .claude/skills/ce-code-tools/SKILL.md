@@ -32,7 +32,7 @@ Never search `~/.gradle` with `find` (it takes minutes) and never unzip jars by 
   `python tools/ce_patch.py <file>` (format in `--help`). It keeps CRLF, writes nothing unless every block matches, shows
   the nearest line when one does not, and can be rerun. Do not write a new `patch.py`, `edit.py` or heredoc Python script.
 - Never put a heredoc containing apostrophes in the Bash tool: it fails to parse.
-- Source uses tabs. Check the real diff with `rtk proxy git diff` (the shell hook filters plain `git diff`).
+- Source uses tabs. Check the real diff with `rtk proxy git diff` (a shell hook may filter plain `git diff`, in Bash and PowerShell).
   `git status` can list generated JSON that differs only in line endings.
 
 ## Generators (they overwrite hand edits: change the generator, then rerun it)
@@ -41,7 +41,7 @@ Never search `~/.gradle` with `find` (it takes minutes) and never unzip jars by 
 |---|---|
 | `tools/generate_models.py` | block models; run from the repo root; safe to rerun |
 | `tools/generate_textures.py` | run with `/c/Python315/python.exe` (another zlib rewrites every PNG's bytes) |
-| `tools/generate_sounds.py` | run with `/c/Python312/python.exe` (numpy, scipy, Pillow); `--wav DIR name...` previews |
+| `tools/generate_sounds.py` | run with `/c/Python312/python.exe` (numpy, scipy, Pillow); `--wav DIR name...` previews; takes `sndfile.dll` from Audacity 4 |
 | `tools/ponder_schematics.py` | rewrites every `.nbt` when run: to add one, exec the helpers plus only the new tail from a scratchpad script |
 | `tools/preview_models.py` | `--scale` is the cell size in pixels |
 
@@ -50,3 +50,7 @@ Check what a generator will touch before running it: restoring with `git checkou
 ## Shell
 
 Robocopy exit codes 0-7 mean success. A `cd` in Bash carries to later calls: use absolute paths.
+
+- Source files may be CRLF or LF (autocrlf), and `grep` output hides the CRs.
+- Windows `python.exe` run from Git Bash cannot open a `/tmp/...` path written inside a script (only arguments are
+  converted). Git Bash `tar` treats `C:` as a remote host: use `--force-local`.

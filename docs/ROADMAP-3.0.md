@@ -36,7 +36,7 @@ question, not an obstacle ([CLAUDE.md](../CLAUDE.md)).
 | 2.1 | Twin Mass | **Dual-mass flywheel**, the readouts that make a flywheel choice legible, and sharper niches for the existing fuels | Medium to large |
 | 2.2 | Proving Ground | Verification debts: server-from-jar, the step-size finding; **the battery tiers**, then **charge priority, electric injector assist and ignition coils**, with electrolysis to be decided (author, 2026-11-23) | Medium |
 | 2.3 | Wear and Tear | **The opt-in wear mode and nothing else** (author, 2026-11-24): pistons, rods, gaskets (stock and three tiers), rotary apex seals and batteries wear, precision parts wear slower, a rod can be thrown (a flag, a misfire, a broken head, with spectacle) and a gasket can blow, light wear is repaired by an automatable, durable Service Kit and the rest by replacing the part, worn parts keep their wear as items, and the Black Box and Display Link report each part and a total; off by default, nothing runs with it off, and gaskets and seals are not required with it off | Medium to large |
-| 2.4 | Running Hot | **Temperature in degrees, overheating you can reach** (a soft power loss in both modes, an exception the author approved on 2026-11-25), heat that follows work, **the Radiator** (closed loop, sheds more with a fan or on a moving contraption), and **the wear overhaul, part 2** (heat drives wear and failures, rod wear from load, plug and turbo wear wired, gasket recipes) (author, 2026-11-25), **a full sound rework** (each engine's note built from its banks, exhausts, cylinder size, cam and fuel instead of one shared firing sound; client-side only) (author, 2026-11-25), and **a texture rework, with some new models, so the mod looks like part of Create** (author, 2026-11-25, from player complaints) | Large |
+| 2.4 | Running Hot | **Temperature in degrees, overheating you can reach** (a soft power loss in both modes, an exception the author approved on 2026-11-25), heat that follows work, **the Radiator** (closed loop, sheds more with a fan or on a moving contraption), and **the wear overhaul, part 2** (heat drives wear and failures, rod wear from load, plug and turbo wear wired, gasket recipes) (author, 2026-11-25), **a full sound rework** (each engine's note built from its banks, exhausts, cylinder size, cam and fuel instead of one shared firing sound; client-side only, and bearable with many engines running in a build) (author, 2026-11-25), and **a texture rework, with some new models, so the mod looks like part of Create** (author, 2026-11-25, from player complaints), and **splitting the giant source files**, with no behaviour change (author, 2026-11-26) | Large |
 | 2.5 | Open Garage (was 2.4 until 2026-11-25) | Reach: API 1.2, energy and probe mods, the next Create, a second example addon; **piston rings**, **polluted intake air**, **high- and low-compression piston variants**, **rotor variants (a precision rotor among them) with an exhaust niche**, and **nitrous oxide** (liquid, a vaporiser and a gas in the intake manifolds) (author, 2026-11-23), a **W layout for the Bank Builder** (author, 2026-11-24), then **look, sound and performance** only where the 2.0.x pass found something (all of it was 2.3 until the author moved it, 2026-11-24; its sound went to 2.4's sound rework, 2026-11-25) | Medium to large |
 | 3.0 | Clean Slate | The second breaking cleanup: drop 1.x migrations, regenerate baselines, API 2.0 | Large |
 
@@ -700,6 +700,10 @@ These were the 2.3.1 patch. They go out with 2.4 and are listed first in its cha
 
 ### Shutting an engine down: the Ponder explanation
 
+**Built 2026-11-26, not seen in game, not released.** Built as below. The mod had no item summaries, so the tooltip is a line of hover text
+on the Camshaft and Cam Lobe items. The cylinder's goggles say "Fuel cut" too, and the cylinder, head and injector share one Ponder page,
+which has the closing step. Tests: `FuelCutGameTests`. The copper gasket guard under "Fixes carried over" is `ShapedRecipePatternTest`.
+
 **Why:** players asked for a block that cuts the fuel to stop an engine (MachinaCafe, Discord "Fuel injection shutoff", 2026-11-24), and the
 author was using a valve on the fuel line. The mod already has it: a redstone signal on any block of a camshaft line closes that line's
 fuel rack (`EngineController.readFuelRacks`, one rack per camshaft line, read every 10 ticks), and strength 15 cuts the fuel, so the
@@ -843,6 +847,10 @@ a head warps after 180 seconds past critical; a warped head drops nothing, like 
 standard rod's speed friction; wrenched or broken blocks carry wear on their item. Not built: a Display Link or goggles readout per part, a
 blueprint record of the rod.
 
+**Added 2026-11-26** (the author: the new rods should have a purpose outside wear mode): with the mode on or off, a rod also scales the
+inertia its cylinder adds to the crank, 0.7 light and 1.5 heavy (first pass), so a heavy rod smooths an engine and a light one lets it rev up
+sooner. Their items are now 3D models like the standard rod's, brass for light and steel for heavy, in place of the flat textures.
+
 **Exceptions owed in the 2.4.0 record**, in addition to those under "Fixes carried over": the loot tables of `battery`, `dry_cell`,
 `large_battery`, `cylinder`, `precision_cylinder`, `rotor_housing`, `turbocharger` and `variable_turbocharger` now copy wear onto the item
 (manifest lines moved by hand); the retuned failure chance and the new heat and load wear (wear mode only); the changed pins in `WearTest`,
@@ -907,12 +915,49 @@ like the engines they are building, even with a correct firing order. Sound only
   A mechanical layer under the exhaust: a valvetrain tick that differs between overhead, pushrod and valley cams, none for a rotary. Crude
   parts sound rougher than precision ones.
 - **Intake and load.** The intake roar joins the note and follows the throttle; on overrun the note drops and the existing exhaust pops
-  carry the crackle; boost and the muffler soften the exhaust as they do now.
+  carry the crackle; boost softens the exhaust as it does now. The Muffler makes the exhaust duller as well as quieter
+  and leaves the valvetrain alone (author, 2026-11-26).
 - **Distance.** Up close the mechanical layer and crack are heard; far off only the low boom of the exhaust carries.
-- **The clack goes.** Every running engine in earshot gets a note voice. The `cylinder_fire` samples are kept registered (no removed
-  sound IDs) but only play past the voice cap, quieter and filtered to sit under the notes that are playing.
+- **The clack goes.** Engines nearest the player get a note voice each; the rest join one shared sound (see "Easy to live with in a
+  build" below) instead of a bang per firing. The `cylinder_fire` samples stay registered (no removed sound IDs) and still play when
+  a player turns `volume.engineNote` to 0, as that setting promises today.
 - **Absorbs 2.5's sound items.** The 2.0.x retune list and the rotary sound (no valvetrain, a smooth rising note, a burble at idle) from
   "Look, sound and performance" in 2.5 are done here, because a rework would redo them anyway.
+
+**Easy to live with in a build** (author, 2026-11-25, from player complaints). Players say the sounds become very annoying in their
+builds: a base with several engines running for hours. Today the engine note has three voices (`EngineNoteSound.MAX_VOICES`), and
+every other engine in earshot plays `cylinder_fire` on each firing, so a factory of engines is a wall of identical clacks. A sound
+that is fine for one engine on a test bench has to stay bearable at the tenth engine and the third hour. So:
+
+- **Many engines are one sound.** Past the nearest few, engines join one shared "engine room" sound per area, a blend of their notes,
+  instead of each playing its own. Its loudness grows slowly with the number of engines (about 3 dB for each doubling), so sixteen
+  engines are a fuller rumble, not sixteen times louder.
+- **A ceiling on the total.** All engines together are never more than a few dB louder than the loudest one alone.
+- **A steady engine settles back.** An engine held at one speed and load drifts a few dB quieter over the first half minute and comes
+  back up as soon as the throttle, load or speed changes: what draws the ear is change, and a running factory should sit in the
+  background. A rev, a stall, a misfire or a warning is always heard at full level.
+- **Nothing harsh on repeat.** The crack and the valvetrain tick are the tiring parts: they fade with distance faster than the boom, and
+  the firing-to-firing variation above keeps any one sound from repeating exactly. Idle is quieter than load.
+- **Enclosed engines are muffled.** An engine inside Engine Casing is heard dulled, like the Muffler's effect. Muffling by any wall in
+  the way is added only if a client profile shows it cheap enough.
+- **The player's controls stay as they are:** the four volume settings in `CEClientConfig`, the Muffler and the noise-cancelling
+  headphones. No new slider (rule: no new tuning dial unless it replaces one).
+- **Tests:** sixteen identical engines in earshot render no more than 6 dB louder than one; engines past the nearest few join the
+  shared sound and none plays `cylinder_fire` per firing (unless `volume.engineNote` is 0); a steady engine's level falls by the set
+  amount and returns within a fraction of a second of a throttle change; warnings are never lowered. A soak with a large base of engines
+  stays inside the sound-thread budget below.
+
+**Build status (2026-11-25).** Built, not heard: the author tunes it in game. See [DESIGN.md](DESIGN.md) "The build's
+voice" and "Many engines". The server works out each engine's voice (`EngineSound`: outlet per firing from its exhaust runs,
+run lengths, compression ignition from cylinders without plugs, cam kind, precision, casing) and syncs it; the synth rings an
+outlet's pipe each, knocks, ticks, varies each firing, and dulls with distance and casing; the clatter loop and the bangs give
+way; the nearest three engines without a note share one voice, any more make it fuller, all are held under a ceiling, and a
+steady engine settles back. Tests: `EngineNoteVoiceTest`, `EngineChorusTest`, `EngineRoomMixTest`, `EngineSoundTest`,
+`EngineGameTests.theEngineSyncsWhatItIsBuiltOfForItsSound`, and the existing note tests unchanged. Changed from the design:
+the intake roar stays the sampled loop at the intake mouth (it already follows speed, load and boost, and the note cannot be
+heard from the mouth); overrun is the note's existing coasting level plus the existing pops. Not done: the trailer's engine
+shots re-recorded, the author's tuning, and a client profile with a large build (`EngineNotePerfTest` times one voice, not the
+scene).
 
 **How it is tuned:** a reference set rendered to WAV by the pure-Java synth (I4, I6, crossplane and flat-plane V8, flat four, V-twin, V12,
 W16, rotary, diesel I6), each at idle, mid and redline, for the author to listen to beside real recordings. Final numbers are the author's
@@ -1000,6 +1045,37 @@ a generator gets a test that its files match the generator's output where one is
 
 It is in 2.4 at the author's choice (2026-11-25). It touches no simulation code, so it does not wait on the heat work and
 the heat work does not wait on it.
+
+### Splitting the giant files (author, 2026-11-26; queued in 2.4)
+
+**Why.** The longest files are slow to change and review, parallel sessions collide in them, and AI sessions spend many tokens
+reading them (`EngineController.java` was the most-read file).
+
+**Candidates** (line counts on 2026-11-26, with 2.4 work still uncommitted):
+
+| File | Lines |
+| --- | --- |
+| `gametest/EngineGameTests.java` | 5094 |
+| `ponder/EngineScenes.java` | 4070 |
+| `client/ShowcaseRun.java` | 2370 |
+| `engine/EngineController.java` | 2304 |
+| `tools/generate_models.py` | 2235 |
+| `gametest/BlueprintGameTests.java` | 1776 |
+| `client/VisualSmokeTest.java` | 1295 |
+| `registry/CEBlocks.java` | 1161 |
+| `gametest/StressGameTests.java` | 1147 |
+| `engine/topology/EngineScanner.java` | 1027 |
+
+**How it is done.**
+
+- After the other 2.4 work in these files is committed, so a split never has to be merged with a feature change.
+- One file per commit, split by responsibility, not at a line count. A file that reads well as one piece may stay whole, with the
+  reason noted here.
+- Behaviour-preserving only: `behaviour.txt`, `trajectories.txt`, the manifest and the world fixtures stay untouched; no ID, key,
+  saved data or `com.createengines.api` name changes; no hot path gets slower.
+- Generators draw the same files: after splitting `generate_models.py`, its output is byte-identical.
+- No test is lost: the unit test and GameTest counts match before and after. Anything that finds code by file or class name (tests,
+  `src/smoke/` lists, tools, skills) moves in the same commit, as do the docs that name it.
 
 ## 2.5 Open Garage
 

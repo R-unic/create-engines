@@ -24,4 +24,4 @@ description: Run the Create Engines release gate and fill in the sign-off record
      code, no TODO or debug left, docs numbers updated
 4. Record what actually ran, with numbers. List every exception with who approved it.
 5. Write the Part 3 hands-on list from the changelog. Never tick Part 3 or sign for the author.
-6. Never tag, or ask for a tag, while a box is open or unexplained. Commit, push and publish only when asked.
+6. Never tag, or ask for a tag, while a box is open or unexplained. Push and publish only when asked (committing follows CLAUDE.md).

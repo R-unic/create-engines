@@ -1,0 +1,13 @@
+{
+  "enableArtifact": false,
+  "permissions": {
+    "deny": [
+      "mcp__computer-use",
+      "mcp__Claude_Browser",
+      "mcp__visualize",
+      "Artifact",
+      "ArtifactData",
+      "ArtifactComments"
+    ]
+  }
+}

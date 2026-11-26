@@ -9,6 +9,15 @@
   `ce-code-tools`).
 - Release gate: skill `ce-release-gate`.
 
+## Commit often, keep files small
+
+- Commit each finished, verified piece of work as soon as it is done, with its tests and docs, without waiting to be asked.
+  Do not let several features pile up uncommitted. Stage only your own changes (other sessions may share this checkout).
+  Pushing and tagging still wait for the author.
+- Do not let files grow to giant sizes. New work goes in a new file or class split by responsibility, not onto the end of a
+  long one. Past about 800 lines, split before adding more. The files that are already too long are listed in
+  [docs/ROADMAP-3.0.md](docs/ROADMAP-3.0.md), "Splitting the giant files".
+
 ## Releases follow the stability contract
 
 Every release (any `vX.Y.Z` tag, patch releases included) follows [docs/STABILITY.md](docs/STABILITY.md). Not optional; hurry
