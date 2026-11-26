@@ -271,8 +271,8 @@ python tools/trailer/record.py --post-only  # cuts the last recordings again (ne
   line says so), a light grade (a slight S-curve, a hint of warm highlights and cool shadows, a faint vignette), a 2.2:1 letterbox, and a caption at
   the lower left that slides in, with its chapter's name over it in gold (`chapter <shot>` lines of `captions.txt`; a `quiet`
   piece keeps the caption before it). A chapter starts with a white flash and a hit. The full cut opens cold on the single
-  cylinder with only the game's sound, slams the title (the mod's round icon, `docs/images/icon.png`, "CREATE" in Minecraft's
-  title font, cut from the game's own logo texture by `tools/create_lettering.py`, and the gold wordmark `docs/images/wordmark.png`)
+  cylinder with only the game's sound, slams the title (the mod's round icon, `docs/images/icon.png`, the "CREATE" lettering
+  `docs/images/create_lettering.png`, placed by `tools/create_lettering.py`, and the gold wordmark `docs/images/wordmark.png`)
   over the title shot with a flash and a boom as the music comes in, and ends with a riser into the last shot, a fade through black
   and an end card (the version line from `gradle.properties`, "Links in the description" and the AI notice, `outro_notice`) with a
   sting. The 16:9 thumbnail uses the same title; `tools/listing_art.py` makes the golden listing tile `docs/images/listing_gold.png`.

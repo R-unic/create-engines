@@ -43,7 +43,7 @@ import mcfont
 import sfx
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-import create_lettering  # noqa: E402  (Create's logo and the "CREATE" block letters, side by side)
+import create_lettering  # noqa: E402  (the "CREATE" lettering above the wordmark)
 
 HERE = Path(__file__).resolve().parent
 ROOT = HERE.parents[1]
@@ -198,7 +198,7 @@ def wrapped(text, scale, limit):
 
 
 def card_image(title, lines, layout, path, footer=None, notice=None, links=None, overlay=False, docs=None, shade=110):
-    """The mod's icon, "CREATE" in Minecraft's title font and the wordmark under it (together the title), a copper rule, and
+    """The mod's icon, the "CREATE" lettering and the wordmark under it (together the title), a copper rule, and
     the lines under it, in Minecraft's font on the dark card. An overlay is the same title on clear glass with a shade (`shade`
     of 255), to lie over footage. `docs` is a line under the AI notice saying where to read how AI is used."""
     lay = LAYOUTS[layout]
@@ -207,7 +207,7 @@ def card_image(title, lines, layout, path, footer=None, notice=None, links=None,
     mark = Image.open(WORDMARK).convert("RGBA")
     mark = mark.resize((lay["mark"], round(mark.height * lay["mark"] / mark.width)), Image.LANCZOS)
     centred(image, mark, lay["mark_y"] + dy)
-    centred(image, create_lettering.sized(lay["create"]), lay["create_y"] + dy)
+    create_lettering.place(image, lay["create"], lay["create_y"] + dy)
     icon = Image.open(LOGO).convert("RGBA").resize((lay["icon"], lay["icon"]), Image.LANCZOS)
     centred(image, icon, lay["icon_y"] + dy)
     draw = ImageDraw.Draw(image)
@@ -871,8 +871,7 @@ def thumbnail(ffmpeg, args, words, shots, work):
     mark = mark.resize((720, round(mark.height * 720 / mark.width)), Image.LANCZOS)
     mark_y = image.height - mark.height - 44
     image.alpha_composite(mark, (48, mark_y))
-    create = create_lettering.sized(380)
-    image.alpha_composite(create, (48 + (720 - create.width) // 2, mark_y - create.height - 10))
+    create_lettering.place(image, 380, mark_y - create_lettering.height(380) - 10, 48 + (720 - 380) // 2)
     icon = Image.open(LOGO).convert("RGBA").resize((150, 150), Image.LANCZOS)
     image.alpha_composite(icon, (36, 36))
     Path(args.thumbnail).resolve().parent.mkdir(parents=True, exist_ok=True)

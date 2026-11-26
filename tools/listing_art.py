@@ -3,7 +3,7 @@
     python tools/listing_art.py [output.png]
 
 A warm gold-to-bronze tile with a soft light behind the title, the wordmark (docs/images/wordmark.png) large across the middle,
-and "CREATE" in Minecraft's title font (tools/create_lettering.py) directly above it and the mod's icon above that. Downscale it to 512x512 for a site's icon slot.
+and the "CREATE" lettering (tools/create_lettering.py) directly above it and the mod's icon above that. Downscale it to 512x512 for a site's icon slot.
 Needs Pillow (the Python 3.12 install here has it).
 """
 import sys
@@ -65,8 +65,7 @@ def main():
     tile.alpha_composite(shadow, (x + 6 - pad, y + 22 - pad))
     tile.alpha_composite(mark, (x, y))
 
-    create = create_lettering.sized(560)
-    tile.alpha_composite(create, ((SIZE - create.width) // 2, 345))
+    create_lettering.place(tile, 560, 345)
     icon = Image.open(IMAGES / "icon.png").convert("RGBA").resize((170, 170), Image.LANCZOS)
     tile.alpha_composite(icon, ((SIZE - 170) // 2, 150))
 
