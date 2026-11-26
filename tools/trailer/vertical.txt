@@ -3,7 +3,9 @@
 # the last is the end piece. It is cut for a feed, where a viewer decides in the first second whether to stay:
 #
 # - no title card at the start: it opens on the engine already growing, with words on screen from the first frame;
-# - a cut every one or two seconds, a promise in the first words ("one click at a time") paid off in the next ("up to a V16");
+# - every piece on screen at least 3 s, long enough to read its words and see what it shows, and the whole cut at most 90 s,
+#   inside the length limit of Shorts and TikTok;
+# - a promise in the first words ("one click at a time") paid off in the next ("up to a V16");
 # - the engines heard, not only seen (`engine`), as most viewers have the sound on in a feed but many do not, so the words
 #   carry the story alone too;
 # - the words kept out of the bottom fifth and the right edge, where the app draws its own title and buttons;
@@ -27,14 +29,17 @@
 # A shot may be used more than once (a long shot split so its words can change half-way). A shot that is not in this run
 # (the Aeronautics shots without Sable) is left out.
 
-grow_engine       3     at=2.2   speed=2   fit zoom=1.6   | One click at a time
-grow_engine       3     at=8.2   speed=2   fit zoom=1.6   | Up to a V16
-heavy_starter     3     at=0     engine    flash          | Then crank it
-inline6_turbo     1.5   at=2     engine                   | Bolt on a turbo
-blown_i6_blower   1.5   at=0.75                           | Or a blower
-rotary_orbit      1.5   at=0     engine                   | Even a Wankel
-v8_exhaust_dusk   1.5   engine                            | Five fuels
-rover_departs     3     at=0     speed=1.5 engine  flash  | Put it on wheels
-refinery_column   1.5   at=0.75                           | Refine your own
-factory_line      1.5                                     | Power Create
-factory_wide      6     at=1.5   fit       end
+grow_engine       4.5   at=1.45  speed=1.5   fit zoom=1.6   | One click at a time
+grow_engine       4.5   at=8.2   speed=1.5   fit zoom=1.6   | Up to a V16
+heavy_starter     6     at=0     engine    flash          | Then crank it
+inline6_turbo     4.5   at=0.75  engine                   | Bolt on a turbo
+blown_i6_blower   3                                       | Or a blower
+rotary_orbit      3     at=0     engine                   | Even a Wankel
+muffler_off       4.5   at=0.75  engine    flash          | No muffler
+muffler_on        4.5   at=0.75  engine                   | Now muffled
+v8_exhaust_dusk   3     engine                            | Five fuels
+rover_departs     6     at=0.75  speed=1.25 engine flash  | Put it on wheels
+refinery_column   4.5   at=0.75                           | Refine your own
+factory_line      4.5                                     | Power Create
+night_pull        6     at=5.25  engine    flash          | Lift off. Bang
+factory_wide      7.5   at=0.75  fit       end

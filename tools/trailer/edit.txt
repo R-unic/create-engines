@@ -24,11 +24,19 @@ flat6_track           1.5   quiet
 rotary_orbit          3     at=0      engine
 inline6_turbo         4.5   at=0.75   engine
 blown_i6_blower       3     at=0
+tuning_vgt            3
+tuning_maf            3
 grow_engine           9     at=0.2    speed=1.333333
 heavy_starter         6     at=0      engine
 headphones_on         3     at=0.5
 instruments_dyno      3
 instruments_governor  3
+running_hot           4.5   at=1.0    engine
+running_cooled        4.5   at=0.75   engine
+muffler_off           4.5   at=0.75   engine
+muffler_on            4.5   at=0.75   engine
+exhaust_stub          4.5   at=0.75   engine
+exhaust_long          4.5   at=0.75   engine
 electric_alternator   3
 electric_battery      3
 electric_heads        3
@@ -41,6 +49,7 @@ casing_dye            3     at=0.5
 factory_flywheel      3
 factory_gearbox       3     at=1.5
 factory_line          4.5
+gasket_line           6     at=1.5
 rover_departs         6     at=0      speed=1.5   engine
 rover_wheels          3     engine
 v8_exhaust_dusk       3     engine
@@ -48,4 +57,5 @@ refinery_column       4.5   at=0.75
 refinery_base         1.5   quiet
 refinery_tops         1.5   quiet
 refinery_flare        3     at=0
+night_pull            10.5  at=0.75   engine
 factory_wide          9     at=0

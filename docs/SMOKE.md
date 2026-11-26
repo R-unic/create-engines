@@ -197,10 +197,10 @@ python tools/trailer/record.py              # plays the game, records screen and
 python tools/trailer/record.py --post-only  # cuts the last recordings again (new captions or music)
 ```
 
-- **What it records.** `ShowcaseRun` with `-PshowcaseSet=trailer` builds eleven walled pads (the five plain engines; a
+- **What it records.** `ShowcaseRun` with `-PshowcaseSet=trailer` builds walled pads (the five plain engines; a
   pad with the battery sizes, an ignition coil and an injector assist on every head; a blown inline six; the test-bed diesel with its
-  instruments; a diesel driving a row of Create machines, two presses stamping iron and a fan smoking beef over a campfire; and a refining column with its flare
-  stack), runs them, goes fullscreen and flies a camera past them for a little over two and a half minutes of footage, smoothly, every frame. The shots are the
+  instruments; a diesel driving a row of Create machines, two presses stamping iron and a fan smoking beef over a campfire; a refining column with its flare
+  stack; and the later pads below), runs them, goes fullscreen and flies a camera past them for about 222 seconds of footage, smoothly, every frame. The shots are the
   `Shot` records in that class, and every length is a whole number of bars of the music (three seconds) so the cuts land on the beat.
   The run leaves one still from the middle of each shot in `run/showcase-shaders/screenshots`, to check the framing without watching
   it, and `-PtrailerShots=a,b` keeps only the named shots, so a new pad can be looked at in a short run.
@@ -240,6 +240,15 @@ python tools/trailer/record.py --post-only  # cuts the last recordings again (ne
   used-oil pump's motor is switched on at tick 600, after the charcoal and clay have arrived: with only 250 mB of used oil and no
   charcoal or clay the basin cokes it, which is the mod's own recipe. The toasts and chat the first-person clips earn are cleared
   every frame, and this mod's advancement sting and the game's toast sounds are dropped from the run's sound.
+- **The pads of `client/ShowcaseRunFeatures`** (bays 19 to 23): a boosted gasoline six with no coolant, which `running_hot` shows
+  steaming and `running_cooled` cools by fitting two full radiators (the harness holds its block at 190 degrees until then, by
+  reflection, as a free-running engine does not get that hot in a few seconds; the steam and the cooling are the mod's); a diesel
+  four with a variable-geometry turbo and a MAF sensor; a gasoline four whose exhaust is rebuilt at the start of `muffler_off`,
+  `muffler_on`, `exhaust_stub` and `exhaust_long`, so the same engine is heard four ways; a belt where two Deployers and two
+  Presses make Copper Gaskets from Rubber ones; and a twin-turbo gasoline V8 with anti-lag, which in `night_pull`
+  idles, has its throttles opened by their idle stops and revs, then is lifted off twice with redstone on its camshaft. As that
+  shot begins the harness warms the V8 once and, by reflection, gives it the mod's own crank inertia back in place of the
+  recorder's five times (see "A steady crank" below), or it would be too sluggish to be seen revving.
 - **Sound and walls.** Only the courtyard the camera is in is heard (sounds from other pads are cancelled as they start and stopped when
   the camera moves on); the camera is held inside the walls (see Framing).
 - **How it is recorded.** `record.py` copies the project to a private folder beside it (as every client run should be), starts
@@ -278,8 +287,8 @@ python tools/trailer/record.py --post-only  # cuts the last recordings again (ne
   from the shot `thumbnail:` names, and a 9:16 thumbnail for Shorts from the shot `vertical_thumbnail:` names
   (`vertical_thumbnail_at:` seconds in, with `vertical_title:` and `vertical_sub:` for its words).
 - **The vertical cut.** Its own edit, `tools/trailer/vertical.txt` (the file says what each option does), cut for a feed where a
-  viewer decides in the first second: no title card, the engine already growing with big words on the first frame, a cut every
-  one or two seconds, the words clear of the bottom fifth and the right edge where the app draws its own buttons. A `fit` piece
+  viewer decides in the first second: no title card, the engine already growing with big words on the first frame, every piece
+  at least three seconds and the whole cut at most ninety, the words clear of the bottom fifth and the right edge where the app draws its own buttons. A `fit` piece
   shows the whole 16:9 picture in a band on a blurred copy of itself (`zoom=` for a small subject), the others a 9:16 window
   (`x=` moves it). The AI notice is in it twice: `vertical_ai_tag` at the top from the first frame, for a viewer who leaves
   early, and on the end piece the full `outro_notice` with `ai_docs` under it, pointing to [AI.md](AI.md). The end piece lies
@@ -295,7 +304,7 @@ python tools/trailer/record.py --post-only  # cuts the last recordings again (ne
   does. `TrailerCoverageTest` fails when a new part has no line, when a line names a shot that does not exist, when a shot has no
   caption, and when a shot is missing from `edit.txt`, is there twice, or has a piece that is not a whole number of half bars. A significant new part goes on a pad (or a new one) in `ShowcaseRun`, gets a shot, a caption and a line in `edit.txt`, and its line names the
   shot. A `later` line is a part that is significant and not in the trailer yet: a debt, kept in the open.
-- **Length budget.** The full trailer may run up to 180 seconds (title shot and end card included; the last cut was 127.5 s). It is a
+- **Length budget.** The full trailer may run up to 240 seconds (title shot and end card included). It is a
   limit for the author and for whoever adds shots, not something a test enforces: when new parts would push it past, trim or shorten
   shots rather than let it grow.
 - **What it cannot see.** The test cannot tell that a part is really on screen in its shot, and nobody has heard the synthesised music

@@ -234,7 +234,7 @@ see docs/SMOKE.md) and `./gradlew runVisualSmokeTest` (builds an engine and save
 
 The trailer is made by a harness, so it can be cut again when the mod changes: `python tools/trailer/record.py` plays the
 game with shaders, records it and writes the full trailer, a teaser, a vertical cut for Shorts, thumbnails and the video descriptions to
-`run/trailer/` (it needs ffmpeg and Pillow; the full cut is kept to 180 seconds). `python tools/gallery.py` retakes the mod
+`run/trailer/` (it needs ffmpeg and Pillow; the full cut is kept to 240 seconds). `python tools/gallery.py` retakes the mod
 page's pictures, each kept under 2 MB. Both are in [docs/SMOKE.md](docs/SMOKE.md) and open a real game window, so do not run
 them while doing something else on the machine.
 

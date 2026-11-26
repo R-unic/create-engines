@@ -47,12 +47,15 @@ chapter hero_v8: Layouts
 chapter inline6_turbo: Forced induction
 chapter grow_engine: Build it big
 chapter instruments_dyno: Instruments
+chapter running_hot: Running hot
+chapter muffler_off: Hear the difference
 chapter electric_alternator: The electrical chain
 chapter service_sump: The service bay
 chapter casing_styles: Casing styles
 chapter factory_flywheel: Drivetrain and factory
 chapter rover_departs: Engine on wheels
 chapter v8_exhaust_dusk: Fuels and the refinery
+chapter night_pull: After dark
 chapter factory_wide: All together
 
 caption title_sequence: Real combustion engines for Create
@@ -64,6 +67,16 @@ caption flat6_track: Flat, opposed cylinders.
 caption rotary_orbit: Even a twin-rotor Wankel.
 caption inline6_turbo: Bolt on a turbocharger.
 caption blown_i6_blower: Or drive a supercharger, then cool the charge.
+caption tuning_vgt: A variable-geometry turbo moves its vanes.
+caption tuning_maf: A MAF sensor trims fuel to match the air.
+caption running_hot: Run too hot and the block steams and loses power.
+caption running_cooled: Fit radiators full of coolant to cool it down.
+caption muffler_off: Every note comes from the engine itself. No muffler.
+caption muffler_on: With a muffler: quieter and duller.
+caption exhaust_stub: A short stub of exhaust barks.
+caption exhaust_long: A long run sounds deeper and hollow.
+caption gasket_line: Press copper onto rubber to make a Copper Gasket.
+caption night_pull: Rev it, lift off: blow-off and anti-lag.
 caption heavy_starter: A heavy starter cranks a cold V16 to life.
 caption headphones_on: Too loud? Noise-cancelling headphones.
 caption instruments_dyno: Put it on the dynamometer and read the truth.
