@@ -565,10 +565,13 @@ def render_piece(ffmpeg, args, layout, piece, index, work, card_paths):
         # They pop: in from small, a little past full size, and back
         pop = "" if piece.get("hook") else (f"scale=w='trunc(iw*if(lt(t,{s + 0.13:.2f}),0.62+0.46*max(0,t-{s})/0.13,"
                                             f"if(lt(t,{s + 0.25:.2f}),1.08-0.08*(t-{s + 0.13:.2f})/0.12,1))/2)*2':h=-2:eval=frame,")
-        graph.append(f"[{source}:v]format=rgba,{pop}{fade_in}fade=t=out:st={e - 0.15:.3f}:d=0.15:alpha=1[big]")
+        # The pop comes last: ffmpeg's fade refuses frames whose size changes under it
+        graph.append(f"[{source}:v]format=rgba,{fade_in}fade=t=out:st={e - 0.15:.3f}:d=0.15:alpha=1"
+                     f"{',' + pop.rstrip(',') if pop else ''}[big]")
         # Over a `fit` piece the words sit under the picture's band; otherwise low in the frame, above the app's description
         if layout == "tall":
-            y0 = FIT_Y + round(width * 9 / 16) + 24 if piece.get("fit") else SAFE_BOTTOM - h
+            # Tall two-line words move up into the gap under the band rather than down past the limit
+            y0 = min(FIT_Y + round(width * 9 / 16) + 24, SAFE_BOTTOM + 20 - h) if piece.get("fit") else SAFE_BOTTOM - h
             if y0 + h > SAFE_BOTTOM + 20:  # the picture's soft halo may reach a little past the words
                 sys.exit(f"the words {piece['big']!r} reach below {SAFE_BOTTOM}, where the app draws its description")
         else:
