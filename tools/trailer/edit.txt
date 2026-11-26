@@ -43,7 +43,8 @@ factory_gearbox       3     at=1.5
 factory_line          4.5
 rover_departs         6     at=0      speed=1.5   engine
 rover_wheels          3     engine
-v8_exhaust_dusk       3     engine
+fuel_tanks            4.5   at=0.75
+v8_exhaust_dusk       3     engine quiet
 refinery_column       4.5   at=0.75
 refinery_base         1.5   quiet
 refinery_tops         1.5   quiet
