@@ -3,7 +3,7 @@
   "category": "misc",
   "key": {
     "B": {
-      "item": "create_engines:battery"
+      "type": "create_engines:new_part", "item": "create_engines:battery"
     },
     "C": {
       "item": "create:brass_casing"

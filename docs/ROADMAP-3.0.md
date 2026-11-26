@@ -673,6 +673,15 @@ wear is. How it is carried (on the block's item, or by dropping the seals as the
 
 ## 2.4 Running Hot (author, 2026-11-25)
 
+### Free wear repairs closed (author, 2026-11-26)
+
+**Built, not seen in game, not released.** A worn or wrecked part could come out new through five crafting recipes, blueprint building,
+a Schematicannon and the Bank Builder (which on a precision swap also duplicated the fitted parts). All of them now take only new parts;
+the recipes use the new ingredient type `create_engines:new_part`. Tests: `WearNoFreeRepairGameTests`. **Exception owed in the 2.4.0
+record**, with the author's name: the recipes `copper_gasket`, `forged_piston`, `large_battery`, `precision_cylinder` and
+`variable_turbocharger` changed (manifest lines moved by hand). The Ignition Coil recipe still takes a worn Spark Plug: a coil does not
+wear, so nothing comes back repaired.
+
 **Asked for by the author on 2026-11-25**, with SilverThorn's wear feedback thread (Discord, "wear and tear mode Feedback and tuning sugestions",
 2026-11-25) as input: expand and overhaul wear and tear, a radiator "like the sump but for coolant", a temperature readout in place of
 cold/warm, and "make sure overheating is a point you can reach". The author put it all in a new 2.4 and moved Open Garage to 2.5, and the same day **dropped 2.3.1**: its fixes ship here too.

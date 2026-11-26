@@ -6,7 +6,7 @@
       "item": "create:brass_sheet"
     },
     "C": {
-      "item": "create_engines:cylinder"
+      "type": "create_engines:new_part", "item": "create_engines:cylinder"
     },
     "M": {
       "item": "create:precision_mechanism"

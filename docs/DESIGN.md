@@ -719,7 +719,11 @@ Variable-Drive Supercharger = Variable-Geometry Turbocharger.**
 - **Schematic pricing.** Fitted parts are block state flags (see `PartInstallation`), and Create prices a block by its
   item alone, so a Schematicannon used to build a finished cylinder, head or rotor housing with its pistons, rods,
   injectors, plugs and rotor for free. Those three blocks now implement Create's `SpecialBlockItemRequirement`
-  (`PartInstallation.requirement`): the block plus every fitted part, precision grade respected.
+  (`PartInstallation.requirement`): the block plus every fitted part, precision grade respected. Every one of those,
+  and each battery and turbocharger, is paid only with a new item (`NewPartRequirement`), as is a blueprint build; Create
+  matches by item alone, so a worn one would come out new. A recipe that builds on a part that wears uses the ingredient
+  type `create_engines:new_part` for the same reason, and the Bank Builder's precision swap carries a block's contents
+  across (`BlockSwap`) instead of replacing it outright.
 - **Bank Builder extras.** A builder that is carrying spark plugs fits one in each head it works on, and one carrying a
   Cam Lobe lays a cam line parallel to the crank: a lobe at each throw's offset and Camshaft blocks in the gaps so the
   line is unbroken (`BankBuilderItem.camOffsets`). The offset is the cell beside each cylinder block, on the side a quarter

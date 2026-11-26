@@ -225,6 +225,12 @@ that changes how an existing engine behaves says so in its changelog. More on
 Unreleased; being written as 2.4 "Running Hot" is built. So far: the second part of the wear mode, two new connecting rods, fixes, new gasket
 recipes, and less work for a server. Three new item IDs (`incomplete_copper_gasket`, `light_connecting_rod`, `heavy_connecting_rod`); no ID,
 key or saved format is renamed or removed. Changes to existing builds are listed first.
+- Fixed (wear mode), free repairs. A worn or wrecked part no longer comes out new by any of these:
+  - Crafting: the Forged Piston, Precision Cylinder, Large Battery, Variable Turbocharger and Copper Gasket recipes take only a new piston,
+    cylinder, battery, turbocharger and rubber gasket. A cylinder with a thrown rod's wreck in it is not new.
+  - Building from a blueprint, or with a Schematicannon, takes only new parts, batteries and turbochargers.
+  - Bank Builder: its swap to precision blocks no longer drops the fitted parts while also keeping them in the new block, and keeps their
+    wear. It no longer fits parts into or swaps a wrecked cylinder or head, swaps out a seized piston, or places a wrecked cylinder.
 - **Changed, overheating, with the wear mode on or off.** From 140 degrees an engine's block loses part of the heat of every burn: up to about
   a quarter of its power at 165 degrees and above, and none below 140. It comes back as the engine cools, and nothing breaks or stops. A boosted
   spark engine that hot also lights its charge a little earlier. A server can scale or turn this off with `balance.overheatPenalty`. **An existing

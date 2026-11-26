@@ -92,7 +92,7 @@ data:data/create_engines/recipe/compacting/sugar_mash_cane.json	562e80900c6051d1
 data:data/create_engines/recipe/compacting/sugar_mash_potato.json	7c2a4b50347b50b16371f10b658ef06ce9aa2c09
 data:data/create_engines/recipe/condenser.json	04fa6f737060eb8dfd32290aa0404b615f62af91
 data:data/create_engines/recipe/connecting_rod.json	70877361c899d8110f3a79337af5a0c244e37954
-data:data/create_engines/recipe/copper_gasket.json	e92fa82c47afaca54da56732ce21e4e61895ccdd
+data:data/create_engines/recipe/copper_gasket.json	8012ae17221a43f7364f26375ada4cb7cb166954
 data:data/create_engines/recipe/crank_throw.json	5f6597aeba82b34293b2fae5aac820a150f260c8
 data:data/create_engines/recipe/crankshaft.json	14988c9b3e974c984cd4654b742dc6876e494a2b
 data:data/create_engines/recipe/cylinder.json	c718b97df68b2e599ed14be956e1d88852193208
@@ -107,7 +107,7 @@ data:data/create_engines/recipe/engine_window_casing.json	3c4b463f314f845ca24115
 data:data/create_engines/recipe/exhaust_manifold.json	31cf412c551515f9485a094a8f2ad235933524af
 data:data/create_engines/recipe/exhaust_outlet.json	7a40e5a0d017e12aef4307f4a353336f835d757f
 data:data/create_engines/recipe/flare_stack.json	5894db84be718d0487925cca15e1eee21abc223f
-data:data/create_engines/recipe/forged_piston.json	bfef1495d4ed5cf59c14709d96ab465a92be550a
+data:data/create_engines/recipe/forged_piston.json	16f242471940364ab906ddec4e538ef41768b57f
 data:data/create_engines/recipe/framed_blueprint.json	950126846ddc44734880b1640420d4b80e9c2af4
 data:data/create_engines/recipe/fuel_injector.json	5d631f71a80570577c85f37e906de2711fbbf65c
 data:data/create_engines/recipe/governor.json	6ed1870bc03bcccd8dd961d899c6868cb4260b4c
@@ -121,7 +121,7 @@ data:data/create_engines/recipe/injector_assist.json	81ef378da03091963c8f53324de
 data:data/create_engines/recipe/intake_manifold.json	3b9dbab62da90b2f6cc0494c3831d64e2c538e9d
 data:data/create_engines/recipe/intercooler.json	aa47c3b438eb83b21bb4ce13390d718612568a88
 data:data/create_engines/recipe/jerry_can.json	18375f370fffe6e3d27a729549ce274650ed451f
-data:data/create_engines/recipe/large_battery.json	99ddd21fb714a0c79bfe0164b8fa5e9c6a4113fa
+data:data/create_engines/recipe/large_battery.json	0b7663626558605f5dfa3f70483c8be12a89414e
 data:data/create_engines/recipe/light_connecting_rod.json	2571680513563a0559c8741ef614965105c23423
 data:data/create_engines/recipe/maf_sensor.json	8eae49b79a9f798037a0079678e818863569641a
 data:data/create_engines/recipe/maker_plate.json	78527074be9b6971f2d1f17d2dfcdbe167fcb6ff
@@ -144,7 +144,7 @@ data:data/create_engines/recipe/mixing/used_oil_coking.json	99828c0102226fcafe8b
 data:data/create_engines/recipe/muffler.json	864a395480f07c166f4a706285ed9600367c2c09
 data:data/create_engines/recipe/oil_filter.json	62c44a4d17bea6ba52f6a9c9a42859641b9e487f
 data:data/create_engines/recipe/piston.json	61ec10f0ff3fc780f65c89e50d6993d5120d3631
-data:data/create_engines/recipe/precision_cylinder.json	88b245ca140f843b71bc8c20d7135269582075f9
+data:data/create_engines/recipe/precision_cylinder.json	3001ddbbd605cddb49996647c143ac072fa66d5d
 data:data/create_engines/recipe/precision_cylinder_head.json	a1b87ea035deaa6e1ae80fe92d128cc1c37f3192
 data:data/create_engines/recipe/precision_injector.json	0a9bcad7700759f4fe70c3f441f0843f1aa7599f
 data:data/create_engines/recipe/radiator.json	8273c477b18f6fe3238b308d25fdf662df1c9fd5
@@ -171,7 +171,7 @@ data:data/create_engines/recipe/timing_tool.json	9a38a6f273181e624966d20eb045c46
 data:data/create_engines/recipe/transmission.json	70740f27dc53ed3dfb41e02b9aa224b494408515
 data:data/create_engines/recipe/turbocharger.json	a3afd0032c177ee755e99fc91d07ec6f06e6faca
 data:data/create_engines/recipe/variable_supercharger.json	c6cb4cef88276cb23e7ad2d328b15891aaa97f8c
-data:data/create_engines/recipe/variable_turbocharger.json	0ffd4f113d7be04dfd7658a53434b44ff724d077
+data:data/create_engines/recipe/variable_turbocharger.json	f0c5c0e0e569cbdd3066f679f655fdbd4cf3e11a
 data:data/create_engines/tags/block/weight/flywheel.json
 data:data/create_engines/tags/block/weight/heavy.json
 data:data/create_engines/tags/block/weight/light.json

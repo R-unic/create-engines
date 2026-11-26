@@ -4,6 +4,7 @@ import org.jetbrains.annotations.Nullable;
 
 import com.createengines.content.CasingStyle;
 import com.createengines.content.Encasing;
+import com.createengines.content.NewPartRequirement;
 import com.createengines.content.PartInstallation;
 import com.createengines.content.WearService;
 import com.createengines.engine.sim.Wear;
@@ -109,7 +110,7 @@ public class CylinderBlock extends DirectionalBlock
 			return needed;
 		// The block, its piston, and the rod that is really in it in place of the standard one
 		ItemRequirement real = PartInstallation.requirement(state.setValue(HAS_ROD, false), PARTS);
-		return real.union(new ItemRequirement(ItemRequirement.ItemUseType.CONSUME, WearService.itemFor(body.rodKind())));
+		return real.union(NewPartRequirement.of(WearService.itemFor(body.rodKind())));
 	}
 
 	@Override
