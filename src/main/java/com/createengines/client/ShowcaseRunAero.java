@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import com.createengines.CreateEngines;
+import com.createengines.content.crankshaft.CrankshaftBlockEntity;
 import com.createengines.registry.CEBlocks;
 
 import dev.ryanhcode.sable.api.SubLevelAssemblyHelper;
@@ -26,6 +27,7 @@ final class ShowcaseRunAero {
 
 	private static ServerSubLevel craft;
 	private static int ticks;
+	private static final List<BlockPos> CRANKS = new ArrayList<>();
 
 	private ShowcaseRunAero() {
 	}
@@ -55,6 +57,9 @@ final class ShowcaseRunAero {
 			if (level.getBlockState(pos)
 				.is(CEBlocks.CYLINDER_HEAD.get()))
 				heads.add(pos.immutable());
+			else if (level.getBlockState(pos)
+				.is(CEBlocks.CRANKSHAFT.get()))
+				CRANKS.add(pos.immutable());
 		// A structure that is only part of the car (blocks that touch nothing are split off) shows as few blocks and heads here
 		CreateEngines.LOGGER.info("Showcase aero: {} blocks in a structure at {}, {} heads", blocks.size(), position(), heads.size());
 		return heads;
@@ -72,6 +77,19 @@ final class ShowcaseRunAero {
 	private static void onServerTick(ServerTickEvent.Post event) {
 		double[] at = position();
 		ShowcaseRun.aeroAt = at;
+		// Four lines a second of the car's engine, so a car that sits can be told apart: stalled, starved or overloaded
+		if (at != null && ticks % 5 == 0)
+			for (BlockPos pos : CRANKS)
+				if (event.getServer()
+					.overworld()
+					.getBlockEntity(pos) instanceof CrankshaftBlockEntity crank && crank.controller() != null
+					&& crank.summary() != null) {
+					var summary = crank.summary();
+					CreateEngines.LOGGER.info("Showcase aero engine: {} rpm {} shaft {} torque {} load {} firing {}/{} cause {}",
+						summary.state(), Math.round(summary.rpm()), Math.round(crank.getSpeed()),
+						Math.round(summary.availableTorque()), Math.round(summary.loadTorque()), summary.firing(),
+						summary.cylinders(), summary.cause());
+				}
 		// One line a second, to tell a car that drives from one that sits
 		if (at != null && ++ticks % 20 == 0)
 			CreateEngines.LOGGER.info("Showcase aero at {} {} {}", Math.round(at[0] * 10) / 10.0, Math.round(at[1] * 10) / 10.0,

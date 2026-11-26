@@ -287,7 +287,8 @@ python tools/trailer/record.py --post-only  # cuts the last recordings again (ne
   from the shot `thumbnail:` names, and a 9:16 thumbnail for Shorts from the shot `vertical_thumbnail:` names
   (`vertical_thumbnail_at:` seconds in, with `vertical_title:` and `vertical_sub:` for its words).
 - **The vertical cut.** Its own edit, `tools/trailer/vertical.txt` (the file says what each option does), cut for a feed where a
-  viewer decides in the first second: no title card, the engine already growing with big words on the first frame, every piece
+  viewer decides in the first second: no title card and no 16:9 band at the start, but a full-frame cold start (`cold_start`:
+  a still engine cranked until it catches) with big words on the first frame that say it is Minecraft, every piece
   at least three seconds and the whole cut at most ninety, the words clear of the bottom fifth and the right edge where the app draws its own buttons. A `fit` piece
   shows the whole 16:9 picture in a band on a blurred copy of itself (`zoom=` for a small subject), the others a 9:16 window
   (`x=` moves it). The AI notice is in it twice: `vertical_ai_tag` at the top from the first frame, for a viewer who leaves

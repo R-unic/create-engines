@@ -59,6 +59,7 @@ chapter night_pull: After dark
 chapter factory_wide: All together
 
 caption title_sequence: Real combustion engines for Create
+caption cold_start: The starter turns a cold V8 over until it catches.
 caption first_rises: Every engine starts with one cylinder.
 caption hero_v8: A V8, built in Create.
 caption grow_engine: Grow it a click at a time, up to a boosted V16.

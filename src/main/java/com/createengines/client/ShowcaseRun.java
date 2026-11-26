@@ -415,8 +415,13 @@ public final class ShowcaseRun {
 	 * it stands cold until a cue lays one (see {@code defineCues}), and the heavy starter turns it over until it catches.
 	 */
 	private static void bigBlock(ServerLevel level, ServerPlayer player, BlockPos at) {
-		bank(level, player, at, BankBuilderItem.Layout.VEE, 8, new Kit(Fuel.GASOLINE, 2, false, 0, false, true, false),
-			STAGE_STRUCTURE | STAGE_BANK | STAGE_FITTINGS, true);
+		coldBank(level, player, at, BankBuilderItem.Layout.VEE, 8, new Kit(Fuel.GASOLINE, 2, false, 0, false, true, false));
+	}
+
+	/** A precision engine that has never turned, on a Heavy Starter: a shot's cue cranks it. */
+	static void coldBank(ServerLevel level, ServerPlayer player, BlockPos at, BankBuilderItem.Layout layout, int count,
+		Kit kit) {
+		bank(level, player, at, layout, count, kit, STAGE_STRUCTURE | STAGE_BANK | STAGE_FITTINGS, true);
 		set(level, at, 1, CY - 1, CZ, CEBlocks.HEAVY_STARTER.getDefaultState()
 			.setValue(StarterBlock.FACING, Direction.UP));
 	}
@@ -798,6 +803,7 @@ public final class ShowcaseRun {
 		SCENES.add(new Scene("sound", ShowcaseRunFeatures.SOUND_BAY, crank, true, List.of(over)));
 		SCENES.add(new Scene("gasket", ShowcaseRunFeatures.GASKET_BAY, null, false, List.of(over)));
 		SCENES.add(new Scene("night", ShowcaseRunFeatures.NIGHT_BAY, crank, true, List.of(over)));
+		SCENES.add(new Scene("coldstart", ShowcaseRunFeatures.HOOK_BAY, crank, false, List.of(over)));
 		// The five fuels, a tank of each
 		SCENES.add(new Scene("fuels", FUEL_BAY, null, false, List.of(
 			new View("row", 7.5, 2.5, CZ, 0, 10, 10))));
@@ -1803,6 +1809,8 @@ public final class ShowcaseRun {
 		// The subjects, in blocks from each pad's corner
 		ShowcaseRunFraming.Box v8 = box(0.5, 1, 2.5, 10, 6.5, 7);
 		ShowcaseRunFraming.Box bigV16 = box(0, 1, 2.5, 14, 7, 7);
+		// The vertical cut opens on this: close on the crank side of a cold inline four, composed for the middle third that 9:16 keeps
+		SHOTS.add(new Shot("cold_start", "coldstart", box(2, 2.2, 4.2, 5.2, 6, 5.8), -24, -14, 4, 3, 1.12, 1.32, 0, 6, DAY));
 		SHOTS.add(new Shot("first_rises", "first", box(1, 1, 1.4, 5, 5, 3.6), -62, -34, 8, 16, 0.94, 1.06, 0, 6, DAY));
 		// The title lies over a high pull-in on the V8 at golden hour, and the next shot carries the same move on
 		SHOTS.add(new Shot("title_sequence", "v8", v8, -130, -112, 13, 10, 0.82, 0.92, 0, 6, GOLDEN_HOUR));

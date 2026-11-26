@@ -225,6 +225,8 @@ that changes how an existing engine behaves says so in its changelog. More on
 Unreleased; being written as 2.4 "Running Hot" is built. So far: the second part of the wear mode, two new connecting rods, fixes, new gasket
 recipes, and less work for a server. Three new item IDs (`incomplete_copper_gasket`, `light_connecting_rod`, `heavy_connecting_rod`); no ID,
 key or saved format is renamed or removed. Changes to existing builds are listed first.
+- Fixed, engines on contraptions: after an engine was moved into a moving structure, its shaft could stand still for seconds while the engine
+  ran on. Create stops a crankshaft it moves, and the engine only set it turning again when its speed matched the last one it had sent.
 - Fixed (wear mode), free repairs. A worn or wrecked part no longer comes out new by any of these:
   - Crafting: the Forged Piston, Precision Cylinder, Large Battery, Variable Turbocharger and Copper Gasket recipes take only a new piston,
     cylinder, battery, turbocharger and rubber gasket. A cylinder with a thrown rod's wreck in it is not new.

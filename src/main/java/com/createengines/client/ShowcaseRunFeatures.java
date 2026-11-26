@@ -61,6 +61,7 @@ final class ShowcaseRunFeatures {
 	static final int SOUND_BAY = 21;
 	static final int GASKET_BAY = 22;
 	static final int NIGHT_BAY = 23;
+	static final int HOOK_BAY = 24;
 
 	/** The block temperature the hot engine is held at, in the simulation's units: 190 degrees, well past critical. */
 	private static final double HOT_BLOCK = 1.7;
@@ -88,7 +89,7 @@ final class ShowcaseRunFeatures {
 		STRAIGHT,
 		/** The same with a Muffler in place of the last pipe. */
 		MUFFLED,
-		/** An opening straight off the last head. */
+		/** An opening straight on every head, with no pipe. */
 		STUB,
 		/** A long run of pipe to the opening. */
 		LONG
@@ -109,6 +110,21 @@ final class ShowcaseRunFeatures {
 		});
 		attempt("the gasket line", () -> gasketLine(level, pad(GASKET_BAY)));
 		attempt("the night engine", () -> night(level, player, pad(NIGHT_BAY)));
+		attempt("the cold start", () -> coldStart(level, player, pad(HOOK_BAY)));
+	}
+
+	/**
+	 * A cold turbocharged inline four on a Heavy Starter, its stack open: nothing on it turns until the starter's cue. An
+	 * inline, so its crank and rods are in the open under the cylinders and the camera sees them start.
+	 */
+	private static void coldStart(ServerLevel level, ServerPlayer player, BlockPos at) {
+		ShowcaseRun.coldBank(level, player, at, BankBuilderItem.Layout.INLINE, NIGHT_THROWS,
+			new ShowcaseRun.Kit(ShowcaseRun.Fuel.GASOLINE, 1, false, 0, false, false, false));
+	}
+
+	private static void hookStarter(ServerLevel level, boolean on) {
+		level.setBlock(pad(HOOK_BAY).offset(1, CY - 1, CZ - 1),
+			on ? Blocks.REDSTONE_BLOCK.defaultBlockState() : Blocks.AIR.defaultBlockState(), Block.UPDATE_ALL);
 	}
 
 	/** A pad that cannot be built is logged and the others still stand, so one mistake costs one shot, not the run. */
@@ -134,10 +150,16 @@ final class ShowcaseRunFeatures {
 		int lastThrow = SOUND_THROWS + 1;
 		int y = CY + 2;
 		int z = CZ + 1;
-		for (int x = lastThrow + 1; x <= lastThrow + LONG_PIPES + 2; x++)
+		for (int x = 2; x <= lastThrow + LONG_PIPES + 2; x++)
 			set(level, at, x, y, z, Blocks.AIR.defaultBlockState());
+		if (shape == Exhaust.STUB) {
+			for (int x = 2; x <= lastThrow; x++)
+				set(level, at, x, y, z, CEBlocks.EXHAUST_OUTLET.getDefaultState()
+					.setValue(PortOpeningBlock.FACING, Direction.SOUTH));
+			return;
+		}
 		int pipes = switch (shape) {
-			case STUB -> 0;
+			case STUB -> throw new IllegalStateException("built above");
 			case STRAIGHT, MUFFLED -> 1;
 			case LONG -> LONG_PIPES;
 		};
@@ -146,10 +168,11 @@ final class ShowcaseRunFeatures {
 			.setValue(PortOpeningBlock.FACING, Direction.EAST));
 		if (shape == Exhaust.MUFFLED)
 			set(level, at, lastThrow + 1, y, z, axisX(CEBlocks.MUFFLER.getDefaultState()));
-		else
-			for (int x = lastThrow + 1; x < outlet; x++)
+		// The row over the heads, and the run past them
+		for (int x = 2; x < outlet; x++)
+			if (shape != Exhaust.MUFFLED || x != lastThrow + 1)
 				ShowcaseRun.pipe(level, at.offset(x, y, z), CEBlocks.EXHAUST_MANIFOLD.get());
-		// The row over the heads joins up again to whatever is beside it now
+		// Each joins up again to whatever is beside it now
 		for (int x = 2; x < outlet; x++)
 			if (level.getBlockState(at.offset(x, y, z))
 				.is(CEBlocks.EXHAUST_MANIFOLD.get()))
@@ -272,6 +295,19 @@ final class ShowcaseRunFeatures {
 		cue.accept("muffler_on", new Cued(0, level -> exhaust(level, Exhaust.MUFFLED)));
 		cue.accept("exhaust_stub", new Cued(0, level -> exhaust(level, Exhaust.STUB)));
 		cue.accept("exhaust_long", new Cued(0, level -> exhaust(level, Exhaust.LONG)));
+		// What the note is being made of, so a take whose two runs sound alike can be told from the log
+		for (String shot : List.of("exhaust_stub", "exhaust_long"))
+			cue.accept(shot, new Cued(3, level -> {
+				if (level.getBlockEntity(pad(SOUND_BAY).offset(1, CY, CZ)) instanceof CrankshaftBlockEntity crank
+					&& crank.summary() != null)
+					CreateEngines.LOGGER.info("Showcase {}: pipe lengths {}", shot, java.util.Arrays.toString(crank.summary()
+						.sound()
+						.pipes()));
+			}));
+
+		// The vertical cut's opening: the starter turns a cold V8 over until it catches
+		cue.accept("cold_start", new Cued(0.2, level -> hookStarter(level, true)));
+		cue.accept("cold_start", new Cued(1.8, level -> hookStarter(level, false)));
 
 		// The night pull: warm and idling, the throttles open and it revs, then two lifts off, each long enough for the valve to
 		// open and the anti-lag to bang, and back on

@@ -27,6 +27,7 @@ blown_i6_blower       3     at=0
 tuning_vgt            3
 tuning_maf            3
 grow_engine           9     at=0.2    speed=1.333333
+cold_start        3   at=0     engine
 heavy_starter         6     at=0      engine
 headphones_on         3     at=0.5
 instruments_dyno      3

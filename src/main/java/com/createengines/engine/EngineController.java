@@ -1197,13 +1197,13 @@ public final class EngineController {
 			target = sim.direction() * Math.min(maxSpeed, Math.max(1, Math.round(sim.rpm())));
 		float current = primary.getGeneratedSpeed();
 		ticksSincePublish++;
-		if (target == current) {
-			// Create zeroes a crank when a rotation conflict breaks a source beside it (a hand crank turned against the
-			// engine), and never asks it again: the engine would run on, firing, with a crank that does not turn
-			if (target != 0 && primary.getSpeed() == 0 && !primary.hasSource() && ticks % 20 == 0)
-				primary.updateGeneratedRotation();
+		// Create zeroes a crank when a rotation conflict breaks a source beside it (a hand crank turned against the engine)
+		// or when it moves it into a moving structure, and never asks it again: the engine would run on, firing, with a crank
+		// that does not turn. Whatever it turns at now: a speed a little off the last one sent is not sent again by itself.
+		if (target != 0 && current != 0 && primary.getSpeed() == 0 && !primary.hasSource() && ticks % 20 == 0)
+			primary.updateGeneratedRotation();
+		if (target == current)
 			return;
-		}
 		boolean startOrStop = target == 0 || current == 0 || Math.signum(target) != Math.signum(current);
 		boolean significant = Math.abs(target - current) >= Math.max(1, Math.abs(current) * 0.04f);
 		if (startOrStop || significant && ticksSincePublish >= PUBLISH_INTERVAL) {
