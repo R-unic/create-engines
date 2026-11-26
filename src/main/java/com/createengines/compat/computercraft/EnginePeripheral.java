@@ -120,7 +120,7 @@ public final class EnginePeripheral implements IPeripheral {
 		return view == null ? null : view.firing();
 	}
 
-	/** 0 is ambient, 0.7 a warm engine on a steady load. */
+	/** 0 is ambient, 0.7 a warm engine on a steady load; degrees Celsius are 20 + 100 times this. */
 	@LuaFunction(mainThread = true)
 	public @Nullable Float getTemperature() {
 		EngineView view = view();

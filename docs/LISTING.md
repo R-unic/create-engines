@@ -235,6 +235,9 @@ key or saved format is renamed or removed. Changes to existing builds are listed
   a quarter of its power at 165 degrees and above, and none below 140. It comes back as the engine cools, and nothing breaks or stops. A boosted
   spark engine that hot also lights its charge a little earlier. A server can scale or turn this off with `balance.overheatPenalty`. **An existing
   engine that runs very hot without coolant makes less power than before**; coolant or a Radiator puts it right.
+- Changed, one set of heat units: every temperature is now in degrees Celsius, including the charge and ignition temperatures in the cylinder
+  goggles (they were in kelvin) and the boost limit in the recipe viewer (it was a bare number), and amounts of heat are in HU, heat units
+  (HU/s on the Exhaust Heat Exchanger and Radiator). Only what is shown changed: data packs and scripts read the same numbers.
 - Changed, heat follows work: a block is now heated by the fuel its cylinders burn, so more boost and more fuel run hotter. Friction counts as
   before on a slow engine and much less on a fast one. An engine near 100 RPM settles where it did; fast engines settle cooler than before,
   and big boosted ones are the hottest. In a measurement with the crank held at 512 RPM, uncooled: a crude four settled near 146 degrees

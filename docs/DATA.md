@@ -57,7 +57,8 @@ tag, so a pack can retune any fluid, including one of this mod's. The shipped fi
 ```
 
 All numbers are in the simulation's own units, in which **ambient pressure and temperature are 1** and an ordinary cylinder
-sweeps a volume of 1.
+sweeps a volume of 1. The game shows a charge temperature `T` from these files in degrees Celsius, as `293.15 x T - 273.15`, so 1 reads
+20 degrees and gasoline's 2.7 reads 518.
 
 | Key | Required | Default | What it does |
 |---|---|---|---|

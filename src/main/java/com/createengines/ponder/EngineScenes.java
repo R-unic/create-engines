@@ -3854,7 +3854,7 @@ public final class EngineScenes {
 		scene.overlay()
 			.showText(140)
 			.colored(PonderPalette.BLUE)
-			.text("It warms and cools over about a second and costs the engine nothing. Its heat also comes out as a redstone signal, and goggles read it in heat per second. The server config can switch heat recovery off.")
+			.text("It warms and cools over about a second and costs the engine nothing. Its heat also comes out as a redstone signal, and goggles read it in HU, heat units, per second. The server config can switch heat recovery off.")
 			.pointAt(util.vector()
 				.topOf(exchanger))
 			.placeNearTarget();
@@ -3864,7 +3864,7 @@ public final class EngineScenes {
 			.showText(150)
 			.attachKeyFrame()
 			.colored(PonderPalette.RED)
-			.text("For the most heat, add burning cylinders on the one exhaust: each running at speed on a full shot gives about 3 heat per second, and they add up along a shared manifold. An idle or unfired cylinder gives nothing.")
+			.text("For the most heat, add burning cylinders on the one exhaust: each running at speed on a full shot gives about 3 HU/s, and they add up along a shared manifold. An idle or unfired cylinder gives nothing.")
 			.pointAt(util.vector()
 				.topOf(exchanger))
 			.placeNearTarget();
@@ -3872,7 +3872,7 @@ public final class EngineScenes {
 		scene.overlay()
 			.showText(150)
 			.colored(PonderPalette.RED)
-			.text("Use one exchanger on an exhaust for a hot basin: exchangers on the same exhaust split its heat between them. Goggles show the heat per second; 6 heats a basin, 20 superheats it.")
+			.text("Use one exchanger on an exhaust for a hot basin: exchangers on the same exhaust split its heat between them. Goggles show the figure: 6 HU/s heats a basin, 20 HU/s superheats it.")
 			.pointAt(util.vector()
 				.topOf(exchanger))
 			.placeNearTarget();

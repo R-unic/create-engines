@@ -30,6 +30,7 @@ import com.createengines.engine.sim.CycleResult;
 import com.createengines.engine.sim.CylinderModel;
 import com.createengines.engine.sim.Knock;
 import com.createengines.engine.sim.Mixture;
+import com.createengines.engine.sim.Thermal;
 import com.createengines.engine.sim.Tuning;
 import com.createengines.engine.sim.Wear;
 import com.createengines.engine.topology.CylinderFault;
@@ -778,8 +779,8 @@ public class CylinderBlockEntity extends SmartBlockEntity implements IHaveGoggle
 							.style(ChatFormatting.DARK_GRAY), tooltip, 2);
 				}
 			} else if (!Float.isNaN(current.chargeTemp()) && !Float.isNaN(current.ignitionTemp()))
-				GoggleLines.add(CELang.translate("goggles.compression", temperature(current.chargeTemp()),
-						temperature(current.ignitionTemp()))
+				GoggleLines.add(CELang.translate("goggles.compression", Thermal.chargeDegrees(current.chargeTemp()),
+						Thermal.chargeDegrees(current.ignitionTemp()))
 					.style(current.chargeTemp() >= current.ignitionTemp() ? ChatFormatting.GRAY : ChatFormatting.GOLD), tooltip, 1);
 			if (!Float.isNaN(current.timingError()))
 				GoggleLines.add(CELang.translate("goggles.timing", CamshaftBlockEntity.timingText(current.timingError()))
@@ -835,8 +836,4 @@ public class CylinderBlockEntity extends SmartBlockEntity implements IHaveGoggle
 			.component();
 	}
 
-	/** Shows a normalized temperature in kelvin, taking ambient as 300 K. */
-	private static String temperature(float normalized) {
-		return Math.round(normalized * 300) + " K";
-	}
 }

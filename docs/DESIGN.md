@@ -408,6 +408,12 @@ faces; and anything that needs doing regularly (an oil change) can be automated 
   to 250 mB), coked into charcoal (250 mB to one charcoal, which feeds the coal route to diesel), or let go from an open
   pipe. Plant oil with glycerin, already a recipe, is the slime-free oil, and glycerin also makes coolant, so one seed
   farm and the biodiesel chain supply fuel, oil and coolant.
+- **Units a player reads** (2.4). Every temperature is in degrees Celsius with ambient at 20, and every amount of heat is in HU, heat
+  units (HU/s for a rate), the way stress is in SU. One HU is one unit of the simulation's own heat, so nothing is scaled. The block's
+  temperature converts as `20 + 100 x T` (`Thermal.degrees`). A charge or ignition temperature is absolute with ambient as 1, so it
+  converts from kelvin, `293.15 x T - 273.15` (`Thermal.chargeDegrees`). Data maps, the add-on API and script values stay in the
+  simulation's own units, so packs and scripts are unaffected. A new readout uses these two conversions and these unit names;
+  `HeatUnitsTest` fails a shipped string in kelvin or with an unnamed heat rate.
 - **Temperature** (`Thermal`). One figure for the whole block, 0 ambient, 0.7 a warm engine on a steady load. Heat in is the
   exhaust heat the cylinders already compute for the heat exchanger; heat out is `PASSIVE x T^2` per cylinder (so an engine
   settles at the square root of its heat, a crawling engine stays warm enough and a boosted one runs hot rather than
@@ -457,10 +463,10 @@ faces; and anything that needs doing regularly (an oil change) can be automated 
   few lines. The recipe JSON (coolant, recycling, coking, filter) follows Create's mixing format from the existing recipes
   but has not been loaded by the game. The V and coupled-crank reward for engines past eight cylinders was discussed and left
   out. The `anOilSumpOilsTheWholeEngine` GameTest now checks gasoline instead of water, which a pan takes as coolant.
-- **Radiator (2.4).** `engine/sim/Radiator`: each one sheds `160 x quality x (T - 0.4) x airflow` heat a second from the whole block (not per
+- **Radiator (2.4).** `engine/sim/Radiator`: each one sheds `160 x quality x (T - 0.4) x airflow` HU/s from the whole block (not per
   cylinder), together never more than would bring the block to the thermostat in one tick. Airflow is 1 in still air, plus up to 1.5 from an
   Encased Fan blowing at it (all of it at 256 RPM) and up to 2 from the structure's speed (all of it at 20 blocks a second), capped at 3. It
-  boils coolant (0.15 mB per unit of heat at the best quality) only at `Wear.CRITICAL`, in both modes. Its basin heat is its smoothed shed
+  boils coolant (0.15 mB per HU at the best quality) only at `Wear.CRITICAL`, in both modes. Its basin heat is its smoothed shed
   times `heatRecoveryOutput`, with the exchanger's thresholds and its on switch, capped at heated, for basins and boilers alike. A heat exchanger does not count a radiator
   beside it as an outside heat source.
 
@@ -686,7 +692,7 @@ Variable-Drive Supercharger = Variable-Geometry Turbocharger.**
   pokes the tank (`FluidTankBlockEntity.updateBoilerTemperature`) when its level changes, because a boiler only looks at
   its heaters when told to. Nothing in the simulation changed, so no balance table moved; the new power is Create's own
   (steam engines, a boiler and its water) paid for with the exhaust the engine was throwing away, scaled by the
-  existing `heatRecoveryOutput` and `heatRecovery` settings. About 20 heat per second makes a seething exchanger, so
+  existing `heatRecoveryOutput` and `heatRecovery` settings. About 20 HU/s makes a seething exchanger, so
   roughly seven cylinders at speed make two boiler levels per exchanger (by Create's own rules, up to two steam engines
   at full efficiency, if the boiler is big enough and has the water), and exchangers on one network split the heat. Advancement: Combined Cycle (`COMBINED_CYCLE`, a hot exchanger under a boiler that has engines on it and
   is taking heat). Not played end to end: the GameTest checks what Create is told, not a running boiler.

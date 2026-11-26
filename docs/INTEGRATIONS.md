@@ -23,7 +23,7 @@ returns `nil` when the block is not part of a built engine or the engine has not
 | `getLoadTorque()` | stress per RPM the network asks for |
 | `getCylinders()` | working cylinders (or rotor chambers) |
 | `getFiring()` | cylinders that fired in the last cycle |
-| `getTemperature()` | 0 is ambient, 0.7 a warm engine on a steady load |
+| `getTemperature()` | 0 is ambient, 0.7 a warm engine on a steady load. The degrees Celsius goggles show are `20 + 100 x` this |
 | `getOilCondition()` | 0 spent, 1 new |
 | `getBoost()` | highest boost of any turbocharger or supercharger, 0 with none |
 | `getHealth()` | `healthy`, `rough` or `failing` |

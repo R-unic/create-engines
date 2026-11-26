@@ -3,7 +3,6 @@ package com.createengines.client.compat;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
-import java.util.Locale;
 
 import com.createengines.client.FuelTooltips;
 import com.createengines.engine.sim.FuelSpec;
@@ -96,7 +95,7 @@ public final class ViewerEntries {
 		// decides how much boost it takes
 		if (spec.autoignitionTemp() > com.createengines.registry.CEDataMaps.PILOT_IGNITION_LIMIT)
 			lines.add(CELang.translate(spec.preignitionTemp() >= TAKES_BOOST ? "recipe.fuel.boost.takes" : "recipe.fuel.boost.limited",
-				String.format(Locale.ROOT, "%.1f", spec.preignitionTemp()))
+				com.createengines.engine.sim.Thermal.chargeDegrees(spec.preignitionTemp()))
 				.component()
 				.copy()
 				.withStyle(ChatFormatting.GRAY));
