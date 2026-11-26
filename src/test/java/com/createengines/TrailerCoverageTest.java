@@ -148,7 +148,7 @@ class TrailerCoverageTest {
 
 	/**
 	 * The vertical cut (Shorts) has its own edit, tools/trailer/vertical.txt. Every piece names a real shot and is a whole number
-	 * of half bars; every piece but the last has its few big words, as many viewers watch a feed without sound; the last, and only
+	 * of half bars, at least 3 s long, and together they run at most 60 s; every piece but the last has its few big words, as many viewers watch a feed without sound; the last, and only
 	 * the last, is the end piece. And the AI notice is in it: the tag at the top from the first frame, the full notice on the end
 	 * piece with the line saying where to read how AI is used, and the address of that page, which must be docs/AI.md and exist.
 	 */
@@ -162,6 +162,7 @@ class TrailerCoverageTest {
 				pieces.add(text);
 		}
 		assertTrue(pieces.size() >= 2, "tools/trailer/vertical.txt has no pieces");
+		double total = 0;
 		for (int i = 0; i < pieces.size(); i++) {
 			String piece = pieces.get(i);
 			String[] halves = piece.split("\\|", 2);
@@ -171,12 +172,16 @@ class TrailerCoverageTest {
 			double halfBars = Double.parseDouble(fields[1]) / 1.5;
 			assertTrue(halfBars > 0 && Math.abs(halfBars - Math.rint(halfBars)) < 1e-9,
 					"A piece of vertical.txt that is not a whole number of half bars (1.5 s): " + piece);
+			double seconds = Double.parseDouble(fields[1]);
+			assertTrue(seconds >= 3, "A piece of vertical.txt is too short to read and see (under 3 s): " + piece);
+			total += seconds;
 			boolean end = List.of(fields).contains("end");
 			boolean last = i == pieces.size() - 1;
 			assertEquals(last, end, "The end piece of vertical.txt must be the last, and only the last: " + piece);
 			boolean words = halves.length == 2 && !halves[1].isBlank();
 			assertTrue(end || words, "A piece of vertical.txt has no words: " + piece);
 		}
+		assertTrue(total <= 60, "The vertical cut runs " + total + " s, past the 60 s it must stay within");
 		Map<String, String> captions = new TreeMap<>();
 		for (String line : Files.readAllLines(CAPTIONS, StandardCharsets.UTF_8)) {
 			int colon = line.indexOf(':');
