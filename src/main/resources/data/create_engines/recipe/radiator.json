@@ -1,0 +1,24 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "key": {
+    "C": {
+      "item": "create:copper_sheet"
+    },
+    "F": {
+      "item": "create:fluid_pipe"
+    },
+    "P": {
+      "item": "create:propeller"
+    }
+  },
+  "pattern": [
+    "CFC",
+    "CPC",
+    "CFC"
+  ],
+  "result": {
+    "count": 1,
+    "id": "create_engines:radiator"
+  }
+}

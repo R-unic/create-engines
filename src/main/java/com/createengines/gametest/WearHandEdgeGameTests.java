@@ -469,7 +469,7 @@ public class WearHandEdgeGameTests {
 	@GameTest(template = "empty", batch = BATCH)
 	public static void aRodThroughTheHeadCountsAsOneFailureNotTwo(GameTestHelper helper) {
 		BlockPos a = BlockPos.ZERO, b = a.above(), c = b.above();
-		int packed = WearKeeper.failureCounts(java.util.Map.of(
+		long packed = WearKeeper.failureCounts(java.util.Map.of(
 			a, CylinderFault.THROWN_ROD.bit() | CylinderFault.BLOWN_GASKET.bit(),
 			b, CylinderFault.BLOWN_GASKET.bit() | CylinderFault.SEIZED.bit(),
 			c, CylinderFault.APEX_FAILED.bit() | CylinderFault.NO_PISTON.bit()));

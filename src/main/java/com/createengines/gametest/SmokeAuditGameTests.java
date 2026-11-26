@@ -547,6 +547,7 @@ public class SmokeAuditGameTests {
 			new Knob("fuelConsumption", v -> Tuning.fuelConsumption = v, 0.05, 20),
 			new Knob("torsionalFlex", v -> Tuning.torsionalFlex = v, 0, 2),
 			new Knob("coolingBonus", v -> Tuning.coolingBonus = v, 0, 3),
+			new Knob("overheatPenalty", v -> Tuning.overheatPenalty = v, 0, 1),
 			new Knob("heatRecovery", v -> Tuning.heatRecovery = v, 0.1, 10),
 			new Knob("altitudeStart", v -> Tuning.altitudeStart = v, -64, 100000),
 			new Knob("altitudeScale", v -> Tuning.altitudeScale = v, 1, 100000),

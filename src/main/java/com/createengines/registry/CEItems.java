@@ -27,7 +27,17 @@ public final class CEItems {
 		.model((c, p) -> p.withExistingParent(c.getName(), p.modLoc("block/cylinder_head/injector_item")))
 		.register();
 
-	public static final ItemEntry<Item> SPARK_PLUG = REGISTRATE.item("spark_plug", Item::new)
+	/** A connecting rod with less of it going up and down: a little less friction at speed, and quick to wear under load. */
+	public static final ItemEntry<Item> LIGHT_CONNECTING_ROD = REGISTRATE.item("light_connecting_rod", p -> (Item) new com.createengines.content.WornPartItem(p))
+		.model((c, p) -> p.generated(c, p.modLoc("item/light_connecting_rod")))
+		.register();
+
+	/** A stout connecting rod: it takes load in its stride, and costs a little at speed. */
+	public static final ItemEntry<Item> HEAVY_CONNECTING_ROD = REGISTRATE.item("heavy_connecting_rod", p -> (Item) new com.createengines.content.WornPartItem(p))
+		.model((c, p) -> p.generated(c, p.modLoc("item/heavy_connecting_rod")))
+		.register();
+
+	public static final ItemEntry<Item> SPARK_PLUG = REGISTRATE.item("spark_plug", p -> (Item) new com.createengines.content.WornPartItem(p))
 		.model((c, p) -> p.withExistingParent(c.getName(), p.modLoc("block/cylinder_head/plug_item")))
 		.register();
 
@@ -51,7 +61,7 @@ public final class CEItems {
 		.register();
 
 	/**
-	 * A high-energy coil that sits on a head's spark plug and spends extra battery charge on a hotter spark, which lights a leaner
+	 * A high-energy coil that sits on the spark plug of a head or a rotor housing and spends extra battery charge on a hotter spark, which lights a leaner
 	 * mixture and burns through more soot. A bonus on top of a plug: it does nothing without one, and without charge the plug sparks
 	 * exactly as it would have.
 	 */

@@ -555,6 +555,14 @@ public final class ShowcaseRun {
 			sump.exchange.setValue(3);
 		}
 
+		// A radiator, full, against the third journal's north face, two blocks along from the pan
+		BlockPos radiator = at.offset(3, CY, north);
+		level.setBlock(radiator, CEBlocks.RADIATOR.getDefaultState(), Block.UPDATE_ALL);
+		if (level.getBlockEntity(radiator) instanceof com.createengines.content.radiator.RadiatorBlockEntity loop)
+			loop.tank()
+				.fill(new FluidStack(CEFluids.COOLANT.get()
+					.getSource(), 1000), IFluidHandler.FluidAction.EXECUTE);
+
 		// The mixer: the crank's near end into a Create shaft (the crankshaft drives one, as on the wheeled car), a gearbox, and up
 		// from that a cogwheel that the mixer meshes with: a mixer takes its rotation from a cog beside it, not from a shaft
 		set(level, at, 0, CY, CZ, axisX(AllBlocks.SHAFT.getDefaultState()));
@@ -1800,6 +1808,7 @@ public final class ShowcaseRun {
 		SHOTS.add(new Shot("electric_heads", "electric", box(1.5, 4, 3.5, 6.5, 6.8, 7), -46, -26, 11, 10, 0.94, 1.06, 0, 3, NO_TIME));
 		// The service bay: the player fits an oil filter and tops up the pan (gameplay), then the line that cleans the used oil and fills cans
 		SHOTS.add(new Shot("service_sump", "service", box(-0.5, 1.5, 3, 4, 5, 6), -40, -40, 15, 15, 0.9, 0.9, 0, 3, NO_TIME));
+		SHOTS.add(new Shot("service_radiator", "service", box(1.5, 1.5, 3, 5, 5, 6), -20, -20, 18, 18, 0.9, 0.95, 0, 3, NO_TIME));
 		SHOTS.add(new Shot("service_oil", "service", box(-4.5, 0, 3, 1.5, 5, 6.5), -28, -10, 15, 17, 1, 1.08, 0, 3, NO_TIME));
 		SHOTS.add(new Shot("service_cans", "service", box(-6, 0, 6, 5, 6, 10.5), 118, 138, 12, 13, 1.08, 1.14, 0, 6, NO_TIME));
 		// The casing styles: the Maker's Plate and the four styles passed, then the player dyeing the pillars (gameplay)

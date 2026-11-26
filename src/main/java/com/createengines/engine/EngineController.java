@@ -168,7 +168,7 @@ public final class EngineController {
 	/** The wear mode's total for the whole build (see {@code WearTotal}), refreshed with each wearing step; none with the mode off. */
 	private final com.createengines.engine.sim.WearTotal.Held wearTotal = new com.createengines.engine.sim.WearTotal.Held();
 	/** How many parts of each kind have failed in this build (see {@code WearFailures}), counted when the engine is built: a failure has it rebuilt. */
-	private final int wearFailures;
+	private final long wearFailures;
 	/** Oil drawn from the pans and heads during the current tick, mB, and its smoothed rate in mB per minute: for goggles. */
 	private double oilDrawn;
 	private double oilRate;
@@ -272,7 +272,7 @@ public final class EngineController {
 
 		// Wear (opt-in): a head whose gasket has blown stops its cylinder, and every other reading of the layout's faults sees that too
 		wearFaults = com.createengines.engine.sim.Tuning.wearMode ? WearKeeper.wearFaults(level, layout) : Map.of();
-		wearFailures = WearKeeper.failureCounts(wearFaults);
+		wearFailures = WearKeeper.failureCounts(wearFaults, com.createengines.engine.sim.Tuning.wearMode ? WearKeeper.failedTurbos(level, layout) : 0);
 		BatteryIgnition plugs = new BatteryIgnition(level, layout.batteries());
 		ignitionSupply = plugs;
 		sparkEngine = layout.cylinders()
@@ -425,6 +425,8 @@ public final class EngineController {
 		sim.thermal()
 			.setTemperature(motion == null ? 0 : motion.temperature());
 		sim.setCoolant(coolant);
+		sim.setRadiators(layout.radiators()
+			.isEmpty() ? com.createengines.engine.sim.Radiator.NONE : new RadiatorBank(level, layout.radiators()));
 		sim.setThermalLive(true);
 		sim.setAmbientDensity(airDensity());
 		if (motion != null) {
@@ -756,9 +758,14 @@ public final class EngineController {
 		if (!com.createengines.engine.sim.Tuning.wearMode)
 			return false;
 		boolean step = ticks % WearKeeper.INTERVAL == 0;
+		// How hard the rods are pulling: what the network asks of the engine against all it can give
+		double rated = ratedTorque();
+		double pull = rated > 0 ? Math.min(1, Math.max(0, smoothedLoad / rated)) : com.createengines.engine.sim.Wear.REFERENCE_LOAD;
 		boolean failed = step && wear.tick(level, EngineSimulation.omegaToRpm(Math.abs(sim.omega())), sim.thermal()
 			.temperature(), sim.lubrication()
-			.film());
+			.film(), pull) || step && wear.tickTurbos(level, turbos, sim.thermal()
+				.temperature(), sim.lubrication()
+				.film(), sim.isStopped());
 		if (!failed && wearTotal.wanted(step))
 			wearTotal.read(WearKeeper.total(level, layout));
 		return failed;
@@ -841,6 +848,7 @@ public final class EngineController {
 				.get(i)
 				.pos()) instanceof TurbochargerBlockEntity be) {
 				turbo.limit = be.boostLimit();
+				turbo.output = be.boostShare();
 				turbo.dump = be.dumping();
 				turbo.antiLag = be.antiLagLevel();
 				turbo.offThrottle = !sim.isStopped() && offThrottle(turbo);

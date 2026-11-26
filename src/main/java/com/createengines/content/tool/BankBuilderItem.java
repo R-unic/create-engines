@@ -507,7 +507,10 @@ public class BankBuilderItem extends Item {
 			counts[1]++;
 			changed = true;
 		}
-		if (!state.getValue(CylinderBlock.HAS_ROD) && supplies.takeItem(CEItems.CONNECTING_ROD) != null) {
+		// A standard rod first, as it always did, and otherwise whichever other rod is carried
+		var rodTaken = state.getValue(CylinderBlock.HAS_ROD) ? null
+			: supplies.takeItem(CEItems.CONNECTING_ROD, CEItems.HEAVY_CONNECTING_ROD, CEItems.LIGHT_CONNECTING_ROD);
+		if (rodTaken != null) {
 			state = state.setValue(CylinderBlock.HAS_ROD, true);
 			counts[0]++;
 			changed = true;
@@ -516,6 +519,10 @@ public class BankBuilderItem extends Item {
 			return;
 		level.setBlockAndUpdate(pos, state);
 		WearService.partsChanged(level, pos, before, state);
+		if (rodTaken != null && level.getBlockEntity(pos) instanceof com.createengines.content.cylinder.CylinderBlockEntity body)
+			body.setRodKind(rodTaken == CEItems.HEAVY_CONNECTING_ROD ? com.createengines.engine.sim.Wear.Rod.HEAVY
+				: rodTaken == CEItems.LIGHT_CONNECTING_ROD ? com.createengines.engine.sim.Wear.Rod.LIGHT
+				: com.createengines.engine.sim.Wear.Rod.STANDARD);
 		// A piston swapped for another leaves HAS_PISTON as it was, which partsChanged cannot see
 		if (swapped && level.getBlockEntity(pos) instanceof com.createengines.content.cylinder.CylinderBlockEntity body)
 			body.resetPiston();

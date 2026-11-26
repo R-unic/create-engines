@@ -1,0 +1,21 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "key": {
+    "I": {
+      "item": "minecraft:iron_ingot"
+    },
+    "A": {
+      "item": "create:andesite_alloy"
+    }
+  },
+  "pattern": [
+    "I",
+    "I",
+    "A"
+  ],
+  "result": {
+    "count": 2,
+    "id": "create_engines:heavy_connecting_rod"
+  }
+}

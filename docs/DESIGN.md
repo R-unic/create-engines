@@ -382,7 +382,8 @@ What the pass found, and changed:
 
 ### Service port, oil condition, temperature, pilot injection and achievement tracks (2026-11-01)
 
-Design rules agreed for this round: nothing wears out or breaks (no part damage, no overheating failure); the only
+Design rules agreed for this round (since changed: 2.3 added the opt-in wear mode, and 2.4 a soft power loss from overheating, in both
+modes, and heat damage in the wear mode): nothing wears out or breaks (no part damage, no overheating failure); the only
 penalties are soft and recoverable (a cold engine drags, spent oil drags a little, an uncooled engine simply earns no
 bonus); anything an engine needs besides air and main fuel must arrive through one block, not through the heads' scarce
 faces; and anything that needs doing regularly (an oil change) can be automated with Create pipes alone.
@@ -412,7 +413,7 @@ faces; and anything that needs doing regularly (an oil change) can be automated 
   settles at the square root of its heat, a crawling engine stays warm enough and a boosted one runs hot rather than
   white hot) plus coolant. Coolant carries `100 x quality x (T - 0.4)` heat per cylinder per second and is spent in
   proportion to the heat it carries (0.02 mB per unit at the best quality, twice that for water, which carries half as
-  much per mB); there is no radiator, the coolant is used up like water boiling off. Quality is 1 for Engine Coolant and
+  much per mB); the pan's coolant is used up like water boiling off (a Radiator is the closed loop, below). Quality is 1 for Engine Coolant and
   0.5 for water. The thermostat at 0.4 stops coolant from ever making an engine cold. A cold engine (below 0.3) drags up
   to 25 percent; an engine below 0.65 earns the cooling bonus, all of it by 0.45: its charge temperature drops by up to
   3 percent of ambient, which is about +9 percent net torque on a crude engine, +6.5 on precision parts and +4.5 with a
@@ -456,6 +457,12 @@ faces; and anything that needs doing regularly (an oil change) can be automated 
   few lines. The recipe JSON (coolant, recycling, coking, filter) follows Create's mixing format from the existing recipes
   but has not been loaded by the game. The V and coupled-crank reward for engines past eight cylinders was discussed and left
   out. The `anOilSumpOilsTheWholeEngine` GameTest now checks gasoline instead of water, which a pan takes as coolant.
+- **Radiator (2.4).** `engine/sim/Radiator`: each one sheds `160 x quality x (T - 0.4) x airflow` heat a second from the whole block (not per
+  cylinder), together never more than would bring the block to the thermostat in one tick. Airflow is 1 in still air, plus up to 1.5 from an
+  Encased Fan blowing at it (all of it at 256 RPM) and up to 2 from the structure's speed (all of it at 20 blocks a second), capped at 3. It
+  boils coolant (0.15 mB per unit of heat at the best quality) only at `Wear.CRITICAL`, in both modes. Its basin heat is its smoothed shed
+  times `heatRecoveryOutput`, with the exchanger's thresholds and its on switch, capped at heated, for basins and boilers alike. A heat exchanger does not count a radiator
+  beside it as an outside heat source.
 
 
 ### Turbo and supercharger sounds, and torsional flex (2026-11-02)

@@ -96,7 +96,9 @@ public class HeatExchangerBlockEntity extends SensorBlockEntity {
 			if (!level.isLoaded(worldPosition.relative(side)))
 				continue;
 			BlockState neighbour = level.getBlockState(worldPosition.relative(side));
-			if (neighbour.getBlock() instanceof HeatExchangerBlock)
+			// Nor a radiator, whose heat is the engine's own too
+			if (neighbour.getBlock() instanceof HeatExchangerBlock
+				|| neighbour.getBlock() instanceof com.createengines.content.radiator.RadiatorBlock)
 				continue;
 			best = Math.max(best, switch (BlazeBurnerBlock.getHeatLevelOf(neighbour)) {
 				case SEETHING -> HeatRecovery.SEETHE;

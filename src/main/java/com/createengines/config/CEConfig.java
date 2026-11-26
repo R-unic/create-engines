@@ -46,6 +46,7 @@ public final class CEConfig {
 	public static final ModConfigSpec.DoubleValue ROTARY_POWER;
 	public static final ModConfigSpec.DoubleValue HEAT_RECOVERY;
 	public static final ModConfigSpec.DoubleValue COOLING_BONUS;
+	public static final ModConfigSpec.DoubleValue OVERHEAT_PENALTY;
 	public static final ModConfigSpec.DoubleValue TORSIONAL_FLEX;
 	public static final ModConfigSpec.DoubleValue ALTERNATOR_ENERGY;
 
@@ -177,9 +178,14 @@ public final class CEConfig {
 			.defineInRange("heatRecoveryOutput", 1.0, 0.1, 10.0));
 		COOLING_BONUS = value("balance.coolingBonus", builder.comment(
 				"Scales how much better a well cooled engine breathes: about 6 to 9 percent more",
-				"power at 1.0. 0 removes the bonus. Cold engines drag and uncooled ones earn nothing either way,",
-				"and nothing ever overheats, and nothing wears out outside the wear mode (wearMode).")
+				"power at 1.0. 0 removes the bonus. Cold engines drag and uncooled ones earn nothing either way.",
+				"Nothing breaks or wears out from heat outside the wear mode (wearMode).")
 			.defineInRange("coolingBonus", 1.0, 0.0, 3.0));
+		OVERHEAT_PENALTY = value("balance.overheatPenalty", builder.comment(
+				"Scales the power an overheating engine loses: from 140 degrees each burn gets less done,",
+				"up to the most it loses (about a quarter) at 165 degrees, and it comes back as the engine cools. Nothing breaks or stops.",
+				"0 turns the loss off.")
+			.defineInRange("overheatPenalty", 1.0, 0.0, 1.0));
 		TORSIONAL_FLEX = value("balance.torsionalFlex", builder.comment(
 				"Scales the rating an engine loses to a long crankshaft: past 8 throws on one unbroken",
 				"crank line it falls by 2.5 percent a throw at 1.0. A vee or flat has half as many throws as cylinders,",
@@ -342,6 +348,7 @@ public final class CEConfig {
 		Tuning.rotaryPower = ROTARY_POWER.get();
 		Tuning.heatRecovery = HEAT_RECOVERY.get();
 		Tuning.coolingBonus = COOLING_BONUS.get();
+		Tuning.overheatPenalty = OVERHEAT_PENALTY.get();
 		Tuning.torsionalFlex = TORSIONAL_FLEX.get();
 		Tuning.forcedInduction = FORCED_INDUCTION.get();
 		Tuning.sparkFouling = SPARK_FOULING.get();

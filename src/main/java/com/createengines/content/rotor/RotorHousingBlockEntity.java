@@ -185,6 +185,32 @@ public class RotorHousingBlockEntity extends CrankshaftBlockEntity implements Ga
 	private double apexWear;
 	private boolean apexFailed;
 
+	/** How worn the spark plug in this housing is, 0 new to 1 spent (see {@code PlugWear}); saved only once there is some. */
+	private double plugWear;
+
+	public double plugWear() {
+		return plugWear;
+	}
+
+	/** Adds wear to the plug. Clients are told when it moves to a new 5% step. */
+	public void addPlugWear(double amount) {
+		int before = (int) Math.round(plugWear * 20);
+		plugWear = Wear.clamp(plugWear + amount);
+		setChanged();
+		if (before != (int) Math.round(plugWear * 20))
+			sendData();
+	}
+
+	/** The plug in this housing is now one worn this much (0 for a new one, or for none). */
+	public void fitPlug(double wear) {
+		double next = Wear.clamp(wear);
+		if (next == plugWear)
+			return;
+		plugWear = next;
+		setChanged();
+		sendData();
+	}
+
 	public double apexWear() {
 		return apexWear;
 	}
@@ -237,14 +263,51 @@ public class RotorHousingBlockEntity extends CrankshaftBlockEntity implements Ga
 		return true;
 	}
 
-	/** Sets right light wear (see {@link Wear#repairable}). A failed set is cured only by a new one. Returns whether anything changed. */
+	/** Sets right light wear of the seals and the plug (see {@link Wear#repairable}). A failed set is cured only by a new one. Returns whether anything changed. */
 	public boolean service() {
-		if (apexFailed || !Wear.repairable(apexWear))
+		boolean seals = !apexFailed && Wear.repairable(apexWear);
+		boolean plug = getBlockState().getValue(RotorHousingBlock.HAS_SPARK_PLUG) && Wear.repairable(plugWear);
+		if (!seals && !plug)
 			return false;
-		apexWear = Wear.repaired(apexWear);
+		if (seals)
+			apexWear = Wear.repaired(apexWear);
+		if (plug)
+			plugWear = Wear.repaired(plugWear);
 		setChanged();
 		sendData();
 		return true;
+	}
+
+	// The block's item keeps the seals' wear and failure, so breaking a housing and placing it again is no repair
+
+	@Override
+	protected void collectImplicitComponents(net.minecraft.core.component.DataComponentMap.Builder components) {
+		super.collectImplicitComponents(components);
+		if (apexWear > 0)
+			components.set(com.createengines.registry.CEComponents.WEAR.get(), apexWear);
+		if (apexFailed)
+			components.set(com.createengines.registry.CEComponents.FAILED.get(), true);
+	}
+
+	@Override
+	protected void applyImplicitComponents(DataComponentInput components) {
+		super.applyImplicitComponents(components);
+		Double carried = components.get(com.createengines.registry.CEComponents.WEAR.get());
+		boolean failed = Boolean.TRUE.equals(components.get(com.createengines.registry.CEComponents.FAILED.get()));
+		if (carried == null && !failed)
+			return;
+		apexWear = carried == null ? 0 : Wear.clamp(carried);
+		apexFailed = failed;
+		setChanged();
+		sendData();
+	}
+
+	@Override
+	@SuppressWarnings("deprecation")
+	public void removeComponentsFromTag(CompoundTag tag) {
+		super.removeComponentsFromTag(tag);
+		tag.remove("ApexWear");
+		tag.remove("ApexFailed");
 	}
 
 	// Status of the three chambers
@@ -279,6 +342,8 @@ public class RotorHousingBlockEntity extends CrankshaftBlockEntity implements Ga
 			tag.putDouble("ApexWear", apexWear);
 		if (apexFailed)
 			tag.putBoolean("ApexFailed", true);
+		if (plugWear > 0)
+			tag.putDouble("PlugWear", plugWear);
 		if (clientPacket)
 			for (int i = 0; i < chambers.length; i++)
 				if (chambers[i] != null)
@@ -291,6 +356,7 @@ public class RotorHousingBlockEntity extends CrankshaftBlockEntity implements Ga
 		// Absent in a world from before wear existed; a damaged save must not hand the model NaN (clamp reads it as new)
 		apexWear = Wear.clamp(tag.getDouble("ApexWear"));
 		apexFailed = tag.getBoolean("ApexFailed");
+		plugWear = Wear.clamp(tag.getDouble("PlugWear"));
 		if (clientPacket)
 			for (int i = 0; i < chambers.length; i++)
 				chambers[i] = tag.contains("Chamber" + i) ? CylinderStatus.read(tag.getCompound("Chamber" + i)) : null;
@@ -497,6 +563,17 @@ public class RotorHousingBlockEntity extends CrankshaftBlockEntity implements Ga
 			if (isPlayerSneaking)
 				GoggleLines.add(CELang.translate("goggles.head.metering.hint")
 					.style(ChatFormatting.DARK_GRAY), tooltip, 2);
+		}
+		if (state.getValue(RotorHousingBlock.HAS_SPARK_PLUG)) {
+			if (state.getValue(RotorHousingBlock.HAS_COIL)) {
+				GoggleLines.add(CELang.translate("goggles.head.coil")
+					.style(ChatFormatting.AQUA), tooltip, 1);
+				if (isPlayerSneaking)
+					GoggleLines.add(CELang.translate("goggles.head.coil.hint")
+						.style(ChatFormatting.DARK_GRAY), tooltip, 2);
+			} else if (isPlayerSneaking)
+				GoggleLines.add(CELang.translate("goggles.head.no_coil")
+					.style(ChatFormatting.DARK_GRAY), tooltip, 1);
 		}
 		// The oil note is a tip for someone who has not found the feature, so it waits for the sneak like the other hints
 		if (oilTank().isEmpty() && isPlayerSneaking)

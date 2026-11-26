@@ -62,7 +62,8 @@ class WearTableTest {
 		out.append("## How long a part lasts\n\n");
 		out.append("Hours of running from new to spent (wear 1), one engine on good oil, no boost. Wear grows with the square of speed up to four times the\n");
 		out.append("reference speed of " + f(Wear.REFERENCE_RPM, 0) + " RPM, with a floor of ");
-		out.append(f(Wear.IDLE_FLOOR * 100, 0) + "% when it is barely turning. Heat adds 2.5 per unit over normal, no oil up to five times.\n\n");
+		out.append(f(Wear.IDLE_FLOOR * 100, 0) + "% when it is barely turning. Heat adds 2.5 per unit over normal and " + f(Wear.HOT_RISE, 0)
+			+ " more per unit past hot (" + f(Wear.HOT, 1) + "), no oil up to five times. A rod's figures are at half load.\n\n");
 		out.append("| Part | " + join(RPMS, " RPM | ") + " RPM |\n| --- |" + " ---: |".repeat(RPMS.length) + "\n");
 		out.append(row("Piston, warm", rpm -> Wear.pistonWear(rpm, warm, 1, 1)));
 		out.append(row("Piston, hot", rpm -> Wear.pistonWear(rpm, hot, 1, 1)));
@@ -70,6 +71,11 @@ class WearTableTest {
 		out.append(row("Forged (precision) piston, warm", rpm -> Wear.pistonWear(rpm, warm, 1, 1, true)));
 		out.append(row("Connecting rod, warm", rpm -> Wear.rodWear(rpm, 1, 1)));
 		out.append(row("Connecting rod, no oil", rpm -> Wear.rodWear(rpm, 0, 1)));
+		out.append(row("Connecting rod, hot", rpm -> Wear.rodWear(rpm, Wear.HOT + 0.3, 1, Wear.REFERENCE_LOAD, 1)));
+		for (Wear.Rod rod : Wear.Rod.values())
+			for (double load : new double[] {0, 1})
+				out.append(row("Rod, " + rod.name().toLowerCase(Locale.ROOT) + ", warm, " + (load == 0 ? "spinning free" : "full load"),
+					rpm -> Wear.rodWear(rod, rpm, warm, 1, load, 1)));
 		for (Wear.Gasket tier : Wear.Gasket.values())
 			out.append(row("Gasket, " + tier.name().toLowerCase(Locale.ROOT) + ", warm, no boost", rpm -> Wear.gasketWear(tier, rpm, warm, 1, 1)));
 		for (Wear.Gasket tier : Wear.Gasket.values())
@@ -99,11 +105,34 @@ class WearTableTest {
 		out.append("\n");
 
 		out.append("## How likely a failure is\n\n");
-		out.append("The chance in one minute that a part fails (a rod is thrown, a gasket blows), by how worn it is and how fast the engine turns.\n\n");
+		out.append("The chance in one minute that a warm part fails (a rod is thrown, a gasket blows), by how worn it is and how fast the engine turns.\n");
+		out.append("Heat multiplies it: nothing up to hot, 3 times at critical (" + f(Wear.CRITICAL, 1) + "), 6 times at " + f(Wear.CRITICAL_SPAN, 1)
+			+ " past it.\n\n");
 		out.append("| Wear | " + join(RPMS, " RPM | ") + " RPM |\n| ---: |" + " ---: |".repeat(RPMS.length) + "\n");
 		for (double wear : new double[] {0.5, 0.6, 0.7, 0.8, 0.9, 1})
 			out.append(failureRow(wear));
 		out.append("\n");
+
+		out.append("## Heat\n\n");
+		out.append("Block temperature is in the engine's own units (0 ambient, " + f(Thermal.NORMAL, 1) + " warm, which goggles read as "
+			+ Thermal.degrees(Thermal.NORMAL) + " degrees; hot is " + Thermal.degrees(Thermal.HOT) + ", overheating " + Thermal.degrees(Thermal.OVERHEATING)
+			+ " and critical " + Thermal.degrees(Thermal.CRITICAL) + "). From critical (" + f(Wear.CRITICAL, 2)
+			+ ") heat breaks things by itself,\ntwice as fast " + f(Wear.CRITICAL_SPAN, 1) + " past it.\n\n");
+		out.append("| Block temperature | Sound gasket blows, in a minute | Seconds to warp a head | Seconds to seize an oiled piston at "
+			+ f(Wear.REFERENCE_RPM, 0) + " RPM |\n| ---: | ---: | ---: | ---: |\n");
+		for (double t : new double[] {Wear.CRITICAL, Wear.CRITICAL + Wear.CRITICAL_SPAN / 2, Wear.CRITICAL + Wear.CRITICAL_SPAN})
+			out.append("| " + f(t, 2) + " | " + f(Wear.heatBlowChance(t, 60) * 100, 1) + "% | "
+				+ f(Wear.WARP_AFTER / Wear.heatSoak(0, t, 1), 0) + " | "
+				+ f(Wear.SEIZE_AFTER / Wear.dryTime(0, 1, t, Wear.REFERENCE_RPM, 1, false), 0) + " |\n");
+		out.append("\nA warped head loses " + f(Wear.WARP_SEAL_LOSS * 100, 0) + "% of every burn until it is replaced.\n\n");
+
+		out.append("## Spark plugs and turbochargers\n\n");
+		out.append("A plug lasts " + f(PlugWear.LIFE / 3600, 0) + " hours at the reference speed (a coil wears it " + f(PlugWear.COIL_FACTOR, 1)
+			+ " times as fast, soot up to " + f(PlugWear.FOULING_FACTOR, 0) + " times). From " + f(PlugWear.MISFIRE_FROM, 2)
+			+ " wear it misses sparks, up to " + f(PlugWear.MISFIRE_MAX * 100, 0) + "% of them spent. It never fails outright.\n");
+		out.append("A turbocharger lasts " + f(TurboWear.LIFE / 3600, 0) + " hours at " + f(TurboWear.REFERENCE_BOOST, 1)
+			+ " bar of boost on warm, clean oil, loses up to " + f(TurboWear.MAX_BOOST_LOSS * 100, 0)
+			+ "% of its boost, and past half worn can fail,\nafter which it makes none until it is replaced.\n\n");
 
 		out.append("## Knock\n\n");
 		out.append("A spark engine whose boost lights the charge early wears its pistons on top of the ordinary wear above, from " + f(Knock.FROM * 100, 0)

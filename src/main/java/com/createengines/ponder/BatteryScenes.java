@@ -186,7 +186,7 @@ public final class BatteryScenes {
 			.showText(150)
 			.attachKeyFrame()
 			.colored(PonderPalette.BLUE)
-			.text("An Ignition Coil sits on a head's Spark Plug and spends half a spark more on each spark that has fuel to light. The hotter spark lights a leaner mixture, burns the charge a little faster and burns through soot that would foul a plain plug.")
+			.text("An Ignition Coil sits on the Spark Plug of a head or a Rotor Housing and spends half a spark more on each spark that has fuel to light. The hotter spark lights a leaner mixture, burns the charge a little faster and burns through soot that would foul a plain plug.")
 			.pointAt(util.vector()
 				.topOf(head))
 			.placeNearTarget();

@@ -21,9 +21,24 @@ package com.createengines.engine.sim;
  *                          pool burns off once lit: 1 is the way every fuel burned before the field existed, above 1 lights surely
  *                          and burns off fast (gasoline, methanol), below 1 is hard to light and slow (diesel, kerosene, plant oil).
  *                          Only {@code FuelLiquidBlock} reads it; nothing in the simulation does
+ * @param heatFactor        how much heat burning it puts into the block, against the usual for the energy it releases: 1 for every
+ *                          built-in fuel, above 1 runs an engine hotter and below 1 cooler. For pack makers
  */
 public record FuelSpec(double energyPerMb, double autoignitionTemp, double airPerMb, double coldSensitivity,
-					   double chargeCooling, double sootFactor, double preignitionTemp, double sulfur, double flammability) {
+					   double chargeCooling, double sootFactor, double preignitionTemp, double sulfur, double flammability,
+					   double heatFactor) {
+
+	/** A fuel that heats the block as every fuel does by default. */
+	public FuelSpec(double energyPerMb, double autoignitionTemp, double airPerMb, double coldSensitivity,
+					double chargeCooling, double sootFactor, double preignitionTemp, double sulfur, double flammability) {
+		this(energyPerMb, autoignitionTemp, airPerMb, coldSensitivity, chargeCooling, sootFactor, preignitionTemp, sulfur, flammability, 1);
+	}
+
+	/** This fuel with a different {@code heatFactor}; every other figure is the same. */
+	public FuelSpec withHeatFactor(double heatFactor) {
+		return new FuelSpec(energyPerMb, autoignitionTemp, airPerMb, coldSensitivity, chargeCooling, sootFactor, preignitionTemp, sulfur,
+			flammability, heatFactor);
+	}
 
 	/** A fuel that burns in a spill like every fuel did before flammability existed. */
 	public FuelSpec(double energyPerMb, double autoignitionTemp, double airPerMb, double coldSensitivity,
@@ -34,7 +49,7 @@ public record FuelSpec(double energyPerMb, double autoignitionTemp, double airPe
 	/** This fuel with a different flammability in a spill; every other figure is the same. */
 	public FuelSpec withFlammability(double flammability) {
 		return new FuelSpec(energyPerMb, autoignitionTemp, airPerMb, coldSensitivity, chargeCooling, sootFactor, preignitionTemp, sulfur,
-			flammability);
+			flammability, heatFactor);
 	}
 
 	/** A fuel whose sulfur is its soot factor: how every fuel behaved before the field existed. */
@@ -85,6 +100,8 @@ public record FuelSpec(double energyPerMb, double autoignitionTemp, double airPe
 	public static final double MAX_USABLE_ENERGY = 1e300;
 	/** What an air figure of 0 (or one that is not a number) becomes: a charge that needs next to no air, never a division by zero. */
 	public static final double MIN_USABLE_AIR = 1e-300;
+	/** The most a fuel's {@code heatFactor} is read as. */
+	public static final double MAX_HEAT_FACTOR = 10;
 
 	/**
 	 * This fuel as the simulation may use it. The {@code fuel} data map accepts any number and {@link FuelCheck} only reports
@@ -104,9 +121,10 @@ public record FuelSpec(double energyPerMb, double autoignitionTemp, double airPe
 		double air = Double.isNaN(airPerMb) || airPerMb == 0 || airPerMb == Double.NEGATIVE_INFINITY ? MIN_USABLE_AIR : airPerMb;
 		double cold = Double.isFinite(coldSensitivity) ? coldSensitivity : 0;
 		double cooling = Double.isFinite(chargeCooling) ? chargeCooling : 0;
-		if (energy == energyPerMb && air == airPerMb && cold == coldSensitivity && cooling == chargeCooling)
+		double heat = Double.isFinite(heatFactor) ? Math.clamp(heatFactor, 0, MAX_HEAT_FACTOR) : 1;
+		if (energy == energyPerMb && air == airPerMb && cold == coldSensitivity && cooling == chargeCooling && heat == heatFactor)
 			return this;
-		return new FuelSpec(energy, autoignitionTemp, air, cold, cooling, sootFactor, preignitionTemp, sulfur, flammability);
+		return new FuelSpec(energy, autoignitionTemp, air, cold, cooling, sootFactor, preignitionTemp, sulfur, flammability, heat);
 	}
 
 	/**

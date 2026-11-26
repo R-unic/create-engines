@@ -6,6 +6,7 @@ import com.createengines.content.CasingStyle;
 import com.createengines.content.Encasing;
 import com.createengines.content.PartInstallation;
 import com.createengines.content.WearService;
+import com.createengines.engine.sim.Wear;
 import com.createengines.content.PartInstallation.Slot;
 import com.createengines.engine.topology.EngineTopology;
 import com.createengines.registry.CEBlockEntities;
@@ -103,7 +104,12 @@ public class CylinderBlock extends DirectionalBlock
 	/** A schematic of a fitted cylinder costs the piston and rod as well as the block. */
 	@Override
 	public ItemRequirement getRequiredItems(BlockState state, @Nullable BlockEntity blockEntity) {
-		return PartInstallation.requirement(state, PARTS);
+		ItemRequirement needed = PartInstallation.requirement(state, PARTS);
+		if (!(blockEntity instanceof CylinderBlockEntity body) || !state.getValue(HAS_ROD) || body.rodKind() == Wear.Rod.STANDARD)
+			return needed;
+		// The block, its piston, and the rod that is really in it in place of the standard one
+		ItemRequirement real = PartInstallation.requirement(state.setValue(HAS_ROD, false), PARTS);
+		return real.union(new ItemRequirement(ItemRequirement.ItemUseType.CONSUME, WearService.itemFor(body.rodKind())));
 	}
 
 	@Override
@@ -120,6 +126,21 @@ public class CylinderBlock extends DirectionalBlock
 			return serviced;
 		// A part fitted keeps the wear it had on the stack (a new one has none)
 		double carried = WearService.wearOf(stack);
+		Wear.Rod rod = WearService.rodOf(stack);
+		// The light and heavy rods go in where a standard one would, and the cylinder remembers which it holds
+		if (rod != null && rod != Wear.Rod.STANDARD && !state.getValue(HAS_ROD)) {
+			if (!level.isClientSide) {
+				BlockState next = state.setValue(HAS_ROD, true);
+				level.setBlockAndUpdate(pos, next);
+				WearService.partsChanged(level, pos, state, next, carried);
+				if (level.getBlockEntity(pos) instanceof CylinderBlockEntity body)
+					body.setRodKind(rod);
+				if (!player.isCreative())
+					stack.shrink(1);
+				level.playSound(null, pos, net.minecraft.sounds.SoundEvents.NETHERITE_BLOCK_PLACE, net.minecraft.sounds.SoundSource.BLOCKS, 0.6f, 1.4f);
+			}
+			return ItemInteractionResult.sidedSuccess(level.isClientSide);
+		}
 		ItemInteractionResult result = PartInstallation.tryInstall(stack, state, level, pos, player, PARTS);
 		if (result != ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION)
 			WearService.partsChanged(level, pos, state, level.getBlockState(pos), carried);

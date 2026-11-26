@@ -566,20 +566,24 @@ public class CrankshaftBlockEntity extends GeneratingKineticBlockEntity implemen
 	private static void addTemperature(List<Component> tooltip, EngineSummary engine, boolean isPlayerSneaking) {
 		float temperature = engine.temperature();
 		if (engine.cooling()) {
-			GoggleLines.add(CELang.translate("goggles.temperature.cooling")
+			GoggleLines.add(CELang.translate("goggles.temperature.cooling", Thermal.degrees(temperature))
 				.style(ChatFormatting.AQUA), tooltip, 1);
 			if (isPlayerSneaking)
 				GoggleLines.add(CELang.translate("goggles.temperature.cooling.hint")
 					.style(ChatFormatting.DARK_GRAY), tooltip, 2);
 			return;
 		}
-		String state = temperature < Thermal.COLD_BELOW ? "cold" : temperature < Thermal.COOL_NONE ? "cool" : "warm";
-		ChatFormatting colour = switch (state) {
-			case "cold" -> ChatFormatting.AQUA;
-			case "cool" -> ChatFormatting.GREEN;
-			default -> ChatFormatting.GRAY;
+		Thermal.Band band = Thermal.band(temperature);
+		ChatFormatting colour = switch (band) {
+			case COLD -> ChatFormatting.AQUA;
+			case COOL -> ChatFormatting.GREEN;
+			case WARM -> ChatFormatting.GRAY;
+			case HOT -> ChatFormatting.GOLD;
+			case OVERHEATING -> ChatFormatting.RED;
+			// A critical block's line flashes, a second red and a second dark red
+			case CRITICAL -> System.currentTimeMillis() / 500 % 2 == 0 ? ChatFormatting.RED : ChatFormatting.DARK_RED;
 		};
-		GoggleLines.add(CELang.translate("goggles.temperature." + state)
+		GoggleLines.add(CELang.translate(band.langKey(), Thermal.degrees(temperature))
 			.style(colour), tooltip, 1);
 		if (engine.coolantRate() > 0)
 			GoggleLines.add(CELang.translate("goggles.coolant_use", format(engine.coolantRate()))

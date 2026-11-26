@@ -60,8 +60,14 @@ public final class Wear {
 	public static final double REPAIRABLE = 0.35;
 	/** What a repair item takes a part down to: wear comes back to this, never to new. */
 	public static final double REPAIRED_TO = 0.1;
-	/** Failure chance per second of a part that is completely spent and running at the reference speed. */
+	/** Failure chance per second of a set of apex seals or a turbocharger completely spent, at its own reference. */
 	public static final double FAILURE_RATE = 0.02;
+	/**
+	 * Failure chance per second of a rod or a gasket completely spent, warm, at the reference speed (retuned for 2.4: at the old
+	 * {@link #FAILURE_RATE}, growing with the square of speed, a part at 0.8 wear was certain to go within a minute at 256 RPM, which was
+	 * no warning at all). First-pass.
+	 */
+	public static final double PART_FAILURE_RATE = 0.002;
 	/** Wear below this never fails: a part has to be well used before a failure is possible. */
 	public static final double FAILURE_FROM = 0.5;
 
@@ -102,6 +108,64 @@ public final class Wear {
 		}
 	}
 
+	/** Block temperature (see {@code Thermal}) from which heat wears parts far faster and makes a worn one likelier to fail. First-pass. */
+	public static final double HOT = Thermal.HOT;
+	/** Block temperature from which heat alone blows gaskets, seizes pistons and warps heads. First-pass. */
+	public static final double CRITICAL = Thermal.CRITICAL;
+	/** How far past {@link #CRITICAL} the effects of heat stop growing. */
+	public static final double CRITICAL_SPAN = 0.2;
+	/** How much more wear each whole unit of temperature past {@link #HOT} adds, on top of the gentle rise from normal. */
+	public static final double HOT_RISE = 10;
+	/** Chance per second, at {@link #CRITICAL}, that a sound gasket blows from heat. */
+	public static final double HEAT_BLOW_RATE = 1.0 / 400;
+	/** How fast a block at {@link #CRITICAL} scores a bore, as a share of how fast running dry does. */
+	public static final double HEAT_SEIZE_SHARE = 0.5;
+	/** Seconds past {@link #CRITICAL} that warp a head. */
+	public static final double WARP_AFTER = 180;
+	/** The share of every burn a warped head loses past its joint. */
+	public static final double WARP_SEAL_LOSS = 0.15;
+	/** The load a rod is read as carrying when nothing says: half of what the engine can give. */
+	public static final double REFERENCE_LOAD = 0.5;
+	/** How hard a rod works spinning free, and pulling all the engine has, against 1 at half load. */
+	public static final double LOAD_FREE = 0.6;
+	public static final double LOAD_FULL = 1.4;
+
+	/**
+	 * The connecting rod a cylinder holds. {@link #STANDARD} is the rod there has always been. A light rod is less mass going up and down,
+	 * so it drags a little less as the speed rises, but it wears fast under load; a heavy one takes load in its stride and costs a little
+	 * at speed. The difference in drag is there with the wear mode on or off; only the difference in wear belongs to the mode. First-pass.
+	 *
+	 * @param viscous how its share of the cylinder's friction that grows with speed compares with a standard rod's
+	 * @param free    how hard it works with the engine spinning free, against a standard rod at half load
+	 * @param full    how hard it works with the engine pulling all it can
+	 */
+	public enum Rod {
+		STANDARD(1, LOAD_FREE, LOAD_FULL),
+		LIGHT(0.96, 0.5, 2.0),
+		HEAVY(1.04, 0.7, 1.0);
+
+		public final double viscous;
+		public final double free;
+		public final double full;
+
+		Rod(double viscous, double free, double full) {
+			this.viscous = viscous;
+			this.free = free;
+			this.full = full;
+		}
+
+		/** The kind for a saved number, {@link #STANDARD} for anything unknown. */
+		public static Rod byId(int id) {
+			Rod[] all = values();
+			return id < 1 || id >= all.length ? STANDARD : all[id];
+		}
+
+		/** How much harder this rod works for the load on the engine, 0 to 1; nonsense is half. */
+		public double loadFactor(double load) {
+			return free + (full - free) * Math.clamp(finite(load, REFERENCE_LOAD), 0, 1);
+		}
+	}
+
 	/** What a cylinder reads from its worn parts. */
 	public interface State {
 		/** The share of the burn's heat the cylinder keeps, 1 for a sound one. */
@@ -109,6 +173,66 @@ public final class Wear {
 
 		/** How many times harder than a sound one the cylinder drags on the crank, 1 for a sound one. */
 		double drag();
+
+		/** How the friction that grows with speed compares with a standard rod's (see {@link Rod}). */
+		default double viscous() {
+			return 1;
+		}
+
+		/** The share of sparks a worn plug misses, 0 for a sound one (see {@link PlugWear}). */
+		default double misfire() {
+			return 0;
+		}
+
+		/** What the leanest mixture the plug can light is multiplied by, 1 for a sound one (see {@link PlugWear}). */
+		default double lean() {
+			return 1;
+		}
+	}
+
+	/** {@code state} with a rod of this kind in the cylinder; a standard rod changes nothing, and gives back the very same state. */
+	public static State withRod(State state, Rod rod) {
+		return rod == Rod.STANDARD ? state : state(state.seal(), state.drag(), rod.viscous, state.misfire(), state.lean());
+	}
+
+	/** {@code state} with a spark plug this worn; one that has not worn changes nothing, and gives back the very same state. */
+	public static State withPlug(State state, double plugWear) {
+		return clamp(plugWear) == 0 ? state
+			: state(state.seal(), state.drag(), state.viscous(), PlugWear.misfireChance(plugWear), PlugWear.leanScale(plugWear));
+	}
+
+	/** {@code state} under a warped head, which loses {@link #WARP_SEAL_LOSS} of every burn past its joint. */
+	public static State warped(State state) {
+		return state(state.seal() * (1 - WARP_SEAL_LOSS), state.drag(), state.viscous(), state.misfire(), state.lean());
+	}
+
+	private static State state(double seal, double drag, double viscous, double misfire, double lean) {
+		return new State() {
+			@Override
+			public double seal() {
+				return seal;
+			}
+
+			@Override
+			public double drag() {
+				return drag;
+			}
+
+			@Override
+			public double viscous() {
+				return viscous;
+			}
+
+			@Override
+			public double misfire() {
+				return misfire;
+			}
+
+			@Override
+			public double lean() {
+				return lean;
+			}
+		};
 	}
 
 	/** No wear: the cylinder runs as it always did. */
@@ -135,9 +259,58 @@ public final class Wear {
 		return Math.max(IDLE_FLOOR, share * share);
 	}
 
-	/** How much worse hot running is: nothing at or below normal temperature, and half as much again for each 0.2 over it. */
+	/**
+	 * How much worse hot running is: nothing at or below normal temperature, half as much again for each 0.2 over it, and from
+	 * {@link #HOT} on far more steeply, {@link #HOT_RISE} more for each whole unit past it.
+	 */
 	public static double heatFactor(double temperature) {
-		return 1 + 2.5 * Math.max(0, finite(temperature, Thermal.NORMAL) - Thermal.NORMAL);
+		double t = finite(temperature, Thermal.NORMAL);
+		return 1 + 2.5 * Math.max(0, t - Thermal.NORMAL) + HOT_RISE * Math.max(0, t - HOT);
+	}
+
+	/** How far past {@link #CRITICAL} a block is, 0 at it or below to 1 at {@link #CRITICAL_SPAN} over and beyond. */
+	public static double pastCritical(double temperature) {
+		return Math.clamp((finite(temperature, Thermal.NORMAL) - CRITICAL) / CRITICAL_SPAN, 0, 1);
+	}
+
+	/** Whether the block is hot enough to break things by heat alone. */
+	public static boolean critical(double temperature) {
+		return finite(temperature, Thermal.NORMAL) >= CRITICAL;
+	}
+
+	/**
+	 * The chance, in {@code dt} seconds, that a gasket blows from heat alone, however sound it is: none below {@link #CRITICAL}, and
+	 * twice as likely at {@link #CRITICAL_SPAN} past it as at it.
+	 */
+	public static double heatBlowChance(double temperature, double dt) {
+		if (!Double.isFinite(dt) || !critical(temperature))
+			return 0;
+		return Math.min(1, HEAT_BLOW_RATE * (1 + pastCritical(temperature)) * Math.max(0, dt));
+	}
+
+	/**
+	 * How long a head has soaked past {@link #CRITICAL}, after {@code dt} more seconds at this temperature: it builds above it, twice as
+	 * fast at {@link #CRITICAL_SPAN} past it, and falls away second for second below it. Never negative, never above the warping point,
+	 * and nonsense in leaves it unchanged. Deterministic, so the goggles' overheating reading is the warning.
+	 */
+	public static double heatSoak(double before, double temperature, double dt) {
+		double was = Double.isFinite(before) ? Math.clamp(before, 0, WARP_AFTER) : 0;
+		if (!Double.isFinite(dt))
+			return was;
+		double span = Math.max(0, dt);
+		if (critical(temperature))
+			return Math.min(WARP_AFTER, was + span * (1 + pastCritical(temperature)));
+		return Math.max(0, was - span);
+	}
+
+	/** Whether a head that has soaked this long has warped. */
+	public static boolean warps(double soak) {
+		return soak >= WARP_AFTER;
+	}
+
+	/** How much harder a standard rod works for the load on the engine, 0 (spinning free) to 1 (all it can give); nonsense is half. */
+	public static double loadFactor(double load) {
+		return Rod.STANDARD.loadFactor(load);
 	}
 
 	/** How much worse running without oil is: 1 with the parts fully filmed, 5 with none. */
@@ -160,9 +333,19 @@ public final class Wear {
 		return step(dt, PISTON_LIFE * (precision ? PRECISION_LIFE : 1), speedFactor(rpm) * heatFactor(temperature) * dryFactor(film));
 	}
 
-	/** Wear a connecting rod takes in {@code dt} seconds: speed and no oil, but neither heat nor boost. */
+	/** Wear a connecting rod takes in {@code dt} seconds on a warm engine at half load: see {@link #rodWear(double, double, double, double, double)}. */
 	public static double rodWear(double rpm, double film, double dt) {
-		return step(dt, ROD_LIFE, speedFactor(rpm) * dryFactor(film));
+		return rodWear(rpm, Thermal.NORMAL, film, REFERENCE_LOAD, dt);
+	}
+
+	/** Wear a connecting rod takes in {@code dt} seconds: speed, heat, no oil and how hard the engine is working, but not boost. */
+	public static double rodWear(double rpm, double temperature, double film, double load, double dt) {
+		return rodWear(Rod.STANDARD, rpm, temperature, film, load, dt);
+	}
+
+	/** As above, for a rod of this kind, which takes the load its own way (see {@link Rod}). */
+	public static double rodWear(Rod rod, double rpm, double temperature, double film, double load, double dt) {
+		return step(dt, ROD_LIFE, speedFactor(rpm) * heatFactor(temperature) * dryFactor(film) * rod.loadFactor(load));
 	}
 
 	/** Wear a head gasket takes in {@code dt} seconds: heat and boost on top of speed. */
@@ -178,13 +361,23 @@ public final class Wear {
 	 * scoring). Never negative, never above the seizing point, and nonsense in leaves it unchanged.
 	 */
 	public static double dryTime(double before, double film, double rpm, double dt, boolean precision) {
+		return dryTime(before, film, Thermal.NORMAL, rpm, dt, precision);
+	}
+
+	/**
+	 * As {@link #dryTime(double, double, double, double, boolean)}, with heat as a second way to score the bore: from {@link #CRITICAL}
+	 * the count builds at {@link #HEAT_SEIZE_SHARE} of the dry rate, on top of it when the piston is dry too, and oil does not bring it
+	 * down until the block is back below.
+	 */
+	public static double dryTime(double before, double film, double temperature, double rpm, double dt, boolean precision) {
 		double was = Double.isFinite(before) ? Math.min(SEIZE_AFTER, Math.max(0, before)) : 0;
 		if (!Double.isFinite(dt) || !(rpm > 0))
 			return was;
 		// A span of time below nothing is none
 		double span = Math.max(0, dt);
-		if (finite(film, 1) < SEIZE_FILM) {
-			double rate = Math.clamp(rpm / REFERENCE_RPM, SEIZE_SLOWEST, SEIZE_FASTEST) / (precision ? PRECISION_LIFE : 1);
+		double scoring = (finite(film, 1) < SEIZE_FILM ? 1 : 0) + (critical(temperature) ? HEAT_SEIZE_SHARE : 0);
+		if (scoring > 0) {
+			double rate = scoring * Math.clamp(rpm / REFERENCE_RPM, SEIZE_SLOWEST, SEIZE_FASTEST) / (precision ? PRECISION_LIFE : 1);
 			return Math.min(SEIZE_AFTER, was + span * rate);
 		}
 		return Math.max(0, was - SEIZE_RECOVERY * span);
@@ -230,17 +423,30 @@ public final class Wear {
 		return 1 + PISTON_DRAG * w * w;
 	}
 
-	/**
-	 * The chance, in {@code dt} seconds, that a part this worn fails: zero below {@link #FAILURE_FROM}, then rising with the cube of how
-	 * far past it the wear is and with speed (squared, as wear itself is). Never above 1.
-	 */
+	/** The chance a rod or gasket this worn fails on a warm engine: see {@link #failureChance(double, double, double, double)}. */
 	public static double failureChance(double wear, double rpm, double dt) {
+		return failureChance(wear, rpm, Thermal.NORMAL, dt);
+	}
+
+	/**
+	 * The chance, in {@code dt} seconds, that a rod or gasket this worn fails: zero below {@link #FAILURE_FROM}, then rising with the cube
+	 * of how far past it the wear is, with speed (in proportion, from the reference up to {@link #SPEED_CAP} times it) and with heat (see
+	 * {@link #heatRisk}). Never above 1.
+	 */
+	public static double failureChance(double wear, double rpm, double temperature, double dt) {
 		if (!Double.isFinite(dt))
 			return 0;
 		// Below the threshold there is nothing past it, and so no chance; a span of time below nothing is none
 		double past = Math.max(0, (clamp(wear) - FAILURE_FROM) / (1 - FAILURE_FROM));
-		double chance = FAILURE_RATE * past * past * past * Math.max(1, speedFactor(rpm)) * Math.max(0, dt);
+		double speed = Math.clamp(finite(rpm, 0) / REFERENCE_RPM, 1, SPEED_CAP);
+		double chance = PART_FAILURE_RATE * past * past * past * speed * heatRisk(temperature) * Math.max(0, dt);
 		return Math.min(1, chance);
+	}
+
+	/** How many times likelier heat makes a worn part fail: 1 up to {@link #HOT}, 3 at {@link #CRITICAL}, 6 at {@link #CRITICAL_SPAN} past it. */
+	public static double heatRisk(double temperature) {
+		double warm = Math.clamp((finite(temperature, Thermal.NORMAL) - HOT) / (CRITICAL - HOT), 0, 1);
+		return 1 + 2 * warm + 3 * pastCritical(temperature);
 	}
 
 	/** Whether the wear is light enough for a repair item to set right. */

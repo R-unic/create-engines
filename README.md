@@ -77,8 +77,12 @@ Minecraft 1.21.1 · NeoForge 21.1.219 or newer · Create 6.0.10 (build 257 or ne
   Exchange dial and a running engine changes its own oil, pushing out **Used Oil** that you burn, refine, coke into
   charcoal or let go. An Oil Filter slows the ageing and cleans fuel out of the oil
 - **Engine temperature**: a cold engine drags until it warms through, and a cooled one breathes better (about 6 to 9
-  percent more power). Coolant, or just water, goes into the same sump and is spent carrying heat away, so there is no
-  radiator to fit. Nothing ever overheats, and nothing wears out unless the wear mode is on
+  percent more power). Coolant, or just water, goes into the same sump and is spent carrying heat away. Goggles read
+  the block in degrees. Heat follows the fuel burned, and from 140 degrees an overheating engine loses power, up to
+  about a quarter at 165, until it cools (a server can turn that off). With the wear mode off, heat breaks nothing
+- A **Radiator** (copper sheets and fluid pipes round a Propeller): a closed coolant loop against the crankshaft, a
+  cylinder or a head that uses nothing up unless the engine is critically hot. An Encased Fan blowing at it, or speed on
+  a moving Aeronautics structure, makes it shed more, and on top of it a basin can run heated recipes or a boiler take its heat
 - **Warm-up and cooling**: a cold block burns fuel a little worse (ethanol and pressed oil most, gasoline least) and
   warms quickest at idle. A Blaze Burner against the heat exchanger preheats it. A stopped engine ticks, shimmers and
   its turbine wheel glows red as it cools, and goggles call it Cooling down
@@ -98,11 +102,14 @@ Minecraft 1.21.1 · NeoForge 21.1.219 or newer · Create 6.0.10 (build 257 or ne
   other hand lays the engine out from the parts you carry, it exports as a Create schematic, it copies out as text and pastes
   in again (the server checks every block and dial), and a Framed Blueprint hangs it on a wall
 - Governors and MAF sensors for the late game
-- **Wear and tear, opt-in** (`features.wearMode`, off by default): pistons, connecting rods, head gaskets, apex seals and
-  batteries wear with speed, heat, boost and lack of oil. A badly worn rod can be thrown, a gasket blown, a dry piston
-  seized, and a spark engine that knocks wears faster. Four head gaskets (stock, cardboard, rubber, copper), Apex Seals and
-  a Service Kit to put light wear right. Off, nothing wears and every engine runs as before. The numbers are in
+- **Wear and tear, opt-in** (`features.wearMode`, off by default): pistons, connecting rods, head gaskets, spark plugs,
+  turbochargers, apex seals and batteries wear with speed, heat, load, boost and lack of oil. A badly worn rod can be
+  thrown, a gasket blown or a turbo failed, a dry piston seized, and a spark engine that knocks wears faster. A very hot
+  block can blow a sound gasket, seize an oiled piston and warp a head. Four head gaskets (stock, cardboard, rubber,
+  copper), Apex Seals and a Service Kit to put light wear right. Off, nothing wears. The numbers are in
   [docs/WEAR.md](docs/WEAR.md)
+- **Light and Heavy Connecting Rods**: a light rod drags a little less at speed and wears fast under load, a heavy one
+  takes load well and drags a little more. The difference in drag is there with the wear mode off too
 - **Engine readouts**: a Display Link set against a crankshaft shows an engine's state, speed, load, temperature and
   oil on a display board or nixie tubes, and a comparator reads any of an oil sump's tanks, so a pump or an alarm can
   keep the oil topped up
@@ -121,7 +128,7 @@ Minecraft 1.21.1 · NeoForge 21.1.219 or newer · Create 6.0.10 (build 257 or ne
   turns it off, and `sableAirPressure`, `altitudeStart`, `altitudeScale` and `altitudeFloor` tune it
 - Flywheels that matter: a rough engine is rated for less, and rotating mass smooths it out
 - A 13-gear transmission with an Auto mode that shifts to suit the engine, and a **Dynamometer** that draws an engine's torque and power curves
-- A **Black Box** flight recorder that keeps ten minutes of an engine's speed, load and warmth and says why it stalled
+- A **Black Box** flight recorder that keeps ten minutes of an engine's speed, load and temperature and says why it stalled
 - An exhaust note made up from the engine's speed and firing order, so a V-twin lopes, a six hums and a dead cylinder limps
 - A **Muffler** that quiets the note, the bangs and the pops without costing the engine any power, and **Engine Casing**
   that joins into one plate and clads cylinders, pipes, cams, and Create's own shafts and cogwheels to hide the sprawl, in

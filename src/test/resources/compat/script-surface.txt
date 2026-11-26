@@ -16,6 +16,7 @@ data fuel charge_cooling optional 0.0
 data fuel cold_sensitivity optional 1.0
 data fuel energy_per_mb required
 data fuel flammability optional 1.0
+data fuel heat_factor optional 1.0
 data fuel preignition_temperature optional 0.0
 data fuel soot_factor optional 1.0
 data fuel sulfur optional

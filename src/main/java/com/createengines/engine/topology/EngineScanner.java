@@ -36,6 +36,7 @@ import com.createengines.content.head.CylinderHeadBlock;
 import com.createengines.content.governor.GovernorBlock;
 import com.createengines.content.rotor.RotorHousingBlock;
 import com.createengines.content.starter.StarterBlock;
+import com.createengines.content.radiator.RadiatorBlock;
 import com.createengines.content.sump.SumpBlock;
 import com.createengines.content.airflow.InlineDuct;
 import com.createengines.content.intercooler.IntercoolerBlock;
@@ -81,6 +82,7 @@ public final class EngineScanner {
 	private final List<CamLine> camLines = new ArrayList<>();
 	private final Map<BlockPos, Integer> camIndex = new HashMap<>();
 	private final Set<BlockPos> sumps = new LinkedHashSet<>();
+	private final Set<BlockPos> radiators = new LinkedHashSet<>();
 	private final Set<BlockPos> governors = new LinkedHashSet<>();
 	private boolean incomplete;
 	/** A plain shaft sits between blocks of a crank line. */
@@ -268,6 +270,13 @@ public final class EngineScanner {
 
 		for (BlockPos head : heads)
 			addElectricsAround(head, batteries, alternators);
+		// A radiator joins by touching any block the engine is made of: its crank line, a cylinder or a head
+		for (Segment segment : segments)
+			addRadiatorsAround(segment.pos());
+		for (CylinderDraft draft : drafts)
+			addRadiatorsAround(draft.pos);
+		for (BlockPos head : heads)
+			addRadiatorsAround(head);
 		addAlternatorChain(alternators);
 
 		List<Cylinder> cylinders = new ArrayList<>();
@@ -287,7 +296,8 @@ public final class EngineScanner {
 		Line first = lines.getFirst();
 		return new EngineLayout(first.start, first.axis, List.copyOf(segments), List.copyOf(cylinders),
 			List.copyOf(ports), List.copyOf(camLines), List.copyOf(starters), List.copyOf(batteries),
-			List.copyOf(alternators), List.copyOf(sumps), List.copyOf(governors), List.copyOf(heads),
+			List.copyOf(alternators), List.copyOf(sumps),
+			List.copyOf(radiators), List.copyOf(governors), List.copyOf(heads),
 			turbos(), inlines(true), inlines(false), flywheelInertia, isolatedInertia, resonanceFactor, lines.size(), Set.copyOf(members), portCells(), incomplete, brokenCrank);
 	}
 
@@ -341,6 +351,14 @@ public final class EngineScanner {
 			} else if (block instanceof AlternatorBlock && alternators.add(neighbour.immutable())
 				|| block instanceof SumpBlock && sumps.add(neighbour.immutable())
 				|| block instanceof GovernorBlock && governors.add(neighbour.immutable()))
+				members.add(neighbour.immutable());
+		}
+	}
+
+	private void addRadiatorsAround(BlockPos pos) {
+		for (Direction direction : Direction.values()) {
+			BlockPos neighbour = pos.relative(direction);
+			if (state(neighbour).getBlock() instanceof RadiatorBlock && radiators.add(neighbour.immutable()))
 				members.add(neighbour.immutable());
 		}
 	}
@@ -508,6 +526,7 @@ public final class EngineScanner {
 		draft.sense = segment.sense();
 		draft.tdcAngle = segment.sense() * CrankGeometry.topDeadCentreAngle(axis, segment.throwAngle(), draft.bore);
 		draft.sparkPlug = state.getValue(RotorHousingBlock.HAS_SPARK_PLUG);
+		draft.ignitionCoil = draft.sparkPlug && state.getValue(RotorHousingBlock.HAS_COIL);
 		if (state.getValue(RotorHousingBlock.FINE_INJECTOR))
 			draft.precision |= PrecisionParts.INJECTOR;
 		if (!Tuning.rotaryEngines)
@@ -914,6 +933,14 @@ public final class EngineScanner {
 					if (nextState.getBlock() instanceof BatteryBlock && bank.add(next.immutable()))
 						queue.add(next.immutable());
 				}
+			}
+		} else if (block instanceof RadiatorBlock) {
+			for (Direction direction : Direction.values()) {
+				BlockPos next = pos.relative(direction);
+				BlockState nextState = loadedState(level, next);
+				addHeadSeed(level, next, nextState, seeds);
+				addCylinderSeed(level, next, nextState, seeds);
+				addIfCrank(level, next, seeds);
 			}
 		} else if (block instanceof AlternatorBlock || block instanceof SumpBlock
 			|| block instanceof GovernorBlock) {

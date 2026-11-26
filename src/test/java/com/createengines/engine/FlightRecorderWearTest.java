@@ -116,7 +116,7 @@ class FlightRecorderWearTest {
 
 	// --- Failures as events ---
 
-	private static Sample failing(int failures) {
+	private static Sample failing(long failures) {
 		return new Sample(EngineState.RUNNING, 100, 50, 100, 0.5f, 1, 1, Diagnosis.Cause.NONE, 0.2f, failures);
 	}
 
@@ -145,7 +145,7 @@ class FlightRecorderWearTest {
 	@Test
 	void aSteadyCountIsNotAnEventAndNeitherIsAPartBeingReplaced() {
 		FlightRecorder recorder = new FlightRecorder();
-		int one = com.createengines.engine.sim.WearFailures.pack(1, 0, 0, 0);
+		long one = com.createengines.engine.sim.WearFailures.pack(1, 0, 0, 0);
 		recorder.record(failing(one));
 		recorder.record(failing(one));
 		recorder.record(failing(one));
@@ -185,7 +185,9 @@ class FlightRecorderWearTest {
 		var causes = FlightRecorder.Cause.values();
 		assertEquals(FlightRecorder.Cause.DRY, causes[4]);
 		assertEquals(FlightRecorder.Cause.ROD_THROWN, causes[5]);
-		assertEquals(FlightRecorder.Cause.APEX_FAILED, causes[causes.length - 1]);
+		assertEquals(FlightRecorder.Cause.APEX_FAILED, causes[8]);
+		assertEquals(FlightRecorder.Cause.HEAD_WARPED, causes[9]);
+		assertEquals(FlightRecorder.Cause.TURBO_FAILED, causes[causes.length - 1]);
 		for (var kind : com.createengines.engine.sim.WearFailures.Kind.values())
 			assertEquals(kind.name(), causes[FlightRecorder.Cause.ROD_THROWN.ordinal() + kind.ordinal()].name(),
 				"a recorded failure's cause is found by the kind's position, so the two lists must stay in the same order");

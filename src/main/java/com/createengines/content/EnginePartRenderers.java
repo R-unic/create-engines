@@ -233,6 +233,8 @@ public final class EnginePartRenderers {
 				draw(CEPartialModels.HEAD_WRECK, be.getBlockState(), frame, ms, buffer, light);
 			else if (be.showsBlown())
 				draw(CEPartialModels.HEAD_BLOWN_GASKET, be.getBlockState(), frame, ms, buffer, light);
+			if (be.showsWarped() && !be.showsBroken())
+				draw(CEPartialModels.HEAD_WARPED, be.getBlockState(), frame, ms, buffer, light);
 			EnginePoses.ValvePose pose = EnginePoses.valves(be, renderTime);
 			if (pose == null)
 				return;

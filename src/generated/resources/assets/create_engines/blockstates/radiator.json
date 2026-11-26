@@ -1,0 +1,19 @@
+{
+  "variants": {
+    "blaze=fading": {
+      "model": "create_engines:block/radiator/block"
+    },
+    "blaze=kindled": {
+      "model": "create_engines:block/radiator/block"
+    },
+    "blaze=none": {
+      "model": "create_engines:block/radiator/block"
+    },
+    "blaze=seething": {
+      "model": "create_engines:block/radiator/block"
+    },
+    "blaze=smouldering": {
+      "model": "create_engines:block/radiator/block"
+    }
+  }
+}

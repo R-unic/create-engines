@@ -1,0 +1,24 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "key": {
+    "N": {
+      "item": "create:brass_nugget"
+    },
+    "B": {
+      "item": "create:brass_ingot"
+    },
+    "A": {
+      "item": "create:andesite_alloy"
+    }
+  },
+  "pattern": [
+    "N",
+    "B",
+    "A"
+  ],
+  "result": {
+    "count": 2,
+    "id": "create_engines:light_connecting_rod"
+  }
+}

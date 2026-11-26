@@ -29,6 +29,7 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.Direction.Axis;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.neoforged.neoforge.fluids.FluidStack;
@@ -1008,7 +1009,7 @@ public final class EngineScenes {
 			.showText(100)
 			.attachKeyFrame()
 			.colored(PonderPalette.BLUE)
-			.text("Its Mixture Target, set with the value panel, is how lean or rich it holds the shot: 80% to 125% of balanced.")
+			.text("Its Mixture Target, set with the value panel, is how lean or rich it holds the shot: 80%% to 125%% of balanced.")
 			.pointAt(util.vector()
 				.blockSurface(sensor, Direction.WEST))
 			.placeNearTarget();
@@ -1526,7 +1527,7 @@ public final class EngineScenes {
 			.showText(130)
 			.attachKeyFrame()
 			.colored(PonderPalette.BLUE)
-			.text("Its Idle Stop, set with the value panel, is how far open the valve rests with no signal: 5% to 100% in steps of 5%, and 20% to begin with. Set it higher for an engine that should idle strongly; set it low for one that should barely tick over.")
+			.text("Its Idle Stop, set with the value panel, is how far open the valve rests with no signal: 5%% to 100%% in steps of 5%%, and 20%% to begin with. Set it higher for an engine that should idle strongly; set it low for one that should barely tick over.")
 			.pointAt(util.vector()
 				.blockSurface(throttle, Direction.WEST))
 			.placeNearTarget();
@@ -1559,7 +1560,7 @@ public final class EngineScenes {
 
 		scene.overlay()
 			.showText(130)
-			.text("The opening rises in a straight line with signal strength. With a 20% idle stop, strength 0 is 20%, strength 8 is about 63% and strength 15 is 100%. Engineer's Goggles on the valve read its opening right now.")
+			.text("The opening rises in a straight line with signal strength. With a 20%% idle stop, strength 0 is 20%%, strength 8 is about 63%% and strength 15 is 100%%. Engineer's Goggles on the valve read its opening right now.")
 			.pointAt(util.vector()
 				.topOf(throttle))
 			.placeNearTarget();
@@ -1568,7 +1569,7 @@ public final class EngineScenes {
 		scene.overlay()
 			.showText(120)
 			.colored(PonderPalette.BLUE)
-			.text("A second dial, the Wide-Open Bore, sets how far full signal opens it: 100% is the plain intake, and up to 150% is a bigger bore that lets a fast engine breathe more than the intake alone gives. It does nothing with no signal.")
+			.text("A second dial, the Wide-Open Bore, sets how far full signal opens it: 100%% is the plain intake, and up to 150%% is a bigger bore that lets a fast engine breathe more than the intake alone gives. It does nothing with no signal.")
 			.pointAt(util.vector()
 				.topOf(3, 3, 2))
 			.placeNearTarget();
@@ -1601,7 +1602,7 @@ public final class EngineScenes {
 
 		scene.overlay()
 			.showText(120)
-			.text("Throttle bodies in one intake line act together: the most closed one governs every cylinder behind it. A bore past 100% only helps when every body in the line is set that wide.")
+			.text("Throttle bodies in one intake line act together: the most closed one governs every cylinder behind it. A bore past 100%% only helps when every body in the line is set that wide.")
 			.pointAt(util.vector()
 				.topOf(throttle))
 			.placeNearTarget();
@@ -2314,6 +2315,93 @@ public final class EngineScenes {
 		scene.markAsFinished();
 	}
 
+	public static void radiator(SceneBuilder builder, SceneBuildingUtil util) {
+		CreateSceneBuilder scene = new CreateSceneBuilder(builder);
+		scene.title("radiator", "A Radiator");
+		scene.configureBasePlate(0, 0, 6);
+		scene.world()
+			.showSection(util.select()
+				.layer(0), Direction.UP);
+
+		Selection crank = util.select()
+			.fromTo(1, 1, 3, 3, 1, 3);
+		Selection engine = util.select()
+			.fromTo(2, 2, 3, 2, 3, 3);
+		BlockPos radiatorPos = util.grid()
+			.at(3, 1, 2);
+		Selection fan = util.select()
+			.position(3, 1, 0);
+		Selection basin = util.select()
+			.position(3, 2, 2);
+		scene.idle(10);
+
+		scene.world()
+			.showSection(crank, Direction.DOWN);
+		scene.world()
+			.showSection(engine, Direction.DOWN);
+		scene.world()
+			.setKineticSpeed(crank, 128);
+		scene.idle(15);
+		scene.world()
+			.showSection(util.select()
+				.position(radiatorPos), Direction.SOUTH);
+		scene.idle(15);
+		scene.overlay()
+			.showText(110)
+			.attachKeyFrame()
+			.text("A Radiator touching a crankshaft, cylinder or cylinder head cools the whole engine. An engine can have several.")
+			.pointAt(util.vector()
+				.blockSurface(radiatorPos, Direction.NORTH))
+			.placeNearTarget();
+		scene.idle(120);
+
+		scene.overlay()
+			.showControls(util.vector()
+				.blockSurface(radiatorPos, Direction.UP), Pointing.DOWN, 50)
+			.rightClick()
+			.withItem(new ItemStack(Items.WATER_BUCKET));
+		scene.idle(15);
+		scene.overlay()
+			.showText(120)
+			.attachKeyFrame()
+			.colored(PonderPalette.BLUE)
+			.text("Fill it with water or Engine Coolant, by bucket or pipe. The loop is closed: nothing is used up unless the engine gets critically hot, when it starts to boil.")
+			.pointAt(util.vector()
+				.blockSurface(radiatorPos, Direction.NORTH))
+			.placeNearTarget();
+		scene.idle(130);
+
+		scene.world()
+			.showSection(fan, Direction.SOUTH);
+		scene.world()
+			.setKineticSpeed(fan, 256);
+		scene.idle(15);
+		scene.overlay()
+			.showText(130)
+			.attachKeyFrame()
+			.colored(PonderPalette.GREEN)
+			.text("It sheds more with air going through it. Point an Encased Fan at it, up to two blocks of air away, or carry the engine on a moving Aeronautics structure.")
+			.pointAt(util.vector()
+				.blockSurface(util.grid()
+					.at(3, 1, 0), Direction.UP))
+			.placeNearTarget();
+		scene.idle(140);
+
+		scene.world()
+			.showSection(basin, Direction.DOWN);
+		scene.idle(15);
+		scene.overlay()
+			.showText(120)
+			.attachKeyFrame()
+			.text("A basin or a boiler on top uses the waste heat: while the radiator sheds enough, it counts as a heated source. It never superheats.")
+			.pointAt(util.vector()
+				.blockSurface(util.grid()
+					.at(3, 2, 2), Direction.NORTH))
+			.placeNearTarget();
+		scene.idle(130);
+		scene.markAsFinished();
+	}
+
 	public static void sump(SceneBuilder builder, SceneBuildingUtil util) {
 		CreateSceneBuilder scene = new CreateSceneBuilder(builder);
 		scene.title("sump", "An Oil Sump");
@@ -2431,7 +2519,7 @@ public final class EngineScenes {
 			.showText(150)
 			.attachKeyFrame()
 			.colored(PonderPalette.BLUE)
-			.text("The same sump takes coolant, from any face. Water works; Engine Coolant, made from water and glycerin, works better. It is spent carrying heat away, so no radiator is needed. A cool engine breathes better. A cold one drags until it warms up. Nothing ever overheats or wears out.")
+			.text("The same sump takes coolant, from any face. Water works; Engine Coolant, made from water and glycerin, works better. It is spent carrying heat away; a Radiator is a loop that keeps its coolant instead. A cool engine breathes better. A cold one drags until it warms up. One with too little cooling overheats and loses power from 140 degrees until it cools. With wear off, nothing breaks.")
 			.pointAt(util.vector()
 				.blockSurface(sumpPos, Direction.UP))
 			.placeNearTarget();
@@ -3645,7 +3733,7 @@ public final class EngineScenes {
 			.showText(190)
 			.attachKeyFrame()
 			.colored(PonderPalette.BLUE)
-			.text("Engine Speed gives the RPM for a nixie tube. Engine Load, Temperature and Oil Condition each give a percentage or a progress bar. Load is how much of its rating the network asks of it, and temperature reads 100 when the block is warm. Engine Boost, Engine Rated Torque and Battery Charge are there too, Engine Fault names what is wrong with it, and against a Transmission, Transmission Gear gives the gear.")
+			.text("Engine Speed gives the RPM for a nixie tube. Engine Load and Oil Condition each give a percentage or a progress bar, and Temperature gives degrees or a bar that is full when the block is warm. Load is how much of its rating the network asks of it. Engine Boost, Engine Rated Torque and Battery Charge are there too, Engine Fault names what is wrong with it, and against a Transmission, Transmission Gear gives the gear.")
 			.pointAt(util.vector()
 				.blockSurface(crankPos, Direction.UP))
 			.placeNearTarget();

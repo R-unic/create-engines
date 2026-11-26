@@ -457,6 +457,26 @@ def wear_wrecks():
         gasket += [quarter(e, turns) for e in north_side()]
     write("cylinder_head/blown_gasket", textures, gasket)
 
+    # A head warped by heat: the joint glowing where it no longer meets the block, a heat-crazed line across the top plate and the
+    # scorch round it. Low and thin, so it reads as damage to the head and not as a wreck
+    def warped_side():
+        return [
+            box((1, 0.2, -0.14), (7, 0.9, 0), "hot"),
+            box((7, 0.7, -0.12), (15, 1.3, 0), "hot"),
+            box((2, 1.3, -0.1), (14, 3, 0), "dark"),
+        ]
+
+    warped = []
+    for turns in range(4):
+        warped += [quarter(e, turns) for e in warped_side()]
+    warped += [
+        box((1.5, 16, 7), (6.5, 16.25, 8), "hot"),
+        box((6.5, 16, 8), (10, 16.25, 9), "hot"),
+        box((10, 16, 7.2), (14.5, 16.25, 8.2), "hot"),
+        box((3, 16, 5), (13, 16.1, 11), "dark"),
+    ]
+    write("cylinder_head/warped", textures, warped)
+
     bore = [
         # the connecting rod, bent in two where it folded
         tilt(box((7, 0, 7.5), (9, 9, 9.5), "iron"), (8, 0, 8.5), "z", 22.5),
@@ -1807,6 +1827,26 @@ def flare_stack():
     WRAP_UV = False
 
 
+def radiator():
+    """A radiator: header tanks top and bottom, a copper core of tubes set back from all four faces, thin dark fins
+    across it, and brass posts at the corners with a filler cap on top."""
+    textures = {"tank": COPPER_CASING, "core": COPPER, "fin": DARK, "post": BRASS, "cap": BRASS, "particle": COPPER_CASING}
+    elements = [
+        box((0, 0, 0), (16, 3, 16), "tank"),
+        box((0, 13, 0), (16, 16, 16), "tank"),
+        box((2, 3, 2), (14, 13, 14), "core"),
+    ]
+    # Fins stand proud of the core and stay inside the posts, and share no face plane with either
+    for y in (4, 6, 8, 10):
+        elements.append(box((1, y + 0.2, 1), (15, y + 1, 15), "fin"))
+    for x in (0.1, 13.9):
+        for z in (0.1, 13.9):
+            elements.append(box((x, 3, z), (x + 2, 13, z + 2), "post"))
+    elements += [box((6.5, 16, 6.5), (9.5, 17, 9.5), "cap"), box((7.25, 17, 7.25), (8.75, 17.8, 8.75), "fin")]
+    write("radiator/block", textures, elements)
+    write_item("radiator/item", "radiator/block")
+
+
 def sump():
     """An oil pan: a shallow sheet-metal tub under a bolted flange, with a drain plug, dipstick and filler."""
     textures = {"pan": DARK, "flange": IRON, "rib": IRON_BLOCK, "bolt": BRASS, "cap": COPPER, "particle": DARK}
@@ -2082,10 +2122,17 @@ def rotor_housing():
     injector = [box((11, 2, 16), (14, 5, 17.5), "injector")]
     plug = [box((2.5, 2.5, 16), (5.5, 5.5, 19), "ceramic"), box((3.5, 3.5, 19), (4.5, 4.5, 20.5), "terminal"),
             box((2, 2, 16), (6, 6, 17), "terminal")]
+    # The coil of a head's plug, laid along the plug (+Z): it swallows the terminal, so that box is left out under it
+    coil = [box((2.4, 2.4, 18.9), (5.6, 5.6, 21.9), "assist"), box((2.2, 2.2, 19.9), (5.8, 5.8, 20.7), "coil"),
+            box((3.5, 3.5, 21.8), (4.5, 4.5, 22.9), "terminal")]
+    coiled = dict(textures, assist=DARK, coil=BLUE)
     write("rotor_housing/block", textures, base)
     write("rotor_housing/block_injector", textures, base + injector)
     write("rotor_housing/block_plug", textures, base + plug)
     write("rotor_housing/block_injector_plug", textures, base + injector + plug)
+    coiled_plug = [plug[0], plug[2]] + coil
+    write("rotor_housing/block_plug_coil", coiled, base + coiled_plug)
+    write("rotor_housing/block_injector_plug_coil", coiled, base + injector + coiled_plug)
     write_item("rotor_housing/item", "rotor_housing/block")
 
     # What turns inside: the shaft, a web at each end of the rotor, and the eccentric journal between them (offset
@@ -2160,6 +2207,7 @@ def main():
     muffler()
     engine_casing()
     sump()
+    radiator()
     refinery()
     flare_stack()
     soot_trap()

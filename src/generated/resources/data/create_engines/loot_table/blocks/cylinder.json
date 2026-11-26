@@ -11,6 +11,16 @@
       "entries": [
         {
           "type": "minecraft:item",
+          "functions": [
+            {
+              "function": "minecraft:copy_components",
+              "include": [
+                "create_engines:wear",
+                "create_engines:failed"
+              ],
+              "source": "block_entity"
+            }
+          ],
           "name": "create_engines:cylinder"
         }
       ],

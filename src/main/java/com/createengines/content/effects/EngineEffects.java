@@ -384,6 +384,16 @@ public final class EngineEffects {
 			return;
 		}
 		boolean turning = engine.state() == EngineState.RUNNING || engine.state() == EngineState.OVERLOADED;
+		// An overheating block steams, harder the hotter it is, and a critical one is heard boiling
+		if (engine.temperature() >= Thermal.OVERHEATING) {
+			boolean critical = engine.temperature() >= Thermal.CRITICAL;
+			if (random.nextFloat() < (critical ? 0.5f : 0.25f))
+				level.addParticle(new GasParticleOptions(0.95f, 0.95f, 0.96f, 0.7f, 0.4f, 0.5f, 24), x, y, z,
+					(random.nextDouble() - 0.5) * 0.02, 0.05, (random.nextDouble() - 0.5) * 0.02);
+			if (critical && random.nextFloat() < 0.03f)
+				level.playLocalSound(x, y, z, com.createengines.registry.CESounds.COOLANT_BOIL.get(), SoundSource.BLOCKS,
+					0.5f * CEClientConfig.mechanicalVolume(), 0.9f + random.nextFloat() * 0.2f, false);
+		}
 		// A block still giving up its heat shimmers faintly, and a little longer than it takes to stop being hot
 		boolean shimmers = turning ? engine.temperature() >= SHIMMERING : engine.cooling() && engine.temperature() >= SHIMMERING - 0.12f;
 		if (shimmers && random.nextFloat() < (turning ? 0.12f : 0.05f))

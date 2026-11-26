@@ -147,7 +147,8 @@ class ScriptAndDataSurfaceTest {
 		assertTrue(now.contains("data part_stats inertia optional 1.0 range 0.1..10"), "" + now);
 		assertEquals(11, now.stream().filter(l -> l.startsWith("data part_stats ")).count());
 		assertTrue(now.contains("data fuel flammability optional 1.0"), "" + now);
-		assertEquals(9, now.stream().filter(l -> l.startsWith("data fuel ")).count());
+		assertTrue(now.contains("data fuel heat_factor optional 1.0"), "" + now);
+		assertEquals(10, now.stream().filter(l -> l.startsWith("data fuel ")).count());
 		assertEquals(8, now.stream().filter(l -> l.startsWith("data part_effects ")).count());
 		assertEquals(6, now.stream().filter(l -> l.startsWith("data cam_profiles ") && l.contains(" optional ")).count());
 		assertTrue(now.contains("data part_effect effect required"), "" + now);

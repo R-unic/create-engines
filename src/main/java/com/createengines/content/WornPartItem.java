@@ -47,6 +47,12 @@ public class WornPartItem extends Item {
 	@Override
 	public void appendHoverText(ItemStack stack, TooltipContext context, List<net.minecraft.network.chat.Component> tooltip, TooltipFlag flag) {
 		super.appendHoverText(stack, context, tooltip, flag);
+		var rod = WearService.rodOf(stack);
+		if (rod != null && rod != com.createengines.engine.sim.Wear.Rod.STANDARD)
+			tooltip.add(CELang.translate("tooltip.rod." + rod.name().toLowerCase(java.util.Locale.ROOT))
+				.component()
+				.copy()
+				.withStyle(ChatFormatting.AQUA));
 		var gasket = WearService.gasketOf(stack);
 		if (gasket != null)
 			tooltip.add(CELang.translate("tooltip.gasket.seals", percent(gasket.bonus))

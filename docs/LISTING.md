@@ -68,7 +68,7 @@ and valves yourself, pipe in air and fuel, and the engine you built fires in ord
 
 | Stage | What you build |
 |---|---|
-| **Start** | A single diesel cylinder and a flywheel. The early game is forgiving: nothing ever overheats, and nothing wears out unless you switch on the wear mode |
+| **Start** | A single diesel cylinder and a flywheel. The early game is forgiving: nothing breaks or wears out unless you switch on the wear mode |
 | **Grow** | An inline six or a V8, laid out in one click with the Bank Builder, fed by your own plant-oil and ethanol chain |
 | **Tune** | Turbos, superchargers, precision parts, a transmission, and the Dynamometer to prove it worked |
 | **Master** | Coupled-crank V12s, Wankel rotaries, a Refinery column, and engines that heat your boilers and basins |
@@ -121,9 +121,10 @@ and valves yourself, pipe in air and fuel, and the engine you built fires in ord
 - **A 13-gear transmission** with an Auto mode that shifts to suit the engine
 - **Dynamometer:** draws an engine's torque and power curves, and compares a new run with the last
 - **Governors and MAF sensors** for the late game
-- **Black Box:** a flight recorder that keeps ten minutes of speed, load and warmth and says why an engine stalled
+- **Black Box:** a flight recorder that keeps ten minutes of speed, load and temperature and says why an engine stalled
 - **Engine temperature:** a cold engine drags until it warms through, and a cooled one breathes better. Water or coolant
-  goes into the same sump, so there is no radiator to fit
+  goes into the same sump
+- **Radiator:** a closed coolant loop that sheds more with a fan or a moving Aeronautics structure, and can heat a basin or a boiler
 
 ## 👂 Hear it, see it
 
@@ -221,8 +222,42 @@ that changes how an existing engine behaves says so in its changelog. More on
 
 ## Changelog for 2.4.0
 
-Unreleased; being written as 2.4 "Running Hot" is built. So far: fixes to the wear mode, new gasket recipes, and less work for a server. One new
-item ID (`incomplete_copper_gasket`); no ID, key or saved format is renamed or removed. Changes to existing builds are listed first.
+Unreleased; being written as 2.4 "Running Hot" is built. So far: the second part of the wear mode, two new connecting rods, fixes, new gasket
+recipes, and less work for a server. Three new item IDs (`incomplete_copper_gasket`, `light_connecting_rod`, `heavy_connecting_rod`); no ID,
+key or saved format is renamed or removed. Changes to existing builds are listed first.
+- **Changed, overheating, with the wear mode on or off.** From 140 degrees an engine's block loses part of the heat of every burn: up to about
+  a quarter of its power at 165 degrees and above, and none below 140. It comes back as the engine cools, and nothing breaks or stops. A boosted
+  spark engine that hot also lights its charge a little earlier. A server can scale or turn this off with `balance.overheatPenalty`. **An existing
+  engine that runs very hot without coolant makes less power than before**; coolant or a Radiator puts it right.
+- Changed, heat follows work: a block is now heated by the fuel its cylinders burn, so more boost and more fuel run hotter. Friction counts as
+  before on a slow engine and much less on a fast one. An engine near 100 RPM settles where it did; fast engines settle cooler than before,
+  and big boosted ones are the hottest. In a measurement with the crank held at 512 RPM, uncooled: a crude four settled near 146 degrees
+  (235 before) and a twin-turbo gasoline W24 near 166 (253 before). A block starved of oil now heats up much faster. Cylinder performance,
+  ratings and fuel figures are unchanged.
+- Changed, temperature is shown in degrees Celsius: goggles (with new Hot, Overheating and Critical readings), the Display Link's temperature
+  and status sources, and the Black Box. An overheating block steams, and a critical one boils audibly. The Display Link temperature source now
+  gives degrees where it gave a percentage of warm; its progress bar is as before.
+- New, an optional `heat_factor` in the `fuel` data map (default 1) for pack makers. API version 1.3.0.
+- Changed (wear mode), the failure chance: a worn rod or gasket is far less likely to fail in any one minute, so heavy wear is now a warning
+  and not a near certainty. Before, a part 80% worn at 256 RPM was certain to fail within a minute; now that chance is about 5% while warm. It
+  grows in proportion to speed (before, with the square), and with heat. Apex seals fail as they did.
+- Changed (wear mode), heat: past a hot block, pistons, gaskets and now connecting rods wear much faster. From a critical temperature a gasket
+  can blow however sound it is, an oiled piston counts towards seizing, and a head left there warps. A **warped head** leaks part of every
+  burn until it is replaced; a Service Kit cannot mend it, and breaking it gives no head back.
+- Changed (wear mode), connecting rods wear with how hard the engine is pulling: less spinning free, more under full load. At half load on a
+  warm engine they wear as before.
+- New (wear mode), spark plugs wear with hours, a coil and soot. A badly worn plug lights a narrower range of mixtures and misses some sparks.
+  It never stops an engine by itself.
+- New (wear mode), turbochargers wear with boost, heat and poor oil. A worn one makes less boost, and a badly worn one can fail and make none
+  until it is replaced. A Service Kit sets light wear right on a turbo or a plug.
+- New, **Light Connecting Rod** and **Heavy Connecting Rod**. A light rod has a little less of the friction that grows with speed and wears fast
+  under load; a heavy one has a little more and wears slowly under load. The friction difference applies with the wear mode on or off. The Bank
+  Builder fits them when you carry no standard rod. A blueprint does not record the kind of rod.
+- New, the Black Box records a warped head and a failed turbocharger as events, and both, with plug wear, count in the build's wear figure.
+- Fixed (wear mode): breaking a battery, rotor housing or turbocharger and placing it again no longer makes it new, and a thrown rod's wreck
+  stays in a cylinder that is broken and placed. Their items now carry `create_engines:wear` and `create_engines:failed`.
+- New saved keys, absent on older worlds: cylinder `Rod`, head `Warped` and `PlugWear`, rotor housing `PlugWear`, turbocharger `Wear` and
+  `WearFailed`. The engine summary's `Failures` is now a long; a saved int reads the same.
 - Changed, gasket recipes (author, 2026-11-25): the **Rubber Gasket** is sawn from a Mechanical Belt (a Mechanical Saw cuts one belt into two
   gaskets) instead of crafted from two slime balls and a paper. The **Cardboard Gasket** is crafted from one of Create's Cardboard instead of three
   paper. The **Copper Gasket** is a Create sequenced assembly on a Rubber Gasket: a Deployer puts a copper sheet on, a Press presses it, a second
@@ -251,6 +286,14 @@ item ID (`incomplete_copper_gasket`); no ID, key or saved format is renamed or r
 - Fixed, damaged saves: a starter, supercharger, crankshaft, crank throw, rotor housing, governor, MAF sensor, heat exchanger, reboiler or condenser
   whose save held a number that is not a number (NaN) or an infinity now reads it as zero (a governor's rack position as wide open) instead of
   running with it and writing it back. Sound saves read exactly as before.
+- Added, Ignition Coil on rotary engines: it now goes onto a Rotor Housing's spark plug as it does onto a head's, and comes off before the plug. All
+  three chambers use it, and each spark with fuel to light spends the same half spark more. New housing state `coil` (default false), so housings
+  already built are unchanged.
+- New, Radiator (`create_engines:radiator`; copper sheets and fluid pipes round a Create Propeller): touching an engine's crankshaft, a cylinder or a
+  cylinder head, it cools the whole engine, and an engine can have several. Its closed loop holds 1000 mB of water or Engine Coolant and uses none
+  unless the engine is critically hot, when it boils some off. An Encased Fan blowing at it (up to two blocks of air between) or the speed of a
+  moving Sable or Aeronautics structure makes it shed more. While it sheds enough, a basin on top runs heated recipes, never superheated ones, and a boiler on top takes it
+  as a heated source. It has its own Ponder page. Engines without one run as before.
 - Added, Bank Builder: W and X layouts. W lays three banks (the base face and the faces a quarter turn either side), X all four faces; sneak-use
   cycles inline, vee, flat, W and X before the grade of parts. Inline, vee and flat build exactly as before.
 

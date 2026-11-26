@@ -34,7 +34,9 @@ public final class FlightRecorder {
 	public enum Cause {
 		NONE, UNKNOWN, NO_FUEL, OVERLOAD, DRY,
 		/** The wear mode's failures, appended so a tape saved before them still reads: a rod was thrown, a gasket blew, a piston seized, apex seals failed. */
-		ROD_THROWN, GASKET_BLOWN, PISTON_SEIZED, APEX_FAILED;
+		ROD_THROWN, GASKET_BLOWN, PISTON_SEIZED, APEX_FAILED,
+		/** Appended for 2.4: heat warped a head, and a turbocharger failed. */
+		HEAD_WARPED, TURBO_FAILED;
 
 		public String langKey() {
 			return "goggles.recorder.cause." + name().toLowerCase(java.util.Locale.ROOT);
@@ -51,7 +53,7 @@ public final class FlightRecorder {
 	 * @param lubrication how well oiled it is, 0 to 1
 	 */
 	public record Sample(EngineState state, float rpm, float load, float capacity, float temperature, float fuel,
-						 float lubrication, Diagnosis.Cause fault, float wear, int failures) {
+						 float lubrication, Diagnosis.Cause fault, float wear, long failures) {
 
 		/** A sample that blames nothing, for the places that only have the figures. */
 		public Sample(EngineState state, float rpm, float load, float capacity, float temperature, float fuel,

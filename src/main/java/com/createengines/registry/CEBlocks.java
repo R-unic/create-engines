@@ -41,6 +41,7 @@ import com.createengines.content.starter.StarterBlock;
 import com.createengines.content.refinery.ColumnPortBlock;
 import com.createengines.content.refinery.ColumnSectionBlock;
 import com.createengines.content.refinery.FlareStackBlock;
+import com.createengines.content.radiator.RadiatorBlock;
 import com.createengines.content.sump.SumpBlock;
 import com.createengines.content.supercharger.VariableSuperchargerBlock;
 import com.createengines.content.supercharger.SuperchargerBlock;
@@ -134,6 +135,7 @@ public final class CEBlocks {
 	public static final BlockEntry<RotorHousingBlock> ROTOR_HOUSING =
 		REGISTRATE.block("rotor_housing", RotorHousingBlock::new)
 				.transform(CEBlocks::engineReadouts)
+			.loot(CEBlocks::keepsWear)
 			.initialProperties(SharedProperties::softMetal)
 			.properties(p -> part(p)
 				.mapColor(MapColor.COLOR_ORANGE)
@@ -142,6 +144,10 @@ public final class CEBlocks {
 			.blockstate((c, p) -> axisIgnoringPaint(c, p, s -> {
 				boolean injector = s.getValue(RotorHousingBlock.HAS_INJECTOR);
 				boolean plug = s.getValue(RotorHousingBlock.HAS_SPARK_PLUG);
+				boolean coil = plug && s.getValue(RotorHousingBlock.HAS_COIL);
+				if (coil)
+					return injector ? AssetLookup.partialBaseModel(c, p, "injector", "plug", "coil")
+						: AssetLookup.partialBaseModel(c, p, "plug", "coil");
 				if (injector && plug)
 					return AssetLookup.partialBaseModel(c, p, "injector", "plug");
 				return plug ? AssetLookup.partialBaseModel(c, p, "plug")
@@ -153,6 +159,7 @@ public final class CEBlocks {
 
 	public static final BlockEntry<CylinderBlock> CYLINDER = REGISTRATE.block("cylinder", CylinderBlock::new)
 		.transform(CEBlocks::casedPart)
+		.loot(CEBlocks::keepsWear)
 		.initialProperties(SharedProperties::softMetal)
 		.properties(p -> part(p)
 			.mapColor(MapColor.METAL))
@@ -179,6 +186,7 @@ public final class CEBlocks {
 	public static final BlockEntry<CylinderBlock> PRECISION_CYLINDER =
 		REGISTRATE.block("precision_cylinder", p -> new CylinderBlock(p, true))
 				.transform(CEBlocks::casedPart)
+			.loot(CEBlocks::keepsWear)
 			.initialProperties(SharedProperties::softMetal)
 			.properties(p -> part(p)
 				.mapColor(MapColor.GOLD))
@@ -396,6 +404,7 @@ public final class CEBlocks {
 		.register();
 
 	public static final BlockEntry<BatteryBlock> BATTERY = REGISTRATE.block("battery", BatteryBlock::new)
+		.loot(CEBlocks::keepsWear)
 		.transform(DisplaySource.displaySource(CEDisplaySources.BATTERY_CHARGE))
 		.initialProperties(SharedProperties::softMetal)
 		.properties(p -> part(p)
@@ -409,6 +418,7 @@ public final class CEBlocks {
 	/** Half a battery's capacity and proof against the cold: 100 sparks, joins into a bank with any other battery. */
 	public static final BlockEntry<BatteryBlock> DRY_CELL = REGISTRATE
 		.block("dry_cell", p -> new BatteryBlock(p, BatteryTier.DRY_CELL))
+		.loot(CEBlocks::keepsWear)
 		.transform(DisplaySource.displaySource(CEDisplaySources.BATTERY_CHARGE))
 		.initialProperties(SharedProperties::softMetal)
 		.properties(p -> part(p)
@@ -422,6 +432,7 @@ public final class CEBlocks {
 	/** Four batteries in one block: 800 sparks, but the cold holds back up to three quarters of it. The bank for an electric motor. */
 	public static final BlockEntry<BatteryBlock> LARGE_BATTERY = REGISTRATE
 		.block("large_battery", p -> new BatteryBlock(p, BatteryTier.LARGE))
+		.loot(CEBlocks::keepsWear)
 		.transform(DisplaySource.displaySource(CEDisplaySources.BATTERY_CHARGE))
 		.initialProperties(SharedProperties::softMetal)
 		.properties(p -> part(p)
@@ -497,6 +508,17 @@ public final class CEBlocks {
 		.initialProperties(SharedProperties::softMetal)
 		.properties(p -> part(p)
 			.mapColor(MapColor.METAL))
+		.transform(TagGen.pickaxeOnly())
+		.blockstate((c, p) -> BlockStateGen.simpleBlock(c, p, s -> AssetLookup.partialBaseModel(c, p)))
+		.item()
+		.transform(ModelGen.customItemModel())
+		.register();
+
+	/** A closed coolant loop that gives an engine's heat to the air, and warms a basin on top of it. */
+	public static final BlockEntry<RadiatorBlock> RADIATOR = REGISTRATE.block("radiator", RadiatorBlock::new)
+		.initialProperties(SharedProperties::softMetal)
+		.properties(p -> part(p)
+			.mapColor(MapColor.COLOR_ORANGE))
 		.transform(TagGen.pickaxeOnly())
 		.blockstate((c, p) -> BlockStateGen.simpleBlock(c, p, s -> AssetLookup.partialBaseModel(c, p)))
 		.item()
@@ -599,6 +621,7 @@ public final class CEBlocks {
 
 	public static final BlockEntry<TurbochargerBlock> TURBOCHARGER =
 		REGISTRATE.block("turbocharger", TurbochargerBlock::new)
+			.loot(CEBlocks::keepsWear)
 			.initialProperties(SharedProperties::copperMetal)
 			.properties(p -> part(p)
 				.mapColor(MapColor.COLOR_ORANGE))
@@ -612,6 +635,7 @@ public final class CEBlocks {
 	/** A turbocharger whose turbine has variable vanes: it spools sooner and chokes the exhaust less at full flow. */
 	public static final BlockEntry<VariableTurbochargerBlock> VARIABLE_TURBOCHARGER =
 		REGISTRATE.block("variable_turbocharger", VariableTurbochargerBlock::new)
+			.loot(CEBlocks::keepsWear)
 			.initialProperties(SharedProperties::copperMetal)
 			.properties(p -> part(p)
 				.mapColor(MapColor.GOLD))
@@ -1048,6 +1072,19 @@ public final class CEBlocks {
 	 * and over it the lamp strip on each side's lid, dark and lit to the blockstate's charge. A side that is joined to another
 	 * battery has no lid face, so it has no lamps.
 	 */
+	/** A block that drops itself, its item keeping what the wear mode has done to it (see {@code CEComponents.WEAR} and {@code FAILED}). */
+	private static <B extends Block> void keepsWear(com.tterrag.registrate.providers.loot.RegistrateBlockLootTables tables, B block) {
+		tables.add(block, net.minecraft.world.level.storage.loot.LootTable.lootTable()
+			.withPool(net.minecraft.world.level.storage.loot.LootPool.lootPool()
+				.setRolls(net.minecraft.world.level.storage.loot.providers.number.ConstantValue.exactly(1))
+				.when(net.minecraft.world.level.storage.loot.predicates.ExplosionCondition.survivesExplosion())
+				.add(net.minecraft.world.level.storage.loot.entries.LootItem.lootTableItem(block)
+					.apply(net.minecraft.world.level.storage.loot.functions.CopyComponentsFunction
+						.copyComponents(net.minecraft.world.level.storage.loot.functions.CopyComponentsFunction.Source.BLOCK_ENTITY)
+						.include(CEComponents.WEAR.get())
+						.include(CEComponents.FAILED.get())))));
+	}
+
 	private static void batteryBlockstate(DataGenContext<Block, BatteryBlock> context, RegistrateBlockstateProvider provider) {
 		var builder = provider.getMultipartBuilder(context.get());
 		BooleanProperty[] joins = { BatteryBlock.NORTH, BatteryBlock.EAST, BatteryBlock.SOUTH, BatteryBlock.WEST, BatteryBlock.UP };

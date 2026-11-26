@@ -36,8 +36,8 @@ question, not an obstacle ([CLAUDE.md](../CLAUDE.md)).
 | 2.1 | Twin Mass | **Dual-mass flywheel**, the readouts that make a flywheel choice legible, and sharper niches for the existing fuels | Medium to large |
 | 2.2 | Proving Ground | Verification debts: server-from-jar, the step-size finding; **the battery tiers**, then **charge priority, electric injector assist and ignition coils**, with electrolysis to be decided (author, 2026-11-23) | Medium |
 | 2.3 | Wear and Tear | **The opt-in wear mode and nothing else** (author, 2026-11-24): pistons, rods, gaskets (stock and three tiers), rotary apex seals and batteries wear, precision parts wear slower, a rod can be thrown (a flag, a misfire, a broken head, with spectacle) and a gasket can blow, light wear is repaired by an automatable, durable Service Kit and the rest by replacing the part, worn parts keep their wear as items, and the Black Box and Display Link report each part and a total; off by default, nothing runs with it off, and gaskets and seals are not required with it off | Medium to large |
-| 2.4 | Running Hot | **Temperature in degrees, overheating you can reach** (a soft power loss in both modes, an exception the author approved on 2026-11-25), heat that follows work, **the Radiator** (closed loop, sheds more with a fan or on a moving contraption), and **the wear overhaul, part 2** (heat drives wear and failures, rod wear from load, plug and turbo wear wired, gasket recipes) (author, 2026-11-25) | Medium to large |
-| 2.5 | Open Garage (was 2.4 until 2026-11-25) | Reach: API 1.2, energy and probe mods, the next Create, a second example addon; **piston rings**, **polluted intake air**, **high- and low-compression piston variants**, **rotor variants (a precision rotor among them) with an exhaust niche**, and **nitrous oxide** (liquid, a vaporiser and a gas in the intake manifolds) (author, 2026-11-23), a **W layout for the Bank Builder** (author, 2026-11-24), then **look, sound and performance** only where the 2.0.x pass found something (all of it was 2.3 until the author moved it, 2026-11-24) | Medium to large |
+| 2.4 | Running Hot | **Temperature in degrees, overheating you can reach** (a soft power loss in both modes, an exception the author approved on 2026-11-25), heat that follows work, **the Radiator** (closed loop, sheds more with a fan or on a moving contraption), and **the wear overhaul, part 2** (heat drives wear and failures, rod wear from load, plug and turbo wear wired, gasket recipes) (author, 2026-11-25), and **a full sound rework** (each engine's note built from its banks, exhausts, cylinder size, cam and fuel instead of one shared firing sound; client-side only) (author, 2026-11-25) | Large |
+| 2.5 | Open Garage (was 2.4 until 2026-11-25) | Reach: API 1.2, energy and probe mods, the next Create, a second example addon; **piston rings**, **polluted intake air**, **high- and low-compression piston variants**, **rotor variants (a precision rotor among them) with an exhaust niche**, and **nitrous oxide** (liquid, a vaporiser and a gas in the intake manifolds) (author, 2026-11-23), a **W layout for the Bank Builder** (author, 2026-11-24), then **look, sound and performance** only where the 2.0.x pass found something (all of it was 2.3 until the author moved it, 2026-11-24; its sound went to 2.4's sound rework, 2026-11-25) | Medium to large |
 | 3.0 | Clean Slate | The second breaking cleanup: drop 1.x migrations, regenerate baselines, API 2.0 | Large |
 
 **Shipped so far (tags):** 2.0.0 (2026-11-21), 2.0.1 and 2.0.2 (2026-11-22), 2.1.0 (2026-11-23), 2.2.0 (2026-11-24) and 2.3.0 (2026-11-25). 2.4, 2.5 and 3.0
@@ -372,6 +372,8 @@ none adds a failure mode (rule 4). Each gets tests, lang entries, a goggle line 
   (pure); the new block state `coil` defaults false, so no saved head changes. Tests: `IgnitionCoilTest`, `IgnitionCoilGameTests`.
   **Ponder written 2026-11-24** ("Spending Charge: Injector Assist and Ignition Coil", also covers the assist). **Open:** the models are generated but unseen (a coil on the standard and the precision plug, in
   all three head combinations), and rotor housings have no coil (a rotor has no head block to put one on).
+  **2026-11-25 (author):** rotor housings take the coil too, for 2.4. It sits on the housing's own plug (new housing state `coil`,
+  default false), all three chambers use it, and each spark spends the same half spark more. The two new housing models are unseen.
 - **Battery wear** belongs to the opt-in wear mode in 2.3 (2.3, see below), not here: deep discharge and repeated cold cycles reduce a
   battery's capacity, only with the mode on.
 
@@ -745,6 +747,23 @@ Three findings, each a part of the fix:
    anything; its only reward is the 3% charge bonus. The pan's coolant boils off, at 50 to 96 mB a second on a big engine, so a 500 mB pan
    lasts seconds. Too cheap to matter and too thirsty to bother with.
 
+### Temperature, heat from work and overheating: build status (2026-11-25)
+
+**Built, not seen or heard in game, not released.** The author asked for "all of the heat work", chose no Fahrenheit toggle, and chose
+bands "tuned from measurements". Where this differs from the design below, this is what was built:
+
+- **Bands:** Hot 120, **Overheating 140, Critical 165** degrees (design: 150 and 180, which almost no engine reached once heat followed fuel).
+- **The penalty is a share of each burn, not hotter intake air.** Measured on the dyno, a hotter charge *raised* torque by up to 25% here (fuel
+  is metered per shot). Each burn loses up to 18% of its heat at Critical, 22 to 25% of peak torque across four fuels with and without a turbo
+  (`ThermalRunningHotTest`); a boosted spark charge is also read nearer its pre-ignition temperature.
+- **Heat from work:** the heat of the fuel burned (times the fuel's `heat_factor`) replaces exhaust heat for cylinders. Friction keeps its old
+  weight (0.35) up to 2.5 a cylinder and 0.1 past it, so slow engines warm as they did.
+- **Measured, crank held at a speed, uncooled, degrees:** crude I4 diesel 83 at 100 RPM, 106 at 256, 146 at 512, 168 at 640; twin-turbo W24
+  gasoline 85, 122, 166, 176. With plain water the W24 stays under 85.
+- **Exceptions owed in the 2.4.0 record**, with the author's name: the soft penalty with the wear mode off and heat following work (both
+  approved 2026-11-25); 22 lines of `compat/trajectories.txt` re-recorded and one line appended to `behaviour.txt`; `ThermalExactTest` and
+  `ThermalTest` pins of the old heat blend; the Display Link temperature reading changing from percent to degrees.
+
 ### Temperature in degrees
 
 - **A number everywhere a word was:** goggles, the Display Link Engine Temperature source (today "Temp n%"), and the Black Box's
@@ -786,6 +805,16 @@ moves the same guards and is listed with it.
 
 ### The Radiator (author, 2026-11-25)
 
+**Built 2026-11-25, not seen in game, not released.** The author settled the open questions the same day: it warms a basin, its recipe involves
+copper and a propeller, and it gets no Display Link source (the engine's is enough). Choices made while building, for the author to confirm:
+a basin goes up to heated and never superheated; a fan reaches over two blocks of air and must blow at it; every number is a first pass
+(DESIGN.md).
+**Author, 2026-11-25, after the build:** it **also heats boilers** (still no further than heated); the two-block fan reach stays; **one look,
+casing styles dropped**; and it is to be **stronger**: one radiator with a fan or fast airflow should handle a large engine, which replaces the
+"two or three" below. Re-measured after heat followed the fuel (a precision gasoline W24 at 640 RPM settles at 1.27 bare), its conductance was
+doubled from 80 to 160: one holds that engine at 0.95 in still air and 0.73 with a full fan on Engine Coolant (at 80: 1.08 and 0.90). The probe
+was a simple one (its boosted case ran no hotter than its unboosted one at speed), so a boosted build still wants checking in game.
+
 **A cooling block, reopened from the Declined list by the author on 2026-11-25** for this release; it is a new block, so no existing build
 changes. The author's spec: **a closed loop, touching the engine like the oil pan, and it sheds more on a moving Aeronautics contraption
 with air going over it fast**. SilverThorn asked for the same, with a fan as the other way to blow air through it.
@@ -806,6 +835,18 @@ with air going over it fast**. SilverThorn asked for the same, with a fan as the
   heat source against the exchanger (preheat) should still count when an engine is already hot.
 
 ### The wear overhaul, part 2 (wear mode only)
+
+**Status (2026-11-25): items 1 to 4 and 6 built, with the break-and-replace fix; not seen or heard in game, not released.** "All of the wear
+items" was the author's go-ahead, light and heavy rods included. Every number is a first pass in [WEAR.md](WEAR.md). Choices made while
+building, for the author to confirm: hot is 1.0 and critical 1.6 in block units (120 and 180 degrees on the scale below, which is not built);
+a head warps after 180 seconds past critical; a warped head drops nothing, like a broken one; a light rod has 0.96 and a heavy rod 1.04 of a
+standard rod's speed friction; wrenched or broken blocks carry wear on their item. Not built: a Display Link or goggles readout per part, a
+blueprint record of the rod.
+
+**Exceptions owed in the 2.4.0 record**, in addition to those under "Fixes carried over": the loot tables of `battery`, `dry_cell`,
+`large_battery`, `cylinder`, `precision_cylinder`, `rotor_housing`, `turbocharger` and `variable_turbocharger` now copy wear onto the item
+(manifest lines moved by hand); the retuned failure chance and the new heat and load wear (wear mode only); the changed pins in `WearTest`,
+`FlightRecorderWearTest` and `WearPropertyTest`.
 
 Everything here is the opt-in mode: with it off, nothing in this list runs. From the author's picks (heat drives wear, wire the plug and
 turbo rules, SilverThorn's thread) on 2026-11-25:
@@ -834,6 +875,62 @@ turbo rules, SilverThorn's thread) on 2026-11-25:
 6. **The failure curve.** [WEAR.md](WEAR.md) shows a part at 0.8 wear at 256 RPM is certain to fail within a minute. Retune with the new heat
    input in place, so Hot plus heavy wear is the warning and Critical plus heavy wear is the risk. Numbers by probe, pinned in `WearTableTest`.
 
+### The sound rework (author, 2026-11-25)
+
+**Asked for by the author on 2026-11-25**, from player complaints that the same clacky firing sound plays over and over and does not sound
+like the engines they are building, even with a correct firing order. Sound only: no rating, sim number or saved key moves, so
+`compat/behaviour.txt` and `compat/trajectories.txt` stay untouched. **Nothing is built; this is a first design.**
+
+**Why it sounds the same today (read from the code, 2026-11-25):**
+
+1. **One voice for every engine.** `EngineNoteSynth` pushes each firing into the same three resonances (86, 172 and 345 Hz) whatever the
+   engine is. Cylinder size and sharpness only stretch the thump and the crack. The firing order sets *when* firings land, but every firing
+   lands in the same "pipe", so an I4, a crossplane V8 and a flat four are the same click at different rhythms.
+2. **Every firing is identical.** No cycle-to-cycle variation, so a slow engine is a metronome. Real engines never fire the same twice,
+   most of all at idle.
+3. **The sample fallback is the clack.** When an engine's note is not playing (voice budget, out of range of the stream),
+   `CylinderBlockEntity.ignite` and the rotor housing play `cylinder_fire` (three variants) on every firing.
+4. **No mechanical layer, no fuel voice.** A diesel's clatter, a pushrod engine's valvetrain, a rotary's lack of one: none is in the note.
+   `engine_clatter` is a separate loop, not tied to firings.
+
+**What changes:**
+
+- **Banks and exhausts shape the note.** Each bank's firings go into its own resonator, tuned by that bank's exhaust run (the Exhaust
+  blocks it uses, their count and length) and placed at that bank's exhaust outlet. Uneven spacing within a bank is what makes a crossplane
+  V8 burble and a flat four rumble, so it comes from the build rather than a per-layout table. Banks sharing one exhaust share one resonator
+  and sound smoother, which is true of real engines and makes exhaust routing something to choose by ear.
+- **Size and speed set the pitch.** The resonances scale with cylinder size and pipe length instead of the fixed 86/172/345 Hz, so a big
+  slow engine booms and a small fast one rasps.
+- **No two firings alike.** Each firing varies a little in strength and timing, more at idle, lean or worn (the existing roughness and
+  misfire share feed it), less at high load. Seeded per engine, so it is not random noise and tests stay deterministic.
+- **Fuel and cam voices.** Diesel and other compression-ignition fuels get the sharp knock-rattle on each firing; spark fuels stay smoother.
+  A mechanical layer under the exhaust: a valvetrain tick that differs between overhead, pushrod and valley cams, none for a rotary. Crude
+  parts sound rougher than precision ones.
+- **Intake and load.** The intake roar joins the note and follows the throttle; on overrun the note drops and the existing exhaust pops
+  carry the crackle; boost and the muffler soften the exhaust as they do now.
+- **Distance.** Up close the mechanical layer and crack are heard; far off only the low boom of the exhaust carries.
+- **The clack goes.** Every running engine in earshot gets a note voice. The `cylinder_fire` samples are kept registered (no removed
+  sound IDs) but only play past the voice cap, quieter and filtered to sit under the notes that are playing.
+- **Absorbs 2.5's sound items.** The 2.0.x retune list and the rotary sound (no valvetrain, a smooth rising note, a burble at idle) from
+  "Look, sound and performance" in 2.5 are done here, because a rework would redo them anyway.
+
+**How it is tuned:** a reference set rendered to WAV by the pure-Java synth (I4, I6, crossplane and flat-plane V8, flat four, V-twin, V12,
+W16, rotary, diesel I6), each at idle, mid and redline, for the author to listen to beside real recordings. Final numbers are the author's
+by ear; the trailer's engine shots are re-recorded with the new note.
+
+**Performance:** the 1.2.0 out-of-memory fix stays the standard; the voice cap and the out-of-earshot pause from the optimisation list land
+with it. More resonators per engine must still keep the sound thread under 2% of one core with the cap's worth of voices
+(`PerfBudgetTest`).
+
+**Tests:**
+
+- Unit (synth, no Minecraft): two engines with the same cylinder count but different bank split or exhaust routing give measurably
+  different spectra (a crossplane V8 has energy at half its firing rate that an I4 does not); no two consecutive firings render identical;
+  the same engine and seed render the same samples; no sample-to-sample step past the click bound; loudness steady across the RPM range;
+  hostile params (NaN, zero cylinders, 20 000 RPM) stay finite and silent where they should.
+- Soak and concurrency: the existing sound-thread tests with the cap's worth of voices and banks.
+- Client audit: every reference engine starts its note, and `cylinder_fire` plays only past the cap.
+
 ### Tests and guards
 
 - Unit: the °C scale and bands; heat from work (more boost, more heat; a lean engine cooler); dry-running heat; the overheat penalty
@@ -852,6 +949,7 @@ turbo rules, SilverThorn's thread) on 2026-11-25:
 - Fahrenheit toggle: yes or no.
 - Radiator: basin heat or not; recipe; Display Link source.
 - Light and heavy rods: in or not (new items that change performance with the mode off).
+- Sound rework: whether the 2.3 note stays as a client option for players who like it; which engines are in the reference set.
 
 ## 2.5 Open Garage
 
@@ -1077,6 +1175,9 @@ saved on 2.x keeps its layout), so no existing build changes (rule 1).
   game, and the changelog line is owed when the release that carries it is prepared.
 
 ### Look, sound and performance (was 2.4 Paint and Polish; merged into 2.3 by the author on 2026-11-23, then moved with the rest to 2.4 on 2026-11-24, and to 2.5 on 2026-11-25)
+
+**The sound parts below (the Sound bullet, and the sound half of Rotary sound and look) moved to 2.4's sound rework** (author,
+2026-11-25). The rotary's look stays here.
 
 Held until 2.0.x has looked at what 2.0 added. Contents are whatever that pass finds, plus these, each only if a profile or an eye
 asks for it:

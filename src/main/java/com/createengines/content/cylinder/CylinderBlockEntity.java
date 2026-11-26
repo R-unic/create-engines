@@ -88,6 +88,23 @@ public class CylinderBlockEntity extends SmartBlockEntity implements IHaveGoggle
 		return rodWear;
 	}
 
+	/** Which connecting rod is fitted (see {@link Wear.Rod}); saved only while it is not the standard one. */
+	private Wear.Rod rodKind = Wear.Rod.STANDARD;
+
+	public Wear.Rod rodKind() {
+		return rodKind;
+	}
+
+	/** A rod of this kind is in: the engine is rebuilt, since the kind changes how the cylinder drags with the wear mode on or off. */
+	public void setRodKind(Wear.Rod kind) {
+		if (rodKind == kind)
+			return;
+		rodKind = kind;
+		setChanged();
+		sendData();
+		EngineTopology.wearChanged(level, worldPosition);
+	}
+
 	/** A thrown rod's wreck is in the cylinder (the wear mode's, see {@link Wear}): saved only while it is, and cleared by a Service Kit. */
 	private boolean thrown;
 
@@ -213,6 +230,7 @@ public class CylinderBlockEntity extends SmartBlockEntity implements IHaveGoggle
 
 	/** A new connecting rod is in. */
 	public void resetRod() {
+		setRodKind(Wear.Rod.STANDARD);
 		if (rodWear == 0)
 			return;
 		rodWear = 0;
@@ -636,6 +654,32 @@ public class CylinderBlockEntity extends SmartBlockEntity implements IHaveGoggle
 		return ahead > 0 && ahead <= travelled;
 	}
 
+	// The block's item keeps a thrown rod's wreck (the fitted parts drop on their own, with their wear), so breaking and placing it clears nothing
+
+	@Override
+	protected void collectImplicitComponents(net.minecraft.core.component.DataComponentMap.Builder components) {
+		super.collectImplicitComponents(components);
+		if (thrown)
+			components.set(com.createengines.registry.CEComponents.FAILED.get(), true);
+	}
+
+	@Override
+	protected void applyImplicitComponents(DataComponentInput components) {
+		super.applyImplicitComponents(components);
+		if (!Boolean.TRUE.equals(components.get(com.createengines.registry.CEComponents.FAILED.get())))
+			return;
+		thrown = true;
+		setChanged();
+		sendData();
+	}
+
+	@Override
+	@SuppressWarnings("deprecation")
+	public void removeComponentsFromTag(CompoundTag tag) {
+		super.removeComponentsFromTag(tag);
+		tag.remove("Thrown");
+	}
+
 	@Override
 	protected void write(CompoundTag tag, HolderLookup.Provider registries, boolean clientPacket) {
 		super.write(tag, registries, clientPacket);
@@ -644,6 +688,8 @@ public class CylinderBlockEntity extends SmartBlockEntity implements IHaveGoggle
 			tag.putDouble("PistonWear", pistonWear);
 		if (rodWear > 0)
 			tag.putDouble("RodWear", rodWear);
+		if (rodKind != Wear.Rod.STANDARD)
+			tag.putInt("Rod", rodKind.ordinal());
 		if (thrown)
 			tag.putBoolean("Thrown", true);
 		if (seized)
@@ -659,6 +705,7 @@ public class CylinderBlockEntity extends SmartBlockEntity implements IHaveGoggle
 		// Absent in a world from before wear existed; a damaged save must not hand the model NaN (clamp reads it as new)
 		pistonWear = Wear.clamp(tag.getDouble("PistonWear"));
 		rodWear = Wear.clamp(tag.getDouble("RodWear"));
+		rodKind = Wear.Rod.byId(tag.getInt("Rod"));
 		thrown = tag.getBoolean("Thrown");
 		seized = tag.getBoolean("Seized");
 		if (clientPacket)
@@ -757,6 +804,10 @@ public class CylinderBlockEntity extends SmartBlockEntity implements IHaveGoggle
 				.style(ChatFormatting.RED), tooltip, 1);
 		wearLine(tooltip, "goggles.wear.piston",state.getValue(CylinderBlock.HAS_PISTON), pistonWear, isPlayerSneaking);
 		wearLine(tooltip, "goggles.wear.rod", state.getValue(CylinderBlock.HAS_ROD), rodWear, isPlayerSneaking);
+		// Which rod is in matters with the wear mode on or off, as it drags its own way either way
+		if (state.getValue(CylinderBlock.HAS_ROD) && rodKind != Wear.Rod.STANDARD)
+			GoggleLines.add(CELang.translate("goggles.wear.rod." + rodKind.name().toLowerCase(java.util.Locale.ROOT))
+				.style(ChatFormatting.AQUA), tooltip, 1);
 		return true;
 	}
 

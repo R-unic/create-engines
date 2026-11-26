@@ -236,7 +236,8 @@ class ThermalTest {
 	@Test
 	void frictionHeatLeavesTheFullThrottleCalibrationWhereItWas() {
 		assertEquals(Thermal.NORMAL, settle(2.5, 8, CoolantSupply.NONE), 0.01);
-		assertEquals(2.5, Thermal.heatIn(2.5, 2.5), 1e-12, "equal exhaust and friction heat add up to the same");
+		// The calibration point for fuel heat is a crude cylinder near 100 RPM, about 16.7 of it burned a second against 1.95 of friction
+		assertEquals(2.02, Thermal.heatIn(16.66, 0, 1.95, 1), 0.02, "what its exhaust and friction put in before heat followed the fuel");
 	}
 
 	@Test

@@ -5,6 +5,7 @@ import java.util.List;
 import com.createengines.CreateEngines;
 import com.createengines.content.battery.BatteryBlockEntity;
 import com.createengines.content.head.CylinderHeadBlock;
+import com.createengines.content.rotor.RotorHousingBlock;
 import com.createengines.engine.BatteryIgnition;
 import com.createengines.engine.sim.IgnitionCoil;
 import com.createengines.engine.topology.EngineLayout;
@@ -25,7 +26,7 @@ import net.neoforged.neoforge.gametest.GameTestHolder;
 import net.neoforged.neoforge.gametest.PrefixGameTestTemplate;
 
 /**
- * The high-energy ignition coil: a part for a head that already has a spark plug, which spends battery charge (never a reserve's)
+ * The high-energy ignition coil: a part for a head or rotor housing that already has a spark plug, which spends battery charge (never a reserve's)
  * on a hotter spark. Fitting it, removing it, what the scanner makes of it and where its charge comes from.
  */
 @GameTestHolder(CreateEngines.MOD_ID)
@@ -117,6 +118,83 @@ public class IgnitionCoilGameTests {
 			found |= required.stack.is(CEItems.IGNITION_COIL.get());
 		helper.assertTrue(found, "A fitted coil is a part a schematic must be given, as the plug is");
 		helper.succeed();
+	}
+
+	private static BlockState housing(boolean plug, boolean coil) {
+		return CEBlocks.ROTOR_HOUSING.getDefaultState()
+			.setValue(RotorHousingBlock.HAS_SPARK_PLUG, plug)
+			.setValue(RotorHousingBlock.HAS_COIL, coil);
+	}
+
+	@GameTest(template = "empty", batch = BATCH)
+	public static void aCoilWillNotFitARotorHousingWithNoPlug(GameTestHelper helper) {
+		helper.setBlock(HEAD, housing(false, false)
+			.setValue(RotorHousingBlock.HAS_ROTOR, true)
+			.setValue(RotorHousingBlock.HAS_INJECTOR, true));
+		Player player = survivalPlayer(helper);
+		ItemStack coil = new ItemStack(CEItems.IGNITION_COIL.get(), 2);
+		player.setItemInHand(InteractionHand.MAIN_HAND, coil);
+		helper.useBlock(HEAD, player);
+		helper.assertTrue(!helper.getBlockState(HEAD).getValue(RotorHousingBlock.HAS_COIL), "The coil sits on a plug, and there is none");
+		helper.assertTrue(coil.getCount() == 2, "so it stays in the hand: " + coil.getCount());
+		helper.succeed();
+	}
+
+	@GameTest(template = "empty", batch = BATCH)
+	public static void aCoilFitsARotorHousingAndComesOffBeforeThePlug(GameTestHelper helper) {
+		helper.setBlock(HEAD, housing(true, false));
+		Player player = survivalPlayer(helper);
+		ItemStack coil = new ItemStack(CEItems.IGNITION_COIL.get(), 2);
+		player.setItemInHand(InteractionHand.MAIN_HAND, coil);
+		helper.useBlock(HEAD, player);
+		helper.assertTrue(helper.getBlockState(HEAD).getValue(RotorHousingBlock.HAS_COIL), "With a plug in, the coil goes on");
+		helper.assertTrue(coil.getCount() == 1, "using up one: " + coil.getCount());
+		player.setShiftKeyDown(true);
+		player.setItemInHand(InteractionHand.MAIN_HAND, ItemStack.EMPTY);
+		helper.useBlock(HEAD, player);
+		BlockState state = helper.getBlockState(HEAD);
+		helper.assertTrue(!state.getValue(RotorHousingBlock.HAS_COIL) && state.getValue(RotorHousingBlock.HAS_SPARK_PLUG),
+			"The coil is taken off first: " + state);
+		helper.assertTrue(player.getInventory().countItem(CEItems.IGNITION_COIL.get()) == 1, "and handed back");
+		helper.succeed();
+	}
+
+	@GameTest(template = "empty", batch = BATCH)
+	public static void aBrokenRotorHousingDropsItsCoil(GameTestHelper helper) {
+		helper.setBlock(HEAD, housing(true, true));
+		helper.setBlock(HEAD, Blocks.AIR);
+		helper.assertItemEntityPresent(CEItems.IGNITION_COIL.get(), HEAD, 3);
+		helper.succeed();
+	}
+
+	@GameTest(template = "empty", batch = BATCH)
+	public static void aSchematicOfAFittedRotorHousingPricesTheCoil(GameTestHelper helper) {
+		BlockState state = housing(true, true);
+		var needed = ((RotorHousingBlock) state.getBlock()).getRequiredItems(state, null);
+		boolean found = false;
+		for (var required : needed.getRequiredItems())
+			found |= required.stack.is(CEItems.IGNITION_COIL.get());
+		helper.assertTrue(found, "A fitted coil is a part a schematic must be given, as the plug is");
+		helper.succeed();
+	}
+
+	@GameTest(template = "empty", timeoutTicks = 100, batch = BATCH)
+	public static void theScannerCountsARotorsCoilInAllThreeChambersAndOnlyOnAPlug(GameTestHelper helper) {
+		TestEngine.buildRotary(helper.getLevel(), helper.absolutePos(BlockPos.ZERO), true);
+		helper.runAtTickTime(20, () -> {
+			helper.assertTrue(scan(helper).cylinders().stream().noneMatch(EngineLayout.Cylinder::ignitionCoil),
+				"A housing with no coil has none");
+			helper.setBlock(TestEngine.HOUSING, helper.getBlockState(TestEngine.HOUSING)
+				.setValue(RotorHousingBlock.HAS_COIL, true));
+			EngineLayout coiled = scan(helper);
+			helper.assertTrue(coiled.cylinders().size() == 3
+				&& coiled.cylinders().stream().allMatch(EngineLayout.Cylinder::ignitionCoil), "Fitted, every chamber has it");
+			helper.setBlock(TestEngine.HOUSING, helper.getBlockState(TestEngine.HOUSING)
+				.setValue(RotorHousingBlock.HAS_SPARK_PLUG, false));
+			helper.assertTrue(scan(helper).cylinders().stream().noneMatch(EngineLayout.Cylinder::ignitionCoil),
+				"A state with a coil and no plug (only a command makes one) gets no bonus");
+			helper.succeed();
+		});
 	}
 
 	private static EngineLayout scan(GameTestHelper helper) {

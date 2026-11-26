@@ -81,6 +81,8 @@ public class CEPonderPlugin implements PonderPlugin {
 			.addStoryBoard("transmission", EngineScenes::transmission);
 		scenes.forComponents(CEBlocks.ROTOR_HOUSING, CEItems.ROTOR)
 			.addStoryBoard("rotor", EngineScenes::rotor);
+		scenes.forComponents(CEBlocks.RADIATOR)
+			.addStoryBoard("radiator", EngineScenes::radiator);
 		scenes.forComponents(CEBlocks.SUMP, CEItems.OIL_FILTER)
 			.addStoryBoard("sump", EngineScenes::sump);
 		scenes.forComponents(CEBlocks.CAST_FLYWHEEL, CEBlocks.DUAL_MASS_FLYWHEEL)
@@ -102,7 +104,8 @@ public class CEPonderPlugin implements PonderPlugin {
 		scenes.forComponents(CEItems.HEADPHONES)
 			.addStoryBoard("rain_cap", HeadphonesScenes::headphones);
 		scenes.forComponents(CEItems.SERVICE_KIT, CEItems.STOCK_GASKET, CEItems.CARDBOARD_GASKET, CEItems.RUBBER_GASKET, CEItems.COPPER_GASKET,
-			CEItems.PISTON, CEItems.FORGED_PISTON, CEItems.CONNECTING_ROD, CEItems.APEX_SEALS)
+			CEItems.PISTON, CEItems.FORGED_PISTON, CEItems.CONNECTING_ROD, CEItems.LIGHT_CONNECTING_ROD, CEItems.HEAVY_CONNECTING_ROD,
+			CEItems.APEX_SEALS)
 			.addStoryBoard("rain_cap", WearScenes::wearAndTear);
 		scenes.forComponents(CEBlocks.CRANKSHAFT, CEBlocks.CAST_FLYWHEEL, CEBlocks.DUAL_MASS_FLYWHEEL, CEBlocks.TURBOCHARGER, CEBlocks.ROTOR_HOUSING)
 			.addStoryBoard("rain_cap", AeronauticsScenes::movingEngine);

@@ -92,6 +92,63 @@ public class CylinderHeadBlockEntity extends SmartBlockEntity implements IHaveGo
 		return visible;
 	}
 
+	/** How worn the spark plug in this head is, 0 new to 1 spent (see {@code PlugWear}); saved only once there is some. */
+	private double plugWear;
+	/** Whether heat has warped this head: it leaks a share of every burn until it is replaced. Saved only while it has. */
+	private boolean warped;
+	/** How long the head has soaked past critical (see {@link Wear#heatSoak}); not saved, so a reloaded world starts clean. */
+	private double heatSoak;
+
+	public double plugWear() {
+		return plugWear;
+	}
+
+	/** Adds wear to the plug. Clients are told when it moves to a new 5% step. */
+	public void addPlugWear(double amount) {
+		int before = (int) Math.round(plugWear * 20);
+		plugWear = Wear.clamp(plugWear + amount);
+		setChanged();
+		if (before != (int) Math.round(plugWear * 20))
+			sendData();
+	}
+
+	/** The plug in this head is now one worn this much (0 for a new one, or for none). */
+	public void fitPlug(double wear) {
+		double next = Wear.clamp(wear);
+		if (next == plugWear)
+			return;
+		plugWear = next;
+		setChanged();
+		sendData();
+	}
+
+	public boolean warped() {
+		return warped;
+	}
+
+	/** Whether the warp counts now (see {@link #showsBlown}). */
+	public boolean showsWarped() {
+		return Tuning.wearMode && warped;
+	}
+
+	public double heatSoak() {
+		return heatSoak;
+	}
+
+	public void setHeatSoak(double soak) {
+		heatSoak = soak;
+	}
+
+	/** Heat has warped the head: the engine is looked at again, and the cylinder under it leaks until the head is replaced. */
+	public void warp() {
+		if (warped)
+			return;
+		warped = true;
+		setChanged();
+		sendData();
+		EngineTopology.wearChanged(level, worldPosition);
+	}
+
 	/** Whether a thrown rod broke this head: it stops its cylinder for good, and only replacing the head cures it. */
 	public boolean broken() {
 		return broken;
@@ -124,6 +181,7 @@ public class CylinderHeadBlockEntity extends SmartBlockEntity implements IHaveGo
 		if (broken)
 			return;
 		broken = true;
+		warped = false;
 		blown = false;
 		gasket = Wear.Gasket.STOCK;
 		gasketWear = 0;
@@ -141,7 +199,7 @@ public class CylinderHeadBlockEntity extends SmartBlockEntity implements IHaveGo
 	@Override
 	public void tick() {
 		super.tick();
-		if (level == null || !level.isClientSide || !(showsBlown() || showsBroken()))
+		if (level == null || !level.isClientSide || !(showsBlown() || showsBroken() || showsWarped()))
 			return;
 		var random = level.random;
 		boolean broken = showsBroken();
@@ -217,11 +275,19 @@ public class CylinderHeadBlockEntity extends SmartBlockEntity implements IHaveGo
 		return out;
 	}
 
-	/** Sets right light gasket wear (see {@link Wear#repairable}). Returns whether anything changed; a blown or heavily worn one is replaced instead. */
+	/**
+	 * Sets right light wear of the gasket and the spark plug (see {@link Wear#repairable}). Returns whether anything changed; a blown or
+	 * heavily worn one is replaced instead, and nothing flattens a warped head.
+	 */
 	public boolean service() {
-		if (blown || !Wear.repairable(gasketWear))
+		boolean gasket = !blown && Wear.repairable(gasketWear);
+		boolean plug = getBlockState().getValue(CylinderHeadBlock.HAS_SPARK_PLUG) && Wear.repairable(plugWear);
+		if (!gasket && !plug)
 			return false;
-		gasketWear = Wear.repaired(gasketWear);
+		if (gasket)
+			gasketWear = Wear.repaired(gasketWear);
+		if (plug)
+			plugWear = Wear.repaired(plugWear);
 		setChanged();
 		sendData();
 		return true;
@@ -238,6 +304,10 @@ public class CylinderHeadBlockEntity extends SmartBlockEntity implements IHaveGo
 			tag.putBoolean("Blown", true);
 		if (broken)
 			tag.putBoolean("Broken", true);
+		if (warped)
+			tag.putBoolean("Warped", true);
+		if (plugWear > 0)
+			tag.putDouble("PlugWear", plugWear);
 		if (stockFitted && gasket == Wear.Gasket.STOCK)
 			tag.putBoolean("StockFitted", true);
 	}
@@ -250,6 +320,8 @@ public class CylinderHeadBlockEntity extends SmartBlockEntity implements IHaveGo
 		gasketWear = Wear.clamp(tag.getDouble("GasketWear"));
 		blown = tag.getBoolean("Blown");
 		broken = tag.getBoolean("Broken");
+		warped = tag.getBoolean("Warped");
+		plugWear = Wear.clamp(tag.getDouble("PlugWear"));
 		stockFitted = tag.getBoolean("StockFitted");
 	}
 
@@ -341,6 +413,16 @@ public class CylinderHeadBlockEntity extends SmartBlockEntity implements IHaveGo
 		} else if (isPlayerSneaking)
 			GoggleLines.add(CELang.translate("goggles.head.no_spark_plug")
 				.style(ChatFormatting.DARK_GRAY), tooltip, 1);
+		if (Tuning.wearMode && plugWear > 0 && state.getValue(CylinderHeadBlock.HAS_SPARK_PLUG)) {
+			GoggleLines.add(CELang.translate("goggles.wear.plug", Math.round(plugWear * 100))
+				.style(plugWear >= Wear.FAILURE_FROM ? ChatFormatting.RED : plugWear >= Wear.REPAIRABLE ? ChatFormatting.GOLD : ChatFormatting.GRAY), tooltip, 1);
+			if (isPlayerSneaking && plugWear > Wear.REPAIRED_TO)
+				GoggleLines.add(CELang.translate(Wear.repairable(plugWear) ? "goggles.wear.light" : "goggles.wear.heavy_plug")
+					.style(ChatFormatting.DARK_GRAY), tooltip, 2);
+		}
+		if (showsWarped())
+			GoggleLines.add(CELang.translate("goggles.fault.warped_head")
+				.style(ChatFormatting.RED), tooltip, 1);
 		if (showsBroken())
 			GoggleLines.add(CELang.translate("goggles.wear.head_broken")
 				.style(ChatFormatting.RED), tooltip, 1);

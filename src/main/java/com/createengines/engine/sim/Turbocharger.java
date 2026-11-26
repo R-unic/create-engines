@@ -97,6 +97,8 @@ public final class Turbocharger {
 	public boolean parallelCompressor;
 	/** The exhaust can bypass the turbine, so its back-pressure is averaged with the other branches' rather than added. */
 	public boolean parallelTurbine;
+	/** The share of its boost this turbo still makes: 1 for a sound one, less for a worn one and 0 for a failed one (the wear mode's, see {@link TurboWear}). */
+	public double output = 1;
 	/**
 	 * Share of the intake air this compressor moves: 1 in series, 1/n in a bank of n in parallel. A compressor moving a
 	 * share does that share of the work, and is a smaller wheel (inertia falls with the square of the flow, since a
@@ -125,6 +127,7 @@ public final class Turbocharger {
 	public Turbocharger copyOnto(Map<? extends Breather, ? extends Breather> copies) {
 		Turbocharger copy = new Turbocharger(mapped(turbine, copies), mapped(compressor, copies), share);
 		copy.limit = limit;
+		copy.output = output;
 		copy.variableGeometry = variableGeometry;
 		copy.parallelCompressor = parallelCompressor;
 		copy.parallelTurbine = parallelTurbine;
@@ -158,7 +161,7 @@ public final class Turbocharger {
 	/** Gauge pressure the compressor is making, atmospheres. */
 	public double boost() {
 		double spool = spool();
-		return FULL_BOOST * spool * spool;
+		return FULL_BOOST * spool * spool * output;
 	}
 
 	/** Share of the exhaust the wastegate is sending round the turbine, 0 (shut) to 1 (open). */

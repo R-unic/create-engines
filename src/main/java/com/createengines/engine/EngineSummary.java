@@ -45,7 +45,7 @@ public record EngineSummary(EngineState state, float rpm, float availableTorque,
 							boolean starterEngaged, float[] firingAngles, int lines, float thinning, float roughness,
 							float condition, float temperature, float coolantRate, boolean pilot, boolean filtered,
 							float flex, int longestLine, Diagnosis.Health health, Diagnosis.Cause cause, float muffling, float boost,
-								List<StatusLine> sourceLines, float oilPerMinute, float wear, int failures) {
+								List<StatusLine> sourceLines, float oilPerMinute, float wear, long failures) {
 
 		/** The summary as it was before failures were counted: none have failed. */
 		public EngineSummary(EngineState state, float rpm, float availableTorque, float loadTorque, float fuelPerMinute,
@@ -122,7 +122,7 @@ public record EngineSummary(EngineState state, float rpm, float availableTorque,
 		if (wear >= 0)
 			tag.putFloat("Wear", wear);
 		if (failures != 0)
-			tag.putInt("Failures", failures);
+			tag.putLong("Failures", failures);
 		tag.putBoolean("Pilot", pilot);
 		tag.putBoolean("Filtered", filtered);
 		tag.putFloat("Flex", flex);
@@ -166,7 +166,7 @@ public record EngineSummary(EngineState state, float rpm, float availableTorque,
 			tag.getInt("LongestLine"), healths[Math.clamp(tag.getInt("Health"), 0, healths.length - 1)],
 			causes[Math.clamp(tag.getInt("Cause"), 0, causes.length - 1)], tag.getFloat("Muffling"), tag.getFloat("Boost"),
 			readSourceLines(tag), tag.getFloat("OilUse"), tag.contains("Wear") ? tag.getFloat("Wear") : -1f,
-			Math.max(0, tag.getInt("Failures")));
+			Math.max(0, tag.getLong("Failures")));
 	}
 
 	private static List<StatusLine> readSourceLines(CompoundTag tag) {

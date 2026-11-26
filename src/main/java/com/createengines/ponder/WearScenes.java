@@ -67,7 +67,7 @@ public final class WearScenes {
 			.showText(150)
 			.attachKeyFrame()
 			.colored(PonderPalette.GREEN)
-			.text("Right-click a head with a gasket to fit it. A fitted gasket seals the joint and is worth a little power even with wear switched off: stock 1%, cardboard 2.5%, rubber 4%, copper 6%. A head with none fitted runs as it always did, so no gasket is ever required.")
+			.text("Right-click a head with a gasket to fit it. A fitted gasket seals the joint and is worth a little power even with wear switched off: stock 1%%, cardboard 2.5%%, rubber 4%%, copper 6%%. A head with none fitted runs as it always did, so no gasket is ever required.")
 			.pointAt(util.vector()
 				.topOf(2, 3, 3))
 			.placeNearTarget();
@@ -100,6 +100,36 @@ public final class WearScenes {
 			.text("A badly worn gasket can blow: the cylinder under it stops, smoking, until a gasket is fitted. A badly worn rod can be thrown. The piston and rod are lost, the head breaks, and a wreck stays in the cylinder, so the head is replaced and a Service Kit clears the wreck before new parts go in.")
 			.pointAt(util.vector()
 				.centerOf(2, 3, 3))
+			.placeNearTarget();
+		scene.idle(160);
+
+		scene.overlay()
+			.showText(150)
+			.attachKeyFrame()
+			.colored(PonderPalette.RED)
+			.text("Heat is the hardest thing on an engine. A very hot block wears pistons, rods and gaskets far faster and makes worn ones likelier to fail. Hotter still, a sound gasket can blow, an oiled piston can seize, and a head left there warps: its cylinder leaks power until the head is replaced.")
+			.pointAt(util.vector()
+				.topOf(2, 3, 3))
+			.placeNearTarget();
+		scene.idle(160);
+
+		scene.overlay()
+			.showText(150)
+			.attachKeyFrame()
+			.colored(PonderPalette.BLUE)
+			.text("A rod wears faster the harder the engine pulls. A light rod drags a little less at speed but wears fast under load, and a heavy one takes load well but drags a little more. That difference in drag is there with wear off too.")
+			.pointAt(util.vector()
+				.centerOf(2, 2, 3))
+			.placeNearTarget();
+		scene.idle(160);
+
+		scene.overlay()
+			.showText(150)
+			.attachKeyFrame()
+			.colored(PonderPalette.BLUE)
+			.text("Spark plugs wear with every spark, faster with a coil or soot, and a badly worn one misses some. Turbochargers wear under boost, make less of it as they go, and can fail. A Service Kit sets light wear right on either.")
+			.pointAt(util.vector()
+				.topOf(2, 3, 3))
 			.placeNearTarget();
 		scene.idle(160);
 

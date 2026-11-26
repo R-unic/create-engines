@@ -52,6 +52,16 @@ public class TurbochargerBlock extends DirectionalBlock implements InlineDuct, I
 		return false;
 	}
 
+	/** A Service Kit sets right a turbo's light wear (the wear mode's). */
+	@Override
+	protected net.minecraft.world.ItemInteractionResult useItemOn(net.minecraft.world.item.ItemStack stack, BlockState state, Level level,
+		BlockPos pos, net.minecraft.world.entity.player.Player player, net.minecraft.world.InteractionHand hand,
+		net.minecraft.world.phys.BlockHitResult hit) {
+		net.minecraft.world.ItemInteractionResult worn = com.createengines.content.WearService.onTurbo(stack, level, pos, player, hand);
+		return worn != net.minecraft.world.ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION ? worn
+			: super.useItemOn(stack, state, level, pos, player, hand, hit);
+	}
+
 	@Override
 	public boolean acceptsPipe(BlockState state, Direction side, PortKind kind) {
 		Direction facing = state.getValue(FACING);

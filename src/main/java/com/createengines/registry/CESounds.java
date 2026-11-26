@@ -65,6 +65,15 @@ public final class CESounds {
 	/** The wear mode's: a rotor's apex seals failing, a snap, the loose strip clattering round the chamber and the wheeze of blow-by. */
 	public static final DeferredHolder<SoundEvent, SoundEvent> APEX_FAIL = register("apex_fail");
 
+	/** The wear mode's: a cylinder head warping from heat, a sharp crack of hot metal and steam hissing from the joint. */
+	public static final DeferredHolder<SoundEvent, SoundEvent> HEAD_WARP = register("head_warp");
+
+	/** A critically hot block boiling: bubbling and a hiss of steam. */
+	public static final DeferredHolder<SoundEvent, SoundEvent> COOLANT_BOIL = register("coolant_boil");
+
+	/** The wear mode's: a turbocharger failing, its wheel rubbing the housing as it screams down. */
+	public static final DeferredHolder<SoundEvent, SoundEvent> TURBO_FAIL = register("turbo_fail");
+
 	/** The rev-up that plays for a goal or a challenge: made up as it plays, so the recording named in sounds.json is never read. */
 	public static final DeferredHolder<SoundEvent, SoundEvent> ADVANCEMENT_STING = register("advancement_sting");
 

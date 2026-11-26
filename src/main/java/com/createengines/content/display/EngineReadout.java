@@ -126,7 +126,7 @@ public final class EngineReadout {
 					.component(),
 			CELang.translate("display.engine.load", percent(load(engine)))
 				.component(),
-			CELang.translate("display.engine.temperature", percent(warmth(engine)))
+			CELang.translate("display.engine.temperature", Thermal.degrees(engine.temperature()))
 				.component(),
 			CELang.translate("display.engine.oil", percent(oil(engine)))
 				.component());

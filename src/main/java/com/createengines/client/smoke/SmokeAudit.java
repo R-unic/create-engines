@@ -77,7 +77,8 @@ public final class SmokeAudit {
 	 * and their files play on a real sound card.
 	 */
 	private static final java.util.List<String> CHANCE_SOUNDS = java.util.List.of("metal_tick", "preignition_knock", "flare_whoosh",
-		"rod_thrown", "gasket_blow", "seize_warning", "piston_seize", "apex_fail");
+		"rod_thrown", "gasket_blow", "seize_warning", "piston_seize", "apex_fail",
+		"head_warp", "turbo_fail", "coolant_boil");
 	private static final java.util.List<String> startedByHand = new java.util.ArrayList<>();
 	private static final Pattern SOUND_DEBUG = Pattern.compile("(\\d+)/(\\d+) \\+ (\\d+)/(\\d+)");
 

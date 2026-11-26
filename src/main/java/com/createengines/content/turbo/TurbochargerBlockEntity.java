@@ -29,6 +29,8 @@ import com.simibubi.create.foundation.blockEntity.behaviour.scrollValue.ScrollVa
 import net.createmod.catnip.math.VecHelper;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
+import com.createengines.engine.sim.TurboWear;
+import com.createengines.engine.sim.Wear;
 import net.minecraft.core.Direction;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
@@ -350,9 +352,98 @@ public class TurbochargerBlockEntity extends SmartBlockEntity
 		return (wheelAngle + wheelSpeed * partialTicks) % 360;
 	}
 
+	// Wear (opt-in, see TurboWear): how worn the bearings and wheel are, and whether the turbo has failed. Saved only once there is some.
+	private double wear;
+	private boolean failed;
+
+	public double wear() {
+		return wear;
+	}
+
+	public boolean failed() {
+		return failed;
+	}
+
+	/** Whether the failure counts now: with the wear mode off it stays saved, and is neither shown nor takes any boost. */
+	public boolean showsFailed() {
+		return com.createengines.engine.sim.Tuning.wearMode && failed;
+	}
+
+	/** The share of its boost this turbo makes now: all of it with the wear mode off. */
+	public double boostShare() {
+		if (!com.createengines.engine.sim.Tuning.wearMode)
+			return 1;
+		return failed ? 0 : TurboWear.boostShare(wear);
+	}
+
+	/** Adds wear. Clients are told when it moves to a new 5% step. */
+	public void addWear(double amount) {
+		int before = (int) Math.round(wear * 20);
+		wear = Wear.clamp(wear + amount);
+		setChanged();
+		if (before != (int) Math.round(wear * 20))
+			sendData();
+	}
+
+	/** The turbo fails: it makes no boost until it is replaced, and the engine is looked at again so it is reported. */
+	public void fail() {
+		if (failed)
+			return;
+		failed = true;
+		setChanged();
+		sendData();
+		com.createengines.engine.topology.EngineTopology.wearChanged(level, worldPosition);
+	}
+
+	/** Sets right light wear (see {@link Wear#repairable}). A failed turbo is replaced instead. Returns whether anything changed. */
+	public boolean service() {
+		if (failed || !Wear.repairable(wear))
+			return false;
+		wear = Wear.repaired(wear);
+		setChanged();
+		sendData();
+		return true;
+	}
+
+	// The block's item keeps the wear and the failure, so breaking a turbo and placing it again is no repair
+
+	@Override
+	protected void collectImplicitComponents(net.minecraft.core.component.DataComponentMap.Builder components) {
+		super.collectImplicitComponents(components);
+		if (wear > 0)
+			components.set(com.createengines.registry.CEComponents.WEAR.get(), wear);
+		if (failed)
+			components.set(com.createengines.registry.CEComponents.FAILED.get(), true);
+	}
+
+	@Override
+	protected void applyImplicitComponents(DataComponentInput components) {
+		super.applyImplicitComponents(components);
+		Double carried = components.get(com.createengines.registry.CEComponents.WEAR.get());
+		boolean broken = Boolean.TRUE.equals(components.get(com.createengines.registry.CEComponents.FAILED.get()));
+		if (carried == null && !broken)
+			return;
+		wear = carried == null ? 0 : Wear.clamp(carried);
+		failed = broken;
+		setChanged();
+		sendData();
+	}
+
+	@Override
+	@SuppressWarnings("deprecation")
+	public void removeComponentsFromTag(CompoundTag tag) {
+		super.removeComponentsFromTag(tag);
+		tag.remove("Wear");
+		tag.remove("WearFailed");
+	}
+
 	@Override
 	protected void write(CompoundTag tag, HolderLookup.Provider registries, boolean clientPacket) {
 		super.write(tag, registries, clientPacket);
+		if (wear > 0)
+			tag.putDouble("Wear", wear);
+		if (failed)
+			tag.putBoolean("WearFailed", true);
 		if (clientPacket && status != null)
 			tag.put("Status", status.write());
 	}
@@ -360,6 +451,8 @@ public class TurbochargerBlockEntity extends SmartBlockEntity
 	@Override
 	protected void read(CompoundTag tag, HolderLookup.Provider registries, boolean clientPacket) {
 		super.read(tag, registries, clientPacket);
+		wear = Wear.clamp(tag.getDouble("Wear"));
+		failed = tag.getBoolean("WearFailed");
 		// Ponder scenes set the status through plain NBT, so a status is taken from either kind of read
 		if (tag.contains("Status"))
 			status = TurboStatus.read(tag.getCompound("Status"));
@@ -411,6 +504,16 @@ public class TurbochargerBlockEntity extends SmartBlockEntity
 				GoggleLines.add(CELang.translate("goggles.turbo.back_pressure",
 						String.format(Locale.ROOT, "%.2f", current.backPressure() - 1))
 					.style(ChatFormatting.DARK_GRAY), tooltip, 1);
+		}
+		if (showsFailed())
+			GoggleLines.add(CELang.translate("goggles.wear.turbo_failed")
+				.style(ChatFormatting.RED), tooltip, 1);
+		else if (com.createengines.engine.sim.Tuning.wearMode && wear > 0) {
+			GoggleLines.add(CELang.translate("goggles.wear.turbo", Math.round(wear * 100))
+				.style(wear >= Wear.FAILURE_FROM ? ChatFormatting.RED : wear >= Wear.REPAIRABLE ? ChatFormatting.GOLD : ChatFormatting.GRAY), tooltip, 1);
+			if (isPlayerSneaking && (Wear.repairable(wear) || wear > Wear.REPAIRABLE))
+				GoggleLines.add(CELang.translate(Wear.repairable(wear) ? "goggles.wear.light" : "goggles.wear.heavy_turbo")
+					.style(ChatFormatting.DARK_GRAY), tooltip, 2);
 		}
 		GoggleLines.add(CELang.translate("goggles.turbo.limit", String.format(Locale.ROOT, "%.1f", boostLimit()))
 			.style(ChatFormatting.DARK_AQUA), tooltip, 1);

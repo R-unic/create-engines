@@ -545,6 +545,7 @@ tuning:heatRecoveryEnabled	true
 tuning:meterAllHeads	false
 tuning:oilAgeing	true
 tuning:oilDilution	true
+tuning:overheatPenalty	1.0
 tuning:pilotInjection	true
 tuning:precisionBonus	1.0
 tuning:rotaryEngines	true

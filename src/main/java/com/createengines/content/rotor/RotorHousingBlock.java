@@ -46,7 +46,7 @@ import net.minecraft.world.phys.shapes.VoxelShape;
  * There are no valves and no camshaft: the intake and exhaust are ports cut in the housing wall, which the rotor opens
  * and shuts as it sweeps by. Plumb it like a head, with an intake pipe on one side and an exhaust on another. Fuel goes
  * in on any side and is shared along the crankshaft like a head's. The charge is too thin to light itself, so it takes a
- * spark plug.
+ * spark plug, and the plug takes an ignition coil as a head's does.
  */
 public class RotorHousingBlock extends CrankshaftBlock implements AirflowPort, SpecialBlockItemRequirement {
 
@@ -55,13 +55,16 @@ public class RotorHousingBlock extends CrankshaftBlock implements AirflowPort, S
 	/** Set with {@link #HAS_INJECTOR} when the injector is a precision common-rail one. */
 	public static final BooleanProperty FINE_INJECTOR = BooleanProperty.create("fine_injector");
 	public static final BooleanProperty HAS_SPARK_PLUG = BooleanProperty.create("spark_plug");
+	/** The high-energy coil of a head's plug (see {@code CylinderHeadBlock.HAS_COIL}): it only fits a housing that has a plug. */
+	public static final BooleanProperty HAS_COIL = BooleanProperty.create("coil");
 
 	/** Faces on a rotor: each makes a chamber. */
 	public static final int CHAMBERS = 3;
 
 	private static final Slot[] PARTS = {new Slot(HAS_ROTOR, CEItems.ROTOR),
 		new Slot(HAS_INJECTOR, CEItems.FUEL_INJECTOR, FINE_INJECTOR, CEItems.PRECISION_INJECTOR),
-		new Slot(HAS_SPARK_PLUG, CEItems.SPARK_PLUG)};
+		new Slot(HAS_SPARK_PLUG, CEItems.SPARK_PLUG),
+		new Slot(HAS_COIL, CEItems.IGNITION_COIL, HAS_SPARK_PLUG, "needs_plug")};
 
 	public RotorHousingBlock(Properties properties) {
 		super(properties);
@@ -69,13 +72,14 @@ public class RotorHousingBlock extends CrankshaftBlock implements AirflowPort, S
 			.setValue(HAS_INJECTOR, false)
 			.setValue(FINE_INJECTOR, false)
 			.setValue(HAS_SPARK_PLUG, false)
+			.setValue(HAS_COIL, false)
 			.setValue(BlockStateProperties.LIT, false));
 	}
 
 	@Override
 	protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {
 		super.createBlockStateDefinition(builder);
-		builder.add(HAS_ROTOR, HAS_INJECTOR, FINE_INJECTOR, HAS_SPARK_PLUG, BlockStateProperties.LIT);
+		builder.add(HAS_ROTOR, HAS_INJECTOR, FINE_INJECTOR, HAS_SPARK_PLUG, HAS_COIL, BlockStateProperties.LIT);
 	}
 
 	/** A housing is an eccentric journal with a rotor on it: it has an angle, like a throw. */
@@ -101,7 +105,7 @@ public class RotorHousingBlock extends CrankshaftBlock implements AirflowPort, S
 		return side.getAxis() != state.getValue(BlockStateProperties.AXIS);
 	}
 
-	/** A schematic of a fitted housing costs the rotor, injector and plug as well as the block. */
+	/** A schematic of a fitted housing costs the rotor, injector, plug and coil as well as the block. */
 	@Override
 	public ItemRequirement getRequiredItems(BlockState state, @Nullable BlockEntity blockEntity) {
 		return PartInstallation.requirement(state, PARTS);
@@ -113,7 +117,11 @@ public class RotorHousingBlock extends CrankshaftBlock implements AirflowPort, S
 		ItemInteractionResult worn = com.createengines.content.WearService.onRotor(stack, level, pos, player, hand);
 		if (worn != ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION)
 			return worn;
+		double carried = com.createengines.content.WearService.wearOf(stack);
 		ItemInteractionResult result = PartInstallation.tryInstall(stack, state, level, pos, player, PARTS);
+		if (result != ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION)
+			com.createengines.content.WearService.plugChanged(level, pos, state.getValue(HAS_SPARK_PLUG),
+				level.getBlockState(pos).getOptionalValue(HAS_SPARK_PLUG).orElse(false), carried);
 		return result == ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION
 			? super.useItemOn(stack, state, level, pos, player, hand, hit) : result;
 	}
@@ -121,8 +129,13 @@ public class RotorHousingBlock extends CrankshaftBlock implements AirflowPort, S
 	@Override
 	protected InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos, Player player,
 											   BlockHitResult hit) {
-		if (PartInstallation.tryRemove(state, level, pos, player, PARTS))
+		if (PartInstallation.tryRemove(state, level, pos, player, (slot, part) -> com.createengines.content.WearService
+			.dressPlug(level, pos, slot.property() == HAS_SPARK_PLUG, part), PARTS)) {
+			// A plug taken out has left with its wear, so the housing forgets it
+			com.createengines.content.WearService.plugChanged(level, pos, state.getValue(HAS_SPARK_PLUG),
+				level.getBlockState(pos).getOptionalValue(HAS_SPARK_PLUG).orElse(false), 0);
 			return InteractionResult.sidedSuccess(level.isClientSide);
+		}
 		return super.useWithoutItem(state, level, pos, player, hit);
 	}
 
@@ -148,7 +161,8 @@ public class RotorHousingBlock extends CrankshaftBlock implements AirflowPort, S
 	public void onRemove(BlockState state, Level level, BlockPos pos, BlockState newState, boolean isMoving) {
 		if (EngineGlow.onlyGlowChanged(state, newState))
 			return;
-		PartInstallation.dropParts(state, level, pos, newState, PARTS);
+		PartInstallation.dropParts(state, level, pos, newState, (slot, part) -> com.createengines.content.WearService
+			.dressPlug(level, pos, slot.property() == HAS_SPARK_PLUG, part), PARTS);
 		super.onRemove(state, level, pos, newState, isMoving);
 	}
 

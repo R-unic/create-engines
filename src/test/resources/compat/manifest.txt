@@ -10,7 +10,7 @@ data:data/create_engines/data_maps/fluid/fuel.json	2d4f347e54780cf391946fcd99e5b
 data:data/create_engines/loot_table/advancement/chief_engineer.json	28b298041108ca73ffe6fa38b375092b40c92113
 data:data/create_engines/loot_table/blocks/air_intake.json	c67253912979b22a0381f88427a063466c73394f
 data:data/create_engines/loot_table/blocks/alternator.json	5c204e3f1c9bf84130e2f70ec7275d04352e3741
-data:data/create_engines/loot_table/blocks/battery.json	24fcef6b47719a1c548ca36b8bfbbd56663463a5
+data:data/create_engines/loot_table/blocks/battery.json	96106b0e28a7e6357781054f3e47cf8ee38f1486
 data:data/create_engines/loot_table/blocks/black_box.json	b8eacbf2315f3b5d94408a94c888d18e03382600
 data:data/create_engines/loot_table/blocks/cam_lobe.json	a0eca0540c90bd7c82c9b97958727e49ba48c38d
 data:data/create_engines/loot_table/blocks/camshaft.json	0a79f51aa0546d69eff349a3032bdd735119d717
@@ -19,9 +19,9 @@ data:data/create_engines/loot_table/blocks/column_section.json	c739b559bfe6f3d98
 data:data/create_engines/loot_table/blocks/condenser.json	27e7d6fb0a7eb139a7871a075d564752d3eef40a
 data:data/create_engines/loot_table/blocks/crank_throw.json	afbb397028cc69ded3b7e2aa067b455a83a5525b
 data:data/create_engines/loot_table/blocks/crankshaft.json	7113e84eaceec514032b21086eb941bf38ecdea0
-data:data/create_engines/loot_table/blocks/cylinder.json	18880fcc5082fb4f1108a7c51397164c1102e94d
+data:data/create_engines/loot_table/blocks/cylinder.json	7d4bc75cd3554f072a5b895a4f08deed40a915c7
 data:data/create_engines/loot_table/blocks/cylinder_head.json	d753781ba40e8dfced4b13b75d2f402adffd2451
-data:data/create_engines/loot_table/blocks/dry_cell.json	adfe226b8ce7d3b837e02780558d960a7c76279a
+data:data/create_engines/loot_table/blocks/dry_cell.json	91f77fa152099f44a065cc544a6b0ab9e193ff12
 data:data/create_engines/loot_table/blocks/dual_mass_flywheel.json	f5c88f47e31a8638059e18e8831c66f80b721085
 data:data/create_engines/loot_table/blocks/dyno.json	90d6bd48b115bd5aab5f04229b2571f38a639cc8
 data:data/create_engines/loot_table/blocks/engine_cased_cogwheel.json	33514fcbecf2ae2d36955d3c981c59ebb28dca61
@@ -49,24 +49,25 @@ data:data/create_engines/loot_table/blocks/heat_exchanger.json	5bd16a70b9f44bf37
 data:data/create_engines/loot_table/blocks/heavy_starter.json	205c33942a04e8e1b6779f98a210a8d1bddc3906
 data:data/create_engines/loot_table/blocks/intake_manifold.json	ca901293ed17f24b76bd7bd164614a94ff21aef2
 data:data/create_engines/loot_table/blocks/intercooler.json	eb140f399ac429e74c4cbcc583cbe763f2f19229
-data:data/create_engines/loot_table/blocks/large_battery.json	2b4123955847bc0dcfaced7ad72de3adc5787d24
+data:data/create_engines/loot_table/blocks/large_battery.json	fa592fc6e418eb72245c2624385bc6f5aa04f4bb
 data:data/create_engines/loot_table/blocks/maf_sensor.json	a987ca9024d0a1d4b8b78f4fe2017a5e160e6746
 data:data/create_engines/loot_table/blocks/maker_plate.json	e9f250566c609adbba83e7eac8716e2a45262eb9
 data:data/create_engines/loot_table/blocks/muffler.json	200c1c89d2c4aa040e8749b66a3dad5759bc4d64
-data:data/create_engines/loot_table/blocks/precision_cylinder.json	0ca5b9126dbfb36b8a5d78615b025e12492a34e1
+data:data/create_engines/loot_table/blocks/precision_cylinder.json	0a0c4e53304a78d08c8c74397fb279cdeab54b85
 data:data/create_engines/loot_table/blocks/precision_cylinder_head.json	8ca861870ed73ac27189d2571e077e4c3084a2ac
+data:data/create_engines/loot_table/blocks/radiator.json	e241a4884a4cf75216a76f17bfc412ccf89cf2fa
 data:data/create_engines/loot_table/blocks/rain_cap.json	71f865046bcf88af39e234e50c188c1bd2d7a6f4
 data:data/create_engines/loot_table/blocks/reboiler.json	805be9dbc0a8b9226bdcefeae4e59e4f8858ffb1
-data:data/create_engines/loot_table/blocks/rotor_housing.json	3281644a78b1ab608e560dba1cc508d50a960452
+data:data/create_engines/loot_table/blocks/rotor_housing.json	acd6b71989a52affb5980315dbf393f071c020fa
 data:data/create_engines/loot_table/blocks/soot_trap.json	31b1af67c1806bc2b255e53544cf4c5e28d9ed32
 data:data/create_engines/loot_table/blocks/starter.json	aac3c9cf95e6c78dc04080928cefdded766ce31a
 data:data/create_engines/loot_table/blocks/sump.json	ccf66570cf2db58e474fac90301787fe0d03a1df
 data:data/create_engines/loot_table/blocks/supercharger.json	6630755f1d9d68e4fcdfcb4b69de0e9684d75f6e
 data:data/create_engines/loot_table/blocks/throttle.json	e7a2fb093ffc311a228010c43c7ecc703014db3f
 data:data/create_engines/loot_table/blocks/transmission.json	ed74f9d95ae4903430c1c2bc17e6f9d20911655e
-data:data/create_engines/loot_table/blocks/turbocharger.json	17e307d1ddfdeee12b6b43a833ebc1c23126f91a
+data:data/create_engines/loot_table/blocks/turbocharger.json	3d764cd42c104547a72bad757bfa69de991b0802
 data:data/create_engines/loot_table/blocks/variable_supercharger.json	de4319833874cad7a1903bd2d06b524ab9909d5d
-data:data/create_engines/loot_table/blocks/variable_turbocharger.json	136e64340400d49de5cb88653fa440bbc56d66f1
+data:data/create_engines/loot_table/blocks/variable_turbocharger.json	ba7ff302e818bf9744a82ae1b7ec829b09187bcb
 data:data/create_engines/recipe/air_intake.json	19ab61e99b3bb986b49df3f07421a9a2ee7ac3af
 data:data/create_engines/recipe/alternator.json	f402191911b985ae9a61b72de1c64d911fbb8814
 data:data/create_engines/recipe/apex_seals.json	97a819aaabf2c114690c76171aad583b35193fe8
@@ -113,6 +114,7 @@ data:data/create_engines/recipe/governor.json	6ed1870bc03bcccd8dd961d899c6868cb4
 data:data/create_engines/recipe/gray_dye_from_soot.json	93786b6d66421c7497d65d2ccc0033dd7c0d4a1c
 data:data/create_engines/recipe/headphones.json	0d1e437f7a545a0ea34e6a6df527a83b30ba2d76
 data:data/create_engines/recipe/heat_exchanger.json	804cf6ffb809adb2c0a29a0fd01164bf529daa98
+data:data/create_engines/recipe/heavy_connecting_rod.json	fe487d327fbc56322ed6454ecbe37405f21c8883
 data:data/create_engines/recipe/heavy_starter.json	ccc4d22ab03e041add5c8e9e2f78ffdb677af937
 data:data/create_engines/recipe/ignition_coil.json	84e50d9597a6f88fa14518e3cf60ba4494964c71
 data:data/create_engines/recipe/injector_assist.json	81ef378da03091963c8f53324de092154454597e
@@ -120,6 +122,7 @@ data:data/create_engines/recipe/intake_manifold.json	3b9dbab62da90b2f6cc0494c383
 data:data/create_engines/recipe/intercooler.json	aa47c3b438eb83b21bb4ce13390d718612568a88
 data:data/create_engines/recipe/jerry_can.json	18375f370fffe6e3d27a729549ce274650ed451f
 data:data/create_engines/recipe/large_battery.json	99ddd21fb714a0c79bfe0164b8fa5e9c6a4113fa
+data:data/create_engines/recipe/light_connecting_rod.json	2571680513563a0559c8741ef614965105c23423
 data:data/create_engines/recipe/maf_sensor.json	8eae49b79a9f798037a0079678e818863569641a
 data:data/create_engines/recipe/maker_plate.json	78527074be9b6971f2d1f17d2dfcdbe167fcb6ff
 data:data/create_engines/recipe/mixing/biodiesel.json	c82cf8bed2a888b6c2502bb532606d1363ed2028
@@ -144,6 +147,7 @@ data:data/create_engines/recipe/piston.json	61ec10f0ff3fc780f65c89e50d6993d5120d
 data:data/create_engines/recipe/precision_cylinder.json	88b245ca140f843b71bc8c20d7135269582075f9
 data:data/create_engines/recipe/precision_cylinder_head.json	a1b87ea035deaa6e1ae80fe92d128cc1c37f3192
 data:data/create_engines/recipe/precision_injector.json	0a9bcad7700759f4fe70c3f441f0843f1aa7599f
+data:data/create_engines/recipe/radiator.json	8273c477b18f6fe3238b308d25fdf662df1c9fd5
 data:data/create_engines/recipe/rain_cap.json	54ea71a03612b41c88607626218c8298b24e5f84
 data:data/create_engines/recipe/reboiler.json	09f9f117a491ccef7428868560bb1f5f0a98d594
 data:data/create_engines/recipe/refining/diesel.json	56e5b079cb3a1d317647579bd29b4932e1a78020
@@ -285,6 +289,7 @@ nbt:CrankshaftBlockEntity:Sense
 nbt:CrankshaftBlockEntity:Summary
 nbt:CrankshaftBlockEntity:Temperature
 nbt:CylinderBlockEntity:PistonWear
+nbt:CylinderBlockEntity:Rod
 nbt:CylinderBlockEntity:RodWear
 nbt:CylinderBlockEntity:Seized
 nbt:CylinderBlockEntity:Status
@@ -293,7 +298,9 @@ nbt:CylinderHeadBlockEntity:Blown
 nbt:CylinderHeadBlockEntity:Broken
 nbt:CylinderHeadBlockEntity:Gasket
 nbt:CylinderHeadBlockEntity:GasketWear
+nbt:CylinderHeadBlockEntity:PlugWear
 nbt:CylinderHeadBlockEntity:StockFitted
+nbt:CylinderHeadBlockEntity:Warped
 nbt:CylinderStatus:Charge
 nbt:CylinderStatus:Faults
 nbt:CylinderStatus:Fouling
@@ -320,6 +327,7 @@ nbt:DynoBlockEntity:Rpm
 nbt:DynoBlockEntity:Torque
 nbt:EngineGameTests:OilExchange
 nbt:EngineGameTests:ScrollValue
+nbt:EngineGameTests:State
 nbt:EngineGameTests:SumpSignal
 nbt:EngineSummary:Args
 nbt:EngineSummary:Boost
@@ -374,6 +382,8 @@ nbt:GovernorSettingGameTests:ScrollValue
 nbt:HeatExchangerBlockEntity:Heat
 nbt:HeatExchangerBlockEntity:HeatLevel
 nbt:HeatExchangerBlockEntity:OnEngine
+nbt:HostileSaves:TankContent
+nbt:HostileSaves:id
 nbt:IntegrationAudit:cylinders
 nbt:IntegrationAudit:engine_running
 nbt:IntegrationAudit:rpm
@@ -427,13 +437,23 @@ nbt:PaintMigrationGameTests:z
 nbt:PartDepthGameTests:ChargeRateSetting
 nbt:PartDepthGameTests:ScrollValue
 nbt:PartDepthGameTests:ShiftProfile
+nbt:PartDepthGameTests:SignalSetting
+nbt:RadiatorBlockEntity:AirSpeed
+nbt:RadiatorBlockEntity:Boiling
+nbt:RadiatorBlockEntity:FanRpm
+nbt:RadiatorBlockEntity:Heat
+nbt:RadiatorBlockEntity:OnEngine
 nbt:RotorHousingBlockEntity:ApexFailed
 nbt:RotorHousingBlockEntity:ApexWear
 nbt:RotorHousingBlockEntity:Chamber
+nbt:RotorHousingBlockEntity:PlugWear
 nbt:RotorHousingBlockEntity:ScrollValue
 nbt:SensorBlockEntity:Signal
 nbt:ServerAudit:Items
 nbt:ServerAudit:x
+nbt:SmallBlockEdgeGameTests:Builder
+nbt:SmallBlockEdgeGameTests:Figures
+nbt:SmallBlockEdgeGameTests:Name
 nbt:SootAndCanGameTests:Gathered
 nbt:SootAndCanGameTests:Stored
 nbt:SootTrapBlockEntity:Gathered
@@ -458,6 +478,7 @@ nbt:TransmissionBlockEntity:Gear
 nbt:TransmissionBlockEntity:GearsUsed
 nbt:TransmissionBlockEntity:InputFace
 nbt:TransmissionBlockEntity:ShiftProfile
+nbt:TransmissionBlockEntity:SignalSetting
 nbt:TransmissionBlockEntity:ThirteenGears
 nbt:TurboStatus:AntiLag
 nbt:TurboStatus:BackPressure
@@ -472,10 +493,13 @@ nbt:TurboStatus:Vanes
 nbt:TurboStatus:Wastegate
 nbt:TurbochargerBlockEntity:ScrollValue
 nbt:TurbochargerBlockEntity:Status
+nbt:TurbochargerBlockEntity:Wear
+nbt:TurbochargerBlockEntity:WearFailed
 nbt:WearBatteryRotaryGameTests:ApexFailed
 nbt:WearBatteryRotaryGameTests:ApexWear
 nbt:WearBatteryRotaryGameTests:Charge
 nbt:WearBatteryRotaryGameTests:Wear
+nbt:WearBreakGameTests:Wear
 nbt:WearGameTests:Blown
 nbt:WearGameTests:Broken
 nbt:WearGameTests:Gasket
@@ -486,6 +510,7 @@ nbt:WearGameTests:Seized
 nbt:WearGameTests:StockFitted
 nbt:WearGameTests:Thrown
 nbt:WearGameTests:Wear
+nbt:WearHandEdgeGameTests:Wear
 prop:BatteryBlock:charge
 prop:ColumnSectionBlock:active
 prop:ColumnSectionBlock:lean_down
@@ -508,12 +533,14 @@ prop:FramedBlueprintBlock:join_down
 prop:FramedBlueprintBlock:join_left
 prop:FramedBlueprintBlock:join_right
 prop:FramedBlueprintBlock:join_up
+prop:RotorHousingBlock:coil
 prop:RotorHousingBlock:fine_injector
 prop:RotorHousingBlock:injector
 prop:RotorHousingBlock:rotor
 prop:RotorHousingBlock:spark_plug
 reg:CEComponents:blueprint
 reg:CEComponents:can_fluid
+reg:CEComponents:failed
 reg:CEComponents:wear
 reg:CECreativeTabs:main
 reg:CEParticles:exhaust_flame
@@ -524,6 +551,7 @@ reg:CERecipes:refining
 reg:CESounds:advancement_sting
 reg:CESounds:apex_fail
 reg:CESounds:bearing_squeal
+reg:CESounds:coolant_boil
 reg:CESounds:cylinder_fire
 reg:CESounds:engine_catch
 reg:CESounds:engine_clatter
@@ -532,16 +560,18 @@ reg:CESounds:engine_stall
 reg:CESounds:exhaust_pop
 reg:CESounds:flare_whoosh
 reg:CESounds:gasket_blow
+reg:CESounds:head_warp
 reg:CESounds:intake_roar
 reg:CESounds:metal_tick
 reg:CESounds:piston_seize
-reg:CESounds:seize_warning
 reg:CESounds:preignition_knock
 reg:CESounds:rod_thrown
+reg:CESounds:seize_warning
 reg:CESounds:soot_catch
 reg:CESounds:starter_whir
 reg:CESounds:supercharger_whine
 reg:CESounds:turbo_blowoff
+reg:CESounds:turbo_fail
 reg:CESounds:turbo_whistle
 reg:addRawLang:plugin_create_engines
 reg:block:air_intake
@@ -582,6 +612,7 @@ reg:block:maker_plate
 reg:block:muffler
 reg:block:precision_cylinder
 reg:block:precision_cylinder_head
+reg:block:radiator
 reg:block:rain_cap
 reg:block:reboiler
 reg:block:rotor_housing
@@ -615,6 +646,7 @@ reg:blockEntity:heat_exchanger
 reg:blockEntity:maf_sensor
 reg:blockEntity:maker_plate
 reg:blockEntity:manifold
+reg:blockEntity:radiator
 reg:blockEntity:rain_cap
 reg:blockEntity:rotor_housing
 reg:blockEntity:soot_trap
@@ -658,10 +690,12 @@ reg:item:copper_gasket
 reg:item:forged_piston
 reg:item:fuel_injector
 reg:item:headphones
+reg:item:heavy_connecting_rod
 reg:item:ignition_coil
 reg:item:incomplete_copper_gasket
 reg:item:injector_assist
 reg:item:jerry_can
+reg:item:light_connecting_rod
 reg:item:oil_filter
 reg:item:piston
 reg:item:precision_injector

@@ -3,18 +3,32 @@ package com.createengines.engine.sim;
 /**
  * How hot an engine's block is, in units where ambient is 0 and a warm engine on a steady load is {@link #NORMAL}.
  * <p>
- * The cylinders put heat in, in proportion to what leaves their exhaust valves; the block loses some to the air in
- * proportion to how hot it is, and a coolant supply carries away more of whatever is above its thermostat. Nothing here
- * can hurt an engine. There are two soft effects instead: a cold engine drags (thick oil, tight fits) until it has
- * warmed through, and a cool one breathes better, as denser air in the cylinders. A hot engine is simply not cool.
+ * The cylinders put heat in, in proportion to the fuel they burn, and friction a little more; the block loses some to the
+ * air in proportion to how hot it is, and a coolant supply carries away more of whatever is above its thermostat. A player
+ * reads the temperature in degrees (see {@link #degrees}). Nothing here breaks an engine (the wear mode's heat damage is
+ * {@link Wear}'s). The effects are soft: a cold engine drags (thick oil, tight fits) until it has warmed through, a cool one
+ * breathes better, as denser air in the cylinders, and an overheating one gets less out of each burn.
  * <p>
- * Coolant is spent carrying heat, like water boiling off a hopper-cooled engine, so it is topped up from a tank and
- * needs no radiator.
+ * Coolant is spent carrying heat, like water boiling off a hopper-cooled engine, so it is topped up from a tank. A
+ * {@link Radiator} is the other way: a closed loop that sheds heat to the air.
  */
 public final class Thermal {
 
 	/** Temperature of a warm engine under steady load, with no coolant. Cooler than this earns the bonus. */
 	public static final double NORMAL = 0.7;
+	/** From here a block is hot: with the wear mode on, heat starts to wear parts far faster. */
+	public static final double HOT = 1.0;
+	/** From here a block is overheating: it warms the charge it breathes, which costs power (see {@link #overheat}). */
+	public static final double OVERHEATING = 1.2;
+	/** From here a block is critical: the overheating loss is at its most, and with the wear mode on heat alone breaks things. */
+	public static final double CRITICAL = 1.45;
+	/** The share of each burn's heat lost in a block at {@link #CRITICAL}, with the penalty at 1. */
+	public static final double MAX_HOT_BURN_LOSS = 0.18;
+	/** How much nearer its pre-ignition temperature a boosted spark charge is in a block at {@link #CRITICAL}, with the penalty at 1. */
+	public static final double MAX_HOT_PREIGNITION = 0.3;
+	/** The temperature a gauge shows for an ambient block, and how many degrees each unit of temperature is: warm reads 90 degrees. */
+	private static final double AMBIENT_DEGREES = 20;
+	private static final double DEGREES_PER_UNIT = 100;
 	/** Below this the engine is cold and drags. */
 	public static final double COLD_BELOW = 0.3;
 	/** Friction added to a completely cold engine, as a share of normal. */
@@ -49,12 +63,55 @@ public final class Thermal {
 	static final double HEAT_SHARE = 1;
 
 	/**
-	 * Share of the heat that goes into the block which comes from friction rather than the exhaust. Rubbing parts warm an
-	 * engine whatever it burns, so a lightly fuelled one still warms through; the share is traded against the exhaust's, and
-	 * friction and exhaust heat are of the same size at the speeds {@link #PASSIVE} was sized for, so a full-throttle
-	 * engine settles where it always did.
+	 * How much of the heat of the fuel burned in the cylinders goes into the block, in the block's own units: what does not leave as work
+	 * or down the exhaust. More boost, more fuel and a fuel with a higher {@code heatFactor} all burn more, so heat follows the work
+	 * asked of the engine; a lean or lightly fuelled one runs cooler. Sized so a crude engine near 100 RPM at full rack settles where it
+	 * did before heat followed the fuel, a little under {@link #NORMAL}.
 	 */
-	static final double FRICTION_SHARE = 0.35;
+	static final double BURN_SHARE = 0.0804;
+	/**
+	 * How much of the power lost to friction warms the block, up to {@link #FRICTION_KNEE} a cylinder: what it always was, so an engine
+	 * turning slowly, however lightly fuelled, warms through as it did.
+	 */
+	static final double FRICTION_HEAT = 0.35;
+	/** Friction power a cylinder past which more of it warms the block far less: about what a crude cylinder loses near 120 RPM. */
+	static final double FRICTION_KNEE = 2.5;
+	/**
+	 * The share of the friction past the knee that warms the block. Before 2.4 all of it weighed alike, so a fast engine's heat was
+	 * nearly all friction, and a crude four ran as hot as a boosted twenty-four.
+	 */
+	static final double FAST_FRICTION_HEAT = 0.1;
+	/** For a source that is not a cylinder and says only what leaves its exhaust: the share of that which warms its block, as it always did. */
+	static final double EXHAUST_HEAT = 0.65;
+	/** How many times more heat friction makes with no oil at all than on an oiled part, on top of the extra drag. */
+	static final double DRY_HEAT = 8;
+
+	/** What the block's temperature reads as, from coldest to hottest. */
+	public enum Band {
+		COLD, COOL, WARM, HOT, OVERHEATING, CRITICAL;
+
+		public String langKey() {
+			return "goggles.temperature." + name().toLowerCase(java.util.Locale.ROOT);
+		}
+	}
+
+	/** The band a block at {@code temperature} reads as. */
+	public static Band band(double temperature) {
+		if (temperature < COLD_BELOW)
+			return Band.COLD;
+		if (temperature < COOL_NONE)
+			return Band.COOL;
+		if (temperature < HOT)
+			return Band.WARM;
+		if (temperature < OVERHEATING)
+			return Band.HOT;
+		return temperature < CRITICAL ? Band.OVERHEATING : Band.CRITICAL;
+	}
+
+	/** A temperature as the whole degrees Celsius a gauge shows: ambient is 20, a warm engine 90. Nonsense reads as ambient. */
+	public static int degrees(double temperature) {
+		return (int) Math.round(AMBIENT_DEGREES + DEGREES_PER_UNIT * (Double.isFinite(temperature) ? Math.max(0, temperature) : 0));
+	}
 
 	/** Share of a fuel's heat release a stone-cold block quenches, for a fuel with a {@link FuelSpec#coldSensitivity()} of 1. */
 	public static final double MAX_COLD_BURN_LOSS = 0.12;
@@ -70,9 +127,37 @@ public final class Thermal {
 	/** Heat per cylinder per second a heat source touching the engine puts in, by heat level (none, smouldering, kindled, seething). */
 	private static final double[] PREHEAT = {0, 0.4, 0.9, 1.6};
 
-	/** The heat per second that goes into the block, from what leaves the exhaust and the power lost to friction. */
-	public static double heatIn(double exhaustHeat, double frictionPower) {
-		return exhaustHeat * (1 - FRICTION_SHARE) + frictionPower * FRICTION_SHARE;
+	/**
+	 * The heat per second that goes into the block.
+	 *
+	 * @param burnHeat      the heat of the fuel burned in the cylinders a second
+	 * @param otherExhaust  heat leaving the exhaust of sources that are not cylinders, a second
+	 * @param frictionPower the power lost to friction
+	 * @param cylinders     how many cylinders share the friction, at least one
+	 */
+	public static double heatIn(double burnHeat, double otherExhaust, double frictionPower, int cylinders) {
+		double knee = FRICTION_KNEE * Math.max(1, cylinders);
+		return burnHeat * BURN_SHARE + otherExhaust * EXHAUST_HEAT + Math.min(frictionPower, knee) * FRICTION_HEAT
+			+ Math.max(0, frictionPower - knee) * FAST_FRICTION_HEAT;
+	}
+
+	/**
+	 * How many times the usual heat friction makes on an oil film this thin: 1 until the film falls below {@link Wear#SEIZE_FILM} (the
+	 * goggles' "failing: dry oil"), then rising to {@link #DRY_HEAT} more with none, so an engine starved of oil overheats before it
+	 * seizes. With the wear mode off this is only a warning; with it on it is the road to seizing.
+	 */
+	public static double dryHeat(double film) {
+		if (!Double.isFinite(film))
+			return 1;
+		return 1 + DRY_HEAT * Math.clamp(1 - film / Wear.SEIZE_FILM, 0, 1);
+	}
+
+	/**
+	 * How far into overheating the block is, 0 at {@link #OVERHEATING} or cooler to 1 at {@link #CRITICAL} and hotter. Nothing with engine
+	 * temperature switched off.
+	 */
+	public double overheat() {
+		return Tuning.engineTemperature ? Math.clamp((temperature - OVERHEATING) / (CRITICAL - OVERHEATING), 0, 1) : 0;
 	}
 
 	private double temperature;
@@ -83,6 +168,35 @@ public final class Thermal {
 	private double crankAssist;
 	/** Heat per cylinder per second an outside heat source is putting in (see {@link #setPreheat}). */
 	private double preheat;
+
+	private Radiator.Supply radiators = Radiator.NONE;
+
+	/** The radiators joined to the engine, {@link Radiator#NONE} for none. */
+	public void setRadiators(Radiator.Supply radiators) {
+		this.radiators = radiators;
+	}
+
+	/**
+	 * Lets each radiator take its share of the heat.
+	 *
+	 * @param most the most heat per second they may take between them: what would bring the block to the thermostat this tick
+	 * @return the heat per second they took
+	 */
+	private double radiate(double most, double dt) {
+		int count = radiators.count();
+		if (count == 0)
+			return 0;
+		double wanted = 0;
+		for (int i = 0; i < count; i++)
+			wanted += Radiator.shed(temperature, radiators.quality(i), radiators.airflow(i));
+		double scale = wanted <= 0 ? 0 : Math.min(1, Math.max(0, most) / wanted);
+		for (int i = 0; i < count; i++) {
+			double quality = radiators.quality(i);
+			double shed = Radiator.shed(temperature, quality, radiators.airflow(i)) * scale;
+			radiators.ran(i, shed, Radiator.boiled(temperature, shed, quality, dt));
+		}
+		return wanted * scale;
+	}
 
 	/** How much of a fuel's burn a block this cold costs: 1 when warm. */
 	public static double burnFactor(double cold, double sensitivity) {
@@ -164,16 +278,20 @@ public final class Thermal {
 		coolantRate = 0;
 		coolantQuality = 0;
 		double above = temperature - THERMOSTAT;
+		double pan = 0;
 		double quality = coolant.quality();
 		if (above > 0 && quality > 0) {
 			double carried = COOLANT_CONDUCTANCE * n * quality * above;
 			double wanted = carried * COOLANT_PER_HEAT / quality * dt;
 			double given = wanted <= 0 ? 0 : coolant.draw(wanted);
 			double share = wanted <= 0 ? 0 : Math.min(1, given / wanted);
-			out += carried * share;
+			pan = carried * share;
+			out += pan;
 			coolantRate = given / dt;
 			coolantQuality = share > 0 ? quality : 0;
 		}
+		// Many radiators on a small block must not carry it below the thermostat inside one tick
+		out += radiate(Math.max(0, above) * CAPACITY * n / dt - pan, dt);
 		temperature = Math.max(0, temperature + (in - out) * dt / (CAPACITY * n));
 	}
 
@@ -202,6 +320,15 @@ public final class Thermal {
 	/** Multiplier on all friction: a cold engine drags. */
 	public double drag() {
 		return 1 + MAX_COLD_FRICTION * felt();
+	}
+
+	/**
+	 * How hot an overheating block runs its cylinders, 0 not at all to 1 the most: {@link #overheat} scaled by
+	 * {@code Tuning.overheatPenalty}, 0 turning it off. Each burn loses up to {@link #MAX_HOT_BURN_LOSS} of its heat to it, and a boosted
+	 * spark charge is nearer lighting early. Nothing breaks or stops, and it goes as the block cools.
+	 */
+	public double hotness() {
+		return overheat() * Tuning.overheatPenalty;
 	}
 
 	/** Multiplier on the temperature of the air the cylinders draw: a cool engine pulls in a denser charge. */

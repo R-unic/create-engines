@@ -288,6 +288,18 @@ write_schematic("transmission", (8, 4, 5), [
     (2, 1, 3, "minecraft:lever", {"face": "floor", "facing": "north", "powered": "false"}),
 ])
 
+write_schematic("radiator", (6, 6, 6), [
+    (1, 1, 3, ce("crankshaft"), axis("x")),
+    (2, 1, 3, ce("crank_throw"), axis("x")),
+    (3, 1, 3, ce("crankshaft"), axis("x")),
+    (2, 2, 3, ce("cylinder"), cylinder("up")),
+    (2, 3, 3, ce("cylinder_head"), head("up")),
+    (3, 1, 2, ce("radiator"), {}),
+    # A fan blowing south at the radiator over one block of air
+    (3, 1, 0, "create:encased_fan", facing("south")),
+    (3, 2, 2, "create:basin", {"facing": "down"}),
+])
+
 write_schematic("sump", (6, 6, 6), [
     (1, 2, 3, ce("crankshaft"), axis("x")),
     (2, 2, 3, ce("crank_throw"), axis("x")),

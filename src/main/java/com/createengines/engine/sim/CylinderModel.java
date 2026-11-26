@@ -258,6 +258,21 @@ public final class CylinderModel implements Breather {
 		return tdcCrankAngle;
 	}
 
+	/** How much of a missed spark a worn plug has run up: it misses one each time this reaches a whole. */
+	private double missed;
+
+	/**
+	 * Whether this spark is one a worn plug drops, for a plug that misses {@code share} of them. Counted and not rolled, so the misses are
+	 * spread evenly and the same engine always runs the same.
+	 */
+	boolean missesSpark(double share) {
+		missed += share;
+		if (missed < 1)
+			return false;
+		missed -= 1;
+		return true;
+	}
+
 	/** A fresh cylinder built the same way on {@code camshaft}, to test apart from the engine. */
 	public CylinderModel copyOnto(@Nullable Camshaft camshaft) {
 		CylinderModel copy =
@@ -280,6 +295,7 @@ public final class CylinderModel implements Breather {
 		copy.intakePressure = intakePressure;
 		copy.intakeTemperature = intakeTemperature;
 		copy.coldness = coldness;
+		copy.hotness = hotness;
 		copy.exhaustPressure = exhaustPressure;
 		return copy;
 	}
@@ -291,6 +307,8 @@ public final class CylinderModel implements Breather {
 	@Override
 	public void endTick() {
 		ports.endTick();
+		burnHeatLastTick = burnHeat;
+		burnHeat = 0;
 	}
 
 	@Override
@@ -323,6 +341,23 @@ public final class CylinderModel implements Breather {
 		exhaustPressure = pressure;
 	}
 
+	/** How hot an overheating block is running this cylinder, 0 to 1 (see {@code Thermal.hotness}); the engine sets it each tick. */
+	double hotness;
+
+	/** The heat of the fuel burned this tick and in the last whole one, each fuel's counted by its {@code heatFactor}. */
+	private double burnHeat;
+	private double burnHeatLastTick;
+
+	/** Counts {@code heat} released by a burn towards what heats the block. */
+	void burned(double heat) {
+		burnHeat += heat;
+	}
+
+	/** The heat the fuel burned in this cylinder released during the last whole tick: what heats its block (see {@code Thermal}). */
+	public double burnHeatLastTick() {
+		return burnHeatLastTick;
+	}
+
 	/** Heat this cylinder put into its exhaust during the last whole tick. */
 	@Override
 	public double exhaustHeatLastTick() {
@@ -346,12 +381,16 @@ public final class CylinderModel implements Breather {
 
 	@Override
 	public double frictionViscous() {
-		return wear == Wear.NONE ? spec.frictionViscous() : spec.frictionViscous() * wear.drag();
+		return wear == Wear.NONE ? spec.frictionViscous() : spec.frictionViscous() * wear.viscous() * wear.drag();
 	}
 
 	@Override
 	public double frictionAt(double omega, double film) {
-		return wear == Wear.NONE ? spec.frictionAt(omega, film) : spec.frictionAt(omega, film) * wear.drag();
+		if (wear == Wear.NONE)
+			return spec.frictionAt(omega, film);
+		// Only the share of the friction that grows with speed is the rod's to change
+		double rod = (wear.viscous() - 1) * spec.frictionViscous() * omega * Lubrication.viscousFactor(film);
+		return (spec.frictionAt(omega, film) + rod) * wear.drag();
 	}
 
 	@Override

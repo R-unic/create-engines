@@ -289,6 +289,15 @@ public class BlackBoxBlockEntity extends SmartBlockEntity implements IHaveGoggle
 		awarded = tag.getBoolean("Awarded");
 	}
 
+	/** The block temperature a recorded warmth stands for: the tape keeps it as a percent of a warm engine's. */
+	private static double temperature(int warmth) {
+		return warmth / 100.0 * com.createengines.engine.sim.Thermal.NORMAL;
+	}
+
+	private static int degrees(int warmth) {
+		return com.createengines.engine.sim.Thermal.degrees(temperature(warmth));
+	}
+
 	@Override
 	public boolean addToGoggleTooltip(List<Component> tooltip, boolean isPlayerSneaking) {
 		CELang.translate("goggles.recorder")
@@ -313,8 +322,13 @@ public class BlackBoxBlockEntity extends SmartBlockEntity implements IHaveGoggle
 			.style(peakLoad > 100 ? ChatFormatting.GOLD : ChatFormatting.GREEN), tooltip, 1);
 		int warmthNow = current.warmth()[current.warmth().length - 1];
 		GoggleLines.add(CELang.translate("goggles.recorder.warmth", bars(current.warmth(), Math.max(100, max(current.warmth()))),
-				warmthNow)
-			.style(warmthNow < 45 ? ChatFormatting.BLUE : ChatFormatting.RED), tooltip, 1);
+				degrees(warmthNow))
+			.style(switch (com.createengines.engine.sim.Thermal.band(temperature(warmthNow))) {
+				case COLD -> ChatFormatting.BLUE;
+				case COOL, WARM -> ChatFormatting.GRAY;
+				case HOT -> ChatFormatting.GOLD;
+				case OVERHEATING, CRITICAL -> ChatFormatting.RED;
+			}), tooltip, 1);
 		GoggleLines.add(CELang.translate("goggles.recorder.states", marks(current.states()))
 			.style(ChatFormatting.GRAY), tooltip, 1);
 		// The wear mode's total for the whole build; no line with the mode off, or when it was off for the whole tape
@@ -384,7 +398,7 @@ public class BlackBoxBlockEntity extends SmartBlockEntity implements IHaveGoggle
 		GoggleLines.add(CELang.translate("goggles.recorder.replay.figures", CELang.translate("goggles.recorder.state." + shown.state()
 					.name()
 					.toLowerCase(Locale.ROOT))
-				.component(), shown.rpm(), shown.load(), shown.warmth())
+				.component(), shown.rpm(), shown.load(), degrees(shown.warmth()))
 			.style(bad ? ChatFormatting.RED : ChatFormatting.GRAY), tooltip, 2);
 		if (com.createengines.engine.sim.Tuning.wearMode && shown.wear() >= 0)
 			GoggleLines.add(CELang.translate("goggles.recorder.replay.wear", shown.wear())

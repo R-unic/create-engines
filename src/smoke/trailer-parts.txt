@@ -21,6 +21,8 @@ coolant: skip - fluid
 column_section: refinery_column
 condenser: refinery_column
 connecting_rod: skip - inside the cylinder
+light_connecting_rod: skip - a variant of the connecting rod, inside the cylinder
+heavy_connecting_rod: skip - a variant of the connecting rod, inside the cylinder
 crank_throw: inline6_pass
 crankshaft: first_rises
 cylinder: first_rises
@@ -85,6 +87,7 @@ soot_trap: later - needs a diesel with a trap fitted
 spark_plug: electric_heads
 starter: inline6_pass
 sugar_mash: skip - fluid
+radiator: service_radiator
 sump: instruments_governor
 supercharger: skip - the variable-drive supercharger, which the trailer shows, is the same part with a drive
 throttle: inline6_pass

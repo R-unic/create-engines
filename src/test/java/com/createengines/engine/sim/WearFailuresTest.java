@@ -13,7 +13,7 @@ class WearFailuresTest {
 
 	@Test
 	void eachKindKeepsItsOwnCountAndNoneMeansZero() {
-		int packed = WearFailures.pack(1, 2, 3, 4);
+		long packed = WearFailures.pack(1, 2, 3, 4);
 		assertEquals(1, WearFailures.count(packed, Kind.ROD_THROWN));
 		assertEquals(2, WearFailures.count(packed, Kind.GASKET_BLOWN));
 		assertEquals(3, WearFailures.count(packed, Kind.PISTON_SEIZED));
@@ -33,7 +33,7 @@ class WearFailuresTest {
 
 	@Test
 	void aRiseIsOneMoreOfThatKindAndNothingElseIsOne() {
-		int before = WearFailures.pack(1, 0, 0, 0);
+		long before = WearFailures.pack(1, 0, 0, 0);
 		assertTrue(WearFailures.rose(before, WearFailures.pack(2, 0, 0, 0), Kind.ROD_THROWN));
 		assertFalse(WearFailures.rose(before, WearFailures.pack(2, 0, 0, 0), Kind.GASKET_BLOWN), "another kind did not rise");
 		assertFalse(WearFailures.rose(before, before, Kind.ROD_THROWN), "the same count is not an event");

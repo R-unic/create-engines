@@ -260,18 +260,26 @@ public final class EngineSimulation {
 
 	/** Closes the tick's heat accounting and lets each turbo spool on it; they spin down even while the crank is stopped. */
 	private void endTick() {
-		double exhaustHeat = 0;
+		double burnHeat = 0, otherExhaust = 0;
 		for (int i = 0; i < sources.size(); i++) {
 			TorqueSource source = sources.get(i);
 			source.endTick();
-			exhaustHeat += source.exhaustHeatLastTick();
+			if (source instanceof CylinderModel cylinder)
+				burnHeat += cylinder.burnHeatLastTick();
+			else
+				otherExhaust += source.exhaustHeatLastTick();
 		}
 		if (thermalLive && Tuning.engineTemperature)
-			thermal.update(Thermal.heatIn(exhaustHeat / TICK, tickFrictionWork / TICK), sources.size(), TICK, coolant);
+			thermal.update(Thermal.heatIn(burnHeat / TICK, otherExhaust / TICK, tickFrictionWork * Thermal.dryHeat(lubrication.film()) / TICK,
+				sources.size()), sources.size(), TICK, coolant);
 		tickFrictionWork = 0;
 		double cold = thermal.felt();
-		for (int i = 0; i < sources.size(); i++)
+		double hot = thermal.hotness();
+		for (int i = 0; i < sources.size(); i++) {
 			sources.get(i).setColdness(cold);
+			if (sources.get(i) instanceof CylinderModel cylinder)
+				cylinder.hotness = hot;
+		}
 		induction.tick(rpm(), cylinders, thermal.chargeFactor());
 		// Sources that are not cylinders breathe the engine's air as a whole; a plain engine skips this
 		int first = cylinders.size();
@@ -462,6 +470,10 @@ public final class EngineSimulation {
 	}
 
 	/** Where the coolant comes from; none by default, in which case the engine only loses heat to the air. */
+	public void setRadiators(Radiator.Supply radiators) {
+		thermal.setRadiators(radiators);
+	}
+
 	public void setCoolant(CoolantSupply coolant) {
 		this.coolant = coolant;
 	}

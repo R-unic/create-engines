@@ -28,8 +28,10 @@ public class CylinderHeadVisual extends AbstractBlockEntityVisual<CylinderHeadBl
 	/** The wear mode's wreck of a head a rod went through, and the gasket pushed out of a blown joint. Hidden unless they are wanted. */
 	private final TransformedInstance wreck;
 	private final TransformedInstance flap;
+	private final TransformedInstance warp;
 	private Boolean lastBroken;
 	private boolean lastBlown;
+	private boolean lastWarped;
 	private boolean posed;
 	private EnginePoses.ValvePose lastPose;
 
@@ -42,6 +44,8 @@ public class CylinderHeadVisual extends AbstractBlockEntityVisual<CylinderHeadBl
 		wreck = instancerProvider().instancer(InstanceTypes.TRANSFORMED, Models.partial(CEPartialModels.HEAD_WRECK))
 			.createInstance();
 		flap = instancerProvider().instancer(InstanceTypes.TRANSFORMED, Models.partial(CEPartialModels.HEAD_BLOWN_GASKET))
+			.createInstance();
+		warp = instancerProvider().instancer(InstanceTypes.TRANSFORMED, Models.partial(CEPartialModels.HEAD_WARPED))
 			.createInstance();
 		animate();
 	}
@@ -58,8 +62,10 @@ public class CylinderHeadVisual extends AbstractBlockEntityVisual<CylinderHeadBl
 	private void overlay() {
 		boolean broken = blockEntity.showsBroken();
 		boolean blown = blockEntity.showsBlown() && !broken;
-		if (lastBroken != null && lastBroken == broken && lastBlown == blown)
+		boolean warped = blockEntity.showsWarped() && !broken;
+		if (lastBroken != null && lastBroken == broken && lastBlown == blown && lastWarped == warped)
 			return;
+		lastWarped = warped;
 		lastBroken = broken;
 		lastBlown = blown;
 		BlockPos origin = getVisualPosition();
@@ -67,6 +73,11 @@ public class CylinderHeadVisual extends AbstractBlockEntityVisual<CylinderHeadBl
 			.getValue(CylinderHeadBlock.FACING));
 		wreck.setVisible(broken);
 		wreck.setIdentityTransform()
+			.translate(origin)
+			.mul(frame)
+			.setChanged();
+		warp.setVisible(warped);
+		warp.setIdentityTransform()
 			.translate(origin)
 			.mul(frame)
 			.setChanged();
@@ -102,7 +113,7 @@ public class CylinderHeadVisual extends AbstractBlockEntityVisual<CylinderHeadBl
 
 	@Override
 	public void updateLight(float partialTick) {
-		relight(intake, exhaust, wreck, flap);
+		relight(intake, exhaust, wreck, flap, warp);
 	}
 
 	@Override

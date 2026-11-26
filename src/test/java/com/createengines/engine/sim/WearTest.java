@@ -227,7 +227,10 @@ class WearTest {
 		assertEquals(com.createengines.engine.topology.CylinderFault.BROKEN_HEAD, faults[base + 3]);
 		assertEquals(com.createengines.engine.topology.CylinderFault.SEIZED, faults[base + 4]);
 		assertEquals(com.createengines.engine.topology.CylinderFault.APEX_FAILED, faults[base + 5]);
-		assertEquals(base + 6, faults.length, "nothing else has been added after them without being pinned here");
+		assertEquals(com.createengines.engine.topology.CylinderFault.WARPED_HEAD, faults[base + 6]);
+		assertEquals(base + 7, faults.length, "nothing else has been added after them without being pinned here");
+		assertFalse(com.createengines.engine.topology.CylinderFault.disables(com.createengines.engine.topology.CylinderFault.WARPED_HEAD.bit()),
+			"a warped head leaks and the cylinder still fires");
 		assertTrue(com.createengines.engine.topology.CylinderFault.disables(com.createengines.engine.topology.CylinderFault.SEIZED.bit()));
 		assertTrue(com.createengines.engine.topology.CylinderFault.disables(com.createengines.engine.topology.CylinderFault.THROWN_ROD.bit()));
 		assertTrue(com.createengines.engine.topology.CylinderFault.disables(com.createengines.engine.topology.CylinderFault.BROKEN_HEAD.bit()));
@@ -464,7 +467,7 @@ class WearTest {
 		assertEquals(0, Wear.failureChance(0, 128, 60), 0);
 		assertTrue(Wear.failureChance(Wear.FAILURE_FROM + 0.01, 128, 60) > 0);
 		// The cube of how far past it, at the reference speed, per second: past = 0.5 at wear 0.75
-		assertEquals(Wear.FAILURE_RATE * 0.125, Wear.failureChance(0.75, Wear.REFERENCE_RPM, 1), 1e-12);
+		assertEquals(Wear.PART_FAILURE_RATE * 0.125, Wear.failureChance(0.75, Wear.REFERENCE_RPM, 1), 1e-12);
 		assertEquals(0, Wear.failureChance(0.9, 128, 0), 0, "no time passing is no chance");
 		assertEquals(0, Wear.failureChance(0.9, 128, -3), 0, "a span of time below nothing is none");
 		assertEquals(0, Wear.failureChance(0.9, 128, Double.NaN), 0);

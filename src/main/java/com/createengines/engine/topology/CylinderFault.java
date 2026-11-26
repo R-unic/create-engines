@@ -40,7 +40,9 @@ public enum CylinderFault {
 	/** The wear mode's: a piston seized from running dry, which locks the cylinder and drags on the crank until the piston comes out, by hand or with a Service Kit. */
 	SEIZED(true),
 	/** The wear mode's: a rotor housing's apex seals have failed, which stops all three chambers until a new set is fitted. */
-	APEX_FAILED(true);
+	APEX_FAILED(true),
+	/** The wear mode's: heat warped the head, which leaks a share of every burn until it is replaced. The cylinder still fires. */
+	WARPED_HEAD(false);
 
 	/** Without this the cylinder is not a working piston at all and is left out of the simulation. */
 	public final boolean disablesCylinder;

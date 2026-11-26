@@ -33,6 +33,7 @@ electric_alternator   3
 electric_battery      3
 electric_heads        3
 service_sump          3
+service_radiator      3
 service_oil           3
 service_cans          3     at=1.5
 casing_styles         3

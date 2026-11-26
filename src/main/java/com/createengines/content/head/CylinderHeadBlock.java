@@ -140,14 +140,23 @@ public class CylinderHeadBlock extends DirectionalBlock
 		ItemInteractionResult worn = WearService.onHead(stack, level, pos, player, hand);
 		if (worn != ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION)
 			return worn;
-		return PartInstallation.tryInstall(stack, state, level, pos, player, PARTS);
+		// A plug fitted keeps the wear it had on the stack
+		double carried = WearService.wearOf(stack);
+		ItemInteractionResult result = PartInstallation.tryInstall(stack, state, level, pos, player, PARTS);
+		if (result != ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION)
+			WearService.plugChanged(level, pos, state.getValue(HAS_SPARK_PLUG), level.getBlockState(pos).getOptionalValue(HAS_SPARK_PLUG).orElse(false), carried);
+		return result;
 	}
 
 	@Override
 	protected InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos, Player player,
 											   BlockHitResult hit) {
-		if (PartInstallation.tryRemove(state, level, pos, player, PARTS))
+		if (PartInstallation.tryRemove(state, level, pos, player,
+			(slot, part) -> WearService.dressPlug(level, pos, slot.property() == HAS_SPARK_PLUG, part), PARTS)) {
+			// A plug taken out has left with its wear, so the head forgets it
+			WearService.plugChanged(level, pos, state.getValue(HAS_SPARK_PLUG), level.getBlockState(pos).getOptionalValue(HAS_SPARK_PLUG).orElse(false), 0);
 			return InteractionResult.sidedSuccess(level.isClientSide);
+		}
 		return InteractionResult.PASS;
 	}
 
@@ -168,11 +177,11 @@ public class CylinderHeadBlock extends DirectionalBlock
 		EngineTopology.markDirty(level, pos);
 	}
 
-	/** A head a thrown rod broke is scrap: breaking it gives nothing back (its injector and plug are still returned, as they are fitted parts). */
+	/** A head a thrown rod broke, or heat warped, is scrap: breaking it gives nothing back (its injector and plug are still returned, as they are fitted parts). */
 	@Override
 	protected java.util.List<ItemStack> getDrops(BlockState state, net.minecraft.world.level.storage.loot.LootParams.Builder params) {
 		if (params.getOptionalParameter(net.minecraft.world.level.storage.loot.parameters.LootContextParams.BLOCK_ENTITY) instanceof CylinderHeadBlockEntity head
-			&& head.showsBroken())
+			&& (head.showsBroken() || head.showsWarped()))
 			return java.util.List.of();
 		return super.getDrops(state, params);
 	}
@@ -186,7 +195,7 @@ public class CylinderHeadBlock extends DirectionalBlock
 			if (!gasket.isEmpty())
 				Block.popResource(level, pos, gasket);
 		}
-		PartInstallation.dropParts(state, level, pos, newState, PARTS);
+		PartInstallation.dropParts(state, level, pos, newState, (slot, part) -> WearService.dressPlug(level, pos, slot.property() == HAS_SPARK_PLUG, part), PARTS);
 		IBE.onRemove(state, level, pos, newState);
 		if (!EngineGlow.onlyGlowChanged(state, newState))
 			EngineTopology.markDirty(level, pos);

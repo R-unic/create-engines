@@ -24,6 +24,7 @@ public final class CEPartialModels {
 	/** The wear mode's wrecks, each laid over the part it is the wreck of: a head a rod went through, a gasket pushed out of the joint, the wreck in a bore. */
 	public static final PartialModel HEAD_WRECK = block("cylinder_head/wreck");
 	public static final PartialModel HEAD_BLOWN_GASKET = block("cylinder_head/blown_gasket");
+	public static final PartialModel HEAD_WARPED = block("cylinder_head/warped");
 	public static final PartialModel CYLINDER_WRECK = block("cylinder/wreck");
 	/** A failed set of apex seals, sprung out of a rotor housing, in the frame of a housing whose shaft stands upright. */
 	public static final PartialModel ROTOR_WRECK = block("rotor_housing/wreck");

@@ -606,6 +606,65 @@ def piston_seize(seed, pitch):
     return finish(mix, 0.85)
 
 
+def head_warp(seed, pitch):
+    """A cylinder head giving way to heat: two dry cracks as the casting moves, the low ring of it, and steam hissing out of the joint."""
+    rng = np.random.default_rng(seed)
+    n = int(1.5 * SR)
+    t = np.arange(n) / SR
+    crack = np.zeros(n)
+    for at, level in ((0.0, 1.0), (0.17, 0.65)):
+        i = int(at * SR)
+        u = np.arange(n - i) / SR
+        hit = band(rng.standard_normal(n - i), 1200 * pitch, 8000, 2) * np.exp(-u / 0.012)
+        hit += sum(lv * np.sin(2 * np.pi * 430 * pitch * r * u) * np.exp(-u / d)
+                   for r, lv, d in ((1.0, 0.7, 0.22), (2.71, 0.4, 0.12), (4.9, 0.2, 0.06)))
+        crack[i:] += level * hit * np.minimum(u / 0.0004, 1)
+    sputter = 0.75 + 0.25 * np.sin(2 * np.pi * np.cumsum(9 + 6 * np.exp(-t / 0.4)) / SR)
+    steam = band(rng.standard_normal(n), 2600 * pitch, 9000, 2) * sputter * np.minimum(np.maximum(t - 0.08, 0) / 0.12, 1) * np.exp(-np.maximum(t - 0.4, 0) / 0.4)
+    mix = crack / np.max(np.abs(crack)) + 0.55 * steam / np.max(np.abs(steam))
+    mix = np.tanh(1.3 * mix)
+    mix *= np.clip((n - np.arange(n)) / (0.25 * SR), 0, 1)
+    return finish(mix, 0.8)
+
+
+def turbo_fail(seed, pitch):
+    """A turbocharger failing: a bang, then the whine of the wheel dragging on its housing, falling in pitch as it grinds to a stop."""
+    rng = np.random.default_rng(seed)
+    n = int(1.7 * SR)
+    t = np.arange(n) / SR
+    bang = band(rng.standard_normal(n), 300, 6000, 2) * np.minimum(t / 0.0004, 1) * np.exp(-t / 0.02)
+    f = (350 + 3400 * np.exp(-t / 0.5)) * pitch
+    phase = 2 * np.pi * np.cumsum(f) / SR
+    whine = (np.sin(phase) + 0.45 * np.sin(2.03 * phase) + 0.2 * np.sin(3.11 * phase))
+    scrape = band(rng.standard_normal(n), 1400, 7000, 2) * (0.55 + 0.45 * np.sin(phase / 24))
+    fade = np.minimum(t / 0.01, 1) * np.exp(-t / 0.65)
+    mix = bang / np.max(np.abs(bang)) + (0.6 * whine / np.max(np.abs(whine)) + 0.5 * scrape / np.max(np.abs(scrape))) * fade
+    mix = np.tanh(1.3 * mix)
+    mix *= np.clip((n - np.arange(n)) / (0.25 * SR), 0, 1)
+    return finish(mix, 0.82)
+
+
+def coolant_boil(seed, pitch):
+    """A block hot enough to boil: bubbles knocking about inside it, quicker through the middle, under a hiss of escaping steam."""
+    rng = np.random.default_rng(seed)
+    n = int(1.4 * SR)
+    t = np.arange(n) / SR
+    bubbles = np.zeros(n)
+    at = 0.02
+    while at < 1.25:
+        i = int(at * SR)
+        u = np.arange(n - i) / SR
+        f = rng.uniform(170, 420) * pitch
+        rise = 2 * np.pi * np.cumsum(f * (1 + 1.6 * np.minimum(u / 0.05, 1))) / SR
+        bubbles[i:] += rng.uniform(0.4, 1.0) * np.sin(rise) * np.minimum(u / 0.004, 1) * np.exp(-u / 0.022)
+        at += rng.uniform(0.025, 0.09)
+    swell = np.sin(np.pi * np.clip(t / 1.4, 0, 1))
+    steam = band(rng.standard_normal(n), 3000 * pitch, 9500, 2) * swell
+    mix = 0.9 * bubbles / np.max(np.abs(bubbles)) * (0.35 + 0.65 * swell) + 0.4 * steam / np.max(np.abs(steam))
+    mix *= np.clip((n - np.arange(n)) / (0.2 * SR), 0, 1) * np.minimum(t / 0.02, 1)
+    return finish(mix, 0.6)
+
+
 def apex_fail(seed, pitch):
     """A rotor's apex seal letting go: a sharp snap of hard metal, the broken strip clattering round the chamber as the shaft carries it,
     slower with every turn until it jams, and the wheeze of compression blowing past the tip that is no longer sealed."""
@@ -688,6 +747,12 @@ SOUNDS = {
     "piston_seize2": lambda: piston_seize(157, 0.88),
     "apex_fail1": lambda: apex_fail(163, 1.0),
     "apex_fail2": lambda: apex_fail(167, 0.87),
+    "head_warp1": lambda: head_warp(173, 1.0),
+    "head_warp2": lambda: head_warp(179, 0.88),
+    "turbo_fail1": lambda: turbo_fail(181, 1.0),
+    "coolant_boil1": lambda: coolant_boil(193, 1.0),
+    "coolant_boil2": lambda: coolant_boil(197, 0.88),
+    "turbo_fail2": lambda: turbo_fail(191, 0.87),
 }
 
 

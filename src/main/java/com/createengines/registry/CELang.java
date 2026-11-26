@@ -46,7 +46,7 @@ public final class CELang {
 		raw("goggles.throttle", "Throttle Body");
 		raw("goggles.throttle.open", "Open: %1$s%%");
 		raw("goggles.throttle.hint",
-			"Redstone opens it from its idle stop to wide open. Less air means less power, and its linkage trims the injectors' fuel to match. Set the wide-open bore above 100% and a full signal opens it past the plain intake: a fast engine that cannot fill gets more air, which is how it turns faster");
+			"Redstone opens it from its idle stop to wide open. Less air means less power, and its linkage trims the injectors' fuel to match. Set the wide-open bore above 100%% and a full signal opens it past the plain intake: a fast engine that cannot fill gets more air, which is how it turns faster");
 
 		raw("value.maf_target", "Mixture Target");
 		raw("value.boost_limit", "Boost Limit");
@@ -159,7 +159,7 @@ public final class CELang {
 		raw("goggles.recorder.span", "The last %1$s, oldest first");
 		raw("goggles.recorder.speed", "Speed   %1$s  up to %2$s RPM");
 		raw("goggles.recorder.load", "Load    %1$s  up to %2$s%% of what it could give");
-		raw("goggles.recorder.warmth", "Warmth  %1$s  now %2$s%% of a warm engine");
+		raw("goggles.recorder.warmth", "Temperature  %1$s  now %2$s°C");
 		raw("goggles.recorder.states", "State   %1$s");
 		raw("goggles.recorder.event", "%1$s ago: %2$s to %3$s");
 		raw("goggles.recorder.event_cause", "%1$s ago: %2$s to %3$s, %4$s");
@@ -168,7 +168,7 @@ public final class CELang {
 		raw("value.replay.live", "Live");
 		raw("value.replay.back", "%1$s back");
 		raw("goggles.recorder.replay", "Replaying %1$s ago");
-		raw("goggles.recorder.replay.figures", "Then: %1$s, %2$s RPM, load %3$s%%, warmth %4$s%%");
+		raw("goggles.recorder.replay.figures", "Then: %1$s, %2$s RPM, load %3$s%%, %4$s°C");
 		raw("goggles.recorder.replay.fault", "The engine's fault then: %1$s");
 		raw("goggles.recorder.replay.hint", "Turn the dial on the box to replay an earlier moment: what the engine was doing then, and what was wrong with it. Live shows the latest");
 		raw("goggles.recorder.state.stalled", "stalled");
@@ -186,6 +186,8 @@ public final class CELang {
 		raw("goggles.recorder.cause.gasket_blown", "a head gasket blew");
 		raw("goggles.recorder.cause.piston_seized", "a piston seized");
 		raw("goggles.recorder.cause.apex_failed", "a rotor's apex seals failed");
+		raw("goggles.recorder.cause.head_warped", "a cylinder head warped from the heat");
+		raw("goggles.recorder.cause.turbo_failed", "a turbocharger failed");
 		raw("goggles.recorder.event_failure", "%1$s ago: %2$s");
 		raw("goggles.dyno.hint", "This is what the engine can be rated for at each speed: after its fuel, mixture, boost and how roughly it runs. Redstone rises as its speed climbs to the speed of its peak power");
 		raw("goggles.turbo", "Turbocharger");
@@ -355,6 +357,17 @@ public final class CELang {
 		raw("goggles.wear.apex", "Apex seal wear: %1$s%%");
 		raw("goggles.wear.heavy_seals", "Heavy wear: only a new set of apex seals cures it, and a set this worn can fail");
 		raw("goggles.fault.apex_failed", "Apex seals failed: fit a new set to run this rotor again");
+		raw("goggles.fault.warped_head", "Head warped by heat: it leaks until the head is replaced");
+		raw("goggles.wear.plug", "Spark plug wear: %1$s%%");
+		raw("goggles.wear.heavy_plug", "Heavy wear: only a new spark plug cures it, and one this worn misses sparks");
+		raw("goggles.wear.turbo", "Turbocharger wear: %1$s%%");
+		raw("goggles.wear.turbo_failed", "Turbocharger failed: it makes no boost until it is replaced");
+		raw("goggles.wear.heavy_turbo", "Heavy wear: only a new turbocharger cures it, and one this worn can fail");
+		raw("goggles.wear.rod.light", "Light connecting rod: less drag at speed, wears fast under load");
+		raw("goggles.wear.rod.heavy", "Heavy connecting rod: takes load well, drags more at speed");
+		raw("tooltip.rod.light", "A little less friction at speed; wears fast under load");
+		raw("tooltip.rod.heavy", "Takes load well; a little more friction at speed");
+		raw("tooltip.wear.failed", "Wrecked: placing it again repairs nothing");
 		raw("message.wear.seals_fitted", "New apex seals fitted");
 		raw("goggles.fault.no_plug", "No spark plug: the chamber is too long and thin for the charge to light itself");
 
@@ -396,6 +409,18 @@ public final class CELang {
 		raw("goggles.head.coil.hint", "It draws only from batteries that are not a reserve. With none to spare the plug sparks exactly as it would without it");
 		raw("goggles.head.no_coil", "Right-click with an Ignition Coil to spend battery charge on a hotter spark");
 		raw("part.needs_plug", "Fit a spark plug first: the coil sits on it");
+
+		raw("goggles.radiator", "Radiator");
+		raw("goggles.radiator.no_engine", "Not touching an engine's crankshaft, cylinder or cylinder head, or the engine has not run lately");
+		raw("goggles.radiator.empty", "Empty: fill it with water or Engine Coolant by bucket or pipe");
+		raw("goggles.radiator.shedding", "Shedding %1$s heat a second");
+		raw("goggles.radiator.air.still", "Still air: an Encased Fan blowing at it, or speed on a moving structure, sheds more");
+		raw("goggles.radiator.air.fan", "Fan air: %1$sx the still-air cooling");
+		raw("goggles.radiator.air.ram", "Ram air: %1$sx the still-air cooling");
+		raw("goggles.radiator.boiling", "Boiling: the engine is critically hot and coolant is being lost");
+		raw("goggles.radiator.basin", "Warm enough to heat a basin or a boiler on top of it");
+		raw("goggles.radiator.hint",
+			"A closed loop: it uses up no coolant unless the engine is critically hot");
 
 		raw("goggles.sump", "Oil Sump");
 		raw("tooltip.jerry_can.empty", "Empty: holds %1$s mB of one fluid");
@@ -593,7 +618,7 @@ public final class CELang {
 		raw("display.engine.speed", "%1$s RPM");
 		raw("display.engine.power", "%1$s hp");
 		raw("display.engine.load", "Load %1$s%%");
-		raw("display.engine.temperature", "Temp %1$s%%");
+		raw("display.engine.temperature", "Temp %1$s°C");
 		raw("display.engine.oil", "Oil %1$s%%");
 		raw("display.engine.boost", "Boost +%1$s bar");
 		raw("display.engine.torque", "%1$s SU/RPM");
@@ -611,10 +636,13 @@ public final class CELang {
 			"Spent oil drags the engine a little. Set an oil pan's Oil Exchange to change it as the engine turns");
 		raw("goggles.oil_filtered", "Oil filter fitted");
 		raw("goggles.oil_use", "Oil used: %1$s mB a minute");
-		raw("goggles.temperature.cold", "Cold: drags until warm");
-		raw("goggles.temperature.cool", "Cool: breathes better");
-		raw("goggles.temperature.warm", "Warm");
-		raw("goggles.temperature.cooling", "Cooling down");
+		raw("goggles.temperature.cold", "%1$s°C  Cold: drags until warm");
+		raw("goggles.temperature.cool", "%1$s°C  Cool: breathes better");
+		raw("goggles.temperature.warm", "%1$s°C  Warm");
+		raw("goggles.temperature.hot", "%1$s°C  Hot");
+		raw("goggles.temperature.overheating", "%1$s°C  Overheating: losing power");
+		raw("goggles.temperature.critical", "%1$s°C  Critical: cool it down");
+		raw("goggles.temperature.cooling", "%1$s°C  Cooling down");
 		raw("goggles.temperature.cooling.hint", "Running a cold engine drags and burns fuel poorly, and pressed oil and ethanol are the worst at it. Gasoline copes best");
 		raw("goggles.temperature.preheated", "Warmed by a heat source against the exchanger");
 		raw("goggles.health.healthy", "Healthy");

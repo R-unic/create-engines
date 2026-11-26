@@ -249,7 +249,9 @@ public class PackToolsGameTests {
 				if (part.part().is(com.createengines.registry.CEItems.INJECTOR_ASSIST.get()))
 					state = state.setValue(com.createengines.content.head.CylinderHeadBlock.HAS_INJECTOR, true);
 				if (part.part().is(com.createengines.registry.CEItems.IGNITION_COIL.get()))
-					state = state.setValue(com.createengines.content.head.CylinderHeadBlock.HAS_SPARK_PLUG, true);
+					state = state.setValue(state.getBlock() instanceof com.createengines.content.rotor.RotorHousingBlock
+						? com.createengines.content.rotor.RotorHousingBlock.HAS_SPARK_PLUG
+						: com.createengines.content.head.CylinderHeadBlock.HAS_SPARK_PLUG, true);
 				helper.getLevel()
 					.setBlock(helper.absolutePos(at), state, 3);
 				net.minecraft.world.item.ItemStack offered = part.part()

@@ -16,7 +16,7 @@ public final class TurboWear {
 	/** A spent turbo makes this much less boost. */
 	public static final double MAX_BOOST_LOSS = 0.3;
 	/** Failure chance per second of a spent turbo at the reference boost. */
-	public static final double FAILURE_RATE = 0.02;
+	public static final double FAILURE_RATE = 0.002;
 	/** Boost is read up to this many bars over ambient and no further, so absurd inputs cannot overflow the figures. */
 	public static final double MAX_BOOST = 50;
 	/** Boost beyond this many bars over ambient is overspeed: the chance of failure doubles for each bar past it. */

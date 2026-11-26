@@ -176,7 +176,9 @@ final class Combustion {
 		double air = charge.fresh * charge.moles;
 		double equivalence = air < CylinderModel.MIN_FRESH_AIR ? Double.MAX_VALUE
 			: fuelPending * burningFuel.airPerMb() / air;
-		if (equivalence < IgnitionCoil.leanLimit(LEAN_LIMIT, coiled))
+		if (owner.wear != Wear.NONE && owner.missesSpark(owner.wear.misfire()))
+			return;
+		if (equivalence < IgnitionCoil.leanLimit(LEAN_LIMIT, coiled) * (owner.wear == Wear.NONE ? 1 : owner.wear.lean()))
 			current.flameOut = -1;
 		else if (equivalence > CylinderModel.RICH_LIMIT)
 			current.flameOut = 1;
@@ -218,7 +220,7 @@ final class Combustion {
 		// engine: a charge runs hotter with speed alone, and that is the engine's business, not the boost's.
 		double boost = Math.min(1, Math.max(0, (owner.intakePressure - 1) / PREIGNITION_FULL_BOOST));
 		preignitionLoss = owner.ignition.installed() && boost > 0
-			? burningFuel.preignitionLoss(charge.temperature) * boost : 0;
+			? burningFuel.preignitionLoss(charge.temperature + Thermal.MAX_HOT_PREIGNITION * owner.hotness) * boost : 0;
 		current.preignition = Math.max(current.preignition, preignitionLoss);
 	}
 
@@ -251,9 +253,11 @@ final class Combustion {
 		charge.fresh = Math.max(0, (charge.fresh * charge.moles - burned * burningFuel.airPerMb()) / charge.moles);
 		double heat = burned * burningFuel.energyPerMb() * Mixture.efficiency(burnEquivalence)
 			* Thermal.burnFactor(owner.coldness, burningFuel.coldSensitivity()) * (1 - preignitionLoss)
-			* (owner.wear == Wear.NONE ? 1 : owner.wear.seal());
+			* (owner.wear == Wear.NONE ? 1 : owner.wear.seal())
+			* (1 - Thermal.MAX_HOT_BURN_LOSS * owner.hotness);
 		charge.temperature += heat * (CylinderModel.GAMMA - 1) / (charge.moles + FUEL_HEAT_CAPACITY * fuelPending);
 		current.fuelBurned += burned;
+		owner.burned(heat * burningFuel.heatFactor());
 		if (fuelPending <= CylinderModel.FUEL_EPSILON)
 			burning = false;
 	}

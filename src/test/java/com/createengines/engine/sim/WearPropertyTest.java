@@ -329,10 +329,10 @@ class WearPropertyTest {
 	@Test
 	void anyFailureCountsPackAndReadBackHeldAt127() {
 		for (int i = 0; i < ROUNDS; i++) {
-			int[] counts = new int[4];
-			for (int k = 0; k < 4; k++)
+			int[] counts = new int[6];
+			for (int k = 0; k < 6; k++)
 				counts[k] = random.nextInt(4) == 0 ? random.nextInt() : random.nextInt(200) - 20;
-			int packed = WearFailures.pack(counts[0], counts[1], counts[2], counts[3]);
+			long packed = WearFailures.pack(counts[0], counts[1], counts[2], counts[3], counts[4], counts[5]);
 			assertTrue(packed >= 0, "a reading is never negative");
 			for (WearFailures.Kind kind : WearFailures.Kind.values())
 				assertEquals(Math.clamp(counts[kind.ordinal()], 0, 127), WearFailures.count(packed, kind), kind.name());
@@ -342,10 +342,10 @@ class WearPropertyTest {
 	@Test
 	void oneMoreFailureOfAKindRisesThatKindOnly() {
 		for (WearFailures.Kind more : WearFailures.Kind.values()) {
-			int[] counts = {3, 3, 3, 3};
-			int before = WearFailures.pack(counts[0], counts[1], counts[2], counts[3]);
+			int[] counts = {3, 3, 3, 3, 3, 3};
+			long before = WearFailures.pack(counts[0], counts[1], counts[2], counts[3], counts[4], counts[5]);
 			counts[more.ordinal()]++;
-			int after = WearFailures.pack(counts[0], counts[1], counts[2], counts[3]);
+			long after = WearFailures.pack(counts[0], counts[1], counts[2], counts[3], counts[4], counts[5]);
 			for (WearFailures.Kind kind : WearFailures.Kind.values()) {
 				assertEquals(kind == more, WearFailures.rose(before, after, kind), more + " seen as " + kind);
 				assertFalse(WearFailures.rose(after, before, kind), "a repair is not a rise");

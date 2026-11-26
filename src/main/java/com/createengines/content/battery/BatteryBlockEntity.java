@@ -356,6 +356,34 @@ public class BatteryBlockEntity extends SmartBlockEntity implements IHaveGoggleI
 		return best;
 	}
 
+	// The block's item keeps the wear, so breaking a battery and placing it again does not make it new
+
+	@Override
+	protected void collectImplicitComponents(net.minecraft.core.component.DataComponentMap.Builder components) {
+		super.collectImplicitComponents(components);
+		if (wear > 0)
+			components.set(com.createengines.registry.CEComponents.WEAR.get(), wear);
+	}
+
+	@Override
+	protected void applyImplicitComponents(DataComponentInput components) {
+		super.applyImplicitComponents(components);
+		Double carried = components.get(com.createengines.registry.CEComponents.WEAR.get());
+		if (carried == null)
+			return;
+		wear = Wear.clamp(carried);
+		charge = Math.min(charge, capacity());
+		setChanged();
+		sendData();
+	}
+
+	@Override
+	@SuppressWarnings("deprecation")
+	public void removeComponentsFromTag(CompoundTag tag) {
+		super.removeComponentsFromTag(tag);
+		tag.remove("Wear");
+	}
+
 	@Override
 	protected void write(CompoundTag tag, HolderLookup.Provider registries, boolean clientPacket) {
 		super.write(tag, registries, clientPacket);

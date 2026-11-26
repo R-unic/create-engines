@@ -33,7 +33,14 @@ public final class CEDataMaps {
 	 */
 	public record FuelProperties(double energyPerMb, double autoignitionTemp, double airPerMb, double coldSensitivity,
 								 double chargeCooling, double sootFactor, double preignitionTemp,
-								 java.util.Optional<Double> sulfur, double flammability) {
+								 java.util.Optional<Double> sulfur, double flammability, double heatFactor) {
+
+		/** A fuel that heats the block as every fuel did before {@code heat_factor} existed. */
+		public FuelProperties(double energyPerMb, double autoignitionTemp, double airPerMb, double coldSensitivity,
+							  double chargeCooling, double sootFactor, double preignitionTemp, java.util.Optional<Double> sulfur,
+							  double flammability) {
+			this(energyPerMb, autoignitionTemp, airPerMb, coldSensitivity, chargeCooling, sootFactor, preignitionTemp, sulfur, flammability, 1);
+		}
 
 		/** A fuel that burns in a spill the way every fuel did before {@code flammability} existed. */
 		public FuelProperties(double energyPerMb, double autoignitionTemp, double airPerMb, double coldSensitivity,
@@ -50,7 +57,8 @@ public final class CEDataMaps {
 				Codec.DOUBLE.optionalFieldOf("soot_factor", 1.0).forGetter(FuelProperties::sootFactor),
 				Codec.DOUBLE.optionalFieldOf("preignition_temperature", 0.0).forGetter(FuelProperties::preignitionTemp),
 				Codec.DOUBLE.optionalFieldOf("sulfur").forGetter(FuelProperties::sulfur),
-				Codec.DOUBLE.optionalFieldOf("flammability", 1.0).forGetter(FuelProperties::flammability))
+				Codec.DOUBLE.optionalFieldOf("flammability", 1.0).forGetter(FuelProperties::flammability),
+				Codec.DOUBLE.optionalFieldOf("heat_factor", 1.0).forGetter(FuelProperties::heatFactor))
 			.apply(i, FuelProperties::new));
 
 		/** The sulfur a fuel that does not set one gives off: its soot factor, as before the field existed. */
@@ -60,7 +68,7 @@ public final class CEDataMaps {
 
 		public FuelSpec toSpec() {
 			return new FuelSpec(energyPerMb, autoignitionTemp, airPerMb, coldSensitivity, chargeCooling, sootFactor,
-				preignitionTemp > 0 ? preignitionTemp : autoignitionTemp, effectiveSulfur(), flammability);
+				preignitionTemp > 0 ? preignitionTemp : autoignitionTemp, effectiveSulfur(), flammability, heatFactor);
 		}
 	}
 

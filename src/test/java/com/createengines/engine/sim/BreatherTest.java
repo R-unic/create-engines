@@ -211,6 +211,25 @@ class BreatherTest {
 	}
 
 	@Test
+	void aWornTurboMakesItsShareOfTheBoostItsWheelWouldGiveSound() {
+		EngineSimulation sim = bare();
+		Lung hotExhaust = new Lung();
+		hotExhaust.heat = 5;
+		Lung breathes = new Lung();
+		sim.addAttachedSource(hotExhaust);
+		sim.addAttachedSource(breathes);
+		Turbocharger turbo = new Turbocharger(List.of(hotExhaust), List.of(breathes), 1);
+		sim.addTurbo(turbo);
+		run(sim, 600);
+		double sound = turbo.boost();
+		assertTrue(sound > 0, "spooled");
+		turbo.output = 0.7;
+		assertEquals(0.7 * sound, turbo.boost(), 1e-12);
+		turbo.output = 0;
+		assertEquals(0, turbo.boost(), 0, "a failed one makes none");
+	}
+
+	@Test
 	void withNoCompressorsAnAttachedSourceStillBreathesThickAirAndThinAirAtAltitude() {
 		EngineSimulation sim = bare();
 		Lung lung = new Lung();

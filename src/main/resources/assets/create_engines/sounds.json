@@ -240,5 +240,41 @@
         "attenuation_distance": 32
       }
     ]
+  },
+  "head_warp": {
+    "sounds": [
+      {
+        "name": "create_engines:head_warp1",
+        "attenuation_distance": 32
+      },
+      {
+        "name": "create_engines:head_warp2",
+        "attenuation_distance": 32
+      }
+    ]
+  },
+  "coolant_boil": {
+    "sounds": [
+      {
+        "name": "create_engines:coolant_boil1",
+        "attenuation_distance": 24
+      },
+      {
+        "name": "create_engines:coolant_boil2",
+        "attenuation_distance": 24
+      }
+    ]
+  },
+  "turbo_fail": {
+    "sounds": [
+      {
+        "name": "create_engines:turbo_fail1",
+        "attenuation_distance": 32
+      },
+      {
+        "name": "create_engines:turbo_fail2",
+        "attenuation_distance": 32
+      }
+    ]
   }
 }

@@ -76,7 +76,8 @@ public final class ViewerEntries {
 		parts.add(new Part(CEItems.PRECISION_INJECTOR.asStack(), headsAndRotors, true));
 		parts.add(new Part(CEItems.SPARK_PLUG.asStack(), headsAndRotors, false));
 		parts.add(new Part(CEItems.INJECTOR_ASSIST.asStack(), stacks(CEBlocks.CYLINDER_HEAD.asStack(), CEBlocks.PRECISION_CYLINDER_HEAD.asStack()), false));
-		parts.add(new Part(CEItems.IGNITION_COIL.asStack(), stacks(CEBlocks.CYLINDER_HEAD.asStack(), CEBlocks.PRECISION_CYLINDER_HEAD.asStack()), false));
+		parts.add(new Part(CEItems.IGNITION_COIL.asStack(), stacks(CEBlocks.CYLINDER_HEAD.asStack(), CEBlocks.PRECISION_CYLINDER_HEAD.asStack(),
+			CEBlocks.ROTOR_HOUSING.asStack()), false));
 		parts.add(new Part(CEItems.ROTOR.asStack(), stacks(CEBlocks.ROTOR_HOUSING.asStack()), false));
 		parts.add(new Part(CEItems.OIL_FILTER.asStack(), stacks(CEBlocks.SUMP.asStack()), false));
 		return parts;

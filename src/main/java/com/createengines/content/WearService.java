@@ -71,6 +71,43 @@ public final class WearService {
 		};
 	}
 
+	/** A spark plug went into or came out of a head or a rotor housing: the new one starts with the wear {@code carried} on its stack. */
+	public static void plugChanged(Level level, BlockPos pos, boolean had, boolean has, double carried) {
+		if (level.isClientSide || had == has)
+			return;
+		if (LoadedBlocks.blockEntity(level, pos) instanceof CylinderHeadBlockEntity head)
+			head.fitPlug(has ? carried : 0);
+		else if (LoadedBlocks.blockEntity(level, pos) instanceof RotorHousingBlockEntity housing)
+			housing.fitPlug(has ? carried : 0);
+	}
+
+	/** A part coming out of a head or a rotor housing: the spark plug leaves with its wear, and anything else as it is. */
+	public static ItemStack dressPlug(Level level, BlockPos pos, boolean plug, ItemStack part) {
+		if (!plug)
+			return part;
+		if (LoadedBlocks.blockEntity(level, pos) instanceof CylinderHeadBlockEntity head)
+			return withWear(part, head.plugWear());
+		return LoadedBlocks.blockEntity(level, pos) instanceof RotorHousingBlockEntity housing ? withWear(part, housing.plugWear()) : part;
+	}
+
+	/** The connecting rod a stack is, or null if it is not one. */
+	public static Wear.Rod rodOf(ItemStack stack) {
+		if (CEItems.CONNECTING_ROD.isIn(stack))
+			return Wear.Rod.STANDARD;
+		if (CEItems.LIGHT_CONNECTING_ROD.isIn(stack))
+			return Wear.Rod.LIGHT;
+		return CEItems.HEAVY_CONNECTING_ROD.isIn(stack) ? Wear.Rod.HEAVY : null;
+	}
+
+	/** The item that is a connecting rod of this kind. */
+	public static ItemStack itemFor(Wear.Rod kind) {
+		return switch (kind) {
+			case STANDARD -> CEItems.CONNECTING_ROD.asStack();
+			case LIGHT -> CEItems.LIGHT_CONNECTING_ROD.asStack();
+			case HEAVY -> CEItems.HEAVY_CONNECTING_ROD.asStack();
+		};
+	}
+
 	/** An item used on a cylinder head: a gasket goes in, a Service Kit sets right light wear. */
 	public static ItemInteractionResult onHead(ItemStack stack, Level level, BlockPos pos, Player player, InteractionHand hand) {
 		Wear.Gasket tier = gasketOf(stack);
@@ -115,7 +152,7 @@ public final class WearService {
 
 	/** A Service Kit used on a cylinder: it pulls a seized piston out, or else sets right the light wear of the piston and rod fitted. */
 	public static ItemInteractionResult onCylinder(ItemStack stack, Level level, BlockPos pos, Player player, InteractionHand hand) {
-		boolean part = CEItems.PISTON.isIn(stack) || CEItems.FORGED_PISTON.isIn(stack) || CEItems.CONNECTING_ROD.isIn(stack);
+		boolean part = CEItems.PISTON.isIn(stack) || CEItems.FORGED_PISTON.isIn(stack) || rodOf(stack) != null;
 		if (!CEItems.SERVICE_KIT.isIn(stack) && !part)
 			return ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION;
 		if (!level.isClientSide && LoadedBlocks.blockEntity(level, pos) instanceof CylinderBlockEntity body) {
@@ -170,6 +207,16 @@ public final class WearService {
 	 * An item used on a rotor housing: a set of apex seals goes in (and replaces whatever set was there, a failed one too, which is scrap),
 	 * and a Service Kit sets right light wear. Anything else is the housing's ordinary parts, which are not this class's.
 	 */
+	/** A Service Kit used on a turbocharger: it sets right light wear. */
+	public static ItemInteractionResult onTurbo(ItemStack stack, Level level, BlockPos pos, Player player, InteractionHand hand) {
+		if (!CEItems.SERVICE_KIT.isIn(stack))
+			return ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION;
+		if (!level.isClientSide && LoadedBlocks.blockEntity(level, pos) instanceof com.createengines.content.turbo.TurbochargerBlockEntity turbo)
+			service(stack, level, pos, player, hand, turbo.service());
+		return ItemInteractionResult.sidedSuccess(level.isClientSide);
+	}
+
+	/** An item used on a rotor housing: seals or a Service Kit. */
 	public static ItemInteractionResult onRotor(ItemStack stack, Level level, BlockPos pos, Player player, InteractionHand hand) {
 		boolean seals = CEItems.APEX_SEALS.isIn(stack);
 		boolean kit = CEItems.SERVICE_KIT.isIn(stack);
@@ -275,7 +322,7 @@ public final class WearService {
 		if (slot.property() == CylinderBlock.HAS_PISTON)
 			return withWear(part, body.pistonWear());
 		if (slot.property() == CylinderBlock.HAS_ROD)
-			return withWear(part, body.rodWear());
+			return withWear(itemFor(body.rodKind()), body.rodWear());
 		return part;
 	}
 }

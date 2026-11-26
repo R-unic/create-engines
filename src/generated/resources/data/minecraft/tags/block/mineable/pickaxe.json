@@ -31,6 +31,7 @@
     "create_engines:dyno",
     "create_engines:black_box",
     "create_engines:sump",
+    "create_engines:radiator",
     "create_engines:reboiler",
     "create_engines:column_section",
     "create_engines:condenser",

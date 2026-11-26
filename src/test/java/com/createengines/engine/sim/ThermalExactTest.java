@@ -74,11 +74,15 @@ class ThermalExactTest {
 	}
 
 	@Test
-	void heatIntoTheBlockIsTheBlendOfExhaustAndFriction() {
-		assertEquals(10 * 0.65 + 20 * 0.35, Thermal.heatIn(10, 20), 1e-12);
-		assertEquals(0, Thermal.heatIn(0, 0), 0);
-		assertEquals(6.5, Thermal.heatIn(10, 0), 1e-12);
-		assertEquals(7, Thermal.heatIn(0, 20), 1e-12);
+	void heatIntoTheBlockIsTheBlendOfFuelOtherExhaustAndFriction() {
+		assertEquals(10 * 0.0804 + 30 * 0.65 + 4 * 0.35, Thermal.heatIn(10, 30, 4, 2), 1e-12);
+		assertEquals(0, Thermal.heatIn(0, 0, 0, 1), 0);
+		assertEquals(0.804, Thermal.heatIn(10, 0, 0, 1), 1e-12);
+		assertEquals(6.5, Thermal.heatIn(0, 10, 0, 1), 1e-12);
+		// Friction weighs its old share up to 2.5 a cylinder and a tenth past it
+		assertEquals(5 * 0.35, Thermal.heatIn(0, 0, 5, 2), 1e-12);
+		assertEquals(5 * 0.35 + 15 * 0.1, Thermal.heatIn(0, 0, 20, 2), 1e-12);
+		assertEquals(2.5 * 0.35 + 17.5 * 0.1, Thermal.heatIn(0, 0, 20, 0), 1e-12, "no cylinders is read as one");
 	}
 
 	@Test

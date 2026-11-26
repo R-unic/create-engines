@@ -15,6 +15,7 @@ import com.createengines.content.blackbox.BlackBoxBlock;
 import com.createengines.content.crankshaft.CrankshaftBlock;
 import com.createengines.content.flywheel.CastFlywheelBlock;
 import com.createengines.content.head.GalleryMember;
+import com.createengines.content.radiator.RadiatorBlockEntity;
 import com.createengines.content.transmission.TransmissionBlock;
 import com.createengines.content.sump.SumpBlockEntity;
 import com.simibubi.create.AllBlocks;
@@ -32,7 +33,7 @@ import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 
 /**
  * The parts that belong to an engine's build without being part of what the scanner follows: the Create pipes, pumps, valves and
- * tanks that carry fuel, oil, coolant and water to its heads, rotor housings, oil pan and heat exchanger (its fluid system), and
+ * tanks that carry fuel, oil, coolant and water to its heads, rotor housings, oil pan, radiators and heat exchanger (its fluid system), and
  * the Black Box recorders set against it. {@link BlueprintRecorder} puts them in a blueprint after the engine's own blocks.
  * <p>
  * Reads only, and never loads a chunk. None of these is in {@code EngineLayout#members()}, so they never trigger a rescan, and a
@@ -107,7 +108,8 @@ public final class EngineAttachments {
 				continue;
 			boolean exchanger = false;
 			boolean holdsFluid = false;
-			if (level.getBlockEntity(pos) instanceof GalleryMember || level.getBlockEntity(pos) instanceof SumpBlockEntity)
+			if (level.getBlockEntity(pos) instanceof GalleryMember || level.getBlockEntity(pos) instanceof SumpBlockEntity
+				|| level.getBlockEntity(pos) instanceof RadiatorBlockEntity)
 				holdsFluid = true;
 			else if (level.getBlockEntity(pos) instanceof HeatExchangerBlockEntity)
 				holdsFluid = exchanger = true;

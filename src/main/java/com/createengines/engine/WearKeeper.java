@@ -9,6 +9,12 @@ import org.jetbrains.annotations.Nullable;
 
 import com.createengines.content.cylinder.CylinderBlock;
 import com.createengines.content.cylinder.CylinderBlockEntity;
+import com.createengines.content.head.CylinderHeadBlock;
+import com.createengines.content.rotor.RotorHousingBlock;
+import com.createengines.content.turbo.TurbochargerBlockEntity;
+import com.createengines.engine.sim.TurboWear;
+import com.createengines.engine.sim.Turbocharger;
+import com.createengines.engine.sim.PlugWear;
 import com.createengines.content.head.CylinderHeadBlockEntity;
 import com.createengines.content.rotor.RotorHousingBlockEntity;
 import com.createengines.engine.sim.ApexSeals;
@@ -61,6 +67,9 @@ public final class WearKeeper {
 	/** A film that is used in place of the engine's own, or null: a test sets it to run an engine dry or keep it oiled. */
 	public static volatile @Nullable DoubleSupplier filmOverride;
 
+	/** A block temperature used in place of the engine's own, or null: a test sets it to run an engine critically hot. */
+	public static volatile @Nullable DoubleSupplier temperatureOverride;
+
 	/**
 	 * The wear mode's faults of this layout, by cylinder position: a blown gasket, a broken head and a thrown rod's wreck, each of which
 	 * stops its cylinder. The scanner does not read block entities, so the controller adds these to what it found.
@@ -80,6 +89,8 @@ public final class WearKeeper {
 				bits |= CylinderFault.BROKEN_HEAD.bit();
 			else if (head != null && head.blown())
 				bits |= CylinderFault.BLOWN_GASKET.bit();
+			if (head != null && !head.broken() && head.warped())
+				bits |= CylinderFault.WARPED_HEAD.bit();
 			CylinderBlockEntity body = body(level, cylinder);
 			if (body != null && body.thrown())
 				bits |= CylinderFault.THROWN_ROD.bit();
@@ -113,15 +124,20 @@ public final class WearKeeper {
 	 * nothing for the one that is not there (an unfinished build is not a worn one).
 	 */
 	public static float total(Level level, EngineLayout layout) {
-		// A cylinder counts three parts at most (a rotor housing one) and a battery one
-		double[] parts = new double[3 * layout.cylinders()
-			.size() + layout.batteries()
+		// A cylinder counts four parts at most (a rotor housing two) and a battery one
+		double[] parts = new double[4 * layout.cylinders()
+			.size() + layout.turbos()
+				.size() + layout.batteries()
 				.size()];
 		int count = 0;
 		for (Cylinder cylinder : layout.cylinders()) {
 			if (cylinder.rotary()) {
-				if (level.isLoaded(cylinder.pos()) && LoadedBlocks.blockEntity(level, cylinder.pos()) instanceof com.createengines.content.rotor.RotorHousingBlockEntity housing)
+				// The chambers of one housing share its seals and plug, which are counted once
+				if (cylinder.chamber() == 0 && rotor(level, cylinder) instanceof RotorHousingBlockEntity housing) {
 					parts[count++] = housing.apexFailed() ? 1.0 : housing.apexWear();
+					if (housing.getBlockState().getValue(RotorHousingBlock.HAS_SPARK_PLUG))
+						parts[count++] = housing.plugWear();
+				}
 				continue;
 			}
 			CylinderBlockEntity body = body(level, cylinder);
@@ -138,9 +154,15 @@ public final class WearKeeper {
 				}
 			}
 			CylinderHeadBlockEntity head = head(level, cylinder);
-			if (head != null)
-				parts[count++] = head.broken() || head.blown() ? 1.0 : head.gasketWear();
+			if (head != null) {
+				parts[count++] = head.broken() || head.blown() || head.warped() ? 1.0 : head.gasketWear();
+				if (head.getBlockState().getValue(CylinderHeadBlock.HAS_SPARK_PLUG))
+					parts[count++] = head.plugWear();
+			}
 		}
+		for (EngineLayout.Turbo turbo : layout.turbos())
+			if (turbo(level, turbo.pos()) instanceof TurbochargerBlockEntity be)
+				parts[count++] = be.failed() ? 1.0 : be.wear();
 		for (BlockPos pos : layout.batteries())
 			if (level.isLoaded(pos) && LoadedBlocks.blockEntity(level, pos) instanceof com.createengines.content.battery.BatteryBlockEntity battery)
 				parts[count++] = battery.wear();
@@ -151,8 +173,13 @@ public final class WearKeeper {
 	 * How many parts of each kind have failed, from {@link #wearFaults} (see {@link WearFailures}): rods thrown, gaskets blown, pistons seized and sets of
 	 * apex seals failed. A thrown rod breaks its head too, which is the same failure and not two, and a rotor housing is one set of seals whatever its chambers.
 	 */
-	public static int failureCounts(Map<BlockPos, Integer> faults) {
-		int rods = 0, gaskets = 0, seizures = 0, apex = 0;
+	public static long failureCounts(Map<BlockPos, Integer> faults) {
+		return failureCounts(faults, 0);
+	}
+
+	/** As above, with the failed turbochargers, which are no cylinder's fault, counted in. */
+	public static long failureCounts(Map<BlockPos, Integer> faults, int turbos) {
+		int rods = 0, gaskets = 0, seizures = 0, apex = 0, warps = 0;
 		for (int bits : faults.values()) {
 			if ((bits & CylinderFault.THROWN_ROD.bit()) != 0)
 				rods++;
@@ -162,8 +189,57 @@ public final class WearKeeper {
 				seizures++;
 			if ((bits & CylinderFault.APEX_FAILED.bit()) != 0)
 				apex++;
+			if ((bits & CylinderFault.WARPED_HEAD.bit()) != 0)
+				warps++;
 		}
-		return WearFailures.pack(rods, gaskets, seizures, apex);
+		return WearFailures.pack(rods, gaskets, seizures, apex, warps, turbos);
+	}
+
+	private static @Nullable TurbochargerBlockEntity turbo(Level level, BlockPos pos) {
+		return level.isLoaded(pos) && LoadedBlocks.blockEntity(level, pos) instanceof TurbochargerBlockEntity turbo ? turbo : null;
+	}
+
+	/** How many of this layout's turbochargers have failed. */
+	public static int failedTurbos(Level level, EngineLayout layout) {
+		int failed = 0;
+		for (EngineLayout.Turbo placed : layout.turbos())
+			if (turbo(level, placed.pos()) instanceof TurbochargerBlockEntity be && be.failed())
+				failed++;
+		return failed;
+	}
+
+	/**
+	 * Wears the turbochargers by one interval (see {@link TurboWear}) and rolls for a failure. {@code sims} are the engine's turbos, in
+	 * the layout's order. A stopped engine's stand still. Returns whether one failed.
+	 */
+	public boolean tickTurbos(Level level, List<Turbocharger> sims, double temperature, double film, boolean stopped) {
+		if (stopped)
+			return false;
+		double dt = INTERVAL * EngineSimulation.TICK;
+		DoubleSupplier forcedFilm = filmOverride;
+		if (forcedFilm != null)
+			film = forcedFilm.getAsDouble();
+		DoubleSupplier forcedTemperature = temperatureOverride;
+		if (forcedTemperature != null)
+			temperature = forcedTemperature.getAsDouble();
+		for (int i = 0; i < sims.size(); i++) {
+			BlockPos pos = layout.turbos()
+				.get(i)
+				.pos();
+			TurbochargerBlockEntity be = turbo(level, pos);
+			if (be == null || be.failed())
+				continue;
+			double boost = sims.get(i)
+				.boost();
+			be.addWear(TurboWear.wear(boost, temperature, film, dt));
+			if (roll(level, TurboWear.failureChance(be.wear(), boost, dt))) {
+				be.fail();
+				level.playSound(null, pos, CESounds.TURBO_FAIL.get(), SoundSource.BLOCKS, 1.2f, 1.0f);
+				smoke(level, pos);
+				return true;
+			}
+		}
+		return false;
 	}
 
 	/** Gives every working cylinder the state its saved wear says. */
@@ -174,16 +250,30 @@ public final class WearKeeper {
 				.get(i);
 			if (model != null && cylinder.rotary()) {
 				RotorHousingBlockEntity housing = rotor(level, cylinder);
-				model.wear = housing == null ? Wear.NONE : ApexSeals.state(housing.apexWear());
+				model.wear = housing == null ? Wear.NONE : rotorState(housing);
 				continue;
 			}
 			if (model == null || cylinder.rotary())
 				continue;
 			CylinderBlockEntity body = body(level, cylinder);
 			CylinderHeadBlockEntity head = head(level, cylinder);
-			model.wear = body == null || head == null ? Wear.NONE
-				: Wear.of(body.pistonWear(), head.gasket(), head.gasketWear(), head.hasGasketItem());
+			model.wear = body == null || head == null ? Wear.NONE : worn(body, head);
 		}
+	}
+
+	/** What a piston cylinder reads from its worn parts: the piston and gasket, its kind of rod, its plug and a warp in its head. */
+	private static Wear.State worn(CylinderBlockEntity body, CylinderHeadBlockEntity head) {
+		Wear.State state = Wear.of(body.pistonWear(), head.gasket(), head.gasketWear(), head.hasGasketItem());
+		state = Wear.withRod(state, body.rodKind());
+		if (head.getBlockState().getValue(CylinderHeadBlock.HAS_SPARK_PLUG))
+			state = Wear.withPlug(state, head.plugWear());
+		return head.warped() ? Wear.warped(state) : state;
+	}
+
+	/** What a rotor chamber reads: the apex seals and the plug. */
+	private static Wear.State rotorState(RotorHousingBlockEntity housing) {
+		Wear.State state = ApexSeals.state(housing.apexWear());
+		return housing.getBlockState().getValue(RotorHousingBlock.HAS_SPARK_PLUG) ? Wear.withPlug(state, housing.plugWear()) : state;
 	}
 
 	/**
@@ -199,7 +289,10 @@ public final class WearKeeper {
 			if (model == null)
 				continue;
 			CylinderHeadBlockEntity head = cylinder.rotary() ? null : head(level, cylinder);
-			model.wear = head != null && head.hasGasketItem() ? Wear.fitted(head.gasket()) : Wear.NONE;
+			Wear.State state = head != null && head.hasGasketItem() ? Wear.fitted(head.gasket()) : Wear.NONE;
+			// A light or heavy rod drags its own way with the mode on or off, as a fitted gasket seals either way
+			CylinderBlockEntity body = cylinder.rotary() ? null : body(level, cylinder);
+			model.wear = body == null ? state : Wear.withRod(state, body.rodKind());
 		}
 	}
 
@@ -209,13 +302,17 @@ public final class WearKeeper {
 	 * @param rpm         how fast the crank is turning
 	 * @param temperature the block's temperature, 0 ambient to 1 hot (see {@code Thermal})
 	 * @param film        how well oiled the parts are, 0 dry to 1
+	 * @param load        how hard the engine is pulling, 0 (spinning free) to 1 (all it can give)
 	 * @return whether a part failed: the engine is being rebuilt around the gap, and the caller stops for this tick
 	 */
-	public boolean tick(Level level, double rpm, double temperature, double film) {
+	public boolean tick(Level level, double rpm, double temperature, double film, double load) {
 		double dt = INTERVAL * EngineSimulation.TICK;
 		DoubleSupplier forcedFilm = filmOverride;
 		if (forcedFilm != null)
 			film = forcedFilm.getAsDouble();
+		DoubleSupplier forcedTemperature = temperatureOverride;
+		if (forcedTemperature != null)
+			temperature = forcedTemperature.getAsDouble();
 		// One cry a step, however many cylinders are running dry together
 		boolean cried = false;
 		for (int i = 0; i < models.size(); i++) {
@@ -241,14 +338,16 @@ public final class WearKeeper {
 			CycleStats last = model.lastCycle();
 			double early = rpm >= TURNING_FROM_RPM && last.result.fired() ? last.preignition : 0;
 			body.addWear(piston ? Wear.pistonWear(rpm, temperature, film, dt, forged) + Knock.pistonWear(early, rpm, dt, forged) : 0,
-				rod ? Wear.rodWear(rpm, film, dt) : 0);
+				rod ? Wear.rodWear(body.rodKind(), rpm, temperature, film, load, dt) : 0);
 			head.addGasketWear(Wear.gasketWear(head.gasket(), rpm, temperature, model.intakePressure, dt));
-			model.wear = Wear.of(body.pistonWear(), head.gasket(), head.gasketWear(), head.hasGasketItem());
+			if (head.getBlockState().getValue(CylinderHeadBlock.HAS_SPARK_PLUG))
+				head.addPlugWear(PlugWear.wear(rpm, model.coil.installed(), model.fouling(), dt));
+			model.wear = worn(body, head);
 			if (!piston)
 				body.setDryTime(0);
 			else {
 				double before = body.dryTime();
-				body.setDryTime(Wear.dryTime(before, film, rpm, dt, forged));
+				body.setDryTime(Wear.dryTime(before, film, temperature, rpm, dt, forged));
 				if (Wear.seizes(body.dryTime())) {
 					seize(level, cylinder, body);
 					return true;
@@ -258,13 +357,22 @@ public final class WearKeeper {
 					cried = true;
 				}
 			}
-			if (rpm >= TURNING_FROM_RPM && roll(level, Wear.failureChance(body.rodWear(), rpm, dt))) {
+			if (rpm >= TURNING_FROM_RPM && roll(level, Wear.failureChance(body.rodWear(), rpm, temperature, dt))) {
 				throwRod(level, cylinder, body);
 				return true;
 			}
-			if (rpm >= TURNING_FROM_RPM && roll(level, Wear.failureChance(head.gasketWear(), rpm, dt))) {
+			if (rpm >= TURNING_FROM_RPM && !head.blown() && (roll(level, Wear.failureChance(head.gasketWear(), rpm, temperature, dt))
+				|| roll(level, Wear.heatBlowChance(temperature, dt)))) {
 				blowGasket(level, cylinder, head);
 				return true;
+			}
+			// A head left past critical warps; only a turning engine is making the heat that does it
+			if (rpm >= TURNING_FROM_RPM && !head.warped()) {
+				head.setHeatSoak(Wear.heatSoak(head.heatSoak(), temperature, dt));
+				if (Wear.warps(head.heatSoak())) {
+					warp(level, cylinder, head);
+					return true;
+				}
 			}
 		}
 		return false;
@@ -281,7 +389,9 @@ public final class WearKeeper {
 		boolean first = cylinder.chamber() == 0;
 		if (first)
 			housing.addApexWear(ApexSeals.wear(rpm, temperature, film, dt));
-		model.wear = ApexSeals.state(housing.apexWear());
+		if (first && housing.getBlockState().getValue(RotorHousingBlock.HAS_SPARK_PLUG))
+			housing.addPlugWear(PlugWear.wear(rpm, model.coil.installed(), model.fouling(), dt));
+		model.wear = rotorState(housing);
 		if (first && rpm >= TURNING_FROM_RPM && roll(level, ApexSeals.failureChance(housing.apexWear(), rpm, dt))) {
 			failApex(level, cylinder, housing);
 			return true;
@@ -363,6 +473,13 @@ public final class WearKeeper {
 	static void blowGasket(Level level, Cylinder cylinder, CylinderHeadBlockEntity head) {
 		head.blow();
 		level.playSound(null, cylinder.head(), CESounds.GASKET_BLOW.get(), SoundSource.BLOCKS, 1.0f, 1.0f);
+		smoke(level, cylinder.head());
+	}
+
+	/** The head gives with the heat: a crack and a hiss, and steam from the joint it no longer seals. */
+	static void warp(Level level, Cylinder cylinder, CylinderHeadBlockEntity head) {
+		head.warp();
+		level.playSound(null, cylinder.head(), CESounds.HEAD_WARP.get(), SoundSource.BLOCKS, 1.0f, 1.0f);
 		smoke(level, cylinder.head());
 	}
 

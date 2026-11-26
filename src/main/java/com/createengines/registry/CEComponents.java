@@ -38,6 +38,16 @@ public final class CEComponents {
 			.networkSynchronized(net.minecraft.network.codec.ByteBufCodecs.DOUBLE)
 			.build());
 
+	/**
+	 * Carried by the item of a block that was broken while failed: a cylinder with a thrown rod's wreck in it, or a rotor housing whose apex
+	 * seals have failed, so breaking and placing it again is no repair. Absent on every other stack.
+	 */
+	public static final DeferredHolder<DataComponentType<?>, DataComponentType<Boolean>> FAILED =
+		TYPES.register("failed", () -> DataComponentType.<Boolean>builder()
+			.persistent(com.mojang.serialization.Codec.BOOL)
+			.networkSynchronized(net.minecraft.network.codec.ByteBufCodecs.BOOL)
+			.build());
+
 	private CEComponents() {
 	}
 

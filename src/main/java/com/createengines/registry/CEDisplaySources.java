@@ -35,7 +35,7 @@ public final class CEDisplaySources {
 		REGISTRATE.displaySource("engine_load", () -> new EngineFillDisplaySource(EngineReadout::load))
 			.register();
 	public static final RegistryEntry<DisplaySource, EngineFillDisplaySource> ENGINE_TEMPERATURE =
-		REGISTRATE.displaySource("engine_temperature", () -> new EngineFillDisplaySource(EngineReadout::warmth))
+		REGISTRATE.displaySource("engine_temperature", () -> (EngineFillDisplaySource) new com.createengines.content.display.EngineTemperatureDisplaySource())
 			.register();
 	public static final RegistryEntry<DisplaySource, EngineFillDisplaySource> ENGINE_OIL =
 		REGISTRATE.displaySource("engine_oil", () -> new EngineFillDisplaySource(EngineReadout::oil))
