@@ -37,7 +37,7 @@ question, not an obstacle ([CLAUDE.md](../CLAUDE.md)).
 | 2.2 | Proving Ground | Verification debts: server-from-jar, the step-size finding; **the battery tiers**, then **charge priority, electric injector assist and ignition coils**, with electrolysis to be decided (author, 2026-11-23) | Medium |
 | 2.3 | Wear and Tear | **The opt-in wear mode and nothing else** (author, 2026-11-24): pistons, rods, gaskets (stock and three tiers), rotary apex seals and batteries wear, precision parts wear slower, a rod can be thrown (a flag, a misfire, a broken head, with spectacle) and a gasket can blow, light wear is repaired by an automatable, durable Service Kit and the rest by replacing the part, worn parts keep their wear as items, and the Black Box and Display Link report each part and a total; off by default, nothing runs with it off, and gaskets and seals are not required with it off | Medium to large |
 | 2.4 | Running Hot | **Temperature in degrees, overheating you can reach** (a soft power loss in both modes, an exception the author approved on 2026-11-25), heat that follows work, **the Radiator** (closed loop, sheds more with a fan or on a moving contraption), and **the wear overhaul, part 2** (heat drives wear and failures, rod wear from load, plug and turbo wear wired, gasket recipes) (author, 2026-11-25), **a full sound rework** (each engine's note built from its banks, exhausts, cylinder size, cam and fuel instead of one shared firing sound; client-side only, and bearable with many engines running in a build) (author, 2026-11-25), and **a texture rework, with some new models, so the mod looks like part of Create** (author, 2026-11-25, from player complaints), and **splitting the giant source files**, with no behaviour change (author, 2026-11-26) | Large |
-| 2.5 | Open Garage (was 2.4 until 2026-11-25) | Reach: API 1.2, energy and probe mods, the next Create, a second example addon; **piston rings**, **polluted intake air**, **high- and low-compression piston variants**, **rotor variants (a precision rotor among them) with an exhaust niche**, and **nitrous oxide** (liquid, a vaporiser and a gas in the intake manifolds) (author, 2026-11-23), a **W layout for the Bank Builder** (author, 2026-11-24), then **look, sound and performance** only where the 2.0.x pass found something (all of it was 2.3 until the author moved it, 2026-11-24; its sound went to 2.4's sound rework, 2026-11-25) | Medium to large |
+| 2.5 | Open Garage (was 2.4 until 2026-11-25) | Reach: a new API minor (**fuel supply, a shared combustion model and animation for addon engines**, author, 2026-11-26), energy and probe mods, the next Create, a second example addon; **piston rings**, **polluted intake air**, **high- and low-compression piston variants**, **rotor variants (a precision rotor among them) with an exhaust niche**, and **nitrous oxide** (liquid, a vaporiser and a gas in the intake manifolds) (author, 2026-11-23), a **W layout for the Bank Builder** (author, 2026-11-24), then **look, sound and performance** only where the 2.0.x pass found something (all of it was 2.3 until the author moved it, 2026-11-24; its sound went to 2.4's sound rework, 2026-11-25) | Medium to large |
 | 3.0 | Clean Slate | The second breaking cleanup: drop 1.x migrations, regenerate baselines, API 2.0 | Large |
 
 **Shipped so far (tags):** 2.0.0 (2026-11-21), 2.0.1 and 2.0.2 (2026-11-22), 2.1.0 (2026-11-23), 2.2.0 (2026-11-24) and 2.3.0 (2026-11-25). 2.4, 2.5 and 3.0
@@ -1095,18 +1095,48 @@ reading them (`EngineController.java` was the most-read file).
 Reach, in the order the author's direction names (other Create addons and pack makers). Everything is optional and compiled
 against without being required.
 
-- **API 1.2**, from what the example addon and real addons find missing. The rule stands: an addon never needs an internal class, and
+- **A new API minor** (the current version is in [API.md](API.md)), from what the example addon and real addons find missing. The rule stands: an addon never needs an internal class, and
   a need is a gap in the API. Candidates already known: reading and subscribing to an engine's readout and its ripple (so the
   dual-mass flywheel is visible to addons), registering a crank-line part (a flywheel of an addon's own, through data), and a
   display source (the data-defined flywheel moved to 2.1 and is already API 1.2: `PartBlocks.flywheel`). Each is a new name in `compat/api-surface.txt` and `compat/script-surface.txt` and a bump of `ApiVersion.MINOR`.
 - **A second example addon** in `examples/`, this time of a part that is not a cylinder (a flywheel or a crank-line part), to prove
   the same route for a second kind of block.
+- **Fuel supply, a shared combustion model and animation for addon sources** (author, 2026-11-26): see "An addon's own engine type"
+  below.
 - **Forge Energy input for engines** and **WTHIT / The One Probe**, both listed as "not done" in the 2.0 record. Each gets a row in
   [COMPAT.md](COMPAT.md) and the compatibility matrix, and is called supported only once its row is green.
 - **The next Create.** Move the supported range when Create and Aeronautics allow (2.0.x settles whether they do now); each Create
   version in range is built and tested against (rule 7), and if two cannot sit side by side the release says so.
 - **Pack tools**, as asked for: check [PACKS.md](PACKS.md) against what pack makers ask for in the feedback channel (the
   `triage-feedback` skill reads it) before choosing anything here. Nothing is built from a guess.
+
+### An addon's own engine type: fuel, combustion and animation (author, 2026-11-26; proposed)
+
+**Asked for by the author on 2026-11-26**, after asking whether the addon API could support an opposed-piston engine. **All three are
+wanted. Nothing is built; the shapes below are a first design.** Today an addon can put such an engine on the crank as a `TorqueSource`
+([ADDONS.md](ADDONS.md)), but has to supply the rest itself. This was found by reading the API and the engine code, not by building one.
+
+- **Fuel supply.** A source can draw from the engine's shared fuel gallery (the fuel piped into any head) and learns which fuel it is
+  and how much it was really given. Today `fuelUsedLastStep()` only adds to the reported fuel rate, and the gallery feeds only the
+  mod's own cylinders and turbo anti-lag. To settle: how an engine made only of addon parts is fuelled, since it has none of the
+  mod's heads.
+- **A shared combustion model.** A source gets this mod's gas, ignition and burn behaviour and supplies only its own geometry (volume
+  against crank angle, and when its valves or ports open). Fuels, pack fuel data, boost, intercooling, cold starts and pre-ignition
+  then behave as they do in a cylinder. Today that code (`CylinderModel`, `Combustion`) is internal. The public surface has to be
+  small enough to keep frozen, with the internals behind it free to change. It must handle two pistons sharing one chamber and a
+  cycle that repeats every 360 degrees; the mod itself still adds no two-stroke.
+- **Animation.** A client can read an engine's crank angle and direction, in step with the engine, so an addon's own pistons and
+  linkages move with the shaft, including a phase lead between two cranks. Today `EngineView` gives only RPM and there is no client
+  angle in the API. The addon still supplies its models and renderer.
+
+**Rules for the work:** each is an addition in a new API minor, with `ApiVersion.MINOR` raised and the new names recorded in
+`compat/api-surface.txt`; nothing allocates in `advance`; and opening up the combustion code is a behaviour-preserving refactor, so
+`compat/behaviour.txt` and `compat/trajectories.txt` stay untouched.
+
+**Proof:** an example addon with an opposed-piston engine built on all three, using only the public API, with GameTests that it starts,
+runs, burns fuel from the supply and stalls without it. Its animation is checked in game. Whether this is the second example addon
+above or a third is open. The same work should check what else an engine made only of addon sources lacks (status and cylinder
+counts, sound, knock, wear, readouts); none of those was checked, and they are not part of this request.
 
 ### Piston variants: high and low compression (author, 2026-11-23; proposed)
 
