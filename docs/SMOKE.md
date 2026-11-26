@@ -244,6 +244,10 @@ silent, or a step never reached its goal (an engine that did not start). The aut
 The mod's trailer is made by a harness, so it can be cut again when the mod changes. It is a development aid, not a check, and is
 kept out of the jar and the coverage count like the rest of the picture-taking code.
 
+Each new minor or major version gets a trailer composed differently from the earlier ones (opening, story, shot order,
+camera moves, edit, captions), not the last cut with new shots slotted in, and it shows off that version's new features. The
+harness stays; the composition below describes the current cut and is rewritten with the next one.
+
 ```
 python tools/trailer/record.py              # plays the game, records screen and sound, cuts the videos
 python tools/trailer/record.py --post-only  # cuts the last recordings again (new captions or music)

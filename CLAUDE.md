@@ -55,6 +55,10 @@ A significant new block or item goes in the trailer ([docs/SMOKE.md](docs/SMOKE.
 `TrailerCoverageTest` fails a part with no line. Mark a part `skip` only with a real reason (inside another part, a variant,
 a tool, a fluid); `later` is an open debt, not a way to pass the test. Captions say only what the mod does.
 
+Each new minor or major version's trailer is composed afresh, so it does not look like the earlier ones: its own opening,
+story, shot order, camera moves, edit and captions, not the last cut with new shots slotted in. It shows off what that
+version adds.
+
 ## When a test, snapshot or ratchet goes red
 
 A red guard is a question: *did I change something I did not mean to?* Default answer: the code is wrong, so fix the code.
