@@ -644,27 +644,6 @@ def turbo_fail(seed, pitch):
     return finish(mix, 0.82)
 
 
-def coolant_boil(seed, pitch):
-    """A block hot enough to boil: bubbles knocking about inside it, quicker through the middle, under a hiss of escaping steam."""
-    rng = np.random.default_rng(seed)
-    n = int(1.4 * SR)
-    t = np.arange(n) / SR
-    bubbles = np.zeros(n)
-    at = 0.02
-    while at < 1.25:
-        i = int(at * SR)
-        u = np.arange(n - i) / SR
-        f = rng.uniform(170, 420) * pitch
-        rise = 2 * np.pi * np.cumsum(f * (1 + 1.6 * np.minimum(u / 0.05, 1))) / SR
-        bubbles[i:] += rng.uniform(0.4, 1.0) * np.sin(rise) * np.minimum(u / 0.004, 1) * np.exp(-u / 0.022)
-        at += rng.uniform(0.025, 0.09)
-    swell = np.sin(np.pi * np.clip(t / 1.4, 0, 1))
-    steam = band(rng.standard_normal(n), 3000 * pitch, 9500, 2) * swell
-    mix = 0.9 * bubbles / np.max(np.abs(bubbles)) * (0.35 + 0.65 * swell) + 0.4 * steam / np.max(np.abs(steam))
-    mix *= np.clip((n - np.arange(n)) / (0.2 * SR), 0, 1) * np.minimum(t / 0.02, 1)
-    return finish(mix, 0.6)
-
-
 def apex_fail(seed, pitch):
     """A rotor's apex seal letting go: a sharp snap of hard metal, the broken strip clattering round the chamber as the shaft carries it,
     slower with every turn until it jams, and the wheeze of compression blowing past the tip that is no longer sealed."""
@@ -750,8 +729,6 @@ SOUNDS = {
     "head_warp1": lambda: head_warp(173, 1.0),
     "head_warp2": lambda: head_warp(179, 0.88),
     "turbo_fail1": lambda: turbo_fail(181, 1.0),
-    "coolant_boil1": lambda: coolant_boil(193, 1.0),
-    "coolant_boil2": lambda: coolant_boil(197, 0.88),
     "turbo_fail2": lambda: turbo_fail(191, 0.87),
 }
 

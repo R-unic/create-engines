@@ -551,7 +551,6 @@ reg:CERecipes:refining
 reg:CESounds:advancement_sting
 reg:CESounds:apex_fail
 reg:CESounds:bearing_squeal
-reg:CESounds:coolant_boil
 reg:CESounds:cylinder_fire
 reg:CESounds:engine_catch
 reg:CESounds:engine_clatter

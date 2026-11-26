@@ -78,7 +78,7 @@ public final class SmokeAudit {
 	 */
 	private static final java.util.List<String> CHANCE_SOUNDS = java.util.List.of("metal_tick", "preignition_knock", "flare_whoosh",
 		"rod_thrown", "gasket_blow", "seize_warning", "piston_seize", "apex_fail",
-		"head_warp", "turbo_fail", "coolant_boil");
+		"head_warp", "turbo_fail");
 	private static final java.util.List<String> startedByHand = new java.util.ArrayList<>();
 	private static final Pattern SOUND_DEBUG = Pattern.compile("(\\d+)/(\\d+) \\+ (\\d+)/(\\d+)");
 

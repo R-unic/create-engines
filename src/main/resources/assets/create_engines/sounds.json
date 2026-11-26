@@ -253,18 +253,6 @@
       }
     ]
   },
-  "coolant_boil": {
-    "sounds": [
-      {
-        "name": "create_engines:coolant_boil1",
-        "attenuation_distance": 24
-      },
-      {
-        "name": "create_engines:coolant_boil2",
-        "attenuation_distance": 24
-      }
-    ]
-  },
   "turbo_fail": {
     "sounds": [
       {

@@ -241,7 +241,7 @@ key or saved format is renamed or removed. Changes to existing builds are listed
   (235 before) and a twin-turbo gasoline W24 near 166 (253 before). A block starved of oil now heats up much faster. Cylinder performance,
   ratings and fuel figures are unchanged.
 - Changed, temperature is shown in degrees Celsius: goggles (with new Hot, Overheating and Critical readings), the Display Link's temperature
-  and status sources, and the Black Box. An overheating block steams, and a critical one boils audibly. The Display Link temperature source now
+  and status sources, and the Black Box. An overheating block steams, harder the hotter it is. The Display Link temperature source now
   gives degrees where it gave a percentage of warm; its progress bar is as before.
 - New, an optional `heat_factor` in the `fuel` data map (default 1) for pack makers. API version 1.3.0.
 - Changed (wear mode), the failure chance: a worn rod or gasket is far less likely to fail in any one minute, so heavy wear is now a warning

@@ -68,9 +68,6 @@ public final class CESounds {
 	/** The wear mode's: a cylinder head warping from heat, a sharp crack of hot metal and steam hissing from the joint. */
 	public static final DeferredHolder<SoundEvent, SoundEvent> HEAD_WARP = register("head_warp");
 
-	/** A critically hot block boiling: bubbling and a hiss of steam. */
-	public static final DeferredHolder<SoundEvent, SoundEvent> COOLANT_BOIL = register("coolant_boil");
-
 	/** The wear mode's: a turbocharger failing, its wheel rubbing the housing as it screams down. */
 	public static final DeferredHolder<SoundEvent, SoundEvent> TURBO_FAIL = register("turbo_fail");
 
