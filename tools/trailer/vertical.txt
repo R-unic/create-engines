@@ -1,0 +1,40 @@
+# The edit of the vertical cut (9:16, for YouTube Shorts and the like). post.py reads it; TrailerCoverageTest checks that every
+# shot it names exists, that every piece is a whole number of half bars, that every piece but the last has words, and that
+# the last is the end piece. It is cut for a feed, where a viewer decides in the first second whether to stay:
+#
+# - no title card at the start: it opens on the engine already growing, with words on screen from the first frame;
+# - a cut every one or two seconds, a promise in the first words ("one click at a time") paid off in the next ("up to a V16");
+# - the engines heard, not only seen (`engine`), as most viewers have the sound on in a feed but many do not, so the words
+#   carry the story alone too;
+# - the words kept out of the bottom fifth and the right edge, where the app draws its own title and buttons;
+# - the end piece lays the title, the links and the AI notice over moving footage, and the cut ends there with no fade, so
+#   it loops cleanly back into the opening.
+#
+#   <shot> <seconds> [at=<s>] [speed=<x>] [x=<0..1>] [fit] [zoom=<1..3>] [flash] [engine] [cold] [end] | <WORDS>
+#
+# seconds   how long the piece runs, a multiple of 1.5 (half a bar at 80 beats a minute), so every cut falls on the beat
+# at=       where in the shot the piece starts, in seconds of the shot (default: the middle of the shot)
+# speed=    plays the shot faster
+# x=        where across the 16:9 shot the 9:16 window sits, 0 the left edge, 1 the right (default 0.5, the middle)
+# fit       the whole 16:9 picture in a band across the middle, on a blurred copy of itself, for a subject too wide to crop
+# zoom=     with fit: takes a window that much smaller into the band (a little above the middle), for a small subject
+# flash     a white flash at the cut
+# engine    the music drops and the game's sound comes up
+# cold      game sound only, no music
+# end       the end piece: the title, the links and the AI notice over the footage. Last, and only once.
+# WORDS     the few big words over the piece (the last word is drawn in gold)
+#
+# A shot may be used more than once (a long shot split so its words can change half-way). A shot that is not in this run
+# (the Aeronautics shots without Sable) is left out.
+
+grow_engine       3     at=2.2   speed=2   fit zoom=1.6   | One click at a time
+grow_engine       3     at=8.2   speed=2   fit zoom=1.6   | Up to a V16
+heavy_starter     3     at=0     engine    flash          | Then crank it
+inline6_turbo     1.5   at=2     engine                   | Bolt on a turbo
+blown_i6_blower   1.5   at=0.75                           | Or a blower
+rotary_orbit      1.5   at=0     engine                   | Even a Wankel
+v8_exhaust_dusk   1.5   engine                            | Five fuels
+rover_departs     3     at=0     speed=1.5 engine  flash  | Put it on wheels
+refinery_column   1.5   at=0.75                           | Refine your own
+factory_line      1.5                                     | Power Create
+factory_wide      6     at=1.5   fit       end

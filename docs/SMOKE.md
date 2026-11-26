@@ -274,13 +274,23 @@ python tools/trailer/record.py --post-only  # cuts the last recordings again (ne
   music is the first file in `tools/trailer/music/` if there is one, otherwise a backing track that `tools/trailer/music.py`
   synthesises (original, so nothing to license; a placeholder for a real track; 80 beats a minute, a bar of three seconds).
 - **The cuts.** The full trailer, a teaser (a title card, four three-second shots named by `short_shots` in `captions.txt` with a
-  few big words each, and the end card) and the teaser cropped to 9:16 for phones, each with a `.srt` of its captions, a thumbnail
+  few big words each, and the end card) and a vertical cut for Shorts, each with a `.srt` of its captions, a thumbnail
   from the shot `thumbnail:` names, and a 9:16 thumbnail for Shorts from the shot `vertical_thumbnail:` names
   (`vertical_thumbnail_at:` seconds in, with `vertical_title:` and `vertical_sub:` for its words).
+- **The vertical cut.** Its own edit, `tools/trailer/vertical.txt` (the file says what each option does), cut for a feed where a
+  viewer decides in the first second: no title card, the engine already growing with big words on the first frame, a cut every
+  one or two seconds, the words clear of the bottom fifth and the right edge where the app draws its own buttons. A `fit` piece
+  shows the whole 16:9 picture in a band on a blurred copy of itself (`zoom=` for a small subject), the others a 9:16 window
+  (`x=` moves it). The AI notice is in it twice: `vertical_ai_tag` at the top from the first frame, for a viewer who leaves
+  early, and on the end piece the full `outro_notice` with `ai_docs` under it, pointing to [AI.md](AI.md). The end piece lies
+  over footage and does not fade, so the Short loops cleanly. It writes `run/trailer/description_vertical.txt` too, with the AI
+  notice and the address of AI.md (`ai_docs_url`) in its first lines; the full description carries that address as well.
+  `TrailerCoverageTest` checks the edit names real shots on the beat, has words on every piece and ends on the end piece, and
+  that the AI lines are there and AI.md exists.
 - **The gameplay clips.** The first-person shots keep the player's hand and the item in it; the recorder hides the hotbar, the
   crosshair and the picked item's name (`ShowcaseRun.onRenderGuiLayer`).
-- **The video description.** Every full cut also writes `run/trailer/description.txt` (`post.py`, so `--post-only` too): the pitch, the links, chapters from the `chapter <shot>` lines (a chapter under ten seconds long is dropped, as YouTube would ignore it), the version line and the AI notice. The words, links and chapters are in `captions.txt`; the Modrinth and CurseForge addresses are not there yet (post.py does not guess them).
-- **Output.** `run/trailer/trailer.mp4`, `trailer_teaser.mp4`, `trailer_vertical.mp4`, `thumbnail.png` and `thumbnail_vertical.png`, with the raw recordings and the shot timings beside them.
+- **The video description.** Every full cut also writes `run/trailer/description.txt` (`post.py`, so `--post-only` too): the pitch, the links, chapters from the `chapter <shot>` lines (a chapter under ten seconds long is dropped, as YouTube would ignore it), the version line and the AI notice with the address of [AI.md](AI.md). The words, links and chapters are in `captions.txt`; the Modrinth and CurseForge addresses are not there yet (post.py does not guess them).
+- **Output.** `run/trailer/trailer.mp4`, `trailer_teaser.mp4`, `trailer_vertical.mp4`, `thumbnail.png`, `thumbnail_vertical.png`, `description.txt` and `description_vertical.txt`, with the raw recordings and the shot timings beside them.
 - **Keeping it current.** `src/smoke/trailer-parts.txt` has a line for every block and item saying which shot shows it, or why none
   does. `TrailerCoverageTest` fails when a new part has no line, when a line names a shot that does not exist, when a shot has no
   caption, and when a shot is missing from `edit.txt`, is there twice, or has a piece that is not a whole number of half bars. A significant new part goes on a pad (or a new one) in `ShowcaseRun`, gets a shot, a caption and a line in `edit.txt`, and its line names the

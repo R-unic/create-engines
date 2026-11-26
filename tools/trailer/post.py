@@ -12,9 +12,11 @@ tools/trailer/edit.txt, and the words are drawn in Minecraft's own font (mcfont.
 first file in tools/trailer/music/, or a backing track that tools/trailer/music.py makes; the hits come from sfx.py.
 
 --cut full is the whole trailer. teaser is a title card, four three-second shots (the `short_shots` of captions.txt) with a
-few big words each, and an end card; vertical is the same teaser cropped to 9:16 for phones. Every piece lasts a whole number
-of half bars of the music (80 beats a minute), so the cuts fall on the beat. A .srt of the captions is written beside the
-video, and the full cut also writes the video description.
+few big words each, and an end card. vertical is the 9:16 cut for Shorts, with its own edit (tools/trailer/vertical.txt): no
+title card, words from the first frame, a cut every one or two seconds, a small AI tag at the top throughout, and an end piece
+over footage with the title, the links, the AI notice and where to read how AI is used (docs/AI.md); it loops. Every piece
+lasts a whole number of half bars of the music (80 beats a minute), so the cuts fall on the beat. A .srt of the captions is
+written beside the video; the full cut also writes the video description, and the vertical cut the Shorts description.
 
 How it is made: every piece of the cut is rendered on its own (its stretch of the recording, sped up if edit.txt says so,
 graded, letterboxed, with its flash, caption and fades), the pieces are joined, and the sound is mixed in numpy and brought to
@@ -70,10 +72,16 @@ LAYOUTS = {
     "wide": dict(size=(1920, 1080), icon=120, icon_y=95, create=520, create_y=225, mark=1040, mark_y=372, rule_y=752, sub=5, sub_y=787,
                  links=4, links_y=845, ver=3, ver_y=900, notice=3, notice_y=955, lone=65,
                  caption=4, kicker=3, caption_x=110, caption_gap=28, letterbox=LETTERBOX, big=9, big_gap=56),
-    "tall": dict(size=(1080, 1920), icon=200, icon_y=330, create=640, create_y=545, mark=980, mark_y=725, rule_y=1085, sub=3, sub_y=1125,
-                 links=3, links_y=1165, ver=2, ver_y=1215, lone=0, notice=3, notice_y=1600,
+    # The tall cut's end piece keeps every word above the bottom fifth (y 1536 on), where a Shorts player draws its own title
+    "tall": dict(size=(1080, 1920), icon=200, icon_y=300, create=640, create_y=515, mark=980, mark_y=695, rule_y=1055, sub=3, sub_y=1095,
+                 links=3, links_y=1140, ver=2, ver_y=1190, lone=0, notice=3, notice_y=1250, docs=3,
                  caption=3, kicker=2, caption_x=70, caption_gap=330, letterbox=0, big=8, big_gap=560),
 }
+# The vertical cut: where a `fit` piece's 16:9 band lies (1080x608, a little above the middle), the margins its words keep
+# clear of the app's buttons down the right edge, and where the AI tag sits (top left, where a Shorts player draws nothing)
+FIT_Y = 560
+TALL_MARGIN = 130
+TAG_AT = (56, 120)
 
 
 def find_ffmpeg():
@@ -104,25 +112,35 @@ def read_captions():
     return words
 
 
-def read_edit():
-    """The lines of edit.txt: shot, seconds, and its options (at, speed, engine, quiet, cold)."""
+def read_edit(file="edit.txt"):
+    """The lines of an edit (edit.txt, or vertical.txt): shot, seconds, its options, and for the vertical cut the words after
+    a `|`. edit.txt takes at, speed, engine, quiet and cold; vertical.txt takes at, speed, x, zoom, fit, flash, engine, cold and end."""
+    vertical = file == "vertical.txt"
+    numbers = ("at", "speed", "x", "zoom") if vertical else ("at", "speed")
+    flags = ("fit", "flash", "engine", "cold", "end") if vertical else ("engine", "quiet", "cold")
     lines = []
-    for number, line in enumerate((HERE / "edit.txt").read_text(encoding="utf-8").splitlines(), 1):
+    for number, line in enumerate((HERE / file).read_text(encoding="utf-8").splitlines(), 1):
         line = line.split("#", 1)[0].strip()
         if not line:
             continue
+        line, _, said = line.partition("|")
         name, seconds, *options = line.split()
-        entry = dict(name=name, dur=float(seconds), at=None, speed=1.0, engine=False, quiet=False, cold=False)
+        entry = dict(name=name, dur=float(seconds), at=None, speed=1.0, x=0.5, zoom=1.0, words=said.strip() or None,
+                     **{flag: False for flag in ("engine", "quiet", "cold", "fit", "flash", "end")})
         for option in options:
             key, _, value = option.partition("=")
-            if key in ("at", "speed") and value:
+            if key in numbers and value:
                 entry[key] = float(value)
-            elif key in ("engine", "quiet", "cold") and not value:
+            elif key in flags and not value:
                 entry[key] = True
             else:
-                sys.exit(f"edit.txt line {number}: unknown option {option!r}")
+                sys.exit(f"{file} line {number}: unknown option {option!r}")
         if abs(entry["dur"] / (BAR / 2) - round(entry["dur"] / (BAR / 2))) > 1e-6:
-            sys.exit(f"edit.txt line {number}: {seconds} s is not a whole number of half bars ({BAR / 2} s)")
+            sys.exit(f"{file} line {number}: {seconds} s is not a whole number of half bars ({BAR / 2} s)")
+        if not 0 <= entry["x"] <= 1:
+            sys.exit(f"{file} line {number}: x={entry['x']} is not between 0 and 1")
+        if not 1 <= entry["zoom"] <= 3:
+            sys.exit(f"{file} line {number}: zoom={entry['zoom']} is not between 1 and 3")
         lines.append(entry)
     return lines
 
@@ -172,12 +190,12 @@ def wrapped(text, scale, limit):
     return lines + [line]
 
 
-def card_image(title, lines, layout, path, footer=None, notice=None, links=None, overlay=False):
+def card_image(title, lines, layout, path, footer=None, notice=None, links=None, overlay=False, docs=None, shade=110):
     """The mod's icon, "CREATE" in Minecraft's title font and the wordmark under it (together the title), a copper rule, and
-    the lines under it, in Minecraft's font on the dark card. An overlay is the same title on clear glass with a light shade,
-    to lie over footage."""
+    the lines under it, in Minecraft's font on the dark card. An overlay is the same title on clear glass with a shade (`shade`
+    of 255), to lie over footage. `docs` is a line under the AI notice saying where to read how AI is used."""
     lay = LAYOUTS[layout]
-    image = Image.new("RGBA", lay["size"], (0, 0, 0, 110) if overlay else BACKGROUND)
+    image = Image.new("RGBA", lay["size"], (0, 0, 0, shade) if overlay else BACKGROUND)
     dy = lay["lone"] if not (footer or notice) else 0  # a title card has no lines at the foot, so it sits lower
     mark = Image.open(WORDMARK).convert("RGBA")
     mark = mark.resize((lay["mark"], round(mark.height * lay["mark"] / mark.width)), Image.LANCZOS)
@@ -197,11 +215,28 @@ def card_image(title, lines, layout, path, footer=None, notice=None, links=None,
     if notice:
         # The AI notice: small, near the foot of the card, wrapped to the card's width
         scale, y = lay["notice"], lay["notice_y"]
-        for row in wrapped(notice, scale, lay["size"][0] - 200):
-            layer = mcfont.render(row, scale, GREY)
+        limit = lay["size"][0] - (2 * TALL_MARGIN if layout == "tall" else 200)
+        for row in wrapped(notice, scale, limit):
+            layer = mcfont.render(row, scale, WHITE if overlay else GREY)
             centred(image, layer, y)
             y += layer.height + scale * 2
+        if docs:
+            scale = lay.get("docs", lay["notice"])
+            y += scale * 4
+            for row in wrapped(docs, scale, limit):
+                layer = mcfont.render(row, scale, GOLD)
+                centred(image, layer, y)
+                y += layer.height + scale * 2
     (image if overlay else image.convert("RGB")).save(path)
+
+
+def ai_tag(text, path):
+    """The small line that stays at the top of the vertical cut from its first frame: the AI notice, in short, for a viewer
+    who swipes away before the end piece. White in Minecraft's font with a soft shadow, so it reads on the sky."""
+    layer = mcfont.render(text, 4, WHITE)
+    image, pad = soft_shadow(layer, reach=8, strength=170)
+    image.save(path)
+    return pad
 
 
 def soft_shadow(layer, reach=10, strength=150):
@@ -258,7 +293,8 @@ def big_words(text, layout, path):
     lay = LAYOUTS[layout]
     width = lay["size"][0]
     scale = lay["big"]
-    while scale > 3 and mcfont.width(text.upper()) * scale > width - 140:
+    room = width - (2 * TALL_MARGIN if layout == "tall" else 140)
+    while scale > 3 and mcfont.width(text.upper()) * scale > room:
         scale -= 1
     reach = max(3, scale // 3)
     first, _, last = text.upper().rpartition(" ")
@@ -320,6 +356,34 @@ def plan_short(shots, words):
     return pieces
 
 
+def plan_vertical(shots, words, edit):
+    """The pieces of the vertical cut, from vertical.txt: a hit under the first frame and a light one at every cut after, the
+    AI tag over every piece but the end one, and the end piece (title, links, AI notice) over its footage, with a sting. No
+    fade at either end, so the loop a Shorts player makes is seamless."""
+    by_name = {s["name"]: s for s in shots["shots"]}
+    pieces = []
+    for entry in edit:
+        shot = by_name.get(entry["name"])
+        if shot is None:
+            print(f"post: {entry['name']} is not in this recording, left out")
+            continue
+        length = shot["end"] - shot["start"]
+        raw = entry["dur"] * entry["speed"]
+        if raw > length + 1e-6:
+            sys.exit(f"vertical.txt: {entry['name']} needs {raw:.2f} s of a {length:.2f} s shot (shorten it or speed it up)")
+        at = (length - raw) / 2 if entry["at"] is None else min(entry["at"], length - raw)
+        end = entry["end"]
+        pieces.append(dict(kind="shot", name=entry["name"], src=shot["start"] + at, dur=entry["dur"], speed=entry["speed"],
+                           mix="cold" if entry["cold"] else "engine" if entry["engine"] else "music",
+                           big=None if end else entry["words"], focus=entry["x"], fit=entry["fit"], zoom=entry["zoom"],
+                           flash=entry["flash"],
+                           hit=0.9 if not pieces else 0.0 if end else 0.6 if entry["flash"] else 0.3, hook=not pieces,
+                           tag=not end, end=end, sting=end, title=False, fade_in=0.0, fade_out=0.0))
+    if not pieces or not pieces[-1]["end"]:
+        sys.exit("vertical.txt: the last piece must be the `end` piece")
+    return pieces
+
+
 def place(pieces):
     at = 0.0
     for piece in pieces:
@@ -371,9 +435,23 @@ def render_piece(ffmpeg, args, layout, piece, index, work, card_paths):
     else:
         raw_len = piece["dur"] * piece["speed"]
         inputs += ["-ss", f"{args.offset + piece['src']:.3f}", "-t", f"{raw_len + 0.2:.3f}", "-i", str(Path(args.raw).resolve())]
-        crop = f"crop=608:1080:(iw-608)/2:0,scale={width}:{height}:flags=lanczos" if layout == "tall" \
-            else f"scale={width}:{height}:flags=lanczos"
-        graph.append(f"[0:v]setpts=(PTS-STARTPTS)/{piece['speed']},fps={FPS},{crop},{GRADE},format=yuv420p[v0]")
+        timed = f"[0:v]setpts=(PTS-STARTPTS)/{piece['speed']},fps={FPS}"
+        if layout == "tall" and piece.get("fit"):
+            # The whole picture in a band, on a blurred, darkened copy of itself filling the frame (blurred small, so it is cheap)
+            band = round(width * 9 / 16 / 2) * 2
+            graph.append(f"{timed},{GRADE},split[full][back]")
+            graph.append(f"[back]scale=270:480:force_original_aspect_ratio=increase,crop=270:480,gblur=sigma=9,"
+                         f"eq=brightness=-0.18:saturation=0.85,scale={width}:{height}:flags=bicubic[blur]")
+            # zoom= takes a smaller window of the picture into the band, a little above the middle (clear of the hotbar's row)
+            zoom = piece.get("zoom", 1.0)
+            window = "" if zoom == 1.0 else f"crop=iw/{zoom:.3f}:ih/{zoom:.3f}:(iw-ow)/2:(ih-oh)*0.4,"
+            graph.append(f"[full]{window}scale={width}:{band}:flags=lanczos[band]")
+            graph.append(f"[blur][band]overlay=0:{FIT_Y},format=yuv420p[v0]")
+        else:
+            focus = piece.get("focus", 0.5)
+            crop = f"crop=608:1080:(iw-608)*{focus:.3f}:0,scale={width}:{height}:flags=lanczos" if layout == "tall" \
+                else f"scale={width}:{height}:flags=lanczos"
+            graph.append(f"{timed},{crop},{GRADE},format=yuv420p[v0]")
     last = "v0"
     n = 1
 
@@ -422,12 +500,25 @@ def render_piece(ffmpeg, args, layout, piece, index, work, card_paths):
         png = work / f"big_{index:03d}.png"
         w, h = big_words(piece["big"], layout, png)
         source = overlay_input(png, piece["dur"])
-        s, e = 0.12, piece["dur"] - 0.15
-        graph.append(f"[{source}:v]format=rgba,fade=t=in:st={s}:d=0.12:alpha=1,fade=t=out:st={e - 0.15:.3f}:d=0.15:alpha=1[big]")
-        y0 = height - lay["letterbox"] - lay["big_gap"] - h
-        graph.append(f"[{last}][big]overlay=x=(W-w)/2:y='{y0}+26*pow(max(0,1-(t-{s})/0.3),3)':"
-                     f"enable='between(t,{s},{e:.3f})'[v5]")
+        # The hook's words are there on the first frame (the one a feed shows before it plays); the rest pop in on the cut
+        s, e = (0.0 if piece.get("hook") else 0.12), piece["dur"] - 0.15
+        fade_in = "" if piece.get("hook") else f"fade=t=in:st={s}:d=0.12:alpha=1,"
+        graph.append(f"[{source}:v]format=rgba,{fade_in}fade=t=out:st={e - 0.15:.3f}:d=0.15:alpha=1[big]")
+        # Over a `fit` piece the words sit under the picture's band; otherwise low in the frame, above the app's own title
+        y0 = FIT_Y + round(width * 9 / 16) + 40 if piece.get("fit") else height - lay["letterbox"] - lay["big_gap"] - h
+        rise = "" if piece.get("hook") else f"+26*pow(max(0,1-(t-{s})/0.3),3)"
+        graph.append(f"[{last}][big]overlay=x=(W-w)/2:y='{y0}{rise}':enable='between(t,{s},{e:.3f})'[v5]")
         last = "v5"
+    if piece.get("tag"):
+        source = overlay_input(card_paths["tag"], piece["dur"])
+        pad = card_paths["tag_pad"]
+        graph.append(f"[{last}][{source}:v]overlay=x={TAG_AT[0] - pad}:y={TAG_AT[1] - pad}[v6]")
+        last = "v6"
+    if piece.get("end"):
+        source = overlay_input(card_paths["end"], piece["dur"])
+        graph.append(f"[{source}:v]format=rgba,fade=t=in:st=0:d=0.25:alpha=1[endcard]")
+        graph.append(f"[{last}][endcard]overlay=0:0[v7]")
+        last = "v7"
     fades = []
     if piece.get("fade_in"):
         fades.append(f"fade=t=in:st=0:d={piece['fade_in']}")
@@ -597,7 +688,12 @@ def main():
     words = read_captions()
     shots = json.loads(Path(args.shots).read_text(encoding="utf-8-sig"))
     layout = "tall" if args.cut == "vertical" else "wide"
-    pieces = plan_full(shots, words, read_edit()) if args.cut == "full" else plan_short(shots, words)
+    if args.cut == "full":
+        pieces = plan_full(shots, words, read_edit())
+    elif args.cut == "vertical":
+        pieces = plan_vertical(shots, words, read_edit("vertical.txt"))
+    else:
+        pieces = plan_short(shots, words)
     length = place(pieces)
     srt = captions_of(pieces)
 
@@ -608,6 +704,12 @@ def main():
         card_image(words["title"], words.get("subtitle", ""), layout, cards["open"])
         card_image(words.get("outro", words["title"]), words.get("outro_sub", ""), layout, cards["close"], footer=versions(),
                    links=words.get("outro_links"), notice=words.get("outro_notice"))
+        if args.cut == "vertical":
+            cards["end"] = work / "end.png"
+            card_image(words.get("outro", words["title"]), words.get("outro_sub", ""), layout, cards["end"], footer=versions(),
+                       links=words.get("outro_links"), notice=words["outro_notice"], docs=words["ai_docs"], overlay=True, shade=185)
+            cards["tag"] = work / "tag.png"
+            cards["tag_pad"] = ai_tag(words["vertical_ai_tag"], cards["tag"])
 
         with ThreadPoolExecutor(max_workers=3) as pool:
             files = list(pool.map(lambda job: render_piece(ffmpeg, args, layout, job[1], job[0], work, cards), enumerate(pieces)))
@@ -628,6 +730,8 @@ def main():
         Path(args.out).with_suffix(".srt").write_text("\n".join(lines), encoding="utf-8")
         if args.cut == "full":
             write_description(Path(args.out).with_name("description.txt"), pieces, words)
+        if args.cut == "vertical":
+            write_vertical_description(Path(args.out).with_name("description_vertical.txt"), words)
         if args.thumbnail and args.cut == "full":
             thumbnail(ffmpeg, args, words, shots, work)
         if args.thumbnail and args.cut == "vertical":
@@ -660,7 +764,20 @@ def write_description(path, pieces, words):
         lines += ["Links"] + [f"{name}: {url}" for name, url in links] + [""]
     if len(kept) >= 3:
         lines += ["Chapters"] + [f"{stamp(when)} {text}" for when, text in kept] + [""]
-    lines += [versions(), "", words.get("outro_notice", "")]
+    lines += [versions(), "", words.get("outro_notice", ""), f"How AI is used, and what is guaranteed: {words['ai_docs_url']}"]
+    path.write_text("\n".join(lines).rstrip() + "\n", encoding="utf-8")
+    print(f"description: {path}")
+
+
+def write_vertical_description(path, words):
+    """The Shorts description, written with every vertical cut: the hook line, the AI notice and the link to docs/AI.md
+    first (a Shorts description shows only its first lines), then the links and the version line."""
+    lines = [words.get("vertical_description", words.get("subtitle", "")), "",
+             words.get("outro_notice", ""), f"How AI is used, and what is guaranteed: {words['ai_docs_url']}", ""]
+    links = [(key[len("link "):], text) for key, text in words.items() if key.startswith("link ")]
+    if links:
+        lines += [f"{name}: {url}" for name, url in links] + [""]
+    lines += [versions()]
     path.write_text("\n".join(lines).rstrip() + "\n", encoding="utf-8")
     print(f"description: {path}")
 

@@ -14,10 +14,10 @@
    speakers play, so a notification would be in the trailer. (Needs `pip install soundcard`; without it the trailer has
    only the music.)
 3. Hands both recordings to post.py with the offsets between their starts and the first shot, for the full trailer, the
-   teaser and the vertical teaser, and a thumbnail.
+   teaser and the vertical cut for Shorts (its edit in vertical.txt), and the thumbnails.
 
 The cuts land in run/trailer of this project (trailer.mp4, trailer_teaser.mp4, trailer_vertical.mp4, each with a .srt, and
-thumbnail.png and thumbnail_vertical.png), with the raw recordings next to them. --post-only cuts the last recordings again (after a change to
+thumbnail.png and thumbnail_vertical.png, and the descriptions), with the raw recordings next to them. --post-only cuts the last recordings again (after a change to
 captions.txt or the music) without playing the game.
 """
 import argparse
