@@ -130,6 +130,7 @@ public final class ShowcaseRun {
 	private static final int CASING_BAY = 15;
 	private static final int BIGBLOCK_BAY = 16;
 	private static final int SERVICE_BAY = 17;
+	private static final int FUEL_BAY = 18;
 	/**
 	 * Where the wheeled car's structure is in the world right now, and where it was when it was lifted off its pad, or null before
 	 * then (written by {@link ShowcaseRunAero}, which exists only for runs with Create Aeronautics and Sable).
@@ -268,6 +269,11 @@ public final class ShowcaseRun {
 					factory(level, player, pad(8));
 				} catch (RuntimeException e) {
 					CreateEngines.LOGGER.error("Showcase: the factory pad failed to build", e);
+				}
+				try {
+					ShowcaseRunFuels.build(level, pad(FUEL_BAY), CZ);
+				} catch (RuntimeException e) {
+					CreateEngines.LOGGER.error("Showcase: the fuel tanks failed to build", e);
 				}
 				try {
 					refinery(level, pad(9));
@@ -792,6 +798,9 @@ public final class ShowcaseRun {
 		SCENES.add(new Scene("sound", ShowcaseRunFeatures.SOUND_BAY, crank, true, List.of(over)));
 		SCENES.add(new Scene("gasket", ShowcaseRunFeatures.GASKET_BAY, null, false, List.of(over)));
 		SCENES.add(new Scene("night", ShowcaseRunFeatures.NIGHT_BAY, crank, true, List.of(over)));
+		// The five fuels, a tank of each
+		SCENES.add(new Scene("fuels", FUEL_BAY, null, false, List.of(
+			new View("row", 7.5, 2.5, CZ, 0, 10, 10))));
 		// An inline six on a moving structure, driving itself on wheels: only with Create Aeronautics (its Offroad wheels) and Sable in
 		// the run. Its views are offsets from the craft, which the camera follows (see pose)
 		if (aero())
@@ -1504,6 +1513,8 @@ public final class ShowcaseRun {
 			serviceStock(level);
 			refineryStock(level);
 			ShowcaseRunFeatures.stock(level);
+			if (TRAILER)
+				ShowcaseRunFuels.fill(level, pad(FUEL_BAY), CZ);
 			// (the refinery and the service bay are fed by their own pumps and funnels: see refinery() and serviceStock())
 		});
 	}
@@ -1851,6 +1862,8 @@ public final class ShowcaseRun {
 			SHOTS.add(new Shot("rover_wheels", "rover", box(12.8, 0, 2, 16.8, 3.6, 4.5), -22, 0, 6, 10, 0.9, 1.04, 0, 3, NO_TIME));
 		}
 		// Fuels and the refinery as the sun goes down (the exhaust-side shot is early, it faces away from the light)
+		SHOTS.add(new Shot("fuel_tanks", "fuels", box(2.5, 1, CZ - 0.5, 12.5, 5.2, CZ + 1.5), -12, 12, 8, 8, 1, 1.08, 0, 6,
+			GOLDEN_HOUR));
 		SHOTS.add(new Shot("v8_exhaust_dusk", "v8", v8, 136, 158, 10, 12, 1.08, 1.2, 0, 3, GOLDEN_HOUR));
 		SHOTS.add(new Shot("refinery_column", "refinery", box(5, 0, 2, 10, 9, 6), -48, -24, 4, 7, 1.08, 1.18, 0, 6, DUSK));
 		SHOTS.add(new Shot("refinery_base", "refinery", box(4.5, 0, 1, 8.5, 3.5, 5), -58, -40, 16, 14, 0.9, 1.02, 0, 3, NO_TIME));

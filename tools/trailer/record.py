@@ -305,6 +305,9 @@ def main():
     parser.add_argument("--no-music", action="store_true")
     parser.add_argument("--music")
     parser.add_argument("--post-only", action="store_true")
+    parser.add_argument("--pickup", metavar="SHOTS",
+                        help="record only these shots (comma-separated) again, into run/trailer/pickups, and cut them in over "
+                             "the main recording")
     parser.add_argument("--only", choices=("full", "teaser", "vertical"), help="cut only this one")
     args = parser.parse_args()
 
@@ -320,9 +323,17 @@ def main():
         else:
             task, run_dir = "runShowcaseShaders", "run/showcase-shaders"
         extra = ["-PwithAeronautics"] if task == "runShowcaseShaders" and not args.no_aeronautics else []
-        sound.unlink(missing_ok=True)
-        offset, audio_offset = record(ffmpeg, raw, sound, task, run_dir, extra)
-        meta.write_text(json.dumps({"offset": offset, "audio_offset": audio_offset}), encoding="utf-8")
+        if args.pickup:
+            take = OUT / "pickups" / args.pickup.replace(",", "+")
+            take.mkdir(parents=True, exist_ok=True)
+            extra.append(f"-PtrailerShots={args.pickup}")
+        else:
+            take = OUT
+            shutil.rmtree(OUT / "pickups", ignore_errors=True)  # a whole new recording makes every pickup stale
+        (take / "game.wav").unlink(missing_ok=True)
+        (take / "meta.json").unlink(missing_ok=True)
+        offset, audio_offset = record(ffmpeg, take / "raw.mp4", take / "game.wav", task, run_dir, extra)
+        (take / "meta.json").write_text(json.dumps({"offset": offset, "audio_offset": audio_offset}), encoding="utf-8")
         print(f"first shot begins {offset:.2f} s into the picture"
               + (f" and {audio_offset:.2f} s into the sound" if audio_offset is not None else ""))
     saved = json.loads(meta.read_text(encoding="utf-8"))
