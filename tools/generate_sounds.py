@@ -18,8 +18,10 @@ Sounds:
   turbo_whistle      a seamless loop of a spooling turbine: a thin whistle over air rush; pitch follows the wheel speed
   turbo_blowoff      the blow-off valve dumping boost: a thump, a hiss and a flutter of the compressor surging
   supercharger_whine a seamless loop of a roots blower: gear whine over the beat of its lobes; pitch follows its shaft
-  engine_catch       an engine catching on the starter: a few firings, each sooner and harder than the last
-  engine_stall       an engine dying: its last firings slowing and weakening, a clunk and a sigh from the exhaust
+  engine_catch, engine_catch2..3  an engine catching on the starter: a cough or two, a stumble, then firings crowding
+                     together as it flares and falls back (start_stall_sounds.py)
+  engine_stall, engine_stall2..3  an engine dying: uneven last firings and unlit chuffs, the crank rocking to a stop
+                     against compression and a sigh from the exhaust (start_stall_sounds.py)
   exhaust_pop1..3    unburned fuel lighting in a hot exhaust (the backfire): a hard-driven burst of noise with its weight in
                      the low mids, close reflections and a dense crackle behind it; no fixed tones
   metal_tick1..3     hot metal ticking as it cools: a small bright tink
@@ -46,7 +48,9 @@ import wave
 import numpy as np
 from scipy import signal
 
-SR = 44100
+import start_stall_sounds
+from sound_dsp import SR, band, finish, highpass, lowpass
+
 OUT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "src", "main", "resources", "assets",
                    "create_engines", "sounds")
 
@@ -99,6 +103,7 @@ def write_ogg_ffmpeg(path, samples):
 # Sounds that are mostly noise bursts, which the encoder's default quality smears into a grainy, crushed-sounding warble.
 # Only these are encoded at a higher quality; the others keep their recordings.
 HIGH_QUALITY = {"exhaust_pop1": 0.8, "exhaust_pop2": 0.8, "exhaust_pop3": 0.8}
+HIGH_QUALITY.update({name: 0.8 for name in start_stall_sounds.SOUNDS})
 
 
 def write_ogg(lib, name, samples):
@@ -121,23 +126,6 @@ def write_ogg(lib, name, samples):
     lib.sf_write_float(handle, data.ctypes.data_as(ctypes.POINTER(ctypes.c_float)), len(data))
     lib.sf_close(handle)
     print("wrote", os.path.normpath(path), "%.2fs" % (len(data) / SR))
-
-
-def band(noise, low, high, order=3):
-    sos = signal.butter(order, [low, high], btype="bandpass", fs=SR, output="sos")
-    return signal.sosfilt(sos, noise)
-
-
-def lowpass(noise, cutoff, order=3):
-    return signal.sosfilt(signal.butter(order, cutoff, btype="lowpass", fs=SR, output="sos"), noise)
-
-
-def highpass(noise, cutoff, order=2):
-    return signal.sosfilt(signal.butter(order, cutoff, btype="highpass", fs=SR, output="sos"), noise)
-
-
-def finish(mix, peak=0.9):
-    return mix / np.max(np.abs(mix)) * peak
 
 
 def bang(seed, pitch, bright=1.0):
@@ -298,55 +286,6 @@ def supercharger_loop():
 
     mix = (0.42 * whine * flutter + 0.3 * thrum / np.max(np.abs(thrum)) + 0.24 * air + 0.2 * grit)
     return finish(np.tanh(1.25 * mix), 0.8)
-
-
-def firing(t, at, pitch, rng):
-    """One firing heard from outside the engine, starting at time `at`: a thump that drops in pitch and a muffled crack."""
-    local = np.maximum(t - at, 0)
-    gate = (t >= at) * np.minimum(local / 0.002, 1)
-    sweep = (48 + 95 * np.exp(-local / 0.028)) * pitch
-    thump = np.sin(2 * np.pi * np.cumsum(sweep * (t >= at)) / SR) * np.exp(-local / 0.07)
-    crack = band(rng.standard_normal(len(t)), 500 * pitch, 3800, 2) * np.exp(-local / 0.018)
-    body = lowpass(rng.standard_normal(len(t)), 520 * pitch) * np.exp(-local / 0.06)
-    return gate * (thump + 0.3 * crack + 0.5 * body)
-
-
-def engine_catch():
-    """An engine catching on the starter: four firings, each sooner, harder and higher than the last, over a breath of
-    exhaust that swells as it takes hold."""
-    rng = np.random.default_rng(41)
-    n = int(0.85 * SR)
-    t = np.arange(n) / SR
-    mix = np.zeros(n)
-    for at, level, pitch in ((0.02, 0.5, 0.82), (0.21, 0.7, 0.9), (0.36, 0.9, 0.98), (0.48, 1.0, 1.06), (0.58, 0.8, 1.12)):
-        mix += level * firing(t, at, pitch, rng)
-    breath = band(rng.standard_normal(n), 180, 1500, 2)
-    breath = breath / np.max(np.abs(breath)) * np.clip(t / 0.5, 0, 1) ** 2 * np.exp(-np.maximum(t - 0.55, 0) / 0.09)
-    mix = np.tanh(1.5 * (mix + 0.35 * breath))
-    mix *= np.clip((n - np.arange(n)) / (0.12 * SR), 0, 1)
-    return finish(mix)
-
-
-def engine_stall():
-    """An engine dying: its last firings come later and weaker, something inside knocks to a stop, and what is left in
-    the exhaust sighs out."""
-    rng = np.random.default_rng(43)
-    n = int(1.2 * SR)
-    t = np.arange(n) / SR
-    mix = np.zeros(n)
-    for at, level, pitch in ((0.01, 1.0, 1.0), (0.13, 0.8, 0.92), (0.29, 0.6, 0.84), (0.5, 0.42, 0.76)):
-        mix += level * firing(t, at, pitch, rng)
-    # The crank rocking back against compression: a dull knock with a short iron ring
-    local = np.maximum(t - 0.7, 0)
-    gate = (t >= 0.7) * np.minimum(local / 0.001, 1)
-    knock = gate * (band(rng.standard_normal(n), 300, 2400, 2) * np.exp(-local / 0.012) * 0.25
-                    + 0.45 * np.sin(2 * np.pi * 172 * local) * np.exp(-local / 0.05)
-                    + 0.12 * np.sin(2 * np.pi * 437 * local) * np.exp(-local / 0.035))
-    sigh = band(rng.standard_normal(n), 400, 5200, 2)
-    sigh = sigh / np.max(np.abs(sigh)) * np.clip((t - 0.45) / 0.2, 0, 1) * np.exp(-np.maximum(t - 0.65, 0) / 0.2)
-    mix = np.tanh(1.4 * (mix + knock + 0.16 * sigh))
-    mix *= np.clip((n - np.arange(n)) / (0.15 * SR), 0, 1)
-    return finish(mix)
 
 
 def exhaust_pop(seed, pitch):
@@ -702,8 +641,7 @@ SOUNDS = {
     "turbo_whistle": turbo_loop,
     "turbo_blowoff": turbo_blowoff,
     "supercharger_whine": supercharger_loop,
-    "engine_catch": engine_catch,
-    "engine_stall": engine_stall,
+    **start_stall_sounds.SOUNDS,
     "exhaust_pop1": lambda: exhaust_pop(53, 1.0),
     "exhaust_pop2": lambda: exhaust_pop(59, 0.88),
     "exhaust_pop3": lambda: exhaust_pop(61, 1.14),

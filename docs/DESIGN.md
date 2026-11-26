@@ -602,6 +602,9 @@ faces; and anything that needs doing regularly (an oil change) can be automated 
   `bearing_squeal` (below 30 percent lubrication) as `MachineLoopSound` loops; `metal_tick` at random for about twenty
   seconds after a warm engine stops, from a heat figure the client lets decay. All on the new `mechanicalVolume`
   setting. Recordings are synthesized by `tools/generate_sounds.py`, which can now write WAV previews (`--wav DIR`).
+  The catch and the stall have three takes each, picked at random (`tools/start_stall_sounds.py`): uneven noise-built
+  firings with no pitched sweep; a catch coughs, stumbles and flares, a stall spaces out through unlit chuffs and rocks
+  to a stop.
 - **Checking it.** `./gradlew runVisualSmokeTest -PsmokeEffects --offline` builds a cold, a rich, a flooded and a dry
   engine and screenshots each effect (about a minute and a half).
 

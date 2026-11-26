@@ -246,6 +246,9 @@ key or saved format is renamed or removed. Changes to existing builds are listed
 - Changed, temperature is shown in degrees Celsius: goggles (with new Hot, Overheating and Critical readings), the Display Link's temperature
   and status sources, and the Black Box. An overheating block steams, harder the hotter it is. The Display Link temperature source now
   gives degrees where it gave a percentage of warm; its progress bar is as before.
+- Changed, the sounds of an engine catching and stalling are new, three takes of each. A catch coughs, stumbles, then fires
+  quicker and quicker as it flares; a stall's last firings come unevenly with a cylinder or two not lighting, and the crank
+  knocks to a stop and rocks back.
 - New, an optional `heat_factor` in the `fuel` data map (default 1) for pack makers. API version 1.3.0.
 - Changed (wear mode), the failure chance: a worn rod or gasket is far less likely to fail in any one minute, so heavy wear is now a warning
   and not a near certainty. Before, a part 80% worn at 256 RPM was certain to fail within a minute; now that chance is about 5% while warm. It
