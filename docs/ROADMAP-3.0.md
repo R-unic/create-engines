@@ -1088,6 +1088,33 @@ reading them (`EngineController.java` was the most-read file).
 - No test is lost: the unit test and GameTest counts match before and after. Anything that finds code by file or class name (tests,
   `src/smoke/` lists, tools, skills) moves in the same commit, as do the docs that name it.
 
+**Traps found while planning (2026-11-26).**
+
+- `CompatManifestTest` records saved-data keys by file name (`nbt:<FileName>:<key>`). Moving a test or block entity that writes saved
+  data to a new class makes its keys look deleted. The test classes that write such keys keep the original class name, and the
+  manifest does not move. Today that is `EngineGameTests` (4 keys), `BlueprintGameTests` (8), `StressGameTests` (1) and
+  `CylinderBlockEntity` (6).
+- A GameTest's name includes its class, so a moved test reports under a new name. Docs that quote `EngineGameTests.x` are updated;
+  release records are history and keep the old name.
+
+**The cut, file by file** (a first design; a split that reads worse than the whole is dropped, with the reason noted here):
+
+| File | Split into | Watch |
+| --- | --- | --- |
+| `engine/EngineController.java` | Core: constructor, `tick`, motion, layout. Package-private helpers holding the controller: `EngineInputs` (throttles, turbos, superchargers, fuel racks, governors, sensors, `tuneFuel`, `setAllMetering`), `EngineRating` (rating, curve, capacity), `EngineExhaust` (sound base, muffling, enclosure, soot, pollution), `EngineReadouts` (summary, status lines, diagnosis, sync), `EngineMilestoneReporter` (the `report*` methods) | Runs every tick: scratch arrays stay owned and reused, nothing allocates. pitest re-run. |
+| `gametest/EngineGameTests.java` | About seven classes by subject (starting and stalling, the transmission's `neutral…` tests, fuel and metering, induction, oil and sump, readouts and sensors, water and rain), shared builders in `EngineRigs` | The tests with saved-data keys stay in `EngineGameTests`. |
+| `ponder/EngineScenes.java` | `SceneHelpers` (`setThrow`, `flash`, `playFirings`) and about six themed classes (crank and cams, air and fuel, induction and heat, starting and oil, tools, exhaust and casing) | Scene IDs unchanged; only the plugin's method references move. |
+| `client/ShowcaseRun.java` | `ShowcaseBuild` (floor, engines, bank, pipes, fuelling), `ShowcaseTrailer` (shots, poses, cues, shot list), `ShowcaseHooks` (event handlers), beside the existing `ShowcaseRunAero` and `ShowcaseRunFeatures` | `TrailerCoverageTest`, `TrailerFramingTest` and the skills move with it. |
+| `tools/generate_models.py` | A `tools/models/` package: a core module (`box`, `write`) and one module per existing `# ---` section | Output byte-identical, checked by diffing the generated folder. |
+| `gametest/BlueprintGameTests.java`, `gametest/StressGameTests.java` | By subject, as `EngineGameTests` | Saved-data tests stay in the original class. |
+| `registry/CEBlocks.java` | Block families (`CEEngineBlocks`, `CEInductionBlocks`, `CEElectricBlocks` and so on), blockstate helpers in `CEBlockstates` | Registration order kept, so the creative tab order does not move. `reg:` manifest keys use the Registrate ID and are safe. |
+| `engine/topology/EngineScanner.java` | Optional: `PortTracer` (trace, run length, port network) and `CrankSeeds` | May stay whole if it reads well. |
+| `client/VisualSmokeTest.java` | Later | The sound plan's step 0 is editing it. |
+
+**Order.** First a size ratchet: a test holding each listed file to a line cap that only goes down, so nothing grows back. Then by
+reading cost and risk: `EngineScenes`, `EngineGameTests`, `EngineController`, `ShowcaseRun`, `generate_models.py`, then the rest.
+Each split waits until that file's own 2.4 work is committed, runs the full `ce_run.py` gate, and checks that `compat/` did not move.
+
 ## 2.5 Open Garage
 
 **Was 2.4 until the author moved it on 2026-11-25** to make room for 2.4 Running Hot; nothing in it changed. Older notes below that say "2.4" for these items mean this release.
