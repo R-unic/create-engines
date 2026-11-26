@@ -13,6 +13,7 @@ import com.createengines.config.CEClientConfig;
 import com.createengines.content.EffectRate;
 import com.createengines.content.effects.ExhaustLook;
 import com.createengines.content.EngineNoteSound;
+import com.createengines.content.SoundProbe;
 import com.createengines.content.EnginePoses;
 import com.createengines.content.camshaft.CamshaftBlockEntity;
 import com.createengines.content.crankshaft.CrankshaftBlock;
@@ -387,8 +388,10 @@ public class CylinderBlockEntity extends SmartBlockEntity implements IHaveGoggle
 			EngineEffects.submerged(level, level.random.nextBoolean() ? worldPosition : head);
 		}
 		boolean fired = current.result() == CycleResult.FIRED;
-		if (fired && crosses(previous, travelled, FIRING_CYCLE_ANGLE))
+		if (fired && crosses(previous, travelled, FIRING_CYCLE_ANGLE)) {
+			probeFiring();
 			ignite();
+		}
 		tickChamber(current, cycle, renderTime);
 		if (!current.intakeInlets()
 			.isEmpty() && crosses(previous, travelled, DRAUGHT_CYCLE_ANGLE) && draughts.allow(level)) {
@@ -447,6 +450,14 @@ public class CylinderBlockEntity extends SmartBlockEntity implements IHaveGoggle
 
 	/** The gas in a cylinder's bore: see {@link #chamber}. */
 	public record Chamber(double cycle, double crown, double roof, double radius, CylinderStatus status, long pos) {
+	}
+
+	/** Tells the sound bench, if one is listening, of a firing drawn here. */
+	private void probeFiring() {
+		if (!SoundProbe.active())
+			return;
+		CrankshaftBlockEntity crank = crankThrow();
+		SoundProbe.firing(crank == null ? null : crank.primaryPos());
 	}
 
 	/** The bang, and a flash of flame and sparks at the roof of the chamber. */

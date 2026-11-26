@@ -124,6 +124,7 @@ public final class EngineNoteSound extends AbstractTickableSoundInstance {
 
 	/** Where the engine whose primary crankshaft is at {@code at} is in its 720 degree cycle now, from its cam. */
 	public static void reportPhase(BlockPos at, double cycleDegrees) {
+		SoundProbe.sighting(at, cycleDegrees);
 		EngineNoteSound note = PLAYING.get(at);
 		if (note != null)
 			note.reportedPhase = cycleDegrees;
@@ -251,7 +252,9 @@ public final class EngineNoteSound extends AbstractTickableSoundInstance {
 		public ByteBuffer read(int size) {
 			if (reads++ == 0)
 				LOGGER.debug("Engine note stream first read: {} samples asked for", size / 2);
-			return pcm.read(size);
+			ByteBuffer made = pcm.read(size);
+			SoundProbe.streamRead(this, made.remaining() / 2);
+			return made;
 		}
 
 		@Override

@@ -187,6 +187,58 @@ To re-prove the harness: make a *separate* copy, run `./scripts/smoke-mutations.
 run the Gradle task it names, and check every `EXPECT` line appears among the failures. It refuses to run in a folder with
 `.git`.
 
+## The sound bench
+
+Step 0 of [SOUND-PLAN.md](SOUND-PLAN.md): the game's own sound, recorded and audited, so a change to the sound shows its figures
+from the game and not only from an offline render. It is not part of `./gradlew smoke` or the release gate: it needs a machine
+with speakers that nothing else is using.
+
+```
+/c/Python312/python.exe tools/sound_bench.py                 # everything, about 25 minutes
+/c/Python312/python.exe tools/sound_bench.py --scenes v12    # one scene or a few, while iterating
+python tools/sound_audit.py run/sound-bench/<date-time>      # audit a finished run again, without the game
+python tools/sound_audit.py --self-test                      # the audit finds made-up faults and passes clean sound
+```
+
+It needs `soundcard`, `numpy` and `scipy`. The runner copies the checkout to `create-engines-soundbench`, runs
+`gradlew runVisualSmokeTest -PsmokeSound` there and records what the default speakers play. Keep them on and everything else
+quiet, and never run it beside a trailer recording: each would record the other. All sound categories but blocks are turned
+off in that copy.
+
+* **Scenes** (`client/ShowcaseRunSoundBench`; `--scenes` takes these names): `single` (diesel), `i4`, `v8_cross`, `v8_flat`,
+  `flat4`, `vtwin`, `i6_diesel`, `v12`, `rotary`, `turbo_i4`, `reference` (silence, a furnace, a minecart, a Mechanical
+  Press) and, last, `room` (one single, then fifteen more round it, heard from the same spot, then all of them removed).
+  Engines have open exhausts and are heard from 6 blocks. Each runs one script: start, idle, throttle sweep, blip, a load
+  step (a clutch engages Mechanical Presses, fewer for the small engines), stall (its air is taken away), restart, then the
+  listener walks to 34 blocks and back. The rotary idles with its throttle wider open: at the others' idle stop it runs too
+  lean to light.
+* **The log** (`events.jsonl`) has each phase, each firing as it is drawn, cam sightings, the volume and pitch each tickable
+  engine sound is set to, each read of a note stream, and the engine's speed and load each tick. The mod reports them
+  through `content/SoundProbe`, which does nothing unless the bench is listening.
+* **The audit** (`report.md`, `report.json`, and `wav/<scene>.wav`) reports stream underruns and the least audio a stream
+  had queued; silent gaps while an engine runs; short bursts above 6 kHz that no firing explains; volume or pitch jumping from
+  one tick to the next (from the log) and 50 ms level stairs (from the recording); how long after each firing drawn it is
+  heard; loudness against the three reference sounds; the room of sixteen against its one engine (limit 6 dB); and how
+  alike one firing is to the next. Under **Faults found** it names the room still sounding after its engines are gone
+  ([a known, open bug](SOUND-PLAN.md#known-bug-the-shared-room-voice-outlives-its-engines-open)).
+  `--compare <earlier run>` puts that run's figures beside the new ones.
+* **A/B with real engines:** `--refs <folder>` with `<scene>.wav` recordings writes `ab/<scene>.wav`: the real one, a second
+  of silence, the game's, at the same loudness. No recordings are in the repository; which engines to compare with is the
+  author's choice.
+
+Read the figures for what they are. Lag is measured against a clap the game plays through its own sound, so 0 ms means as late
+as any other sound the game plays at once, not the delay to the ear. A firing's onset is only looked for within 0.45 of the gap
+to the next, so on a busy engine a lag is known only to within that window (shown beside it), and firings closer than 90 ms
+are not measured at all. The recorder's clock and the game's drift apart a little over a long run (the report says by how much
+between its two claps), which bounds how far to trust a difference of a few tens of milliseconds.
+
+The click, stair and likeness figures are of everything heard, not of the note alone. A gap is not
+judged where an engine is next to silent between firings, as a slow single is: there only the stream log can show a dropout.
+
+A report that starts with "Do not trust this run" is not evidence. It says so when the recorder lost audio or filled holes with
+zeros, the two sync claps disagree, a Mechanical Press (played at once) does not measure near 0 ms late, the empty pad is not
+silent, or a step never reached its goal (an engine that did not start). The author's listening is what signs off.
+
 ## The trailer
 
 The mod's trailer is made by a harness, so it can be cut again when the mod changes. It is a development aid, not a check, and is
@@ -353,6 +405,7 @@ reason no longer holds.
 * Whether anything *looks right* or reads as Create. Pictures are kept for a human; the pixel checks only catch the
   broken, the blank and the frozen.
 * Audio quality. The audit proves every sound resolves, starts, and does not leak voices; not that it sounds good.
+  [The sound bench](#the-sound-bench) finds faults in what the game plays, but not whether it sounds good either.
 * Multiplayer, other mods, other GPUs, Linux and macOS. Everything here runs one machine's dev environment, single
   player, with Create and Flywheel only.
 * Behaviour over a *real* long session (hours). The fleet runs about a minute; slower leaks need a longer soak.

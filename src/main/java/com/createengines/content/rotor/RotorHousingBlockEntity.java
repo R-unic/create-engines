@@ -7,6 +7,7 @@ import org.jetbrains.annotations.Nullable;
 import com.createengines.config.CEClientConfig;
 import com.createengines.content.EffectRate;
 import com.createengines.content.EngineNoteSound;
+import com.createengines.content.SoundProbe;
 import com.createengines.content.GoggleLines;
 import com.createengines.content.crankshaft.CrankshaftBlockEntity;
 import com.createengines.content.effects.EngineEffects;
@@ -422,8 +423,10 @@ public class RotorHousingBlockEntity extends CrankshaftBlockEntity implements Ga
 				if (mouth != null)
 					offerIntake(mouth);
 			}
-			if (current.result() == CycleResult.FIRED && crosses(previous, travelled, FIRING_CYCLE_ANGLE))
+			if (current.result() == CycleResult.FIRED && crosses(previous, travelled, FIRING_CYCLE_ANGLE)) {
+				SoundProbe.firing(primaryPos());
 				ignite(chamber);
+			}
 			if (!current.intakeInlets()
 				.isEmpty() && crosses(previous, travelled, DRAUGHT_CYCLE_ANGLE) && draughts[chamber].allow(level))
 				EngineEffects.draught(level, current, engineSummary());

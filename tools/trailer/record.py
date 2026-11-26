@@ -65,7 +65,9 @@ class SoundRecorder:
     silence, so a second thread plays an inaudible hiss through the same speakers to keep the stream alive.
     """
 
-    def __init__(self):
+    def __init__(self, blocksize=None):
+        # Frames each end of the loopback may buffer. None is the library's default, about 10 ms, which a busy machine overruns
+        self.blocksize = blocksize
         self.stop = threading.Event()
         self.started = None
         self.chunks = []
@@ -87,19 +89,23 @@ class SoundRecorder:
             import soundcard as sc
             speaker = sc.default_speaker()
             microphone = sc.get_microphone(id=str(speaker.name), include_loopback=True)
-            with microphone.recorder(samplerate=SAMPLE_RATE, channels=2) as recorder:
+            with microphone.recorder(samplerate=SAMPLE_RATE, channels=2, blocksize=self.blocksize) as recorder:
+                self._opened(recorder)
                 self.started = time.time()
                 while not self.stop.is_set():
                     self.chunks.append(recorder.record(numframes=SAMPLE_RATE // 10))
         except Exception as error:  # a device that will not open must not stop the picture being recorded
             self.error = f"could not record the speakers: {error}"
 
+    def _opened(self, recorder):
+        """For a subclass that has something to set on the library's recorder."""
+
     def _keep_alive(self):
         try:
             import numpy as np
             import soundcard as sc
             hiss = (np.random.default_rng(1).standard_normal((SAMPLE_RATE // 10, 2)) * 1e-4).astype("float32")
-            with sc.default_speaker().player(samplerate=SAMPLE_RATE, channels=2) as player:
+            with sc.default_speaker().player(samplerate=SAMPLE_RATE, channels=2, blocksize=self.blocksize) as player:
                 while not self.stop.is_set():
                     player.play(hiss)
         except Exception:

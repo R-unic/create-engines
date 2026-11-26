@@ -143,6 +143,8 @@ neoForge {
             systemProperty 'create_engines.visualSmokeTest.rainCap', project.hasProperty('smokeRainCap') ? 'true' : 'false'
             systemProperty 'create_engines.visualSmokeTest.refinery', project.hasProperty('smokeRefinery') ? 'true' : 'false'
             systemProperty 'create_engines.visualSmokeTest.window', project.hasProperty('smokeWindow') ? 'true' : 'false'
+            systemProperty 'create_engines.visualSmokeTest.sound', project.hasProperty('smokeSound') ? 'true' : 'false'
+            systemProperty 'create_engines.visualSmokeTest.sound.scenes', project.findProperty('soundScenes') ?: ''
         }
 
         // The unattended client audit (see docs/SMOKE.md): content, models, Ponder, a running fleet, leaks, pictures.

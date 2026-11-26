@@ -151,6 +151,7 @@ public final class MachineLoopSound extends AbstractTickableSoundInstance {
 		}
 		volume = loudest * source.loopVolume() * level * fade;
 		pitch = Mth.clamp(currentPitch, 0.5f, 2f);
+		SoundProbe.level(getLocation().getPath(), this, volume, pitch);
 	}
 
 	private void finish() {

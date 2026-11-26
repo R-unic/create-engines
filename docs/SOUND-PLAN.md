@@ -1,6 +1,6 @@
 # Sound, round two: sounding right in the game (plan, 2026-11-26)
 
-**A plan for the author to choose from. Nothing in it is built.** The first round of the rework is recorded in
+**A plan for the author to choose from. Only step 0 is built (2026-11-26).** The first round of the rework is recorded in
 [ROADMAP-3.0.md](ROADMAP-3.0.md), "The sound rework". This plan picks up from there. Sound is one of the mod's biggest draws, and what
 counts is how it sounds **in the game**: in a world, next to vanilla sounds, while the player walks around, with ten engines running.
 A clean offline render isn't enough. Some steps regenerate sounds from scratch.
@@ -36,11 +36,35 @@ each step (2.4 is the sound rework; 2.5 has "look, sound and performance").
 7. **Only the author's ears check the game.** Every automatic check is an offline render. Dropouts, stalls, clicks at buffer joins,
    level against vanilla, and the 16-engine room are only found when the author happens to hear them.
 
+## Known bug: the shared room voice outlives its engines (open)
+
+Found by step 0's sound bench, 2026-11-26. **Not fixed.** It is in the first round's shared "engine room" voice
+(`content/EngineNoteSound`, its `Scene` and `Room`), which was not yet committed when the bench found it.
+
+- **What is heard.** When every engine the room voice is playing stops calling in at once, the voice plays on with their last
+  notes. Its distance fall-off is off (`Attenuation.NONE`), so it is heard just as loud from anywhere.
+- **When.** From the code: the engines all stall or break, or are all removed or unloaded, as when the player travels away, with
+  no other running engine left to call in. The bench has shown the removed case only; the others are not tried in game.
+- **Cause.** Only a running engine's primary crankshaft calls `EngineNoteSound.ensurePlaying`, and only its `Scene.offer`
+  calls `Scene.resolve`, which empties and fades the room's slots. With no caller, the slots keep their synthesizers at their last
+  levels, so `EngineRoomMix.isSilent` stays false and `Room.tick` never ends the voice. Leaving the world ends it (`clear`).
+- **Measured.** With all sixteen of the room's engines removed, -44 LUFS in one run and -45.7 in another, where an empty pad reads
+  about -101 and one engine from 6 blocks about -47. In an earlier run, which then put the reference sounds after the room, it was
+  still playing in them, several pads away.
+- **Reproduce.** `tools/sound_bench.py --scenes room`: the report lists it under "Faults found" (the `gone` phase).
+- **For the fix.** Something that runs whether or not an engine does, such as the room voice's own tick or a client tick, has to
+  work the scene out, so engines that stopped calling in are forgotten. It needs a test, and the bench's `gone` phase silent.
+
 ## The plan, in order
 
 Each step can ship on its own and is measured with step 0's capture, before and after.
 
 ### Step 0: Hear the game, not the renderer (first, small to medium)
+
+**Built, 2026-11-26.** How to run it and how to read its figures: [SMOKE.md](SMOKE.md), "The sound bench". Where it differs from
+the list below: volume and pitch stairs are judged mainly from the levels the game logs each tick (a recording of an engine
+hides them); the recording is lined up by two claps and checked against the Mechanical Press; gaps are not judged where an
+engine is quiet between firings. No recordings of real engines are chosen yet (decision 5): `--refs` takes them.
 
 A repeatable in-game listening session, so every later change shows its numbers from the game itself.
 
@@ -131,7 +155,7 @@ the game.
 | Step | New tests |
 |---|---|
 | 0 | `sound_audit.py` self-test on made-up faults (a gap, a click, a stair, a late onset); the bench world in the smoke harness |
-| 1 | a throttle step heard within the queued time; no per-tick gain stairs in the PCM; handover hysteresis; spool pitch continuous beyond 2× |
+| 1 | a throttle step heard within the queued time; no per-tick gain stairs in the PCM; handover hysteresis; spool pitch continuous beyond 2×; the room voice falls silent once its engines stop calling in (the known bug above) |
 | 2 | waveguide pitch follows run length (stub to long run in semitones); grain takes never repeat back to back; perf budget; existing `EngineNoteVoiceTest` rules kept or moved by hand with the author's say-so |
 | 3 | one-shots inside the stream land on their firing; catch and stall have no gap or overlap with the note; asset rules |
 | 4 | occlusion and room cost under budget; filters stay finite |
