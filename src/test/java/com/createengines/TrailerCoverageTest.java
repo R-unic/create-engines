@@ -34,6 +34,7 @@ class TrailerCoverageTest {
 	private static final Path SHOWCASE = ROOT.resolve("src/main/java/com/createengines/client/ShowcaseRun.java");
 	private static final Path CAPTIONS = ROOT.resolve("tools/trailer/captions.txt");
 	private static final Path EDIT = ROOT.resolve("tools/trailer/edit.txt");
+	private static final Path VERTICAL = ROOT.resolve("tools/trailer/vertical.txt");
 
 	private static final Pattern PART_KEY = Pattern.compile("\"(?:block|item)\\.create_engines\\.([a-z0-9_]+)\"");
 	private static final Pattern SHOT = Pattern.compile("new Shot\\(\"([a-z0-9_]+)\"");
@@ -143,6 +144,51 @@ class TrailerCoverageTest {
 		assertEquals(once.size(), edited.size(), "A shot is in tools/trailer/edit.txt twice: " + edited);
 		assertEquals(shots(), once, "The shots of ShowcaseRun and the lines of tools/trailer/edit.txt must match");
 		assertTrue(offBeat.isEmpty(), "Pieces of edit.txt that are not a whole number of half bars (1.5 s): " + offBeat);
+	}
+
+	/**
+	 * The vertical cut (Shorts) has its own edit, tools/trailer/vertical.txt. Every piece names a real shot and is a whole number
+	 * of half bars; every piece but the last has its few big words, as many viewers watch a feed without sound; the last, and only
+	 * the last, is the end piece. And the AI notice is in it: the tag at the top from the first frame, the full notice on the end
+	 * piece with the line saying where to read how AI is used, and the address of that page, which must be docs/AI.md and exist.
+	 */
+	@Test
+	void theVerticalCutNamesRealShotsKeepsTheBeatAndCarriesTheAiNotice() throws IOException {
+		Set<String> shots = shots();
+		List<String> pieces = new ArrayList<>();
+		for (String line : Files.readAllLines(VERTICAL, StandardCharsets.UTF_8)) {
+			String text = line.split("#", 2)[0].trim();
+			if (!text.isEmpty())
+				pieces.add(text);
+		}
+		assertTrue(pieces.size() >= 2, "tools/trailer/vertical.txt has no pieces");
+		for (int i = 0; i < pieces.size(); i++) {
+			String piece = pieces.get(i);
+			String[] halves = piece.split("\\|", 2);
+			String[] fields = halves[0].trim().split("\\s+");
+			assertTrue(fields.length >= 2, "A line of vertical.txt is not \"<shot> <seconds> [options] | <words>\": " + piece);
+			assertTrue(shots.contains(fields[0]), "vertical.txt names a shot that does not exist: " + piece);
+			double halfBars = Double.parseDouble(fields[1]) / 1.5;
+			assertTrue(halfBars > 0 && Math.abs(halfBars - Math.rint(halfBars)) < 1e-9,
+					"A piece of vertical.txt that is not a whole number of half bars (1.5 s): " + piece);
+			boolean end = List.of(fields).contains("end");
+			boolean last = i == pieces.size() - 1;
+			assertEquals(last, end, "The end piece of vertical.txt must be the last, and only the last: " + piece);
+			boolean words = halves.length == 2 && !halves[1].isBlank();
+			assertTrue(end || words, "A piece of vertical.txt has no words: " + piece);
+		}
+		Map<String, String> captions = new TreeMap<>();
+		for (String line : Files.readAllLines(CAPTIONS, StandardCharsets.UTF_8)) {
+			int colon = line.indexOf(':');
+			if (!line.startsWith("#") && colon > 0)
+				captions.put(line.substring(0, colon).trim(), line.substring(colon + 1).trim());
+		}
+		for (String key : List.of("outro_notice", "vertical_ai_tag", "ai_docs", "ai_docs_url"))
+			assertTrue(!captions.getOrDefault(key, "").isEmpty(), "tools/trailer/captions.txt has no " + key + ": line");
+		assertTrue(captions.get("vertical_ai_tag").contains("AI") && captions.get("ai_docs").contains("docs/AI.md"),
+				"The vertical cut's AI tag must say AI, and its docs line must point to docs/AI.md");
+		assertTrue(captions.get("ai_docs_url").endsWith("/docs/AI.md"), "ai_docs_url must be the address of docs/AI.md");
+		assertTrue(Files.isRegularFile(ROOT.resolve("docs/AI.md")), "docs/AI.md, which the trailer points to, is gone");
 	}
 
 	@Test

@@ -6,9 +6,13 @@
 # outro, outro_sub       the closing card (post.py adds the version line from gradle.properties)
 # outro_links         the line under that telling viewers the download links are in the video description
 # outro_notice           the AI notice at the foot of the closing card
+# ai_docs                the line under the AI notice on the vertical cut's end piece, saying where to read how AI is used
+# ai_docs_url            the address of that page (docs/AI.md), under the AI notice in both video descriptions
+# vertical_ai_tag        the short AI notice at the top of the vertical cut from its first frame, for a viewer who leaves early
+# vertical_description   the first line of the Shorts description (post.py writes run/trailer/description_vertical.txt)
 # caption <shot>         the line shown over that shot in the full trailer (every shot has one; a `quiet` piece of edit.txt
 #                        does not show its own, the one before stays up)
-# short_shots            the shots of the teaser and the vertical cut, in order, three seconds each
+# short_shots            the shots of the teaser, in order, three seconds each (the vertical cut has its own edit, vertical.txt)
 # short_caption <shot>   the few big words over each of those
 # thumbnail              the shot the thumbnail is taken from
 # vertical_thumbnail     the shot the 9:16 thumbnail (Shorts) is taken from, vertical_thumbnail_at seconds into it; vertical_title is its two big lines split by |, vertical_sub the small one
@@ -26,7 +30,13 @@ outro_sub: Modrinth | CurseForge
 outro_links: Links in the description
 outro_notice: Built with AI: nearly all of this mod, its sounds and models, and this trailer's music were made by an AI (Claude) at the author's direction.
 
+ai_docs: How AI is used: docs/AI.md on GitHub (R-unic/create-engines)
+ai_docs_url: https://github.com/R-unic/create-engines/blob/master/docs/AI.md
+vertical_ai_tag: Mod made with AI - see docs/AI.md
+
 description: Real combustion engines for Create: inline, V, flat and Wankel layouts, turbochargers and superchargers, a refinery, an electrical chain and a working factory, all turning Create rotation. Everything in this trailer is made in the game with the mod.
+vertical_description: Real combustion engines for Create: build one cylinder up to a boosted V16, start it and put it to work.
+
 link GitHub: https://github.com/R-unic/create-engines
 link Report a bug: https://github.com/R-unic/create-engines/issues
 link Discord: https://discord.gg/QYVpy2dqGE
