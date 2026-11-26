@@ -248,6 +248,17 @@ Each new minor or major version gets a trailer composed differently from the ear
 camera moves, edit, captions), not the last cut with new shots slotted in, and it shows off that version's new features. The
 harness stays; the composition below describes the current cut and is rewritten with the next one.
 
+Every composition keeps viewers through its first and last seconds, each form in its own way:
+
+- **The opening (first 3 to 5 seconds).** The short form must start in the middle of fast, high-speed machinery: no title card,
+  intro beat or slow build before it. The long form may start with a short intro card; keep it brief and get to intense
+  motion, fast machinery or a dramatic feature reveal inside those seconds.
+- **The outro.** In both forms, keep the calls to action (download links, release date, what to watch next) concise and work
+  them in just before the visuals end, so they are seen before viewers drop off at the end screen. In the short form they lie
+  over moving footage. The long form leads into them smoothly, with no long, separate tail. The AI notice stays.
+
+The current cuts predate these two rules and are not yet checked against them; they apply from the next composition.
+
 ```
 python tools/trailer/record.py              # plays the game, records screen and sound, cuts the videos
 python tools/trailer/record.py --post-only  # cuts the last recordings again (new captions or music)

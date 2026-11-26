@@ -59,6 +59,9 @@ Each new minor or major version's trailer is composed afresh, so it does not loo
 story, shot order, camera moves, edit and captions, not the last cut with new shots slotted in. It shows off what that
 version adds.
 
+Both forms, long and short, need a tight opening and a concise outro, tuned to each ([docs/SMOKE.md](docs/SMOKE.md),
+"The trailer").
+
 ## When a test, snapshot or ratchet goes red
 
 A red guard is a question: *did I change something I did not mean to?* Default answer: the code is wrong, so fix the code.
