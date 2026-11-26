@@ -440,6 +440,7 @@ public final class EngineController {
 			model.resetGas(model.pistonAngle(sim.angle(), sim.rotaryAngle(), sim.direction()));
 		if (motion != null && motion.source() != null) {
 			carryCylinders(motion.source());
+			sim.carryMeanSpeed(motion.source().sim);
 			// A rebuilt engine is re-rated from scratch, but until that is done it is still the engine it was: dropping
 			// its rating to nothing for the moment that takes would overstress everything it was driving
 			torqueCurve = motion.source().torqueCurve;
@@ -1194,7 +1195,7 @@ public final class EngineController {
 		float maxSpeed = AllConfigs.server().kinetics.maxRotationSpeed.get();
 		float target = 0;
 		if (!sim.isStopped())
-			target = sim.direction() * Math.min(maxSpeed, Math.max(1, Math.round(sim.rpm())));
+			target = sim.direction() * Math.min(maxSpeed, Math.max(1, Math.round(sim.meanRpm())));
 		float current = primary.getGeneratedSpeed();
 		ticksSincePublish++;
 		// Create zeroes a crank when a rotation conflict breaks a source beside it (a hand crank turned against the engine)
@@ -1317,13 +1318,13 @@ public final class EngineController {
 			if (i < torqueCurve.length && i < rippleCurve.length)
 				torque[i] = (float) (Math.max(0, torqueCurve[i]) * Roughness.smoothness(rippleCurve[i]) * scale);
 		}
-		return new Curve(rpm, torque, (float) sim.rpm(), (float) (ratedTorque() * CEConfig.STRESS_PER_TORQUE.get()),
+		return new Curve(rpm, torque, (float) sim.meanRpm(), (float) (ratedTorque() * CEConfig.STRESS_PER_TORQUE.get()),
 			rated && rating == null);
 	}
 
 	private double ratedTorque() {
 		return sim.isStopped() ? 0
-			: Dynamometer.ratedTorque(torqueCurve, rippleCurve, sim.rpm()) * RATING_MARGIN * Torsion.stiffness(flexLoss);
+			: Dynamometer.ratedTorque(torqueCurve, rippleCurve, sim.meanRpm()) * RATING_MARGIN * Torsion.stiffness(flexLoss);
 	}
 
 	/**
@@ -1414,9 +1415,9 @@ public final class EngineController {
 		// The summary keeps this array, so it is the one thing here that has to be made new; sorted as Float.compare orders them
 		float[] angles = Arrays.copyOf(listed, listedCount);
 		Arrays.sort(angles);
-		float roughness = (float) (sim.isStopped() ? 0 : Dynamometer.roughnessLoss(torqueCurve, rippleCurve, sim.rpm()));
+		float roughness = (float) (sim.isStopped() ? 0 : Dynamometer.roughnessLoss(torqueCurve, rippleCurve, sim.meanRpm()));
 		Diagnosis.Report report = diagnose(state, firing, roughness);
-		return new EngineSummary(state, (float) sim.rpm(), primary.publishedCapacity(),
+		return new EngineSummary(state, (float) sim.meanRpm(), primary.publishedCapacity(),
 			(float) (smoothedLoad * torqueScale), (float) (sim.fuelRate() * 60), (float) sim.ripple(), firing,
 			working, (float) sim.inertia(), (float) sim.lubrication()
 				.effective(),
@@ -1504,7 +1505,7 @@ public final class EngineController {
 		double secondary = sim.isolatedInertia();
 		if (!(secondary > 0))
 			return null;
-		double rpm = sim.rpm();
+		double rpm = sim.meanRpm();
 		double share = DualMass.isolation(rpm, sim.isolationResonanceRpm());
 		double seen = DualMass.effectiveInertia(sim.inertia(), secondary, rpm, sim.isolationResonanceRpm());
 		long isolating = Math.round(share * 10) * 10;
@@ -1998,7 +1999,7 @@ public final class EngineController {
 				&& turbo.vanes() >= EngineMilestones.VANES_CLOSING;
 			antiLagBoost |= turbo.antiLagging() && turbo.boost() >= EngineMilestones.STAGE_BOOST;
 		}
-		float roughness = (float) (sim.isStopped() ? 0 : Dynamometer.roughnessLoss(torqueCurve, rippleCurve, sim.rpm()));
+		float roughness = (float) (sim.isStopped() ? 0 : Dynamometer.roughnessLoss(torqueCurve, rippleCurve, sim.meanRpm()));
 		// Banks: firing pistons that share a throw, on sides a quarter turn apart (a vee) or opposite (flat)
 		int firing = 0;
 		boolean sharedLobe = false;

@@ -237,6 +237,13 @@ key or saved format is renamed or removed. Changes to existing builds are listed
   a quarter of its power at 165 degrees and above, and none below 140. It comes back as the engine cools, and nothing breaks or stops. A boosted
   spark engine that hot also lights its charge a little earlier. A server can scale or turn this off with `balance.overheatPenalty`. **An existing
   engine that runs very hot without coolant makes less power than before**; coolant or a Radiator puts it right.
+- **Changed, the speed a rough engine gives, in every world.** An engine now gives its network the mean speed of its firing cycle. Before, it
+  gave whatever the speed was as a game tick ended, which lands somewhere else on a rough engine's surge each time, so its speed wandered and
+  was sent again and again, twitching every shaft on the line. It now holds steady, and so do the goggles, Display Link, Black Box and sound
+  that show it. **What an existing rough engine's network gets, speed and stress capacity, no longer wanders with the surge**, and after a
+  throttle or load change it follows up to one firing cycle later. Smooth engines look as before. The simulation is unchanged.
+- Changed, how a crank is drawn: when its speed does change, it now catches up with Create's shafts over a few frames instead of jumping in
+  one. A rough engine's crank throws and pistons now visibly surge with each firing, by a few degrees. Drawing only.
 - Changed, one set of heat units: every temperature is now in degrees Celsius, including the charge and ignition temperatures in the cylinder
   goggles (they were in kelvin) and the boost limit in the recipe viewer (it was a bare number), and amounts of heat are in HU, heat units
   (HU/s on the Exhaust Heat Exchanger and Radiator). Only what is shown changed: data packs and scripts read the same numbers.

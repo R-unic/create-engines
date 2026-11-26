@@ -1187,6 +1187,16 @@ STALLED ──(crank driven ≥ cranking speed)──▶ CRANKING ──(combust
 - We don't replace or wrap `KineticNetwork` or `RotationPropagator`.
 - We don't push sub-tick torque ripple into Create. Create sees a smoothed speed and capacity. Ripple shows up in
   diagnostics and visuals (and later in wear and noise).
+  **How it is smoothed:** the speed sent to the network, and the speed the capacity, goggles, Display Link, Black Box,
+  dynamometer's current-speed mark and sounds read, is the mean over the last whole firing cycle
+  (`EngineSimulation.meanRpm`), ramped to each new mean over that cycle's length (`engine.sim.MeanSpeed`), so it is
+  smooth and at most a cycle behind. Before a first cycle, while a starter or another source holds the crank, and when
+  stopped, it is the instant speed. A tick is not locked to the firing cycle, so the instant speed at its end would land
+  somewhere else on the ripple each time and a rough engine would keep sending new speeds. The governor, the tuning
+  readings and everything inside the simulation still use the instant speed.
+  **How it shows:** `CrankSurge` draws the crank's throws, and so their pistons, a few degrees (4 at most) ahead and
+  behind once for each firing, more with more ripple. The plain crank segments, whose ends meet Create's shafts, and the
+  cams do not surge.
 
 ---
 
@@ -1431,9 +1441,11 @@ piston, linkage and connector `TransformedInstance`s every frame from the shaft'
   line whose two other coordinates sum to an even number, 0 on the next one over); `CrankGeometry.createShaftPhase` is
   that rule and `EnginePoses.drawnShaft` adds it to the crank, its pistons and a rotor's eccentric, the sim being
   untouched. And since the real shafts jump at every speed change where the accumulated angle does not,
-  `RenderRotation.alignedAt` eases the crank's angle back toward Create's, to the nearest quarter turn (a shaft looks
-  the same every 90°), by at most half a degree a tick, so an engine that has settled to a speed is square with the
-  shafts around it and one that is changing speed is never seen to jump. Camshafts are not aligned this way.
+  `RenderRotation.alignedAt` brings the crank back to Create's angle, to the nearest quarter turn (a shaft looks the
+  same every 90°). The jump can be up to 45° however small the change of speed, so on a change the crank catches up in
+  even shares over 3 ticks (`CATCH_UP_TICKS`): not all in one frame, which twitched the whole engine, and not slowly,
+  which left it visibly out of step with its shafts. Any drift between changes is eased out by at most half a degree a
+  tick. Camshafts follow the crank's angle and are not aligned on their own.
 
 The server sim's Θ and the client's render angle are **not** the same number, by design. The server is authoritative
 for torque and fuel; the client is authoritative for what looks right. The status flags tie them together qualitatively.

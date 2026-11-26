@@ -101,6 +101,11 @@ public final class EngineSimulation {
 	private double ripple;
 	private double fuelRate;
 	private boolean hasCompletedCycle;
+	/** Mean angular speed over the last whole cycle, rad/s, and how long it took; 0 with no whole cycle since the last stop. */
+	private double cycleMeanOmega;
+	private double cycleMeanSeconds;
+	/** The speed seen from outside; nothing in the simulation reads it. */
+	private final MeanSpeed meanSpeed = new MeanSpeed();
 
 	public EngineSimulation(List<CylinderModel> cylinders, double baseInertia, double baseFriction) {
 		this(cylinders, baseInertia, baseFriction, 0);
@@ -273,6 +278,8 @@ public final class EngineSimulation {
 			thermal.update(Thermal.heatIn(burnHeat / TICK, otherExhaust / TICK, tickFrictionWork * Thermal.dryHeat(lubrication.film()) / TICK,
 				sources.size()), sources.size(), TICK, coolant);
 		tickFrictionWork = 0;
+		// With a clutch holding the crank there is no cycle of its own to go by
+		meanSpeed.update(rpm(), crankingTorque() > 0 ? 0 : omegaToRpm(cycleMeanOmega), cycleMeanSeconds, TICK);
 		double cold = thermal.felt();
 		double hot = thermal.hotness();
 		for (int i = 0; i < sources.size(); i++) {
@@ -370,6 +377,8 @@ public final class EngineSimulation {
 		ripple = mean > 0 ? (cycleOmegaMax - cycleOmegaMin) / mean : 0;
 		fuelRate = cycleTime > 0 ? cycleFuel / cycleTime : 0;
 		hasCompletedCycle = true;
+		cycleMeanOmega = cycleTime > 0 ? mean : 0;
+		cycleMeanSeconds = cycleTime;
 		washOil();
 
 		cycleProgress = 0;
@@ -418,6 +427,8 @@ public final class EngineSimulation {
 		fuelRate = 0;
 		ripple = 0;
 		hasCompletedCycle = false;
+		cycleMeanOmega = 0;
+		cycleMeanSeconds = 0;
 		cycleProgress = 0;
 		cycleGasWork = 0;
 		cycleFrictionWork = 0;
@@ -543,6 +554,7 @@ public final class EngineSimulation {
 		this.omega = Double.isFinite(omega) ? Math.max(0, omega) : 0;
 		for (Camshaft camshaft : camshafts)
 			camshaft.angle = this.angle / 2;
+		meanSpeed.update(rpm(), 0, 0, TICK);
 	}
 
 	/**
@@ -574,6 +586,16 @@ public final class EngineSimulation {
 		return cylinders;
 	}
 
+	/**
+	 * Takes over the mean speed of the simulation this one replaces, after {@link #restore}: without it a rebuilt engine
+	 * would be back at the instant speed, somewhere on its ripple, until it had turned a whole cycle again.
+	 */
+	public void carryMeanSpeed(EngineSimulation old) {
+		cycleMeanOmega = old.cycleMeanOmega;
+		cycleMeanSeconds = old.cycleMeanSeconds;
+		meanSpeed.copyFrom(old.meanSpeed);
+	}
+
 	public List<Camshaft> camshafts() {
 		return camshafts;
 	}
@@ -601,6 +623,15 @@ public final class EngineSimulation {
 
 	public double rpm() {
 		return omegaToRpm(omega);
+	}
+
+	/**
+	 * The speed to show and to give a network, RPM: the mean over a firing cycle, ramped between cycles (see
+	 * {@link MeanSpeed}), where {@link #rpm()} is wherever the crank is on its ripple at this instant. It is the instant
+	 * speed before a first whole cycle, while a clutch holds the crank, and when stopped. As of the last tick's end.
+	 */
+	public double meanRpm() {
+		return isStopped() ? 0 : meanSpeed.rpm();
 	}
 
 	public int direction() {

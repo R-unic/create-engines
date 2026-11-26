@@ -689,6 +689,15 @@ wear, so nothing comes back repaired.
 cold/warm, and "make sure overheating is a point you can reach". The author put it all in a new 2.4 and moved Open Garage to 2.5, and the same day **dropped 2.3.1**: its fixes ship here too.
 **Nothing new is built; this is a first design.**
 
+### Smoother speed ripple (author, 2026-11-26)
+
+**Built, not seen in game, not released.** An engine gives its network the mean speed of its firing cycle instead of the speed as a tick
+ends, its crank catches up with Create's shafts over 3 ticks after a speed change, and a rough engine's throws and pistons are drawn surging
+(how each works: `docs/DESIGN.md` 2.6 and 8). **Exception for the 2.4.0 record, approved by the author on 2026-11-26**: the speed and
+stress capacity a rough engine gives its network, and the speed shown for it, changed from the sampled instant speed to the cycle mean.
+`compat/behaviour.txt` and `compat/trajectories.txt` are not moved by it. `RenderRotationTest`'s same-frame squareness check now allows the
+3-tick catch-up.
+
 ### Fixes carried over (2.3.1 dropped, author 2026-11-25)
 
 These were the 2.3.1 patch. They go out with 2.4 and are listed first in its changelog.
