@@ -279,9 +279,11 @@ key or saved format is renamed or removed. Changes to existing builds are listed
   It never stops an engine by itself.
 - New (wear mode), turbochargers wear with boost, heat and poor oil. A worn one makes less boost, and a badly worn one can fail and make none
   until it is replaced. A Service Kit sets light wear right on a turbo or a plug.
-- New, **Light Connecting Rod** and **Heavy Connecting Rod**. A light rod has a little less of the friction that grows with speed and wears fast
-  under load; a heavy one has a little more and wears slowly under load. The friction difference applies with the wear mode on or off. The Bank
-  Builder fits them when you carry no standard rod. A blueprint does not record the kind of rod.
+- New, **Light Connecting Rod** and **Heavy Connecting Rod**. With the wear mode on or off, a light rod has a little less of the friction that
+  grows with speed and adds less inertia to the crank (it revs up sooner and runs rougher), and a heavy one has a little more friction and adds
+  more inertia (it runs smoother, so an uneven engine keeps more of its stress, and changes speed slower). In wear mode a light rod also wears
+  fast under load and a heavy one slowly. The Bank Builder fits them when you carry no standard rod. A blueprint does not record the kind of rod.
+  In the cylinder a light rod is slim brass and a heavy one is stout steel.
 - New, the Black Box records a warped head and a failed turbocharger as events, and both, with plug wear, count in the build's wear figure.
 - Fixed (wear mode): breaking a battery, rotor housing or turbocharger and placing it again no longer makes it new, and a thrown rod's wreck
   stays in a cylinder that is broken and placed. Their items now carry `create_engines:wear` and `create_engines:failed`.

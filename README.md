@@ -109,8 +109,10 @@ Minecraft 1.21.1 · NeoForge 21.1.219 or newer · Create 6.0.10 (build 257 or ne
   block can blow a sound gasket, seize an oiled piston and warp a head. Four head gaskets (stock, cardboard, rubber,
   copper), Apex Seals and a Service Kit to put light wear right. Off, nothing wears. The numbers are in
   [docs/WEAR.md](docs/WEAR.md)
-- **Light and Heavy Connecting Rods**: a light rod drags a little less at speed and wears fast under load, a heavy one
-  takes load well and drags a little more. The difference in drag is there with the wear mode off too
+- **Light and Heavy Connecting Rods**: a light rod drags a little less and gives the crank less to swing, so the engine
+  revs up sooner but runs rougher. A heavy one drags a little more and adds mass, so it runs smoother (a lumpy engine
+  keeps more of its stress) but changes speed slower. Both work with the wear mode off; with it on, a light rod also
+  wears fast under load and a heavy one slowly
 - **Engine readouts**: a Display Link set against a crankshaft shows an engine's state, speed, load, temperature and
   oil on a display board or nixie tubes, and a comparator reads any of an oil sump's tanks, so a pump or an alarm can
   keep the oil topped up

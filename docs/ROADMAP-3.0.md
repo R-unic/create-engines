@@ -871,6 +871,10 @@ blueprint record of the rod.
 inertia its cylinder adds to the crank, 0.7 light and 1.5 heavy (first pass), so a heavy rod smooths an engine and a light one lets it rev up
 sooner. Their items are now 3D models like the standard rod's, brass for light and steel for heavy, in place of the flat textures.
 
+**Seen and tested in game (the author, 2026-11-26):** the author has seen the new connecting rods working in cylinders and has tested wear.
+This replaces "not seen in game" above for those. It does not settle the first-pass numbers or the choices left to confirm, and it is not a
+release record box.
+
 **Exceptions owed in the 2.4.0 record**, in addition to those under "Fixes carried over": the loot tables of `battery`, `dry_cell`,
 `large_battery`, `cylinder`, `precision_cylinder`, `rotor_housing`, `turbocharger` and `variable_turbocharger` now copy wear onto the item
 (manifest lines moved by hand); the retuned failure chance and the new heat and load wear (wear mode only); the changed pins in `WearTest`,
