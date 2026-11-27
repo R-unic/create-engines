@@ -84,7 +84,7 @@ night_pull         6     engine   flash    | Lift off. / Bang
 far_boom           7.5   fit      end
 ```
 
-Vertical thumbnail: the exhaust flame in `wear_turbo`, titled "Running / Hot", "Version 2.4" (remade 2026-11-27). Teaser (`short_shots`): exhaust_mouth "Hear every pipe", v8_crossplane "Crossplane burble",
+Vertical thumbnail: the exhaust flame in `wear_turbo`, titled "Working / Engines", "for Create", with an "Update 2.4" badge (remade 2026-11-27). Teaser (`short_shots`): exhaust_mouth "Hear every pipe", v8_crossplane "Crossplane burble",
 wear_gasket_blown "Wear it out", bank_wx "Build a W or X".
 
 ## Where the build differs from the plan above

@@ -882,6 +882,10 @@ def thumbnail(ffmpeg, args, words, shots, work):
     image.convert("RGB").save(args.thumbnail)
 
 
+TALLEST_TITLE = 21  # a short title stops here, so the small line under it stays out of the bottom fifth
+BADGE_ROOM = 150  # how far the words move up when there is a badge, so it stays out of the bottom fifth too
+
+
 def tall_crop(words):
     """The ffmpeg filter that takes the Shorts thumbnail's 9:16 window out of a 16:9 frame. `vertical_thumbnail_x` and
     `vertical_thumbnail_y` (0..1, default 0.5) place it, `vertical_thumbnail_zoom` (1 or more) makes it that much smaller."""
@@ -906,11 +910,13 @@ def vertical_thumbnail(ffmpeg, args, words, shots, work):
     image = ImageEnhance.Contrast(image).enhance(1.12)
     image = image.filter(ImageFilter.UnsharpMask(radius=3, percent=70, threshold=2)).convert("RGBA")
     width, height = image.size
+    badge = words.get("vertical_badge")
+    raised = BADGE_ROOM if badge else 0  # the words, and the dark behind them, move up to make room for the badge
 
     shade = Image.new("RGBA", image.size, (0, 0, 0, 0))
     draw = ImageDraw.Draw(shade)
     for y in range(height):  # dark behind the words in the lower middle, a little at the top for the logo
-        low = min(1.0, max(0.0, (y - 880) / 360)) ** 1.2 * 225 if y < 1500 else 225 - min(1.0, (y - 1500) / 420) * 70
+        low = min(1.0, max(0.0, (y - 880 + raised) / 360)) ** 1.2 * 225 if y < 1500 else 225 - min(1.0, (y - 1500) / 420) * 70
         top = max(0.0, 1 - y / 300) ** 1.5 * 110
         draw.line((0, y, width, y), fill=(6, 4, 10, int(max(low, top))))
     image.alpha_composite(shade)
@@ -918,10 +924,10 @@ def vertical_thumbnail(ffmpeg, args, words, shots, work):
     margin = 70
     title_lines = words["vertical_title"].upper().split("|")
     scale = 1  # one size for both lines, the longest fills the width
-    while all(mcfont.width(line) * (scale + 1) <= width - 2 * margin - 40 for line in title_lines):
+    while scale < TALLEST_TITLE and all(mcfont.width(line) * (scale + 1) <= width - 2 * margin - 40 for line in title_lines):
         scale += 1
     reach = max(4, scale // 5)
-    y = 1050
+    y = 1050 - raised
     for line, color in zip(title_lines, (WHITE, GOLD)):
         art = outlined(line, scale, color, INK, reach=reach, drop=reach)
         image.alpha_composite(art, ((width - art.width) // 2, y))
@@ -929,6 +935,13 @@ def vertical_thumbnail(ffmpeg, args, words, shots, work):
     sub = outlined(words["vertical_sub"].upper(), 7, (255, 255, 255), INK, reach=5, drop=5)
     image.alpha_composite(Image.new("RGBA", (sub.width, 12), COPPER), ((width - sub.width) // 2, y + 12))
     image.alpha_composite(sub, ((width - sub.width) // 2, y + 40))
+    if badge:  # its own copper plate, so it does not read as part of the line above ("for Create update 2.4")
+        text = mcfont.render(badge.upper(), 7, WHITE)
+        top = y + 40 + sub.height + 28
+        left = (width - text.width) // 2
+        ImageDraw.Draw(image).rectangle((left - 30, top, left + text.width + 29, top + text.height + 35),
+                                        fill=COPPER, outline=INK, width=6)
+        image.alpha_composite(text, (left, top + 18))
 
     logo = Image.open(LOGO).convert("RGBA").resize((190, 190), Image.LANCZOS)
     ring = Image.new("RGBA", (214, 214), (0, 0, 0, 0))
