@@ -1,6 +1,7 @@
 # Sound, round two: sounding right in the game (plan, 2026-11-26)
 
-**A plan for the author to choose from. Only step 0 is built (2026-11-26).** The first round of the rework is recorded in
+**A plan for the author to choose from. Steps 0 to 4 are built (2026-11-26); step 1 is measured by the bench, steps 2 to 4
+only by offline renders and tests, and none is signed off by ear.** The first round of the rework is recorded in
 [ROADMAP-3.0.md](ROADMAP-3.0.md), "The sound rework". This plan picks up from there. Sound is one of the mod's biggest draws, and what
 counts is how it sounds **in the game**: in a world, next to vanilla sounds, while the player walks around, with ten engines running.
 A clean offline render isn't enough. Some steps regenerate sounds from scratch.
@@ -36,9 +37,10 @@ each step (2.4 is the sound rework; 2.5 has "look, sound and performance").
 7. **Only the author's ears check the game.** Every automatic check is an offline render. Dropouts, stalls, clicks at buffer joins,
    level against vanilla, and the 16-engine room are only found when the author happens to hear them.
 
-## Known bug: the shared room voice outlives its engines (open)
+## Known bug: the shared room voice outlives its engines (fixed)
 
-Found by step 0's sound bench, 2026-11-26. **Not fixed.** It is in the first round's shared "engine room" voice
+Found by step 0's sound bench, 2026-11-26. **Fixed with step 1, the same day:** in a full bench run afterwards the `gone` phase was silent and no fault was found.
+The room voice's own tick now works the scene out when no engine calls in. What follows is the bug as found. It is in the first round's shared "engine room" voice
 (`content/EngineNoteSound`, its `Scene` and `Room`), which was not yet committed when the bench found it.
 
 - **What is heard.** When every engine the room voice is playing stops calling in at once, the voice plays on with their last
@@ -84,7 +86,55 @@ A repeatable in-game listening session, so every later change shows its numbers 
 - **For the ear.** One WAV per scene plus a report, and the same scenes next to reference recordings of real engines for A/B. The
   author's listening is still what signs off. The audit finds faults so the author's time isn't spent on them.
 
+**The bench's gaps, filled 2026-11-26** (the author asked): scenes behind walls, indoors and on a moving structure, how
+long a change waits in the stream's queue, what the sound costs, and a fault for stacked notes
+([SMOKE.md](SMOKE.md), "The sound bench"). A heard throttle delay is still not measured: in an earlier run's recording the
+blip barely moved the engines' speed, and their level did not follow it closely enough to time. The queue wait stands in for it: re-audited, the runs below read a median of 252 to 302 ms before step 1 and
+102 to 149 ms after. The scenes added, run in game (runs `20261126-203957`, walls and indoors,
+and `20261126-203728`, moving; an earlier try at the first was thrown out, as another sound got into the recording and the
+timing check failed):
+
+- *Walls:* one, two and three blocks of stone took 3.4, 7.9 and 10.4 dB off, each duller than the last, and it came back
+  with the wall gone (4 dB under the start, where the engine was still slowing from a faster idle).
+- *Indoors:* 0.3 dB under out of doors just before, so no louder. The bench's figures don't show the reflection itself.
+- *Moving:* the structure was carried from 30 blocks off to 6 and back. The note on the ground ended, one started on the
+  structure, and no two played at once. The pitch shift was not measured.
+- *Cost:* the sound thread used 0.5 to 0.6% of one core with one note (not the cap's worth of voices), and the slowest
+  look round the world took 2.6 ms.
+- *Dropouts:* the walls and indoors scenes each ran dry once (36 to 38 ms), and a new note started at once, with the
+  shared voice standing in. The underrun is still open.
+- These runs recorded about 14 dB louder than `20261126-174506` on all three reference sounds, so compare levels within
+  a run, or against its references, not across these. Where the notes below under
+steps 1 and 4 say the bench lacks these, they speak of the bench before this.
+
 ### Step 1: Fix the delivery, same sound (small to medium)
+
+**Built, 2026-11-26.** How it works: [DESIGN.md](DESIGN.md), "Delivery". Where it differs from the list below: the whistle
+and whine keep the pitch range the blocks already ask for (only the clamp is gone), and are heard from the note's place;
+up to four per engine. The note's place weighs openings by muffling only. **Still owed:** the author's listening.
+
+**Bench, 2026-11-26** (full runs `20261126-163102` before and `20261126-174506` after; other work on the sound happened in
+the checkout between them, so not every difference is step 1's). The new run had no problems and no faults.
+
+- *Better:* the room is silent once its engines are gone; all sixteen of its engines fired, 0.3 dB above one.
+- *Worse:* one underrun (`flat4`, 35 ms dry) where there were none, and the least audio queued fell from about 0.25 s to
+  0.09 s. A stream that runs dry is dropped by the game, so the note was gone for about 2 s (the budget's rest) with the
+  room voice standing in. That run's longest wait between reads was 232 ms.
+- *Unexplained:* more short bursts the audit calls clicks in the V8 scenes (0 to 5 and 6) and as the room fills (its
+  count is level only because the silent `gone` phase lost 20). Multi-cylinder idles read 1 to 2 dB louder; the
+  reference sounds held within 0.1 dB.
+- Not measured: how soon a throttle change is heard (the bench measures each firing's lag only, which stayed small).
+
+**Those faults, looked into the same day:**
+
+- *The dropped note* now comes back at once instead of after two seconds ([DESIGN.md](DESIGN.md), "Delivery"). The underrun
+  itself can still happen. Not yet seen in a bench run.
+- *The extra "clicks"* follow the level, not a fault in the sound: the earlier run's recording, turned up by 0, 1, 2 and 3 dB
+  and audited again, gave 0, 2, 5 and 7 in `v8_cross` and 0, 2, 6 and 11 in `v8_flat`. Most found while the engine ran sit about 70 to 100 ms
+  after a firing, just past what the audit excuses (as some did in the earlier run), at about the -45 dB it counts from.
+  The audit is unchanged. This does not explain every burst by itself, and the count says nothing about the step 2 note.
+- *The louder idles:* not proven. The likely cause is intended: the note moved from the crankshaft at one end of the engine
+  to its exhaust openings, which are nearer the bench's listener, who stands by the engine's middle.
 
 - **Latency.** Smaller chunks (about 50 ms, so about 0.2 s queued at most). Step 0's underrun count decides how small they can go,
   lag spikes included. The synth also looks ahead for the time still queued: rpm and load are extrapolated along their trend, so a
@@ -101,6 +151,12 @@ A repeatable in-game listening session, so every later change shows its numbers 
 - **Sound from the exhaust.** The note's source sits at the loudness-weighted centre of the outlets, not at the crankshaft.
 
 ### Step 2: A new note, firing grains through a pipe (the regeneration, large)
+
+**Built, 2026-11-26**, as recommended, with fully synthetic grains (no recordings) at 32 kHz. How it works:
+[DESIGN.md](DESIGN.md), "Grains and pipes". Where it differs from the list below: the muffler is in the pipe's loop and
+also keeps step 1's filter and level after it; the muffled level the author chose is unchanged; the "bed" swells twice a
+crank turn, as a hum at crank speed itself would be below hearing at these speeds. Outlets, not run lengths, have pipes,
+as before. **Still owed:** the author's listening (`build/sound-preview/step2`), and a bench run.
 
 **Recommended: a hybrid of recorded-style grains and a modelled pipe.**
 
@@ -127,6 +183,17 @@ Rejected alternatives:
 
 ### Step 3: One-shots join the engine (medium)
 
+**Built, 2026-11-26.** How it works: [DESIGN.md](DESIGN.md), "One-shots in the note". Where it differs from the list below:
+
+- A backfire or spit in the note goes out of the outlet that fires next, not the one whose flame set it off, and is heard
+  up to about a quarter of a second after the flash, as the stream is made ahead of what is seen.
+- The level pass was set against offline renders of the note. Nothing was measured in a capture from the game, and not
+  against vanilla's sounds.
+- Failure sounds are levelled, not remade from the grains.
+- `engine_settle` stays registered, for a note lost part way through its stall.
+
+**Still owed:** the author's listening (`build/sound-preview/step3`), and a bench run.
+
 - **Regenerate** `exhaust_pop`, `exhaust_spit`, `engine_catch` and `engine_stall` from the same grains and pipe model, so a backfire
   from a long run sounds like that run. If the engine has a note, they are rendered inside its stream at the firing they belong to.
   Otherwise the sample plays.
@@ -137,6 +204,17 @@ Rejected alternatives:
 - **Asset rules in `SoundAssetsTest`.** Mono, no DC offset, at least 2 ms fade at each end, a peak ceiling.
 
 ### Step 4: The world around the sound (medium; each part only if step 0's profile says it is cheap)
+
+**Built, 2026-11-26:** air, room and walls. How they work: [DESIGN.md](DESIGN.md), "The world around the note". Where it
+differs from the list below:
+
+- Moving engines get no shift of ours: Sable already gives every sound on a moving structure a Doppler shift.
+- Step 0's bench profiles no CPU cost, so cost was measured by a unit test instead (`NoteSurroundingsTest`).
+- The room is felt for by rays, and one reflection pattern serves every engine. Recorded sounds and loops get none of the
+  three.
+
+**Still owed:** the author's listening, and a bench run (its pads are out of doors, so it exercises the air only). No
+renders were made for listening. Not tried on a moving structure.
 
 - **Air.** A low-pass that closes gently with distance, on top of today's dulling. Far off, only the boom carries.
 - **Room.** About once a second, the blocks around the listener are sampled. Indoors gets a short early reflection, outdoors stays

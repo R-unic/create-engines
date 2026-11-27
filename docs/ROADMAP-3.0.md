@@ -971,17 +971,73 @@ that is fine for one engine on a test bench has to stay bearable at the tenth en
   amount and returns within a fraction of a second of a throttle change; warnings are never lowered. A soak with a large base of engines
   stays inside the sound-thread budget below.
 
+**Valve sounds removed (author, 2026-11-26).** No valve tick in the note for any cam kind, no valve-gear hiss under it, and the
+`engine_clatter` loop no longer plays (its sound ID stays registered). This replaces every mention of a valvetrain or clatter
+layer in this section.
+
 **Build status (2026-11-25).** Built, not heard: the author tunes it in game. See [DESIGN.md](DESIGN.md) "The build's
 voice" and "Many engines". The server works out each engine's voice (`EngineSound`: outlet per firing from its exhaust runs,
 run lengths, compression ignition from cylinders without plugs, cam kind, precision, casing) and syncs it; the synth rings an
 outlet's pipe each, knocks, ticks, varies each firing, and dulls with distance and casing; the clatter loop and the bangs give
 way; the nearest three engines without a note share one voice, any more make it fuller, all are held under a ceiling, and a
-steady engine settles back. Tests: `EngineNoteVoiceTest`, `EngineChorusTest`, `EngineRoomMixTest`, `EngineSoundTest`,
+steady engine settles back. After the first tuning (2026-11-26): each cam reading is timed so firings keep step, each
+outlet is muffled on its own, a run's length is the way from head to opening and is heard more strongly, the crack and thump
+start more softly, and the notes go to the nearest engines. Tests: `EngineNoteTimingTest`, `EngineNoteVoiceTest`, `EngineChorusTest`, `EngineRoomMixTest`, `EngineSoundTest`,
 `EngineGameTests.theEngineSyncsWhatItIsBuiltOfForItsSound`, and the existing note tests unchanged. Changed from the design:
 the intake roar stays the sampled loop at the intake mouth (it already follows speed, load and boost, and the note cannot be
 heard from the mouth); overrun is the note's existing coasting level plus the existing pops. Not done: the trailer's engine
 shots re-recorded, the author's tuning, and a client profile with a large build (`EngineNotePerfTest` times one voice, not the
 scene).
+
+**Heard in game (the author, 2026-11-26):** the author has heard the new sounds. This replaces "not heard" above. Final tuning has not been
+signed off, and the trailer re-recording and the client profile are still not done.
+
+**Delivery (2026-11-26).** Step 1 of [SOUND-PLAN.md](SOUND-PLAN.md) is built: a shorter queue, gains and blowers inside
+the note's stream, equal-power handovers and the note heard from the exhaust. Not yet heard or measured in the game.
+
+**Third round (author, 2026-11-26):** long exhaust runs pitched too low and sounded crushed, there was too much reverb on every
+length of run, and the backfire was to be reworked completely. A long run now rings 0.4 of an octave below a middling one
+(was 0.9), a stub an octave above (was 0.9); the resonances ring shorter and no longer longer on low pipes; the thump and
+rumble die sooner; the pipe's reflection is one faint one, 3 to 12 ms, in place of a repeating one of up to 30 ms; and
+`exhaust_pop` is remade (five takes, no echoes). `EngineNoteVoiceTest`'s stub-to-long floor moved from 21 to 16 semitones with
+it. Not yet heard.
+
+**Backfire redesigned again (author, 2026-11-26):** the author asked for a new design of the sound played as sparks leave the
+exhaust. The dry bang is replaced by a crack, the hollow note of an open-ended pipe (112 to 174 Hz across the five takes), a
+soft rush of flame and sparks spitting for about a third of a second (`tools/exhaust_pop_sounds.py`). Same sound IDs, same
+moments played. Not yet heard.
+
+**The sound the author meant (2026-11-26):** it was the pre-ignition knock at the exhaust, heard as a hollow plastic cup
+tapped with a spoon. The exhaust now plays a new sound, `exhaust_spit` (three takes: a darkening hiss of burning gas, a
+small puff and a smooth fizz, no ringing or separate clicks), at the same moments and volume. `preignition_knock` and
+its files are unchanged and still play for wear mode's ping at a cylinder. Not yet heard.
+
+**Backfire tuning (author, 2026-11-26):** the new backfire's separate spark spits sounded like the old leg-breaking
+crackle. They are replaced by the spit's smooth, quiet fizz; the crack, pipe and flame are unchanged. The author said
+"better now" after the spit change and asked for more tuning of the backfire. This version is not yet heard.
+
+**One-shots join the note (sound plan step 3, 2026-11-26):** the author asked to continue onto step 3. An engine with a note
+plays its backfires, spits and the end of a stall in its own stream; the pop, spit, catch and stall recordings are remade
+from the note's grains and pipe, and every recording that plays once is levelled. What differs from the plan:
+[SOUND-PLAN.md](SOUND-PLAN.md), step 3. Not yet heard.
+
+**Faults heard by ear (author, 2026-11-26: add to the roadmap; not built).** A fault should be told apart by its sound, at
+its place in the engine's rhythm. Today the note hears only roughness and the share of cylinders firing, and wear mode's ping
+is the pre-ignition knock recording played high at the cylinder.
+
+- **Knock in the note:** the ping lands on the firing that knocked, inside the engine's stream.
+- **A worn rod:** a knock in time with the crank, louder with load and with wear, so it warns before the rod is thrown.
+- **A blown gasket:** a chuff in time with its cylinder.
+- Wear faults sound with the wear mode on only. They are warnings, so the settling back and the many-engine ceiling never
+  lower them. An engine without a note keeps today's recordings, and no sound ID is removed.
+- Sound only: no rating, sim number or saved key moves. The client may need to be sent more about wear than it is now.
+- Tests: each fault changes the rendered note at its own firing or crank angle; a sound engine, and any engine with the wear
+  mode off, renders sample for sample as before.
+
+**Subtitles (author, 2026-11-26: add to the roadmap; not built).** No sound of the mod has a subtitle, so vanilla's Show
+Subtitles shows nothing for it. Give each sound event one, the warnings (dry seizing, knock, a failing part) first, in words
+that say what is happening. The running note and the other sounds that repeat all the time must not flood the list. Lang keys
+only, appended. Test: every sound event has a subtitle with a translation, or is on a short list that says why not.
 
 **How it is tuned:** a reference set rendered to WAV by the pure-Java synth (I4, I6, crossplane and flat-plane V8, flat four, V-twin, V12,
 W16, rotary, diesel I6), each at idle, mid and redline, for the author to listen to beside real recordings. Final numbers are the author's
