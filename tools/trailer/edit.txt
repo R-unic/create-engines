@@ -1,7 +1,7 @@
 # The edit of the full trailer: which shots it uses, in what order, for how long. post.py reads it; TrailerCoverageTest checks
 # that every shot of client/ShowcaseRun is here exactly once and nothing else is. The words are in captions.txt.
 #
-#   <shot> <seconds> [at=<s>] [speed=<x>] [engine] [quiet] [cold]
+#   <shot> <seconds> [at=<s>] [speed=<x>] [engine] [quiet] [cold] [end]
 #
 # seconds   how long the piece runs in the cut. Keep it a multiple of 1.5 (half a bar of the music at 80 beats a minute), so
 #           every cut falls on the beat.
@@ -10,54 +10,80 @@
 # engine    the engine is the point here: the music drops and the game's sound comes up
 # quiet     no caption of its own; the caption of the piece before stays up over it (montages)
 # cold      before the title: game sound only, no music. Only at the start.
+# end       the end piece: the title, the links and the AI notice come in over its footage, with a sting, after its own
+#           caption has had its time. Last, and only once. There is no end card after it.
 #
 # A shot that is not in this run (the Aeronautics shots without Sable) is left out of the cut. A chapter (captions.txt
 # `chapter <shot>:`) starts with a flash and a hit, and its name is the small gold line over the captions in it.
 
-# The order follows ShowcaseRun's shot list, so the light only moves on. at= and speed= are chosen so that what happens in a
-# shot lands on a beat (grow_engine's six stages, two seconds apart in the shot, change every half bar of the cut).
-first_rises           4.5   at=0.75   engine cold
+# The order follows ShowcaseRunShots, so the light only moves on. at= is chosen so that what a cue does in a shot is on
+# screen: a gasket blowing, the rods changing, the clutch taking up.
+
+# Cold open: steam, goggles at Critical, a gasket blowing, in game sound only
+heat_critical         4.5   at=0.75   engine cold
 title_sequence        6     at=0
-hero_v8               4.5   at=2.25
-inline6_pass          1.5
-flat6_track           1.5   quiet
-rotary_orbit          3     at=0      engine
-inline6_turbo         4.5   at=0.75   engine
-blown_i6_blower       3     at=0
-tuning_vgt            3
-tuning_maf            3
-grow_engine           9     at=0.2    speed=1.333333
-cold_start        3   at=0     engine
-heavy_starter         6     at=0      engine
-headphones_on         3     at=0.5
-instruments_dyno      3
-instruments_governor  3
-running_hot           4.5   at=1.0    engine
-running_cooled        4.5   at=0.75   engine
-muffler_off           4.5   at=0.75   engine
-muffler_on            4.5   at=0.75   engine
+# Hear it
+cold_start            4.5   at=0      engine
+exhaust_mouth         4.5   at=0      engine
 exhaust_stub          4.5   at=0.75   engine
 exhaust_long          4.5   at=0.75   engine
-electric_alternator   3
-electric_battery      3
-electric_heads        3
-service_sump          3
-service_radiator      3
-service_oil           3
-service_cans          3     at=1.5
-casing_styles         3
-casing_dye            3     at=0.5
-factory_flywheel      3
-factory_gearbox       3     at=1.5
-factory_line          4.5
+v8_crossplane         4.5   at=1.0    engine
+v8_flatplane          4.5   at=1.0    engine
+muffler_off           3     at=1.0    engine
+muffler_on            3     at=1.0    engine
+muffler_bank          4.5   at=1.0    engine
+diesel_knock          3     at=1.5    engine
+inline6_turbo         4.5   at=0.75   engine
+blown_i6_blower       3     at=0      engine
+far_boom              4.5   at=4.5    engine
+stall_load            4.5   at=0.75   engine
+headphones_on         3     at=0.5    engine
+# Wear it out
+rods_light_heavy      6     at=0      engine
+wear_parts            4.5   at=0.75
+wear_gasket_blown     3     at=0.75   engine
+wear_apex             3     at=0      engine
+wear_turbo            3     at=0      engine
+gasket_saw            3     at=1.5
 gasket_line           6     at=1.5
-rover_departs         6     at=0      speed=1.5   engine
-rover_wheels          3     engine
-fuel_tanks            4.5   at=0.75
-v8_exhaust_dusk       3     engine quiet
-refinery_column       4.5   at=0.75
+# Running hot
+running_hot           4.5   at=1.0    engine
+running_cooled        4.5   at=0.75   engine
+radiator_fan_basin    4.5   at=1.0
+# New builds
+bank_wx               6     at=0
+rotary_orbit          3     at=0      engine
+# Everything else: a montage under one caption
+first_rises           1.5
+hero_v8               1.5   quiet
+inline6_pass          1.5   quiet
+flat6_track           1.5   quiet
+grow_engine           1.5   at=12.5   quiet
+tuning_vgt            1.5   quiet
+tuning_maf            1.5   quiet
+instruments_dyno      1.5   quiet
+instruments_governor  1.5   quiet
+electric_alternator   1.5   quiet
+electric_battery      1.5   quiet
+electric_heads        1.5   quiet
+service_sump          1.5   at=0.5    quiet
+service_radiator      1.5   quiet
+service_oil           1.5   quiet
+service_cans          1.5   at=2.0    quiet
+casing_styles         1.5   quiet
+casing_dye            1.5   at=2.0    quiet
+heavy_starter         1.5   at=1.5    quiet
+factory_flywheel      1.5   quiet
+factory_gearbox       1.5   at=1.5    quiet
+factory_line          1.5   quiet
+rover_departs         1.5   at=4.5    quiet
+rover_wheels          1.5   quiet
+fuel_tanks            1.5   quiet
+v8_exhaust_dusk       1.5   quiet
+refinery_column       1.5   quiet
 refinery_base         1.5   quiet
 refinery_tops         1.5   quiet
-refinery_flare        3     at=0
+refinery_flare        1.5   quiet
+# Finale
 night_pull            10.5  at=0.75   engine
-factory_wide          9     at=0
+factory_wide          7.5   at=0.75   end

@@ -14,7 +14,7 @@
 #                        does not show its own, the one before stays up)
 # short_shots            the shots of the teaser, in order, three seconds each (the vertical cut has its own edit, vertical.txt)
 # short_caption <shot>   the few big words over each of those
-# thumbnail              the shot the thumbnail is taken from
+# thumbnail              the shot the thumbnail is taken from (the middle of it)
 # vertical_thumbnail     the shot the 9:16 thumbnail (Shorts) is taken from, vertical_thumbnail_at seconds into it; vertical_title is its two big lines split by |, vertical_sub the small one
 # description            the pitch at the top of the video description (post.py writes run/trailer/description.txt with every full cut)
 # link <name>            a line of the description's Links list: "link GitHub: https://..." (add the Modrinth and CurseForge pages here
@@ -34,66 +34,72 @@ ai_docs: How AI is used: docs/AI.md on GitHub (R-unic/create-engines)
 ai_docs_url: https://github.com/R-unic/create-engines/blob/master/docs/AI.md
 vertical_ai_tag: Mod made with AI - see docs/AI.md
 
-description: Real combustion engines for Create: inline, V, flat and rotary layouts, turbochargers and superchargers, a refinery, an electrical chain and a working factory, all turning Create rotation. Everything in this trailer is made in the game with the mod.
-vertical_description: Real combustion engines for Create: build one cylinder up to a boosted V16, start it and put it to work.
+description: Version 2.4, Running Hot, of real combustion engines for Create: a reworked engine sound you can hear from the pipe out, wear and failures, running hot and cooling it, and W and X engines. Everything in this trailer is made in the game with the mod.
+vertical_description: Real combustion engines for Create: hear every pipe, wear them out, keep them cool.
 
 link GitHub: https://github.com/R-unic/create-engines
 link Report a bug: https://github.com/R-unic/create-engines/issues
 link Discord: https://discord.gg/QYVpy2dqGE
 
-chapter first_rises: One cylinder
 chapter title_sequence: Create: Engine Engineer
-chapter hero_v8: Layouts
-chapter inline6_turbo: Forced induction
-chapter grow_engine: Build it big
-chapter instruments_dyno: Instruments
+chapter cold_start: Hear it
+chapter rods_light_heavy: Wear it out
 chapter running_hot: Running hot
-chapter muffler_off: Hear the difference
-chapter electric_alternator: The electrical chain
-chapter service_sump: The service bay
-chapter casing_styles: Casing styles
-chapter factory_flywheel: Drivetrain and factory
-chapter rover_departs: Engine on wheels
-chapter fuel_tanks: Fuels and the refinery
+chapter bank_wx: New builds
+chapter first_rises: Everything else
 chapter night_pull: After dark
-chapter factory_wide: All together
 
+caption heat_critical: Run it past critical and the gasket lets go.
 caption title_sequence: Real combustion engines for Create
 caption cold_start: The starter turns a cold V8 over until it catches.
-caption first_rises: Every engine starts with one cylinder.
-caption hero_v8: A V8, built in Create.
-caption grow_engine: Grow it a click at a time, up to a boosted V16.
-caption inline6_pass: Inline, flat, V or rotary.
-caption flat6_track: Flat, opposed cylinders.
-caption rotary_orbit: Even a twin-rotor rotary.
-caption inline6_turbo: Bolt on a turbocharger.
-caption blown_i6_blower: Or drive a supercharger, then cool the charge.
-caption tuning_vgt: A variable-geometry turbo moves its vanes.
-caption tuning_maf: A MAF sensor trims fuel to match the air.
-caption running_hot: Run too hot and the block steams and loses power.
-caption running_cooled: Fit radiators full of coolant to cool it down.
-caption muffler_off: Every note comes from the engine itself. No muffler.
-caption muffler_on: With a muffler: quieter and duller.
+caption exhaust_mouth: Every note is made from the engine's own exhaust.
 caption exhaust_stub: A short stub of exhaust barks.
 caption exhaust_long: A long run sounds deeper and hollow.
-caption gasket_line: Press copper onto rubber to make a Copper Gasket.
-caption night_pull: Rev it, lift off: blow-off and anti-lag.
-caption heavy_starter: A heavy starter cranks a cold V16 to life.
+caption v8_crossplane: A crossplane V8, one exhaust a bank, burbles.
+caption v8_flatplane: A flat-plane V8 does not.
+caption muffler_off: Every note comes from the engine itself. No muffler.
+caption muffler_on: With a muffler: quieter and duller.
+caption muffler_bank: Muffle one bank and only its firings go dull.
+caption diesel_knock: No spark plug: compression ignition knocks at idle.
+caption inline6_turbo: Bolt on a turbocharger.
+caption blown_i6_blower: Or drive a supercharger, then cool the charge.
+caption far_boom: Far off, the crack fades and the boom carries.
+caption stall_load: Stalled by its load, it thuds to a stop.
 caption headphones_on: Too loud? Noise-cancelling headphones.
+caption rods_light_heavy: Light rods rev sooner and run rougher; heavy ones smoother.
+caption wear_parts: Four gaskets, a Service Kit, and parts that wear.
+caption wear_gasket_blown: Wear mode: a blown gasket shows from across the room.
+caption wear_apex: A rotary's apex seals spring out when they fail.
+caption wear_turbo: A worn turbo loses boost, and can fail outright.
+caption gasket_saw: A Mechanical Saw cuts a belt into rubber gaskets.
+caption gasket_line: Press copper onto rubber to make a Copper Gasket.
+caption running_hot: Run too hot and the block steams and loses power.
+caption running_cooled: Fit radiators full of coolant to cool it down.
+caption radiator_fan_basin: Blow a fan at a radiator; heat a basin on top.
+caption bank_wx: The Bank Builder now lays W and X engines.
+caption rotary_orbit: Even a twin-rotor rotary.
+caption first_rises: And all that came before, from one cylinder up.
+caption hero_v8: A V8, built in Create.
+caption inline6_pass: Inline, flat, V or rotary.
+caption flat6_track: Flat, opposed cylinders.
+caption grow_engine: Grow it a click at a time, up to a boosted V16.
+caption tuning_vgt: A variable-geometry turbo moves its vanes.
+caption tuning_maf: A MAF sensor trims fuel to match the air.
 caption instruments_dyno: Put it on the dynamometer and read the truth.
 caption instruments_governor: A governor holds the speed you set.
 caption electric_alternator: An alternator turns crank power into charge.
 caption electric_battery: Batteries in three sizes join into one bank.
 caption electric_heads: Spend it on ignition coils and injector assists.
-caption casing_styles: Four casing styles for the shafts and cogs.
-caption casing_dye: In any of sixteen colours.
-caption factory_flywheel: A dual-mass flywheel smooths out the crank.
-caption factory_gearbox: Thirteen gears, by hand or shifted for you.
-caption factory_line: Then put the power to work on Create's machines.
 caption service_sump: Fit an oil filter in the pan.
 caption service_radiator: A radiator keeps its coolant and sheds the heat to the air.
 caption service_oil: Used oil goes through a heated mixer and comes back clean.
 caption service_cans: Fill cans, belt them along, drain them into the tank.
+caption casing_styles: Four casing styles for the shafts and cogs.
+caption casing_dye: In any of sixteen colours.
+caption heavy_starter: A heavy starter cranks a cold V16 to life.
+caption factory_flywheel: A dual-mass flywheel smooths out the crank.
+caption factory_gearbox: Thirteen gears, by hand or shifted for you.
+caption factory_line: Then put the power to work on Create's machines.
 caption rover_departs: With Create Aeronautics, put it on wheels and drive.
 caption rover_wheels: The crank drives a wheel through two gearboxes.
 caption fuel_tanks: Run diesel, gasoline, ethanol, kerosene or methanol.
@@ -102,17 +108,18 @@ caption refinery_column: Refine your own fuel in a full-size column.
 caption refinery_base: A pump feeds it, a funnel adds the coal catalyst.
 caption refinery_tops: A second pump draws the finished fuel off the top.
 caption refinery_flare: One column: diesel, kerosene, gasoline and methanol.
+caption night_pull: Rev it, lift off: blow-off and anti-lag.
 caption factory_wide: From one cylinder to a working factory.
 
-short_shots: grow_engine inline6_turbo refinery_column factory_wide
-short_caption grow_engine: Build real engines
-short_caption inline6_turbo: Add boost
-short_caption refinery_column: Refine your fuel
-short_caption factory_wide: Power your factory
+short_shots: exhaust_mouth v8_crossplane wear_gasket_blown bank_wx
+short_caption exhaust_mouth: Hear every pipe
+short_caption v8_crossplane: Crossplane burble
+short_caption wear_gasket_blown: Wear it out
+short_caption bank_wx: Build a W or X
 
-thumbnail: hero_v8
+thumbnail: heat_critical
 
-vertical_thumbnail: inline6_turbo
-vertical_thumbnail_at: 4.5
+vertical_thumbnail: exhaust_mouth
+vertical_thumbnail_at: 0.3
 vertical_title: REAL|ENGINES
 vertical_sub: for Create

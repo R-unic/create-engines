@@ -1,6 +1,6 @@
 """Cuts the trailer from the recordings: the shots in the order and at the lengths of edit.txt, graded and letterboxed, a
 caption under each with its chapter's name over it, a flash and a hit where a chapter starts, the title over the title shot,
-an end card, and the game's sound mixed with the music, which drops when an engine is the point of a shot.
+the calls to action over the last shot, and the game's sound mixed with the music, which drops when an engine is the point of a shot.
 
     python tools/trailer/post.py --raw RAW.mp4 --shots trailer_shots.json --offset SECONDS --out trailer.mp4
         [--cut full|teaser|vertical] [--audio GAME.wav --audio-offset SECONDS] [--music FILE] [--no-music]
@@ -59,7 +59,7 @@ WHITE = (255, 255, 255)
 GREY = (170, 170, 170)
 INK = (20, 12, 8, 255)  # the dark outline of the big words
 TITLE_SHOT = "title_sequence"  # the shot the title lies over
-END_CARD = 2 * BAR  # seconds the end card holds in the full cut
+END_OVER = 5.0  # seconds before the full cut's end that its end card comes in over the last shot
 SHORT_SHOT = BAR  # seconds of each teaser shot
 # A light touch, close to the game's own look: a slight S-curve, a hint of warm highlights and cool shadows, a little more
 # colour and edge, and a faint vignette (a stronger grade was tried and judged too much)
@@ -121,10 +121,11 @@ def read_captions():
 
 def read_edit(file="edit.txt"):
     """The lines of an edit (edit.txt, or vertical.txt): shot, seconds, its options, and for the vertical cut the words after
-    a `|`. edit.txt takes at, speed, engine, quiet and cold; vertical.txt takes at, speed, x, zoom, fit, flash, engine, cold and end."""
+    a `|`. edit.txt takes at, speed, engine, quiet, cold and end; vertical.txt takes at, speed, x, zoom, fit, flash, engine, cold
+    and end."""
     vertical = file == "vertical.txt"
     numbers = ("at", "speed", "x", "zoom") if vertical else ("at", "speed")
-    flags = ("fit", "flash", "engine", "cold", "end") if vertical else ("engine", "quiet", "cold")
+    flags = ("fit", "flash", "engine", "cold", "end") if vertical else ("engine", "quiet", "cold", "end")
     lines = []
     for number, line in enumerate((HERE / file).read_text(encoding="utf-8").splitlines(), 1):
         line = line.split("#", 1)[0].strip()
@@ -351,6 +352,8 @@ def big_words(text, layout, path):
 def plan_full(shots, words, edit):
     """The pieces of the full cut, in order: each a stretch of the recording (or a card) with its length, speed, mix, flash,
     fades and caption."""
+    if not edit or not edit[-1]["end"] or any(entry["end"] for entry in edit[:-1]):
+        sys.exit("edit.txt: the last piece, and only the last, must be the `end` piece")
     by_name = {s["name"]: s for s in shots["shots"]}
     pieces, kicker = [], None
     for entry in edit:
@@ -373,9 +376,12 @@ def plan_full(shots, words, edit):
                            flash=title or (bool(chapter) and bool(pieces) and not entry["cold"]), title=title,
                            hit=1.0 if title else 0.5 if chapter and pieces and not entry["cold"] else 0.0,
                            fade_in=0.6 if not pieces else 0.0, fade_out=0.0))
-    pieces[-1]["fade_out"] = 0.75  # the last shot goes to black, the end card comes up out of it
-    pieces[-1]["riser"] = True  # and a riser climbs into it from the piece before
-    pieces.append(dict(kind="card", name="close", dur=END_CARD, mix="card", fade_in=0.5, fade_out=0.0, sting=True))
+    if not pieces or pieces[-1]["name"] != edit[-1]["name"]:
+        sys.exit("edit.txt: the recording lacks the `end` piece's shot")
+    # The last shot carries the calls to action: they come in over it, with a sting, and it goes to black at the very end.
+    # A riser climbs into it from the piece before
+    last = pieces[-1]
+    last.update(end=True, end_at=max(0.0, last["dur"] - END_OVER), sting=True, riser=True, fade_out=0.75)
     return pieces
 
 
@@ -443,6 +449,8 @@ def captions_of(pieces):
         start, end = piece["start"] + 0.35, pieces[j]["start"] + pieces[j]["dur"] - 0.3
         if pieces[j].get("fade_out"):
             end -= pieces[j]["fade_out"]
+        if pieces[j].get("end_at") is not None:  # the caption is gone before the end card comes over its piece
+            end = pieces[j]["start"] + pieces[j]["end_at"] - 0.1
         srt.append((start, end, piece["text"]))
         for k in range(i, j + 1):
             pieces[k]["caption"] = dict(text=piece["text"], kicker=piece.get("kicker"),
@@ -586,7 +594,7 @@ def render_piece(ffmpeg, args, layout, piece, index, work, card_paths):
         last = "v6"
     if piece.get("end"):
         source = overlay_input(card_paths["end"], piece["dur"])
-        graph.append(f"[{source}:v]format=rgba,fade=t=in:st=0:d=0.25:alpha=1[endcard]")
+        graph.append(f"[{source}:v]format=rgba,fade=t=in:st={piece.get('end_at', 0):.3f}:d=0.25:alpha=1[endcard]")
         graph.append(f"[{last}][endcard]overlay=0:0[v7]")
         last = "v7"
     fades = []
@@ -713,7 +721,7 @@ def mix_sound(ffmpeg, args, pieces, length, work):
             rise = sfx.riser(BAR)
             add(hits, piece["start"] - BAR, rise, 0.22)
         if piece.get("sting"):
-            add(hits, piece["start"], sfx.sting(), 0.55)
+            add(hits, piece["start"] + piece.get("end_at", 0.0), sfx.sting(), 0.55)
 
     if not have_game and not source:
         return None
@@ -778,6 +786,10 @@ def main():
         card_image(words["title"], words.get("subtitle", ""), layout, cards["open"])
         card_image(words.get("outro", words["title"]), words.get("outro_sub", ""), layout, cards["close"], footer=versions(),
                    links=words.get("outro_links"), notice=words.get("outro_notice"))
+        if args.cut == "full":
+            cards["end"] = work / "end.png"
+            card_image(words.get("outro", words["title"]), words.get("outro_sub", ""), layout, cards["end"], footer=versions(),
+                       links=words.get("outro_links"), notice=words["outro_notice"], overlay=True, shade=165)
         if args.cut == "vertical":
             cards["end"] = work / "end.png"
             card_image(words.get("outro", words["title"]), words.get("outro_sub", ""), layout, cards["end"], footer=versions(),

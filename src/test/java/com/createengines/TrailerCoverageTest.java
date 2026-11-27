@@ -31,7 +31,7 @@ class TrailerCoverageTest {
 	private static final Path ROOT = Path.of("").toAbsolutePath();
 	private static final Path LANG = ROOT.resolve("src/generated/resources/assets/create_engines/lang/en_us.json");
 	private static final Path PARTS = ROOT.resolve("src/smoke/trailer-parts.txt");
-	private static final Path SHOWCASE = ROOT.resolve("src/main/java/com/createengines/client/ShowcaseRun.java");
+	private static final Path SHOWCASE = ROOT.resolve("src/main/java/com/createengines/client/ShowcaseRunShots.java");
 	private static final Path CAPTIONS = ROOT.resolve("tools/trailer/captions.txt");
 	private static final Path EDIT = ROOT.resolve("tools/trailer/edit.txt");
 	private static final Path VERTICAL = ROOT.resolve("tools/trailer/vertical.txt");
@@ -55,6 +55,61 @@ class TrailerCoverageTest {
 		while (m.find())
 			out.add(m.group(1));
 		return out;
+	}
+
+	/** How long each shot is filmed for: the second to last value of its line in the shot list, before the time of day. */
+	private static Map<String, Double> shotSeconds() throws IOException {
+		Map<String, Double> out = new TreeMap<>();
+		Matcher m = Pattern.compile("new Shot\\(\"([a-z0-9_]+)\"(.*?)\\)\\);", Pattern.DOTALL)
+			.matcher(Files.readString(SHOWCASE, StandardCharsets.UTF_8));
+		while (m.find()) {
+			String[] values = m.group(2)
+				.split(",");
+			out.put(m.group(1), Double.parseDouble(values[values.length - 2].trim()));
+		}
+		return out;
+	}
+
+	/** No piece of either edit asks for more of a shot than is filmed, from where it starts: post.py would stop, or slide it. */
+	@Test
+	void everyPieceFitsInsideTheShotItIsCutFrom() throws IOException {
+		Map<String, Double> seconds = shotSeconds();
+		assertEquals(shots(), seconds.keySet(), "The length of every shot must be readable from the shot list");
+		List<String> over = new ArrayList<>();
+		for (Path edit : List.of(EDIT, VERTICAL))
+			for (String line : Files.readAllLines(edit, StandardCharsets.UTF_8)) {
+				String text = line.split("#", 2)[0].split("\\|", 2)[0].trim();
+				if (text.isEmpty())
+					continue;
+				String[] fields = text.split("\\s+");
+				double at = 0;
+				double speed = 1;
+				for (String option : fields) {
+					if (option.startsWith("at="))
+						at = Double.parseDouble(option.substring(3));
+					else if (option.startsWith("speed="))
+						speed = Double.parseDouble(option.substring(6));
+				}
+				if (at + Double.parseDouble(fields[1]) * speed > seconds.get(fields[0]) + 1e-5)
+					over.add(edit.getFileName() + ": " + text + " (the shot is " + seconds.get(fields[0]) + " s)");
+			}
+		assertTrue(over.isEmpty(), "Pieces that run past the end of their shot: " + over);
+	}
+
+	/** The full cut has no separate tail: its last piece, and only that one, is the end piece the calls to action lie over. */
+	@Test
+	void theFullCutEndsOnItsEndPiece() throws IOException {
+		List<Boolean> ends = new ArrayList<>();
+		for (String line : Files.readAllLines(EDIT, StandardCharsets.UTF_8)) {
+			String text = line.split("#", 2)[0].trim();
+			if (!text.isEmpty())
+				ends.add(List.of(text.split("\\s+"))
+					.contains("end"));
+		}
+		assertTrue(!ends.isEmpty() && ends.get(ends.size() - 1), "The last piece of edit.txt must be the end piece");
+		assertEquals(1, ends.stream()
+			.filter(end -> end)
+			.count(), "Only the last piece of edit.txt may be the end piece");
 	}
 
 	private static Map<String, String> classified() throws IOException {

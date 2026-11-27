@@ -2,8 +2,8 @@
 # shot it names exists, that every piece is a whole number of half bars, that every piece but the last has words, and that
 # the last is the end piece. It is cut for a feed, where a viewer decides in the first second whether to stay:
 #
-# - no title card at the start: it opens full frame (no `fit` band) on a still engine being cranked until it catches,
-#   with words on the first frame that say what this is (`cold_start`, composed for the 9:16 window);
+# - no title card at the start: it opens full frame (no `fit` band) tight on a barking exhaust mouth and pulls back fast
+#   to the whole engine revving (`exhaust_mouth`), with words on the first frame;
 # - every piece on screen at least 3 s, long enough to read its words and see what it shows, and the whole cut at most 90 s,
 #   inside the length limit of Shorts and TikTok;
 # - the engines heard, not only seen (`engine`), as most viewers have the sound on in a feed but many do not, so the words
@@ -31,17 +31,17 @@
 # A shot may be used more than once (a long shot split so its words can change half-way). A shot that is not in this run
 # (the Aeronautics shots without Sable) is left out.
 
-cold_start        4.5   at=0.2   engine                     | Real engines / in Minecraft
-inline6_turbo     4.5   at=0.75  engine                     | Bolt on a / turbo
-blown_i6_blower   3                                         | Or a / supercharger
-rotary_orbit      3     at=0     engine                     | Even a / rotary
-muffler_off       4.5   at=0.75  engine    flash            | No / muffler
-muffler_on        4.5   at=0.75  engine                     | Now / muffled
-grow_engine       4.5   at=8.2   speed=1.5   fit zoom=1.6   flash | Build up to / a V16
-heavy_starter     4.5   at=0     engine    flash            | Then / crank it
-rover_departs     6     at=0.75  speed=1.25 engine flash    | Put it on / wheels
-fuel_tanks        4.5   at=0.75  fit zoom=1.25 flash        | Five / fuels
-refinery_column   4.5   at=0.75                             | Refine / your own
-factory_line      4.5                                       | Power / Create
-night_pull        6     at=5.25  engine    flash            | Lift off. / Bang
-factory_wide      7.5   at=0.75  fit       end
+exhaust_mouth       4.5   at=0     engine                    | Every note / from the pipe
+exhaust_stub        3     at=1.5   engine                    | Short pipe / barks
+exhaust_long        3     at=1.5   engine                    | Long pipe / booms
+v8_crossplane       4.5   at=1.0   engine    flash           | Crossplane / burble
+muffler_bank        4.5   at=1.0   engine                    | Muffle / one bank
+inline6_turbo       4.5   at=0.75  engine                    | Turbo / spools up
+rods_light_heavy    4.5   at=0.75  fit zoom=1.6 engine flash | Light rods / or heavy
+wear_gasket_blown   4.5   at=0.75  engine    flash           | Run it / to failure
+gasket_line         4.5   at=1.5                             | Press a / copper gasket
+running_hot         4.5   at=1.0   engine                    | Too / hot?
+radiator_fan_basin  4.5   at=1.0                             | Fit a / radiator
+bank_wx             4.5   at=0.75  fit       flash           | Now build / a W or X
+night_pull          6     at=5.25  engine    flash           | Lift off. / Bang
+far_boom            7.5   at=0.75  fit       engine end

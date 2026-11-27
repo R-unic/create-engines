@@ -1,6 +1,7 @@
 # The 2.4.0 trailer: plan
 
-The composition the author picked for 2.4 "Running Hot" (author, 2026-11-26). Not built yet. [SMOKE.md](SMOKE.md), "The trailer",
+The composition the author picked for 2.4 "Running Hot" (author, 2026-11-26). Built on 2026-11-27: the pads, shots, cues,
+captions and both edits are in. **Nothing has been run in the game, recorded or cut.** [SMOKE.md](SMOKE.md), "The trailer",
 has the harness and the rules every composition keeps; this page is only what is new for this cut. Once it is cut and posted, the
 composition part of SMOKE.md is rewritten to describe it and this page is deleted.
 
@@ -85,20 +86,24 @@ far_boom           7.5   fit      end
 Vertical thumbnail: `exhaust_mouth`. Teaser (`short_shots`): exhaust_mouth "Hear every pipe", v8_crossplane "Crossplane burble",
 wear_gasket_blown "Wear it out", bank_wx "Build a W or X".
 
-## Work it needs
+## Where the build differs from the plan above
 
-- **New pads and shots** in `client/ShowcaseRunFeatures` (or a new class beside it; `ShowcaseRun` is on the giant-files list): the
-  16 new shots above, with the shot list reordered to the new cut so the light still only moves from day to dusk.
-- **Wear mode on** in the trailer's private game folder (`TRAILER_CONFIG` in `record.py`). Failures cannot be waited for, so the
-  harness sets the wear and failed state by reflection, as `running_hot` already holds its block at 190 degrees. The failure and its
-  look and sound are the mod's own; SMOKE.md says what the harness forced.
-- **Camera moves:** a fast pull-back for `exhaust_mouth`, a long dolly away for `far_boom`, and a close, slow shot of the crank throws
-  for `rods_light_heavy`.
-- **Captions, edits and parts:** `captions.txt`, `edit.txt`, `vertical.txt`; in `trailer-parts.txt` the gaskets, Service Kit, Apex
-  Seals, both new rods and the Radiator name their new shots.
+The edits themselves (`tools/trailer/edit.txt`, `vertical.txt`) now own the order and the lengths; the tables above are the plan.
+
+- The long cut plans to 184.5 s (181.5 s without the Aeronautics car), under the "about 200" above.
+- `headphones_on` is filmed by the turbocharged six: the V16 it stood by is now cold until the montage's `heavy_starter`.
+- `rods_light_heavy` is one engine and one camera, with the rods changed half-way, not two engines side by side.
+- The title shot is in daylight (it was golden hour), so that the light still only moves on.
+- In the vertical cut, the rods, the blown gasket, the hot engine and the last piece are also marked `engine`, to be heard.
+- The montage's one caption is "And all that came before, from one cylinder up." (over `first_rises`).
 
 ## Before recording
 
+- A short run to look at the new shots' stills and log, with the author's go-ahead, as it takes the screen. None of this has been
+  seen: the goggles reading Critical, the steam, each forced failure, the pull-back and the long dolly, the rods' surge, the belts
+  going into the saw, the fan's direction and the basin's brass, the W and X laid in first person, and whether six presses stall
+  the diesel at idle (the log says `under the load` with its speed). If they do not, the load wants tuning.
+- The captions for the new shots are checked against those stills and sounds.
 - The sound rework is the author's to tune by ear and is not signed off ([ROADMAP-3.0.md](ROADMAP-3.0.md), 2.4 "The sound rework"),
   and the blower sounds are still being listened to. The engine shots are recorded after that, or recorded again.
 - The author watches both cuts before they are posted.

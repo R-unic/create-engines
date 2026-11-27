@@ -146,17 +146,27 @@ TRAILER_CONFIG = {
 }
 
 
-def steady_crank_config(run_dir):
-    """Writes TRAILER_CONFIG into the private game folder's config for the mod (creating the file if the game has not yet)."""
+# The 2.4 shots show worn and failed parts, which the game only does with the wear mode on. The showcase lets nothing fail by
+# chance (ShowcaseRunWear): each failure is set on its shot's cue.
+TRAILER_FEATURES = {"wearMode": "true"}
+
+
+def trailer_config(run_dir):
+    """Writes TRAILER_CONFIG and TRAILER_FEATURES into the private game folder's config for the mod (creating the file if the
+    game has not yet)."""
     path = PRIVATE / run_dir / "config" / "create_engines-v2-server.toml"
     path.parent.mkdir(parents=True, exist_ok=True)
-    text = path.read_text(encoding="utf-8") if path.is_file() else "[calibration]" + chr(10)
-    for key, value in TRAILER_CONFIG.items():
-        line = chr(9) + f"{key} = {value}"
-        if re.search(rf"^\s*{key}\s*=", text, re.M):
-            text = re.sub(rf"^\s*{key}\s*=.*$", line, text, flags=re.M)
-        else:
-            text = text.replace("[calibration]", "[calibration]" + chr(10) + line, 1)
+    text = path.read_text(encoding="utf-8") if path.is_file() else ""
+    for section, values in (("calibration", TRAILER_CONFIG), ("features", TRAILER_FEATURES)):
+        header = f"[{section}]"
+        if header not in text:
+            text += header + chr(10)
+        for key, value in values.items():
+            line = chr(9) + f"{key} = {value}"
+            if re.search(rf"^\s*{key}\s*=", text, re.M):
+                text = re.sub(rf"^\s*{key}\s*=.*$", line, text, flags=re.M)
+            else:
+                text = text.replace(header, header + chr(10) + line, 1)
     path.write_text(text, encoding="utf-8")
 
 
@@ -244,7 +254,7 @@ def record(ffmpeg, raw, sound_path, task, run_dir, extra=()):
         options.parent.mkdir(parents=True, exist_ok=True)
         shutil.copy(ROOT / "tools" / "trailer" / "options.txt", options)
     (PRIVATE / run_dir / "trailer_sync.json").unlink(missing_ok=True)
-    steady_crank_config(run_dir)
+    trailer_config(run_dir)
     encoder = encoder_args(ffmpeg)  # probed now: doing it after the game's ready line would make the picture start late
     game = subprocess.Popen([str(PRIVATE / "gradlew.bat"), task, "-PshowcaseSet=trailer", *extra, "--offline", "--console=plain"],
                             cwd=PRIVATE, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, encoding="utf-8",

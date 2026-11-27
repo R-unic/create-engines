@@ -282,8 +282,8 @@ Every composition keeps viewers through its first and last seconds, each form in
   them in just before the visuals end, so they are seen before viewers drop off at the end screen. In the short form they lie
   over moving footage. The long form leads into them smoothly, with no long, separate tail. The AI notice stays.
 
-The current cuts predate these two rules and are not yet checked against them; they apply from the next composition. The
-2.4.0 composition the author picked is planned in [TRAILER-2.4.md](TRAILER-2.4.md).
+The composition now in the harness is 2.4.0's, which follows both rules. It is built and has not been recorded; what is
+still to be checked before it is, is in [TRAILER-2.4.md](TRAILER-2.4.md).
 
 ```
 python tools/trailer/record.py              # plays the game, records screen and sound, cuts the videos
@@ -293,17 +293,22 @@ python tools/trailer/record.py --post-only  # cuts the last recordings again (ne
 - **What it records.** `ShowcaseRun` with `-PshowcaseSet=trailer` builds walled pads (the five plain engines; a
   pad with the battery sizes, an ignition coil and an injector assist on every head; a blown inline six; the test-bed diesel with its
   instruments; a diesel driving a row of Create machines, two presses stamping iron and a fan smoking beef over a campfire; a refining column with its flare
-  stack; and the later pads below), runs them, goes fullscreen and flies a camera past them for about 222 seconds of footage, smoothly, every frame. The shots are the
-  `Shot` records in that class, and every length is a whole number of bars of the music (three seconds) so the cuts land on the beat.
+  stack; and the later pads below), runs them, goes fullscreen and flies a camera past them for about 327 seconds of footage
+  (12 fewer without the car), smoothly, every frame. The shots are the `Shot` records of `client/ShowcaseRunShots`, in the order of
+  the cut, and every length is a whole number of bars of the music (three seconds) so the cuts land on the beat.
   The run leaves one still from the middle of each shot in `run/showcase-shaders/screenshots`, to check the framing without watching
-  it, and `-PtrailerShots=a,b` keeps only the named shots, so a new pad can be looked at in a short run.
+  it, and `-PtrailerShots=a,b` keeps only the named shots, so a new pad can be looked at in a short run. A shot left out takes its
+  cues with it, and some shots set up what a later one films (the V8 is opened up during `cold_start` for `exhaust_mouth`), so
+  name the shot before too.
 - **Framing.** No camera distance is typed in. Each `Shot` gives a box round its subject, in blocks from the pad's corner, with
   the angles it is seen from and how much of the frame it should take up at the start and at the end (more at the end is a push
-  in, less is a pull back). `client/ShowcaseRunFraming` works out where the camera stands so the whole box lies inside the safe
+  in, less is a pull back). A shot may also move from its box to a second one (`MOVES`: the fast pull-back from an exhaust mouth).
+  The one exception to the sums is a shot read through Create's goggles (`REACH`: `heat_critical`), which only reach so far, so it
+  stands a set distance off with the block under the crosshair. `client/ShowcaseRunFraming` works out where the camera stands so the whole box lies inside the safe
   area: clear of the letterbox and the caption, a little above the middle (`TrailerFramingTest`). The run films with one 60 degree
   lens, whatever the game's setting is. A shot whose camera a courtyard wall pulls more than 0.75 of a block off its framing
   logs a warning (`held inside the walls`): look at its still. The shot list is in the order of the cut, so the light only moves
-  on from day to dusk.
+  on from day to dusk. The open V8's pad (and the car's) has no walls, so the camera can pull far away from it.
 - **The wheeled car.** With Create Aeronautics (its Offroad wheels) and Sable in the run, pad 11 has a turbocharged precision diesel
   inline eight with one driven Offroad wheel (the crank line runs out of the east end through a gearbox, a shaft down and a second
   gearbox into a wheel mount), three more wheels that roll free on a casing frame, and no walls. The pad's blocks are lifted into a
@@ -314,14 +319,16 @@ python tools/trailer/record.py --post-only  # cuts the last recordings again (ne
   `--no-shaders`); `--no-aeronautics` leaves it, and the shots, out. Lessons for changing the car: a wheel mount costs 16 stress per
   rpm and takes drive from the block behind it; a large cogwheel meshes a small one diagonally; blocks that touch nothing are split off
   into structures of their own when it is lifted.
-- **Gameplay clip.** `grow_engine` is seen through the player's own eyes, standing still (creative mode, the Bank
-  Builder in hand). One engine grows on a bare pad in six steps, two seconds apart, each the Bank Builder's work on a fresh crank line:
-  one cylinder, an inline four, a V8, a V16, the V16 in precision parts, and the V16 boosted. It is driven by `Cue`s (seconds into
-  a shot) in `ShowcaseRun.defineCues`; the other shots are a spectator's camera. The engine is rebuilt, not swapped, so no part items
-  are dropped on the floor (any that are get discarded).
+- **Gameplay clips.** `grow_engine` and `bank_wx` are seen through the player's own eyes, standing still (creative mode, the Bank
+  Builder in hand), on the same bare pad. In `bank_wx` the Bank Builder lays a W of twelve cylinders, then an X of sixteen. In
+  `grow_engine` one engine grows in six steps, two seconds apart: one cylinder, an inline four, a V8, a V16, the V16 in precision
+  parts, and the V16 boosted. Each step is the Bank Builder's work on a fresh crank line, driven by `Cue`s (seconds into a shot);
+  the other shots are a spectator's camera. The engine is rebuilt, not swapped, so no part items are dropped on the floor (any that
+  are get discarded). `heat_critical`, `headphones_on`, `casing_dye` and `service_sump` are first person too; `heat_critical` wears
+  Create's goggles.
 - **The later pads and what is real in them.** Bays 15 to 17 (past the car's drive) hold the casing styles (four styles of cased
   shaft and cogs between casing pillars, a Maker's Plate, the player dyeing the pillars), a precision twin-turbo V16 that stands cold
-  until a cue gives its heavy starter power (then the player, in first person, puts on headphones), and a service bay. The service bay and
+  until a cue gives its heavy starter power, and a service bay. (`headphones_on` is by the turbocharged six.) The service bay and
   the refinery are built from Create's own machines and only the heat exchangers' heat, and the stock a tank or barrel starts with, is the
   harness's: used oil goes from the pan by a pump to a basin under a mixer (driven from the engine's crank, through a shaft, a gearbox and a
   cogwheel the mixer meshes with), charcoal and clay come from a barrel through a pair of funnels (an extracting funnel above an inserting
@@ -338,10 +345,24 @@ python tools/trailer/record.py --post-only  # cuts the last recordings again (ne
   reflection, as a free-running engine does not get that hot in a few seconds; the steam and the cooling are the mod's); a diesel
   four with a variable-geometry turbo and a MAF sensor; a gasoline four whose exhaust is rebuilt at the start of `muffler_off`,
   `muffler_on`, `exhaust_stub` and `exhaust_long`, so the same engine is heard four ways; a belt where two Deployers and two
-  Presses make Copper Gaskets from Rubber ones; and a twin-turbo gasoline V8 with anti-lag, which in `night_pull`
+  Presses make Copper Gaskets from Rubber ones; a cold inline four the starter cranks over (`cold_start`); and a twin-turbo gasoline V8 with anti-lag, which in `night_pull`
   idles, has its throttles opened by their idle stops and revs, then is lifted off twice with redstone on its camshaft. As that
   shot begins the harness warms the V8 once and, by reflection, gives it the mod's own crank inertia back in place of the
   recorder's five times (see "A steady crank" below), or it would be too sluggish to be seen revving.
+- **The 2.4 pads** (bays 25 to 29, in a row north of the first; `client/ShowcaseRunSounds` and `client/ShowcaseRunWear`): an
+  open-air V8 with a bare exhaust on each bank and no flywheel, which revs for `exhaust_mouth` and `far_boom`, idles re-timed
+  crossplane and then flat-plane, and has one bank muffled in `muffler_bank`; a diesel four that knocks at idle (`diesel_knock`)
+  and in `stall_load` has six Mechanical Presses clutched on; a turbocharged gasoline four for `heat_critical`,
+  `wear_gasket_blown` and `wear_turbo`; a twin with no flywheel whose light rods are changed for heavy ones half-way through
+  `rods_light_heavy`; the wear parts on depots; and a face-up Mechanical Saw that belts are dropped onto. `wear_apex` uses the
+  rotary's pad, which gets new seals before `rotary_orbit`, and `radiator_fan_basin` adds a fan, a third radiator, a basin and a
+  Mixer to the hot engine's pad.
+- **What is staged for wear and heat.** `record.py` turns the wear mode on in the trailer's private game folder
+  (`TRAILER_FEATURES`; a run started without it logs a warning and shows no damage). No part fails by chance during the run
+  (`WearKeeper.roller`, the GameTests' hook). A cue puts each failed part in the mod's own failed state, with its own sound and
+  smoke (and the apex seals' sparks), because a real failure cannot be waited for. The first shot's engine is held at 190 degrees
+  and the one heating the basin just short of critical. The V8 gets the mod's own crank inertia while it revs, as does the rod
+  twin, whose surge the recorder's heavy crank would hide.
 - **Sound and walls.** Only the courtyard the camera is in is heard (sounds from other pads are cancelled as they start and stopped when
   the camera moves on). Engines are also kept to the courtyard by where their crankshaft is, because the shared "engine room"
   voice has no place of its own to filter by; during the car's shots only the engine on no courtyard is heard. The camera is held
@@ -360,17 +381,20 @@ python tools/trailer/record.py --post-only  # cuts the last recordings again (ne
 - **A steady crank.** The showcase engines turn at 40 to 70 rpm, where a light crank's speed ripples by several percent each cycle and the
   network shows it as shafts and presses that surge and jump. `record.py` gives the trailer's private game folder five times the
   inertia on the crank blocks and flywheels (`TRAILER_CONFIG`; a ripple goes as one over the inertia). It touches nothing in the mod.
+  The shots named above that need a lively crank take it off their own engine.
 - **How it is cut.** `post.py` takes the order and the length of every piece of the full cut from `tools/trailer/edit.txt`
-  (`<shot> <seconds> [at=] [speed=] [engine] [quiet] [cold]`; every piece a whole number of half bars, 1.5 s at the music's 80
+  (`<shot> <seconds> [at=] [speed=] [engine] [quiet] [cold] [end]`; every piece a whole number of half bars, 1.5 s at the music's 80
   beats a minute, so the cuts fall on the beat). It renders each piece on its own: its stretch of the recording (sped up when the
   line says so), a light grade (a slight S-curve, a hint of warm highlights and cool shadows, a faint vignette), a 2.2:1 letterbox, and a caption at
   the lower left that slides in, with its chapter's name over it in gold (`chapter <shot>` lines of `captions.txt`; a `quiet`
-  piece keeps the caption before it). A chapter starts with a white flash and a hit. The full cut opens cold on the single
-  cylinder with only the game's sound, slams the title (the mod's round icon, `docs/images/icon.png`, the "CREATE" lettering
+  piece keeps the caption before it). A chapter starts with a white flash and a hit. The full cut opens cold on the critically hot
+  engine with only the game's sound, slams the title (the mod's round icon, `docs/images/icon.png`, the "CREATE" lettering
   `docs/images/create_lettering.png`, placed by `tools/create_lettering.py`, and the gold wordmark `docs/images/wordmark.png`)
-  over the title shot with a flash and a boom as the music comes in, and ends with a riser into the last shot, a fade through black
-  and an end card (the version line from `gradle.properties`, "Links in the description" and the AI notice, `outro_notice`) with a
-  sting. The 16:9 thumbnail uses the same title; `tools/listing_art.py` makes the golden listing tile `docs/images/listing_gold.png`.
+  over the title shot with a flash and a boom as the music comes in, and ends with a riser into the last shot. There is no end
+  card after it: five seconds before the end of that shot (the `end` piece) the title, the version line from `gradle.properties`,
+  "Links in the description" and the AI notice (`outro_notice`) come in over the footage with a sting, and it fades to black.
+  Earlier versions' features are a montage of a beat and a half each, under one caption. The 16:9 thumbnail uses the same title;
+  `tools/listing_art.py` makes the golden listing tile `docs/images/listing_gold.png`.
   All the text is drawn in Minecraft's own font by `mcfont.py`, from the game's font bitmap.
 - **The sound.** Mixed in numpy: the game's sound of each piece (sped pieces keep their pitch), brought to one level; the music
   from the title on, which drops to 40% under an `engine` piece while the engines come up; and the hits (`tools/trailer/sfx.py`,
@@ -382,8 +406,8 @@ python tools/trailer/record.py --post-only  # cuts the last recordings again (ne
   from the shot `thumbnail:` names, and a 9:16 thumbnail for Shorts from the shot `vertical_thumbnail:` names
   (`vertical_thumbnail_at:` seconds in, with `vertical_title:` and `vertical_sub:` for its words).
 - **The vertical cut.** Its own edit, `tools/trailer/vertical.txt` (the file says what each option does), cut for a feed where a
-  viewer decides in the first second: no title card and no 16:9 band at the start, but a full-frame cold start (`cold_start`:
-  a still engine cranked until it catches) with big words on the first frame that say it is Minecraft, every piece
+  viewer decides in the first second: no title card and no 16:9 band at the start, but a full-frame pull-back from a barking
+  exhaust mouth to the whole engine revving, with big words on the first frame, every piece
   at least three seconds and the whole cut at most ninety, the words clear of the bottom fifth and the right edge where the app draws its own buttons. A `fit` piece
   shows the whole 16:9 picture in a band on a blurred copy of itself (`zoom=` for a small subject), the others a 9:16 window
   (`x=` moves it). The AI notice is in it twice: `vertical_ai_tag` at the top from the first frame, for a viewer who leaves
@@ -398,9 +422,10 @@ python tools/trailer/record.py --post-only  # cuts the last recordings again (ne
 - **Output.** `run/trailer/trailer.mp4`, `trailer_teaser.mp4`, `trailer_vertical.mp4`, `thumbnail.png`, `thumbnail_vertical.png`, `description.txt` and `description_vertical.txt`, with the raw recordings and the shot timings beside them.
 - **Keeping it current.** `src/smoke/trailer-parts.txt` has a line for every block and item saying which shot shows it, or why none
   does. `TrailerCoverageTest` fails when a new part has no line, when a line names a shot that does not exist, when a shot has no
-  caption, and when a shot is missing from `edit.txt`, is there twice, or has a piece that is not a whole number of half bars. A significant new part goes on a pad (or a new one) in `ShowcaseRun`, gets a shot, a caption and a line in `edit.txt`, and its line names the
+  caption, when a shot is missing from `edit.txt`, is there twice, or has a piece that is not a whole number of half bars, when a
+  piece of either edit runs past the end of its shot, and when the full cut's last piece is not its one `end` piece. A significant new part goes on a pad (or a new one), gets a shot in `ShowcaseRunShots`, a caption and a line in `edit.txt`, and its line names the
   shot. A `later` line is a part that is significant and not in the trailer yet: a debt, kept in the open.
-- **Length budget.** The full trailer may run up to 240 seconds (title shot and end card included). It is a
+- **Length budget.** The full trailer may run up to 240 seconds (title shot and the end piece included). It is a
   limit for the author and for whoever adds shots, not something a test enforces: when new parts would push it past, trim or shorten
   shots rather than let it grow.
 - **What it cannot see.** The test cannot tell that a part is really on screen in its shot, and nobody has heard the synthesised music
