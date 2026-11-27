@@ -22,6 +22,8 @@ import org.jetbrains.annotations.Nullable;
 public final class CylinderModel implements Breather {
 
 	static final double GAMMA = 1.3;
+	/** The power of the volume ratio a squeezed charge heats by. */
+	public static final double HEATING_EXPONENT = GAMMA - 1;
 	static final double FUEL_EPSILON = 1e-6;
 	/** Most an injector can deliver as a multiple of {@link CylinderSpec#maxFuelPerShot()}: Fuel Metering's top setting. */
 	public static final double INJECTOR_CAPACITY = 2;
@@ -104,6 +106,14 @@ public final class CylinderModel implements Breather {
 	public double coldness = 0;
 	/** Pressure the exhaust valve blows down into, ambient (1) unless a turbine is in the way. */
 	public double exhaustPressure = 1;
+	/** The share of a burn's heat the piston rings keep: 1 with none, and a little more for each. */
+	public double ringSeal = 1;
+	/** A scale on the charge temperature that a cylinder with no plug judges lighting by; 1 except for a low compression piston. */
+	public double lightingHeat = 1;
+	/** A high compression rotor's loss to pre-ignition per atmosphere of boost; 0 for every other cylinder. */
+	public double rotorEarlyLoss = 0;
+	/** A low compression rotor's gain per atmosphere of boost; 0 for every other cylinder. */
+	public double rotorBoostGain = 0;
 	public FuelSupply fuelSupply = FuelSupply.NONE;
 	/**
 	 * A second, easily ignited fuel (diesel, say) a cylinder with no spark plug can inject a little of to light a main
@@ -287,6 +297,10 @@ public final class CylinderModel implements Breather {
 		copy.assist = assist;
 		copy.coil = coil;
 		copy.wear = wear;
+		copy.ringSeal = ringSeal;
+		copy.lightingHeat = lightingHeat;
+		copy.rotorEarlyLoss = rotorEarlyLoss;
+		copy.rotorBoostGain = rotorBoostGain;
 		copy.intakeFactor = intakeFactor;
 		copy.fuelTrim = fuelTrim;
 		copy.pilotSupply = pilotSupply;

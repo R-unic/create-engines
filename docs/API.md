@@ -63,7 +63,7 @@ other mod's block is still refused. Placing it needs the addon installed, as wit
 ## Parts as data
 
 A cylinder is the crude one with the effects of the parts it was built with multiplied in. `data/create_engines/part_effects/`
-holds one file per part (`bore`, `head`, `piston`, `injector`), each a JSON object of optional scales (1 changes nothing, range
+holds one file per part (`bore`, `head`, `piston`, `injector`, `high_compression`, `low_compression`), each a JSON object of optional scales (1 changes nothing, range
 0.1 to 10): `compression_ratio`, `breathing` (intake and exhaust valve flow), `ignition_delay`, `burn_duration`,
 `friction_static`, `friction_viscous`, `inertia`, `injector_flow`. The mod ships the built-in values as these files
 (`PartEffectsTest` pins them to the constants), so a pack changes a part by providing the same path. The server's precision bonus

@@ -163,7 +163,8 @@ public final class CEConfig {
 			.defineInRange("fuelConsumption", 1.0, 0.05, 20.0));
 		PRECISION_BONUS = value("balance.precisionBonus", builder.comment(
 				"How far each precision part (cylinder, head, forged piston, injector) moves a",
-				"cylinder away from the crude one. 0 makes them cosmetic, 2 doubles their effect.")
+				"cylinder away from the crude one. 0 makes them cosmetic, 2 doubles their effect.",
+				"It scales the high and low compression pistons and rotors the same way.")
 			.defineInRange("precisionBonus", 1.0, 0.0, 2.0));
 		BOOST_STRENGTH = value("balance.boostStrength", builder.comment("Scales the boost made by every turbocharger and supercharger.")
 			.defineInRange("boostStrength", 1.0, 0.0, 2.0));

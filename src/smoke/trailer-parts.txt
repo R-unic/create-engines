@@ -104,3 +104,8 @@ copper_gasket: gasket_line
 incomplete_copper_gasket: skip - the half-made Copper Gasket of its sequenced assembly, an intermediate, not a part
 service_kit: wear_parts
 apex_seals: wear_parts
+high_compression_piston: skip - inside the cylinder, a variant of the forged piston
+low_compression_piston: skip - inside the cylinder, a variant of the forged piston
+high_compression_rotor: skip - inside the housing, a variant of the rotor
+low_compression_rotor: skip - inside the housing, a variant of the rotor
+piston_ring: skip - inside the cylinder

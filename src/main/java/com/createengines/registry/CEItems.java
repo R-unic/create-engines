@@ -46,6 +46,23 @@ public final class CEItems {
 		.model((c, p) -> p.withExistingParent(c.getName(), p.modLoc("block/cylinder/forged_piston")))
 		.register();
 
+	/** A forged piston with its crown built up: more from the fuel without boost, less room for boost on a spark fuel. */
+	public static final ItemEntry<Item> HIGH_COMPRESSION_PISTON = REGISTRATE.item("high_compression_piston",
+			p -> (Item) new com.createengines.content.WornPartItem(p))
+		.model((c, p) -> p.withExistingParent(c.getName(), p.modLoc("block/cylinder/high_compression_piston")))
+		.register();
+
+	/** A forged piston with its crown dished out: less without boost, and gasoline takes far more boost. */
+	public static final ItemEntry<Item> LOW_COMPRESSION_PISTON = REGISTRATE.item("low_compression_piston",
+			p -> (Item) new com.createengines.content.WornPartItem(p))
+		.model((c, p) -> p.withExistingParent(c.getName(), p.modLoc("block/cylinder/low_compression_piston")))
+		.register();
+
+	/** Goes onto a fitted piston, up to three, each sealing a little better. Nothing wears. */
+	public static final ItemEntry<Item> PISTON_RING = REGISTRATE.item("piston_ring", Item::new)
+		.model((c, p) -> p.generated(c, p.modLoc("item/piston_ring")))
+		.register();
+
 	/** A common-rail injector that atomises the fuel finely: a precision part for a head. */
 	public static final ItemEntry<Item> PRECISION_INJECTOR = REGISTRATE.item("precision_injector", Item::new)
 		.model((c, p) -> p.withExistingParent(c.getName(), p.modLoc("block/cylinder_head/precision_injector_item")))
@@ -114,6 +131,16 @@ public final class CEItems {
 	public static final ItemEntry<Item> ROTOR = REGISTRATE.item("rotor", Item::new)
 		.lang("Engine Rotor")
 		.model((c, p) -> p.withExistingParent(c.getName(), p.modLoc("block/rotor_housing/rotor_item")))
+		.register();
+
+	/** A rotor with shallow pockets in its flanks, which squeezes the charge harder: the rotary's high compression piston. */
+	public static final ItemEntry<Item> HIGH_COMPRESSION_ROTOR = REGISTRATE.item("high_compression_rotor", Item::new)
+		.model((c, p) -> p.withExistingParent(c.getName(), p.modLoc("block/rotor_housing/high_compression_rotor_item")))
+		.register();
+
+	/** A rotor with deep pockets cut in its flanks: the rotary's low compression piston. */
+	public static final ItemEntry<Item> LOW_COMPRESSION_ROTOR = REGISTRATE.item("low_compression_rotor", Item::new)
+		.model((c, p) -> p.withExistingParent(c.getName(), p.modLoc("block/rotor_housing/low_compression_rotor_item")))
 		.register();
 
 	/** Fitted in an oil pan: the oil ages more slowly and fuel is cleaned out of it faster. Nothing wears out. */

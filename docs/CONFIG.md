@@ -66,7 +66,7 @@ Balance multipliers. 1.0 is the shipped balance.
 | Setting | Default | Range | What it does |
 |---|---|---|---|
 | `fuelConsumption` | `1.0` | 0.05 to 20.0 | Fuel drawn from the tanks for each unit of fuel an engine burns. Above 1 makes every engine thirstier, below 1 thriftier; the engine's power is unchanged. |
-| `precisionBonus` | `1.0` | 0.0 to 2.0 | How far each precision part (cylinder, head, forged piston, injector) moves a cylinder away from the crude one. 0 makes them cosmetic, 2 doubles their effect. |
+| `precisionBonus` | `1.0` | 0.0 to 2.0 | How far each precision part (cylinder, head, forged piston, injector) moves a cylinder away from the crude one. 0 makes them cosmetic, 2 doubles their effect. It scales the high and low compression pistons and rotors the same way. |
 | `boostStrength` | `1.0` | 0.0 to 2.0 | Scales the boost made by every turbocharger and supercharger. |
 | `rotaryPower` | `1.0` | 0.25 to 2.0 | Scales a Wankel rotor chamber's swept volume, and so its power and thirst. Rotary engines are tuned as a niche (compact and smooth but thirsty, weak at low speed); raising this shifts that balance. |
 | `heatRecoveryOutput` | `1.0` | 0.1 to 10.0 | Scales the heat an Exhaust Heat Exchanger takes from an engine's exhaust. Create's basins need a heated or superheated source below them, and the exchanger gets there only with enough exhaust heat, so lower values need a bigger engine. |

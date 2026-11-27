@@ -529,6 +529,8 @@ public final class EngineScanner {
 		draft.ignitionCoil = draft.sparkPlug && state.getValue(RotorHousingBlock.HAS_COIL);
 		if (state.getValue(RotorHousingBlock.FINE_INJECTOR))
 			draft.precision |= PrecisionParts.INJECTOR;
+		draft.precision |= state.getValue(RotorHousingBlock.COMPRESSION)
+			.bits();
 		if (!Tuning.rotaryEngines)
 			draft.faults |= CylinderFault.ROTARY_DISABLED.bit();
 		if (!state.getValue(RotorHousingBlock.HAS_ROTOR))
@@ -578,6 +580,9 @@ public final class EngineScanner {
 		draft.addEffect(state.getBlock());
 		if (state.getValue(CylinderBlock.FORGED_PISTON))
 			draft.precision |= PrecisionParts.PISTON;
+		draft.precision |= state.getValue(CylinderBlock.COMPRESSION)
+			.bits();
+		draft.precision = PrecisionParts.withRings(draft.precision, state.getValue(CylinderBlock.RINGS));
 
 		BlockPos headPos = pos.relative(bore);
 		BlockState head = state(headPos);

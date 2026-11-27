@@ -563,6 +563,10 @@ public class RotorHousingBlockEntity extends CrankshaftBlockEntity implements Ga
 				GoggleLines.add(CELang.translate(fault.langKey())
 					.style(fault.disablesCylinder ? ChatFormatting.RED : ChatFormatting.GOLD), tooltip, 1);
 
+		if (state.getValue(RotorHousingBlock.COMPRESSION) != com.createengines.content.PartCompression.STANDARD)
+			GoggleLines.add(CELang.translate("goggles.rotor." + state.getValue(RotorHousingBlock.COMPRESSION)
+					.getSerializedName())
+				.style(ChatFormatting.AQUA), tooltip, 1);
 		if (state.getValue(RotorHousingBlock.HAS_INJECTOR)) {
 			GoggleLines.add(CELang.translate("goggles.head.metering", Math.round(meteringFraction() * 100))
 				.style(ChatFormatting.AQUA), tooltip, 1);

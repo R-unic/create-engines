@@ -70,6 +70,9 @@ public final class ViewerEntries {
 		List<Part> parts = new ArrayList<>();
 		parts.add(new Part(CEItems.PISTON.asStack(), cylinders, false));
 		parts.add(new Part(CEItems.FORGED_PISTON.asStack(), cylinders, true));
+		parts.add(new Part(CEItems.HIGH_COMPRESSION_PISTON.asStack(), cylinders, true));
+		parts.add(new Part(CEItems.LOW_COMPRESSION_PISTON.asStack(), cylinders, true));
+		parts.add(new Part(CEItems.PISTON_RING.asStack(), cylinders, false));
 		parts.add(new Part(CEItems.CONNECTING_ROD.asStack(), cylinders, false));
 		parts.add(new Part(CEItems.FUEL_INJECTOR.asStack(), headsAndRotors, false));
 		parts.add(new Part(CEItems.PRECISION_INJECTOR.asStack(), headsAndRotors, true));
@@ -78,6 +81,8 @@ public final class ViewerEntries {
 		parts.add(new Part(CEItems.IGNITION_COIL.asStack(), stacks(CEBlocks.CYLINDER_HEAD.asStack(), CEBlocks.PRECISION_CYLINDER_HEAD.asStack(),
 			CEBlocks.ROTOR_HOUSING.asStack()), false));
 		parts.add(new Part(CEItems.ROTOR.asStack(), stacks(CEBlocks.ROTOR_HOUSING.asStack()), false));
+		parts.add(new Part(CEItems.HIGH_COMPRESSION_ROTOR.asStack(), stacks(CEBlocks.ROTOR_HOUSING.asStack()), false));
+		parts.add(new Part(CEItems.LOW_COMPRESSION_ROTOR.asStack(), stacks(CEBlocks.ROTOR_HOUSING.asStack()), false));
 		parts.add(new Part(CEItems.OIL_FILTER.asStack(), stacks(CEBlocks.SUMP.asStack()), false));
 		return parts;
 	}

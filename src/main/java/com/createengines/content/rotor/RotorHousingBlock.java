@@ -32,6 +32,8 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.StateDefinition;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.minecraft.world.level.block.state.properties.BooleanProperty;
+import net.minecraft.world.level.block.state.properties.EnumProperty;
+import com.createengines.content.PartCompression;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.Shapes;
@@ -58,10 +60,14 @@ public class RotorHousingBlock extends CrankshaftBlock implements AirflowPort, S
 	/** The high-energy coil of a head's plug (see {@code CylinderHeadBlock.HAS_COIL}): it only fits a housing that has a plug. */
 	public static final BooleanProperty HAS_COIL = BooleanProperty.create("coil");
 
+	/** Set with {@link #HAS_ROTOR} when the rotor is a high or low compression one. */
+	public static final EnumProperty<PartCompression> COMPRESSION = EnumProperty.create("compression", PartCompression.class);
+
 	/** Faces on a rotor: each makes a chamber. */
 	public static final int CHAMBERS = 3;
 
-	private static final Slot[] PARTS = {new Slot(HAS_ROTOR, CEItems.ROTOR),
+	private static final Slot[] PARTS = {new Slot(HAS_ROTOR, CEItems.ROTOR)
+			.withCompressions(COMPRESSION, CEItems.HIGH_COMPRESSION_ROTOR, CEItems.LOW_COMPRESSION_ROTOR),
 		new Slot(HAS_INJECTOR, CEItems.FUEL_INJECTOR, FINE_INJECTOR, CEItems.PRECISION_INJECTOR),
 		new Slot(HAS_SPARK_PLUG, CEItems.SPARK_PLUG),
 		new Slot(HAS_COIL, CEItems.IGNITION_COIL, HAS_SPARK_PLUG, "needs_plug")};
@@ -73,13 +79,14 @@ public class RotorHousingBlock extends CrankshaftBlock implements AirflowPort, S
 			.setValue(FINE_INJECTOR, false)
 			.setValue(HAS_SPARK_PLUG, false)
 			.setValue(HAS_COIL, false)
+			.setValue(COMPRESSION, PartCompression.STANDARD)
 			.setValue(BlockStateProperties.LIT, false));
 	}
 
 	@Override
 	protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {
 		super.createBlockStateDefinition(builder);
-		builder.add(HAS_ROTOR, HAS_INJECTOR, FINE_INJECTOR, HAS_SPARK_PLUG, HAS_COIL, BlockStateProperties.LIT);
+		builder.add(HAS_ROTOR, HAS_INJECTOR, FINE_INJECTOR, HAS_SPARK_PLUG, HAS_COIL, COMPRESSION, BlockStateProperties.LIT);
 	}
 
 	/** A housing is an eccentric journal with a rotor on it: it has an angle, like a throw. */

@@ -1991,6 +1991,31 @@ def forged_piston():
            box((2.9, 3, 2.9), (13.1, 3.4, 13.1), "ring"), box((6.5, -1, 2.6), (9.5, 2, 13.4), "pin")])
 
 
+def compression_pistons():
+    """The high and low compression pistons: a forged piston's dark skirt, band and pin under two crowns that cannot be taken
+    for each other. The high one stands a red dome on its top; the low one is dished, a steel rim round a blue floor. Neither
+    reaches more than a pixel past the forged piston's crown, which is under the head."""
+    textures = {"piston": DARK, "ring": BRASS, "pin": IRON_BLOCK, "high": RED, "low": BLUE, "rim": IRON_BLOCK,
+                "particle": DARK}
+    pin = box((6.5, -1, 2.6), (9.5, 2, 13.4), "pin")
+    write("cylinder/high_compression_piston", textures,
+          [box((3, -2, 3), (13, 5, 13), "piston"), box((2.9, 3.2, 2.9), (13.1, 3.8, 13.1), "ring"), pin,
+           box((4.5, 5, 4.5), (11.5, 7, 11.5), "high")])
+    write("cylinder/low_compression_piston", textures,
+          [box((3, -2, 3), (13, 4, 13), "piston", up="low"), box((2.9, 2.6, 2.9), (13.1, 3.2, 13.1), "ring"), pin,
+           box((3, 4, 3), (13, 6, 5), "rim"), box((3, 4, 11), (13, 6, 13), "rim"),
+           box((3, 4, 5), (5, 6, 11), "rim"), box((11, 4, 5), (13, 6, 11), "rim")])
+
+
+def piston_rings():
+    """The rings fitted to a piston, drawn at its pose: thin cast-iron bands standing proud of its skirt, below the bands the
+    pistons have of their own, one model for each number fitted."""
+    heights = (1.8, 0.6, -0.6)
+    for count in (1, 2, 3):
+        write("cylinder/rings_%d" % count, {"ring": IRON, "particle": IRON},
+              [box((2.75, y, 2.75), (13.25, y + 0.5, 13.25), "ring") for y in heights[:count]])
+
+
 def precision_injector_item():
     write("cylinder_head/precision_injector_item",
           {"body": BRASS, "cap": DARK, "nozzle": IRON_BLOCK, "rail": QUARTZ, "particle": BRASS},
@@ -2136,6 +2161,21 @@ def rotor_elements(y0=5.0, y1=11.0):
 ROTOR_TEXTURES = {"rotor": IRON_BLOCK, "face": CUT_COPPER, "seal": BRASS, "hub": DARK, "particle": IRON_BLOCK}
 
 
+def rotor_crowns(y0, y1):
+    """The high compression rotor's mark, on both end faces: the red raised block of the high compression piston."""
+    return [box((5.75, y1, 5.75), (10.25, y1 + 0.9, 10.25), "high"), box((5.75, y0 - 0.9, 5.75), (10.25, y0, 10.25), "high")]
+
+
+def rotor_dishes(y0, y1):
+    """The low compression rotor's mark, on both end faces: the low compression piston's steel rim round a blue floor."""
+    elements = []
+    for floor0, floor1, rim0, rim1 in ((y1, y1 + 0.25, y1, y1 + 0.9), (y0 - 0.25, y0, y0 - 0.9, y0)):
+        elements.append(box((6.5, floor0, 6.5), (9.5, floor1, 9.5), "low"))
+        elements += [box((5.5, rim0, 5.5), (10.5, rim1, 6.5), "rotor"), box((5.5, rim0, 9.5), (10.5, rim1, 10.5), "rotor"),
+                     box((5.5, rim0, 6.5), (6.5, rim1, 9.5), "rotor"), box((9.5, rim0, 6.5), (10.5, rim1, 9.5), "rotor")]
+    return elements
+
+
 def rotor_housing():
     textures = {"frame": IRON, "rim": COPPER_CASING, "boss": CASING, "injector": BRASS, "ceramic": QUARTZ,
                 "terminal": IRON_BLOCK, "particle": COPPER_CASING}
@@ -2179,6 +2219,11 @@ def rotor_housing():
            box((6, 5.05, 8 + e - 2), (10, 10.95, 8 + e + 2), "journal")])
     write("rotor_housing/rotor", ROTOR_TEXTURES, rotor_elements())
     write("rotor_housing/rotor_item", ROTOR_TEXTURES, rotor_elements(6.0, 10.0))
+    textures = dict(ROTOR_TEXTURES, high=RED, low=BLUE)
+    for suffix, y0, y1 in (("", 5.0, 11.0), ("_item", 6.0, 10.0)):
+        stock = rotor_elements(y0, y1)
+        write("rotor_housing/high_compression_rotor" + suffix, textures, stock + rotor_crowns(y0, y1))
+        write("rotor_housing/low_compression_rotor" + suffix, textures, stock + rotor_dishes(y0, y1))
 
 
 def pushrod():
@@ -2201,6 +2246,8 @@ def main():
     precision_cylinder()
     precision_head()
     forged_piston()
+    compression_pistons()
+    piston_rings()
     precision_injector_item()
     governor()
     timing_tool()

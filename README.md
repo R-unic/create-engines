@@ -180,7 +180,7 @@ Fuel properties are a datapack data map (`data_maps/fluid/fuel.json`), so other 
 
 For pack makers, three config presets ship in the jar (`config_presets/casual.toml`, `standard.toml`, `expert.toml`): copy
 their `[balance]` and `[features]` tables over the ones in the config. **Frozen at 2.0 and only added to since (the API's own version is in docs/API.md):**
-parts as data (`part_effects/<part>.json` for the four precision parts, and a part stats data map,
+parts as data (`part_effects/<part>.json` for the four precision parts and the two compression factors, and a part stats data map,
 `data_maps/block/part_stats.json`, with optional scales on a cylinder's stats, keyed by `create_engines:cylinder`,
 `create_engines:precision_cylinder` or `create_engines:rotor_housing`), and a public API (`com.createengines.api`:
 `EngineApi.viewAt`, two events, `EngineStateChangeEvent` and `EngineMilestoneEvent`, on `NeoForge.EVENT_BUS`, and an

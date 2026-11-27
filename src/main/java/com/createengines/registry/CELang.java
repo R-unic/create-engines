@@ -411,6 +411,18 @@ public final class CELang {
 		raw("goggles.head.coil.hint", "It draws only from batteries that are not a reserve. With none to spare the plug sparks exactly as it would without it");
 		raw("goggles.head.no_coil", "Right-click with an Ignition Coil to spend battery charge on a hotter spark");
 		raw("part.needs_plug", "Fit a spark plug first: the coil sits on it");
+		raw("part.needs_piston", "Fit a piston first: the ring goes on it");
+		raw("part.rings_full", "This piston has all the rings it takes");
+		raw("goggles.piston.high", "High-compression piston: more power without boost, less room for boost on a spark fuel");
+		raw("goggles.piston.low", "Low-compression piston: less power without boost, far more room for boost on gasoline");
+		raw("goggles.piston.rings", "Piston rings: %1$s of %2$s");
+		raw("goggles.rotor.high", "High-compression rotor: more power without boost, less room for boost");
+		raw("goggles.rotor.low", "Low-compression rotor: less power without boost, more room for boost on gasoline");
+		raw("tooltip.part.high_compression_piston", "More power without boost. Boosted gasoline lights early sooner");
+		raw("tooltip.part.low_compression_piston", "Less power without boost. Gasoline takes far more boost");
+		raw("tooltip.part.high_compression_rotor", "More power without boost. Boosted gasoline lights early sooner");
+		raw("tooltip.part.low_compression_rotor", "Less power without boost. Gasoline takes far more boost");
+		raw("tooltip.part.piston_ring", "Goes on a fitted piston, up to %1$s. Each adds a little power, and none wears");
 
 		raw("goggles.radiator", "Radiator");
 		raw("goggles.radiator.no_engine", "Not touching an engine's crankshaft, cylinder or cylinder head, or the engine has not run lately");

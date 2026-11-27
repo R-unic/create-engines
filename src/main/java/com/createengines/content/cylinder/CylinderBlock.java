@@ -6,6 +6,13 @@ import com.createengines.content.CasingStyle;
 import com.createengines.content.Encasing;
 import com.createengines.content.NewPartRequirement;
 import com.createengines.content.PartInstallation;
+import com.createengines.content.PartCompression;
+import com.createengines.engine.sim.CylinderSpec;
+import net.minecraft.network.chat.Component;
+import net.minecraft.sounds.SoundEvents;
+import net.minecraft.sounds.SoundSource;
+import net.minecraft.world.level.block.state.properties.EnumProperty;
+import net.minecraft.world.level.block.state.properties.IntegerProperty;
 import com.createengines.content.WearService;
 import com.createengines.engine.sim.Wear;
 import com.createengines.content.PartInstallation.Slot;
@@ -51,8 +58,31 @@ public class CylinderBlock extends DirectionalBlock
 	/** Set with {@link #HAS_PISTON} when the piston is a forged precision one. */
 	public static final BooleanProperty FORGED_PISTON = BooleanProperty.create("forged_piston");
 
-	private static final Slot[] PARTS = {new Slot(HAS_PISTON, CEItems.PISTON, FORGED_PISTON, CEItems.FORGED_PISTON),
-		new Slot(HAS_ROD, CEItems.CONNECTING_ROD)};
+	/** Set with {@link #FORGED_PISTON} when the piston is a high or low compression one, which is a forged piston reshaped. */
+	public static final EnumProperty<PartCompression> COMPRESSION = EnumProperty.create("compression", PartCompression.class);
+	/** The rings on the piston, none to {@link CylinderSpec#MAX_RINGS}. */
+	public static final IntegerProperty RINGS = IntegerProperty.create("rings", 0, CylinderSpec.MAX_RINGS);
+
+	private static final Slot PISTON_SLOT = new Slot(HAS_PISTON, CEItems.PISTON, FORGED_PISTON, CEItems.FORGED_PISTON)
+		.withCompressions(COMPRESSION, CEItems.HIGH_COMPRESSION_PISTON, CEItems.LOW_COMPRESSION_PISTON);
+	private static final Slot[] PARTS = {PISTON_SLOT, new Slot(HAS_ROD, CEItems.CONNECTING_ROD)};
+
+	/** The item the piston in {@code state} is. */
+	public static ItemStack pistonStack(BlockState state) {
+		return PISTON_SLOT.fitted(state);
+	}
+
+	/** {@code state} with the piston and its rings gone. */
+	public static BlockState withoutPiston(BlockState state) {
+		return PISTON_SLOT.emptied(state)
+			.setValue(RINGS, 0);
+	}
+
+	/** Whether the stack is any piston that goes in a cylinder. */
+	public static boolean isPiston(ItemStack stack) {
+		return CEItems.PISTON.isIn(stack) || CEItems.FORGED_PISTON.isIn(stack) || CEItems.HIGH_COMPRESSION_PISTON.isIn(stack)
+			|| CEItems.LOW_COMPRESSION_PISTON.isIn(stack);
+	}
 
 	private final boolean precision;
 
@@ -68,6 +98,8 @@ public class CylinderBlock extends DirectionalBlock
 			.setValue(HAS_PISTON, false)
 			.setValue(FORGED_PISTON, false)
 			.setValue(HAS_ROD, false)
+			.setValue(COMPRESSION, PartCompression.STANDARD)
+			.setValue(RINGS, 0)
 			.setValue(Encasing.ENCASED, false)
 			.setValue(Encasing.STYLE, CasingStyle.PLAIN));
 	}
@@ -84,7 +116,7 @@ public class CylinderBlock extends DirectionalBlock
 
 	@Override
 	protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {
-		builder.add(FACING, HAS_PISTON, FORGED_PISTON, HAS_ROD, Encasing.ENCASED, Encasing.STYLE);
+		builder.add(FACING, HAS_PISTON, FORGED_PISTON, HAS_ROD, COMPRESSION, RINGS, Encasing.ENCASED, Encasing.STYLE);
 	}
 
 	@Override
@@ -106,11 +138,49 @@ public class CylinderBlock extends DirectionalBlock
 	@Override
 	public ItemRequirement getRequiredItems(BlockState state, @Nullable BlockEntity blockEntity) {
 		ItemRequirement needed = PartInstallation.requirement(state, PARTS);
-		if (!(blockEntity instanceof CylinderBlockEntity body) || !state.getValue(HAS_ROD) || body.rodKind() == Wear.Rod.STANDARD)
+		if (blockEntity instanceof CylinderBlockEntity body && state.getValue(HAS_ROD) && body.rodKind() != Wear.Rod.STANDARD) {
+			// The block, its piston, and the rod that is really in it in place of the standard one
+			ItemRequirement real = PartInstallation.requirement(state.setValue(HAS_ROD, false), PARTS);
+			needed = real.union(NewPartRequirement.of(WearService.itemFor(body.rodKind())));
+		}
+		if (state.getValue(RINGS) == 0)
 			return needed;
-		// The block, its piston, and the rod that is really in it in place of the standard one
-		ItemRequirement real = PartInstallation.requirement(state.setValue(HAS_ROD, false), PARTS);
-		return real.union(NewPartRequirement.of(WearService.itemFor(body.rodKind())));
+		return needed.union(new ItemRequirement(ItemRequirement.ItemUseType.CONSUME,
+			new ItemStack(CEItems.PISTON_RING.get(), state.getValue(RINGS))));
+	}
+
+	/** A piston ring used on a cylinder goes onto its piston, one at a time. */
+	private ItemInteractionResult fitRing(ItemStack stack, BlockState state, Level level, BlockPos pos, Player player) {
+		String refusal = !state.getValue(HAS_PISTON) ? "needs_piston"
+			: state.getValue(RINGS) >= CylinderSpec.MAX_RINGS ? "rings_full" : null;
+		if (!level.isClientSide) {
+			if (refusal != null)
+				player.displayClientMessage(Component.translatable("create_engines.part." + refusal), true);
+			else {
+				level.setBlockAndUpdate(pos, state.setValue(RINGS, state.getValue(RINGS) + 1));
+				if (!player.isCreative())
+					stack.shrink(1);
+				level.playSound(null, pos, SoundEvents.NETHERITE_BLOCK_PLACE, SoundSource.BLOCKS, 0.4f, 1.8f);
+			}
+		}
+		return ItemInteractionResult.sidedSuccess(level.isClientSide);
+	}
+
+	/**
+	 * Sneaking with an empty hand takes the rings off one at a time, after the rod and before the piston they are on.
+	 * Returns whether a ring came off.
+	 */
+	private static boolean removeRing(BlockState state, Level level, BlockPos pos, Player player) {
+		if (!player.isShiftKeyDown() || state.getValue(HAS_ROD) || state.getValue(RINGS) == 0)
+			return false;
+		if (!level.isClientSide) {
+			level.setBlockAndUpdate(pos, state.setValue(RINGS, state.getValue(RINGS) - 1));
+			if (!player.isCreative())
+				player.getInventory()
+					.placeItemBackInInventory(CEItems.PISTON_RING.asStack());
+			level.playSound(null, pos, SoundEvents.NETHERITE_BLOCK_BREAK, SoundSource.BLOCKS, 0.4f, 1.8f);
+		}
+		return true;
 	}
 
 	@Override
@@ -125,6 +195,8 @@ public class CylinderBlock extends DirectionalBlock
 		ItemInteractionResult serviced = WearService.onCylinder(stack, level, pos, player, hand);
 		if (serviced != ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION)
 			return serviced;
+		if (CEItems.PISTON_RING.isIn(stack))
+			return fitRing(stack, state, level, pos, player);
 		// A part fitted keeps the wear it had on the stack (a new one has none)
 		double carried = WearService.wearOf(stack);
 		Wear.Rod rod = WearService.rodOf(stack);
@@ -164,6 +236,8 @@ public class CylinderBlock extends DirectionalBlock
 	@Override
 	protected InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos, Player player,
 											   BlockHitResult hit) {
+		if (!state.getValue(Encasing.ENCASED) && removeRing(state, level, pos, player))
+			return InteractionResult.sidedSuccess(level.isClientSide);
 		if (!state.getValue(Encasing.ENCASED) && PartInstallation.tryRemove(state, level, pos, player,
 			(slot, part) -> WearService.dress(level, pos, slot, part), PARTS)) {
 			WearService.partsChanged(level, pos, state, level.getBlockState(pos));
@@ -182,6 +256,8 @@ public class CylinderBlock extends DirectionalBlock
 	protected void onRemove(BlockState state, Level level, BlockPos pos, BlockState newState, boolean movedByPiston) {
 		Encasing.dropOnRemove(state, level, pos, newState);
 		PartInstallation.dropParts(state, level, pos, newState, (slot, part) -> WearService.dress(level, pos, slot, part), PARTS);
+		if (!level.isClientSide && !state.is(newState.getBlock()) && state.getValue(RINGS) > 0)
+			Block.popResource(level, pos, new ItemStack(CEItems.PISTON_RING.get(), state.getValue(RINGS)));
 		IBE.onRemove(state, level, pos, newState);
 		EngineTopology.markDirty(level, pos);
 	}

@@ -1,0 +1,10 @@
+{
+  "type": "create:cutting",
+  "ingredients": [
+    {"item": "create_engines:rotor"}
+  ],
+  "processing_time": 100,
+  "results": [
+    {"id": "create_engines:low_compression_rotor"}
+  ]
+}

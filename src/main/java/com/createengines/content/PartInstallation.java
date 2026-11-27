@@ -18,6 +18,7 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.properties.BooleanProperty;
+import net.minecraft.world.level.block.state.properties.EnumProperty;
 
 /**
  * Engine parts that are smaller than a block (pistons, connecting rods, injectors) are installed into their housing
@@ -25,7 +26,8 @@ import net.minecraft.world.level.block.state.properties.BooleanProperty;
  * Each installed part is a block state property, so installing one changes the block and the engine rescans.
  * <p>
  * A slot can also take a precision version of its part. That fills the same property and sets a second one beside it,
- * so everything that asks only whether a piston or an injector is fitted needn't care which it is.
+ * so everything that asks only whether a piston or an injector is fitted needn't care which it is. A slot for a piston or
+ * a rotor also takes high and low compression versions, which a third property tells apart.
  */
 public final class PartInstallation {
 
@@ -36,30 +38,73 @@ public final class PartInstallation {
 	 * @param gradeItem the precision part
 	 */
 	public record Slot(BooleanProperty property, ItemEntry<Item> item, @Nullable BooleanProperty grade,
-					   @Nullable ItemEntry<Item> gradeItem, @Nullable BooleanProperty requires, @Nullable String needs) {
+					   @Nullable ItemEntry<Item> gradeItem, @Nullable BooleanProperty requires, @Nullable String needs,
+					   @Nullable Compressions compressions) {
 
 		public Slot(BooleanProperty property, ItemEntry<Item> item) {
-			this(property, item, null, null, null, null);
+			this(property, item, null, null, null, null, null);
 		}
 
 		public Slot(BooleanProperty property, ItemEntry<Item> item, @Nullable BooleanProperty grade,
 					@Nullable ItemEntry<Item> gradeItem) {
-			this(property, item, grade, gradeItem, null, null);
+			this(property, item, grade, gradeItem, null, null, null);
 		}
 
 		/** A part that only fits where {@code requires} is already fitted (an injector assist on a head with an injector). */
 		public Slot(BooleanProperty property, ItemEntry<Item> item, BooleanProperty requires) {
-			this(property, item, null, null, requires, "needs_injector");
+			this(property, item, null, null, requires, "needs_injector", null);
 		}
 
 		/** The same, saying {@code needs} (a lang key under {@code create_engines.part.}) when the part it sits on is missing. */
 		public Slot(BooleanProperty property, ItemEntry<Item> item, BooleanProperty requires, String needs) {
-			this(property, item, null, null, requires, needs);
+			this(property, item, null, null, requires, needs, null);
+		}
+
+		/** This slot, also taking a high and a low compression version of its part; they count as the precision grade, if there is one. */
+		public Slot withCompressions(EnumProperty<PartCompression> which, ItemEntry<Item> high, ItemEntry<Item> low) {
+			return new Slot(property, item, grade, gradeItem, requires, needs, new Compressions(which, high, low));
 		}
 
 		/** The item that comes out of this slot as it stands in {@code state}. */
-		ItemStack fitted(BlockState state) {
+		public ItemStack fitted(BlockState state) {
+			if (compressions != null && state.getValue(compressions.property()) != PartCompression.STANDARD)
+				return compressions.item(state.getValue(compressions.property()))
+					.asStack();
 			return grade != null && state.getValue(grade) ? gradeItem.asStack() : item.asStack();
+		}
+
+		/** {@code state} with this slot empty. */
+		public BlockState emptied(BlockState state) {
+			BlockState next = state.setValue(property, false);
+			if (grade != null)
+				next = next.setValue(grade, false);
+			return compressions == null ? next : next.setValue(compressions.property(), PartCompression.STANDARD);
+		}
+
+		/** {@code state} with the part {@code stack} is fitted in this slot, or null if the stack is no part of it. */
+		@Nullable BlockState filledWith(BlockState state, ItemStack stack) {
+			if (item.isIn(stack))
+				return state.setValue(property, true);
+			if (gradeItem != null && gradeItem.isIn(stack))
+				return state.setValue(property, true)
+					.setValue(grade, true);
+			if (compressions == null)
+				return null;
+			for (PartCompression compression : new PartCompression[] {PartCompression.HIGH, PartCompression.LOW})
+				if (compressions.item(compression)
+					.isIn(stack)) {
+					BlockState next = state.setValue(property, true)
+						.setValue(compressions.property(), compression);
+					return grade == null ? next : next.setValue(grade, true);
+				}
+			return null;
+		}
+	}
+
+	/** The high and low compression versions of a slot's part, and the property that says which is in. */
+	public record Compressions(EnumProperty<PartCompression> property, ItemEntry<Item> high, ItemEntry<Item> low) {
+		ItemEntry<Item> item(PartCompression compression) {
+			return compression == PartCompression.HIGH ? high : low;
 		}
 	}
 
@@ -77,13 +122,8 @@ public final class PartInstallation {
 					player.displayClientMessage(Component.translatable("create_engines.part." + slot.needs()), true);
 				return ItemInteractionResult.sidedSuccess(level.isClientSide);
 			}
-			BlockState next;
-			if (slot.item().isIn(stack))
-				next = state.setValue(slot.property(), true);
-			else if (slot.gradeItem() != null && slot.gradeItem().isIn(stack))
-				next = state.setValue(slot.property(), true)
-					.setValue(slot.grade(), true);
-			else
+			BlockState next = slot.filledWith(state, stack);
+			if (next == null)
 				continue;
 			if (!level.isClientSide) {
 				level.setBlockAndUpdate(pos, next);
@@ -119,10 +159,7 @@ public final class PartInstallation {
 				continue;
 			if (!level.isClientSide) {
 				ItemStack part = dresser.dress(slot, slot.fitted(state));
-				BlockState next = state.setValue(slot.property(), false);
-				if (slot.grade() != null)
-					next = next.setValue(slot.grade(), false);
-				level.setBlockAndUpdate(pos, next);
+				level.setBlockAndUpdate(pos, slot.emptied(state));
 				if (!player.isCreative())
 					player.getInventory()
 						.placeItemBackInInventory(part);

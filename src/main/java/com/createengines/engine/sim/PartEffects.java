@@ -19,7 +19,9 @@ public final class PartEffects {
 
 	/** The parts a cylinder can be built with. The names are the data file names. */
 	public enum Part {
-		BORE, HEAD, PISTON, INJECTOR;
+		BORE, HEAD, PISTON, INJECTOR,
+		/** A high or low compression piston or rotor: the one compression factor both share. */
+		HIGH_COMPRESSION, LOW_COMPRESSION;
 
 		public String fileName() {
 			return name().toLowerCase(Locale.ROOT);
@@ -60,6 +62,8 @@ public final class PartEffects {
 			CylinderSpec.PRECISION_PISTON_VISCOUS, CylinderSpec.PRECISION_PISTON_INERTIA, 1));
 		map.put(Part.INJECTOR, new Effect(1, 1, CylinderSpec.PRECISION_INJECTOR_DELAY, CylinderSpec.PRECISION_INJECTOR_BURN,
 			1, 1, 1, CylinderSpec.PRECISION_INJECTOR_FLOW));
+		map.put(Part.HIGH_COMPRESSION, new Effect(CylinderSpec.HIGH_COMPRESSION, 1, 1, 1, 1, 1, 1, 1));
+		map.put(Part.LOW_COMPRESSION, new Effect(CylinderSpec.LOW_COMPRESSION, 1, 1, 1, 1, 1, 1, 1));
 		return Map.copyOf(map);
 	}
 

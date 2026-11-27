@@ -1,0 +1,41 @@
+{
+  "parent": "block/block",
+  "textures": {
+    "ring": "create_engines:block/cast_iron",
+    "particle": "create_engines:block/cast_iron"
+  },
+  "elements": [
+    {
+      "from": [
+        2.75,
+        1.8,
+        2.75
+      ],
+      "to": [
+        13.25,
+        2.3,
+        13.25
+      ],
+      "faces": {
+        "north": {
+          "texture": "#ring"
+        },
+        "south": {
+          "texture": "#ring"
+        },
+        "east": {
+          "texture": "#ring"
+        },
+        "west": {
+          "texture": "#ring"
+        },
+        "up": {
+          "texture": "#ring"
+        },
+        "down": {
+          "texture": "#ring"
+        }
+      }
+    }
+  ]
+}

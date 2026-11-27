@@ -1,0 +1,129 @@
+{
+  "parent": "block/block",
+  "textures": {
+    "ring": "create_engines:block/cast_iron",
+    "particle": "create_engines:block/cast_iron"
+  },
+  "elements": [
+    {
+      "from": [
+        2.75,
+        1.8,
+        2.75
+      ],
+      "to": [
+        13.25,
+        2.3,
+        13.25
+      ],
+      "faces": {
+        "north": {
+          "texture": "#ring"
+        },
+        "south": {
+          "texture": "#ring"
+        },
+        "east": {
+          "texture": "#ring"
+        },
+        "west": {
+          "texture": "#ring"
+        },
+        "up": {
+          "texture": "#ring"
+        },
+        "down": {
+          "texture": "#ring"
+        }
+      }
+    },
+    {
+      "from": [
+        2.75,
+        0.6,
+        2.75
+      ],
+      "to": [
+        13.25,
+        1.1,
+        13.25
+      ],
+      "faces": {
+        "north": {
+          "texture": "#ring"
+        },
+        "south": {
+          "texture": "#ring"
+        },
+        "east": {
+          "texture": "#ring"
+        },
+        "west": {
+          "texture": "#ring"
+        },
+        "up": {
+          "texture": "#ring"
+        },
+        "down": {
+          "texture": "#ring"
+        }
+      }
+    },
+    {
+      "from": [
+        2.75,
+        -0.6,
+        2.75
+      ],
+      "to": [
+        13.25,
+        -0.1,
+        13.25
+      ],
+      "faces": {
+        "north": {
+          "texture": "#ring",
+          "uv": [
+            2.75,
+            0.1,
+            13.25,
+            0.6
+          ]
+        },
+        "south": {
+          "texture": "#ring",
+          "uv": [
+            2.75,
+            0.1,
+            13.25,
+            0.6
+          ]
+        },
+        "east": {
+          "texture": "#ring",
+          "uv": [
+            2.75,
+            0.1,
+            13.25,
+            0.6
+          ]
+        },
+        "west": {
+          "texture": "#ring",
+          "uv": [
+            2.75,
+            0.1,
+            13.25,
+            0.6
+          ]
+        },
+        "up": {
+          "texture": "#ring"
+        },
+        "down": {
+          "texture": "#ring"
+        }
+      }
+    }
+  ]
+}

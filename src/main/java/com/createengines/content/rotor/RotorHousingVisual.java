@@ -3,6 +3,7 @@ package com.createengines.content.rotor;
 import java.util.function.Consumer;
 
 import com.createengines.content.EnginePoses;
+import com.createengines.content.PartCompression;
 import com.createengines.content.StructureCulling;
 import com.createengines.registry.CEPartialModels;
 
@@ -26,7 +27,8 @@ public class RotorHousingVisual extends AbstractBlockEntityVisual<RotorHousingBl
 	implements SimpleDynamicVisual {
 
 	private final TransformedInstance eccentric;
-	private final TransformedInstance rotor;
+	/** One instance for each kind of rotor, by compression; only the fitted one shows. */
+	private final TransformedInstance[] rotors;
 	/** The wear mode's: the seals sprung out of a housing whose set has failed. Hidden unless it has. */
 	private final TransformedInstance wreck;
 	private final Axis axis;
@@ -37,8 +39,11 @@ public class RotorHousingVisual extends AbstractBlockEntityVisual<RotorHousingBl
 		axis = blockState.getValue(BlockStateProperties.AXIS);
 		eccentric = instancerProvider().instancer(InstanceTypes.TRANSFORMED, Models.partial(CEPartialModels.ROTOR_ECCENTRIC))
 			.createInstance();
-		rotor = instancerProvider().instancer(InstanceTypes.TRANSFORMED, Models.partial(CEPartialModels.ROTOR))
-			.createInstance();
+		rotors = new TransformedInstance[PartCompression.values().length];
+		for (PartCompression compression : PartCompression.values())
+			rotors[compression.ordinal()] = instancerProvider()
+				.instancer(InstanceTypes.TRANSFORMED, Models.partial(CEPartialModels.rotor(compression)))
+				.createInstance();
 		wreck = instancerProvider().instancer(InstanceTypes.TRANSFORMED, Models.partial(CEPartialModels.ROTOR_WRECK))
 			.createInstance();
 		wrecked = blockEntity.showsApexFailed();
@@ -75,30 +80,39 @@ public class RotorHousingVisual extends AbstractBlockEntityVisual<RotorHousingBl
 			.mul(EnginePoses.rotatingPart(axis, EnginePoses.crankAngle(blockEntity, renderTime)))
 			.setChanged();
 		// A rotor is only there if one has been fitted
-		rotor.setVisible(blockEntity.getBlockState()
-			.getValue(RotorHousingBlock.HAS_ROTOR));
-		rotor.setIdentityTransform()
-			.translate(getVisualPosition())
-			.mul(EnginePoses.rotor(blockEntity, renderTime))
-			.setChanged();
+		boolean fitted = blockEntity.getBlockState()
+			.getValue(RotorHousingBlock.HAS_ROTOR);
+		int which = blockEntity.getBlockState()
+			.getValue(RotorHousingBlock.COMPRESSION)
+			.ordinal();
+		for (int i = 0; i < rotors.length; i++) {
+			rotors[i].setVisible(fitted && i == which);
+			rotors[i].setIdentityTransform()
+				.translate(getVisualPosition())
+				.mul(EnginePoses.rotor(blockEntity, renderTime))
+				.setChanged();
+		}
 	}
 
 	@Override
 	public void updateLight(float partialTick) {
-		relight(eccentric, rotor, wreck);
+		relight(eccentric, wreck);
+		relight(rotors);
 	}
 
 	@Override
 	protected void _delete() {
 		eccentric.delete();
-		rotor.delete();
+		for (TransformedInstance instance : rotors)
+			instance.delete();
 		wreck.delete();
 	}
 
 	@Override
 	public void collectCrumblingInstances(Consumer<Instance> consumer) {
 		consumer.accept(eccentric);
-		consumer.accept(rotor);
+		for (TransformedInstance instance : rotors)
+			consumer.accept(instance);
 		consumer.accept(wreck);
 	}
 }

@@ -51,6 +51,9 @@ public class CEPonderPlugin implements PonderPlugin {
 		scenes.forComponents(CEBlocks.PRECISION_CYLINDER, CEBlocks.PRECISION_CYLINDER_HEAD, CEItems.FORGED_PISTON,
 				CEItems.PRECISION_INJECTOR)
 			.addStoryBoard("precision_parts", EngineScenes::precisionParts);
+		scenes.forComponents(CEItems.HIGH_COMPRESSION_PISTON, CEItems.LOW_COMPRESSION_PISTON, CEItems.PISTON_RING,
+				CEItems.HIGH_COMPRESSION_ROTOR, CEItems.LOW_COMPRESSION_ROTOR, CEItems.FORGED_PISTON, CEItems.ROTOR)
+			.addStoryBoard("precision_parts", PistonScenes::compressionAndRings);
 		scenes.forComponents(CEBlocks.CYLINDER_HEAD)
 			.addStoryBoard("mixture", EngineScenes::mixture);
 		scenes.forComponents(CEBlocks.CYLINDER_HEAD, CEBlocks.CRANKSHAFT, CEBlocks.CRANK_THROW)
@@ -105,7 +108,7 @@ public class CEPonderPlugin implements PonderPlugin {
 			.addStoryBoard("rain_cap", HeadphonesScenes::headphones);
 		scenes.forComponents(CEItems.SERVICE_KIT, CEItems.STOCK_GASKET, CEItems.CARDBOARD_GASKET, CEItems.RUBBER_GASKET, CEItems.COPPER_GASKET,
 			CEItems.PISTON, CEItems.FORGED_PISTON, CEItems.CONNECTING_ROD, CEItems.LIGHT_CONNECTING_ROD, CEItems.HEAVY_CONNECTING_ROD,
-			CEItems.APEX_SEALS)
+			CEItems.HIGH_COMPRESSION_PISTON, CEItems.LOW_COMPRESSION_PISTON, CEItems.APEX_SEALS)
 			.addStoryBoard("rain_cap", WearScenes::wearAndTear);
 		scenes.forComponents(CEBlocks.CRANKSHAFT, CEBlocks.CAST_FLYWHEEL, CEBlocks.DUAL_MASS_FLYWHEEL, CEBlocks.TURBOCHARGER, CEBlocks.ROTOR_HOUSING)
 			.addStoryBoard("rain_cap", AeronauticsScenes::movingEngine);

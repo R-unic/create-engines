@@ -1,6 +1,11 @@
 package com.createengines.engine.topology;
 
+import org.jetbrains.annotations.Nullable;
+
+import com.createengines.engine.sim.CylinderModel;
 import com.createengines.engine.sim.CylinderSpec;
+import com.createengines.engine.sim.PartEffects;
+import com.createengines.engine.sim.Tuning;
 
 /**
  * Which precision parts a cylinder is built from, as bits. Each part improves the crude cylinder in one way and they
@@ -18,6 +23,57 @@ public final class PrecisionParts {
 	public static final int INJECTOR = 8;
 	public static final int ALL = BORE | HEAD | PISTON | INJECTOR;
 
+	/** A high compression piston or rotor. Not a precision part of its own, so outside {@link #ALL}. */
+	public static final int HIGH_COMPRESSION = 16;
+	/** A low compression piston or rotor. */
+	public static final int LOW_COMPRESSION = 32;
+	/** Where the number of piston rings, 0 to {@link CylinderSpec#MAX_RINGS}, sits in the same bits. */
+	private static final int RING_SHIFT = 6;
+	private static final int RING_MASK = 3 << RING_SHIFT;
+
+	/** These bits with {@code rings} piston rings in them. */
+	public static int withRings(int parts, int rings) {
+		return parts & ~RING_MASK | Math.clamp(rings, 0, CylinderSpec.MAX_RINGS) << RING_SHIFT;
+	}
+
+	public static int rings(int parts) {
+		return (parts & RING_MASK) >> RING_SHIFT;
+	}
+
+	/** The share of a burn's heat the piston rings keep: exactly 1 with none. */
+	public static double ringSeal(int parts) {
+		return 1 + CylinderSpec.RING_GAIN * rings(parts);
+	}
+
+	/** What a high compression rotor loses to pre-ignition under boost: 0 for any other rotor. */
+	public static double rotorEarlyLoss(int parts) {
+		return has(parts, HIGH_COMPRESSION) ? CylinderSpec.HIGH_ROTOR_EARLY_LOSS * Tuning.precisionBonus : 0;
+	}
+
+	/** What a low compression rotor gains under boost: 0 for any other rotor. */
+	public static double rotorBoostGain(int parts) {
+		return has(parts, LOW_COMPRESSION) ? CylinderSpec.LOW_ROTOR_BOOST_GAIN * Tuning.precisionBonus : 0;
+	}
+
+	/** The compression part among these, or null for a stock piston or rotor. */
+	public static PartEffects.@Nullable Part compression(int parts) {
+		if (has(parts, HIGH_COMPRESSION))
+			return PartEffects.Part.HIGH_COMPRESSION;
+		return has(parts, LOW_COMPRESSION) ? PartEffects.Part.LOW_COMPRESSION : null;
+	}
+
+	/**
+	 * What a cylinder with no plug judges lighting by, as a scale on its charge temperature. A low compression piston runs a
+	 * cooler charge, which must not make a compression-lit engine harder to start: this gives it back the stock piston's
+	 * temperature for lighting alone. Exactly 1 for every other piston.
+	 */
+	public static double lightingHeat(int parts) {
+		if (!has(parts, LOW_COMPRESSION))
+			return 1;
+		double scale = Tuning.blend(PartEffects.of(PartEffects.Part.LOW_COMPRESSION).compression(), Tuning.precisionBonus);
+		return scale < 1 ? Math.pow(1 / scale, CylinderModel.HEATING_EXPONENT) : 1;
+	}
+
 	private PrecisionParts() {
 	}
 
@@ -32,16 +88,16 @@ public final class PrecisionParts {
 
 	/** The physical description of a rotary chamber built from these parts; only the injector applies to a rotor. */
 	public static CylinderSpec rotarySpec(int parts) {
-		return CylinderSpec.buildRotary(has(parts, INJECTOR));
+		return CylinderSpec.buildRotary(has(parts, INJECTOR), compression(parts));
 	}
 
 	/** The physical description of a cylinder built from these parts. */
 	public static CylinderSpec spec(int parts) {
-		return CylinderSpec.build(has(parts, BORE), has(parts, HEAD), has(parts, PISTON), has(parts, INJECTOR));
+		return spec(parts, java.util.List.of());
 	}
 
 	/** As {@link #spec(int)}, with the part effects of a pack's or an addon's own blocks added (ids of {@code part_effects} files). */
 	public static CylinderSpec spec(int parts, java.util.List<String> own) {
-		return CylinderSpec.build(has(parts, BORE), has(parts, HEAD), has(parts, PISTON), has(parts, INJECTOR), own);
+		return CylinderSpec.build(has(parts, BORE), has(parts, HEAD), has(parts, PISTON), has(parts, INJECTOR), compression(parts), own);
 	}
 }

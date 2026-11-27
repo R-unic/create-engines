@@ -320,6 +320,12 @@ public final class EngineController {
 				: InjectorAssist.NONE;
 			model.coil = cylinder.ignitionCoil() && cylinder.sparkPlug() ? plugs.coil() : IgnitionCoil.NONE;
 			model.pilotSupply = pilots;
+			model.ringSeal = PrecisionParts.ringSeal(cylinder.precision());
+			model.lightingHeat = cylinder.rotary() ? 1 : PrecisionParts.lightingHeat(cylinder.precision());
+			if (cylinder.rotary()) {
+				model.rotorEarlyLoss = PrecisionParts.rotorEarlyLoss(cylinder.precision());
+				model.rotorBoostGain = PrecisionParts.rotorBoostGain(cylinder.precision());
+			}
 			// Underwater, nothing gets in or out, wherever the pipes lead
 			boolean submerged = CylinderFault.SUBMERGED.in(cylinder.faults());
 			model.intakeFactor = submerged ? 0 : flow(cylinder.intake());
@@ -1529,7 +1535,7 @@ public final class EngineController {
 				spark++;
 			else
 				compression++;
-			if (placed.precision() != 0)
+			if ((placed.precision() & PrecisionParts.ALL) != 0)
 				precise++;
 		}
 		return new SoundBase(outlets.outletOf(), pipes, muffles, compression > spark,
@@ -2006,9 +2012,9 @@ public final class EngineController {
 				precision = false;
 				continue;
 			}
-			precision &= layout.cylinders()
+			precision &= (layout.cylinders()
 				.get(i)
-				.precision() == PrecisionParts.ALL;
+				.precision() & PrecisionParts.ALL) == PrecisionParts.ALL;
 			fouling = Math.max(fouling, (float) model.fouling());
 			if (!model.lastCycle().result.fired())
 				continue;

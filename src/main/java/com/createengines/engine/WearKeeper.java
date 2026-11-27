@@ -443,8 +443,7 @@ public final class WearKeeper {
 		BlockPos pos = cylinder.pos();
 		BlockState state = body.getBlockState();
 		boolean fuel = fuelAt(level, cylinder);
-		level.setBlockAndUpdate(pos, state.setValue(CylinderBlock.HAS_PISTON, false)
-			.setValue(CylinderBlock.FORGED_PISTON, false)
+		level.setBlockAndUpdate(pos, CylinderBlock.withoutPiston(state)
 			.setValue(CylinderBlock.HAS_ROD, false));
 		body.throwRod();
 		CylinderHeadBlockEntity head = head(level, cylinder);

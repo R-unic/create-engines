@@ -1,4 +1,4 @@
-"""Flat item textures for the wear mode: three head gaskets and the Service Kit.
+"""Flat item textures: the wear mode's head gaskets and Service Kit, and the piston ring.
 
 Standalone on purpose: generate_textures.py rewrites every texture when it runs, and these four are new. Run from the repo root with
 the pure-Python build (C:/Python315/python.exe) so the PNG bytes match the rest:
@@ -97,6 +97,33 @@ def kit():
     return rows
 
 
+# Hand-placed: two rings lying one on the other seen from above and in front, the upper one split. k outline, h lit, m mid, s shade
+PISTON_RINGS = (
+    "................",
+    ".....kkkkk......",
+    "...kkhhhhhk.k...",
+    "..khhkkkkkk.kk..",
+    ".khkk.......khk.",
+    ".khk.........mk.",
+    ".khmkk.....kkmk.",
+    ".kkhmmkkkkkmmkk.",
+    ".khkhmmmmmmmkmk.",
+    ".kmkkkkkkkkkksk.",
+    ".khmk......kmsk.",
+    ".khmmkkkkkkmmsk.",
+    "..kkmmmmmmmsskk.",
+    "....kksssssk....",
+    "......kkkkk.....",
+    "................",
+)
+
+
+def piston_rings():
+    colours = {".": CLEAR, "k": STOCK[0] + (255,), "h": STOCK[7] + (255,), "m": STOCK[5] + (255,), "s": STOCK[3] + (255,)}
+    return [[colours[c] for c in row] for row in PISTON_RINGS]
+
+
+write_png("piston_ring", piston_rings())
 write_png("stock_gasket", gasket(STOCK, 10, False, 3.5))
 write_png("cardboard_gasket", gasket(CARDBOARD, 11, False, 4.0))
 write_png("rubber_gasket", gasket(RUBBER, 12, False, 3.5))

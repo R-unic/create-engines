@@ -199,7 +199,7 @@ final class Combustion {
 		if (!Tuning.pilotInjection || owner.ignition.installed())
 			return false;
 		FuelSpec pilot = usable(owner.pilotSupply.fuel());
-		if (pilot == null || charge.temperature < pilot.autoignitionTemp())
+		if (pilot == null || charge.temperature * owner.lightingHeat < pilot.autoignitionTemp())
 			return false;
 		double shot = CylinderModel.PILOT_SHARE * current.fuelInjected;
 		if (shot <= 0 || owner.pilotSupply.draw(shot) < shot * 0.99)
@@ -221,7 +221,14 @@ final class Combustion {
 		double boost = Math.min(1, Math.max(0, (owner.intakePressure - 1) / PREIGNITION_FULL_BOOST));
 		preignitionLoss = owner.ignition.installed() && boost > 0
 			? burningFuel.preignitionLoss(charge.temperature + Thermal.MAX_HOT_PREIGNITION * owner.hotness) * boost : 0;
+		if (owner.rotorEarlyLoss > 0)
+			preignitionLoss = Math.min(FuelSpec.PREIGNITION_MAX_LOSS, preignitionLoss + owner.rotorEarlyLoss * earlyFuelBoost());
 		current.preignition = Math.max(current.preignition, preignitionLoss);
+	}
+
+	/** Boost in atmospheres, up to one, on a fuel that lights early sooner than ethanol does; 0 on one that holds out. */
+	private double earlyFuelBoost() {
+		return burningFuel.preignitionTemp() < FuelSpec.ETHANOL_PREIGNITION ? Math.min(1, Math.max(0, owner.intakePressure - 1)) : 0;
 	}
 
 	void combust(double dt) {
@@ -234,7 +241,7 @@ final class Combustion {
 			// A spark fuel in an engine with no plug is lit by a pilot shot or not at all, however hot boost has made the
 			// charge: a plug-fitted engine's charge past the autoignition point is pre-ignition, which costs power but is
 			// still the plug's burn
-			boolean selfLit = charge.temperature >= burningFuel.autoignitionTemp()
+			boolean selfLit = charge.temperature * (owner.ignition.installed() ? 1 : owner.lightingHeat) >= burningFuel.autoignitionTemp()
 				&& (owner.ignition.installed() || !burningFuel.needsSpark());
 			if (!selfLit) {
 				if (!pilotLights())
@@ -254,7 +261,9 @@ final class Combustion {
 		double heat = burned * burningFuel.energyPerMb() * Mixture.efficiency(burnEquivalence)
 			* Thermal.burnFactor(owner.coldness, burningFuel.coldSensitivity()) * (1 - preignitionLoss)
 			* (owner.wear == Wear.NONE ? 1 : owner.wear.seal())
-			* (1 - Thermal.MAX_HOT_BURN_LOSS * owner.hotness);
+			* (1 - Thermal.MAX_HOT_BURN_LOSS * owner.hotness)
+			* owner.ringSeal
+			* (owner.rotorBoostGain > 0 ? 1 + owner.rotorBoostGain * earlyFuelBoost() : 1);
 		charge.temperature += heat * (CylinderModel.GAMMA - 1) / (charge.moles + FUEL_HEAT_CAPACITY * fuelPending);
 		current.fuelBurned += burned;
 		owner.burned(heat * burningFuel.heatFactor());

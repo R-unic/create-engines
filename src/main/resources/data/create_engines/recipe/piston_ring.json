@@ -1,0 +1,10 @@
+{
+  "type": "create:deploying",
+  "ingredients": [
+    {"item": "create:iron_sheet"},
+    {"item": "create:zinc_nugget"}
+  ],
+  "results": [
+    {"id": "create_engines:piston_ring"}
+  ]
+}

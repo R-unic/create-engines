@@ -1,7 +1,11 @@
 package com.createengines.registry;
 
 import com.createengines.CreateEngines;
+import com.createengines.content.PartCompression;
+import com.createengines.content.cylinder.CylinderBlock;
 import com.createengines.engine.sim.Wear;
+
+import net.minecraft.world.level.block.state.BlockState;
 
 import dev.engine_room.flywheel.lib.model.baked.PartialModel;
 
@@ -20,6 +24,12 @@ public final class CEPartialModels {
 	public static final PartialModel ROTOR = block("rotor_housing/rotor");
 	public static final PartialModel PISTON = block("cylinder/piston");
 	public static final PartialModel FORGED_PISTON = block("cylinder/forged_piston");
+	public static final PartialModel HIGH_COMPRESSION_PISTON = block("cylinder/high_compression_piston");
+	public static final PartialModel LOW_COMPRESSION_PISTON = block("cylinder/low_compression_piston");
+	/** The rings fitted to a piston, drawn at its own pose: one model for one, two and three. */
+	private static final PartialModel[] PISTON_RINGS = {block("cylinder/rings_1"), block("cylinder/rings_2"), block("cylinder/rings_3")};
+	public static final PartialModel HIGH_COMPRESSION_ROTOR = block("rotor_housing/high_compression_rotor");
+	public static final PartialModel LOW_COMPRESSION_ROTOR = block("rotor_housing/low_compression_rotor");
 	public static final PartialModel CONNECTING_ROD = block("cylinder/rod");
 	public static final PartialModel LIGHT_CONNECTING_ROD = block("cylinder/light_rod");
 	public static final PartialModel HEAVY_CONNECTING_ROD = block("cylinder/heavy_rod");
@@ -54,6 +64,34 @@ public final class CEPartialModels {
 			case STANDARD -> CONNECTING_ROD;
 			case LIGHT -> LIGHT_CONNECTING_ROD;
 			case HEAVY -> HEAVY_CONNECTING_ROD;
+		};
+	}
+
+	/** Every piston a cylinder draws, in the order {@link #pistonIndex} numbers them. */
+	public static PartialModel[] pistons() {
+		return new PartialModel[] {PISTON, FORGED_PISTON, HIGH_COMPRESSION_PISTON, LOW_COMPRESSION_PISTON};
+	}
+
+	/** Which of {@link #pistons} a cylinder in {@code state} draws. */
+	public static int pistonIndex(BlockState state) {
+		return switch (state.getValue(CylinderBlock.COMPRESSION)) {
+			case HIGH -> 2;
+			case LOW -> 3;
+			case STANDARD -> state.getValue(CylinderBlock.FORGED_PISTON) ? 1 : 0;
+		};
+	}
+
+	/** The model of {@code count} piston rings, 1 to 3. */
+	public static PartialModel rings(int count) {
+		return PISTON_RINGS[count - 1];
+	}
+
+	/** The model a rotor housing draws for the rotor fitted in it. */
+	public static PartialModel rotor(PartCompression compression) {
+		return switch (compression) {
+			case STANDARD -> ROTOR;
+			case HIGH -> HIGH_COMPRESSION_ROTOR;
+			case LOW -> LOW_COMPRESSION_ROTOR;
 		};
 	}
 

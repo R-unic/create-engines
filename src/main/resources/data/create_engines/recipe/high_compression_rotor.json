@@ -1,0 +1,10 @@
+{
+  "type": "create:deploying",
+  "ingredients": [
+    {"item": "create_engines:rotor"},
+    {"item": "create:iron_sheet"}
+  ],
+  "results": [
+    {"id": "create_engines:high_compression_rotor"}
+  ]
+}

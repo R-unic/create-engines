@@ -830,6 +830,14 @@ public class CylinderBlockEntity extends SmartBlockEntity implements IHaveGoggle
 				.style(ChatFormatting.RED), tooltip, 1);
 		wearLine(tooltip, "goggles.wear.piston",state.getValue(CylinderBlock.HAS_PISTON), pistonWear, isPlayerSneaking);
 		wearLine(tooltip, "goggles.wear.rod", state.getValue(CylinderBlock.HAS_ROD), rodWear, isPlayerSneaking);
+		if (state.getValue(CylinderBlock.COMPRESSION) != com.createengines.content.PartCompression.STANDARD)
+			GoggleLines.add(CELang.translate("goggles.piston." + state.getValue(CylinderBlock.COMPRESSION)
+					.getSerializedName())
+				.style(ChatFormatting.AQUA), tooltip, 1);
+		if (state.getValue(CylinderBlock.RINGS) > 0)
+			GoggleLines.add(CELang.translate("goggles.piston.rings", state.getValue(CylinderBlock.RINGS),
+					com.createengines.engine.sim.CylinderSpec.MAX_RINGS)
+				.style(ChatFormatting.AQUA), tooltip, 1);
 		// Which rod is in matters with the wear mode on or off, as it drags and weighs its own way either way
 		if (state.getValue(CylinderBlock.HAS_ROD) && rodKind != Wear.Rod.STANDARD)
 			GoggleLines.add(CELang.translate("goggles.wear.rod." + rodKind.name().toLowerCase(java.util.Locale.ROOT))

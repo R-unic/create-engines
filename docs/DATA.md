@@ -12,7 +12,7 @@ Names, keys, defaults and ranges of the `fuel`, `part_stats` and `part_effect` d
 |---|---|---|
 | [`fuel`](#fuels-the-fuel-data-map) data map | `data/create_engines/data_maps/fluid/fuel.json` | which fluids an engine burns, and how |
 | [fuel tags](#fuel-tags) | `data/c/tags/fluid/<name>.json` | the shortcut: a fluid in a fuel tag is a fuel with that fuel's numbers |
-| [`part_effects`](#part-effects-the-four-precision-parts) | `data/create_engines/part_effects/<part>.json` | what each precision part does to a cylinder |
+| [`part_effects`](#part-effects-the-four-precision-parts) | `data/create_engines/part_effects/<part>.json` | what each precision part, and each compression part, does to a cylinder |
 | [`part_effect`](#a-part-of-your-own-the-part-effect-data-map) data map | `data/create_engines/data_maps/block/part_effect.json` | names the effect file an addon's own cylinder or head block adds |
 | [`flywheel`](#a-flywheel-of-your-own-the-flywheel-data-map) data map | `data/create_engines/data_maps/block/flywheel.json` | gives an addon's own flywheel block its masses (added in 2.1, API 1.2) |
 | [`cam_profiles`](#cam-profiles-when-the-valves-open) | `data/create_engines/cam_profiles/<kind>.json` | when the valves of a piston cylinder, and the ports of a rotor, open and shut |
@@ -132,6 +132,10 @@ key this version does not know is refused, so a typo is found instead of ignored
 | `inertia` | the rotating and reciprocating inertia the cylinder adds to the crank |
 | `injector_flow` | how much more than the usual most the injector can deliver (matters under boost) |
 
+Two more files, `high_compression` and `low_compression`, are what a high or a low compression piston or rotor multiplies in
+(a compression piston is a Forged Piston reshaped, so `piston` applies to it too). They read the same keys. What the two
+compression **rotors** gain and lose under boost is not in these files.
+
 **The built-in values** (what the shipped files hold):
 
 | Part | Keys it sets |
@@ -140,6 +144,8 @@ key this version does not know is refused, so a typo is found instead of ignored
 | `head` | `breathing` 1.5, `ignition_delay` 0.8 |
 | `piston` | `inertia` 0.7, `friction_static` 0.8, `friction_viscous` 0.7 |
 | `injector` | `ignition_delay` 0.8, `burn_duration` 0.7, `injector_flow` 1.3 |
+| `high_compression` | `compression_ratio` 1.2 |
+| `low_compression` | `compression_ratio` 0.8 |
 
 **The blend rule.** The server's `precisionBonus` setting (default 1) decides how far each effect applies:
 `applied = 1 + (scale - 1) * precisionBonus`. At 0 the parts do nothing; at 2 each does twice what its file says. A file's own

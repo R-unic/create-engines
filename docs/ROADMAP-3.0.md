@@ -40,8 +40,8 @@ question, not an obstacle ([CLAUDE.md](../CLAUDE.md)).
 | 2.5 | Open Garage (was 2.4 until 2026-11-25) | Reach: a new API minor (**fuel supply, a shared combustion model and animation for addon engines**, author, 2026-11-26), energy and probe mods, the next Create, a second example addon; **piston rings**, **polluted intake air**, **high- and low-compression piston variants**, **rotor variants (a precision rotor among them) with an exhaust niche**, and **nitrous oxide** (liquid, a vaporiser and a gas in the intake manifolds) (author, 2026-11-23), a **W layout for the Bank Builder** (author, 2026-11-24), then **look, sound and performance** only where the 2.0.x pass found something (all of it was 2.3 until the author moved it, 2026-11-24; its sound went to 2.4's sound rework, 2026-11-25); **a texture rework, with some new models, so the mod looks like part of Create** (author, 2026-11-25, from player complaints; moved from 2.4 on 2026-11-26) | Medium to large |
 | 3.0 | Clean Slate | The second breaking cleanup: drop 1.x migrations, regenerate baselines, API 2.0 | Large |
 
-**Shipped so far (tags):** 2.0.0 (2026-11-21), 2.0.1 and 2.0.2 (2026-11-22), 2.1.0 (2026-11-23), 2.2.0 (2026-11-24) and 2.3.0 (2026-11-25). 2.4 is in progress and
-not released, and 2.5 and 3.0 are not started; 2.3.1 was dropped by the author on 2026-11-25 and its fixes go out in 2.4. Each shipped release has its sign-off record in [releases](releases), which lists what the machine gate did not see in a running
+**Shipped so far (tags):** 2.0.0 (2026-11-21), 2.0.1 and 2.0.2 (2026-11-22), 2.1.0 (2026-11-23), 2.2.0 (2026-11-24), 2.3.0 (2026-11-25) and 2.4.0 (2026-11-27). 2.5 is in progress and
+not released, and 3.0 is not started; 2.3.1 was dropped by the author on 2026-11-25 and its fixes go out in 2.4. Each shipped release has its sign-off record in [releases](releases), which lists what the machine gate did not see in a running
 game and what the author's Part 3 pass covered; the "built, not seen in game" notes below are the state at the time of building, kept for the record.
 
 2.2 to 2.5 are independent of 2.1 and of each other; they can swap places or be cut, and 2.1 does not wait on either.
@@ -1259,6 +1259,21 @@ engine with variant pistons keeps them; a 2.0 blueprint loads unchanged), and a 
 one that high compression raises NA output and lowers the pre-ignition margin and low compression does the reverse, a property test that no
 combination produces a non-finite or negative result, a `ConfigMatrixTest` row, a GameTest for each variant fitted, saved and reloaded,
 and a `LegacyWorldGameTests` case showing a 2.0 world runs the same. `pitest` is re-run, since `engine/sim` changes.
+
+**Built 2026-11-27** (author's go-ahead that day, for high and low compression pistons and rotors and for piston rings). What was
+built, where it differs from the design above, and what is open:
+- Compression pistons are made from a new Forged Piston and keep its inertia, drag and wear life, so the stock to compare against is the
+  forged piston. Compression 1.2 and 0.8 (`part_effects` files `high_compression` and `low_compression`). The Dynamometer figures are
+  printed by `PistonVariantTest` and summed up in the 2.5.0 changelog in [LISTING.md](LISTING.md). **The numbers are a first pass the
+  author has not yet approved.**
+- Rotors: a **low** compression rotor was built with the high one, as the author asked; the lightweight and precision rotors and the
+  exhaust niche below are not built. A rotor's charge runs too cool to light early at either compression, which would have made high a
+  free gain and low a pure loss, so the two carry their boost trade directly (`HIGH_ROTOR_EARLY_LOSS`, `LOW_ROTOR_BOOST_GAIN`). The
+  stock rotor is unchanged.
+- Piston rings (designed nowhere before this): an item, up to three on a fitted piston, each 1% more heat from a burn (about 1.3% power
+  on the Dynamometer). No wear. Not on rotors.
+- Open: nothing seen in game (models in a cylinder, the Ponder scene, goggle lines), and `pitest` has not been re-run since `engine/sim`
+  changed. A Bank Builder fits standard and forged pistons only, and no rings.
 
 ### Nitrous oxide: a liquid, a vaporiser and a gas in the intake (author, 2026-11-23; proposed)
 

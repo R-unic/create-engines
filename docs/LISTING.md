@@ -115,6 +115,8 @@ and valves yourself, pipe in air and fuel, and the engine you built fires in ord
 - **Forced induction:** stacked, twin and variable-geometry turbochargers (with anti-lag), plain and variable-drive
   superchargers, and intercoolers
 - **Precision parts:** precision cylinders, heads, pistons and injectors
+- **Compression:** high compression pistons and rotors for more power without boost, low compression ones for far more
+  boost on gasoline, and up to three piston rings on each piston
 - **Thin air:** above y 128 the air thins, so a naturally aspirated engine loses power as it climbs and a turbo or
   supercharger earns its place. Made for Create Aeronautics aircraft; engines at or below y 128 are unaffected, and a
   config switch turns it off
@@ -221,6 +223,29 @@ that changes how an existing engine behaves says so in its changelog. More on
 - [Source and issue tracker](https://github.com/R-unic/create-engines)
 - [Design notes](https://github.com/R-unic/create-engines/blob/master/docs/DESIGN.md), how the simulation works
 ```
+
+## Changelog for 2.5.0
+
+Not released yet.
+
+- New, **High-Compression Piston** and **Low-Compression Piston**, each made from a new Forged Piston (an iron sheet deployed on it, or
+  a Mechanical Saw). Both keep the forged piston's light weight, low drag and longer life, and change only the compression: 20% more
+  or 20% less. On a four cylinder precision engine on the Dynamometer, against forged pistons: high compression makes about 5% more with
+  no boost on gasoline, diesel and ethanol, about 5 to 7% less on gasoline from 1.0 of boost, and still gains on ethanol; low
+  compression makes about 6% less with no boost and about 6% more on gasoline at 1.5. A diesel with no spark plug lights on a low
+  compression piston as it does on a forged one.
+- New, **High-Compression Rotor** and **Low-Compression Rotor**, made from a Rotor the same two ways. Without boost, high makes about
+  8% more and low about 11% less. A rotor's charge runs too cool to light early on its own, so these two carry their boost trade
+  directly on fuels that light early sooner than ethanol: with a blower, high makes about 4 to 6% less than a stock rotor and low
+  about 5 to 9% more. High shows its loss as pre-ignition in the goggles. The stock rotor is unchanged.
+- New, **Piston Rings** (an iron sheet with a zinc nugget deployed on it): right-click a fitted piston with up to three. Each adds
+  about 1.3% power, about 4% with all three. They work with the wear mode off and never wear. With the rod out, sneak with an empty
+  hand to take them off one at a time; they come out with a seized piston, drop when the cylinder is broken and are destroyed with the
+  piston when a rod is thrown.
+- New, a Ponder scene, "Choosing a Piston", goggle lines and item tooltips for all of the above.
+- Packs can retune the two compression factors with `part_effects/high_compression.json` and `low_compression.json`.
+- The server's `precisionBonus` setting scales the new compression parts as it does the precision ones.
+- Existing builds run as before: no existing part, number or saved state changed.
 
 ## Changelog for 2.4.0
 

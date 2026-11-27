@@ -2,6 +2,8 @@ package com.createengines.engine.sim;
 
 import java.util.Map;
 
+import org.jetbrains.annotations.Nullable;
+
 /**
  * Physical description of one cylinder tier.
  * <p>
@@ -83,6 +85,21 @@ public record CylinderSpec(double compressionRatio, double rodRatio, double inta
 	 * server's rotary power setting scales the chamber's swept volume and the fuel it can burn.
 	 */
 	public static CylinderSpec buildRotary(boolean precisionInjector) {
+		return buildRotary(precisionInjector, null);
+	}
+
+	/** As above, with a rotor of another compression: {@code compression} is the high or low compression part, or null. */
+	public static CylinderSpec buildRotary(boolean precisionInjector, PartEffects.@Nullable Part compression) {
+		if (compression == null)
+			return buildStockRotary(precisionInjector);
+		CylinderSpec stock = buildStockRotary(precisionInjector);
+		double ratio = stock.compressionRatio * Tuning.blend(PartEffects.of(compression).compression(), Tuning.precisionBonus);
+		return new CylinderSpec(Math.max(PartStats.MIN_COMPRESSION, ratio), stock.rodRatio, stock.intakeFlow, stock.exhaustFlow,
+			stock.maxFuelPerShot, stock.ignitionDelay, stock.burnDuration, stock.frictionStatic, stock.frictionViscous,
+			stock.inertia, stock.displacement, stock.injectorFlow);
+	}
+
+	private static CylinderSpec buildStockRotary(boolean precisionInjector) {
 		double power = Tuning.rotaryPower;
 		if (!precisionInjector && power == 1)
 			return ROTARY;
@@ -117,6 +134,13 @@ public record CylinderSpec(double compressionRatio, double rodRatio, double inta
 	 */
 	public static CylinderSpec build(boolean precisionBore, boolean precisionHead, boolean precisionPiston,
 									 boolean precisionInjector, java.util.List<String> own) {
+		return build(precisionBore, precisionHead, precisionPiston, precisionInjector, null, own);
+	}
+
+	/** As above, with a high or low compression piston's effect (null for neither) multiplied in with the other parts'. */
+	public static CylinderSpec build(boolean precisionBore, boolean precisionHead, boolean precisionPiston,
+									 boolean precisionInjector, PartEffects.@Nullable Part compressionPart,
+									 java.util.List<String> own) {
 		double compression = CRUDE.compressionRatio;
 		double intake = CRUDE.intakeFlow;
 		double exhaust = CRUDE.exhaustFlow;
@@ -129,7 +153,8 @@ public record CylinderSpec(double compressionRatio, double rodRatio, double inta
 		double bonus = Tuning.precisionBonus;
 		// Each part multiplies in what its effect says (data: see PartEffects). A scale of 1 leaves the stat as it was exactly.
 		PartEffects.Part[] parts = PartEffects.Part.values();
-		boolean[] fitted = { precisionBore, precisionHead, precisionPiston, precisionInjector };
+		boolean[] fitted = { precisionBore, precisionHead, precisionPiston, precisionInjector,
+			compressionPart == PartEffects.Part.HIGH_COMPRESSION, compressionPart == PartEffects.Part.LOW_COMPRESSION };
 		for (int i = 0; i < parts.length + own.size(); i++) {
 			if (i < parts.length && !fitted[i])
 				continue;
@@ -150,6 +175,23 @@ public record CylinderSpec(double compressionRatio, double rodRatio, double inta
 		return new CylinderSpec(compression, CRUDE.rodRatio, intake, exhaust, CRUDE.maxFuelPerShot, delay, burn,
 			frictionStatic, frictionViscous, inertia, 1, injectorFlow);
 	}
+
+	/** What a high compression piston or rotor does to the compression ratio: more from the fuel, less room for boost. */
+	public static final double HIGH_COMPRESSION = 1.2;
+	/** What a low compression piston or rotor does to it: less without boost, and gasoline takes far more boost. */
+	public static final double LOW_COMPRESSION = 0.8;
+	/**
+	 * A rotor's long chamber runs too cool for any compression here to light a charge early by temperature alone, so the two
+	 * rotors that are a choice carry their half of the trade directly, per atmosphere of boost (up to one), on a fuel that
+	 * lights early sooner than ethanol does: a high compression rotor loses this share of its burn to pre-ignition...
+	 */
+	public static final double HIGH_ROTOR_EARLY_LOSS = 0.08;
+	/** ...and a low compression rotor, with room in its deep pockets, gets this share more from the burn. */
+	public static final double LOW_ROTOR_BOOST_GAIN = 0.12;
+	/** The most piston rings one piston takes. */
+	public static final int MAX_RINGS = 3;
+	/** Each piston ring seals the charge a little better: this share more heat from the same burn. */
+	public static final double RING_GAIN = 0.01;
 
 	public static final double PRECISION_COMPRESSION = 1.2;
 	public static final double PRECISION_BORE_STATIC = 0.7;

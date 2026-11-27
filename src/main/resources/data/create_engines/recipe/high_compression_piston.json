@@ -1,0 +1,10 @@
+{
+  "type": "create:deploying",
+  "ingredients": [
+    {"type": "create_engines:new_part", "item": "create_engines:forged_piston"},
+    {"item": "create:iron_sheet"}
+  ],
+  "results": [
+    {"id": "create_engines:high_compression_piston"}
+  ]
+}

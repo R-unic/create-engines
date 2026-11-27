@@ -157,7 +157,7 @@ public final class WearService {
 
 	/** A Service Kit used on a cylinder: it pulls a seized piston out, or else sets right the light wear of the piston and rod fitted. */
 	public static ItemInteractionResult onCylinder(ItemStack stack, Level level, BlockPos pos, Player player, InteractionHand hand) {
-		boolean part = CEItems.PISTON.isIn(stack) || CEItems.FORGED_PISTON.isIn(stack) || rodOf(stack) != null;
+		boolean part = CylinderBlock.isPiston(stack) || CEItems.PISTON_RING.isIn(stack) || rodOf(stack) != null;
 		if (!CEItems.SERVICE_KIT.isIn(stack) && !part)
 			return ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION;
 		if (!level.isClientSide && LoadedBlocks.blockEntity(level, pos) instanceof CylinderBlockEntity body) {
@@ -184,10 +184,9 @@ public final class WearService {
 	 */
 	private static void pullSeizedPiston(ItemStack kit, Level level, BlockPos pos, Player player, InteractionHand hand, CylinderBlockEntity body) {
 		BlockState before = body.getBlockState();
-		ItemStack piston = withWear(before.getValue(CylinderBlock.FORGED_PISTON) ? CEItems.FORGED_PISTON.asStack() : CEItems.PISTON.asStack(),
-			body.pistonWear());
-		BlockState after = before.setValue(CylinderBlock.HAS_PISTON, false)
-			.setValue(CylinderBlock.FORGED_PISTON, false);
+		ItemStack piston = withWear(CylinderBlock.pistonStack(before), body.pistonWear());
+		int rings = before.getValue(CylinderBlock.RINGS);
+		BlockState after = CylinderBlock.withoutPiston(before);
 		level.setBlockAndUpdate(pos, after);
 		partsChanged(level, pos, before, after);
 		if (!player.isCreative()) {
@@ -195,6 +194,10 @@ public final class WearService {
 			kit.hurtAndBreak(1, player, LivingEntity.getSlotForHand(hand));
 			player.getInventory()
 				.placeItemBackInInventory(piston);
+			// The rings come out on the piston, and nothing wears them
+			if (rings > 0)
+				player.getInventory()
+					.placeItemBackInInventory(new ItemStack(CEItems.PISTON_RING.get(), rings));
 		}
 		done(level, pos, player, "message.wear.seized_piston_out");
 	}

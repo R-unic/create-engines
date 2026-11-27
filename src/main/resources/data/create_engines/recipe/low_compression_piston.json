@@ -1,0 +1,10 @@
+{
+  "type": "create:cutting",
+  "ingredients": [
+    {"type": "create_engines:new_part", "item": "create_engines:forged_piston"}
+  ],
+  "processing_time": 100,
+  "results": [
+    {"id": "create_engines:low_compression_piston"}
+  ]
+}

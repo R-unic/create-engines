@@ -116,6 +116,8 @@ data:data/create_engines/recipe/headphones.json	0d1e437f7a545a0ea34e6a6df527a83b
 data:data/create_engines/recipe/heat_exchanger.json	804cf6ffb809adb2c0a29a0fd01164bf529daa98
 data:data/create_engines/recipe/heavy_connecting_rod.json	fe487d327fbc56322ed6454ecbe37405f21c8883
 data:data/create_engines/recipe/heavy_starter.json	ccc4d22ab03e041add5c8e9e2f78ffdb677af937
+data:data/create_engines/recipe/high_compression_piston.json	81b3cec179fb3e7ae6f56e3218db70123a748f35
+data:data/create_engines/recipe/high_compression_rotor.json	ba2c795ef6aca68d24a612c7a9d427e830eb0d1a
 data:data/create_engines/recipe/ignition_coil.json	84e50d9597a6f88fa14518e3cf60ba4494964c71
 data:data/create_engines/recipe/injector_assist.json	81ef378da03091963c8f53324de092154454597e
 data:data/create_engines/recipe/intake_manifold.json	3b9dbab62da90b2f6cc0494c3831d64e2c538e9d
@@ -123,6 +125,8 @@ data:data/create_engines/recipe/intercooler.json	aa47c3b438eb83b21bb4ce13390d718
 data:data/create_engines/recipe/jerry_can.json	18375f370fffe6e3d27a729549ce274650ed451f
 data:data/create_engines/recipe/large_battery.json	0b7663626558605f5dfa3f70483c8be12a89414e
 data:data/create_engines/recipe/light_connecting_rod.json	2571680513563a0559c8741ef614965105c23423
+data:data/create_engines/recipe/low_compression_piston.json	856cde175d87ce9abe24e0ad7fee1475028bbeff
+data:data/create_engines/recipe/low_compression_rotor.json	8de2f9fca675ff51cc4185853f91dfbee0945eda
 data:data/create_engines/recipe/maf_sensor.json	8eae49b79a9f798037a0079678e818863569641a
 data:data/create_engines/recipe/maker_plate.json	78527074be9b6971f2d1f17d2dfcdbe167fcb6ff
 data:data/create_engines/recipe/mixing/biodiesel.json	c82cf8bed2a888b6c2502bb532606d1363ed2028
@@ -144,6 +148,7 @@ data:data/create_engines/recipe/mixing/used_oil_coking.json	99828c0102226fcafe8b
 data:data/create_engines/recipe/muffler.json	864a395480f07c166f4a706285ed9600367c2c09
 data:data/create_engines/recipe/oil_filter.json	62c44a4d17bea6ba52f6a9c9a42859641b9e487f
 data:data/create_engines/recipe/piston.json	61ec10f0ff3fc780f65c89e50d6993d5120d3631
+data:data/create_engines/recipe/piston_ring.json	e4e9002a96bd092e2da44133c1444c277aa6891a
 data:data/create_engines/recipe/precision_cylinder.json	3001ddbbd605cddb49996647c143ac072fa66d5d
 data:data/create_engines/recipe/precision_cylinder_head.json	a1b87ea035deaa6e1ae80fe92d128cc1c37f3192
 data:data/create_engines/recipe/precision_injector.json	0a9bcad7700759f4fe70c3f441f0843f1aa7599f
@@ -203,6 +208,9 @@ enumvalue:ColumnSectionBlock:active
 enumvalue:ColumnSectionBlock:lean_down
 enumvalue:ColumnSectionBlock:lean_up
 enumvalue:ColumnSectionBlock:tint
+enumvalue:PartCompression:high
+enumvalue:PartCompression:low
+enumvalue:PartCompression:standard
 nbt:AlternatorBlockEntity:Batteries
 nbt:AlternatorBlockEntity:ChargeRate
 nbt:AlternatorBlockEntity:ChargeRateSetting
@@ -516,9 +524,11 @@ prop:ColumnSectionBlock:active
 prop:ColumnSectionBlock:lean_down
 prop:ColumnSectionBlock:lean_up
 prop:ColumnSectionBlock:tint
+prop:CylinderBlock:compression
 prop:CylinderBlock:connecting_rod
 prop:CylinderBlock:forged_piston
 prop:CylinderBlock:piston
+prop:CylinderBlock:rings
 prop:CylinderHeadBlock:assist
 prop:CylinderHeadBlock:coil
 prop:CylinderHeadBlock:fine_injector
@@ -534,6 +544,7 @@ prop:FramedBlueprintBlock:join_left
 prop:FramedBlueprintBlock:join_right
 prop:FramedBlueprintBlock:join_up
 prop:RotorHousingBlock:coil
+prop:RotorHousingBlock:compression
 prop:RotorHousingBlock:fine_injector
 prop:RotorHousingBlock:injector
 prop:RotorHousingBlock:rotor
@@ -695,13 +706,18 @@ reg:item:forged_piston
 reg:item:fuel_injector
 reg:item:headphones
 reg:item:heavy_connecting_rod
+reg:item:high_compression_piston
+reg:item:high_compression_rotor
 reg:item:ignition_coil
 reg:item:incomplete_copper_gasket
 reg:item:injector_assist
 reg:item:jerry_can
 reg:item:light_connecting_rod
+reg:item:low_compression_piston
+reg:item:low_compression_rotor
 reg:item:oil_filter
 reg:item:piston
+reg:item:piston_ring
 reg:item:precision_injector
 reg:item:rotor
 reg:item:rubber_gasket

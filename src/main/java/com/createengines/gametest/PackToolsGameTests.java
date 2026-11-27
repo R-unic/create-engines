@@ -246,6 +246,8 @@ public class PackToolsGameTests {
 				var state = ((net.minecraft.world.item.BlockItem) block.getItem()).getBlock()
 					.defaultBlockState();
 				// A part that sits on another (an assist on an injector, a coil on a plug) is offered to a head that has what it sits on
+				if (part.part().is(com.createengines.registry.CEItems.PISTON_RING.get()))
+					state = state.setValue(com.createengines.content.cylinder.CylinderBlock.HAS_PISTON, true);
 				if (part.part().is(com.createengines.registry.CEItems.INJECTOR_ASSIST.get()))
 					state = state.setValue(com.createengines.content.head.CylinderHeadBlock.HAS_INJECTOR, true);
 				if (part.part().is(com.createengines.registry.CEItems.IGNITION_COIL.get()))
@@ -276,7 +278,10 @@ public class PackToolsGameTests {
 			com.createengines.registry.CEItems.CONNECTING_ROD, com.createengines.registry.CEItems.FUEL_INJECTOR,
 			com.createengines.registry.CEItems.PRECISION_INJECTOR, com.createengines.registry.CEItems.SPARK_PLUG,
 			com.createengines.registry.CEItems.INJECTOR_ASSIST, com.createengines.registry.CEItems.IGNITION_COIL,
-			com.createengines.registry.CEItems.ROTOR, com.createengines.registry.CEItems.OIL_FILTER))
+			com.createengines.registry.CEItems.ROTOR, com.createengines.registry.CEItems.OIL_FILTER,
+			com.createengines.registry.CEItems.HIGH_COMPRESSION_PISTON, com.createengines.registry.CEItems.LOW_COMPRESSION_PISTON,
+			com.createengines.registry.CEItems.PISTON_RING, com.createengines.registry.CEItems.HIGH_COMPRESSION_ROTOR,
+			com.createengines.registry.CEItems.LOW_COMPRESSION_ROTOR))
 			if (com.createengines.client.compat.ViewerEntries.parts()
 				.stream()
 				.noneMatch(part -> part.part()

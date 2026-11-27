@@ -857,8 +857,7 @@ public final class CEBlocks {
 		net.minecraft.world.level.block.state.properties.Property<?>... alsoIgnored) {
 		var ignored = new java.util.ArrayList<net.minecraft.world.level.block.state.properties.Property<?>>(
 			java.util.List.of(alsoIgnored));
-		if (c.get().defaultBlockState().hasProperty(Encasing.PAINT))
-			ignored.add(Encasing.PAINT);
+		ignored.addAll(java.util.List.of(paintIgnored(c.get())));
 		p.getVariantBuilder(c.get())
 			.forAllStatesExcept(state -> {
 				Direction.Axis axis = state.getValue(RotatedPillarKineticBlock.AXIS);
@@ -896,11 +895,16 @@ public final class CEBlocks {
 			}, paintIgnored(c.get()));
 	}
 
-	/** The dye property when a block carries it as state (the plain casings do), else nothing to ignore. */
+	/**
+	 * The properties no block model depends on, so the blockstate file need not list them: the dye, when a block carries it as
+	 * state (the plain casings do), and which piston, rotor and rings are fitted, which only the renderer draws.
+	 */
 	private static net.minecraft.world.level.block.state.properties.Property<?>[] paintIgnored(Block block) {
-		return block.defaultBlockState().hasProperty(Encasing.PAINT)
-			? new net.minecraft.world.level.block.state.properties.Property<?>[] { Encasing.PAINT }
-			: new net.minecraft.world.level.block.state.properties.Property<?>[0];
+		BlockState state = block.defaultBlockState();
+		return java.util.stream.Stream.<net.minecraft.world.level.block.state.properties.Property<?>>of(Encasing.PAINT,
+				CylinderBlock.COMPRESSION, CylinderBlock.RINGS, RotorHousingBlock.COMPRESSION)
+			.filter(state::hasProperty)
+			.toArray(net.minecraft.world.level.block.state.properties.Property<?>[]::new);
 	}
 
 	/**

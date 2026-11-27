@@ -151,7 +151,8 @@ public final class EnginePartRenderers {
 			draw(CEPartialModels.ROTOR_ECCENTRIC, state, EnginePoses.rotatingPart(state.getValue(BlockStateProperties.AXIS),
 				EnginePoses.crankAngle(be, renderTime)), ms, buffer, light);
 			if (state.getValue(RotorHousingBlock.HAS_ROTOR))
-				draw(CEPartialModels.ROTOR, state, EnginePoses.rotor(be, renderTime), ms, buffer, light);
+				draw(CEPartialModels.rotor(state.getValue(RotorHousingBlock.COMPRESSION)), state, EnginePoses.rotor(be, renderTime), ms,
+					buffer, light);
 			if (be.showsApexFailed())
 				draw(CEPartialModels.ROTOR_WRECK, state, EnginePoses.axisFrame(state.getValue(BlockStateProperties.AXIS)), ms,
 					buffer, light);
@@ -204,9 +205,12 @@ public final class EnginePartRenderers {
 					.getValue(CylinderBlock.FACING)), ms, buffer, light);
 			if (be.showsSeized() && pose.showPiston())
 				draw(CEPartialModels.SEIZED_RING, be.getBlockState(), pose.piston(), ms, buffer, light);
-			if (pose.showPiston())
-				draw(be.getBlockState().getValue(CylinderBlock.FORGED_PISTON) ? CEPartialModels.FORGED_PISTON
-					: CEPartialModels.PISTON, be.getBlockState(), pose.piston(), ms, buffer, light);
+			if (pose.showPiston()) {
+				var fitted = be.getBlockState();
+				draw(CEPartialModels.pistons()[CEPartialModels.pistonIndex(fitted)], fitted, pose.piston(), ms, buffer, light);
+				if (fitted.getValue(CylinderBlock.RINGS) > 0)
+					draw(CEPartialModels.rings(fitted.getValue(CylinderBlock.RINGS)), fitted, pose.piston(), ms, buffer, light);
+			}
 			if (pose.showRod())
 				draw(CEPartialModels.rod(be.rodKind()), be.getBlockState(), pose.rod(), ms, buffer, light);
 			EnginePoses.PushrodPose pushrods = EnginePoses.pushrods(be, renderTime);
