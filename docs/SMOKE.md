@@ -194,8 +194,9 @@ from the game and not only from an offline render. It is not part of `./gradlew 
 with speakers that nothing else is using.
 
 ```
-/c/Python312/python.exe tools/sound_bench.py                 # everything, about 25 minutes
+/c/Python312/python.exe tools/sound_bench.py                 # everything, about 30 minutes
 /c/Python312/python.exe tools/sound_bench.py --scenes v12    # one scene or a few, while iterating
+/c/Python312/python.exe tools/sound_bench.py --moving        # the moving structure only, with Create Aeronautics loaded
 python tools/sound_audit.py run/sound-bench/<date-time>      # audit a finished run again, without the game
 python tools/sound_audit.py --self-test                      # the audit finds made-up faults and passes clean sound
 ```
@@ -207,20 +208,42 @@ off in that copy.
 
 * **Scenes** (`client/ShowcaseRunSoundBench`; `--scenes` takes these names): `single` (diesel), `i4`, `v8_cross`, `v8_flat`,
   `flat4`, `vtwin`, `i6_diesel`, `v12`, `rotary`, `turbo_i4`, `reference` (silence, a furnace, a minecart, a Mechanical
-  Press) and, last, `room` (one single, then fifteen more round it, heard from the same spot, then all of them removed).
+  Press), `walls` and `indoors` (below) and, last, `room` (one single, then fifteen more round it, heard from the same spot,
+  then all of them removed).
   Engines have open exhausts and are heard from 6 blocks. Each runs one script: start, idle, throttle sweep, blip, a load
   step (a clutch engages Mechanical Presses, fewer for the small engines), stall (its air is taken away), restart, then the
   listener walks to 34 blocks and back. The rotary idles with its throttle wider open: at the others' idle stop it runs too
   lean to light.
+* **The soak** (`soak`, `client/ShowcaseRunSoundBenchSoak`, about 4 minutes): the listener stands among sixteen singles.
+  One runs alone first, then all sixteen: as they come up, after time to settle, while the listener paces through them,
+  and standing again for a minute. The audit's faults: the crowd more than 6 dB above the one from the same spot,
+  getting louder as it settles or while left alone (over 1.5 dB), or a second of it played again almost sample for
+  sample (correlation over 0.97, a loop). It reports the loudness against the loudest of the three reference sounds but
+  sets no limit on it. It does not play a warning: warnings are separate sounds that none of the many-engine rules
+  touch, and the capture could not tell one from the engines well enough to judge its level.
+* **Where it is heard** (`client/ShowcaseRunSoundBenchPlaces`): one idling inline four each. `walls` listens from 12 blocks
+  with nothing in the way, then through one, two and three blocks of stone, then in the open again. `indoors` listens from
+  6 blocks out of doors, shut in a stone room with the engine, and out of doors again. `moving` is only run by `--moving`
+  (gradle `runSoundBenchAeronautics`, with Create Aeronautics and Sable): the engine is lifted into a moving structure,
+  held beside the listener, then carried 24 blocks to each side at 8 blocks a second. It has no reference sounds, so its
+  timing is not checked against the Mechanical Press.
 * **The log** (`events.jsonl`) has each phase, each firing as it is drawn, cam sightings, the volume and pitch each tickable
   engine sound is set to, each read of a note stream, and the engine's speed and load each tick. The mod reports them
-  through `content/SoundProbe`, which does nothing unless the bench is listening.
+  through `content/SoundProbe`, which does nothing unless the bench is listening. It also has how long each stretch of a
+  stream took to make, and each look round the world for walls or a room.
 * **The audit** (`report.md`, `report.json`, and `wav/<scene>.wav`) reports stream underruns and the least audio a stream
   had queued; silent gaps while an engine runs; short bursts above 6 kHz that no firing explains; volume or pitch jumping from
   one tick to the next (from the log) and 50 ms level stairs (from the recording); how long after each firing drawn it is
   heard; loudness against the three reference sounds; the room of sixteen against its one engine (limit 6 dB); and how
-  alike one firing is to the next. Under **Faults found** it names the room still sounding after its engines are gone
-  ([a known, open bug](SOUND-PLAN.md#known-bug-the-shared-room-voice-outlives-its-engines-open)).
+  alike one firing is to the next. It also reports **how late a change is heard** (how long audio waits in a stream's queue:
+  worked out from the log, not heard, and without the synthesizer's follow, the sound card or the look-ahead), **what the
+  sound costs** (the sound thread's share of one core against the roadmap's 2%, by the clock, and the game thread's looks
+  round the world), and for `walls`, `indoors` and `moving` each phase's loudness and brightness (the middle of its
+  spectrum) against the scene's first. Under **Faults found** it names the room still sounding after its engines are gone
+  ([a bug since fixed](SOUND-PLAN.md#known-bug-the-shared-room-voice-outlives-its-engines-fixed)), and any scene of one
+  engine that played two of its notes at once for over a second (how stacked copies on a moving structure would show).
+  The note's and the room voice's source volumes do not move: their fades are inside the stream, so only the recording can
+  show a stair in them.
   `--compare <earlier run>` puts that run's figures beside the new ones.
 * **A/B with real engines:** `--refs <folder>` with `<scene>.wav` recordings writes `ab/<scene>.wav`: the real one, a second
   of silence, the game's, at the same loudness. No recordings are in the repository; which engines to compare with is the
