@@ -36,8 +36,8 @@ question, not an obstacle ([CLAUDE.md](../CLAUDE.md)).
 | 2.1 | Twin Mass | **Dual-mass flywheel**, the readouts that make a flywheel choice legible, and sharper niches for the existing fuels | Medium to large |
 | 2.2 | Proving Ground | Verification debts: server-from-jar, the step-size finding; **the battery tiers**, then **charge priority, electric injector assist and ignition coils**, with electrolysis to be decided (author, 2026-11-23) | Medium |
 | 2.3 | Wear and Tear | **The opt-in wear mode and nothing else** (author, 2026-11-24): pistons, rods, gaskets (stock and three tiers), rotary apex seals and batteries wear, precision parts wear slower, a rod can be thrown (a flag, a misfire, a broken head, with spectacle) and a gasket can blow, light wear is repaired by an automatable, durable Service Kit and the rest by replacing the part, worn parts keep their wear as items, and the Black Box and Display Link report each part and a total; off by default, nothing runs with it off, and gaskets and seals are not required with it off | Medium to large |
-| 2.4 | Running Hot | **Temperature in degrees, overheating you can reach** (a soft power loss in both modes, an exception the author approved on 2026-11-25), heat that follows work, **the Radiator** (closed loop, sheds more with a fan or on a moving contraption), and **the wear overhaul, part 2** (heat drives wear and failures, rod wear from load, plug and turbo wear wired, gasket recipes) (author, 2026-11-25), **a full sound rework** (each engine's note built from its banks, exhausts, cylinder size, cam and fuel instead of one shared firing sound; client-side only, and bearable with many engines running in a build) (author, 2026-11-25), and **a texture rework, with some new models, so the mod looks like part of Create** (author, 2026-11-25, from player complaints), and **splitting the giant source files**, with no behaviour change (author, 2026-11-26) | Large |
-| 2.5 | Open Garage (was 2.4 until 2026-11-25) | Reach: a new API minor (**fuel supply, a shared combustion model and animation for addon engines**, author, 2026-11-26), energy and probe mods, the next Create, a second example addon; **piston rings**, **polluted intake air**, **high- and low-compression piston variants**, **rotor variants (a precision rotor among them) with an exhaust niche**, and **nitrous oxide** (liquid, a vaporiser and a gas in the intake manifolds) (author, 2026-11-23), a **W layout for the Bank Builder** (author, 2026-11-24), then **look, sound and performance** only where the 2.0.x pass found something (all of it was 2.3 until the author moved it, 2026-11-24; its sound went to 2.4's sound rework, 2026-11-25) | Medium to large |
+| 2.4 | Running Hot | **Temperature in degrees, overheating you can reach** (a soft power loss in both modes, an exception the author approved on 2026-11-25), heat that follows work, **the Radiator** (closed loop, sheds more with a fan or on a moving contraption), and **the wear overhaul, part 2** (heat drives wear and failures, rod wear from load, plug and turbo wear wired, gasket recipes) (author, 2026-11-25), **a full sound rework** (each engine's note built from its banks, exhausts, cylinder size, cam and fuel instead of one shared firing sound; client-side only, and bearable with many engines running in a build) (author, 2026-11-25), and **splitting the giant source files**, with no behaviour change (author, 2026-11-26) | Large |
+| 2.5 | Open Garage (was 2.4 until 2026-11-25) | Reach: a new API minor (**fuel supply, a shared combustion model and animation for addon engines**, author, 2026-11-26), energy and probe mods, the next Create, a second example addon; **piston rings**, **polluted intake air**, **high- and low-compression piston variants**, **rotor variants (a precision rotor among them) with an exhaust niche**, and **nitrous oxide** (liquid, a vaporiser and a gas in the intake manifolds) (author, 2026-11-23), a **W layout for the Bank Builder** (author, 2026-11-24), then **look, sound and performance** only where the 2.0.x pass found something (all of it was 2.3 until the author moved it, 2026-11-24; its sound went to 2.4's sound rework, 2026-11-25); **a texture rework, with some new models, so the mod looks like part of Create** (author, 2026-11-25, from player complaints; moved from 2.4 on 2026-11-26) | Medium to large |
 | 3.0 | Clean Slate | The second breaking cleanup: drop 1.x migrations, regenerate baselines, API 2.0 | Large |
 
 **Shipped so far (tags):** 2.0.0 (2026-11-21), 2.0.1 and 2.0.2 (2026-11-22), 2.1.0 (2026-11-23), 2.2.0 (2026-11-24) and 2.3.0 (2026-11-25). 2.4, 2.5 and 3.0
@@ -1016,56 +1016,6 @@ with it. More resonators per engine must still keep the sound thread under 2% of
 - Light and heavy rods: in or not (new items that change performance with the mode off).
 - Sound rework: whether the 2.3 note stays as a client option for players who like it; which engines are in the reference set.
 
-### Looking like Create: a texture rework and some models (author, 2026-11-25; queued in 2.4)
-
-**Why.** Many players say the mod does not fit Create to look at: its blocks stand out in a Create factory instead of reading as
-part of one. Rule 5 ("it looks like Create") is the standard, and today's art misses it often enough that players notice. This is
-a pass over the art as a whole, not a block at a time.
-
-**First, find out exactly what is wrong.** Nothing is redrawn from a guess.
-
-- Collect the complaints: what players name (which blocks, what about them: colour, shape, detail, scale), with the
-  `triage-feedback` skill over the feedback channel, and ask in the channel for screenshots where the reports are vague.
-- Audit every block and item side by side with Create's own (`tools/preview_models.py --create-textures`, in the world next to
-  Create machines, and on the mod page's pictures), and write one list, worst first: what each misses and whether a texture fixes
-  it or the model has to change.
-
-**Textures (the bulk of it).** Built from Create's own wherever one fits: its andesite, brass and copper casings, shafts, cogs,
-gauges and trims, used as they are. The mod's own metals keep Create's structure and exact colours (dark outer rim, bright inner rim
-lit top and left, broad low-contrast strokes) in `tools/generate_textures.py`. No per-pixel noise, no posterising, no baked shading
-(the 2026-11-08 art direction, [DESIGN.md](DESIGN.md) "Art (2026-11-08)"). Connected casing textures keep joining, and the wear
-textures (`tools/generate_wear_textures.py`) are redrawn to match the new base.
-
-**Models (some, where a texture cannot fix it).** Only the blocks the audit says read wrong in silhouette. Create's vocabulary: a
-casing frame with its kinetic parts showing (a shaft end, a cog, a turning part behind a window), brass or copper trim, chunky
-boxes as in `tools/generate_models.py`. No stepped circles, rows of tiny boxes or reconstructed round parts (the rejected
-"3D pixel art" pass). A model change keeps the block's ID, blockstate and saved data; a new collision shape also moves its goggles
-anchor, Ponder scenes and the smoke screenshots.
-
-**How it is done.**
-
-- A small sample first (two or three blocks, before and after, next to Create's), shown to the author before anything bigger; then
-  batches, each approved by the author on a contact sheet before it is merged.
-- Cosmetic only: no rating, recipe or behaviour changes (rule 4).
-- Within 2.x a redrawn model counts as a change to how existing builds look ([CLAUDE.md](../CLAUDE.md), "Genuinely intended
-  behaviour changes"): it needs the author's say-so naming the batch, and each batch is listed under Exceptions in the v2.4.0 release record
-  with who approved it. Resource packs that retexture this mod will show the old look on reworked blocks; the changelog
-  says which blocks changed.
-- Afterwards the mod page's pictures (`tools/gallery.py`), the Ponder screenshots and the trailer (`tools/trailer/record.py`) are
-  taken again, and [LISTING.md](LISTING.md) and the README follow.
-
-**Tests.** The client audit's missing-texture and missing-model checks and the smoke screenshots cover every changed block; the
-generators stay the source of every texture and model they draw (regenerated, never hand-edited), and a block whose art comes from
-a generator gets a test that its files match the generator's output where one is cheap.
-
-**Open for the author.**
-
-- Which blocks go first (the audit's worst-first list is the proposal).
-- Whether the old look ships as an optional built-in resource pack ("Classic"), so a player who liked it keeps it.
-
-It is in 2.4 at the author's choice (2026-11-25). It touches no simulation code, so it does not wait on the heat work and
-the heat work does not wait on it.
-
 ### Splitting the giant files (author, 2026-11-26; queued in 2.4)
 
 **Why.** The longest files are slow to change and review, parallel sessions collide in them, and AI sessions spend many tokens
@@ -1397,6 +1347,55 @@ asks for it:
   2.1 did not already. Cosmetic parts never change a rating (rule 4).
 - **Blueprints.** Whatever the dual-mass flywheel and the 2.x parts show the format missing; a blueprint saved on 2.0 must keep
   loading (the format is part of the promise).
+
+### Looking like Create: a texture rework and some models (author, 2026-11-25; moved from 2.4 to 2.5 on 2026-11-26)
+
+**Why.** Many players say the mod does not fit Create to look at: its blocks stand out in a Create factory instead of reading as
+part of one. Rule 5 ("it looks like Create") is the standard, and today's art misses it often enough that players notice. This is
+a pass over the art as a whole, not a block at a time.
+
+**First, find out exactly what is wrong.** Nothing is redrawn from a guess.
+
+- Collect the complaints: what players name (which blocks, what about them: colour, shape, detail, scale), with the
+  `triage-feedback` skill over the feedback channel, and ask in the channel for screenshots where the reports are vague.
+- Audit every block and item side by side with Create's own (`tools/preview_models.py --create-textures`, in the world next to
+  Create machines, and on the mod page's pictures), and write one list, worst first: what each misses and whether a texture fixes
+  it or the model has to change.
+
+**Textures (the bulk of it).** Built from Create's own wherever one fits: its andesite, brass and copper casings, shafts, cogs,
+gauges and trims, used as they are. The mod's own metals keep Create's structure and exact colours (dark outer rim, bright inner rim
+lit top and left, broad low-contrast strokes) in `tools/generate_textures.py`. No per-pixel noise, no posterising, no baked shading
+(the 2026-11-08 art direction, [DESIGN.md](DESIGN.md) "Art (2026-11-08)"). Connected casing textures keep joining, and the wear
+textures (`tools/generate_wear_textures.py`) are redrawn to match the new base.
+
+**Models (some, where a texture cannot fix it).** Only the blocks the audit says read wrong in silhouette. Create's vocabulary: a
+casing frame with its kinetic parts showing (a shaft end, a cog, a turning part behind a window), brass or copper trim, chunky
+boxes as in `tools/generate_models.py`. No stepped circles, rows of tiny boxes or reconstructed round parts (the rejected
+"3D pixel art" pass). A model change keeps the block's ID, blockstate and saved data; a new collision shape also moves its goggles
+anchor, Ponder scenes and the smoke screenshots.
+
+**How it is done.**
+
+- A small sample first (two or three blocks, before and after, next to Create's), shown to the author before anything bigger; then
+  batches, each approved by the author on a contact sheet before it is merged.
+- Cosmetic only: no rating, recipe or behaviour changes (rule 4).
+- Within 2.x a redrawn model counts as a change to how existing builds look ([CLAUDE.md](../CLAUDE.md), "Genuinely intended
+  behaviour changes"): it needs the author's say-so naming the batch, and each batch is listed under Exceptions in the v2.5.0 release record
+  with who approved it. Resource packs that retexture this mod will show the old look on reworked blocks; the changelog
+  says which blocks changed.
+- Afterwards the mod page's pictures (`tools/gallery.py`), the Ponder screenshots and the trailer (`tools/trailer/record.py`) are
+  taken again, and [LISTING.md](LISTING.md) and the README follow.
+
+**Tests.** The client audit's missing-texture and missing-model checks and the smoke screenshots cover every changed block; the
+generators stay the source of every texture and model they draw (regenerated, never hand-edited), and a block whose art comes from
+a generator gets a test that its files match the generator's output where one is cheap.
+
+**Open for the author.**
+
+- Which blocks go first (the audit's worst-first list is the proposal).
+- Whether the old look ships as an optional built-in resource pack ("Classic"), so a player who liked it keeps it.
+
+The author queued it in 2.4 on 2026-11-25 and moved it to 2.5 on 2026-11-26. It touches no simulation code.
 
 ## 3.0 Clean Slate
 
