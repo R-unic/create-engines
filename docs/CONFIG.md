@@ -113,7 +113,14 @@ Other mods, and how the world around an engine answers it.
 | `pollutionEngineCeiling` | `0.0` | 0.0 to 100000.0 | The most steps of each gas one engine may release per minute of running, however much it burns. 0 turns the ceiling off. |
 <!-- /generated:server-settings -->
 
-`[meta] carriedOver` is a bookkeeping flag: it is set once the 1.x file has been read (see "From 1.x" below). Leave it alone.
+### `[meta]`
+
+Both files, server and client, end with this group. It is the mod's own bookkeeping, not a setting to tune, so it is not in
+the generated tables.
+
+| Setting | Default | Range | What it does |
+|---|---|---|---|
+| `carriedOver` | `false` | on or off | The mod sets it to `true` the first time the file loads, after looking for the 1.x file beside it (see "From 1.x" below), whether or not there was one. Leave it alone. If it is set back to `false`, or the line is deleted, the next load reads a 1.x file that is still there again, and its values replace the matching ones you have now. |
 
 ### Things that go together
 
@@ -185,10 +192,10 @@ refused, never clamped, and the command says which.
 
 ## From 1.x
 
-2.0 regrouped the server file once. The 1.x file (`create_engines-server.toml`) is left where it is; the first time the 2.0 file
-loads it reads the 1.x one beside it, copies every value across under its new name, writes what moved and what it left alone
-to the log, and sets `carriedOver` so a value you change later is never overwritten. Names and meanings did not change, only
-where they live:
+2.0 regrouped the config files once. Each 1.x file (`create_engines-server.toml` and `create_engines-client.toml`) is left
+where it is; the first time its 2.0 file loads it reads the 1.x one beside it, copies every value across under its new name,
+writes what moved and what it left alone to the log, and sets [`carriedOver`](#meta) so a value you change later is not
+overwritten. Meanings did not change, only where the settings live and, for some client ones, their names:
 
 | 1.x key | 2.x key |
 |---|---|
