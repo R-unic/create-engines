@@ -7,14 +7,14 @@ import org.junit.jupiter.api.Test;
 import com.createengines.content.EngineNoteSynth.Params;
 
 /**
- * The engine note is rendered on the sound engine's thread for every engine in earshot, 22050 samples a second each, so
+ * The engine note is rendered on the sound engine's thread for every engine in earshot, 32000 samples a second each, so
  * its cost per sample is multiplied by the number of voices. The measured numbers are printed on every run; the budget is
  * set well above them so a busy build agent does not trip it, but below what a reintroduced per-sample allocation or
  * transcendental pile-up costs. The checksum line lets a before and after run show whether a change moved the sound.
  */
 class EngineNotePerfTest {
 
-	/** Nanoseconds a sample may take, one voice, any scenario. A real-time voice has 45000 ns a sample available. */
+	/** Nanoseconds a sample may take, one voice, any scenario. A real-time voice has 31250 ns a sample available. */
 	private static final double MAX_NS_PER_SAMPLE = 600;
 
 	private static float[] even(int cylinders) {
@@ -72,6 +72,10 @@ class EngineNotePerfTest {
 			{ "8 cyl @ 3000 rpm", new Params(3000, even(8), 0.9f, 0.8f, 1, 0.7f, 0.8f) },
 			{ "16 cyl @ 8000 rpm", new Params(8000, even(16), 1, 1, 1) },
 			{ "idle coast @ 400 rpm", new Params(400, even(6), 1, 0, 0.25f) },
+			// Every layer the build can switch on: four outlets, a diesel's knock, a rough crude engine
+			{ "16 cyl full voice @ 3000 rpm", new Params(3000, even(16), 1, 0.3f, 1, 0, 0.8f, 0.5f,
+				new EngineNoteSynth.Voice(new int[] {0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3}, new float[] {0.2f, 0.4f, 0.6f, 0.8f},
+					EngineNoteSynth.Ignition.COMPRESSION, 0)) },
 		};
 		warmUp(scenarios);
 		for (Object[] scenario : scenarios) {

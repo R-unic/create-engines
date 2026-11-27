@@ -545,8 +545,9 @@ public final class ClientAudit {
 			minecraft.level.registryAccess());
 		var shown = CreateEnginesTab.items();
 		for (Item item : ServerAudit.items())
-			report.check("tab", "item " + BuiltInRegistries.ITEM.getKey(item)
-				.getPath() + " is in the creative tab", shown.contains(item),
-				"players in creative mode cannot find it");
+			if (com.createengines.registry.CECreativeTabs.isListed(item))
+				report.check("tab", "item " + BuiltInRegistries.ITEM.getKey(item)
+					.getPath() + " is in the creative tab", shown.contains(item),
+					"players in creative mode cannot find it");
 	}
 }

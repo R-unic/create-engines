@@ -208,7 +208,7 @@ public final class EnginePartRenderers {
 				draw(be.getBlockState().getValue(CylinderBlock.FORGED_PISTON) ? CEPartialModels.FORGED_PISTON
 					: CEPartialModels.PISTON, be.getBlockState(), pose.piston(), ms, buffer, light);
 			if (pose.showRod())
-				draw(CEPartialModels.CONNECTING_ROD, be.getBlockState(), pose.rod(), ms, buffer, light);
+				draw(CEPartialModels.rod(be.rodKind()), be.getBlockState(), pose.rod(), ms, buffer, light);
 			EnginePoses.PushrodPose pushrods = EnginePoses.pushrods(be, renderTime);
 			if (pushrods != null) {
 				draw(CEPartialModels.PUSHROD, be.getBlockState(), pushrods.intakeRod(), ms, buffer, light);

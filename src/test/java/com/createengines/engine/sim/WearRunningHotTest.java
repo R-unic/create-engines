@@ -107,6 +107,53 @@ class WearRunningHotTest {
 	}
 
 	@Test
+	void aHeavyRodAddsMassToTheCrankAndALightOneTakesItAway() {
+		double standard = model(Wear.NONE, 0).inertia();
+		assertEquals(CylinderSpec.CRUDE.inertia(), standard, 0, "a standard rod is exactly what it always was");
+		assertEquals(standard * 0.7, model(Wear.withRod(Wear.NONE, Wear.Rod.LIGHT), 0).inertia(), EPS);
+		assertEquals(standard * 1.5, model(Wear.withRod(Wear.NONE, Wear.Rod.HEAVY), 0).inertia(), EPS);
+	}
+
+	/** A worn plug and a warped head are laid over the rod, and a copy for the dyno keeps its mass. */
+	@Test
+	void aRodsMassSurvivesOtherWearAndTheDynosCopy() {
+		Wear.State all = Wear.warped(Wear.withPlug(Wear.withRod(Wear.NONE, Wear.Rod.HEAVY), 0.8));
+		assertEquals(Wear.Rod.HEAVY.mass, all.mass(), EPS);
+		CylinderModel heavy = model(all, 0);
+		assertEquals(heavy.inertia(), heavy.copyOnto(new Camshaft())
+			.inertia(), 0);
+	}
+
+	/** With the wear mode off a heavy rod is a trade, not only a cost: its engine surges less, and a light one's more. */
+	@Test
+	void aHeavyRodRunsSmootherAndALightOneRougher() {
+		assertTrue(crank(Wear.Rod.HEAVY).inertia() > crank(Wear.Rod.STANDARD).inertia());
+		double light = ripple(Wear.Rod.LIGHT);
+		double standard = ripple(Wear.Rod.STANDARD);
+		double heavy = ripple(Wear.Rod.HEAVY);
+		assertTrue(heavy < standard && standard < light, heavy + " " + standard + " " + light);
+		assertTrue(Roughness.smoothness(heavy) >= Roughness.smoothness(standard));
+	}
+
+	/** A single cylinder on a bare crank with this rod, run at 128 RPM until its speed swing is measured. */
+	private static EngineSimulation crank(Wear.Rod rod) {
+		CylinderModel model = model(Wear.withRod(Wear.NONE, rod), 0);
+		model.fuelSupply = MixtureTest.unlimited(FuelSpec.GASOLINE);
+		model.ignition = IgnitionSource.UNLIMITED;
+		EngineSimulation sim = new EngineSimulation(List.of(model), 0.35, 0.03);
+		model.resetGas(0);
+		return sim;
+	}
+
+	private static double ripple(Wear.Rod rod) {
+		EngineSimulation sim = crank(rod);
+		sim.trackSwing();
+		for (int i = 0; i < 200; i++)
+			sim.tickDriven(EngineSimulation.rpmToOmega(128), 1);
+		return sim.predictedRipple();
+	}
+
+	@Test
 	void aWornPlugMissesItsShareOfSparksEvenlyAndASoundOneNone() {
 		CylinderModel model = model(Wear.NONE, 0);
 		int missed = 0;

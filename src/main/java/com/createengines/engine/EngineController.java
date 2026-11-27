@@ -113,6 +113,8 @@ public final class EngineController {
 	/** Ticks of a small, steady difference between the rating and the published capacity before it is published. */
 	private static final int SETTLE_INTERVAL = 40;
 	private static final int SYNC_INTERVAL = 10;
+	/** Syncs between looks at the casing round the cylinders: two seconds. */
+	private static final int ENCLOSURE_SYNCS = 40 / SYNC_INTERVAL;
 	/** How long a heavy starter goes on choking an engine after it lets go, ticks, and the last stretch over which that fades. */
 	private static final int COLD_ASSIST_HOLD = 160;
 	private static final int COLD_ASSIST_FADE = 60;
@@ -908,6 +910,12 @@ public final class EngineController {
 	private static final java.util.function.Predicate<net.minecraft.world.level.block.state.BlockState> SENSOR_OUTPUT =
 		state -> state.getBlock() instanceof com.createengines.content.airflow.SensorBlock<?>;
 
+	/** Whether redstone has shut the fuel rack of this cylinder's camshaft line all the way. A rotor housing has no cam. */
+	private boolean fuelCut(Cylinder cylinder) {
+		int line = cylinder.camLine();
+		return line >= 0 && line < racks.length && racks[line] <= 0;
+	}
+
 	private void readFuelRacks(Level level) {
 		for (int i = 0; i < racks.length; i++) {
 			int signal = 0;
@@ -1413,8 +1421,12 @@ public final class EngineController {
 		int firing = 0;
 		int working = 0;
 		float[] listed = firingScratch();
+		SoundBase base = soundBase();
+		// Which exhaust outlet each listed firing goes out of, kept beside it (only the sound)
+		int[] listedOutlets = outletScratch();
 		int listedCount = 0;
-		for (CylinderModel model : models) {
+		for (int i = 0; i < models.size(); i++) {
+			CylinderModel model = models.get(i);
 			if (model == null)
 				continue;
 			working++;
@@ -1422,8 +1434,10 @@ public final class EngineController {
 			if (state != EngineState.STALLED && model.lastCycle().result.fired())
 				firing++;
 			Camshaft camshaft = model.camshaft();
-			if (camshaft != null && camshaft.isPhaseLocked())
+			if (camshaft != null && camshaft.isPhaseLocked()) {
+				listedOutlets[listedCount] = base.outletOf[i];
 				listed[listedCount++] = (float) model.firingRotorAngle();
+			}
 		}
 		// A rotor fires once a turn of the shaft, which in the engine's 720 degrees is twice; its three chambers are the
 		// same event, so only the first is listed
@@ -1433,12 +1447,16 @@ public final class EngineController {
 			if (models.get(i) == null || !placed.rotary() || placed.chamber() != 0)
 				continue;
 			float angle = (float) (((sim.direction() * placed.tdcAngle() + 180) % 360 + 360) % 360);
+			listedOutlets[listedCount] = base.outletOf[i];
 			listed[listedCount++] = angle;
+			listedOutlets[listedCount] = base.outletOf[i];
 			listed[listedCount++] = angle + 360;
 		}
-		// The summary keeps this array, so it is the one thing here that has to be made new; sorted as Float.compare orders them
+		EngineSound.sortFirings(listed, listedOutlets, listedCount);
+		// The summary keeps these arrays, so they are the things here that have to be made new
 		float[] angles = Arrays.copyOf(listed, listedCount);
-		Arrays.sort(angles);
+		EngineSound sound = new EngineSound(Arrays.copyOf(listedOutlets, listedCount), base.pipes, base.compression,
+			base.precision, enclosure, base.muffles);
 		float roughness = (float) (sim.isStopped() ? 0 : Dynamometer.roughnessLoss(torqueCurve, rippleCurve, sim.meanRpm()));
 		Diagnosis.Report report = diagnose(state, firing, roughness);
 		return new EngineSummary(state, (float) (sim.meanRpm() * speedScale()), primary.publishedCapacity(),
@@ -1455,7 +1473,94 @@ public final class EngineController {
 			(float) sim.thermal()
 				.coolantRate(),
 			pilotLit(), filtered, (float) Torsion.scaled(flexLoss), longestLine, report.health(), report.cause(), muffling(),
-				inductionBoost(), sourceLines(), sim.isStopped() ? 0 : (float) oilRate, wearTotal.total(), wearFailures);
+				inductionBoost(), sourceLines(), sim.isStopped() ? 0 : (float) oilRate, wearTotal.total(), wearFailures, sound);
+	}
+
+	/**
+	 * The part of the engine's sound that only the layout decides, worked out once per controller (the layout never changes for
+	 * one): each cylinder's exhaust outlet, each outlet's run length, how the charge is lit and the share of precision
+	 * cylinders.
+	 */
+	private record SoundBase(int[] outletOf, float[] pipes, float[] muffles, boolean compression,
+							 float precision) {
+	}
+
+	private @Nullable SoundBase soundBase;
+	private int @Nullable [] outletScratch;
+	/** How much of the cylinders' sides are clad in Engine Casing, 0 to 1; looked at now and then, as casing is not part of the layout. */
+	private float enclosure;
+	private int enclosureCountdown;
+
+	private int[] outletScratch() {
+		if (outletScratch == null)
+			outletScratch = new int[Math.max(1, 2 * models.size())];
+		return outletScratch;
+	}
+
+	private SoundBase soundBase() {
+		if (soundBase == null)
+			soundBase = computeSoundBase();
+		return soundBase;
+	}
+
+	private SoundBase computeSoundBase() {
+		List<Cylinder> cylinders = layout.cylinders();
+		EngineSound.Outlets outlets = EngineSound.assignOutlets(cylinders.stream()
+			.mapToInt(Cylinder::exhaust)
+			.toArray());
+		float[] runLength = new float[cylinders.size()];
+		float[] runMuffle = new float[cylinders.size()];
+		for (int i = 0; i < cylinders.size(); i++) {
+			int port = cylinders.get(i)
+				.exhaust();
+			EngineLayout.PortNetwork network = port < 0 ? null : layout.ports()
+				.get(port);
+			runLength[i] = network == null ? Float.NaN : EngineSound.pipeLength(network.run());
+			runMuffle[i] = network == null ? Float.NaN : muffled(network);
+		}
+		float[] pipes = EngineSound.perOutlet(outlets.outletOf(), runLength, outlets.runs().length);
+		float[] muffles = EngineSound.perOutlet(outlets.outletOf(), runMuffle, outlets.runs().length);
+		int spark = 0;
+		int compression = 0;
+		int precise = 0;
+		for (int i = 0; i < cylinders.size(); i++) {
+			Cylinder placed = cylinders.get(i);
+			if (placed.sparkPlug() || placed.rotary())
+				spark++;
+			else
+				compression++;
+			if (placed.precision() != 0)
+				precise++;
+		}
+		return new SoundBase(outlets.outletOf(), pipes, muffles, compression > spark,
+			cylinders.isEmpty() ? 1 : precise / (float) cylinders.size());
+	}
+
+	/**
+	 * Share of the cylinders' sides that are clad in Engine Casing, 0 to 1, looked at every two seconds: casing is not part of
+	 * the layout, so placing it does not rebuild the engine.
+	 */
+	private void refreshEnclosure(Level level) {
+		if (enclosureCountdown-- > 0)
+			return;
+		enclosureCountdown = ENCLOSURE_SYNCS - 1;
+		int sides = 0;
+		int clad = 0;
+		for (Cylinder placed : layout.cylinders())
+			for (Direction side : SIDES) {
+				if (side.getAxis() == placed.bore()
+					.getAxis())
+					continue;
+				BlockPos beside = placed.pos()
+					.relative(side);
+				if (!level.isLoaded(beside))
+					continue;
+				sides++;
+				if (level.getBlockState(beside)
+					.getBlock() instanceof com.createengines.content.EngineCasingBlock)
+					clad++;
+			}
+		enclosure = sides == 0 ? 0 : clad / (float) sides;
 	}
 
 	/**
@@ -1568,15 +1673,20 @@ public final class EngineController {
 		float[] muffled = new float[runs.size()];
 		for (int i = 0; i < runs.size(); i++) {
 			EngineLayout.PortNetwork run = runs.get(i);
-			boolean series = run.mufflers()
-				.stream()
-				.anyMatch(muffler -> !run.parallel()
-					.contains(muffler));
 			heads[i] = run.heads();
-			muffled[i] = Muffling.run(series, !series && !run.mufflers()
-				.isEmpty());
+			muffled[i] = muffled(run);
 		}
 		return Muffling.engine(heads, muffled);
+	}
+
+	/** How muffled one exhaust run is, 0 to 1. */
+	private static float muffled(EngineLayout.PortNetwork run) {
+		boolean series = run.mufflers()
+			.stream()
+			.anyMatch(muffler -> !run.parallel()
+				.contains(muffler));
+		return Muffling.run(series, !series && !run.mufflers()
+			.isEmpty());
 	}
 
 	/**
@@ -1718,6 +1828,7 @@ public final class EngineController {
 
 	private void syncDiagnostics(Level level, double torqueScale) {
 		EngineState state = state();
+		refreshEnclosure(level);
 		primary.updateSummary(summary(state, torqueScale));
 		glow(level, state == EngineState.RUNNING || state == EngineState.OVERLOADED);
 		reportMilestones(level, state);
@@ -1755,7 +1866,8 @@ public final class EngineController {
 				cylinder.lobe(), outlets, last != null && last.lean(),
 				last == null || last.equivalence <= 0 ? Float.NaN : (float) last.equivalence, cylinder.sparkPlug(),
 				model == null ? 0 : (float) model.fouling(), model == null ? 0 : (float) model.lobeShift(),
-				openings(cylinder.intake()), last == null ? 0 : (float) last.preignition));
+				openings(cylinder.intake()), last == null ? 0 : (float) last.preignition, fuelCut(cylinder),
+				muffled(cylinder.exhaust())));
 		}
 
 		for (BlockPos pos : layout.batteries())
@@ -1814,7 +1926,13 @@ public final class EngineController {
 			fuel == null ? Float.NaN : (float) fuel.autoignitionTemp(), null, outlets, last != null && last.lean(),
 			last == null || last.equivalence <= 0 ? Float.NaN : (float) last.equivalence, cylinder.sparkPlug(),
 			model == null ? 0 : (float) model.fouling(), 0, openings(cylinder.intake()),
-			last == null ? 0 : (float) last.preignition);
+			last == null ? 0 : (float) last.preignition, false, muffled(cylinder.exhaust()));
+	}
+
+	/** How muffled the exhaust run on a port is, 0 to 1. */
+	private float muffled(int port) {
+		return port < 0 ? 0 : muffled(layout.ports()
+			.get(port));
 	}
 
 	/** Every opening of a port network, clear or not, for the effects at its mouths. */
@@ -1841,7 +1959,7 @@ public final class EngineController {
 				.get(i);
 			Turbocharger turbo = turbos.get(i);
 			if (LoadedBlocks.blockEntity(level, placed.pos()) instanceof TurbochargerBlockEntity be)
-				be.updateStatus(new TurboStatus((float) turbo.spool(), (float) turbo.boost(), (float) turbo.wastegate(),
+				be.updateStatus(layout.primary(), new TurboStatus((float) turbo.spool(), (float) turbo.boost(), (float) turbo.wastegate(),
 					(float) turbo.backPressure(), (float) charge(turbo), !turbo.compressor()
 						.isEmpty(),
 					!turbo.turbine()

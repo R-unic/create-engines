@@ -132,24 +132,29 @@ public final class Wear {
 
 	/**
 	 * The connecting rod a cylinder holds. {@link #STANDARD} is the rod there has always been. A light rod is less mass going up and down,
-	 * so it drags a little less as the speed rises, but it wears fast under load; a heavy one takes load in its stride and costs a little
-	 * at speed. The difference in drag is there with the wear mode on or off; only the difference in wear belongs to the mode. First-pass.
+	 * so it drags a little less as the speed rises and the crank has less to swing (it revs up sooner and surges more), but it wears fast
+	 * under load; a heavy one costs a little at speed, adds mass to the crank (a smoother engine, slower to change speed) and takes load in
+	 * its stride. The differences in drag and mass are there with the wear mode on or off; only the difference in wear belongs to the mode.
+	 * First-pass.
 	 *
 	 * @param viscous how its share of the cylinder's friction that grows with speed compares with a standard rod's
+	 * @param mass    how the inertia its cylinder adds to the crank compares with a standard rod's
 	 * @param free    how hard it works with the engine spinning free, against a standard rod at half load
 	 * @param full    how hard it works with the engine pulling all it can
 	 */
 	public enum Rod {
-		STANDARD(1, LOAD_FREE, LOAD_FULL),
-		LIGHT(0.96, 0.5, 2.0),
-		HEAVY(1.04, 0.7, 1.0);
+		STANDARD(1, 1, LOAD_FREE, LOAD_FULL),
+		LIGHT(0.96, 0.7, 0.5, 2.0),
+		HEAVY(1.04, 1.5, 0.7, 1.0);
 
 		public final double viscous;
+		public final double mass;
 		public final double free;
 		public final double full;
 
-		Rod(double viscous, double free, double full) {
+		Rod(double viscous, double mass, double free, double full) {
 			this.viscous = viscous;
+			this.mass = mass;
 			this.free = free;
 			this.full = full;
 		}
@@ -179,6 +184,11 @@ public final class Wear {
 			return 1;
 		}
 
+		/** How the inertia the cylinder adds to the crank compares with a standard rod's (see {@link Rod}). */
+		default double mass() {
+			return 1;
+		}
+
 		/** The share of sparks a worn plug misses, 0 for a sound one (see {@link PlugWear}). */
 		default double misfire() {
 			return 0;
@@ -192,21 +202,21 @@ public final class Wear {
 
 	/** {@code state} with a rod of this kind in the cylinder; a standard rod changes nothing, and gives back the very same state. */
 	public static State withRod(State state, Rod rod) {
-		return rod == Rod.STANDARD ? state : state(state.seal(), state.drag(), rod.viscous, state.misfire(), state.lean());
+		return rod == Rod.STANDARD ? state : state(state.seal(), state.drag(), rod.viscous, rod.mass, state.misfire(), state.lean());
 	}
 
 	/** {@code state} with a spark plug this worn; one that has not worn changes nothing, and gives back the very same state. */
 	public static State withPlug(State state, double plugWear) {
 		return clamp(plugWear) == 0 ? state
-			: state(state.seal(), state.drag(), state.viscous(), PlugWear.misfireChance(plugWear), PlugWear.leanScale(plugWear));
+			: state(state.seal(), state.drag(), state.viscous(), state.mass(), PlugWear.misfireChance(plugWear), PlugWear.leanScale(plugWear));
 	}
 
 	/** {@code state} under a warped head, which loses {@link #WARP_SEAL_LOSS} of every burn past its joint. */
 	public static State warped(State state) {
-		return state(state.seal() * (1 - WARP_SEAL_LOSS), state.drag(), state.viscous(), state.misfire(), state.lean());
+		return state(state.seal() * (1 - WARP_SEAL_LOSS), state.drag(), state.viscous(), state.mass(), state.misfire(), state.lean());
 	}
 
-	private static State state(double seal, double drag, double viscous, double misfire, double lean) {
+	private static State state(double seal, double drag, double viscous, double mass, double misfire, double lean) {
 		return new State() {
 			@Override
 			public double seal() {
@@ -221,6 +231,11 @@ public final class Wear {
 			@Override
 			public double viscous() {
 				return viscous;
+			}
+
+			@Override
+			public double mass() {
+				return mass;
 			}
 
 			@Override

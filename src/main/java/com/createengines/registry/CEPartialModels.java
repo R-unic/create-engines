@@ -1,6 +1,7 @@
 package com.createengines.registry;
 
 import com.createengines.CreateEngines;
+import com.createengines.engine.sim.Wear;
 
 import dev.engine_room.flywheel.lib.model.baked.PartialModel;
 
@@ -20,6 +21,8 @@ public final class CEPartialModels {
 	public static final PartialModel PISTON = block("cylinder/piston");
 	public static final PartialModel FORGED_PISTON = block("cylinder/forged_piston");
 	public static final PartialModel CONNECTING_ROD = block("cylinder/rod");
+	public static final PartialModel LIGHT_CONNECTING_ROD = block("cylinder/light_rod");
+	public static final PartialModel HEAVY_CONNECTING_ROD = block("cylinder/heavy_rod");
 	public static final PartialModel VALVE_STEM = block("cylinder_head/valve");
 	/** The wear mode's wrecks, each laid over the part it is the wreck of: a head a rod went through, a gasket pushed out of the joint, the wreck in a bore. */
 	public static final PartialModel HEAD_WRECK = block("cylinder_head/wreck");
@@ -43,6 +46,15 @@ public final class CEPartialModels {
 	public static final PartialModel DUAL_MASS_SECONDARY = block("dual_mass_flywheel/secondary");
 
 	private CEPartialModels() {
+	}
+
+	/** The model a cylinder draws for the rod fitted in it. */
+	public static PartialModel rod(Wear.Rod kind) {
+		return switch (kind) {
+			case STANDARD -> CONNECTING_ROD;
+			case LIGHT -> LIGHT_CONNECTING_ROD;
+			case HEAVY -> HEAVY_CONNECTING_ROD;
+		};
 	}
 
 	private static PartialModel block(String path) {

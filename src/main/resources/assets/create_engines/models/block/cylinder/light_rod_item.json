@@ -1,0 +1,105 @@
+{
+  "parent": "block/block",
+  "textures": {
+    "rod": "create_engines:block/brass",
+    "particle": "create_engines:block/brass"
+  },
+  "elements": [
+    {
+      "from": [
+        7.25,
+        1,
+        7.25
+      ],
+      "to": [
+        8.75,
+        15,
+        8.75
+      ],
+      "faces": {
+        "north": {
+          "texture": "#rod"
+        },
+        "south": {
+          "texture": "#rod"
+        },
+        "east": {
+          "texture": "#rod"
+        },
+        "west": {
+          "texture": "#rod"
+        },
+        "up": {
+          "texture": "#rod"
+        },
+        "down": {
+          "texture": "#rod"
+        }
+      }
+    },
+    {
+      "from": [
+        6.75,
+        0,
+        6.5
+      ],
+      "to": [
+        9.25,
+        2.5,
+        9.5
+      ],
+      "faces": {
+        "north": {
+          "texture": "#rod"
+        },
+        "south": {
+          "texture": "#rod"
+        },
+        "east": {
+          "texture": "#rod"
+        },
+        "west": {
+          "texture": "#rod"
+        },
+        "up": {
+          "texture": "#rod"
+        },
+        "down": {
+          "texture": "#rod"
+        }
+      }
+    },
+    {
+      "from": [
+        7,
+        13.25,
+        6.75
+      ],
+      "to": [
+        9,
+        15.25,
+        9.25
+      ],
+      "faces": {
+        "north": {
+          "texture": "#rod"
+        },
+        "south": {
+          "texture": "#rod"
+        },
+        "east": {
+          "texture": "#rod"
+        },
+        "west": {
+          "texture": "#rod"
+        },
+        "up": {
+          "texture": "#rod"
+        },
+        "down": {
+          "texture": "#rod"
+        }
+      }
+    }
+  ]
+}

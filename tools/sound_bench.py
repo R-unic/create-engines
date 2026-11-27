@@ -1,12 +1,13 @@
 """Runs the sound bench, records what the game plays and audits it (docs/SMOKE.md, "The sound bench").
 
-    /c/Python312/python.exe tools/sound_bench.py [--scenes single,v12,room,reference] [--refs DIR] [--compare RUN] [--no-copy]
+    /c/Python312/python.exe tools/sound_bench.py [--scenes single,walls,room] [--refs DIR] [--compare RUN] [--no-copy]
+    /c/Python312/python.exe tools/sound_bench.py --moving     # the moving structure, with Create Aeronautics loaded
 
 1. Copies the project to a private folder beside it (create-engines-soundbench), because running the game from the shared
    checkout crashes whenever another build recompiles under it, and runs `gradlew runVisualSmokeTest -PsmokeSound` there.
 2. Records what the default speakers play, with the trailer's recorder (`pip install soundcard`), from when the game says
    `SOUNDBENCH ready` until `SOUNDBENCH done`. Keep the speakers on and every other program silent: whatever they play is
-   in the recording. A full run takes about 25 minutes.
+   in the recording. A full run takes about 30 minutes.
 3. Leaves capture.wav, meta.json, events.jsonl and the game's log in run/sound-bench/<date-time> of this project, and runs
    tools/sound_audit.py on them, which adds report.md, report.json, a WAV a scene and any A/B files.
 
@@ -76,12 +77,14 @@ def sync():
         sys.exit(f"robocopy failed ({result.returncode})")
 
 
-def play(out, scenes):
+def play(out, scenes, moving=False):
     """Plays the bench in the private copy and records it into ``out``."""
     hurry()
-    events = PRIVATE / "run" / "sound-bench" / "events.jsonl"
+    game_folder = PRIVATE / "run" / "sound-bench-aeronautics" if moving else PRIVATE / "run"
+    events = game_folder / "sound-bench" / "events.jsonl"
     events.unlink(missing_ok=True)
-    command = [str(PRIVATE / "gradlew.bat"), "runVisualSmokeTest", "-PsmokeSound", "--offline", "--console=plain"]
+    task = ["runSoundBenchAeronautics"] if moving else ["runVisualSmokeTest", "-PsmokeSound"]
+    command = [str(PRIVATE / "gradlew.bat"), *task, "--offline", "--console=plain"]
     if scenes:
         command.append(f"-PsoundScenes={scenes}")
     game = subprocess.Popen(command, cwd=PRIVATE, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True,
@@ -127,7 +130,9 @@ def play(out, scenes):
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--scenes", help="only these, comma-separated (default: every engine, room and reference)")
+    which = parser.add_mutually_exclusive_group()
+    which.add_argument("--scenes", help="only these, comma-separated (default: every scene but the moving one)")
+    which.add_argument("--moving", action="store_true", help="only the moving structure, with Create Aeronautics loaded")
     parser.add_argument("--refs", help="folder of recordings of real engines, <scene>.wav, for A/B files")
     parser.add_argument("--compare", help="an earlier run's folder, to show its figures beside these")
     parser.add_argument("--no-copy", action="store_true", help="run in the private copy as it is")
@@ -136,7 +141,7 @@ def main():
     out.mkdir(parents=True)
     if not args.no_copy:
         sync()
-    play(out, args.scenes)
+    play(out, args.scenes, args.moving)
     sys.exit(0 if sound_audit.audit(out, args.refs, args.compare) else 1)
 
 

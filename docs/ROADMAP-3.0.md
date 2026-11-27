@@ -995,6 +995,19 @@ signed off, and the trailer re-recording and the client profile are still not do
 **Delivery (2026-11-26).** Step 1 of [SOUND-PLAN.md](SOUND-PLAN.md) is built: a shorter queue, gains and blowers inside
 the note's stream, equal-power handovers and the note heard from the exhaust. Not yet heard or measured in the game.
 
+**Blower sounds (the author, 2026-11-26).** The turbo whistle, blow-off and supercharger whine are reworked
+(`tools/boost_sounds.py` and `BoostWhine`; [DESIGN.md](DESIGN.md), "Turbo and supercharger sounds"), and the turbo's pitch
+range is wider. The author heard a first version the same day: the whistle had lost its high end, the new blow-offs
+sounded much worse than the old one, and the new whine looked likely to grate. Since then the old high end is back, the
+blow-off is the old one with a clear flutter (three takes), many turbos venting together share their loudness, and the
+whine is lower, rounder and quieter. The author heard that too: the whine was still like a whistle being blown, the
+flutter sounded like parts colliding, and the blow-off had far too much low end. So the whine is now a close stack of
+overtones with pulsing air and no tone of its own standing out, and the blow-off is one soft-swelling stream of air with
+nothing below 800 Hz. The author then preferred the whine before that one, which is back, kept all three blow-off takes
+and asked for them fuller (the thumping ones were like a kick drum, the thin one like a shaker): they now have their body
+in the low middle of the range, cut off below 220 Hz. The author then asked for a little whine, as real turbos have: each
+take now has a thin tone under the air that falls as the wheel runs down. Not yet heard.
+
 **Third round (author, 2026-11-26):** long exhaust runs pitched too low and sounded crushed, there was too much reverb on every
 length of run, and the backfire was to be reworked completely. A long run now rings 0.4 of an octave below a middling one
 (was 0.9), a stub an octave above (was 0.9); the resonances ring shorter and no longer longer on low pipes; the thump and

@@ -6,6 +6,7 @@ import com.createengines.content.AnimationDiagnostic;
 import com.createengines.content.EnginePoses;
 import com.createengines.content.crankshaft.CrankshaftBlockEntity;
 import com.createengines.content.StructureCulling;
+import com.createengines.engine.sim.Wear;
 import com.createengines.registry.CEPartialModels;
 
 import dev.engine_room.flywheel.api.instance.Instance;
@@ -27,7 +28,9 @@ public class CylinderVisual extends AbstractBlockEntityVisual<CylinderBlockEntit
 
 	private final TransformedInstance piston;
 	private final TransformedInstance forgedPiston;
-	private final TransformedInstance rod;
+	/** One instance for each kind of rod, by {@link Wear.Rod} ordinal; only the fitted one shows. */
+	private final TransformedInstance[] rods;
+	private Wear.Rod lastRod;
 	/** The wear mode's wreck lying in the bore of a cylinder whose rod was thrown, and the scorch on a seized piston. Hidden unless they are wanted. */
 	private final TransformedInstance wreck;
 	private final TransformedInstance scorch;
@@ -47,8 +50,9 @@ public class CylinderVisual extends AbstractBlockEntityVisual<CylinderBlockEntit
 			.createInstance();
 		forgedPiston = instancerProvider().instancer(InstanceTypes.TRANSFORMED,
 			Models.partial(CEPartialModels.FORGED_PISTON)).createInstance();
-		rod = instancerProvider().instancer(InstanceTypes.TRANSFORMED, Models.partial(CEPartialModels.CONNECTING_ROD))
-			.createInstance();
+		rods = new TransformedInstance[Wear.Rod.values().length];
+		for (Wear.Rod kind : Wear.Rod.values())
+			rods[kind.ordinal()] = instance(CEPartialModels.rod(kind));
 		wreck = instance(CEPartialModels.CYLINDER_WRECK);
 		scorch = instance(CEPartialModels.SEIZED_RING);
 		pushrods = new TransformedInstance[] {instance(CEPartialModels.PUSHROD), instance(CEPartialModels.PUSHROD),
@@ -87,9 +91,17 @@ public class CylinderVisual extends AbstractBlockEntityVisual<CylinderBlockEntit
 		boolean forged = blockEntity.getBlockState().getValue(CylinderBlock.FORGED_PISTON);
 		// Piston and rod that have not moved since the last frame (a stopped engine) keep their pose and are not re-uploaded
 		boolean seized = blockEntity.showsSeized();
-		if (lastForged == null || lastForged != forged || !pose.equals(lastPose) || seized != lastSeized) {
+		Wear.Rod kind = blockEntity.rodKind();
+		// A change of rod hides all three, and the pose below shows the one now fitted
+		if (kind != lastRod)
+			for (TransformedInstance unused : rods) {
+				unused.setVisible(false);
+				unused.setChanged();
+			}
+		if (lastForged == null || lastForged != forged || !pose.equals(lastPose) || seized != lastSeized || kind != lastRod) {
 			pose(forged ? forgedPiston : piston, pose.showPiston(), origin, pose.piston());
-			pose(rod, pose.showRod(), origin, pose.rod());
+			pose(rods[kind.ordinal()], pose.showRod(), origin, pose.rod());
+			lastRod = kind;
 			// The scorch rides on the piston it is the scorch of
 			pose(scorch, seized && pose.showPiston(), origin, pose.piston());
 			lastSeized = seized;
@@ -141,7 +153,8 @@ public class CylinderVisual extends AbstractBlockEntityVisual<CylinderBlockEntit
 
 	@Override
 	public void updateLight(float partialTick) {
-		relight(piston, forgedPiston, rod, wreck, scorch);
+		relight(piston, forgedPiston, wreck, scorch);
+		relight(rods);
 		relight(pushrods);
 	}
 
@@ -149,7 +162,8 @@ public class CylinderVisual extends AbstractBlockEntityVisual<CylinderBlockEntit
 	protected void _delete() {
 		piston.delete();
 		forgedPiston.delete();
-		rod.delete();
+		for (TransformedInstance instance : rods)
+			instance.delete();
 		wreck.delete();
 		scorch.delete();
 		for (TransformedInstance instance : pushrods)
@@ -160,7 +174,8 @@ public class CylinderVisual extends AbstractBlockEntityVisual<CylinderBlockEntit
 	public void collectCrumblingInstances(Consumer<Instance> consumer) {
 		consumer.accept(piston);
 		consumer.accept(forgedPiston);
-		consumer.accept(rod);
+		for (TransformedInstance instance : rods)
+			consumer.accept(instance);
 		consumer.accept(wreck);
 		consumer.accept(scorch);
 		for (TransformedInstance instance : pushrods)

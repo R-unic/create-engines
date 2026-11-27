@@ -59,6 +59,19 @@ public final class VoiceBudget {
 		finishedAt.put(owner, now);
 	}
 
+	/**
+	 * {@code owner}'s voice was lost without its owner asking: the sound engine dropped it, or stopped reading it, as it does
+	 * to a stream that ran dry in a hitch. One that had played and lived at least as long as a rest may be replaced at once,
+	 * so the hitch is heard as a short gap and not a two-second one. Anything shorter-lived, or never played (a start the
+	 * sound engine declined), rests as ever, so no owner can start more than one voice a rest this way either.
+	 */
+	public void lost(Object owner, long now, long age, boolean played) {
+		if (played && age >= REST_TICKS)
+			finishedAt.remove(owner);
+		else
+			finished(owner, now);
+	}
+
 	/** Forgets rests that have run out, and any from another world's clock. */
 	public void prune(long now) {
 		Iterator<Map.Entry<Object, Long>> it = finishedAt.entrySet()

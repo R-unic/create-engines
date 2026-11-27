@@ -5,6 +5,7 @@ import java.util.Locale;
 
 import org.jetbrains.annotations.Nullable;
 
+import com.createengines.content.EngineNoteSound;
 import com.createengines.content.GoggleLines;
 import com.createengines.content.LoopSource;
 import com.createengines.content.MachineLoopSound;
@@ -91,11 +92,15 @@ public class SuperchargerBlockEntity extends KineticBlockEntity implements Engin
 		return primaryPos != null && served > 0;
 	}
 
+	/** The whine's volume at its loudest: low, for a tone that is heard as long as the shaft turns. */
+	private static final float LOUDEST_WHINE = 0.14f;
+
 	@Override
 	public void tick() {
 		super.tick();
-		if (level != null && level.isClientSide && loopLevel() > 0.02f)
-			MachineLoopSound.ensurePlaying(this, worldPosition, CESounds.SUPERCHARGER_WHINE.get(), 0.2f, this);
+		if (level != null && level.isClientSide && loopLevel() > 0.02f
+			&& !EngineNoteSound.carrySupercharger(onEngine() ? primaryPos : null, this, worldPosition, LOUDEST_WHINE))
+			MachineLoopSound.ensurePlaying(this, worldPosition, CESounds.SUPERCHARGER_WHINE.get(), LOUDEST_WHINE, this);
 	}
 
 	/** The whine rises with the shaft, and is much quieter while the blower is turning but not pushing any engine's air. */

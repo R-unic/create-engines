@@ -473,18 +473,33 @@ faces; and anything that needs doing regularly (an oil change) can be automated 
 
 ### Turbo and supercharger sounds, and torsional flex (2026-11-02)
 
-- **Sounds.** Three new recordings, synthesized by `tools/generate_sounds.py` (which now falls back to ffmpeg's libvorbis
-  when there is no libsndfile, and takes sound names to regenerate only those): `turbo_whistle` and `supercharger_whine`,
-  one-second seamless loops, and `turbo_blowoff`, a one-shot with a valve thump, a hiss and a compressor-surge flutter.
+- **Sounds** (reworked 2026-11-26). Synthesized by `tools/generate_sounds.py` (which falls back to ffmpeg's libvorbis
+  when there is no libsndfile, and takes sound names to regenerate only those), these three from `tools/boost_sounds.py`.
+  `turbo_whistle`, a one-second seamless loop: a core tone at 2 kHz that drifts a little, with bright overtones at 4 and
+  6 kHz, a narrow band of noise that makes it breathe, a hollow note an octave down and a wide rush of air that reaches
+  to the top (the high end is the first recording's, kept at the author's request). `supercharger_whine`, the same length,
+  made to be heard for as long as a shaft turns: the lobes' tone at 520 Hz with soft overtones, a growl of copies 48 Hz
+  either side, a low thrum, a soft whir of air and a trace of the drive gears' mesh near 1.4 kHz (the author preferred it
+  to a close stack of overtones with no tone of its own). `turbo_blowoff`, three takes under the one sound ID, is air
+  alone: a full rush, most of it between 400 and 1500 Hz with a hiss over it, cut off below 220 Hz (a thump at the bottom
+  was heard as a kick drum, and a thin hiss alone as a shaker), that within a fifth of a second is fluttering as the
+  compressor surges. The flutter is that one stream swelling and easing, soft at both ends and never shut off (hard,
+  separate bursts were heard as parts striking). Under the air the wheel whines, a little: a thin tone falling from
+  3.3 kHz toward 1.5 kHz, sagging and swelling with each surge, some 12 to 17 dB under the rush.
+  The takes start at 18 to 25 swells a second and slow toward 10.5 to 14.
   `MachineLoopSound` (client only, like `StarterWhirSound`) plays a loop for any block entity that implements `LoopSource`:
   it fades in and out and takes its volume and pitch from `loopLevel()` and `loopPitch()` every tick. The turbo's loop level
-  is its wheel speed above 4 percent and its pitch runs from 0.55 to about 1.8; the supercharger's level is its shaft speed
+  eases in from 6 percent of its wheel speed and its pitch is 0.4 plus 0.7 times that speed, up to 1.24
+  (`Pitches.turboWhistle`); the supercharger's level is its shaft speed
   over 96 RPM (a third as loud when it feeds no engine) and its pitch 0.6 to 1.8 by 200 RPM. The blow-off plays when redstone
   holds the wastegate open, or when the engine lifts off the throttle (`TurboStatus.offThrottle`, at most once a second), with
-  at least 0.25 bar on the gauge a moment before, louder for more boost; anti-lag pops
-  reuse the cylinder bang, quieter and higher, at half the rate of the particles. The client config `boostVolume` scales the
-  whistle, whine and blow-off; `bangVolume` still scales the pops. The recordings were analyzed (levels, spectrum, loop seam)
-  but not listened to; if one is off, adjust its constants in the generator and regenerate it by name.
+  at least 0.25 bar on the gauge a moment before, louder for more boost. `BlowOffCrowd` (pure, one count for blow-offs and
+  one for wastegate chuffs) keeps many valves from adding up: of those within 10 ticks and 16 blocks of each other, the
+  first plays in full, the next two at 0.5 and 0.3, and the rest not at all (`BlowOffCrowdTest`). Anti-lag pops are the
+  backfire (`afterfire`), quieter and higher, at half the rate of the particles. The client config `boostVolume` scales the
+  whistle, whine and blow-off; `bangVolume` still scales the pops. The sounds are checked from spectrograms and tests
+  (`BoostSoundsTest`). The author heard a first version of the rework and rejected parts of it; what followed it has not
+  been heard. If one is off, adjust its constants and regenerate it by name. A change to a loop goes into `BoostWhine` too.
 - **Torsional flex** (`engine.sim.Torsion`). The rating loses `0.025` per throw beyond eight on a crank line (it was 0.045 to at most 0.45 until 2026-11-02, when a V24 and V30
   were rated below a V16; now at most 0.35),
   and an engine with several lines loses the average of the lines' losses weighted by their throws, so a short line
@@ -549,7 +564,7 @@ faces; and anything that needs doing regularly (an oil change) can be automated 
   - *Blowers.* An engine with a note plays its turbos' whistles and superchargers' whine in the same stream (`BoostWhine`,
     the recordings' recipe made live, at their level; up to four, `NoteWhines`), at the level and hearing range each would
     have from where it stands, but from the note's place. Their loops cross-fade out and remain for engines without a
-    note, and for any past four. The pitch the blocks ask for is unchanged, but is no longer held to 0.5 to 2.
+    note, and for any past four. The note plays the pitch the blocks ask for without holding it to 0.5 to 2.
     The turbo's client sync names its engine (`Engine`, never saved).
   - *Handovers.* A note and the room voice cross-fade at equal power over 16 ticks (`NoteHandover`), the room's copy
     seeded as the note is and timed as a latecomer to a running stream. A note is held at least 3 s before a nearer
@@ -637,7 +652,8 @@ faces; and anything that needs doing regularly (an oil change) can be automated 
   - *Top end.* A deep engine's crack is up to 40% weaker.
   - *Measured offline*, idling at 80 to 240 RPM: a crossplane V8 on short manifolds has about 68 to 72% of its sound below
     120 Hz, where it had about 43%. Singles and twins have no boom, and a single is as it was. Fours and up are all
-    lower than before. Not heard in game by anyone.
+    lower than before. The sound bench has recorded it in game ([SOUND-PLAN.md](SOUND-PLAN.md), step 5); nobody has
+    judged it by ear.
   - Tests: `EngineNoteDepthTest`, and every earlier note test unchanged.
 - **Sounds on moving structures (2026-11-26).** Sable plays any sound that starts on a moving structure inside a wrapper
   of its own, so `SoundManager.isActive` says no to the instance this mod made. Every note, loop and starter whir there
@@ -708,7 +724,7 @@ faces; and anything that needs doing regularly (an oil change) can be automated 
   themselves, softened, now come in as a tone at the firing rate, and a slow gain (0.3 s) holds the level across the
   range, only for fast engines so a slow engine's lope is untouched (`theNoteDoesNotChangeCharacterAtAnySpeed`). The
   turbo whistle (0.09) and
-  supercharger whine (0.2) are quieter than before, because a tone in the kilohertz carries much further to the ear than
+  supercharger whine (0.2, lowered again to 0.14 in the 2.4 rework) are quieter than before, because a tone in the kilohertz carries much further to the ear than
   a rumble of the same level.
 
 

@@ -363,10 +363,10 @@ public final class CELang {
 		raw("goggles.wear.turbo", "Turbocharger wear: %1$s%%");
 		raw("goggles.wear.turbo_failed", "Turbocharger failed: it makes no boost until it is replaced");
 		raw("goggles.wear.heavy_turbo", "Heavy wear: only a new turbocharger cures it, and one this worn can fail");
-		raw("goggles.wear.rod.light", "Light connecting rod: less drag at speed, wears fast under load");
-		raw("goggles.wear.rod.heavy", "Heavy connecting rod: takes load well, drags more at speed");
-		raw("tooltip.rod.light", "A little less friction at speed; wears fast under load");
-		raw("tooltip.rod.heavy", "Takes load well; a little more friction at speed");
+		raw("goggles.wear.rod.light", "Light connecting rod: less drag, revs up sooner, runs rougher");
+		raw("goggles.wear.rod.heavy", "Heavy connecting rod: runs smoother, revs up slower, drags more");
+		raw("tooltip.rod.light", "Less friction at speed and quicker to rev, but rougher. In wear mode: wears fast under load");
+		raw("tooltip.rod.heavy", "Smoother running, but slower to rev with a little more friction. In wear mode: takes load well");
 		raw("tooltip.wear.failed", "Wrecked: placing it again repairs nothing");
 		raw("message.wear.seals_fitted", "New apex seals fitted");
 		raw("goggles.fault.no_plug", "No spark plug: the chamber is too long and thin for the charge to light itself");
@@ -382,6 +382,8 @@ public final class CELang {
 		raw("goggles.lobe_cylinders", "Actuates %1$s cylinder(s)");
 		raw("goggles.lobe_shared", "Times the first at its angle; the others follow their own crank angles");
 		raw("goggles.fuel_rack", "Fuel rack: %1$s%%");
+		raw("goggles.fuel_cut", "Fuel cut: redstone on the camshaft");
+		raw("tooltip.camshaft.fuel_cut", "Redstone on any block closes the fuel rack; 15 stops the engine");
 
 		raw("goggles.starter", "Starter");
 		raw("goggles.starter.idle", "Idle: needs a redstone signal, and rotation on its input unless a battery can turn it (spark engines only)");

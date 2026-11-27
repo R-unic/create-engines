@@ -71,12 +71,12 @@ public final class SmokeAudit {
 	private static final PerfSampler.Series STATIC_SOUNDS = new PerfSampler.Series();
 	private static final Map<ResourceLocation, Integer> SOUNDS_PLAYED = new TreeMap<>();
 	/**
-	 * Sounds the fleet cannot be relied on to start, so the end of {@link #fleet} starts any it did not by hand: the three that fire by chance, and the wear
+	 * Sounds the fleet cannot be relied on to start, so the end of {@link #fleet} starts any it did not by hand: the four that fire by chance, and the wear
 	 * mode's three failures (a rod thrown, a gasket blown, a piston seized) and its dry-piston cry, which only happen with the wear mode on and a part worn out, and a fleet that
 	 * wore parts out on purpose would fail every check that its engines are running. Their triggers are tested by the wear GameTests; this proves the events
 	 * and their files play on a real sound card.
 	 */
-	private static final java.util.List<String> CHANCE_SOUNDS = java.util.List.of("metal_tick", "preignition_knock", "flare_whoosh",
+	private static final java.util.List<String> CHANCE_SOUNDS = java.util.List.of("metal_tick", "preignition_knock", "exhaust_spit", "flare_whoosh",
 		"rod_thrown", "gasket_blow", "seize_warning", "piston_seize", "apex_fail",
 		"head_warp", "turbo_fail");
 	private static final java.util.List<String> startedByHand = new java.util.ArrayList<>();
@@ -528,7 +528,7 @@ public final class SmokeAudit {
 		// The toast sting plays when an advancement is earned; earn them all, last, so no toast is in a picture
 		if (t == 1160)
 			VisualSmokeTest.server(server -> VisualSmokeTest.command(server, "advancement grant @a everything"));
-		// The cooling tick, the pre-ignition knock and the flare's whoosh are chance events by design (a few per second on the right
+		// The cooling tick, the pre-ignition knock and spit and the flare's whoosh are chance events by design (a few per second on the right
 		// engine, now and then at a flare), so a fleet of any size can go a whole run without one. Each is started by hand here when the fleet did not, which proves its sound
 		// event and files play; a sound that is not random must still be started by the fleet itself.
 		if (t == 1190)

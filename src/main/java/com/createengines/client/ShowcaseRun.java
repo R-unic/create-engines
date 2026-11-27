@@ -159,6 +159,7 @@ public final class ShowcaseRun {
 		{
 			NeoForge.EVENT_BUS.addListener(ShowcaseRun::onRenderFrame);
 			NeoForge.EVENT_BUS.addListener(ShowcaseRun::onPlaySound);
+			com.createengines.content.EngineNoteSound.hearOnly(ShowcaseRun::engineInShot);
 			NeoForge.EVENT_BUS.addListener(ShowcaseRun::onRenderGuiLayer);
 			NeoForge.EVENT_BUS.addListener(ShowcaseRun::onFov);
 		}
@@ -2235,18 +2236,40 @@ public final class ShowcaseRun {
 	private static boolean inCurrentPad(SoundInstance sound) {
 		if (sound.isRelative() || sound.getAttenuation() == SoundInstance.Attenuation.NONE || SHOTS.isEmpty())
 			return true;
-		Scene scene = null;
+		Scene scene = shotScene();
+		// The wheeled car has no courtyard, and its sounds are made where its structure is kept, not where it is seen
+		return scene == null || scene.bay() == AERO_BAY || onPad(scene.bay(), sound.getX(), sound.getZ());
+	}
+
+	/**
+	 * Whether an engine, by its crankshaft, belongs to the shot: the shared engine voice passes {@link #inCurrentPad}, so
+	 * other engines are kept out of it here. The wheeled car's is the one on no courtyard at all.
+	 */
+	private static boolean engineInShot(BlockPos at) {
+		if (SHOTS.isEmpty())
+			return true;
+		Scene scene = shotScene();
+		if (scene == null)
+			return true;
+		if (scene.bay() != AERO_BAY)
+			return onPad(scene.bay(), at.getX() + 0.5, at.getZ() + 0.5);
+		return SCENES.stream()
+			.noneMatch(other -> other.bay() != AERO_BAY && onPad(other.bay(), at.getX() + 0.5, at.getZ() + 0.5));
+	}
+
+	private static Scene shotScene() {
 		String name = SHOTS.get(Math.max(trailerShot, 0))
 			.scene();
 		for (Scene candidate : SCENES)
 			if (candidate.name().equals(name))
-				scene = candidate;
-		// The wheeled car has no courtyard, and its sounds are made where its structure is kept, not where it is seen
-		if (scene == null || scene.bay() == AERO_BAY)
-			return true;
-		BlockPos pad = pad(scene.bay());
-		return sound.getX() >= pad.getX() + PAD_X0 && sound.getX() <= pad.getX() + PAD_X1 + 1
-			&& sound.getZ() >= pad.getZ() + PAD_Z0 && sound.getZ() <= pad.getZ() + PAD_Z1 + 1;
+				return candidate;
+		return null;
+	}
+
+	private static boolean onPad(int bay, double x, double z) {
+		BlockPos pad = pad(bay);
+		return x >= pad.getX() + PAD_X0 && x <= pad.getX() + PAD_X1 + 1
+			&& z >= pad.getZ() + PAD_Z0 && z <= pad.getZ() + PAD_Z1 + 1;
 	}
 
 	/**

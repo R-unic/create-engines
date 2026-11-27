@@ -436,7 +436,8 @@ reason no longer holds.
 * New sound event: the fleet must make it play, or it shows as "never started"; add its trigger to the fleet in
   `SmokeAudit.fleet`.
   One documented exception: sounds that fire by chance by design (`CHANCE_SOUNDS` in `SmokeAudit`: the cooling tick, the
-  pre-ignition knock, the flare whoosh) are started by hand at the end of the run if the fleet did not, and a check fails
+  pre-ignition knock and spit, the flare whoosh, and the wear mode's failures and warnings) are started by hand at the end
+  of the run if the fleet did not, and a check fails
   if the sound engine never hears them. A sound that is not random must still be started by the fleet. The whistle
   needs the camera within 48 blocks of the turbo, so the run stands there while the wheel is up to speed.
 * A new class of failure you were bitten by: write the check that would have caught it first, in a layer that can fail

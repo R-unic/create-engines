@@ -3,6 +3,8 @@ package com.createengines.content.head;
 import java.util.List;
 
 import com.createengines.content.WearService;
+import com.createengines.content.cylinder.CylinderBlockEntity;
+import com.createengines.engine.LoadedBlocks;
 import com.createengines.engine.sim.Tuning;
 import com.createengines.engine.sim.Wear;
 import com.createengines.engine.topology.EngineTopology;
@@ -379,6 +381,13 @@ public class CylinderHeadBlockEntity extends SmartBlockEntity implements IHaveGo
 		CELang.translate("goggles.head")
 			.forGoggles(tooltip);
 		BlockState state = getBlockState();
+		// The head has no engine data of its own: it reads the cylinder it closes
+		if (LoadedBlocks.blockEntity(level, worldPosition.relative(state.getValue(CylinderHeadBlock.FACING)
+			.getOpposite())) instanceof CylinderBlockEntity cylinder && cylinder.status() != null
+			&& cylinder.status()
+				.fuelCut())
+			GoggleLines.add(CELang.translate("goggles.fuel_cut")
+				.style(ChatFormatting.GOLD), tooltip, 1);
 		if (!state.getValue(CylinderHeadBlock.HAS_INJECTOR))
 			GoggleLines.add(CELang.translate("goggles.head.no_injector")
 				.style(ChatFormatting.GOLD), tooltip, 1);

@@ -1,10 +1,14 @@
 package com.createengines.gametest;
 
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.function.BiConsumer;
 
+import net.minecraft.world.level.block.state.properties.AttachFace;
+
 import com.createengines.CreateEngines;
+import com.createengines.engine.EngineSound;
 import com.createengines.config.CEConfig;
 import com.createengines.content.airflow.HeatExchangerBlockEntity;
 import com.createengines.content.airflow.MafSensorBlockEntity;
@@ -113,6 +117,19 @@ public class EngineGameTests {
 
 	private static void buildSingleCylinder(GameTestHelper helper, boolean fuelled) {
 		TestEngine.build(helper.getLevel(), helper.absolutePos(BlockPos.ZERO), fuelled);
+	}
+
+	/** That the engine tells the client this about itself, for its sound, with an outlet for every firing it lists. */
+	private static void assertSounds(GameTestHelper helper, boolean compression, int outlets) {
+		EngineSummary summary = summary(helper);
+		EngineSound sound = summary.sound();
+		helper.assertTrue(sound.compression() == compression, "Compression ignition should be " + compression);
+		helper.assertTrue(sound.outlets().length == summary.firingAngles().length,
+			"An outlet for every firing: " + Arrays.toString(sound.outlets()) + " for " + Arrays.toString(summary.firingAngles()));
+		helper.assertTrue(sound.pipes().length == outlets && Arrays.stream(sound.outlets())
+			.distinct()
+			.count() == outlets, "Should go out of " + outlets + " outlets: " + Arrays.toString(sound.outlets()) + ", pipes "
+				+ Arrays.toString(sound.pipes()));
 	}
 
 	private static EngineSummary summary(GameTestHelper helper) {
@@ -254,6 +271,29 @@ public class EngineGameTests {
 		});
 	}
 
+	/** A starter runs on redstone, so a button or lever has to be able to go straight on it, whichever way it faces. */
+	@GameTest(template = "empty")
+	public static void buttonsAndLeversMountOnAStarter(GameTestHelper helper) {
+		BlockPos pos = new BlockPos(2, 2, 2);
+		for (net.minecraft.world.level.block.Block starter : List.of(CEBlocks.STARTER.get(), CEBlocks.HEAVY_STARTER.get()))
+			for (Direction facing : Direction.values()) {
+				helper.setBlock(pos, starter.defaultBlockState()
+					.setValue(StarterBlock.FACING, facing));
+				for (Direction side : Direction.values())
+					for (net.minecraft.world.level.block.Block mounted : List.of(Blocks.STONE_BUTTON, Blocks.LEVER)) {
+						BlockState state = mounted.defaultBlockState()
+							.setValue(BlockStateProperties.ATTACH_FACE, side == Direction.UP ? AttachFace.FLOOR
+								: side == Direction.DOWN ? AttachFace.CEILING : AttachFace.WALL);
+						if (side.getAxis()
+							.isHorizontal())
+							state = state.setValue(BlockStateProperties.HORIZONTAL_FACING, side);
+						helper.assertTrue(state.canSurvive(helper.getLevel(), helper.absolutePos(pos.relative(side))),
+							mounted + " should mount on the " + side + " side of " + starter + " facing " + facing);
+					}
+			}
+		helper.succeed();
+	}
+
 	/** Once the redstone drops, the starter lets go of its input: a weak source such as a hand crank must not stay loaded. */
 	@GameTest(template = "empty", timeoutTicks = 900)
 	public static void starterReleasesItsInputWhenTheSignalDrops(GameTestHelper helper) {
@@ -282,6 +322,12 @@ public class EngineGameTests {
 			.registryOrThrow(Registries.CREATIVE_MODE_TAB)
 			.getOrThrow(CreativeModeTabs.SEARCH);
 		for (RegistryEntry<Item, Item> entry : CreateEngines.REGISTRATE.getAll(Registries.ITEM)) {
+			if (entry.get() == CEItems.INCOMPLETE_COPPER_GASKET.get()) {
+				assertNotListed(helper, CECreativeTabs.MAIN.get()
+					.getDisplayItems(), entry, "our tab");
+				assertNotListed(helper, search.getDisplayItems(), entry, "search");
+				continue;
+			}
 			assertListedOnce(helper, CECreativeTabs.MAIN.get()
 				.getDisplayItems(), entry, "our tab");
 			assertListedOnce(helper, search.getDisplayItems(), entry, "search");
@@ -617,6 +663,65 @@ public class EngineGameTests {
 		});
 	}
 
+	/**
+	 * The engine tells the client what it is built of, for its sound (the 2.4 sound rework): an outlet for every firing, the
+	 * run's length (longer once the exhaust runs through a muffler), and casing
+	 * beside the cylinder as part of it clad. Only the sound: nothing here changes how it runs.
+	 */
+	@GameTest(template = "empty", timeoutTicks = 300)
+	public static void theEngineSyncsWhatItIsBuiltOfForItsSound(GameTestHelper helper) {
+		buildSingleCylinder(helper, true);
+		float[] stub = new float[1];
+		helper.runAtTickTime(60, () -> {
+			EngineSummary summary = summary(helper);
+			com.createengines.engine.EngineSound sound = summary.sound();
+			helper.assertTrue(sound.outlets().length == summary.firingAngles().length,
+				"Every firing angle has an outlet: " + java.util.Arrays.toString(sound.outlets()) + " for "
+					+ java.util.Arrays.toString(summary.firingAngles()));
+			helper.assertTrue(sound.pipes().length == 1, "One exhaust run is one outlet: " + java.util.Arrays.toString(sound.pipes()));
+			helper.assertTrue(sound.enclosure() == 0, "Nothing is clad yet: " + sound.enclosure());
+			stub[0] = sound.pipes()[0];
+			// A longer run, through a muffler, and a casing block beside the cylinder
+			helper.setBlock(TestEngine.EXHAUST.west(), CEBlocks.EXHAUST_OUTLET.getDefaultState()
+				.setValue(com.createengines.content.airflow.PortOpeningBlock.FACING, Direction.WEST));
+			helper.setBlock(TestEngine.EXHAUST, CEBlocks.MUFFLER.getDefaultState()
+				.setValue(BlockStateProperties.AXIS, Axis.X));
+			helper.setBlock(TestEngine.CYLINDER.east(), CEBlocks.ENGINE_CASING.getDefaultState());
+		});
+		helper.runAtTickTime(200, () -> {
+			com.createengines.engine.EngineSound sound = summary(helper).sound();
+			helper.assertTrue(sound.pipes().length == 1 && sound.pipes()[0] > stub[0],
+				"The run through the muffler is longer: " + stub[0] + " to " + java.util.Arrays.toString(sound.pipes()));
+			helper.assertTrue(sound.muffles().length == 1 && sound.muffles()[0] == 1,
+				"The muffled run's own outlet is muffled: " + java.util.Arrays.toString(sound.muffles()));
+			helper.assertTrue(sound.enclosure() > 0, "A casing block beside the cylinder clads part of it: " + sound.enclosure());
+			// The sync keeps it, and an older world's summary (without it) reads as a plain note
+			EngineSummary synced = EngineSummary.read(summary(helper).write());
+			helper.assertTrue(synced.sound()
+				.sameAs(sound), "The summary's sync keeps the sound: " + synced.sound());
+			net.minecraft.nbt.CompoundTag older = summary(helper).write();
+			for (String key : java.util.List.of("SoundOutlets", "SoundPipes", "SoundCompression", "SoundPrecision",
+				"SoundEnclosure", "SoundMuffles"))
+				older.remove(key);
+			helper.assertTrue(EngineSummary.read(older)
+				.sound() == com.createengines.engine.EngineSound.NONE, "A summary without it is a plain note");
+			// A summary that differs only in how it sounds is still sent to the client
+			helper.assertTrue(!synced.differsFrom(EngineSummary.read(summary(helper).write())),
+				"The same summary read twice should not differ: " + synced);
+			net.minecraft.nbt.CompoundTag duller = summary(helper).write();
+			duller.putFloat("SoundEnclosure", 1f);
+			helper.assertTrue(EngineSummary.read(duller)
+				.differsFrom(synced), "A change of sound alone should be synced");
+			helper.setBlock(TestEngine.CYLINDER.east(), Blocks.AIR);
+		});
+		helper.runAtTickTime(250, () -> {
+			helper.assertTrue(summary(helper).sound()
+				.enclosure() == 0, "With the casing gone nothing is clad: " + summary(helper).sound()
+					.enclosure());
+			helper.succeed();
+		});
+	}
+
 	private static void assertPriced(GameTestHelper helper, BlockState state, Item... items) {
 		var needed = com.simibubi.create.content.schematics.requirement.ItemRequirement.of(state, null)
 			.getRequiredItems();
@@ -633,6 +738,12 @@ public class EngineGameTests {
 			.getRequiredItems()
 			.stream()
 			.noneMatch(requirement -> requirement.stack.is(item)), state + " should not cost " + item);
+	}
+
+	private static void assertNotListed(GameTestHelper helper, Collection<ItemStack> items,
+		RegistryEntry<Item, Item> entry, String where) {
+		helper.assertTrue(items.stream()
+			.noneMatch(stack -> stack.is(entry.get())), entry.getId() + " should not be listed in " + where);
 	}
 
 	private static void assertListedOnce(GameTestHelper helper, Collection<ItemStack> listed,
@@ -935,6 +1046,7 @@ public class EngineGameTests {
 			helper.assertTrue(summary(helper).firing() == 1,
 				"Cylinder should fire on the pushrod cam, summary " + summary(helper) + ", cylinder " + status);
 			helper.assertTrue(Math.abs(status.timingError()) < 1, "Cam timing should be right: " + status);
+			assertSounds(helper, true, 1);
 			helper.succeed();
 		});
 	}
@@ -987,6 +1099,8 @@ public class EngineGameTests {
 			helper.assertTrue(Math.abs(follower.lobeShift()) > 1 && first.lobeShift() == 0,
 				"Only the second is shifted round the lobe: " + first.lobeShift() + ", " + follower.lobeShift());
 			helper.assertTrue(summary(helper).firing() == 2, "Both banks should fire: " + summary(helper));
+			// One cam for both banks, and each bank out of its own exhaust
+			assertSounds(helper, true, 2);
 			helper.succeed();
 		});
 	}
@@ -1145,6 +1259,7 @@ public class EngineGameTests {
 				.getFluidAmount() < 250, "Engine should have burned gasoline");
 			BatteryBlockEntity battery = helper.getBlockEntity(TestEngine.BATTERY);
 			helper.assertTrue(battery.charge() > 20, "The turning engine should keep its battery charged");
+			assertSounds(helper, false, 1);
 			helper.succeed();
 		});
 	}
@@ -1731,6 +1846,9 @@ public class EngineGameTests {
 			CrankshaftBlockEntity crank = helper.getBlockEntity(PRIMARY);
 			crude[0] = crank.publishedCapacity();
 			helper.assertTrue(crude[0] > 0, "The crude engine should be rated");
+			helper.assertTrue(summary(helper).sound()
+				.precision() == 0, "Crude parts sound crude: " + summary(helper).sound()
+					.precision());
 		});
 		helper.runAtTickTime(210, () -> {
 			helper.setBlock(CYLINDER, CEBlocks.PRECISION_CYLINDER.getDefaultState()
@@ -1754,6 +1872,9 @@ public class EngineGameTests {
 			CrankshaftBlockEntity crank = helper.getBlockEntity(PRIMARY);
 			helper.assertTrue(crank.publishedCapacity() > crude[0] * 1.15f,
 				"Precision parts should raise the rating from " + crude[0] + ": " + crank.publishedCapacity());
+			helper.assertTrue(summary(helper).sound()
+				.precision() == 1, "The sound should follow the parts: " + summary(helper).sound()
+					.precision());
 			helper.succeed();
 		});
 	}
@@ -3232,6 +3353,7 @@ public class EngineGameTests {
 			EngineSummary summary = summary(helper);
 			helper.assertTrue(summary.state() == EngineState.RUNNING, "The rotary engine should run on its own: " + summary);
 			helper.assertTrue(summary.firing() == 3, "All three chambers should fire: " + summary);
+			assertSounds(helper, false, 1);
 			RotorHousingBlockEntity housing = helper.getBlockEntity(TestEngine.HOUSING);
 			for (int i = 0; i < 3; i++)
 				helper.assertTrue(housing.chamber(i) != null && housing.chamber(i)

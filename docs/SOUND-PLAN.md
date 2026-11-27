@@ -1,7 +1,7 @@
 # Sound, round two: sounding right in the game (plan, 2026-11-26)
 
-**A plan for the author to choose from. Steps 0 to 4 are built (2026-11-26); step 1 is measured by the bench, steps 2 to 4
-only by offline renders and tests, and none is signed off by ear.** The first round of the rework is recorded in
+**A plan for the author to choose from. All six steps, 0 to 5, are built (2026-11-26) and have had a full bench run
+(step 5, below). None is signed off by ear.** The first round of the rework is recorded in
 [ROADMAP-3.0.md](ROADMAP-3.0.md), "The sound rework". This plan picks up from there. Sound is one of the mod's biggest draws, and what
 counts is how it sounds **in the game**: in a world, next to vanilla sounds, while the player walks around, with ten engines running.
 A clean offline render isn't enough. Some steps regenerate sounds from scratch.
@@ -110,7 +110,8 @@ steps 1 and 4 say the bench lacks these, they speak of the bench before this.
 ### Step 1: Fix the delivery, same sound (small to medium)
 
 **Built, 2026-11-26.** How it works: [DESIGN.md](DESIGN.md), "Delivery". Where it differs from the list below: the whistle
-and whine keep the pitch range the blocks already ask for (only the clamp is gone), and are heard from the note's place;
+and whine keep the pitch range the blocks already ask for (only the clamp is gone; the turbo's range was widened later
+that day, when the three blower sounds were remade), and are heard from the note's place;
 up to four per engine. The note's place weighs openings by muffling only. **Still owed:** the author's listening.
 
 **Bench, 2026-11-26** (full runs `20261126-163102` before and `20261126-174506` after; other work on the sound happened in
@@ -227,6 +228,47 @@ renders were made for listening. Not tried on a moving structure.
 The 16-engine room and a long soak with the player inside it are captured and audited against round one's rules: the ceiling,
 settling back, no repetition, and warnings never lowered. It is also checked against vanilla's level, so the mod doesn't drown out
 the game.
+
+**Built, 2026-11-26:** the bench's `soak` scene ([SMOKE.md](SMOKE.md), "The sound bench"). Warnings are not measured: the
+capture could not tell one from the engines. Nothing in the many-engine rules touches a warning's sound.
+
+**Full run `20261126-211117`** (with the deeper voice for big engines, [DESIGN.md](DESIGN.md), "Deep engines"): no
+underruns, gaps, faults or problems in any scene.
+
+- *The soak:* sixteen firing, 2.7 dB above one of them from the same spot (limit 6), 0.8 dB down once settled and 1.2 dB
+  down after pacing through it. No second of it came back (0.665 at the closest, limit 0.97). Its loudest was 4.1 dB under
+  the minecart. The room heard from outside was 0.9 dB under its one engine.
+- *Level:* this recording is about 14 dB hotter than run `20261126-174506`, the minecart too, so compare engines with the
+  references and not between runs. Against the minecart they moved by about 2 dB or less.
+- *Clicks:* counted again with the recording turned down 14.2 dB to match, every scene has as few as the earlier run or
+  fewer, but for `turbo_i4`: 219 where there were none. They come from the pre-ignition spits, which the note has played
+  since step 3 where the earlier run played the recording about 107 times. Offline, a note without spits is flagged
+  nowhere and the same note with them is. So they are the spit's own bright edge, not a fault in the stream. Whether it
+  should be so sharp is for the author's ear.
+- *Over budget:* the sound thread took 2.72% of a core in the soak, over the roadmap's 2% (six engines rendered at
+  once; the room from outside took 1.97%). Fixed since, below.
+- *Walls and rooms:* one, two and three walls read 3.3, 7.5 and 9.8 dB down, but with the walls gone the engine was still
+  4.8 dB down, so much of that is the engine settling over the scene, not the wall. Indoors read 0.9 dB down with the
+  same brightness: the bench shows next to nothing of the room's reflection.
+- Not looked into: the rotary's lag figure (-241 ms; a rotary has no cam to keep time by).
+
+**Back under budget, 2026-11-26** (the soak alone, `--scenes soak`, so no reference or room figures):
+
+- *Cause:* between a slow engine's firings, filters in the note decayed into subnormal numbers, which are very slow to work
+  out; two of an idling single's sat there 88% of the time. And `Math.tanh`, which Java works out in software, was clipping
+  every sample of every note.
+- *Fix:* filters drop to zero far below hearing (`Denormals`), the soft clip and the undertone's two sines are read from
+  tables within a tenth of a 16-bit step (`NoteMath`), filter coefficients are worked out only when their input moves, and
+  a boom nothing has struck is skipped. Everything but the tables left an offline render of idling singles bit-identical.
+  `NoteMathTest` and `NoteSubnormalTest` hold it.
+- *Measured:* run `20261126-214515` before, 2.81% of a core and 241 ns a sample; run `20261126-220258` after, 1.86% and 160
+  ns. Offline, a single's note went from about 138 to 80 ns a sample.
+- *Little room to spare:* the budget is over the whole scene, quiet start included. With all sixteen running, the phases
+  read 1.95 to 2.18% (3.05 to 3.14% before), by the clock; the median read there cost about 115 ns a sample, and slow reads
+  make up the difference. A run in between, on a busier machine, read 2.00% and was not to be trusted (its sync claps
+  disagreed by 204 ms).
+- The after run had one dry spell, all four streams at the same instant (the run before had one in one stream). Its
+  cause was not looked into.
 
 ## Tests that come with it
 

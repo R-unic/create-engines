@@ -553,10 +553,15 @@ reg:CESounds:apex_fail
 reg:CESounds:bearing_squeal
 reg:CESounds:cylinder_fire
 reg:CESounds:engine_catch
+reg:CESounds:engine_catch_hard
+reg:CESounds:engine_settle
 reg:CESounds:engine_clatter
 reg:CESounds:engine_note
 reg:CESounds:engine_stall
+reg:CESounds:engine_stall_lugged
+reg:CESounds:engine_stall_starved
 reg:CESounds:exhaust_pop
+reg:CESounds:exhaust_spit
 reg:CESounds:flare_whoosh
 reg:CESounds:gasket_blow
 reg:CESounds:head_warp

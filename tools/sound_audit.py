@@ -11,7 +11,10 @@ same loudness). --compare puts an earlier run's figures beside this one's.
 What it measures: stream underruns (from the log of the sound engine's reads) and silent gaps while an engine runs; clicks
 that no firing explains; volume or pitch moving in 50 ms stairs; how long after each firing drawn it is heard; each scene's
 loudness against a furnace, a minecart and a Mechanical Press heard from the same spot; the room of sixteen against one of
-its engines; and how alike one firing sounds to the next.
+its engines; how alike one firing sounds to the next; how long newly made audio waits in a stream's queue, which is how
+late a change of throttle is heard (worked out from the log, not heard); what making the
+sound costs the sound thread and looking round the world costs the game thread; how walls, a room and a moving structure
+change what is heard; and whether one engine ever plays two notes at once.
 
 Lag is measured against a clap the game plays through its own sound, so 0 ms means "as late as any sound the game plays at
 once". It is not the delay to the ear. The audit finds faults; the author's listening is still what signs off.
@@ -28,12 +31,28 @@ import numpy as np
 from scipy import ndimage, signal
 
 RATE = 48000
-NOTE_RATE = 22050
+NOTE_RATE = 32000
 TICK_HZ = 20
 # An engine is meant to be heard through these phases, all from the listening distance
-RUNNING_PHASES = ("idle", "sweep", "settle", "load_approach", "load_on", "load_off", "restarted", "one", "sixteen")
+# The scenes that move one idling engine's surroundings and nothing else, each phase held against the scene's first
+PLACE_SCENES = {"walls": ("open", "wall1", "wall2", "wall3", "open_again"),
+                "indoors": ("outdoors", "indoors", "outdoors_again"),
+                "moving": ("held", "leave", "pass", "pass_back")}
+RUNNING_PHASES = ("alone", "crowd_early", "crowd_waiting", "crowd_settled", "pace", "stay", "idle", "sweep", "settle", "load_approach", "load_on", "load_off", "restarted", "one", "sixteen",
+                  *(phase for phases in PLACE_SCENES.values() for phase in phases))
+# The roadmap's budget for the sound thread, as a share of one core
+CPU_LIMIT_SHARE = 0.02
+# Two notes of one engine for longer than this are stacked copies, not one handing over to the next
+STACKED_SECONDS = 1.0
 ROOM_LIMIT_DB = 6.0
 ROOM_ENGINES = 16
+# The soak's phases with all sixteen running, the listener standing in the middle for all but the pacing
+CROWD_PHASES = ("crowd_early", "crowd_waiting", "crowd_settled", "pace", "stay")
+# A crowd left alone may drift this much louder from one stretch to a later one before it is called growing
+GROWTH_LIMIT_DB = 1.5
+# Two stretches this alike, sample for sample, are the same audio played again, not two engines sounding alike
+REPEAT_LIMIT = 0.97
+REPEAT_SECONDS = 1.0
 # The empty pad is silent: anything louder than this on it was heard from somewhere it should not be
 SILENCE_LIMIT_LUFS = -70.0
 # A sound the game plays at once must measure this close to 0 ms late, or the recording and the log are not lined up
@@ -176,19 +195,25 @@ def level_steps(events):
 def underruns(reads):
     """From one stream's reads [(ms, samples)]: the times its queue ran dry, as (ms, seconds dry), and the least audio it
     had queued at a read after the first few, in seconds (what a smaller chunk would have to spare)."""
-    dry, least = [], None
+    dry, ahead_at = queue(reads)
+    return dry, min(ahead_at[6:]) if len(ahead_at) > 6 else None
+
+
+def queue(reads):
+    """From one stream's reads: the times its queue ran dry, and at each read the audio waiting to be played, in seconds:
+    how long what is made at that read waits before it is heard."""
+    dry, waiting = [], []
     start, queued = None, 0.0
-    for index, (t, samples) in enumerate(reads):
+    for t, samples in reads:
         if start is None:
             start = t
         ahead = queued - (t - start) / 1000
         if ahead < -0.02:
             dry.append((t, -ahead))
             start, queued, ahead = t, 0.0, 0.0
-        if index >= 6:
-            least = ahead if least is None else min(least, ahead)
+        waiting.append(ahead)
         queued += samples / NOTE_RATE
-    return dry, least
+    return dry, waiting
 
 
 def onset_rise(mono):
@@ -245,8 +270,93 @@ def alikeness(mono, onsets):
     return scores
 
 
+def brightness(mono):
+    """The middle of the sound's spectrum in Hz (the power-weighted mean frequency, above 20 Hz): what a wall or the air
+    takes the top off. None for silence."""
+    if len(mono) < RATE // 2:
+        return None
+    frequencies, power = signal.welch(mono, RATE, nperseg=4096)
+    kept = frequencies >= 20
+    total = float(power[kept].sum())
+    return float((frequencies[kept] * power[kept]).sum() / total) if total > 1e-14 else None
+
+
+def cost(renders, looks, seconds):
+    """What a stretch's sound cost, from the log's [(samples, nanos)] of audio made and [nanos] of looking round the world:
+    shares of one core over ``seconds``, and the slowest single piece of each. Clock time, so a thread the machine set
+    aside half way through counts in full."""
+    if not renders or seconds <= 0:
+        return None
+    samples, spent = sum(n for n, _ in renders), sum(ns for _, ns in renders)
+    return {"sound_core_share": spent / 1e9 / seconds, "ns_per_sample": spent / max(samples, 1),
+            "worst_read_ms": max(ns for _, ns in renders) / 1e6,
+            "looks": len(looks), "look_core_share": sum(looks) / 1e9 / seconds,
+            "worst_look_ms": max(looks) / 1e6 if looks else None}
+
+
+def stacked_seconds(levels):
+    """From the logged (ms, id) of one engine's note: for how long, in all, two or more of them were playing at once."""
+    ticks = defaultdict(set)
+    for t, which in levels:
+        ticks[t // 100].add(which)
+    return sum(1 for ids in ticks.values() if len(ids) > 1) * 0.1
+
+
 # ---------------------------------------------------------------------------------------------------------------------
 # A run
+
+def exact_repeat(mono, excerpts=8):
+    """The closest any of ``excerpts`` stretches of ``mono`` comes to being played again later, 0 to 1: the best normalised
+    correlation of each, at any offset past its own end. A loop scores near 1. None if there is too little to judge."""
+    length = int(REPEAT_SECONDS * RATE)
+    if len(mono) < 4 * length:
+        return None
+    best = None
+    for start in np.linspace(0, len(mono) - 3 * length, excerpts).astype(int):
+        piece = mono[start:start + length] - mono[start:start + length].mean()
+        later = mono[start + length:].astype(float)
+        size = np.sqrt(np.sum(piece ** 2))
+        if size < 1e-4:
+            continue
+        top = signal.fftconvolve(later, piece[::-1], mode="valid")
+        running = np.concatenate([[0.0], np.cumsum(later ** 2)])
+        under = np.sqrt(np.maximum(running[length:] - running[:-length], 0)) * size
+        loud = under > 0.1 * size * size
+        if loud.any():
+            score = float(np.max(top[loud] / under[loud]))
+            best = score if best is None else max(best, score)
+    return best
+
+
+def soak_findings(levels, repeat, references):
+    """What the soak says about the rules for many engines: ``levels`` is each phase's integrated LUFS, ``repeat`` the
+    closest the standing stretch came to repeating, ``references`` the game's other sounds. Returns the figures and the
+    faults."""
+    figures, faults = {}, []
+    alone = levels.get("alone")
+    crowd = [levels[name] for name in CROWD_PHASES if name != "pace" and levels.get(name) is not None]
+    if alone is not None and crowd:
+        figures["over_one_db"] = rounded(max(crowd) - alone)
+        if figures["over_one_db"] > ROOM_LIMIT_DB:
+            faults.append(f"soak: the crowd round the listener is {figures['over_one_db']} dB above one engine from the same "
+                          f"spot (limit {ROOM_LIMIT_DB})")
+    early = levels.get("crowd_early")
+    for name, key in (("crowd_settled", "settled_db"), ("stay", "stayed_db")):
+        if early is not None and levels.get(name) is not None:
+            figures[key] = rounded(levels[name] - early)
+    held = levels.get("crowd_settled")
+    if held is not None and levels.get("stay") is not None and levels["stay"] - held > GROWTH_LIMIT_DB:
+        faults.append(f"soak: the crowd grew {rounded(levels['stay'] - held)} dB louder while it was left alone")
+    if early is not None and held is not None and held - early > GROWTH_LIMIT_DB:
+        faults.append(f"soak: the crowd got {rounded(held - early)} dB louder as it settled")
+    figures["exact_repeat"] = None if repeat is None else rounded(repeat, 3)
+    if repeat is not None and repeat > REPEAT_LIMIT:
+        faults.append(f"soak: a stretch of the crowd was played again almost sample for sample ({repeat:.3f})")
+    others = [v for name, v in references.items() if name != "silence" and v is not None]
+    if others and crowd:
+        figures["over_loudest_other_db"] = rounded(max(crowd) - max(others))
+    return figures, faults
+
 
 def read_wav(path):
     with wave.open(str(path), "rb") as handle:
@@ -380,7 +490,8 @@ def analyse_phase(run, phase, start, end, heard_after):
     stereo = run.clip(start, end, mono=False)
     result = {"seconds": rounded((end - start) / 1000), "lufs": rounded(integrated_lufs(stereo)),
               "momentary": rounded(momentary_lufs(stereo)),
-              "peak_db": rounded(db(np.abs(mono).max())) if len(mono) else None}
+              "peak_db": rounded(db(np.abs(mono).max())) if len(mono) else None,
+              "brightness_hz": rounded(brightness(mono), 0)}
     states = run.between("state", start, end)
     if states:
         result["rpm"] = [rounded(min(s["rpm"] for s in states)), rounded(max(s["rpm"] for s in states))]
@@ -422,7 +533,7 @@ def analyse(run):
             continue
         entry = scenes.setdefault(scene, {"start": start, "end": end, "phases": {}, "marks": []})
         entry["end"] = end
-        if phase not in ("build", "time", "clear"):
+        if phase not in ("build", "time", "assemble", "clear"):
             entry["marks"].append((phase, start, end))
     for entry in scenes.values():
         marks = entry.pop("marks")
@@ -435,13 +546,17 @@ def analyse(run):
         streams = defaultdict(list)
         for event in run.between("read", start, end):
             streams[event["id"]].append((event["t"], event["n"]))
-        dry, least = [], []
+        dry, least, waits = [], [], []
         for reads in streams.values():
+            # The first reads fill the queue, so they say nothing about how a running stream stands
+            waits += queue(reads)[1][6:]
             gone, spare = underruns(reads)
             dry += [[rounded(run.at(t) - run.at(start), 2), rounded(seconds, 3)] for t, seconds in gone]
             if spare is not None:
                 least.append(spare)
         entry["streams"] = {"count": len(streams), "underruns": dry, "least_queued_s": rounded(min(least), 3) if least else None}
+        entry["wait_ms"] = {"median": rounded(1000 * np.median(waits), 0), "p95": rounded(1000 * np.percentile(waits, 95), 0)} \
+            if waits else None
         voices = defaultdict(list)
         for event in run.between("level", start, end):
             voices[(event["voice"], event["id"])].append(event)
@@ -454,6 +569,11 @@ def analyse(run):
             total["worst_db"] = rounded(max(total["worst_db"], loud))
             total["worst_semitones"] = rounded(max(total["worst_semitones"], pitch), 2)
         entry["level_steps"] = steps
+        spent = cost([(e["n"], e["ns"]) for e in run.between("render", start, end)],
+                     [e["ns"] for e in run.between("look", start, end)], (end - start) / 1000)
+        entry["cost"] = None if spent is None else {k: None if v is None else round(float(v), 5) for k, v in spent.items()}
+        entry["notes_stacked_s"] = rounded(stacked_seconds(
+            [(e["t"], e["id"]) for e in run.between("level", start, end) if e["voice"] == "note"]))
     report = {"problems": run.problems, "clap_offsets_ms": [rounded(1000 * o) for _, o in run.claps], "scenes": scenes}
     room = scenes.get("room", {}).get("phases", {})
     if room.get("one", {}).get("lufs") is not None and room.get("sixteen", {}).get("lufs") is not None:
@@ -485,6 +605,22 @@ def analyse(run):
                 left = momentary_lufs(run.clip(start + 2000, end, mono=False))
                 if left is not None and left > SILENCE_LIMIT_LUFS:
                     report["faults"].append(f"the room is still sounding, at {left:.1f} LUFS, after all its engines are gone")
+    # The room of sixteen is meant to have several notes at once; every other scene has one engine
+    for name, entry in scenes.items():
+        if name not in ("room", "soak", "reference") and entry["notes_stacked_s"] > STACKED_SECONDS:
+            report["faults"].append(f"{name}: one engine played two or more notes at once for {entry['notes_stacked_s']} s")
+    soak = scenes.get("soak", {}).get("phases", {})
+    if soak:
+        stay = next(((start, end) for scene, phase, start, end in run.phases if (scene, phase) == ("soak", "stay")), None)
+        others = {name: reference[name].get("lufs") for name in report["references"]}
+        report["soak"], found = soak_findings({name: p.get("lufs") for name, p in soak.items()},
+                                              exact_repeat(run.clip(*stay)) if stay else None, others)
+        report["faults"] += found
+        if stay:
+            heard = len({e["engine"] for e in run.between("firing", *stay)})
+            report["soak"]["engines_firing"] = heard
+            if heard != ROOM_ENGINES:
+                run.problems.append(f"the soak had {heard} engines firing: its levels say nothing about sixteen")
     report["calibration_ms"] = calibration(run)
     if report["calibration_ms"] is not None and abs(report["calibration_ms"]) > CALIBRATION_LIMIT_MS:
         run.problems.append(f"the Mechanical Press, played at once, measured {report['calibration_ms']} ms late: the recording "
@@ -504,6 +640,52 @@ def totals(entry):
 
 def shown(value):
     return "–" if value is None else str(value)
+
+
+def wait_lines(report):
+    waits = {name: entry["wait_ms"] for name, entry in report["scenes"].items() if entry.get("wait_ms")}
+    if not waits:
+        return []
+    lines = ["", "## How late a change is heard", "",
+             "How long audio waits in a stream's queue between being made and being played: a change of throttle or load cannot "
+             "be heard sooner than this after the synthesizer is told. Worked out from the log of the stream's reads, not "
+             "heard. Not in it: the synthesizer's own follow, the sound card's delay, and what the look-ahead wins back.", "",
+             "| Scene | Median ms | 95th percentile ms |", "|---|---|---|"]
+    return lines + [f"| {name} | {w['median']} | {w['p95']} |" for name, w in waits.items()]
+
+
+def cost_lines(report):
+    spent = {name: entry["cost"] for name, entry in report["scenes"].items() if entry.get("cost")}
+    if not spent:
+        return []
+    lines = ["", "## What the sound costs", "",
+             f"The sound thread's budget is {100 * CPU_LIMIT_SHARE:.0f}% of one core. Averaged over each whole scene, by the "
+             "clock, so time the thread was set aside counts too. The note streams and the room voice only: the game's own "
+             "mixing is not in it. `Looking` is the game thread feeling for walls and rooms.", "",
+             "| Scene | Sound thread | ns a sample | Slowest read ms | Looking | Slowest look ms |", "|---|---|---|---|---|---|"]
+    for name, c in spent.items():
+        over = " **over**" if c["sound_core_share"] > CPU_LIMIT_SHARE else ""
+        worst = "–" if c["worst_look_ms"] is None else f"{c['worst_look_ms']:.3f}"
+        lines.append(f"| {name} | {100 * c['sound_core_share']:.2f}%{over} | {c['ns_per_sample']:.0f} | "
+                     f"{c['worst_read_ms']:.2f} | {100 * c['look_core_share']:.3f}% | {worst} |")
+    return lines
+
+
+def place_lines(report):
+    lines = []
+    for name, order in PLACE_SCENES.items():
+        phases = report["scenes"].get(name, {}).get("phases", {})
+        first = phases.get(order[0], {})
+        if not first:
+            continue
+        lines += ["", f"## {name.capitalize()}: against `{order[0]}`", "",
+                  "| Phase | LUFS | Change dB | Brightness Hz |", "|---|---|---|---|"]
+        for phase in order:
+            p = phases.get(phase)
+            if p:
+                change = None if p["lufs"] is None or first["lufs"] is None else rounded(p["lufs"] - first["lufs"])
+                lines.append(f"| {phase} | {shown(p['lufs'])} | {shown(change)} | {shown(p.get('brightness_hz'))} |")
+    return lines
 
 
 def markdown(report, old=None):
@@ -542,6 +724,16 @@ def markdown(report, old=None):
                   f"{room.get('engines_firing', '?')} engines firing, {room['over_one_db']} dB above one of them "
                   f"(limit {room['limit_db']} dB): "
                   + ("within." if room["within"] else "**over the limit.**")]
+    if "soak" in report:
+        soak = report["soak"]
+        lines += ["", "## The soak among sixteen", "",
+                  f"{soak.get('engines_firing', '?')} engines firing, the listener standing among them. Against one of them "
+                  f"alone from the same spot: {shown(soak.get('over_one_db'))} dB (limit {ROOM_LIMIT_DB}). Against the crowd as "
+                  f"it came up: settled {shown(soak.get('settled_db'))} dB, after pacing through it and standing again "
+                  f"{shown(soak.get('stayed_db'))} dB. Closest any second came to being played again: "
+                  f"{shown(soak.get('exact_repeat'))} (limit {REPEAT_LIMIT}). Against the loudest of the game's other sounds, "
+                  f"each from 6 blocks: {shown(soak.get('over_loudest_other_db'))} dB."]
+    lines += wait_lines(report) + cost_lines(report) + place_lines(report)
     lines += ["", "## Each phase", ""]
     for name, entry in report["scenes"].items():
         if name == "reference":
@@ -695,6 +887,40 @@ def self_test():
         take = random.standard_normal(RATE // 10) * 0.1
         varied[int(at * RATE):int(at * RATE) + len(take)] += take
     assert max(alikeness(varied, [0.5, 1.0, 1.5, 2.0])) < 0.5, "different takes are not"
+
+    # Reads a chunk apart in step with playing keep the same audio waiting; four read at once leave three ahead of the next
+    steady_reads = [(0, chunk)] * 4 + [(100 * i, chunk) for i in range(1, 30)]
+    waiting = queue(steady_reads)[1]
+    assert abs(float(np.median(waiting[6:])) - 0.3) < 0.01, waiting
+
+    noise = np.random.default_rng(7).standard_normal(6 * RATE)
+    dull = signal.sosfilt(signal.butter(4, 800, fs=RATE, output="sos"), noise)
+    assert brightness(dull) < 0.2 * brightness(noise), "less top is less bright"
+    assert brightness(np.zeros(RATE)) is None
+
+    spent = cost([(1600, 2_000_000)] * 20, [100_000, 300_000], 1.0)
+    assert abs(spent["sound_core_share"] - 0.04) < 1e-9 and spent["ns_per_sample"] == 1250, spent
+    assert spent["worst_look_ms"] == 0.3 and spent["looks"] == 2, spent
+    assert cost([], [], 1.0) is None
+
+    random = np.random.default_rng(11)
+    fresh = random.standard_normal(12 * RATE) * 0.1
+    assert exact_repeat(fresh) < 0.2, "noise never repeats"
+    loop = np.tile(random.standard_normal(int(2.7 * RATE)) * 0.1, 5)
+    assert exact_repeat(loop) > 0.99, "a loop repeats"
+    assert exact_repeat(fresh[:RATE]) is None, "too short to judge"
+    fine = {"alone": -40.0, "crowd_early": -35.0, "crowd_waiting": -36.0, "crowd_settled": -37.0, "pace": -33.0,
+            "stay": -37.0}
+    figures, faults = soak_findings(fine, 0.5, {"silence": -100.0, "minecart": -30.0})
+    assert faults == [] and figures["over_one_db"] == 5.0 and figures["settled_db"] == -2.0, (figures, faults)
+    assert figures["over_loudest_other_db"] == -5.0, figures
+    assert len(soak_findings({**fine, "crowd_early": -34.2}, 0.5, {})[1]) == 0, "settling down is no fault"
+    assert len(soak_findings({**fine, "alone": -43.0}, 0.5, {})[1]) == 1, "over the ceiling"
+    assert len(soak_findings({**fine, "stay": -35.0}, 0.5, {})[1]) == 1, "grew while left alone"
+    assert len(soak_findings(fine, 0.995, {})[1]) == 1, "a loop is a fault"
+
+    assert stacked_seconds([(50 * i, 1) for i in range(100)]) == 0, "one note"
+    assert stacked_seconds([(50 * i, which) for i in range(100) for which in (1, 2)]) > 4.9, "two at once"
 
     # A whole made-up run through the same path as a real one, with the recording starting 0.3 s off what the log says
     import tempfile

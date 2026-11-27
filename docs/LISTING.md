@@ -176,7 +176,7 @@ The guides are in the repository: [PACKS.md](https://github.com/R-unic/create-en
 
 ## 🧩 For addon authors
 
-A public API under its own version (1.1.0, frozen at 2.0): read any engine (`EngineApi.viewAt`), listen to its state changes
+A public API under its own version, frozen at 2.0: read any engine (`EngineApi.viewAt`), listen to its state changes
 and milestones, and register an `EngineSourceProvider` with a `TorqueSource` to put another kind of engine on a crankshaft,
 with boost, goggle lines and blueprint support. A working example is built and tested with the mod. See
 [ADDONS.md](https://github.com/R-unic/create-engines/blob/master/docs/ADDONS.md) and
@@ -224,9 +224,11 @@ that changes how an existing engine behaves says so in its changelog. More on
 
 ## Changelog for 2.4.0
 
-Unreleased; being written as 2.4 "Running Hot" is built. So far: the second part of the wear mode, two new connecting rods, fixes, new gasket
-recipes, and less work for a server. Three new item IDs (`incomplete_copper_gasket`, `light_connecting_rod`, `heavy_connecting_rod`); no ID,
-key or saved format is renamed or removed. Changes to existing builds are listed first.
+Unreleased; being written as 2.4 "Running Hot" is built. So far: heat that follows work, overheating and a Radiator, the second part of the
+wear mode, two new connecting rods, a rework of the engine sound, fixes, new gasket recipes, and less work for a server. New IDs: a block
+(`radiator`), three items (`incomplete_copper_gasket`, `light_connecting_rod`, `heavy_connecting_rod`), a data component
+(`create_engines:failed`) and sound events (`engine_catch_hard`, `engine_stall_lugged`, `engine_stall_starved`, `engine_settle`,
+`exhaust_spit`, `head_warp`, `turbo_fail`). No ID, key or saved format is renamed or removed. Changes to existing builds are listed first.
 - New server setting, `balance.rpmScale` (1 by default, 0.25 to 8): turns every engine's shaft that many times as fast with its SU per RPM
   divided to match, so the same engine gives the same total SU on the same fuel, at 2 reaching at 512 RPM what it gave at 256. Above 1 it
   needs Create's `maxRotationSpeed` raised to match, and goes no further than that limit divided by 256, so at Create's default it does
@@ -301,6 +303,16 @@ key or saved format is renamed or removed. Changes to existing builds are listed
 - Fix: the shared sound of many engines could play on, heard from anywhere, after all its engines had stopped or unloaded.
 - Fix: on a Create Aeronautics (Sable) moving structure, an engine's note, loops and starter were started again on top of
   themselves every second or two, piling up until the game ran out of sound channels.
+- Changed, the turbo and supercharger sounds:
+  - A turbo's whistle is a new breathy tone that keeps its bright, airy top, and climbs further as the wheel spools:
+    more than an octave from a slow wheel to full speed.
+  - A supercharger's whine is lower, rounder and quieter: a soft singing tone that follows its shaft, with a low thrum
+    and the whir of air under it.
+  - The blow-off valve is now all air, with none of the old thump: a full rush that flutters softly and slows down. There
+    are three takes, each fluttering at its own rate, with a little whine under them that falls as the wheel runs down.
+    The wastegate's chuff is made from them too.
+  - Many turbos venting together no longer add up to a roar: of those close together in place and time, the first is
+    heard in full, the next two more softly and the rest not at all. Every one is still seen to vent.
 - Changed, big engines are deeper. A V8 rumbles: each exhaust has a low boom that carries from one firing to the next,
   a crossplane's uneven banks burble harder, and its crack is softer. Every engine of two or more cylinders is voiced
   lower than before, since more cylinders no longer make each one sound much smaller.

@@ -371,7 +371,7 @@ public final class CylinderModel implements Breather {
 
 	@Override
 	public double inertia() {
-		return spec.inertia();
+		return wear == Wear.NONE ? spec.inertia() : spec.inertia() * wear.mass();
 	}
 
 	@Override

@@ -4,6 +4,7 @@ import java.util.IdentityHashMap;
 import java.util.Map;
 
 import com.createengines.content.LoopSanity;
+import com.createengines.content.MachineLoopSound;
 import com.createengines.content.VoiceClock;
 import com.createengines.registry.CESounds;
 
@@ -66,10 +67,10 @@ public final class StarterWhirSound extends AbstractTickableSoundInstance {
 		long now = minecraft.level.getGameTime();
 		StarterWhirSound current = PLAYING.get(starter);
 		// A new instance gets a moment to start; one the sound engine declined is only tried again after that
-		if (current != null && (!VoiceClock.settled(now, current.startedAt) || !current.isStopped() && sounds.isActive(current)))
+		if (current != null && (!VoiceClock.settled(now, current.startedAt) || !current.isStopped() && MachineLoopSound.stillPlaying(sounds, current)))
 			return;
 		PLAYING.values()
-			.removeIf(whir -> VoiceClock.settled(now, whir.startedAt) && (whir.isStopped() || !sounds.isActive(whir)));
+			.removeIf(whir -> VoiceClock.settled(now, whir.startedAt) && (whir.isStopped() || !MachineLoopSound.stillPlaying(sounds, whir)));
 		StarterWhirSound whir = new StarterWhirSound(starter, now);
 		PLAYING.put(starter, whir);
 		sounds.play(whir);

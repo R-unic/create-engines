@@ -151,11 +151,23 @@ public record EngineLayout(BlockPos primary, Axis axis, List<Segment> segments, 
 	 *                      other branches; any other is in series, and all of the flow goes through it
 	 * @param mufflers      mufflers in an exhaust line, which quiet what the engine sounds like
 	 * @param traps         soot traps in an exhaust line, which catch the soot of a rich engine
+	 * @param run           how many blocks the gas goes through from a head to the nearest opening, the opening included,
+	 *                      averaged over the heads: how long a run it is, which sets how its exhaust rings (only the sound)
 	 */
 	public record PortNetwork(PortKind kind, int openings, int flooded, int heads, List<BlockPos> outlets,
 							  List<BlockPos> throttles, List<BlockPos> sensors, List<BlockPos> turbos,
 							  List<BlockPos> superchargers, List<BlockPos> intercoolers, Set<BlockPos> parallel,
-							  List<BlockPos> mufflers, List<BlockPos> traps) {
+							  List<BlockPos> mufflers, List<BlockPos> traps, int run) {
+
+		/** A line whose length nobody measured: as long as its openings. */
+		public PortNetwork(PortKind kind, int openings, int flooded, int heads, List<BlockPos> outlets,
+						   List<BlockPos> throttles, List<BlockPos> sensors, List<BlockPos> turbos,
+						   List<BlockPos> superchargers, List<BlockPos> intercoolers, Set<BlockPos> parallel,
+						   List<BlockPos> mufflers, List<BlockPos> traps) {
+			this(kind, openings, flooded, heads, outlets, throttles, sensors, turbos, superchargers, intercoolers, parallel, mufflers,
+				traps, Math.max(1, outlets.size()));
+		}
+
 		/** Share of full breathing each head gets: diminishing returns per opening, crowded openings worth half ({@link PortFlow}). */
 		public double flowFactor() {
 			if (openings == 0 || heads == 0)

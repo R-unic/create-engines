@@ -147,6 +147,17 @@ neoForge {
             systemProperty 'create_engines.visualSmokeTest.sound.scenes', project.findProperty('soundScenes') ?: ''
         }
 
+        // The sound bench's moving-structure scene (tools/sound_bench.py --moving): the same harness with Create Aeronautics
+        // and Sable loaded, in a game folder of its own; its mods folder is filled by the run task
+        soundBenchAeronautics {
+            client()
+            gameDirectory = file('run/sound-bench-aeronautics')
+            systemProperty 'neoforge.enabledGameTestNamespaces', project.mod_id
+            systemProperty 'create_engines.visualSmokeTest', 'true'
+            systemProperty 'create_engines.visualSmokeTest.sound', 'true'
+            systemProperty 'create_engines.visualSmokeTest.sound.scenes', 'moving'
+        }
+
         // The unattended client audit (see docs/SMOKE.md): content, models, Ponder, a running fleet, leaks, pictures.
         // Runs in a game folder of its own, so it starts from default settings and never touches a development client's.
         smokeAudit {
@@ -430,6 +441,8 @@ dependencies {
     testImplementation('org.junit.jupiter:junit-jupiter')
     testRuntimeOnly('org.junit.platform:junit-platform-launcher')
     testImplementation('com.google.code.gson:gson:2.10.1')
+    // The game's own Vorbis decoder, so SoundAssetsTest can look at the recordings' samples
+    testImplementation('org.jcraft:jorbis:0.0.17')
 }
 
 tasks.named('test', Test) {
@@ -633,7 +646,8 @@ tasks.matching { it.name == 'runShowcaseShaders' }.configureEach {
 
 // The showcase with Aeronautics loaded: its jars go in the game folder's mods folder, as in the rows above
 def aeroShowcaseMods = configurations.getByName('aeronauticsRuntime').incoming.files
-['runShowcaseAeronautics': 'run/showcase-aeronautics', 'runClientAeronautics': 'run/client-aeronautics'].each { taskName, dir ->
+['runShowcaseAeronautics': 'run/showcase-aeronautics', 'runClientAeronautics': 'run/client-aeronautics',
+        'runSoundBenchAeronautics': 'run/sound-bench-aeronautics'].each { taskName, dir ->
     def gameDir = file(dir)
     tasks.matching { it.name == taskName }.configureEach {
         doFirst {

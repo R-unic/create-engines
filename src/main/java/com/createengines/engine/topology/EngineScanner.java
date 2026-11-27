@@ -767,6 +767,46 @@ public final class EngineScanner {
 		return new Trace(visited, openings, heads);
 	}
 
+	/**
+	 * How many blocks the gas goes through between a head and the nearest opening, the opening included, averaged over the
+	 * heads: how long the run sounds. Worked back from the openings through the pipes of the trace. A head with an opening
+	 * on it, or one the pipes do not reach, is left out; with none left the run is one block.
+	 */
+	private static int runLength(Set<BlockPos> ducts, Set<BlockPos> openings, Set<BlockPos> heads) {
+		Map<BlockPos, Integer> distance = new HashMap<>();
+		Deque<BlockPos> queue = new ArrayDeque<>();
+		for (BlockPos opening : openings) {
+			distance.put(opening, 1);
+			queue.add(opening);
+		}
+		while (!queue.isEmpty()) {
+			BlockPos from = queue.poll();
+			for (Direction direction : Direction.values()) {
+				BlockPos next = from.relative(direction);
+				if (!ducts.contains(next) || distance.containsKey(next))
+					continue;
+				distance.put(next, distance.get(from) + 1);
+				queue.add(next);
+			}
+		}
+		int total = 0;
+		int counted = 0;
+		for (BlockPos head : heads) {
+			int nearest = Integer.MAX_VALUE;
+			for (Direction direction : Direction.values()) {
+				BlockPos beside = head.relative(direction);
+				Integer steps = ducts.contains(beside) ? distance.get(beside) : null;
+				if (steps != null)
+					nearest = Math.min(nearest, steps);
+			}
+			if (nearest != Integer.MAX_VALUE) {
+				total += nearest;
+				counted++;
+			}
+		}
+		return counted == 0 ? 1 : Math.round(total / (float) counted);
+	}
+
 	private int portNetwork(BlockPos start, PortKind kind) {
 		Map<BlockPos, Integer> index = portIndex.computeIfAbsent(kind, $ -> new HashMap<>());
 		Integer known = index.get(start);
@@ -824,7 +864,7 @@ public final class EngineScanner {
 		int number = ports.size();
 		ports.add(new PortNetwork(kind, open, flooded, Math.max(1, heads.size()), List.copyOf(openings), List.copyOf(throttles), List.copyOf(sensors),
 			List.copyOf(turbos), List.copyOf(superchargers), List.copyOf(intercoolers), Set.copyOf(parallel),
-			List.copyOf(mufflers), List.copyOf(traps)));
+			List.copyOf(mufflers), List.copyOf(traps), runLength(visited, openings, heads)));
 		for (BlockPos pos : visited) {
 			index.put(pos, number);
 			members.add(pos);

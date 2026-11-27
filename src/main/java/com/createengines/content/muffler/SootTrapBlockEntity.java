@@ -55,7 +55,8 @@ public class SootTrapBlockEntity extends SmartBlockEntity implements IHaveGoggle
 		if (collector.stored() != before) {
 			if (level != null && !level.isClientSide && collector.stored() > before)
 				level.playSound(null, worldPosition, com.createengines.registry.CESounds.SOOT_CATCH.get(),
-					net.minecraft.sounds.SoundSource.BLOCKS, 0.35f, 0.9f + level.random.nextFloat() * 0.2f);
+					net.minecraft.sounds.SoundSource.BLOCKS, 0.35f,
+					com.createengines.content.effects.Pitches.near(1, level.random.nextFloat()));
 			setChanged();
 			if (collector.stored() != sentStored) {
 				sentStored = collector.stored();

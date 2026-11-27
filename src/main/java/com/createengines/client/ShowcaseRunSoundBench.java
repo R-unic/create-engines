@@ -14,6 +14,7 @@ import java.util.function.IntConsumer;
 import java.util.stream.Collectors;
 
 import com.createengines.CreateEngines;
+import com.createengines.compat.sable.SableCompat;
 import com.createengines.content.SoundProbe;
 import com.createengines.content.airflow.ManifoldBlock;
 import com.createengines.content.airflow.PortOpeningBlock;
@@ -61,8 +62,9 @@ import net.neoforged.neoforge.fluids.capability.IFluidHandler.FluidAction;
 /**
  * The sound bench (gradle {@code -PsmokeSound}, run by tools/sound_bench.py, which records the speakers): reference engines
  * one at a time, each heard from the same distance through the same script (start, idle, throttle sweep, blip, load step,
- * stall, restart, a walk away and back), then a room of sixteen, then vanilla and Create sounds from that distance to
- * compare levels with. Everything that happens is logged with its time, for tools/sound_audit.py. Named like the showcase
+ * stall, restart, a walk away and back), then vanilla and Create sounds from that distance to compare levels with, one
+ * engine behind walls and indoors ({@link ShowcaseRunSoundBenchPlaces}) and a room of sixteen. With Create Aeronautics
+ * loaded it can instead carry an engine past the listener on a moving structure. Everything that happens is logged with its time, for tools/sound_audit.py. Named like the showcase
  * so the release jar leaves it out (build.gradle).
  * <p>
  * {@code -PsoundScenes=single,v12} runs only those scenes.
@@ -78,7 +80,7 @@ public final class ShowcaseRunSoundBench {
 	/** Between pads: far past anything heard from the one before. */
 	private static final int BAY = 160;
 	/** Idle stop of each throttle body, in its dial's steps of 5%: its default, and wide open. */
-	private static final int IDLE = ThrottleBlockEntity.DEFAULT_IDLE;
+	static final int IDLE = ThrottleBlockEntity.DEFAULT_IDLE;
 	private static final int OPEN = ThrottleBlockEntity.MAX_IDLE;
 	/** Mechanical Presses the load step's clutch engages on a banked engine, and on a small one that four would overstress. */
 	private static final int PRESSES = 4;
@@ -96,7 +98,7 @@ public final class ShowcaseRunSoundBench {
 	 * crank line, {@code loadX} the first free block past the crank's far end, and {@code length} how far the pad reaches
 	 * along X. A null {@code style} leaves the engine timed as built.
 	 */
-	private record Rig(String id, String title, Builder builder, BlockPos crank, BlockPos starterPower, int loadX,
+	record Rig(String id, String title, Builder builder, BlockPos crank, BlockPos starterPower, int loadX,
 		int length, FiringPlanner.Style style, int idle, int presses) {
 
 		Rig idlingAt(int steps) {
@@ -224,6 +226,10 @@ public final class ShowcaseRunSoundBench {
 		if (only.isEmpty() || only.contains("reference"))
 			referenceScene(bay);
 		bay++;
+		bay = ShowcaseRunSoundBenchPlaces.schedule(only, bay, rigs().get(1));
+		if (only.isEmpty() || only.contains("soak"))
+			ShowcaseRunSoundBenchSoak.schedule(bay);
+		bay++;
 		// Last of all: whatever the room leaves sounding must not get into any other scene
 		if (only.isEmpty() || only.contains("room"))
 			roomScene(bay);
@@ -233,7 +239,12 @@ public final class ShowcaseRunSoundBench {
 			.stop());
 	}
 
-	private static void step(String scene, String name, int ticks, Runnable enter) {
+	/** A script stretch in which {@code tick} is told how far in it is. */
+	static void during(String scene, String name, int ticks, IntConsumer tick) {
+		PHASES.add(new Phase(scene, name, ticks, ticks, null, tick, null));
+	}
+
+	static void step(String scene, String name, int ticks, Runnable enter) {
 		PHASES.add(new Phase(scene, name, ticks, ticks, enter, null, null));
 	}
 
@@ -247,14 +258,14 @@ public final class ShowcaseRunSoundBench {
 		});
 	}
 
-	private static void engineScene(Rig each, int bay) {
-		String id = each.id();
+	/** Builds, times and starts {@code each} on the pad in {@code bay}, with the listener {@code distance} blocks off. */
+	static void startedEngine(String id, Rig each, int bay, int distance) {
 		step(id, "build", 60, () -> {
 			rig = each;
 			pad = origin.offset(bay * BAY, 0, 0);
 			INTAKES.clear();
 			listenAt(pad.getX() + each.length() / 2.0 - 1, pad.getZ() + each.crank()
-				.getZ() + 0.5 - LISTEN);
+				.getZ() + 0.5 - distance);
 			teleport();
 			onServer((level, player) -> {
 				// What the Bank Builder lays only if its holder carries it: the cam line and the plugs
@@ -277,6 +288,11 @@ public final class ShowcaseRunSoundBench {
 				onServer((level, player) -> TimingToolItem.apply(level, pad.offset(each.crank()), each.style()));
 		}, null));
 		start(id, "start");
+	}
+
+	private static void engineScene(Rig each, int bay) {
+		String id = each.id();
+		startedEngine(id, each, bay, LISTEN);
 		step(id, "idle", 160, null);
 		PHASES.add(new Phase(id, "sweep", 240, 240, null, t -> {
 			if (t % 4 == 0) {
@@ -316,9 +332,14 @@ public final class ShowcaseRunSoundBench {
 		step(id, "restarted", 100, null);
 		walk(id, "walk_away", LISTEN, WALK_TO);
 		walk(id, "walk_back", WALK_TO, LISTEN);
+		clearScene(id);
+	}
+
+	/** Takes the pad's engine away. */
+	static void clearScene(String id) {
 		step(id, "clear", 40, () -> {
 			BlockPos corner = pad;
-			int length = each.length();
+			int length = rig.length();
 			rig = null;
 			onServer((level, player) -> clear(level, corner, length));
 		});
@@ -380,20 +401,34 @@ public final class ShowcaseRunSoundBench {
 				level.removeBlock(corner.offset(TestEngine.STARTER_POWER), false);
 		}));
 		step("room", "sixteen", 600, null);
-		step("room", "clear", 40, () -> {
-			BlockPos corner = pad;
-			rig = null;
-			onServer((level, player) -> {
-				for (BlockPos x = corner; x.getX() <= corner.getX() + 36; x = x.east(8))
-					for (int z = 0; z <= 18; z += 6)
-						clear(level, x.south(z), 8);
-			});
-		});
+		step("room", "clear", 40, ShowcaseRunSoundBench::clearRoom);
 		// With every engine removed there must be nothing left to hear
 		step("room", "gone", 140, null);
 	}
 
-	private static List<BlockPos> roomCorners() {
+	/** Takes a room of sixteen away. */
+	static void clearRoom() {
+		BlockPos corner = pad;
+		rig = null;
+		onServer((level, player) -> {
+			for (BlockPos x = corner; x.getX() <= corner.getX() + 36; x = x.east(8))
+				for (int z = 0; z <= 18; z += 6)
+					clear(level, x.south(z), 8);
+		});
+	}
+
+	/** Makes {@code bay} the pad under test, with {@code of} the engine the log follows. */
+	static void useBay(Rig of, int bay) {
+		rig = of;
+		pad = origin.offset(bay * BAY, 0, 0);
+	}
+
+	/** Waits for the room's engine at {@code offset} from the pad to be running. */
+	static void startedRoomEngine(String scene, String name, BlockPos offset) {
+		PHASES.add(new Phase(scene, name, 80, 400, null, null, () -> ticksRunning(pad.offset(offset))));
+	}
+
+	static List<BlockPos> roomCorners() {
 		List<BlockPos> corners = new ArrayList<>();
 		for (int row = 0; row < 4; row++)
 			for (int column = 0; column < 4; column++)
@@ -436,7 +471,7 @@ public final class ShowcaseRunSoundBench {
 	// -----------------------------------------------------------------------------------------------------------------
 	// The world
 
-	private static List<BlockPos> blocks(BlockPos corner, int length) {
+	static List<BlockPos> blocks(BlockPos corner, int length) {
 		List<BlockPos> all = new ArrayList<>();
 		for (BlockPos pos : BlockPos.betweenClosed(corner.offset(-3, 0, CZ - 7), corner.offset(length, CY + 5, CZ + 6)))
 			all.add(pos.immutable());
@@ -475,7 +510,7 @@ public final class ShowcaseRunSoundBench {
 	}
 
 	/** Keeps every head and rotor housing on the pad full of its fuel and of oil. */
-	private static void fuel(ServerLevel level) {
+	static void fuel(ServerLevel level) {
 		if (rig == null)
 			return;
 		if (rig.id()
@@ -506,7 +541,13 @@ public final class ShowcaseRunSoundBench {
 			.getSource(), CylinderHeadBlockEntity.CAPACITY), FluidAction.EXECUTE);
 	}
 
-	private static void onServer(java.util.function.BiConsumer<ServerLevel, ServerPlayer> action) {
+	/** Marks the run as one not to be trusted. */
+	static void failed(String why) {
+		CreateEngines.LOGGER.error("SOUNDBENCH FAIL {}", why);
+		log.event("fail", "");
+	}
+
+	static void onServer(java.util.function.BiConsumer<ServerLevel, ServerPlayer> action) {
 		VisualSmokeTest.server(server -> {
 			try {
 				action.accept(server.overworld(), server.getPlayerList()
@@ -522,12 +563,12 @@ public final class ShowcaseRunSoundBench {
 	// -----------------------------------------------------------------------------------------------------------------
 	// The listener
 
-	private static void listenAt(double x, double z) {
+	static void listenAt(double x, double z) {
 		feet = new Vec3(x, pad.getY() + CY - 0.6, z);
 		yaw = 0;
 	}
 
-	private static void teleport() {
+	static void teleport() {
 		Vec3 to = feet;
 		VisualSmokeTest.server(server -> VisualSmokeTest.command(server, String.format(Locale.ROOT,
 			"tp @a %.2f %.2f %.2f %.1f %.1f", to.x, to.y, to.z, yaw, pitch)));
@@ -541,6 +582,16 @@ public final class ShowcaseRunSoundBench {
 		minecraft.player.getAbilities().flying = true;
 		minecraft.player.setDeltaMovement(Vec3.ZERO);
 		minecraft.player.moveTo(feet.x, feet.y, feet.z, yaw, pitch);
+	}
+
+	/** The corner of the pad under test: where {@link Rig}'s positions count from. */
+	static BlockPos pad() {
+		return pad;
+	}
+
+	/** The engine under test has been moved, its blocks keeping their places beside each other: its corner is now here. */
+	static void movedTo(BlockPos corner) {
+		pad = corner;
 	}
 
 	private static EngineSummary summary() {
@@ -572,7 +623,8 @@ public final class ShowcaseRunSoundBench {
 			",\"engine\":\"%d %d %d\",\"state\":\"%s\",\"rpm\":%.1f,\"load\":%.1f,\"available\":%.1f,\"cylinders\":%d,"
 				+ "\"firing\":%d,\"distance\":%.1f,\"health\":\"%s\",\"cause\":\"%s\"",
 			at.getX(), at.getY(), at.getZ(), now.state(), Math.abs(now.rpm()), now.loadTorque(), now.availableTorque(),
-			now.cylinders(), now.firing(), feet.distanceTo(Vec3.atCenterOf(at)), now.health(), now.cause()));
+			now.cylinders(), now.firing(), feet.distanceTo(SableCompat.worldPosition(Minecraft.getInstance().level, at)),
+			now.health(), now.cause()));
 	}
 
 	// -----------------------------------------------------------------------------------------------------------------

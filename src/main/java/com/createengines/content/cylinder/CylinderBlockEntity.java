@@ -97,7 +97,7 @@ public class CylinderBlockEntity extends SmartBlockEntity implements IHaveGoggle
 		return rodKind;
 	}
 
-	/** A rod of this kind is in: the engine is rebuilt, since the kind changes how the cylinder drags with the wear mode on or off. */
+	/** A rod of this kind is in: the engine is rebuilt, since the kind changes how the cylinder drags and weighs with the wear mode on or off. */
 	public void setRodKind(Wear.Rod kind) {
 		if (rodKind == kind)
 			return;
@@ -353,6 +353,8 @@ public class CylinderBlockEntity extends SmartBlockEntity implements IHaveGoggle
 	private void tickClient() {
 		wearEffects();
 		CylinderStatus current = status;
+		if (current != null)
+			EngineNoteSound.reportOpenings(current);
 		if (current != null && ((level.getGameTime() + worldPosition.asLong()) & 3) == 0) {
 			CrankshaftBlockEntity crank = crankThrow();
 			EngineEffects.heat(level, worldPosition.relative(getBlockState().getValue(CylinderBlock.FACING)),
@@ -388,7 +390,9 @@ public class CylinderBlockEntity extends SmartBlockEntity implements IHaveGoggle
 			EngineEffects.submerged(level, level.random.nextBoolean() ? worldPosition : head);
 		}
 		boolean fired = current.result() == CycleResult.FIRED;
-		if (fired && crosses(previous, travelled, FIRING_CYCLE_ANGLE)) {
+		// Looked at once a tick, so a mark is seen up to a tick after the cam passes it: looking half a tick's travel ahead
+		// puts the flash within half a tick either side of the firing the note plays, not always behind it
+		if (fired && crosses(previous, travelled, ahead(FIRING_CYCLE_ANGLE, lobe.getTheoreticalSpeed()))) {
 			probeFiring();
 			ignite();
 		}
@@ -469,7 +473,7 @@ public class CylinderBlockEntity extends SmartBlockEntity implements IHaveGoggle
 		float volume = CEClientConfig.mechanicalVolume();
 		if (volume > 0 && level.random.nextFloat() < ExhaustLook.knockPing(current.preignition(), cylinders))
 			level.playLocalSound(worldPosition, CESounds.PREIGNITION_KNOCK.get(), SoundSource.BLOCKS, 0.5f * volume,
-				1.45f + level.random.nextFloat() * 0.2f, false);
+				com.createengines.content.effects.Pitches.near(1.55f, level.random.nextFloat()), false);
 	}
 
 	private void ignite() {
@@ -483,13 +487,14 @@ public class CylinderBlockEntity extends SmartBlockEntity implements IHaveGoggle
 		EngineSummary engine = throwBlock == null ? null : throwBlock.engineSummary();
 		knockPing(engine == null ? 1 : engine.cylinders());
 		float volume = CEClientConfig.bangVolume() * Muffling.volume(engine == null ? 0 : engine.muffling());
-		// With the engine's own exhaust note playing, the bang is in the note: it comes from the same firing, so it lands
-		// with it, which a sample played from here a few tenths of a second ahead of the stream never would
+		// With the engine heard through its own exhaust note, or the shared voice of the engines past the nearest few, the bang
+		// is in the note: it comes from the same firing, so it lands with it, which a sample played from here a few tenths of a
+		// second ahead of the stream never would. With the note turned off the bang is back at full
 		boolean inTheNote = throwBlock != null && throwBlock.primaryPos() != null
-			&& EngineNoteSound.isPlayingFor(throwBlock.primaryPos());
+			&& EngineNoteSound.heard(throwBlock.primaryPos());
 		if (volume > 0 && !inTheNote)
 			level.playLocalSound(worldPosition, CESounds.CYLINDER_FIRE.get(), SoundSource.BLOCKS, volume,
-				0.92f + random.nextFloat() * 0.16f, false);
+				com.createengines.content.effects.Pitches.near(1, random.nextFloat()), false);
 		// Photosensitive mode: the bang is heard, but the flash it comes with is left out
 		if (!CEClientConfig.particles() || CEClientConfig.photosensitive())
 			return;
@@ -661,6 +666,12 @@ public class CylinderBlockEntity extends SmartBlockEntity implements IHaveGoggle
 	}
 
 	/** Whether a cam-cycle angle advancing from {@code from} by {@code travelled} passes {@code mark}. */
+	/** The cycle angle half a game tick before {@code mark}, for a cam turning at {@code camRpm}, at most half a stroke. */
+	private static double ahead(double mark, float camRpm) {
+		// A cam turns camRpm * 0.3 degrees a tick, and the cycle twice that
+		return (mark - Math.min(90, Math.abs(camRpm) * 0.3) + 720) % 720;
+	}
+
 	private static boolean crosses(double from, double travelled, double mark) {
 		double ahead = (mark - from + 720) % 720;
 		return ahead > 0 && ahead <= travelled;
@@ -804,6 +815,9 @@ public class CylinderBlockEntity extends SmartBlockEntity implements IHaveGoggle
 				.style(ChatFormatting.DARK_GRAY), tooltip, 1);
 		}
 
+		if (current != null && current.fuelCut())
+			GoggleLines.add(CELang.translate("goggles.fuel_cut")
+				.style(ChatFormatting.GOLD), tooltip, 1);
 		for (CylinderFault fault : CylinderFault.values())
 			if (fault.in(faults))
 				GoggleLines.add(CELang.translate(fault.langKey())
@@ -816,7 +830,7 @@ public class CylinderBlockEntity extends SmartBlockEntity implements IHaveGoggle
 				.style(ChatFormatting.RED), tooltip, 1);
 		wearLine(tooltip, "goggles.wear.piston",state.getValue(CylinderBlock.HAS_PISTON), pistonWear, isPlayerSneaking);
 		wearLine(tooltip, "goggles.wear.rod", state.getValue(CylinderBlock.HAS_ROD), rodWear, isPlayerSneaking);
-		// Which rod is in matters with the wear mode on or off, as it drags its own way either way
+		// Which rod is in matters with the wear mode on or off, as it drags and weighs its own way either way
 		if (state.getValue(CylinderBlock.HAS_ROD) && rodKind != Wear.Rod.STANDARD)
 			GoggleLines.add(CELang.translate("goggles.wear.rod." + rodKind.name().toLowerCase(java.util.Locale.ROOT))
 				.style(ChatFormatting.AQUA), tooltip, 1);

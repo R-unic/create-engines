@@ -289,6 +289,23 @@ def rod():
     textures = {"rod": IRON, "particle": IRON}
     write("cylinder/rod", textures, rod_elements(-1.5, 12.75, 1, 13))
     write("cylinder/rod_item", textures, rod_elements(0, 13, 1, 15))
+    # The light and heavy rods, slimmer in brass and stouter in steel: first as fitted in a cylinder, then as items
+    write("cylinder/light_rod", {"rod": BRASS, "particle": BRASS},
+          [box((7.25, 1, 7.25), (8.75, 13, 8.75), "rod"),
+           box((6.75, -1.25, 6.5), (9.25, 1.25, 9.5), "rod"),
+           box((7, 12.75, 6.75), (9, 14.75, 9.25), "rod")])
+    write("cylinder/heavy_rod", {"rod": IRON_BLOCK, "particle": IRON_BLOCK},
+          [box((6.5, 1, 6.75), (9.5, 13, 9.25), "rod"),
+           box((6, -1.75, 5.5), (10, 1.75, 10.5), "rod"),
+           box((6.25, 12.5, 6), (9.75, 15.5, 10), "rod")])
+    write("cylinder/light_rod_item", {"rod": BRASS, "particle": BRASS},
+          [box((7.25, 1, 7.25), (8.75, 15, 8.75), "rod"),
+           box((6.75, 0, 6.5), (9.25, 2.5, 9.5), "rod"),
+           box((7, 13.25, 6.75), (9, 15.25, 9.25), "rod")])
+    write("cylinder/heavy_rod_item", {"rod": IRON_BLOCK, "particle": IRON_BLOCK},
+          [box((6.5, 1, 6.75), (9.5, 15, 9.25), "rod"),
+           box((6, 0, 5.5), (10, 3.5, 10.5), "rod"),
+           box((6.25, 12.5, 6), (9.75, 15.5, 10), "rod")])
 
 
 # --- head, injector, plug, valve -----------------------------------------------------------------------------------

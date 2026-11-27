@@ -28,11 +28,23 @@ import net.minecraft.nbt.NbtUtils;
  * @param intakeInlets    where this cylinder's air comes in, for the draught at its intakes
  * @param preignition     share of the burn lost last cycle because boost heated the charge past its fuel's autoignition
  *                        point, 0 (none) up to {@link com.createengines.engine.sim.FuelSpec#PREIGNITION_MAX_LOSS}
+ * @param fuelCut         a full redstone signal on this cylinder's camshaft line has shut its fuel rack
+ * @param exhaustMuffle   how muffled its exhaust run is, 0 to 1, which weighs where the engine's note is heard from
  */
 public record CylinderStatus(BlockPos primary, int faults, CycleResult result, boolean rich, float tdcAngle,
 							 float timingError, float chargeTemp, float ignitionTemp, @Nullable BlockPos lobe,
 							 List<BlockPos> exhaustOutlets, boolean lean, float mixture, boolean sparkPlug,
-							 float fouling, float lobeShift, List<BlockPos> intakeInlets, float preignition) {
+							 float fouling, float lobeShift, List<BlockPos> intakeInlets, float preignition, boolean fuelCut,
+							 float exhaustMuffle) {
+
+	/** A cylinder with nothing said about a muffler: an open exhaust. */
+	public CylinderStatus(BlockPos primary, int faults, CycleResult result, boolean rich, float tdcAngle,
+						  float timingError, float chargeTemp, float ignitionTemp, @Nullable BlockPos lobe,
+						  List<BlockPos> exhaustOutlets, boolean lean, float mixture, boolean sparkPlug,
+						  float fouling, float lobeShift, List<BlockPos> intakeInlets, float preignition, boolean fuelCut) {
+		this(primary, faults, result, rich, tdcAngle, timingError, chargeTemp, ignitionTemp, lobe, exhaustOutlets, lean,
+			mixture, sparkPlug, fouling, lobeShift, intakeInlets, preignition, fuelCut, 0);
+	}
 
 	public CompoundTag write() {
 		CompoundTag tag = new CompoundTag();
@@ -62,6 +74,10 @@ public record CylinderStatus(BlockPos primary, int faults, CycleResult result, b
 				.asLong();
 		tag.putLongArray("Inlets", inlets);
 		tag.putFloat("Preignition", preignition);
+		tag.putBoolean("FuelCut", fuelCut);
+		// Only a muffled run says so, so an open one's status is as it was
+		if (exhaustMuffle > 0)
+			tag.putFloat("ExhaustMuffle", exhaustMuffle);
 		return tag;
 	}
 
@@ -83,7 +99,7 @@ public record CylinderStatus(BlockPos primary, int faults, CycleResult result, b
 			NbtUtils.readBlockPos(tag, "Lobe")
 				.orElse(null), List.copyOf(outlets), tag.getBoolean("Lean"), tag.getFloat("Mixture"),
 			tag.getBoolean("Plug"), tag.getFloat("Fouling"), tag.getFloat("LobeShift"), List.copyOf(inlets),
-			tag.getFloat("Preignition"));
+			tag.getFloat("Preignition"), tag.getBoolean("FuelCut"), Math.clamp(tag.getFloat("ExhaustMuffle"), 0f, 1f));
 	}
 
 	/** Whether anything a player would see has changed. */
@@ -95,7 +111,9 @@ public record CylinderStatus(BlockPos primary, int faults, CycleResult result, b
 			|| changed(mixture, other.mixture, 0.05f) || changed(fouling, other.fouling, 0.05f) || changed(tdcAngle, other.tdcAngle, 0.5f)
 			|| changed(timingError, other.timingError, 0.5f) || changed(chargeTemp, other.chargeTemp, 0.05f)
 			|| changed(ignitionTemp, other.ignitionTemp, 0.01f) || !Objects.equals(lobe, other.lobe) || changed(lobeShift, other.lobeShift, 0.5f)
-			|| changed(preignition, other.preignition, 0.01f) || !exhaustOutlets.equals(other.exhaustOutlets) || !intakeInlets.equals(other.intakeInlets);
+			|| changed(preignition, other.preignition, 0.01f) || fuelCut != other.fuelCut
+			|| changed(exhaustMuffle, other.exhaustMuffle, 0.01f)
+			|| !exhaustOutlets.equals(other.exhaustOutlets) || !intakeInlets.equals(other.intakeInlets);
 	}
 
 	private static boolean changed(float a, float b, float tolerance) {

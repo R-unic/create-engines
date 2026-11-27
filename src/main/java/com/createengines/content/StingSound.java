@@ -68,7 +68,8 @@ public final class StingSound extends AbstractTickableSoundInstance {
 		private final EngineNotePcm pcm;
 
 		private Stream(StingSynth synth) {
-			this.pcm = new EngineNotePcm(synth::render);
+			// A sting follows nothing, so it keeps a longer queue than a note, which no hitch is likely to run dry
+			this.pcm = new EngineNotePcm(synth::render, StingSynth.SAMPLE_RATE / 10);
 		}
 
 		@Override
