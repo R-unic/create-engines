@@ -159,7 +159,7 @@ Minecraft 1.21.1 · NeoForge 21.1.219 or newer · Create 6.0.10 (build 257 or ne
 The server config (`serverconfig/create_engines-v2-server.toml` in the world) is grouped into `[calibration]`
 (`stressPerTorque`, the inertia and friction values), `[limits]` (how far the scanner follows a crankshaft, a manifold or a
 coupling, how big a battery bank gets, and the range a Throttle Body's dial offers), `[balance]` multipliers (`fuelConsumption`, `precisionBonus`, `boostStrength`, `rotaryPower`, `heatRecoveryOutput`,
-`coolingBonus`, `torsionalFlex`, `alternatorEnergy`), `[features]` switches (`forcedInduction`, `sparkFouling`, `oilDilution`,
+`coolingBonus`, `torsionalFlex`, `alternatorEnergy`, `rpmScale`), `[features]` switches (`forcedInduction`, `sparkFouling`, `oilDilution`,
 `oilAgeing`, `engineTemperature`, `pilotInjection`, `rotaryEngines`, `heatRecovery`, `batteryCold`, `crankingDraw`, `meterAllHeads`,
 `wearMode`) and `[compat]` (`altitudeThinning`, `sableAirPressure`, `altitudeStart`, `altitudeScale`, `altitudeFloor`, `fuelFire`,
 `fuelFireByVolatility`, and `pollution`, `pollutionRate`, `carbonRate`, `sulfurRate`, `pollutionAreaCap` and
@@ -221,6 +221,9 @@ Create caps rotation at 256 RPM by default, and engines hit that ceiling. We rec
 `serverconfig/create-server.toml` (or the world's `serverconfig` folder) under `[kinetics]`, set `maxRotationSpeed` to
 512 (higher works too). The engine simulation is built to stay cheap at speed, and its torque rating follows the
 limit you set. Everything else on the kinetic network still obeys Create's own rules.
+
+For faster shafts without stronger engines, set `balance.rpmScale` ([docs/CONFIG.md](docs/CONFIG.md)): at 2, with Create's
+limit at 512, an engine that gave its SU at 256 RPM gives the same SU at 512.
 
 ## Building
 

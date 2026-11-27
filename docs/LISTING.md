@@ -154,7 +154,8 @@ and valves yourself, pipe in air and fuel, and the engine you built fires in ord
 
 Create caps rotation at 256 RPM by default, and engines hit that ceiling. Raise it: in
 `serverconfig/create-server.toml` under `[kinetics]`, set `maxRotationSpeed` to 512 (higher works too). The engine
-simulation is built to stay cheap at speed, and its torque rating follows the limit you set.
+simulation is built to stay cheap at speed, and its torque rating follows the limit you set. For faster shafts without
+stronger engines, the `rpmScale` server setting turns every engine's shaft faster for the same SU.
 
 ## 📦 For modpack makers
 
@@ -225,6 +226,10 @@ that changes how an existing engine behaves says so in its changelog. More on
 Unreleased; being written as 2.4 "Running Hot" is built. So far: the second part of the wear mode, two new connecting rods, fixes, new gasket
 recipes, and less work for a server. Three new item IDs (`incomplete_copper_gasket`, `light_connecting_rod`, `heavy_connecting_rod`); no ID,
 key or saved format is renamed or removed. Changes to existing builds are listed first.
+- New server setting, `balance.rpmScale` (1 by default, 0.25 to 8): turns every engine's shaft that many times as fast with its SU per RPM
+  divided to match, so the same engine gives the same total SU on the same fuel, at 2 reaching at 512 RPM what it gave at 256. Above 1 it
+  needs Create's `maxRotationSpeed` raised to match, and goes no further than that limit divided by 256, so at Create's default it does
+  nothing. Goggles, the Dynamometer, governors and other readouts use shaft speed. Machines on the shaft turn faster and ask for more SU.
 - Fixed, engines on contraptions: after an engine was moved into a moving structure, its shaft could stand still for seconds while the engine
   ran on. Create stops a crankshaft it moves, and the engine only set it turning again when its speed matched the last one it had sent.
 - Fixed (wear mode), free repairs. A worn or wrecked part no longer comes out new by any of these:

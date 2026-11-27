@@ -1321,6 +1321,10 @@ record per-cycle stats: work per cylinder, fired/misfire reason, peak p, ω_min/
 Cost: about 20 sub-steps × 12 cylinders × a few dozen flops is negligible. Energy-based integration stays stable at
 large crank-angle steps and handles stalling mid-tick naturally.
 
+**RPM scale.** `balance.rpmScale` is applied only where the engine meets its shaft (`OutputGearing`, `EngineController`):
+published speed ×scale, SU per RPM ÷scale, shaft speeds read back ÷scale, and a supercharger on the engine's network has
+its stress per RPM ÷scale. `engine/sim` never sees it, so saved motion and the behaviour guards are unaffected.
+
 **Running above Create's default 256 RPM limit.** The limit is a server setting (`kinetics.maxRotationSpeed` in
 `create-server.toml`), and we recommend raising it: nothing in the mod assumes 256. The simulation is kept cheap so that
 a tick costs roughly the same whatever the speed:
