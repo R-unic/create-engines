@@ -1076,6 +1076,12 @@ with it. More resonators per engine must still keep the sound thread under 2% of
 - Light and heavy rods: in or not (new items that change performance with the mode off).
 - Sound rework: whether the 2.3 note stays as a client option for players who like it; which engines are in the reference set.
 
+### The trailer (author, 2026-11-26; planned, not built)
+
+A new composition led by the sound rework and the finished wear and parts system, with a brief heat section: it opens on a
+critically hot block steaming, and the Short opens on a pull-back from an exhaust mouth. The plan, its new shots and what it
+needs are in [TRAILER-2.4.md](TRAILER-2.4.md).
+
 ### Splitting the giant files (author, 2026-11-26; queued in 2.4)
 
 **Why.** The longest files are slow to change and review, parallel sessions collide in them, and AI sessions spend many tokens

@@ -281,7 +281,8 @@ Every composition keeps viewers through its first and last seconds, each form in
   them in just before the visuals end, so they are seen before viewers drop off at the end screen. In the short form they lie
   over moving footage. The long form leads into them smoothly, with no long, separate tail. The AI notice stays.
 
-The current cuts predate these two rules and are not yet checked against them; they apply from the next composition.
+The current cuts predate these two rules and are not yet checked against them; they apply from the next composition. The
+2.4.0 composition the author picked is planned in [TRAILER-2.4.md](TRAILER-2.4.md).
 
 ```
 python tools/trailer/record.py              # plays the game, records screen and sound, cuts the videos
