@@ -37,7 +37,7 @@ question, not an obstacle ([CLAUDE.md](../CLAUDE.md)).
 | 2.2 | Proving Ground | Verification debts: server-from-jar, the step-size finding; **the battery tiers**, then **charge priority, electric injector assist and ignition coils**, with electrolysis to be decided (author, 2026-11-23) | Medium |
 | 2.3 | Wear and Tear | **The opt-in wear mode and nothing else** (author, 2026-11-24): pistons, rods, gaskets (stock and three tiers), rotary apex seals and batteries wear, precision parts wear slower, a rod can be thrown (a flag, a misfire, a broken head, with spectacle) and a gasket can blow, light wear is repaired by an automatable, durable Service Kit and the rest by replacing the part, worn parts keep their wear as items, and the Black Box and Display Link report each part and a total; off by default, nothing runs with it off, and gaskets and seals are not required with it off | Medium to large |
 | 2.4 | Running Hot | **Temperature in degrees, overheating you can reach** (a soft power loss in both modes, an exception the author approved on 2026-11-25), heat that follows work, **the Radiator** (closed loop, sheds more with a fan or on a moving contraption), and **the wear overhaul, part 2** (heat drives wear and failures, rod wear from load, plug and turbo wear wired, gasket recipes) (author, 2026-11-25), **a full sound rework** (each engine's note built from its banks, exhausts, cylinder size, cam and fuel instead of one shared firing sound; client-side only, and bearable with many engines running in a build) (author, 2026-11-25), and **splitting the giant source files**, with no behaviour change (author, 2026-11-26) | Large |
-| 2.5 | Open Garage (was 2.4 until 2026-11-25) | Reach: a new API minor (**fuel supply, a shared combustion model and animation for addon engines**, author, 2026-11-26), energy and probe mods, the next Create, a second example addon; **piston rings**, **polluted intake air**, **high- and low-compression piston variants**, **rotor variants (a precision rotor among them) with an exhaust niche**, and **nitrous oxide** (liquid, a vaporiser and a gas in the intake manifolds) (author, 2026-11-23), a **W layout for the Bank Builder** (author, 2026-11-24), then **look, sound and performance** only where the 2.0.x pass found something (all of it was 2.3 until the author moved it, 2026-11-24; its sound went to 2.4's sound rework, 2026-11-25); **a texture rework, with some new models, so the mod looks like part of Create** (author, 2026-11-25, from player complaints; moved from 2.4 on 2026-11-26) | Medium to large |
+| 2.5 | Open Garage (was 2.4 until 2026-11-25) | Reach: a new API minor (**fuel supply, a shared combustion model and animation for addon engines**, author, 2026-11-26), energy and probe mods, the next Create, a second example addon; **Create: Petrochem and Create: Pocket Sized support** (author, 2026-11-27; planned); **piston rings**, **polluted intake air**, **high- and low-compression piston variants**, **rotor variants (a precision rotor among them) with an exhaust niche**, and **nitrous oxide** (liquid, a vaporiser and a gas in the intake manifolds) (author, 2026-11-23), a **W layout for the Bank Builder** (author, 2026-11-24), then **look, sound and performance** only where the 2.0.x pass found something (all of it was 2.3 until the author moved it, 2026-11-24; its sound went to 2.4's sound rework, 2026-11-25); **a texture rework, with some new models, so the mod looks like part of Create** (author, 2026-11-25, from player complaints; moved from 2.4 on 2026-11-26) | Medium to large |
 | 3.0 | Clean Slate | The second breaking cleanup: drop 1.x migrations, regenerate baselines, API 2.0 | Large |
 
 **Shipped so far (tags):** 2.0.0 (2026-11-21), 2.0.1 and 2.0.2 (2026-11-22), 2.1.0 (2026-11-23), 2.2.0 (2026-11-24), 2.3.0 (2026-11-25) and 2.4.0 (2026-11-27). 2.5 is in progress and
@@ -1220,6 +1220,67 @@ wanted. Nothing is built; the shapes below are a first design.** Today an addon 
 runs, burns fuel from the supply and stalls without it. Its animation is checked in game. Whether this is the second example addon
 above or a third is open. The same work should check what else an engine made only of addon sources lacks (status and cylinder
 counts, sound, knock, wear, readouts); none of those was checked, and they are not part of this request.
+
+### Create: Petrochem and Create: Pocket Sized (author, 2026-11-27; planned, not started)
+
+**Asked for by the author on 2026-11-27: plan support for both.** What follows about the two mods was read from their public pages and
+source on that date; nothing was built, loaded or run with either. Each is called supported only once its row in
+[COMPAT.md](COMPAT.md) is green.
+
+**[Create: Petrochem](https://modrinth.com/mod/create-petrochem)** (`petrochem`, 1.3.3, NeoForge 1.21.1, source read from its
+`1.21.1/dev` branch, which may be ahead of the release; built against Create 6.0.10-280 and NeoForge 21.1.230, its minimum
+NeoForge not read). An oil chain with its own diesel and gasoline engines and a turbine.
+
+- **Expected to work with no code:** it tags `petrochem:gasoline`, `petrochem:diesel` and `petrochem:kerosene` as `c:gasoline`,
+  `c:diesel` and `c:kerosene`, so they should burn here. Its diesel engine takes `c:diesel` and its gasoline engine `c:gasoline` and
+  `c:kerosene`, so ours should run them.
+- **Not fuels here:** crude (`petrochem:petroleum`), fuel oil, LPG, and light and heavy naphtha. Its naphthas are not tagged
+  `c:naphtha`. Proposed: leave all of them that way, as with TFMG's crude, heavy oil and LPG; they are its intermediates and its
+  turbine fuel.
+- **Work:** a `runGameTestServerPetrochem` row like the TFMG one (still and flowing forms of the three burn as tagged, the others do
+  not, a shared tank takes both mods' diesel the way pipes allow), then one pass in a world: pipe its products into a head, and
+  ours into its engines. Check the log and recipes with both loaded (its basins make gasoline and lubricant; ours make fuels too),
+  JEI or EMI, and that its fuel tags reach flowing fluids. Its sulfuric acid is in `minecraft:lava`; check what a spill beside fuel
+  does. Then the listing, README and COMPAT.md lines.
+- **Open for the author:** (a) should `petrochem:lubricant` oil an engine? Today only engine oil (full) and poor lubricants (0.6)
+  do. Recommended: yes, through a new full-strength lubricant tag, additive, with its own test. (b) Should the refining column
+  take `c:diesel` as feed, so its diesel can be made into our kerosene or gasoline? Recommended: no for now. The column takes only
+  our fluids, which also keeps our volume-gaining routes out of any loop with another mod's recipes. (c) Balance: a pumped-crude
+  chain feeds our engines without the bio chain's cost. Recommended: accept it, as for TFMG; packs can retune the fuel data.
+
+**[Create: Pocket Sized](https://modrinth.com/mod/create-pocket-sized)** (`pocket`, 0.32.0, alpha, NeoForge 1.21.1,
+[source](https://github.com/misterblusky9/pocket)). Scales Aeronautics' moving structures from 1/32x to 8x through its bundled
+library Pym, and carries the tiny ones as items, between dimensions too. This is mostly Aeronautics support under new conditions.
+
+- **What its mod file requires:** NeoForge 21.1.247 or newer, Create 6.0.10, Sable 2.0.x, Aeronautics and Simulated 1.3.3, Pehkui
+  3.8.3 or newer. This build is on NeoForge 21.1.228 and its Aeronautics row pins 1.3.2. The row therefore needs newer versions,
+  set in a private copy; whether to move the build is decided after that run. The Aeronautics row is also red as last recorded
+  (COMPAT.md), and comes first.
+- **Its licence** is PolyForm Shield (code) and all rights reserved (assets). Proposed: no code or assets copied and nothing
+  bundled. If scale is needed, compile against Pym's public API (`Pym.scale().at(level, pos)`) from one bridge class, as
+  `SableBridge` does, loaded only with the mod there.
+- **Saves, the main risk:** the crankshaft, battery, starter, sump and supercharger save their primary's absolute position. In the
+  files read, nothing in Pocket Sized or Pym rewrites positions inside block entity data when a structure is pocketed and put down
+  elsewhere; the class likely to move them was not read, nor was Sable's. The engine may simply find itself again on its next
+  scan. Test it before changing anything: pocket and place a running engine (multi-bank, coupled cranks, turbo, battery and
+  starter, wear mode on), across a restart and a dimension; fuel, parts, wear, charge, paint and gears must survive, nothing may
+  be duplicated, and no engine may bind to a block at its old position.
+- **Look:** at 1/32, 1 and 8x, with Flywheel on and off: moving parts (our visuals and renderers; Pym scales Flywheel through its
+  internals), particles (Pym scales those from block entities; our other emitters are untested), outlines, goggles, Ponder
+  unaffected.
+- **Sound:** no sound scaling was found in the parts of Pym that were read, so a pocket-sized V8 is expected to be full volume. Our
+  distances, walls and room are worked out from world positions and need checking at both ends. Proposed: first listen, then decide
+  whether volume and range (not pitch) follow scale, client-side.
+- **World contact:** one block of a 1/32 structure shares a world cell with many others, and one at 8x covers many cells. Check
+  intake and exhaust under water, fuel fire from flames and spills, pollution, thin air and the radiator's moving airflow. An exhaust
+  now acts on the one world cell at its mouth, whatever its size.
+- **Open for the author:** should output, fuel use, wear or pollution scale with size? Recommended: no. The engine's numbers stay
+  those of the build, and how thrust and mass scale is Pocket Sized's design. Anything else changes existing behaviour.
+- **Claim:** while it is alpha, say "tested with 0.32.0", not "supported", and name the versions.
+
+**Order:** (1) the Petrochem row and lubricant decision, small and independent. (2) Aeronautics 1.3.3 on NeoForge 21.1.247 in a
+private copy, turning its own row green. (3) The Pocket Sized row: the pocket-and-place GameTests if its API can drive them
+(`Detached`; not yet checked), otherwise a hands-on list for the author. (4) Look and listen, then fix what that shows.
 
 ### Piston variants: high and low compression (author, 2026-11-23; proposed)
 
