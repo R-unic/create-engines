@@ -695,6 +695,7 @@ public class SmokeAuditGameTests {
 			new ConfigKnob("throttleWideMin", com.createengines.config.CEConfig.THROTTLE_WIDE_MIN, 5, 100, false),
 			new ConfigKnob("throttleWideMax", com.createengines.config.CEConfig.THROTTLE_WIDE_MAX, 100, 150, false),
 			new ConfigKnob("alternatorEnergy", com.createengines.config.CEConfig.ALTERNATOR_ENERGY, 0, 100, false),
+			new ConfigKnob("rpmScale", com.createengines.config.CEConfig.RPM_SCALE, 0.25, 8, false),
 			new ConfigKnob("pollutionRate", com.createengines.config.CEConfig.POLLUTION_RATE, 0, 10, false),
 			new ConfigKnob("carbonRate", com.createengines.config.CEConfig.CARBON_RATE, 0, 10, false),
 			new ConfigKnob("sulfurRate", com.createengines.config.CEConfig.SULFUR_RATE, 0, 10, false),

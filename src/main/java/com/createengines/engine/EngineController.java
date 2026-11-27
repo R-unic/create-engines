@@ -70,6 +70,7 @@ import com.createengines.content.muffler.SootTrapBlockEntity;
 import com.createengines.engine.sim.Supercharger;
 import com.createengines.engine.sim.Turbocharger;
 import com.createengines.engine.sim.OilSupply;
+import com.createengines.engine.sim.OutputGearing;
 import com.createengines.engine.topology.CylinderFault;
 import com.createengines.engine.topology.EngineLayout;
 import com.createengines.engine.topology.EngineLayout.CamLine;
@@ -611,7 +612,8 @@ public final class EngineController {
 			sim.setAmbientDensity(airDensity());
 			watchWorldWater(level);
 		}
-		double torqueScale = CEConfig.STRESS_PER_TORQUE.get();
+		// SU per RPM of the shaft for each unit of torque: a faster shaft carries the same SU in less per RPM
+		double torqueScale = CEConfig.STRESS_PER_TORQUE.get() / speedScale();
 
 		if (layout.incomplete() || layout.broken()) {
 			// An engine split by an unloaded chunk stops while it is split, but remembers how fast it was turning, as an engine
@@ -662,7 +664,7 @@ public final class EngineController {
 		double floor = 0;
 		int floorDirection = sim.direction();
 		if (primary.hasSource() && crankSpeed != 0 && drivenFromOutside()) {
-			floor = EngineSimulation.rpmToOmega(Math.abs(crankSpeed));
+			floor = EngineSimulation.rpmToOmega(Math.abs(crankSpeed) / speedScale());
 			floorDirection = (int) Math.signum(crankSpeed);
 		}
 		activeStarter = null;
@@ -713,7 +715,7 @@ public final class EngineController {
 		double load = crankSpeed == 0 || primary.isOverStressed() ? 0
 			: primary.networkStress() / Math.abs(crankSpeed) / torqueScale;
 		smoothedLoad += (load - smoothedLoad) * 0.1;
-		double maxOmega = EngineSimulation.rpmToOmega(AllConfigs.server().kinetics.maxRotationSpeed.get());
+		double maxOmega = EngineSimulation.rpmToOmega(engineLimit());
 		sim.tickCranked(load, maxOmega, floor, floorDirection);
 		oilDrawn = 0;
 		sim.lubrication()
@@ -728,7 +730,8 @@ public final class EngineController {
 		readSensors(level);
 
 		// The starter feels the effort of turning the engine as stress on its own input shaft
-		double crankingStress = sim.crankingTorque() * torqueScale;
+		// (the starter's own input is not geared by rpmScale, so its stress is not either)
+		double crankingStress = sim.crankingTorque() * CEConfig.STRESS_PER_TORQUE.get();
 		// A stronger starter takes more of the effort, and gears it down: every starter pushing feels the same stress
 		// on its input, however many there are and however strong, so a heavy one runs a big engine off a weak source
 		double strength = 0;
@@ -888,7 +891,11 @@ public final class EngineController {
 			Supercharger blower = blowers.get(i);
 			blower.limit = be.boostLimit();
 			blower.dump = be.dumping();
-			blower.rpm = be.shaftRpm();
+			// A blower geared off this engine's own shaft turns as much faster as rpmScale turns that: seen as at 1, and its
+			// stress per RPM shrinks to match, so what it takes from the engine is unchanged
+			double gearing = onEngineNetwork(be) ? speedScale() : 1;
+			be.setGearing(gearing);
+			blower.rpm = be.shaftRpm() / gearing;
 			if (crankRpm >= MIN_RATIO_RPM)
 				blower.driveRatio = Math.min(MAX_DRIVE_RATIO, blower.rpm / crankRpm);
 		}
@@ -979,7 +986,7 @@ public final class EngineController {
 		}
 		});
 		int tuned = tunedCount[0];
-		return new Tuning(tuned, skipped + readings.size() - tuned, (int) Math.round(sim.rpm()));
+		return new Tuning(tuned, skipped + readings.size() - tuned, (int) Math.round(sim.rpm() * speedScale()));
 	}
 
 	/**
@@ -1049,14 +1056,16 @@ public final class EngineController {
 			}
 		boolean fitted = target < Double.MAX_VALUE;
 		double position = 1;
+		// A governor is set and read in shaft speed
+		double shaftRpm = sim.rpm() * speedScale();
 		if (fitted) {
 			if (!governorSeeded) {
 				// Just loaded or rebuilt: carry on from the rack the block last reported, not from wide open
 				governorSeeded = true;
 				if (saved >= 0)
-					governor.seed(saved, sim.rpm(), target);
+					governor.seed(saved, shaftRpm, target);
 			}
-			position = governor.update(sim.rpm(), target, EngineSimulation.TICK);
+			position = governor.update(shaftRpm, target, EngineSimulation.TICK);
 		} else if (!layout.governors()
 			.isEmpty()) {
 			// Its block is not loaded for a moment: keep the rack where it was, an unloaded governor must not race the engine
@@ -1068,13 +1077,13 @@ public final class EngineController {
 		}
 		for (CylinderModel model : sim.cylinders())
 			model.governor = position;
-		boolean holding = fitted && !sim.isStopped() && Math.abs(sim.rpm() - target) <= GOVERNED_BAND * target
+		boolean holding = fitted && !sim.isStopped() && Math.abs(shaftRpm - target) <= GOVERNED_BAND * target
 			&& position > 0.05 && position < 0.95;
 		governedTicks = holding ? governedTicks + 1 : 0;
 		governing = fitted && !sim.isStopped() && position < 0.95;
 		// A redstone signal has turned the governed speed down
 		commanded = governing && target < setting - 0.5;
-		float rpm = (float) sim.rpm();
+		float rpm = (float) shaftRpm;
 		for (BlockPos pos : layout.governors())
 			if (LoadedBlocks.blockEntity(level, pos) instanceof GovernorBlockEntity be)
 				be.reading(rpm, (float) position, (float) be.governedSpeed());
@@ -1191,11 +1200,24 @@ public final class EngineController {
 		return false;
 	}
 
+	/** How many times as fast as the engine its shaft turns ({@code balance.rpmScale}, see {@link OutputGearing}). */
+	private static double speedScale() {
+		return OutputGearing.scale(CEConfig.RPM_SCALE.get(), AllConfigs.server().kinetics.maxRotationSpeed.get());
+	}
+
+	private static float engineLimit() {
+		return (float) OutputGearing.engineLimit(speedScale(), AllConfigs.server().kinetics.maxRotationSpeed.get());
+	}
+
+	private boolean onEngineNetwork(KineticBlockEntity be) {
+		return be.hasNetwork() && primary.hasNetwork() && be.network.equals(primary.network);
+	}
+
 	private void publishSpeed() {
 		float maxSpeed = AllConfigs.server().kinetics.maxRotationSpeed.get();
 		float target = 0;
 		if (!sim.isStopped())
-			target = sim.direction() * Math.min(maxSpeed, Math.max(1, Math.round(sim.meanRpm())));
+			target = sim.direction() * Math.min(maxSpeed, Math.max(1, Math.round(sim.meanRpm() * speedScale())));
 		float current = primary.getGeneratedSpeed();
 		ticksSincePublish++;
 		// Create zeroes a crank when a rotation conflict breaks a source beside it (a hand crank turned against the engine)
@@ -1260,8 +1282,8 @@ public final class EngineController {
 		key.add(sim.intercoolers()
 			.size());
 		key.add(sim.direction());
-		// The curve runs as fast as the network is allowed to turn, so a raised limit has to be measured for
-		float maxRpm = AllConfigs.server().kinetics.maxRotationSpeed.get();
+		// The curve runs as fast as the engine is allowed to turn, so a raised limit has to be measured for
+		float maxRpm = engineLimit();
 		key.add(maxRpm);
 		if (key.equals(ratingKey)) {
 			ratingSpare = key;
@@ -1307,18 +1329,20 @@ public final class EngineController {
 	/** What a dynamometer block shows; asking for it counts as a dynamometer reading this engine. */
 	public Curve curve() {
 		dynoReadTick = ticks;
-		float maxRpm = AllConfigs.server().kinetics.maxRotationSpeed.get();
+		float maxRpm = engineLimit();
+		double speedScale = speedScale();
 		int points = Dynamometer.pointCount(maxRpm);
 		float[] rpm = new float[points];
 		float[] torque = new float[points];
-		double scale = CEConfig.STRESS_PER_TORQUE.get() * RATING_MARGIN * Torsion.stiffness(flexLoss);
+		double scale = CEConfig.STRESS_PER_TORQUE.get() / speedScale * RATING_MARGIN * Torsion.stiffness(flexLoss);
 		for (int i = 0; i < points; i++) {
-			rpm[i] = (float) Dynamometer.speed(i);
+			rpm[i] = (float) (Dynamometer.speed(i) * speedScale);
 			// The curve in use may have been measured before the limit was raised, so it can be shorter than points
 			if (i < torqueCurve.length && i < rippleCurve.length)
 				torque[i] = (float) (Math.max(0, torqueCurve[i]) * Roughness.smoothness(rippleCurve[i]) * scale);
 		}
-		return new Curve(rpm, torque, (float) sim.meanRpm(), (float) (ratedTorque() * CEConfig.STRESS_PER_TORQUE.get()),
+		return new Curve(rpm, torque, (float) (sim.meanRpm() * speedScale),
+			(float) (ratedTorque() * CEConfig.STRESS_PER_TORQUE.get() / speedScale),
 			rated && rating == null);
 	}
 
@@ -1417,7 +1441,7 @@ public final class EngineController {
 		Arrays.sort(angles);
 		float roughness = (float) (sim.isStopped() ? 0 : Dynamometer.roughnessLoss(torqueCurve, rippleCurve, sim.meanRpm()));
 		Diagnosis.Report report = diagnose(state, firing, roughness);
-		return new EngineSummary(state, (float) sim.meanRpm(), primary.publishedCapacity(),
+		return new EngineSummary(state, (float) (sim.meanRpm() * speedScale()), primary.publishedCapacity(),
 			(float) (smoothedLoad * torqueScale), (float) (sim.fuelRate() * 60), (float) sim.ripple(), firing,
 			working, (float) sim.inertia(), (float) sim.lubrication()
 				.effective(),
@@ -1900,7 +1924,7 @@ public final class EngineController {
 		reportParts(level, state, firing);
 		reportLooks(level, state);
 		EngineMilestones.Snapshot snapshot = new EngineMilestones.Snapshot(state, previousState, rpm,
-			activeStarter != null, firing, primary.publishedCapacity() * rpm, sparkFiring, (float) sim.lubrication()
+			activeStarter != null, firing, (float) (primary.publishedCapacity() * rpm * speedScale()), sparkFiring, (float) sim.lubrication()
 				.effective(),
 			rich, boost, dumping, fouling, firing > 0 && balanced, (float) sim.lubrication()
 				.dilution(),

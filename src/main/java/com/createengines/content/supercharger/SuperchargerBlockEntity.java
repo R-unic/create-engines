@@ -134,6 +134,13 @@ public class SuperchargerBlockEntity extends KineticBlockEntity implements Engin
 		return getBlockState().getBlock() instanceof SuperchargerBlock block && block.variableDrive();
 	}
 
+	/** How much faster this shaft turns than the engine sees it: other than 1 only on the engine's own scaled shaft. */
+	public void setGearing(double gearing) {
+		this.gearing = gearing;
+	}
+
+	private double gearing = 1;
+
 	/** The boost the engine last reported, atmospheres. */
 	public float boost() {
 		return boost;
@@ -151,7 +158,7 @@ public class SuperchargerBlockEntity extends KineticBlockEntity implements Engin
 	 */
 	public void updateBlower(BlockPos primary, int cylinders, float boost, float bypass) {
 		float next = cylinders * STRESS_PER_CYLINDER * (float) Math.min(1.7, boost / Supercharger.FULL_BOOST)
-			* (variableDrive() ? (float) Supercharger.VARIABLE_DRAG : 1);
+			* (variableDrive() ? (float) Supercharger.VARIABLE_DRAG : 1) / (float) gearing;
 		boolean changed = !primary.equals(primaryPos) || cylinders != served || Math.abs(boost - this.boost) >= 0.01f
 			|| Math.abs(bypass - this.bypass) >= 0.05f;
 		primaryPos = primary;
