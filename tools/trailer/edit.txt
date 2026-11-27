@@ -22,9 +22,8 @@
 # so that what a cue does in a shot is on screen: a gasket blowing, the rods changing. An engine whose exhaust or timing has
 # just been changed misfires for a few seconds, so those pieces start late in their shots.
 
-# Cold open: goggles at Critical, then the gasket blows, in game sound only
-heat_critical         4.5   at=1.5 engine cold
-title_sequence        6     at=0
+# The title card comes first, before anything else (author, 2026-11-27), and is brief
+title_sequence        4.5   at=0
 # Hear it: the pull-back first, the two V8 notes, the exhausts, then other engines, ending on the long dolly away
 exhaust_mouth         4.5   at=0 engine
 v8_crossplane         4.5   at=1.0 engine
@@ -50,6 +49,7 @@ gasket_saw            3     at=1.5
 gasket_line           6     at=1.5
 # Running hot
 running_hot           4.5   at=1.0 engine
+heat_critical         4.5   at=1.5 engine
 running_cooled        4.5   at=0.75 engine
 radiator_fan_basin    4.5   at=1.0
 # New builds

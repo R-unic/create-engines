@@ -39,7 +39,7 @@ link GitHub: https://github.com/R-unic/create-engines
 link Report a bug: https://github.com/R-unic/create-engines/issues
 link Discord: https://discord.gg/QYVpy2dqGE
 
-chapter title_sequence: Create: Engine Engineer
+chapter title_sequence: Hear it
 chapter exhaust_mouth: Hear it
 chapter wear_gasket_blown: Wear it out
 chapter running_hot: Running hot

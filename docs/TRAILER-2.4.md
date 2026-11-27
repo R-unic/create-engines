@@ -91,7 +91,7 @@ wear_gasket_blown "Wear it out", bank_wx "Build a W or X".
 
 The edits themselves (`tools/trailer/edit.txt`, `vertical.txt`) now own the order and the lengths; the tables above are the plan.
 
-- The long cut runs 180 s and the vertical cut 64.5 s (the long one under the "about 200" above).
+- The long cut runs 178.5 s and the vertical cut 64.5 s (the long one under the "about 200" above).
 - `stall_load` is dropped (author, 2026-11-27): a load alone does not stall an engine. The mod offers Create no more stress
   than the engine can carry, and a bigger load only marks the network overstressed while the engine runs on (the GameTest
   `overloadOverstressesWithoutStalling`). A load Create accepted did not stop it either in the check.
@@ -103,6 +103,8 @@ The edits themselves (`tools/trailer/edit.txt`, `vertical.txt`) now own the orde
 
 ## The recut from the footage (2026-11-27)
 
+- **The long form opens on the title card, before anything else** (author, changing the steam cold open above). The title is
+  4.5 s. `heat_critical` moved into "Running hot", after `running_hot`. The cut runs 178.5 s.
 - **Long form.** "Hear it" opens on the pull-back (`exhaust_mouth`), then the two V8s, and keeps the
   look-alike pads apart; the rods and the cold start moved into it, and it still ends on the long dolly. "Wear it out" starts
   with the three failures, then the parts and how they are made. The last chapter is "At dusk" (the sun is still up), and

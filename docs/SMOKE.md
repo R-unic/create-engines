@@ -390,10 +390,10 @@ python tools/trailer/record.py --post-only  # cuts the last recordings again (ne
   beats a minute, so the cuts fall on the beat). It renders each piece on its own: its stretch of the recording (sped up when the
   line says so; `lift=` first brightens the shadows of a dim shot), a light grade (a slight S-curve, a hint of warm highlights and cool shadows, a faint vignette), a 2.2:1 letterbox, and a caption at
   the lower left that slides in, with its chapter's name over it in gold (`chapter <shot>` lines of `captions.txt`; a `quiet`
-  piece keeps the caption before it). A chapter starts with a white flash and a hit. The full cut opens cold on the critically hot
-  engine with only the game's sound, slams the title (the mod's round icon, `docs/images/icon.png`, the "CREATE" lettering
+  piece keeps the caption before it). A chapter starts with a white flash and a hit. The full cut opens on the title card, before anything else: it
+  slams the title (the mod's round icon, `docs/images/icon.png`, the "CREATE" lettering
   `docs/images/create_lettering.png`, placed by `tools/create_lettering.py`, and the gold wordmark `docs/images/wordmark.png`)
-  over the title shot with a flash and a boom as the music comes in, and ends with a riser into the last shot. There is no end
+  over the title shot with a flash and a boom as the music starts, and ends with a riser into the last shot. There is no end
   card after it: five seconds before the end of that shot (the `end` piece) the title, the version line from `gradle.properties`,
   "Links in the description" and the AI notice (`outro_notice`) come in over the footage with a sting, and it fades to black.
   Earlier versions' features are a montage of a beat and a half each, under one caption. The 16:9 thumbnail uses the same title;
