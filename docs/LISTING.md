@@ -314,6 +314,8 @@ key or saved format is renamed or removed. Changes to existing builds are listed
   no longer has every other bank walked again. Switching the wear mode no longer has every engine search every other. An engine with nothing loaded
   to wear is no longer read every tick, a Transmission no longer reads its neighbours' redstone to decide on a shift, and an engine that has not changed
   costs less to check, as does finding geared cranks. None of these was timed.
+- Fixed: buttons and levers go onto a Starter or Heavy Starter again. Since 2.1.0, when its outline began to follow its model, neither could be placed
+  on it. The outline is unchanged, so on a side of the starter they sit slightly out from the motor.
 - Fixed, damaged saves: a starter, supercharger, crankshaft, crank throw, rotor housing, governor, MAF sensor, heat exchanger, reboiler or condenser
   whose save held a number that is not a number (NaN) or an infinity now reads it as zero (a governor's rack position as wide open) instead of
   running with it and writing it back. Sound saves read exactly as before.
