@@ -361,10 +361,16 @@ class SimStressTest {
 		return out;
 	}
 
-	/** A tick's cost must not climb with speed or blow up with cylinder count. */
+	/**
+	 * A tick's work must stop climbing with speed, and its cost must not blow up with cylinder count. The first is checked
+	 * by counting steps, which is the same on every machine. Comparing timings across speeds was not: the fast cells take
+	 * over ten times as long to sample as the slow ones, so on a busy machine only they failed to find a quiet moment.
+	 */
 	@Test
-	void tickCostStaysFlatAcrossSpeedAndScalesWithCylinders() {
+	void tickStepsAreBoundedAndCostStaysInBudget() {
 		double[] rpms = {16, 64, 256, 1024, 4096};
+		// 4 degree steps at low speed, then 64 steps a tick, then 16 degree steps, so more than 64 only past that ceiling
+		int[] steps = {2, 5, 20, 64, 77};
 		int[] sizes = {1, 4, 8, 16};
 		StringBuilder report = new StringBuilder("\nns/tick by rpm (columns) and cylinders (rows):\n");
 		double[][] cost = new double[sizes.length][rpms.length];
@@ -395,6 +401,10 @@ class SimStressTest {
 					best = Math.min(best, (System.nanoTime() - start) / (double) ticks);
 				}
 				cost[s][p] = best;
+				StepCounter counter = new StepCounter();
+				engine.addSource(counter);
+				engine.tickDriven(omega, 1);
+				assertEquals(steps[p], counter.steps, "steps in a tick at " + rpms[p] + " rpm with " + sizes[s] + " cyl");
 			}
 			report.append(String.format("%2d cyl:", sizes[s]));
 			for (double v : cost[s])
@@ -403,9 +413,76 @@ class SimStressTest {
 		}
 		System.out.print(report);
 		for (int s = 0; s < sizes.length; s++) {
-			assertTrue(cost[s][3] < cost[s][1] * 6 + 200_000, "tick cost climbs with speed for " + sizes[s] + " cyl: " + report);
 			for (int p = 0; p < rpms.length; p++)
-				assertTrue(cost[s][p] < 4_000_000, sizes[s] + " cyl at " + rpms[p] + " rpm costs " + cost[s][p] + " ns/tick");
+				assertTrue(cost[s][p] < 4_000_000, sizes[s] + " cyl at " + rpms[p] + " rpm costs " + cost[s][p] + " ns/tick" + report);
+		}
+	}
+
+	/** Does nothing to the crank, and counts how often it is stepped. */
+	private static final class StepCounter implements TorqueSource {
+		int steps;
+
+		@Override
+		public double advance(double angle, double rotaryAngle, int direction, double delta, double dt) {
+			steps++;
+			return 0;
+		}
+
+		@Override
+		public double inertia() {
+			return 0;
+		}
+
+		@Override
+		public double frictionStatic() {
+			return 0;
+		}
+
+		@Override
+		public double frictionViscous() {
+			return 0;
+		}
+
+		@Override
+		public double frictionAt(double omega, double film) {
+			return 0;
+		}
+
+		@Override
+		public double fuelUsedLastStep() {
+			return 0;
+		}
+
+		@Override
+		public void endTick() {
+		}
+
+		@Override
+		public double exhaustHeatLastTick() {
+			return 0;
+		}
+
+		@Override
+		public void setColdness(double coldness) {
+		}
+
+		@Override
+		public void setDirection(int direction) {
+		}
+
+		@Override
+		public double unburnedFraction() {
+			return -1;
+		}
+
+		@Override
+		public boolean fired() {
+			return false;
+		}
+
+		@Override
+		public double availableWork() {
+			return 0;
 		}
 	}
 
