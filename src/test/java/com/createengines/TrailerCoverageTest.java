@@ -204,8 +204,7 @@ class TrailerCoverageTest {
 	/**
 	 * The vertical cut (Shorts) has its own edit, tools/trailer/vertical.txt. Every piece names a real shot and is a whole number
 	 * of half bars, at least 3 s long, and together they run at most 90 s; every piece but the last has its few big words, as many viewers watch a feed without sound; the last, and only
-	 * the last, is the end piece. And the AI notice is in it: the tag at the top from the first frame, the full notice on the end
-	 * piece with the line saying where to read how AI is used, and the address of that page, which must be docs/AI.md and exist.
+	 * the last, is the end piece. And the AI notice is in it, on the end piece only (author, 2026-11-27: no tag in the corner): the full notice with the line saying where to read how AI is used, and the address of that page, which must be docs/AI.md and exist.
 	 */
 	@Test
 	void theVerticalCutNamesRealShotsKeepsTheBeatAndCarriesTheAiNotice() throws IOException {
@@ -243,10 +242,10 @@ class TrailerCoverageTest {
 			if (!line.startsWith("#") && colon > 0)
 				captions.put(line.substring(0, colon).trim(), line.substring(colon + 1).trim());
 		}
-		for (String key : List.of("outro_notice", "vertical_ai_tag", "ai_docs", "ai_docs_url"))
+		for (String key : List.of("outro_notice", "ai_docs", "ai_docs_url"))
 			assertTrue(!captions.getOrDefault(key, "").isEmpty(), "tools/trailer/captions.txt has no " + key + ": line");
-		assertTrue(captions.get("vertical_ai_tag").contains("AI") && captions.get("ai_docs").contains("docs/AI.md"),
-				"The vertical cut's AI tag must say AI, and its docs line must point to docs/AI.md");
+		assertTrue(captions.get("outro_notice").contains("AI") && captions.get("ai_docs").contains("docs/AI.md"),
+				"The end piece's notice must say AI, and its docs line must point to docs/AI.md");
 		assertTrue(captions.get("ai_docs_url").endsWith("/docs/AI.md"), "ai_docs_url must be the address of docs/AI.md");
 		assertTrue(Files.isRegularFile(ROOT.resolve("docs/AI.md")), "docs/AI.md, which the trailer points to, is gone");
 	}

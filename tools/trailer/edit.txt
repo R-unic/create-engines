@@ -1,12 +1,13 @@
 # The edit of the full trailer: which shots it uses, in what order, for how long. post.py reads it; TrailerCoverageTest checks
 # that every shot of client/ShowcaseRun is here exactly once and nothing else is. The words are in captions.txt.
 #
-#   <shot> <seconds> [at=<s>] [speed=<x>] [engine] [quiet] [cold] [end]
+#   <shot> <seconds> [at=<s>] [speed=<x>] [lift=<0..1>] [engine] [quiet] [cold] [end]
 #
 # seconds   how long the piece runs in the cut. Keep it a multiple of 1.5 (half a bar of the music at 80 beats a minute), so
 #           every cut falls on the beat.
 # at=       where in the shot the piece starts, in seconds of the shot (default: the middle of the shot)
 # speed=    plays the shot faster (the sound too, at its own pitch); a slow shot fits in fewer seconds
+# lift=     brightens the shadows of a dim shot (0, the default, leaves it as it is)
 # engine    the engine is the point here: the music drops and the game's sound comes up
 # quiet     no caption of its own; the caption of the piece before stays up over it (montages)
 # cold      before the title: game sound only, no music. Only at the start.
@@ -16,43 +17,44 @@
 # A shot that is not in this run (the Aeronautics shots without Sable) is left out of the cut. A chapter (captions.txt
 # `chapter <shot>:`) starts with a flash and a hit, and its name is the small gold line over the captions in it.
 
-# The order follows ShowcaseRunShots, so the light only moves on. at= is chosen so that what a cue does in a shot is on
-# screen: a gasket blowing, the rods changing. An engine whose exhaust or timing has just been
-# changed misfires for a few seconds, so those pieces start late in their shots.
+# The order follows ShowcaseRunShots only where the light changes (day, then the refinery's late sun, then dusk). Inside the
+# day it is cut for what is on screen: the biggest camera moves come first and look-alike pads are kept apart. at= is chosen
+# so that what a cue does in a shot is on screen: a gasket blowing, the rods changing. An engine whose exhaust or timing has
+# just been changed misfires for a few seconds, so those pieces start late in their shots.
 
-# Cold open: steam, goggles at Critical, a gasket blowing, in game sound only
-heat_critical         4.5   at=0.75   engine cold
+# Cold open: goggles at Critical, then the gasket blows, in game sound only
+heat_critical         4.5   at=1.5 engine cold
 title_sequence        6     at=0
-# Hear it
-cold_start            4.5   at=0      engine
-exhaust_mouth         4.5   at=0      engine
-exhaust_stub          4.5   at=1.5   engine
-exhaust_long          4.5   at=1.5   engine
-v8_crossplane         4.5   at=1.0    engine
-v8_flatplane          4.5   at=4.5    engine
-muffler_off           3     at=3.0    engine
-muffler_on            3     at=3.0    engine
-muffler_bank          4.5   at=4.5    engine
-diesel_knock          3     at=1.5    engine
-inline6_turbo         4.5   at=0.75   engine
-blown_i6_blower       3     at=0      engine
-far_boom              4.5   at=4.5    engine
-headphones_on         3     at=0.5    engine
-# Wear it out
-rods_light_heavy      6     at=0      engine
+# Hear it: the pull-back first, the two V8 notes, the exhausts, then other engines, ending on the long dolly away
+exhaust_mouth         4.5   at=0 engine
+v8_crossplane         4.5   at=1.0 engine
+v8_flatplane          4.5   at=4.5 engine
+exhaust_stub          4.5   at=1.5 engine
+exhaust_long          4.5   at=1.5 engine
+inline6_turbo         4.5   at=0.75 engine
+blown_i6_blower       3     at=0 engine
+muffler_off           3     at=3.0 engine
+muffler_on            3     at=3.0 engine
+muffler_bank          4.5   at=4.5 engine
+rods_light_heavy      6     at=0 engine
+cold_start            4.5   at=0 engine
+diesel_knock          3     at=1.5 engine
+headphones_on         3     at=0.5 engine
+far_boom              4.5   at=1.5 engine
+# Wear it out: the failures first, then the parts and how they are made
+wear_gasket_blown     3     at=1.0 engine
+wear_apex             3     at=0 engine
+wear_turbo            3     at=0 engine
 wear_parts            4.5   at=0.75
-wear_gasket_blown     3     at=0.75   engine
-wear_apex             3     at=0      engine
-wear_turbo            3     at=0      engine
 gasket_saw            3     at=1.5
 gasket_line           6     at=1.5
 # Running hot
-running_hot           4.5   at=1.0    engine
-running_cooled        4.5   at=0.75   engine
+running_hot           4.5   at=1.0 engine
+running_cooled        4.5   at=0.75 engine
 radiator_fan_basin    4.5   at=1.0
 # New builds
 bank_wx               6     at=0
-rotary_orbit          3     at=0      engine
+rotary_orbit          3     at=0 engine
 # Everything else: a montage under one caption
 first_rises           1.5
 hero_v8               1.5   quiet
@@ -85,5 +87,5 @@ refinery_base         1.5   quiet
 refinery_tops         1.5   quiet
 refinery_flare        1.5   quiet
 # Finale
-night_pull            10.5  at=0.75   engine
-factory_wide          7.5   at=0.75   end
+night_pull            10.5  at=0.75 lift=1 engine
+factory_wide          7.5   at=0.75 lift=0.4 end

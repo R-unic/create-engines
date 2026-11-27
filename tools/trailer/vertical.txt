@@ -13,11 +13,12 @@
 # - the end piece lays the title, the links and the AI notice over moving footage, and the cut ends there with no fade, so
 #   it loops cleanly back into the opening.
 #
-#   <shot> <seconds> [at=<s>] [speed=<x>] [x=<0..1>] [fit] [zoom=<1..3>] [flash] [engine] [cold] [end] | <WORDS>
+#   <shot> <seconds> [at=<s>] [speed=<x>] [lift=<0..1>] [x=<0..1>] [fit] [zoom=<1..3>] [flash] [engine] [cold] [end] | <WORDS>
 #
 # seconds   how long the piece runs, a multiple of 1.5 (half a bar at 80 beats a minute), so every cut falls on the beat
 # at=       where in the shot the piece starts, in seconds of the shot (default: the middle of the shot)
 # speed=    plays the shot faster
+# lift=     brightens the shadows of a dim shot (0, the default, leaves it as it is)
 # x=        where across the 16:9 shot the 9:16 window sits, 0 the left edge, 1 the right (default 0.5, the middle)
 # fit       the whole 16:9 picture in a band across the middle, on a blurred copy of itself, for a subject too wide to crop
 # zoom=     with fit: takes a window that much smaller into the band (a little above the middle), for a small subject
@@ -31,17 +32,18 @@
 # A shot may be used more than once (a long shot split so its words can change half-way). A shot that is not in this run
 # (the Aeronautics shots without Sable) is left out.
 
-exhaust_mouth       4.5   at=0     engine                    | Every note / from the pipe
-exhaust_stub        3     at=3.0   engine                    | Short pipe / barks
-exhaust_long        3     at=3.0   engine                    | Long pipe / booms
-v8_crossplane       4.5   at=1.0   engine    flash           | Crossplane / burble
-muffler_bank        4.5   at=4.5   engine                    | Muffle / one bank
-inline6_turbo       4.5   at=0.75  engine                    | Turbo / spools up
-rods_light_heavy    4.5   at=0.75  fit zoom=1.6 engine flash | Light rods / or heavy
-wear_gasket_blown   4.5   at=0.75  engine    flash           | Run it / to failure
-gasket_line         4.5   at=1.5                             | Press a / copper gasket
-running_hot         4.5   at=1.0   engine                    | Too / hot?
-radiator_fan_basin  4.5   at=1.0                             | Fit a / radiator
-bank_wx             4.5   at=0.75  fit       flash           | Now build / a W or X
-night_pull          6     at=5.25  engine    flash           | Lift off. / Bang
-far_boom            7.5   at=0.75  fit       engine end
+exhaust_mouth       4.5   at=0     engine                         | Every note / from the pipe
+v8_crossplane       4.5   at=1.0   x=0.57 engine flash            | Crossplane / burble
+exhaust_stub        3     at=3.0   fit zoom=1.2 engine            | Short pipe / barks
+exhaust_long        3     at=3.0   fit zoom=1.2 engine            | Long pipe / booms
+muffler_bank        3     at=5.0   x=0.57 engine                  | Muffle / one bank
+inline6_turbo       4.5   at=0.75  engine                         | New turbo / whistle
+rods_light_heavy    3     at=1.5   fit zoom=1.6 engine flash      | Light rods / or heavy
+wear_gasket_blown   4.5   at=0.75  engine flash                   | Run it / to failure
+gasket_line         3     at=3.0   fit zoom=1.3                   | Press a / copper gasket
+running_hot         4.5   at=1.0   engine flash                   | Too / hot?
+radiator_fan_basin  4.5   at=1.0                                  | Fit a / radiator
+bank_wx             4.5   at=0.25  x=0.57 flash                   | Now build / a W or X
+rover_departs       4.5   at=4.0   fit zoom=1.35 engine flash     | With Aeronautics / drive it
+night_pull          6     at=5.25  x=0.43 lift=1 engine flash     | Lift off. / Bang
+far_boom            7.5   at=0     speed=0.8 fit engine end

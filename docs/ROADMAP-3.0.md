@@ -1099,6 +1099,9 @@ needs are in [TRAILER-2.4.md](TRAILER-2.4.md).
 Added 2026-11-27: built (pads, shots, captions and both edits); not yet run in the game, recorded or cut. Later that day the new shots were checked in the game; the load stall did not work
 and was dropped (author), and nothing is recorded or cut.
 
+Added 2026-11-27: recorded, then reordered and recut from the footage, with no AI tag in the vertical cut's corner (author). Not heard,
+and not posted.
+
 ### Splitting the giant files (author, 2026-11-26; queued in 2.4)
 
 **Why.** The longest files are slow to change and review, parallel sessions collide in them, and AI sessions spend many tokens

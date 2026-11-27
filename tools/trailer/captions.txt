@@ -8,7 +8,6 @@
 # outro_notice           the AI notice at the foot of the closing card
 # ai_docs                the line under the AI notice on the vertical cut's end piece, saying where to read how AI is used
 # ai_docs_url            the address of that page (docs/AI.md), under the AI notice in both video descriptions
-# vertical_ai_tag        the short AI notice at the top of the vertical cut from its first frame, for a viewer who leaves early
 # vertical_description   the first line of the Shorts description (post.py writes run/trailer/description_vertical.txt)
 # caption <shot>         the line shown over that shot in the full trailer (every shot has one; a `quiet` piece of edit.txt
 #                        does not show its own, the one before stays up)
@@ -32,7 +31,6 @@ outro_notice: Built with AI: nearly all of this mod, its sounds and models, and 
 
 ai_docs: How AI is used: docs/AI.md on GitHub (R-unic/create-engines)
 ai_docs_url: https://github.com/R-unic/create-engines/blob/master/docs/AI.md
-vertical_ai_tag: Mod made with AI - see docs/AI.md
 
 description: Version 2.4, Running Hot, of real combustion engines for Create: a reworked engine sound you can hear from the pipe out, wear and failures, running hot and cooling it, and W and X engines. Everything in this trailer is made in the game with the mod.
 vertical_description: Real combustion engines for Create: hear every pipe, wear them out, keep them cool.
@@ -42,12 +40,12 @@ link Report a bug: https://github.com/R-unic/create-engines/issues
 link Discord: https://discord.gg/QYVpy2dqGE
 
 chapter title_sequence: Create: Engine Engineer
-chapter cold_start: Hear it
-chapter rods_light_heavy: Wear it out
+chapter exhaust_mouth: Hear it
+chapter wear_gasket_blown: Wear it out
 chapter running_hot: Running hot
 chapter bank_wx: New builds
 chapter first_rises: Everything else
-chapter night_pull: After dark
+chapter night_pull: At dusk
 
 caption heat_critical: Run it past critical and the gasket lets go.
 caption title_sequence: Real combustion engines for Create
@@ -57,7 +55,7 @@ caption exhaust_stub: A short stub of exhaust barks.
 caption exhaust_long: A long run sounds deeper and hollow.
 caption v8_crossplane: A crossplane V8, one exhaust a bank, burbles.
 caption v8_flatplane: A flat-plane V8 does not.
-caption muffler_off: Every note comes from the engine itself. No muffler.
+caption muffler_off: Here it is with no muffler.
 caption muffler_on: With a muffler: quieter and duller.
 caption muffler_bank: Muffle one bank and only its firings go dull.
 caption diesel_knock: No spark plug: compression ignition knocks at idle.

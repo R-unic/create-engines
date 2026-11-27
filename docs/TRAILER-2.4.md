@@ -1,8 +1,8 @@
 # The 2.4.0 trailer: plan
 
 The composition the author picked for 2.4 "Running Hot" (author, 2026-11-26). Built on 2026-11-27: the pads, shots, cues,
-captions and both edits are in. The new shots were checked in the game the same day, from stills and the log. **Nothing has
-been recorded or cut.** [SMOKE.md](SMOKE.md), "The trailer",
+captions and both edits are in. The new shots were checked in the game the same day, from stills and the log. **It was
+recorded and cut the same day, then reordered and recut from the footage. It is not posted.** [SMOKE.md](SMOKE.md), "The trailer",
 has the harness and the rules every composition keeps; this page is only what is new for this cut. Once it is cut and posted, the
 composition part of SMOKE.md is rewritten to describe it and this page is deleted.
 
@@ -91,7 +91,7 @@ wear_gasket_blown "Wear it out", bank_wx "Build a W or X".
 
 The edits themselves (`tools/trailer/edit.txt`, `vertical.txt`) now own the order and the lengths; the tables above are the plan.
 
-- The long cut plans to 180 s (177 s without the Aeronautics car), under the "about 200" above.
+- The long cut runs 180 s and the vertical cut 64.5 s (the long one under the "about 200" above).
 - `stall_load` is dropped (author, 2026-11-27): a load alone does not stall an engine. The mod offers Create no more stress
   than the engine can carry, and a bigger load only marks the network overstressed while the engine runs on (the GameTest
   `overloadOverstressesWithoutStalling`). A load Create accepted did not stop it either in the check.
@@ -100,6 +100,21 @@ The edits themselves (`tools/trailer/edit.txt`, `vertical.txt`) now own the orde
 - The title shot is in daylight (it was golden hour), so that the light still only moves on.
 - In the vertical cut, the rods, the blown gasket, the hot engine and the last piece are also marked `engine`, to be heard.
 - The montage's one caption is "And all that came before, from one cylinder up." (over `first_rises`).
+
+## The recut from the footage (2026-11-27)
+
+- **Long form.** "Hear it" opens on the pull-back (`exhaust_mouth`), then the two V8s, and keeps the
+  look-alike pads apart; the rods and the cold start moved into it, and it still ends on the long dolly. "Wear it out" starts
+  with the three failures, then the parts and how they are made. The last chapter is "At dusk" (the sun is still up), and
+  `muffler_off` has a new caption, as its old one repeated the pull-back's.
+- **Vertical.** The crossplane V8 comes second. The short and long pipes are `fit` pieces, so both lengths can be seen.
+  `bank_wx` is a full-frame window that starts as the W appears. The turbo's words are "New turbo / whistle", and the
+  Aeronautics car (`rover_departs`) comes before the finale (author). It runs 64.5 s.
+- **No AI tag in the corner** (author): the notice is on the end piece only, and in the descriptions.
+- **Brightened:** `night_pull`, and `factory_wide` a little (`lift=` in the edits); the finale was a near-black silhouette.
+- **`far_boom` goes silent** about 6.5 s into its shot as the camera draws away, in the recording itself. The long cut takes
+  1.5 to 6 s of it and the vertical cut 0 to 6 s, slowed to 0.8, so no piece goes quiet. Why it goes silent that far out has
+  not been looked into.
 
 ## The check of 2026-11-27
 
@@ -110,10 +125,10 @@ Rubber Gaskets; the fan counted as fan air and the basin making brass; the W and
 the pull-back's first frame and the engine small at the end of the long dolly; and the V8 firing on all eight about five seconds
 after each re-timing.
 
-## Before recording
+## Before posting
 
-- Not checked: anything heard, any movement between the stills, and whether each caption reads true over its piece. The pieces
-  that start later than at first (the rebuilt exhausts, the flat-plane V8, the muffled bank) have not been looked at there.
+- Checked after recording: frames every 1.5 s of both cuts, and the recorded sound's level through the new shots. **Nothing
+  has been heard**, and the cuts have not been watched in motion.
 - The sound rework is the author's to tune by ear and is not signed off ([ROADMAP-3.0.md](ROADMAP-3.0.md), 2.4 "The sound rework"),
-  and the blower sounds are still being listened to. The engine shots are recorded after that, or recorded again.
+  and the blower sounds are still being listened to. If either changes, the engine shots are recorded again.
 - The author watches both cuts before they are posted.

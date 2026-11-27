@@ -282,7 +282,7 @@ Every composition keeps viewers through its first and last seconds, each form in
   them in just before the visuals end, so they are seen before viewers drop off at the end screen. In the short form they lie
   over moving footage. The long form leads into them smoothly, with no long, separate tail. The AI notice stays.
 
-The composition now in the harness is 2.4.0's, which follows both rules. It is built and has not been recorded; what is
+The composition now in the harness is 2.4.0's, which follows both rules. It has been recorded and cut, and is not posted; what is
 still to be checked before it is, is in [TRAILER-2.4.md](TRAILER-2.4.md).
 
 ```
@@ -386,9 +386,9 @@ python tools/trailer/record.py --post-only  # cuts the last recordings again (ne
   inertia on the crank blocks and flywheels (`TRAILER_CONFIG`; a ripple goes as one over the inertia). It touches nothing in the mod.
   The shots named above that need a lively crank take it off their own engine.
 - **How it is cut.** `post.py` takes the order and the length of every piece of the full cut from `tools/trailer/edit.txt`
-  (`<shot> <seconds> [at=] [speed=] [engine] [quiet] [cold] [end]`; every piece a whole number of half bars, 1.5 s at the music's 80
+  (`<shot> <seconds> [at=] [speed=] [lift=] [engine] [quiet] [cold] [end]`; every piece a whole number of half bars, 1.5 s at the music's 80
   beats a minute, so the cuts fall on the beat). It renders each piece on its own: its stretch of the recording (sped up when the
-  line says so), a light grade (a slight S-curve, a hint of warm highlights and cool shadows, a faint vignette), a 2.2:1 letterbox, and a caption at
+  line says so; `lift=` first brightens the shadows of a dim shot), a light grade (a slight S-curve, a hint of warm highlights and cool shadows, a faint vignette), a 2.2:1 letterbox, and a caption at
   the lower left that slides in, with its chapter's name over it in gold (`chapter <shot>` lines of `captions.txt`; a `quiet`
   piece keeps the caption before it). A chapter starts with a white flash and a hit. The full cut opens cold on the critically hot
   engine with only the game's sound, slams the title (the mod's round icon, `docs/images/icon.png`, the "CREATE" lettering
@@ -415,8 +415,8 @@ python tools/trailer/record.py --post-only  # cuts the last recordings again (ne
   exhaust mouth to the whole engine revving, with big words on the first frame, every piece
   at least three seconds and the whole cut at most ninety, the words clear of the bottom fifth and the right edge where the app draws its own buttons. A `fit` piece
   shows the whole 16:9 picture in a band on a blurred copy of itself (`zoom=` for a small subject), the others a 9:16 window
-  (`x=` moves it). The AI notice is in it twice: `vertical_ai_tag` at the top from the first frame, for a viewer who leaves
-  early, and on the end piece the full `outro_notice` with `ai_docs` under it, pointing to [AI.md](AI.md). The end piece lies
+  (`x=` moves it). The AI notice is on the end piece only, with nothing in a corner before it (author, 2026-11-27):
+  the full `outro_notice` with `ai_docs` under it, pointing to [AI.md](AI.md). The end piece lies
   over footage and does not fade, so the Short loops cleanly. It writes `run/trailer/description_vertical.txt` too, with the AI
   notice and the address of AI.md (`ai_docs_url`) in its first lines; the full description carries that address as well.
   `TrailerCoverageTest` checks the edit names real shots on the beat, has words on every piece and ends on the end piece, and
