@@ -105,6 +105,18 @@ class EngineSoundTest {
 	}
 
 	@Test
+	void aRotaryIsToldApartAndWorthSyncing() {
+		EngineSound piston = new EngineSound(new int[] {0}, new float[] {0.5f}, false, 1, 0);
+		EngineSound rotary = piston.asRotary(true);
+		assertFalse(piston.rotary());
+		assertTrue(rotary.rotary());
+		assertFalse(piston.sameAs(rotary));
+		assertTrue(rotary.sameAs(piston.asRotary(true)));
+		assertFalse(new EngineSound(new int[0], new float[0], false, 1, 0).asRotary(true)
+			.plain());
+	}
+
+	@Test
 	void aPlainEngineHasNothingNewToSync() {
 		assertTrue(EngineSound.NONE.plain());
 		assertTrue(new EngineSound(new int[0], new float[0], false, 1, 0).plain());

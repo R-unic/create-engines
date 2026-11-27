@@ -1500,7 +1500,7 @@ public final class EngineController {
 		// The summary keeps these arrays, so they are the things here that have to be made new
 		float[] angles = Arrays.copyOf(listed, listedCount);
 		EngineSound sound = new EngineSound(Arrays.copyOf(listedOutlets, listedCount), base.pipes, base.compression,
-			base.precision, enclosure, base.muffles);
+			base.precision, enclosure, base.muffles, base.rotary);
 		float roughness = (float) (sim.isStopped() ? 0 : Dynamometer.roughnessLoss(torqueCurve, rippleCurve, sim.meanRpm()));
 		Diagnosis.Report report = diagnose(state, firing, roughness);
 		return new EngineSummary(state, (float) (sim.meanRpm() * speedScale()), primary.publishedCapacity(),
@@ -1527,7 +1527,7 @@ public final class EngineController {
 	 * cylinders.
 	 */
 	private record SoundBase(int[] outletOf, float[] pipes, float[] muffles, boolean compression,
-							 float precision) {
+							 float precision, boolean rotary) {
 	}
 
 	private @Nullable SoundBase soundBase;
@@ -1578,7 +1578,9 @@ public final class EngineController {
 				precise++;
 		}
 		return new SoundBase(outlets.outletOf(), pipes, muffles, compression > spark,
-			cylinders.isEmpty() ? 1 : precise / (float) cylinders.size());
+			cylinders.isEmpty() ? 1 : precise / (float) cylinders.size(),
+			!cylinders.isEmpty() && cylinders.stream()
+				.allMatch(Cylinder::rotary));
 	}
 
 	/**

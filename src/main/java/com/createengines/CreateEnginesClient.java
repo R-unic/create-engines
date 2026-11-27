@@ -51,6 +51,8 @@ public class CreateEnginesClient {
 		NeoForge.EVENT_BUS.addListener(com.createengines.client.BuildPreview::onRender);
 		NeoForge.EVENT_BUS.addListener(com.createengines.client.ShaftClock::onRenderFrame);
 		NeoForge.EVENT_BUS.addListener(CreateEnginesClient::onLoggingOut);
+		NeoForge.EVENT_BUS.addListener((net.neoforged.neoforge.client.event.ClientTickEvent.Post event) ->
+			com.createengines.content.effects.EngineEffects.tickFlashes());
 		// The headphones: muffle on the sound card, and the tooltip's word on whether the card can
 		com.createengines.content.headphones.HeadphonesItem.filterAvailable = com.createengines.client.HeadphoneMuffle::filtering;
 		modEventBus.addListener(com.createengines.client.HeadphoneMuffle::onSoundEngineLoad);
@@ -96,6 +98,7 @@ public class CreateEnginesClient {
 	/** The sound engine drops every voice when the world closes; forget ours too, or they keep that world's machines alive. */
 	private static void onLoggingOut(ClientPlayerNetworkEvent.LoggingOut event) {
 		com.createengines.content.EngineNoteSound.clear();
+		com.createengines.content.effects.EngineEffects.clearFlashes();
 		com.createengines.content.MachineLoopSound.clear();
 		com.createengines.content.starter.StarterWhirSound.clear();
 		com.createengines.client.RainCaps.clear();

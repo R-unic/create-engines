@@ -602,13 +602,18 @@ and regular rattles are what made the first takes sound like a cartoon (`Failure
     on average. `EngineNotePerfTest` measured 136 to 246 ns a sample against its 600, at 32,000 samples a second.
   - Tests: `EngineGrainTest`, and every earlier note test unchanged.
 - **One-shots in the note (sound plan step 3, 2026-11-26).**
-  - *Backfire and spit.* An engine with a note plays them in its own stream (`NoteBangs`): a big blow-down, its crack, the
-    flame and the sparks' fizz for a backfire, a darkening jet, a small blow-down and a fizz for a spit. They have a pipe
-    and a last stage of their own, so the note itself is sample for sample what it would be without them. One waits for the
-    engine's next firing, for at most a tenth of a second, and rings that outlet's pipe with its muffler. Which cylinder's
-    flame set it off is not followed: it goes out of whichever outlet fires next. The stream is made ahead of what is
-    seen, so it is heard up to about a quarter of a second after its flash. An engine without a note plays
-    `exhaust_pop` or `exhaust_spit` at once.
+  - *Backfire and spit.* An engine with a note plays them in its own stream (`NoteBangs`). A backfire is a big blow-down
+    that opens over 6 ms, a soft crack, dull burning gas (130 to 1100 Hz, down the pipe and straight from the mouth) and a
+    thud that drops from above the pipe's note to under it, then none, one or two weaker ones 55 to 155 ms apart. A spit is
+    a small blow-down and one soft breath that darkens from 2600 to 650 Hz. Neither clips, and little of either is above
+    3 kHz (retuned 2026-11-27: the author found them too sharp, wrong in character and late; the backfire had risen in
+    0.3 ms into hard clipping and over half the spit was above 2 kHz). They have a pipe and a last stage of their own, so
+    the note itself is sample for sample what it would be without them. One waits for the engine's next firing, for at most
+    a tenth of a second, and rings that outlet's pipe with its muffler. Which cylinder's flame set it off is not followed:
+    it goes out of whichever outlet fires next. The stream is made ahead of what is seen, so the bang is heard up to about
+    a quarter of a second after it is asked for, and its flame and sparks wait for it: the sound thread says on the bang's
+    cue (`NoteCue`) when it is heard, and `content.effects.HeldFlashes` shows them then, to within a tick, or after half a
+    second if the note was lost. An engine without a note plays `exhaust_pop` or `exhaust_spit` at once, with its flash.
   - *A stall's end.* When the wind-down ends, the note rocks its own crank to rest, three blow-downs and a sigh, as hard as
     that kind of stall fetches up (`EngineNoteGesture.Kind.slam`, `sigh`). `engine_settle` plays only if the note was lost
     part way through. A note started on the same tick as a catch comes in at once, not faded, and the note is now started
@@ -620,7 +625,7 @@ and regular rattles are what made the first takes sound like a cartoon (`Failure
     against a capture from the game.
   - *Pitch.* A one-off strays at most 3% either way from its pitch (`content.effects.Pitches`). Pitches that tell you
     something (the take a catch or stall picks, how near a dry piston is to seizing) are as they were.
-  - Tests: `NoteBangsTest`, `SoundAssetsTest`.
+  - Tests: `NoteBangsTest`, `NoteBangShapeTest`, `HeldFlashesTest`, `SoundAssetsTest`.
 - **The world around the note (sound plan step 4, 2026-11-26).** It works on what a note's stream and the room voice play,
   after everything else, so the synthesizer is as it was. Recorded sounds and loops are left to the game. In clear air
   within 8 blocks and out of doors, the stream is sample for sample what it was.
@@ -664,6 +669,23 @@ and regular rattles are what made the first takes sound like a cartoon (`Failure
     lower than before. The sound bench has recorded it in game (step 5 of the sound plan); nobody has
     judged it by ear.
   - Tests: `EngineNoteDepthTest`, and every earlier note test unchanged.
+- **Kinds of engine (2026-11-27).** The author found engines too alike and the note fake or synthetic: every build was the
+  same pipe over the same thump. Two things were added, and nothing about timing or rhythm changed.
+  - *Rush of gas* (`NoteFlow`). Each firing sends noise (350 to 2600 Hz) down its outlet's pipe, opening over 2.5 ms and
+    falling to about a third in 9 to 22 ms by cylinder size, more under load. It is turned down as firings crowd.
+  - *Resonances* (`NoteTimbre`, `NoteBody`). What leaves the pipes goes through two band-passes that do not move with the
+    engine's speed, beside some of the sound as it was; the boom and the thump go round them. Where they sit, and how much
+    rush and thump there is, goes by the kind of engine: by how many firings it lists (1, 2, 3, 4, 5, 6, 8, 10, 12, 16 and
+    up), a burble for six or more firings whose banks fire unevenly (a crossplane V8), and a buzz for a rotary. A longer
+    mean run moves both down and a stub up; unequal runs lower and dull them; compression ignition lowers both and rushes
+    less. The table is in `NoteTimbre`.
+  - *Rotary.* A twin rotary fires as an even four does, so the server now says when every cylinder of an engine is a rotor
+    chamber (`EngineSound.rotary`, synced as `SoundRotary`, written only then; nothing saved changes).
+  - *Measured offline* at 420 RPM, in the bands that carry sound: a crossplane and a flat-plane V8 were 0.1 dB apart and
+    are about 7; an even four and a rotary went from 1.7 to about 6, a four and a six from 2.5 to about 5. A flat four on
+    unequal runs is still close to an inline four (about 2). Level is within about 3 dB of before, and most builds are
+    brighter above 1 kHz. Nobody has judged any of it by ear.
+  - Tests: `NoteTimbreTest`, `EngineSoundTest`, `EngineGameTests.aRotaryEngineStartsAndRunsOnGasoline`.
 - **Sounds on moving structures (2026-11-26).** Sable plays any sound that starts on a moving structure inside a wrapper
   of its own, so `SoundManager.isActive` says no to the instance this mod made. Every note, loop and starter whir there
   was taken for dropped and started again over itself, about every second or two, until the game had no sound channel
@@ -775,10 +797,10 @@ and regular rattles are what made the first takes sound like a cartoon (`Failure
   far past rich the mixture is, white while the block is below `Thermal.COLD_BELOW`, blue with oil dilution, a pale mist
   for unlit fuel, a darker thicker cloud for thirty ticks after catching. A rich engine working hard licks flame; unlit
   fuel into the pipe of a warm, otherwise firing engine pops three times in ten (`exhaust_pop`, on the bang volume: five takes,
-  each a crack, a blow-down down the note's own pipe, a soft rush of flame and the sparks fizzing after it, some with a
-  smaller pop or two, made by `tools/exhaust_pop_sounds.py`; an engine with a note plays its own, see "One-shots in the
+  each a blow-down down the note's own pipe with burning gas and a thud, some with a smaller pop or two, made by
+  `tools/exhaust_pop_sounds.py`; an engine with a note plays its own, see "One-shots in the
   note"). A charge boost lit early spits from the pipe with orange
-  flashes (`exhaust_spit`, on the mechanical volume: a hiss of burning gas, a small puff and a fizz, from the same file);
+  flashes (`exhaust_spit`, on the mechanical volume: a soft breath of burning gas and a small puff, from the same file);
   `preignition_knock` is only the wear mode's ping at a cylinder.
   Each firing leaves by one outlet picked at random and throws fewer puffs past four cylinders, so particles do not
   multiply with outlets or grow in step with cylinders.

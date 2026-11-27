@@ -280,25 +280,25 @@ public final class EngineNoteSound extends AbstractTickableSoundInstance {
 	 * Has the note of the engine whose primary crankshaft is at {@code primary} play a backfire out of the pipe it next fires
 	 * down. {@code loudness} is what the recording would have played at, the player's volume setting and any muffler in it.
 	 *
-	 * @return false if there is no note to play it, and the recording should play instead
+	 * @return the cue that says when it is heard, or null if there is no note to play it and the recording should play
+	 *         instead
 	 */
-	public static boolean pop(@Nullable BlockPos primary, float loudness, float pitch) {
+	public static NoteCue pop(@Nullable BlockPos primary, float loudness, float pitch) {
 		return bang(primary, NoteBangs.Kind.POP, loudness / POP_LOUDNESS, pitch);
 	}
 
 	/** The same for the spit of a charge that boost lit early. */
-	public static boolean spit(@Nullable BlockPos primary, float loudness, float pitch) {
+	public static NoteCue spit(@Nullable BlockPos primary, float loudness, float pitch) {
 		return bang(primary, NoteBangs.Kind.SPIT, loudness / SPIT_LOUDNESS, pitch);
 	}
 
-	private static boolean bang(@Nullable BlockPos primary, NoteBangs.Kind kind, float loudness, float pitch) {
+	private static NoteCue bang(@Nullable BlockPos primary, NoteBangs.Kind kind, float loudness, float pitch) {
 		float setting = CEClientConfig.engineNoteVolume();
 		EngineNoteSound note = primary == null ? null : PLAYING.get(primary);
 		if (note == null || note.yielding || setting <= 0 || !isPlayingFor(primary) || !hasFirings(note.crank))
-			return false;
+			return null;
 		// The stream is played at the note's own volume setting, which the bang's loudness must not be multiplied by again
-		note.synth.bang(kind, loudness / setting, pitch);
-		return true;
+		return note.synth.bang(kind, loudness / setting, pitch);
 	}
 
 	/** Forgets every voice, for when the player leaves a world: the sound engine has already dropped them. */

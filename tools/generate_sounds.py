@@ -31,9 +31,9 @@ Sounds:
   engine_catch_hard, engine_catch_hard2..3  a cold or long-cranked engine: coughs that come to nothing, then a ragged catch
   engine_stall_lugged, engine_stall_lugged2..3  dragged down by its load: hard, slowing firings and a heavy stop
   engine_stall_starved, engine_stall_starved2..3  out of fuel: weak firings among misses, and a soft stop
-  exhaust_pop1..5    unburned fuel lighting in a hot exhaust (the backfire): a crack, a blow-down down the note's pipe, a
-                     soft rush of flame and the sparks fizzing after it, some with a smaller pop or two (exhaust_pop_sounds)
-  exhaust_spit1..3   a charge boost lit early, spat out of the pipe: a quick hiss of burning gas, a small puff and a fizz
+  exhaust_pop1..5    unburned fuel lighting in a hot exhaust (the backfire): a blow-down down the note's pipe, burning gas
+                     and a thud, some with a smaller pop or two (exhaust_pop_sounds)
+  exhaust_spit1..3   a charge boost lit early, spat out of the pipe: a soft breath of burning gas and a small puff
                      (exhaust_pop_sounds)
   metal_tick1..3     hot metal ticking as it cools: a small bright tink
   preignition_knock1..3  a charge lighting itself early under boost: a quick run of hard metallic knocks (at a cylinder, in wear mode)

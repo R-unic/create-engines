@@ -14,9 +14,22 @@ import java.util.Arrays;
  * @param precision   share of the cylinders built with precision parts, 0 to 1
  * @param enclosure   share of the cylinders' sides clad in Engine Casing, 0 to 1: a clad engine is heard dulled
  * @param muffles     for each outlet, how much of its gas goes through a muffler, 0 to 1
+ * @param rotary      the engine is rotor housings rather than cylinders
  */
 public record EngineSound(int[] outlets, float[] pipes, boolean compression, float precision, float enclosure,
-	float[] muffles) {
+	float[] muffles, boolean rotary) {
+
+	/** A piston engine's shape. */
+	public EngineSound(int[] outlets, float[] pipes, boolean compression, float precision, float enclosure,
+		float[] muffles) {
+		this(outlets, pipes, compression, precision, enclosure, muffles, false);
+	}
+
+	/** The same shape, of rotor housings or not. */
+	public EngineSound asRotary(boolean rotors) {
+		return rotors == rotary ? this
+			: new EngineSound(outlets, pipes, compression, precision, enclosure, muffles, rotors);
+	}
 
 	/** A shape whose outlets say nothing about mufflers: the engine's share of them is heard on all alike. */
 	public EngineSound(int[] outlets, float[] pipes, boolean compression, float precision, float enclosure) {
@@ -99,7 +112,7 @@ public record EngineSound(int[] outlets, float[] pipes, boolean compression, flo
 
 	/** Whether two shapes would sound the same, so a change need not be synced. */
 	public boolean sameAs(EngineSound other) {
-		return other != null && compression == other.compression
+		return other != null && compression == other.compression && rotary == other.rotary
 			&& Math.abs(precision - other.precision) < 0.05f && Math.abs(enclosure - other.enclosure) < 0.05f
 			&& Arrays.equals(outlets, other.outlets) && samePipes(pipes, other.pipes) && samePipes(muffles, other.muffles);
 	}
@@ -115,7 +128,7 @@ public record EngineSound(int[] outlets, float[] pipes, boolean compression, flo
 
 	/** Whether there is anything to sync: a plain engine writes nothing new, so its summary is as it was. */
 	public boolean plain() {
-		return this == NONE || outlets.length == 0 && !compression && enclosure == 0;
+		return this == NONE || outlets.length == 0 && !compression && !rotary && enclosure == 0;
 	}
 
 	/** As the other {@code held}, with each outlet's muffling too. */

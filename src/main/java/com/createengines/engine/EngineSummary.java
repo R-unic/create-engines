@@ -170,6 +170,8 @@ public record EngineSummary(EngineState state, float rpm, float availableTorque,
 			tag.putFloat("SoundPrecision", sound.precision());
 			tag.putFloat("SoundEnclosure", sound.enclosure());
 			tag.putIntArray("SoundMuffles", sound.muffleHundredths());
+			if (sound.rotary())
+				tag.putBoolean("SoundRotary", true);
 		}
 		if (!sourceLines.isEmpty()) {
 			ListTag lines = new ListTag();
@@ -212,7 +214,7 @@ public record EngineSummary(EngineState state, float rpm, float availableTorque,
 			return EngineSound.NONE;
 		return EngineSound.held(tag.getIntArray("SoundOutlets"), tag.getIntArray("SoundPipes"), tag.getBoolean("SoundCompression"),
 			tag.getFloat("SoundPrecision"), tag.getFloat("SoundEnclosure"),
-			tag.getIntArray("SoundMuffles"));
+			tag.getIntArray("SoundMuffles")).asRotary(tag.getBoolean("SoundRotary"));
 	}
 
 	private static List<StatusLine> readSourceLines(CompoundTag tag) {

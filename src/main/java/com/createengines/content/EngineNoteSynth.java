@@ -9,8 +9,9 @@ import com.createengines.engine.sim.Muffling;
  * modelled pipe of the outlet it goes out of ({@link ExhaustPipe}), so an even straight six hums at one pitch, a V-twin
  * potato-potatoes, a four with a dead cylinder limps, and a rotary buzzes, all from the same code and nothing recorded.
  * <p>
- * Under the pipe are a low thump on each firing, a faint mechanical bed that turns with the crank and, where firings run
- * together, a tone at their rate.
+ * Each firing also sends a rush of gas down its pipe ({@link NoteFlow}), and what leaves the pipes goes through the
+ * resonances of the kind of engine it is ({@link NoteTimbre}). Under that are a low thump on each firing, a faint
+ * mechanical bed that turns with the crank and, where firings run together, a tone at their rate.
  * <p>
  * What the engine is built of shapes it ({@link Voice}): each exhaust outlet rings its own pipe, tuned by the run's length and
  * the cylinders' size, so the firings an outlet gets, even or uneven, are heard as that outlet's rhythm; compression-ignition
@@ -81,9 +82,16 @@ public final class EngineNoteSynth {
 	 * @param enclosure  how much of the engine is clad in casing, 0 to 1: a clad engine is heard dulled, its crack muffled
 	 * @param muffle     for each outlet, how much of its gas goes through a muffler, 0 to 1. Empty: every outlet is muffled as
 	 *                   much as {@link #setMuffling} says
+	 * @param rotary     rotor housings rather than cylinders: it buzzes
 	 */
 	public record Voice(int[] outlet, float[] pipeLength, Ignition ignition, float precision, float enclosure,
-						float[] muffle) {
+						float[] muffle, boolean rotary) {
+
+		/** A piston engine's voice. */
+		public Voice(int[] outlet, float[] pipeLength, Ignition ignition, float precision, float enclosure,
+					 float[] muffle) {
+			this(outlet, pipeLength, ignition, precision, enclosure, muffle, false);
+		}
 
 		/** A voice whose outlets are all muffled alike, as {@link #setMuffling} says. */
 		public Voice(int[] outlet, float[] pipeLength, Ignition ignition, float precision, float enclosure) {
@@ -98,7 +106,7 @@ public final class EngineNoteSynth {
 			if (sound == null || sound == EngineSound.NONE)
 				return PLAIN;
 			return new Voice(sound.outlets(), sound.pipes(), sound.compression() ? Ignition.COMPRESSION : Ignition.SPARK,
-				sound.precision(), sound.enclosure(), sound.muffles());
+				sound.precision(), sound.enclosure(), sound.muffles(), sound.rotary());
 		}
 
 		/** A voice for an engine with no casing round it. */
@@ -186,10 +194,16 @@ public final class EngineNoteSynth {
 	 * What the game thread last asked for, with what follows from it worked out there (the closest two
 	 * firings), so the audio thread allocates nothing. One object, so the audio thread never sees the parts of two.
 	 */
-	private record Prepared(Params params, float closest, int outlets, float[] lope, float depth) {
+	private record Prepared(Params params, float closest, int outlets, float[] lope, float depth, NoteTimbre timbre) {
 	}
 
-	private volatile Prepared prepared = new Prepared(Params.SILENT, (float) CYCLE, 1, new float[0], 0);
+	private volatile Prepared prepared = prepare(Params.SILENT);
+	/** The kind of engine the note is heard as, kept from the last that listed its firings. */
+	private NoteTimbre timbre = prepared.timbre();
+	private final NoteBody openBody = new NoteBody();
+	private final NoteBody shutBody = new NoteBody();
+	private final NoteFlow flow = new NoteFlow();
+	private float flowShare = 1;
 	/** The last of them the audio thread took up. */
 	private Prepared taken;
 	private float[] angles = new float[0];
@@ -239,6 +253,7 @@ public final class EngineNoteSynth {
 	private void tune(float size, Voice voice) {
 		tunedSize = size;
 		tunedVoice = voice;
+		flow.sized(size);
 		for (int o = 0; o < MOST_OUTLETS; o++) {
 			pipes[o].tune(PIPE_HZ * pitch(size, voice.pipe(o)) * OUTLET_DETUNE[o]);
 			booms[o].tune(boomNote(voice.pipe(o)) * OUTLET_DETUNE[o]);
@@ -308,6 +323,8 @@ public final class EngineNoteSynth {
 	void applyLock(long nowNanos) {
 		applyLock();
 		long heard = clock.heardAt(rendered, nowNanos);
+		blockSample = rendered;
+		blockHeard = heard;
 		Sighting seen = sighting;
 		// A stall winds the cycle down itself: the cam has already stopped, or is about to
 		if (dying())
@@ -329,6 +346,17 @@ public final class EngineNoteSynth {
 		} else if (++astray >= 2)
 			// One wild reading is a hitch; two are a different place in the cycle
 			jump(target);
+	}
+
+	/** The first sample of the block being rendered, and when it is heard. */
+	private long blockSample;
+	private long blockHeard;
+
+	/** Says when a bang that went off with the sample just rendered is heard. */
+	private void cueStarted() {
+		NoteCue cue = bangs.takeStarted();
+		if (cue != null)
+			cue.heardAt(blockHeard + (long) ((rendered - blockSample) * 1e9 / SAMPLE_RATE));
 	}
 
 	/** Where in its 720 degree cycle the next sample is. */
@@ -362,15 +390,19 @@ public final class EngineNoteSynth {
 	public void set(Params next) {
 		if (dying())
 			return;
-		Prepared made = prepare(clean(next));
+		Prepared made = prepare(NoteInput.clean(next));
 		prepared = made;
 		if (made.params.combustion > 0 && made.params.rpm > 1 && made.params.firingAngles.length > 0)
 			lastTurning = made;
 	}
 
 	private static Prepared prepare(Params clean) {
-		return new Prepared(clean, closest(clean.firingAngles), Math.min(MOST_OUTLETS, clean.voice.outlets()),
-			EngineNoteVoicing.lope(clean.firingAngles, clean.voice.outlet()), EngineNoteVoicing.depth(clean.firingAngles.length));
+		int ringing = Math.min(MOST_OUTLETS, clean.voice.outlets());
+		float[] lope = EngineNoteVoicing.lope(clean.firingAngles, clean.voice.outlet());
+		return new Prepared(clean, NoteInput.closest(clean.firingAngles), ringing, lope,
+			EngineNoteVoicing.depth(clean.firingAngles.length), NoteTimbre.of(lope, NoteInput.meanRun(clean.voice, ringing),
+				NoteInput.unequalRuns(clean.voice, ringing), clean.voice.ignition() == Ignition.COMPRESSION,
+				clean.voice.rotary()));
 	}
 
 	/** The catch or stall being played, if any. */
@@ -409,8 +441,8 @@ public final class EngineNoteSynth {
 	}
 
 	/** Plays a backfire or a spit in this note, from the game thread: see {@link NoteBangs}. */
-	void bang(NoteBangs.Kind kind, float strength, float pitch) {
-		bangs.ask(kind, strength, pitch);
+	NoteCue bang(NoteBangs.Kind kind, float strength, float pitch) {
+		return bangs.ask(kind, strength, pitch);
 	}
 
 	/** Whether a stalled engine's crank is still rocking to rest. */
@@ -422,45 +454,6 @@ public final class EngineNoteSynth {
 	boolean dying() {
 		EngineNoteGesture current = gesture;
 		return current != null && current.kind.dies();
-	}
-
-	/**
-	 * What the synthesizer is willing to follow. A NaN or infinity from the engine would poison the filters and the phase
-	 * for good, leaving that engine mute until the world reloads, so anything unusable becomes silence or a sane limit.
-	 */
-	private static Params clean(Params p) {
-		float[] angles = p.firingAngles == null ? new float[0] : p.firingAngles;
-		for (float angle : angles)
-			if (!Float.isFinite(angle) || angle < 0 || angle >= CYCLE)
-				return Params.SILENT;
-		return new Params(finite(p.rpm, 0, 20000), angles, finite(p.firingShare, 0, 1), finite(p.load, 0, 1.3f),
-			finite(p.combustion, 0, 1), finite(p.size, 0, 1), finite(p.sharpness, 0, 1), finite(p.roughness, 0, 1),
-			clean(p.voice, angles.length));
-	}
-
-	/** A voice the synthesizer can follow: an outlet for every firing, each within range, and sane lengths. */
-	private static Voice clean(Voice voice, int firings) {
-		if (voice == null)
-			return Voice.PLAIN;
-		int[] outlet = new int[firings];
-		if (voice.outlet != null && voice.outlet.length == firings)
-			for (int i = 0; i < firings; i++)
-				outlet[i] = Math.clamp(voice.outlet[i], 0, MOST_OUTLETS - 1);
-		float[] pipes = new float[MOST_OUTLETS];
-		for (int o = 0; o < MOST_OUTLETS; o++)
-			pipes[o] = voice.pipeLength != null && o < voice.pipeLength.length ? finite(voice.pipeLength[o], 0, 1) : 0.5f;
-		return new Voice(outlet, pipes, voice.ignition == null ? Ignition.SPARK : voice.ignition,
-			finite(voice.precision, 0, 1),
-			finite(voice.enclosure, 0, 1), muffles(voice.muffle));
-	}
-
-	private static float[] muffles(float[] wanted) {
-		if (wanted == null || wanted.length == 0)
-			return new float[0];
-		float[] muffles = new float[MOST_OUTLETS];
-		for (int o = 0; o < MOST_OUTLETS; o++)
-			muffles[o] = o < wanted.length ? finite(wanted[o], 0, 1) : 0;
-		return muffles;
 	}
 
 	private volatile float wantedFar;
@@ -491,17 +484,13 @@ public final class EngineNoteSynth {
 		wantedMuffling = Float.isFinite(share) ? Math.clamp(share, 0f, 1f) : 0f;
 	}
 
-	private static float finite(float value, float min, float max) {
-		return Float.isFinite(value) ? Math.clamp(value, min, max) : 0;
-	}
-
 	/** Whether there is nothing left to hear: the engine is quiet and the pipe has stopped ringing. */
 	public boolean isSilent() {
 		for (int o = 0; o < MOST_OUTLETS; o++)
 			if (!blows[o].idle() || o < outlets && !(pipes[o].isSilent() && booms[o].isSilent()))
 				return false;
 		return prepared.params().combustion <= 0 && combustion < 0.001f && openRaps.idle() && shutRaps.idle()
-			&& under.isSilent() && bangs.idle();
+			&& under.isSilent() && flow.isStill() && bangs.idle();
 	}
 
 	/** Fills {@code out[offset, offset + count)} with 16-bit samples. */
@@ -544,6 +533,8 @@ public final class EngineNoteSynth {
 			taken = state;
 			outletOf = p.voice.outlet();
 			outlets = state.outlets();
+			if (p.firingAngles.length > 0)
+				timbre = state.timbre();
 			closestFirings = state.closest();
 			// Each sync brings a new array, mostly with the same firings in it: finding the place again would skip one still waiting
 			if (!java.util.Arrays.equals(p.firingAngles, angles)) {
@@ -567,20 +558,34 @@ public final class EngineNoteSynth {
 			fireDue(p);
 		}
 
-		double body = 0;
-		double shutBody = 0;
-		// Each outlet's grains go through its own pipe
+		float piped = 0;
+		float pipedShut = 0;
+		double boomed = 0;
+		double boomedShut = 0;
+		boolean breathing = !flow.isStill();
+		if (breathing)
+			flow.advance();
+		float breath = timbre.flow() * flowShare;
+		// Each outlet's grains and rush of gas go through its own pipe
 		for (int o = 0; o < outlets; o++) {
 			float boom = booms[o].isStill() ? 0 : booms[o].next();
-			double outletSound = (pipes[o].next(blows[o].take()) + boom * BOOM_WEIGHT * boomShare)
-				* OUTLET_WEIGHT[o];
-			body += outletSound * (1 - muffled[o]);
-			shutBody += outletSound * muffled[o];
+			float into = blows[o].take();
+			if (breathing)
+				into += flow.next(o) * breath;
+			float mouth = pipes[o].next(into) * OUTLET_WEIGHT[o];
+			double under55 = boom * BOOM_WEIGHT * boomShare * OUTLET_WEIGHT[o];
+			piped += mouth * (1 - muffled[o]);
+			pipedShut += mouth * muffled[o];
+			boomed += under55 * (1 - muffled[o]);
+			boomedShut += under55 * muffled[o];
 		}
+		// The boom is under the resonances, not through them: they would take it away
+		double body = openBody.next(piped, timbre) + boomed;
+		double behind = mostMuffled > 0.001f ? shutBody.next(pipedShut, timbre) + boomedShut : pipedShut + boomedShut;
 
 		if ((slowTick++ & (SLOW_EVERY - 1)) == 0)
 			refreshSlow();
-		float shared = under.next(noise(), phase, rpm, combustion, pileUp, toneShare);
+		float shared = under.next(noise(), phase, rpm, combustion, pileUp * timbre.thump(), toneShare);
 
 		// Far off or behind casing, the sharp parts go first
 		float sharp = highShare;
@@ -588,7 +593,7 @@ public final class EngineNoteSynth {
 		// firings between open ones
 		firingMuffle += MUFFLE_SWITCH * (muffled[firingOutlet] - firingMuffle);
 		float open = (float) (body + shared * (1 - firingMuffle) + openRaps.take() * sharp) * scale * 2;
-		float shut = (float) (shutBody + shared * firingMuffle + shutRaps.take() * sharp) * scale * 2;
+		float shut = (float) (behind + shared * firingMuffle + shutRaps.take() * sharp) * scale * 2;
 		// Only a fast engine is levelled, so the lope of a slow one is left alone, a stopping engine is not turned up, and a
 		// note of a pipe the firing rate happens to hit is turned down
 		float out = exit.next(open, shut, toneShare * Math.min(1f, combustion * 2), mostMuffled > 0.001f);
@@ -596,7 +601,11 @@ public final class EngineNoteSynth {
 			reset();
 			return 0;
 		}
-		return bangs.idle() ? out : EngineRoomMix.limit(out + bangs.next());
+		if (bangs.idle())
+			return out;
+		out = EngineRoomMix.limit(out + bangs.next());
+		cueStarted();
+		return out;
 	}
 
 	/**
@@ -624,6 +633,7 @@ public final class EngineNoteSynth {
 		float rate = eventsPerSecond * eventsPerSecond;
 		toneShare = rate / (rate + TONE_FROM * TONE_FROM);
 		scale = LEVEL / (float) Math.pow(1 + 0.03f * eventsPerSecond, 0.7);
+		flowShare = 1 / (float) Math.sqrt(1 + eventsPerSecond / BREATHS_BEFORE_PILE_UP);
 		// The boom is there to carry from one firing to the next. Where they come close enough to carry themselves it goes,
 		// steeply, or it would ring on what differs between them and blur the engine's rhythm
 		float crowd = eventsPerSecond / BOOMS_BEFORE_PILE_UP;
@@ -657,6 +667,9 @@ public final class EngineNoteSynth {
 		bangs.dulledBy(clad, far);
 	}
 
+	/** Firings a second at which the rushes of gas have begun to run together, and each is turned down. */
+	private static final float BREATHS_BEFORE_PILE_UP = 60;
+
 	/** The latest a firing's variation may make it, in seconds: too little to be heard against the flash it belongs to. */
 	static final float MOST_LATE = 0.006f;
 
@@ -688,6 +701,9 @@ public final class EngineNoteSynth {
 		correction = 0;
 		rpm = load = combustion = 0;
 		under.clear();
+		flow.clear();
+		openBody.clear();
+		shutBody.clear();
 		bangs.clear();
 	}
 
@@ -706,18 +722,6 @@ public final class EngineNoteSynth {
 			return 0;
 		double most = Math.min(jitterDegrees, CYCLE - 0.01 - angles[index]);
 		return Math.max(0, most) * (noise() + 1) * 0.5;
-	}
-
-	/** The fewest degrees between two firings, going round the cycle. */
-	private static float closest(float[] angles) {
-		if (angles.length < 2)
-			return (float) CYCLE;
-		float least = (float) CYCLE;
-		for (int i = 0; i < angles.length; i++) {
-			float next = i + 1 < angles.length ? angles[i + 1] : angles[0] + (float) CYCLE;
-			least = Math.min(least, next - angles[i]);
-		}
-		return least;
 	}
 
 	private void fire(int index, Params p) {
@@ -744,6 +748,8 @@ public final class EngineNoteSynth {
 		under.pressure(strength * burn);
 		boolean compression = p.voice().ignition() == Ignition.COMPRESSION;
 		strikeBlow(firingOutlet, compression, p.size, lit ? p.load() : 0, strength * burn * BODY_WEIGHT);
+		// A hard-worked cylinder empties with more of a rush than an idling one
+		flow.breathe(firingOutlet, strength * burn * BODY_WEIGHT * (lit ? 0.55f + 0.45f * Math.min(1f, p.load()) : 0.3f));
 		if (depth > 0)
 			booms[firingOutlet].strike(strength * burn);
 		if (lit && compression) {

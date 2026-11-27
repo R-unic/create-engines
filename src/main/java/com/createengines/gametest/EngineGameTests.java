@@ -3356,6 +3356,9 @@ public class EngineGameTests {
 			helper.assertTrue(summary.state() == EngineState.RUNNING, "The rotary engine should run on its own: " + summary);
 			helper.assertTrue(summary.firing() == 3, "All three chambers should fire: " + summary);
 			assertSounds(helper, false, 1);
+			helper.assertTrue(EngineSummary.read(summary.write())
+				.sound()
+				.rotary(), "The client is not told the engine is a rotary: " + summary.write());
 			RotorHousingBlockEntity housing = helper.getBlockEntity(TestEngine.HOUSING);
 			for (int i = 0; i < 3; i++)
 				helper.assertTrue(housing.chamber(i) != null && housing.chamber(i)

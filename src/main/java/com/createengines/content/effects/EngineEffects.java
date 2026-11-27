@@ -7,6 +7,7 @@ import org.jetbrains.annotations.Nullable;
 import com.createengines.client.RainCaps;
 import com.createengines.config.CEClientConfig;
 import com.createengines.content.EngineNoteSound;
+import com.createengines.content.NoteCue;
 import com.createengines.content.raincap.RainCapBlock;
 import com.createengines.content.airflow.PortOpeningBlock;
 import com.createengines.content.crankshaft.CrankshaftBlockEntity;
@@ -48,7 +49,28 @@ public final class EngineEffects {
 	/** Create's usual speed limit, against which an engine's speed is reckoned for effects. */
 	private static final float TOP_RPM = 256;
 
+	/** Flashes waiting for their bang to be heard from an engine's note. */
+	private static final HeldFlashes HELD = new HeldFlashes();
+
 	private EngineEffects() {
+	}
+
+	/** Shows the flashes whose bangs are heard by now; once a client tick. */
+	public static void tickFlashes() {
+		HELD.tick(System.nanoTime());
+	}
+
+	/** Forgets the flashes still waiting, for when the player leaves a world. */
+	public static void clearFlashes() {
+		HELD.clear();
+	}
+
+	/** Shows {@code flash} when {@code cue}'s bang is heard, or at once for a bang that is not a note's. */
+	private static void withBang(@Nullable NoteCue cue, Runnable flash) {
+		if (cue == null)
+			flash.run();
+		else
+			HELD.add(cue, System.nanoTime(), flash);
 	}
 
 	/**
@@ -106,15 +128,18 @@ public final class EngineEffects {
 		BlockPos primary = crank == null ? null : crank.primaryPos();
 		// Boost lit the charge early: a spit of burning gas from the pipe and orange flashes
 		if (random.nextFloat() < ExhaustLook.preignitionRattle(status.preignition())) {
-			flames(level, outlet.at, outlet.normal, 2, 0.18);
 			float volume = CEClientConfig.mechanicalVolume();
+			NoteCue cue = null;
 			// A note playing this engine has the spit itself, out of its own pipe
 			if (volume > 0) {
 				float pitch = Pitches.near(1, random.nextFloat());
-				if (!EngineNoteSound.spit(primary, 0.3f * volume, pitch))
+				cue = EngineNoteSound.spit(primary, 0.3f * volume, pitch);
+				if (cue == null)
 					level.playLocalSound(outlet.at.x, outlet.at.y, outlet.at.z, CESounds.EXHAUST_SPIT.get(),
 						SoundSource.BLOCKS, 0.3f * volume, pitch, false);
 			}
+			Opening from = outlet;
+			withBang(cue, () -> flames(level, from.at, from.normal, 2, 0.18));
 		}
 
 		float roll = random.nextFloat();
@@ -156,16 +181,20 @@ public final class EngineEffects {
 		float pitch) {
 		RandomSource random = level.random;
 		float volume = CEClientConfig.bangVolume();
+		NoteCue cue = null;
 		if (volume > 0) {
 			float varied = Pitches.near(pitch, random.nextFloat());
-			if (!EngineNoteSound.pop(primary, loudness * volume, varied))
+			cue = EngineNoteSound.pop(primary, loudness * volume, varied);
+			if (cue == null)
 				level.playLocalSound(at.x, at.y, at.z, CESounds.EXHAUST_POP.get(), SoundSource.BLOCKS, loudness * volume,
 					varied, false);
 		}
 		if (!CEClientConfig.particles())
 			return;
-		flames(level, at, normal, 4, 0.24);
-		sparks(level, at, normal.scale(0.22), 3, 0.1);
+		withBang(cue, () -> {
+			flames(level, at, normal, 4, 0.24);
+			sparks(level, at, normal.scale(0.22), 3, 0.1);
+		});
 	}
 
 	/** An engine drowning: a burst of white steam from the block at {@code at} and a hard clunk as it seizes up on water. */

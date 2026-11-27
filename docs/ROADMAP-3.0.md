@@ -1039,6 +1039,12 @@ plays its backfires, spits and the end of a stall in its own stream; the pop, sp
 from the note's grains and pipe, and every recording that plays once is levelled. What differs from the plan:
 step 3 of the sound plan. Not yet heard.
 
+**More tuning after 2.4.0 (author, 2026-11-27; in 2.5):** the author asked to tune the rework more and named the faults:
+backfires and spits too sharp or clicky, wrong in character and late after their flash; engine notes too alike and fake or
+synthetic. Built: softer bangs with their flash held until they are heard, a rush of gas on each firing and exhaust
+resonances by kind of engine ([DESIGN.md](DESIGN.md), "Kinds of engine"). **Exception owed in the 2.5.0 record, with the
+author's name:** this changes how existing engines sound. Not yet heard.
+
 **Faults heard by ear (author, 2026-11-26: add to the roadmap; not built).** A fault should be told apart by its sound, at
 its place in the engine's rhythm. Today the note hears only roughness and the share of cylinders firing, and wear mode's ping
 is the pre-ignition knock recording played high at the cylinder.

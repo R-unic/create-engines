@@ -15,7 +15,7 @@ final class NoteBangs {
 		POP, SPIT
 	}
 
-	private record Request(Kind kind, float strength, float pitch) {
+	private record Request(Kind kind, float strength, float pitch, NoteCue cue) {
 	}
 
 	private static final int RATE = EngineNoteSynth.SAMPLE_RATE;
@@ -23,13 +23,18 @@ final class NoteBangs {
 	static final int MOST_WAIT = RATE / 10;
 	/** From what leaves the pipe to full scale, as the note scales its own. */
 	private static final float SCALE = 0.07f;
-	private static final float POP_BODY = 270f;
-	private static final float POP_CRACK = 220f;
-	private static final float POP_FLAME = 20f;
-	private static final float SPIT_BODY = 60f;
-	private static final float SPIT_JET = 0.9f;
-	private static final float POP_FIZZ = 0.05f;
-	private static final float SPIT_FIZZ = 0.12f;
+	/** A backfire: the blow-down into the pipe, a soft edge on it, the burning gas and the thud of it going off. */
+	private static final float POP_BODY = 100f;
+	private static final float POP_CRACK = 28f;
+	private static final float POP_FLAME = 4.5f;
+	private static final float POP_THUD = 0.6f;
+	/** How much of the burning gas is heard straight from the mouth, beside what goes down the pipe. */
+	private static final float POP_MOUTH = 0.28f;
+	/** A spit: a small blow-down and a soft breath of burning gas. */
+	private static final float SPIT_BODY = 75f;
+	private static final float SPIT_JET = 2.2f;
+	private static final float POP_FIZZ = 0.006f;
+	private static final float SPIT_FIZZ = 0.012f;
 	private static final float ROCK_BODY = 170f;
 	private static final float SIGH = 3f;
 
@@ -37,17 +42,34 @@ final class NoteBangs {
 	private static final int[] ROCK_AT = {0, (int) (0.15 * RATE), (int) (0.25 * RATE)};
 	private static final float[] ROCK_FORCE = {0.5f, 0.26f, 0.11f};
 
-	/** The flame rolling out of the mouth swells to its most this long after the crack. */
-	private static final double FLAME_PEAK = 0.016 * RATE;
-	private static final float FLAME_POLE = pole(950);
-	private static final float FLAME_FLOOR_POLE = pole(110);
-	private static final float JET_FLOOR_POLE = pole(500);
-	/** The spit's jet starts bright and darkens. */
-	private static final float JET_FIRST = pole(7500);
-	private static final float JET_LAST = pole(1300);
-	private static final float JET_DARKENS = fall(0.035);
+	/**
+	 * The burning gas of a backfire: dull noise that takes a few thousandths of a second to open, so it lands as a bang
+	 * and not as a click, and is gone in about a tenth of a second.
+	 */
+	private static final float FLAME_POLE = pole(1100);
+	private static final float FLAME_FLOOR_POLE = pole(130);
+	private static final float FLAME_RISE = pole(65);
+	private static final float FLAME_FALL = fall(0.032);
+	/** The thud of the gas going off at the mouth drops from above the pipe's note to under it. */
+	private static final double THUD_LOW = 0.6;
+	private static final double THUD_DROP = 0.7;
+	private static final float THUD_DROPS = fall(0.014);
+	private static final float THUD_RISE = pole(55);
+	private static final float THUD_FALL = fall(0.045);
+	/** A backfire often goes off again: how long after, in samples, and how hard beside the first. */
+	private static final int[] AGAIN_AFTER = {(int) (0.055 * RATE), (int) (0.065 * RATE)};
+	private static final int AGAIN_SPREAD = (int) (0.045 * RATE);
+	private static final float[] AGAIN_FORCE = {0.45f, 0.25f};
+	/** How long a bang's blow-down takes to open fully: on its own edge it is a click. */
+	private static final float OPENS = 1 / (0.006f * RATE);
+	private static final float JET_FLOOR_POLE = pole(220);
+	/** The spit's breath starts fairly bright, far under a hiss, and darkens. */
+	private static final float JET_FIRST = pole(2600);
+	private static final float JET_LAST = pole(650);
+	private static final float JET_DARKENS = fall(0.03);
+	private static final float JET_RISE = pole(32);
 	private static final float JET_FALL = fall(0.045);
-	private static final float FIZZ_FLOOR_POLE = pole(3200);
+	private static final float FIZZ_FLOOR_POLE = pole(2200);
 	private static final float FIZZ_FALL = fall(0.085);
 	private static final float FIZZ_RISE = pole(8);
 	private static final float SIGH_POLE = pole(900);
@@ -71,14 +93,32 @@ final class NoteBangs {
 	private int waited;
 	private double lastNote = 86;
 	private float lastMuffle;
+	/** The cue of a bang that has just gone off, until the synthesizer has said when it is heard. */
+	private NoteCue started;
 
-	private int flameAge = -1;
+	/** How hard the burning gas is being driven, and how loud it is as it follows. */
+	/** How far open the latest blow-down is, 0 to 1. */
+	private float opened;
+	private float flameDrive;
 	private float flame;
 	private float flameLow;
+	private float flameSoft;
 	private float flameFloor;
+	private float thudDrive;
+	private float thud;
+	private float thudHigh;
+	private double thudPhase;
+	private double thudNote;
+	/** Samples until the backfire goes off again, how many more times it does, and how many it already has. */
+	private int againIn;
+	private int againLeft;
+	private int againDone;
+	private float againStrength;
+	private float jetDrive;
 	private float jet;
 	private float jetBright;
 	private float jetLow;
+	private float jetSoft;
 	private float jetFloor;
 	private float fizz;
 	private float fizzIn;
@@ -93,15 +133,32 @@ final class NoteBangs {
 	private float tail;
 	private int take;
 	private int random = 0x5F3759DF;
-	/** Whether anything has been started that has not rung out. */
+	/** Whether anything has been started that has not rung out. A bang's blow-down opens from nothing. */
 	private boolean sounding;
 
-	/** Asks for a bang, from the game thread. Of two that have not yet gone off, the stronger is kept. */
-	void ask(Kind kind, float strength, float pitch) {
+	/**
+	 * Asks for a bang, from the game thread. Of two that have not yet gone off, the stronger is kept, and both have the
+	 * one cue.
+	 *
+	 * @return the cue that says when it is heard, or null for a bang that makes no sense
+	 */
+	NoteCue ask(Kind kind, float strength, float pitch) {
 		if (!(strength > 0) || !Float.isFinite(strength) || !Float.isFinite(pitch))
-			return;
-		Request wanted = new Request(kind, Math.min(strength, 2), Math.clamp(pitch, 0.5f, 2));
-		asked.accumulateAndGet(wanted, (held, next) -> held != null && held.strength > next.strength ? held : next);
+			return null;
+		Request wanted = new Request(kind, Math.min(strength, 2), Math.clamp(pitch, 0.5f, 2), new NoteCue());
+		return asked.accumulateAndGet(wanted, (held, next) -> {
+			if (held == null)
+				return next;
+			return held.strength > next.strength ? held
+				: new Request(next.kind, next.strength, next.pitch, held.cue);
+		}).cue;
+	}
+
+	/** The cue of a bang that has gone off since this was last asked, or null; on the sound thread. */
+	NoteCue takeStarted() {
+		NoteCue cue = started;
+		started = null;
+		return cue;
 	}
 
 	/** The engine fired out of a pipe ringing at {@code note} hertz: a bang that has been waiting goes with it. */
@@ -153,23 +210,38 @@ final class NoteBangs {
 
 	private void start(Request bang) {
 		waited = 0;
+		started = bang.cue;
 		tune(bang.pitch);
-		take = EngineNoteSynth.nextTake(take, unit());
 		float strength = bang.strength;
 		fizzIn = 0;
+		opened = 0;
 		if (bang.kind == Kind.POP) {
-			int top = EngineGrains.SIZES - 1;
-			blows.strike(grains.body(false, top, EngineGrains.LOADS - 1, take), strength * POP_BODY);
-			raps.strike(grains.crack(1, take), strength * POP_CRACK);
-			flame = strength * POP_FLAME;
-			flameAge = 0;
+			goOff(strength);
+			// None, one or two more on its heels, so no two backfires are alike
+			againLeft = Math.min(AGAIN_FORCE.length, (int) (unit() * (AGAIN_FORCE.length + 1)));
+			againDone = 0;
+			againStrength = strength;
+			againIn = againLeft > 0 ? AGAIN_AFTER[0] + (int) (unit() * AGAIN_SPREAD) : 0;
 			fizz = strength * POP_FIZZ;
 		} else {
-			blows.strike(grains.body(false, 0, 1, take), strength * SPIT_BODY);
-			jet = strength * SPIT_JET;
+			take = EngineNoteSynth.nextTake(take, unit());
+			blows.strike(grains.body(false, 1, 0, take), strength * SPIT_BODY);
+			jetDrive = Math.max(jetDrive, strength * SPIT_JET);
 			jetBright = 1;
 			fizz = strength * SPIT_FIZZ;
 		}
+	}
+
+	/** One charge going off in the pipe. */
+	private void goOff(float strength) {
+		opened = 0;
+		take = EngineNoteSynth.nextTake(take, unit());
+		blows.strike(grains.body(false, EngineGrains.SIZES - 1, EngineGrains.LOADS - 1, take), strength * POP_BODY);
+		raps.strike(grains.crack(EngineGrains.SIZES - 1, take), strength * POP_CRACK);
+		flameDrive += strength * POP_FLAME;
+		thudDrive += strength * POP_THUD;
+		thudHigh = 1;
+		thudNote = pipe.note();
 	}
 
 	/** The next sample, -1 to 1, to be added to the note. */
@@ -185,6 +257,12 @@ final class NoteBangs {
 			return 0;
 		float into = blows.take();
 		float past = raps.take();
+		if (opened < 1) {
+			opened = Math.min(1, opened + OPENS);
+			float edge = opened * opened * (3 - 2 * opened);
+			into *= edge;
+			past *= edge;
+		}
 		if (rest >= 0) {
 			for (int i = 0; i < ROCK_AT.length; i++)
 				if (rest == ROCK_AT[i]) {
@@ -200,26 +278,45 @@ final class NoteBangs {
 					rest = -1;
 			}
 		}
-		if (flameAge >= 0) {
-			double age = flameAge++ / FLAME_PEAK;
-			float swell = (float) (age * Math.exp(1 - age));
-			flameLow += FLAME_POLE * (white() - flameLow);
-			flameFloor += FLAME_FLOOR_POLE * (flameLow - flameFloor);
-			into += (flameLow - flameFloor) * swell * flame;
-			if (age > 1 && swell < 0.001f)
-				flameAge = -1;
+		if (againLeft > 0 && --againIn <= 0) {
+			goOff(againStrength * AGAIN_FORCE[againDone++]);
+			againIn = --againLeft > 0 ? AGAIN_AFTER[againDone] + (int) (unit() * AGAIN_SPREAD) : 0;
 		}
-		float out = pipe.next(into) * SCALE + past * SCALE;
-		if (jet > SILENT) {
-			float cutoff = JET_LAST + (JET_FIRST - JET_LAST) * jetBright;
-			jetBright *= JET_DARKENS;
-			jetLow += cutoff * (white() - jetLow);
-			jetFloor += JET_FLOOR_POLE * (jetLow - jetFloor);
-			// It opens over a few thousandths of a second, as the brightness is just starting to go
-			out += (jetLow - jetFloor) * jet * Math.min(1f, (1 - jetBright) * 8);
-			jet *= JET_FALL;
+		float mouth = 0;
+		if (flameDrive > SILENT || flame > SILENT) {
+			flameDrive *= FLAME_FALL;
+			flame += FLAME_RISE * (flameDrive - flame);
+			// Two poles, so little of it is left up where a noise turns into a hiss
+			flameLow += FLAME_POLE * (white() - flameLow);
+			flameSoft += FLAME_POLE * (flameLow - flameSoft);
+			flameFloor += FLAME_FLOOR_POLE * (flameSoft - flameFloor);
+			float gas = (flameSoft - flameFloor) * flame;
+			into += gas;
+			mouth = gas * POP_MOUTH;
 		} else
-			jet = 0;
+			flameDrive = flame = 0;
+		float out = pipe.next(into) * SCALE + past * SCALE + mouth;
+		if (thudDrive > SILENT || thud > SILENT) {
+			thudDrive *= THUD_FALL;
+			thud += THUD_RISE * (thudDrive - thud);
+			thudHigh = Denormals.flush(thudHigh * THUD_DROPS);
+			thudPhase += 2 * Math.PI * thudNote * (THUD_LOW + THUD_DROP * thudHigh) / RATE;
+			if (thudPhase > 2 * Math.PI)
+				thudPhase -= 2 * Math.PI;
+			out += NoteMath.sin(thudPhase) * thud;
+		} else
+			thudDrive = thud = 0;
+		if (jetDrive > SILENT || jet > SILENT) {
+			jetDrive *= JET_FALL;
+			jet += JET_RISE * (jetDrive - jet);
+			float cutoff = JET_LAST + (JET_FIRST - JET_LAST) * jetBright;
+			jetBright = Denormals.flush(jetBright * JET_DARKENS);
+			jetLow += cutoff * (white() - jetLow);
+			jetSoft += cutoff * (jetLow - jetSoft);
+			jetFloor += JET_FLOOR_POLE * (jetSoft - jetFloor);
+			out += (jetSoft - jetFloor) * jet;
+		} else
+			jetDrive = jet = 0;
 		if (fizz > SILENT) {
 			fizzIn += FIZZ_RISE * (1 - fizzIn);
 			float noise = white();
@@ -229,8 +326,8 @@ final class NoteBangs {
 		} else
 			fizz = 0;
 		tail = Math.max(Math.abs(out), tail * 0.999f);
-		if (blows.idle() && raps.idle() && flameAge < 0 && jet == 0 && fizz == 0 && rest < 0 && pipe.isSilent()
-			&& tail < SILENT) {
+		if (blows.idle() && raps.idle() && againLeft == 0 && flame == 0 && thud == 0 && jet == 0 && fizz == 0 && rest < 0
+			&& pipe.isSilent() && tail < SILENT) {
 			sounding = false;
 			pipe.clear();
 			exit.clear();
@@ -250,8 +347,13 @@ final class NoteBangs {
 		blows.clear();
 		raps.clear();
 		exit.clear();
-		flameAge = rest = -1;
-		flame = flameLow = flameFloor = jet = jetBright = jetLow = jetFloor = fizz = fizzIn = fizzFloor = 0;
+		rest = -1;
+		started = null;
+		againIn = againLeft = againDone = 0;
+		opened = 1;
+		flameDrive = flame = flameLow = flameSoft = flameFloor = thudDrive = thud = thudHigh = againStrength = 0;
+		thudPhase = thudNote = 0;
+		jetDrive = jet = jetBright = jetLow = jetSoft = jetFloor = fizz = fizzIn = fizzFloor = 0;
 		sigh = sighLow = tail = 0;
 		waited = 0;
 		sounding = false;
