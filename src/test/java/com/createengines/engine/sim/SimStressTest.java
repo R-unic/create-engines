@@ -7,6 +7,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
+import java.util.function.ToDoubleFunction;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
@@ -181,6 +182,11 @@ class SimStressTest {
 	}
 
 	static void check(Rig rig, double maxOmega, boolean driven, int tick) {
+		check(rig, maxOmega, driven, tick, turbo -> Turbocharger.MAX_LIMIT);
+	}
+
+	/** {@link #check(Rig, double, boolean, int)} with the most each turbo may make given by the caller. */
+	static void check(Rig rig, double maxOmega, boolean driven, int tick, ToDoubleFunction<Turbocharger> mostBoost) {
 		EngineSimulation e = rig.engine;
 		String ctx = rig.description + ", tick " + tick;
 		finite("omega", e.omega(), ctx);
@@ -225,7 +231,8 @@ class SimStressTest {
 			finite("spool", t.spool(), ctx);
 			finite("boost", t.boost(), ctx);
 			finite("backPressure", t.backPressure(), ctx);
-			assertTrue(t.boost() >= -1e-9 && t.boost() <= Turbocharger.MAX_LIMIT + 1e-6, "turbo boost " + t.boost() + " (" + ctx + ")");
+			assertTrue(t.boost() >= -1e-9 && t.boost() <= mostBoost.applyAsDouble(t) + 1e-6,
+				"turbo boost " + t.boost() + " with its dial at " + t.limit + " (" + ctx + ")");
 		}
 		for (Supercharger b : e.superchargers()) {
 			finite("blower boost", b.boost(), ctx);

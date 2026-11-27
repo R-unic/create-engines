@@ -1156,6 +1156,18 @@ reading them (`EngineController.java` was the most-read file).
 reading cost and risk: `EngineScenes`, `EngineGameTests`, `EngineController`, `ShowcaseRun`, `generate_models.py`, then the rest.
 Each split waits until that file's own 2.4 work is committed, runs the full `ce_run.py` gate, and checks that `compat/` did not move.
 
+### Test guards changed after 2.4.0 (2026-11-27)
+
+Both go under Exceptions in the next release record. Neither changes how an engine runs.
+
+- **Part-effects concurrency test, turbo bound. Approved by the author 2026-11-27** (answered "Yes, fix the test", told it loosens the bound for
+  dials above 0.5). `partEffectsSwappedFromAnotherThreadNeverBreaksAnEngine` holds each turbo to its dial plus 1 atm, where the wheel is held,
+  and no longer to 1.5 atm, which custom part effects can pass: seed 8945 reads 1.5038 for a tick with no threads, now a fixed test. In a
+  probe with every dial at 1.5, some of the test's effects reached the 2.5 atm hold. Every other test keeps 1.5 atm.
+- **Tick cost against speed.** `SimStressTest` pins the steps in a tick at each speed instead of comparing the timed cost at 1024 and 64 RPM,
+  which failed on a busy CI machine (the `master` run after the 2.4.0 merge). The 4 ms a tick limit is unchanged. No longer caught: a step
+  that gets dearer with speed under that limit.
+
 ## 2.5 Open Garage
 
 **Was 2.4 until the author moved it on 2026-11-25** to make room for 2.4 Running Hot; nothing in it changed. Older notes below that say "2.4" for these items mean this release.
