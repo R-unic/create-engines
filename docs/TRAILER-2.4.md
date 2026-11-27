@@ -1,7 +1,8 @@
 # The 2.4.0 trailer: plan
 
 The composition the author picked for 2.4 "Running Hot" (author, 2026-11-26). Built on 2026-11-27: the pads, shots, cues,
-captions and both edits are in. **Nothing has been run in the game, recorded or cut.** [SMOKE.md](SMOKE.md), "The trailer",
+captions and both edits are in. The new shots were checked in the game the same day, from stills and the log. **Nothing has
+been recorded or cut, and `stall_load` does not work yet.** [SMOKE.md](SMOKE.md), "The trailer",
 has the harness and the rules every composition keeps; this page is only what is new for this cut. Once it is cut and posted, the
 composition part of SMOKE.md is rewritten to describe it and this page is deleted.
 
@@ -97,13 +98,29 @@ The edits themselves (`tools/trailer/edit.txt`, `vertical.txt`) now own the orde
 - In the vertical cut, the rods, the blown gasket, the hot engine and the last piece are also marked `engine`, to be heard.
 - The montage's one caption is "And all that came before, from one cylinder up." (over `first_rises`).
 
+## Open: the stall
+
+`stall_load` does not stall the diesel, so its caption ("Stalled by its load, it thuds to a stop.") is not true of it. The mod
+offers Create no more stress than the engine can carry: a bigger load only marks the network overstressed, and the engine runs
+on, unloaded (the GameTest `overloadOverstressesWithoutStalling`). A load Create accepts did not stop it either, with the
+throttle shut to its lowest as the clutch took up. The mod's heavy "lugged" stall sound plays when an engine that is
+overstressed dies of something else. The shot, its caption and its line in both edits wait for the author's choice. Do not
+record it as it is.
+
+## The check of 2026-11-27
+
+Seen in stills or the log, in a run with nothing recorded: the goggles reading Critical (188 degrees) and the first gasket
+blowing; the second gasket, the apex seals and the turbo failing with their particles; the rotary running again afterwards; the
+rods changing (the log's speed ripple goes from 5.6% to 4.3%, so the difference may be hard to see or hear); a belt cut into two
+Rubber Gaskets; the fan counted as fan air and the basin making brass; the W and the X laid in first person; the open mouth on
+the pull-back's first frame and the engine small at the end of the long dolly; and the V8 firing on all eight about five seconds
+after each re-timing.
+
 ## Before recording
 
-- A short run to look at the new shots' stills and log, with the author's go-ahead, as it takes the screen. None of this has been
-  seen: the goggles reading Critical, the steam, each forced failure, the pull-back and the long dolly, the rods' surge, the belts
-  going into the saw, the fan's direction and the basin's brass, the W and X laid in first person, and whether six presses stall
-  the diesel at idle (the log says `under the load` with its speed). If they do not, the load wants tuning.
-- The captions for the new shots are checked against those stills and sounds.
+- Settle the stall (above).
+- Not checked: anything heard, any movement between the stills, and whether each caption reads true over its piece. The pieces
+  that start later than at first (the rebuilt exhausts, the flat-plane V8, the muffled bank) have not been looked at there.
 - The sound rework is the author's to tune by ear and is not signed off ([ROADMAP-3.0.md](ROADMAP-3.0.md), 2.4 "The sound rework"),
   and the blower sounds are still being listened to. The engine shots are recorded after that, or recorded again.
 - The author watches both cuts before they are posted.

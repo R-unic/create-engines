@@ -32,10 +32,10 @@
 # (the Aeronautics shots without Sable) is left out.
 
 exhaust_mouth       4.5   at=0     engine                    | Every note / from the pipe
-exhaust_stub        3     at=1.5   engine                    | Short pipe / barks
-exhaust_long        3     at=1.5   engine                    | Long pipe / booms
+exhaust_stub        3     at=3.0   engine                    | Short pipe / barks
+exhaust_long        3     at=3.0   engine                    | Long pipe / booms
 v8_crossplane       4.5   at=1.0   engine    flash           | Crossplane / burble
-muffler_bank        4.5   at=1.0   engine                    | Muffle / one bank
+muffler_bank        4.5   at=4.5   engine                    | Muffle / one bank
 inline6_turbo       4.5   at=0.75  engine                    | Turbo / spools up
 rods_light_heavy    4.5   at=0.75  fit zoom=1.6 engine flash | Light rods / or heavy
 wear_gasket_blown   4.5   at=0.75  engine    flash           | Run it / to failure

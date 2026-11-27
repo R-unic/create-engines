@@ -2056,6 +2056,13 @@ public final class ShowcaseRun {
 		CUES.add(new Cue("grow_engine", 0.2 + 2.0 * (stages.length - 1) + 2.5, () -> withPlayer((level, player) ->
 			level.removeBlock(pad(10).offset(0, CY - 1, CZ), false))));
 		CUES.add(new Cue("grow_engine", 14.5, () -> shot("trailer_grow_end")));
+		// More stills, of what a shot's middle does not show, to check it without watching
+		for (var still : java.util.List.of(java.util.Map.entry("heat_critical", 5.0), java.util.Map.entry("exhaust_mouth", 0.1),
+			java.util.Map.entry("far_boom", 8.8), java.util.Map.entry("stall_load", 5.5), java.util.Map.entry("rods_light_heavy", 5.0),
+			java.util.Map.entry("gasket_saw", 5.0), java.util.Map.entry("radiator_fan_basin", 5.8),
+			java.util.Map.entry("bank_wx", 2.5), java.util.Map.entry("bank_wx", 5.8)))
+			CUES.add(new Cue(still.getKey(), still.getValue(),
+				() -> shot("check_" + still.getKey() + "_" + Math.round(still.getValue() * 10))));
 		// The heavy starter turns the cold V16 over (a redstone block under its input, as the other pads' starters get while they
 		// are built), the engine catches and runs on, and the block is taken away again
 		// (positions are worked out when a cue runs: the pads' origin is not known until the world is up)

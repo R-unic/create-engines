@@ -11,6 +11,7 @@ import java.util.List;
 import java.util.function.BiConsumer;
 
 import com.createengines.client.ShowcaseRunStaging.Cued;
+import com.createengines.content.airflow.ThrottleBlockEntity;
 import com.createengines.content.airflow.ManifoldBlock;
 import com.createengines.content.tool.BankBuilderItem;
 import com.createengines.content.tool.TimingToolItem;
@@ -42,10 +43,11 @@ final class ShowcaseRunSounds {
 	private static final int V8_THROWS = 4;
 	private static final int DIESEL_THROWS = 4;
 	/** The V8's idle stop, in steps of five percent. */
-	private static final int V8_IDLE = 3;
+	private static final int V8_IDLE = 6;
 	/** The diesel's flywheel is at this many blocks along; the clutch comes after it. */
 	private static final int CLUTCH_X = DIESEL_THROWS + 6;
-	private static final int PRESSES = 6;
+	/** Four presses are a little under what the diesel is rated for, so Create accepts them, and over what it makes at idle. */
+	private static final int PRESSES = 4;
 
 	private ShowcaseRunSounds() {
 	}
@@ -126,15 +128,17 @@ final class ShowcaseRunSounds {
 		ShowcaseRunStaging.hold(cue, "exhaust_mouth", 0, 6, level -> ShowcaseRunStaging.light(level, V8_BAY));
 		cue.accept("exhaust_mouth", new Cued(3, level -> ShowcaseRunStaging.log(level, V8_BAY, "revving")));
 
-		// The two cranks, at idle on the recorder's steady crank, one after the other
+		// The two cranks, at idle on the recorder's steady crank, one after the other. A re-timed or re-piped engine misfires
+		// for about five seconds, so these shots are long and the edits cut from after that
 		cue.accept("v8_crossplane", new Cued(0, level -> {
 			rev(level, false);
 			ShowcaseRunStaging.heavy(level, V8_BAY);
 			time(level, FiringPlanner.Style.CROSS_PLANE);
 		}));
 		cue.accept("v8_flatplane", new Cued(0, level -> time(level, FiringPlanner.Style.FLAT_PLANE)));
-		for (String shot : List.of("v8_crossplane", "v8_flatplane"))
-			cue.accept(shot, new Cued(3, level -> ShowcaseRunStaging.log(level, V8_BAY, shot)));
+		for (String shot : List.of("v8_crossplane", "v8_flatplane", "muffler_bank"))
+			for (int second = 1; second <= 5; second++)
+				cue.accept(shot, new Cued(second, level -> ShowcaseRunStaging.log(level, V8_BAY, shot)));
 		cue.accept("muffler_bank", new Cued(0, level -> {
 			time(level, FiringPlanner.Style.CROSS_PLANE);
 			muffle(level, V8_BAY, V8_THROWS, BankBuilderItem.Layout.VEE, 0);
@@ -146,11 +150,14 @@ final class ShowcaseRunSounds {
 		}));
 		ShowcaseRunStaging.hold(cue, "far_boom", 0, 9, level -> ShowcaseRunStaging.light(level, V8_BAY));
 
-		// The clutch lets the presses in: more than the diesel can carry at idle
+		// The throttle is shut to its lowest idle and the clutch lets the presses in: more than the diesel makes there
+		cue.accept("stall_load", new Cued(1.25, level -> ShowcaseRunStaging.throttles(level, DIESEL_BAY, DIESEL_THROWS, false,
+			ThrottleBlockEntity.minIdle())));
+		ShowcaseRunStaging.hold(cue, "stall_load", 0, 6, level -> ShowcaseRunStaging.light(level, DIESEL_BAY));
 		cue.accept("stall_load", new Cued(0, level -> ShowcaseRunStaging.log(level, DIESEL_BAY, "before the load")));
 		cue.accept("stall_load", new Cued(1.5,
 			level -> set(level, pad(DIESEL_BAY), CLUTCH_X, CY + 1, CZ, Blocks.AIR.defaultBlockState())));
-		for (double at : new double[] { 2, 3, 4.5 })
+		for (double at : new double[] { 1.75, 2.25, 3, 3.75, 4.5, 5.5 })
 			cue.accept("stall_load", new Cued(at, level -> ShowcaseRunStaging.log(level, DIESEL_BAY, "under the load")));
 	}
 }

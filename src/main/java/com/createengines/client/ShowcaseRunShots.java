@@ -50,7 +50,7 @@ final class ShowcaseRunShots {
 	 * Shots through the goggles, which only read a block the player can reach: the camera stands this many blocks from the
 	 * middle of the shot's box, which is under the crosshair, instead of where the box would fill the frame.
 	 */
-	static final Map<String, Double> REACH = Map.of("heat_critical", 3.6);
+	static final Map<String, Double> REACH = Map.of("heat_critical", 4.6);
 
 	private ShowcaseRunShots() {
 	}
@@ -78,8 +78,8 @@ final class ShowcaseRunShots {
 	}
 
 	private static void opening(List<Shot> shots, ShowcaseRunFraming.Box v8) {
-		// Through goggles at the crank of a critically hot four, from the north: the gasket above it lets go half-way
-		shots.add(new Shot("heat_critical", "wear", box(1, 3, 5, 2, 4, 6), -34, -26, 4, 2, 1, 1, 0, 6, DAY));
+		// Through goggles, looking up at the crank of a critically hot four: the gasket above it lets go half-way
+		shots.add(new Shot("heat_critical", "wear", box(1, 3, 5, 2, 4, 6), -34, -28, -14, -13, 1, 1, 0, 6, DAY));
 		// The title lies over a high pull-in on the V8 at golden hour of the morning
 		shots.add(new Shot("title_sequence", "v8", v8, -130, -112, 13, 10, 0.82, 0.92, 0, 6, NO_TIME));
 	}
@@ -88,18 +88,18 @@ final class ShowcaseRunShots {
 		// Close on the crank side of a cold inline four, composed for the middle third that 9:16 keeps
 		shots.add(new Shot("cold_start", "coldstart", box(2, 2.2, 4.2, 5.2, 6, 5.8), -24, -14, 4, 3, 1.12, 1.32, 0, 6, NO_TIME));
 		// The vertical cut opens on this: tight on a barking exhaust mouth, and fast back to the whole engine (see MOVES)
-		shots.add(new Shot("exhaust_mouth", "open_v8", box(7, 5, 6, 8, 6, 7), 78, 58, 6, 15, 0.8, 1.04, 0, 6, NO_TIME));
+		shots.add(new Shot("exhaust_mouth", "open_v8", box(7, 5, 6, 8, 6, 7), 116, 60, 6, 15, 0.8, 1.04, 0, 6, NO_TIME));
 		// One engine, one camera, its exhaust rebuilt between the shots
 		ShowcaseRunFraming.Box run = box(1.5, 2, 3.5, 15.5, 6.8, 7);
 		shots.add(new Shot("exhaust_stub", "sound", run, -158, -155, 15, 15, 1.1, 1.13, 0, 6, NO_TIME));
 		shots.add(new Shot("exhaust_long", "sound", run, -155, -152, 15, 15, 1.13, 1.16, 0, 6, NO_TIME));
 		ShowcaseRunFraming.Box bare = box(0.5, 1.5, 2.5, 9, 6.8, 7.5);
-		shots.add(new Shot("v8_crossplane", "open_v8", bare, 52, 66, 16, 14, 1.04, 1.12, 0, 6, NO_TIME));
-		shots.add(new Shot("v8_flatplane", "open_v8", bare, 66, 80, 14, 12, 1.12, 1.18, 0, 6, NO_TIME));
+		shots.add(new Shot("v8_crossplane", "open_v8", bare, -48, -34, 18, 16, 1.04, 1.12, 0, 6, NO_TIME));
+		shots.add(new Shot("v8_flatplane", "open_v8", bare, -34, -20, 16, 14, 1.12, 1.18, 0, 9, NO_TIME));
 		ShowcaseRunFraming.Box heard = box(0.5, 2, 3.5, 8.5, 6.8, 7);
 		shots.add(new Shot("muffler_off", "sound", heard, -150, -146, 14, 14, 1.06, 1.1, 0, 6, NO_TIME));
 		shots.add(new Shot("muffler_on", "sound", heard, -146, -142, 14, 14, 1.1, 1.14, 0, 6, NO_TIME));
-		shots.add(new Shot("muffler_bank", "open_v8", bare, 122, 104, 22, 18, 1.02, 1.12, 0, 6, NO_TIME));
+		shots.add(new Shot("muffler_bank", "open_v8", bare, 150, 132, 22, 18, 1.02, 1.12, 0, 9, NO_TIME));
 		shots.add(new Shot("diesel_knock", "diesel", box(0.5, 2, 3.5, 6.5, 6.8, 7), -34, -22, 12, 10, 0.98, 1.1, 0, 6, NO_TIME));
 		// The turbocharger from its own side, clear of the cam's cogwheel, then the blower
 		shots.add(new Shot("inline6_turbo", "inline6", box(6.5, 3.5, 4.5, 10.5, 7.2, 7), -168, -142, 11, 14, 0.98, 1.14, 0, 6, NO_TIME));
@@ -114,13 +114,13 @@ final class ShowcaseRunShots {
 
 	private static void wornOut(List<Shot> shots) {
 		// Close and slow on the crank throws and the rods on them
-		shots.add(new Shot("rods_light_heavy", "rods", box(1.8, 2.4, 4.4, 4.2, 4.6, 5.6), -24, -12, 7, 6, 1, 1.12, 0, 6, NO_TIME));
+		shots.add(new Shot("rods_light_heavy", "rods", box(1, 2, 4.3, 5, 5.2, 5.7), -24, -12, 7, 6, 0.74, 0.8, 0, 6, NO_TIME));
 		shots.add(new Shot("wear_parts", "wear_parts", box(1, 0.8, 4.6, 7, 2.4, 5.4), -14, 14, 32, 34, 1, 1.12, 0, 6, NO_TIME));
 		// From across the room: what a blown gasket looks like from there
-		shots.add(new Shot("wear_gasket_blown", "wear", box(-1, 1, 2.5, 11, 7.6, 7), -40, -28, 14, 13, 0.82, 0.92, 0, 6, NO_TIME));
+		shots.add(new Shot("wear_gasket_blown", "wear", box(1, 2.5, 3.8, 7, 6.8, 6.2), -34, -24, 18, 17, 0.9, 1, 0, 6, NO_TIME));
 		shots.add(new Shot("wear_apex", "rotary", box(1, 1.8, 1.2, 5, 4.6, 3.8), -40, -22, 18, 20, 0.96, 1.06, 0, 3, NO_TIME));
 		shots.add(new Shot("wear_turbo", "wear", box(5.5, 3.5, 4.5, 9, 7.2, 7), -164, -148, 12, 14, 0.94, 1.06, 0, 3, NO_TIME));
-		shots.add(new Shot("gasket_saw", "wear_parts", box(10.8, 0.8, 4, 14.2, 3, 6), -30, -10, 30, 28, 0.94, 1.06, 0, 6, NO_TIME));
+		shots.add(new Shot("gasket_saw", "wear_parts", box(11.2, 0.8, 4.2, 13.6, 2.6, 5.8), -30, -10, 30, 28, 1, 1.12, 0, 6, NO_TIME));
 		// The Copper Gasket's sequenced assembly, along its belt
 		shots.add(new Shot("gasket_line", "gasket", box(1, 1, 4.5, 10, 4.2, 6), -18, 6, 5, 7, 1.06, 1.16, 0, 9, NO_TIME));
 	}
@@ -189,6 +189,6 @@ final class ShowcaseRunShots {
 		// After dark: from idle the throttles open and it revs, then off the fuel twice, with the blow-off and the anti-lag
 		shots.add(new Shot("night_pull", "night", box(4.5, 3.5, 3, 9, 8, 7), 122, 146, 11, 14, 0.96, 1.12, 0, 12, NIGHTFALL));
 		// The finale: from close on the factory, pulling back to the whole row, with the calls to action over it
-		shots.add(new Shot("factory_wide", "factory", box(-6, 0, 3, 11, 6, 7), -12, -34, 12, 14, 1.16, 0.98, 0, 9, NIGHTFALL));
+		shots.add(new Shot("factory_wide", "factory", box(-6, 0, 3, 11, 6, 7), -12, -34, 12, 14, 1.16, 0.98, 0, 9, DUSK));
 	}
 }

@@ -1096,7 +1096,8 @@ A new composition led by the sound rework and the finished wear and parts system
 critically hot block steaming, and the Short opens on a pull-back from an exhaust mouth. The plan, its new shots and what it
 needs are in [TRAILER-2.4.md](TRAILER-2.4.md).
 
-Added 2026-11-27: built (pads, shots, captions and both edits); not yet run in the game, recorded or cut.
+Added 2026-11-27: built (pads, shots, captions and both edits); not yet run in the game, recorded or cut. Later that day the new shots were checked in the game; the load stall does not work
+yet, and nothing is recorded or cut.
 
 ### Splitting the giant files (author, 2026-11-26; queued in 2.4)
 

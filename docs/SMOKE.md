@@ -293,18 +293,19 @@ python tools/trailer/record.py --post-only  # cuts the last recordings again (ne
 - **What it records.** `ShowcaseRun` with `-PshowcaseSet=trailer` builds walled pads (the five plain engines; a
   pad with the battery sizes, an ignition coil and an injector assist on every head; a blown inline six; the test-bed diesel with its
   instruments; a diesel driving a row of Create machines, two presses stamping iron and a fan smoking beef over a campfire; a refining column with its flare
-  stack; and the later pads below), runs them, goes fullscreen and flies a camera past them for about 327 seconds of footage
+  stack; and the later pads below), runs them, goes fullscreen and flies a camera past them for about 333 seconds of footage
   (12 fewer without the car), smoothly, every frame. The shots are the `Shot` records of `client/ShowcaseRunShots`, in the order of
   the cut, and every length is a whole number of bars of the music (three seconds) so the cuts land on the beat.
   The run leaves one still from the middle of each shot in `run/showcase-shaders/screenshots`, to check the framing without watching
   it, and `-PtrailerShots=a,b` keeps only the named shots, so a new pad can be looked at in a short run. A shot left out takes its
-  cues with it, and some shots set up what a later one films (the V8 is opened up during `cold_start` for `exhaust_mouth`), so
+  cues with it. A few shots also leave `check_*` stills from moments their middle one misses. Some shots set up what a later one films (the V8 is opened up during `cold_start` for `exhaust_mouth`), so
   name the shot before too.
 - **Framing.** No camera distance is typed in. Each `Shot` gives a box round its subject, in blocks from the pad's corner, with
   the angles it is seen from and how much of the frame it should take up at the start and at the end (more at the end is a push
   in, less is a pull back). A shot may also move from its box to a second one (`MOVES`: the fast pull-back from an exhaust mouth).
   The one exception to the sums is a shot read through Create's goggles (`REACH`: `heat_critical`), which only reach so far, so it
-  stands a set distance off with the block under the crosshair. `client/ShowcaseRunFraming` works out where the camera stands so the whole box lies inside the safe
+  stands a set distance off with the block under the crosshair (the trailer's options set the GUI scale to 3, so the whole
+  goggle readout fits). `client/ShowcaseRunFraming` works out where the camera stands so the whole box lies inside the safe
   area: clear of the letterbox and the caption, a little above the middle (`TrailerFramingTest`). The run films with one 60 degree
   lens, whatever the game's setting is. A shot whose camera a courtyard wall pulls more than 0.75 of a block off its framing
   logs a warning (`held inside the walls`): look at its still. The shot list is in the order of the cut, so the light only moves
@@ -352,7 +353,8 @@ python tools/trailer/record.py --post-only  # cuts the last recordings again (ne
 - **The 2.4 pads** (bays 25 to 29, in a row north of the first; `client/ShowcaseRunSounds` and `client/ShowcaseRunWear`): an
   open-air V8 with a bare exhaust on each bank and no flywheel, which revs for `exhaust_mouth` and `far_boom`, idles re-timed
   crossplane and then flat-plane, and has one bank muffled in `muffler_bank`; a diesel four that knocks at idle (`diesel_knock`)
-  and in `stall_load` has six Mechanical Presses clutched on; a turbocharged gasoline four for `heat_critical`,
+  and in `stall_load` has four Mechanical Presses clutched on (which does not stall it yet,
+  see [TRAILER-2.4.md](TRAILER-2.4.md)); a turbocharged gasoline four for `heat_critical`,
   `wear_gasket_blown` and `wear_turbo`; a twin with no flywheel whose light rods are changed for heavy ones half-way through
   `rods_light_heavy`; the wear parts on depots; and a face-up Mechanical Saw that belts are dropped onto. `wear_apex` uses the
   rotary's pad, which gets new seals before `rotary_orbit`, and `radiator_fan_basin` adds a fan, a third radiator, a basin and a
@@ -362,7 +364,9 @@ python tools/trailer/record.py --post-only  # cuts the last recordings again (ne
   (`WearKeeper.roller`, the GameTests' hook). A cue puts each failed part in the mod's own failed state, with its own sound and
   smoke (and the apex seals' sparks), because a real failure cannot be waited for. The first shot's engine is held at 190 degrees
   and the one heating the basin just short of critical. The V8 gets the mod's own crank inertia while it revs, as does the rod
-  twin, whose surge the recorder's heavy crank would hide.
+  twin, whose surge the recorder's heavy crank would hide. An engine just re-timed or re-piped misfires for about five
+  seconds, which is why the pieces of those shots start late. The rotary is started again with its starter after its seals
+  are replaced.
 - **Sound and walls.** Only the courtyard the camera is in is heard (sounds from other pads are cancelled as they start and stopped when
   the camera moves on). Engines are also kept to the courtyard by where their crankshaft is, because the shared "engine room"
   voice has no place of its own to filter by; during the car's shots only the engine on no courtyard is heard. The camera is held

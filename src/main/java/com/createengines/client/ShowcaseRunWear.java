@@ -135,6 +135,16 @@ final class ShowcaseRunWear {
 		level.addFreshEntity(belt);
 	}
 
+	private static void logSaw(ServerLevel level) {
+		BlockPos saw = pad(PARTS_BAY).offset(SAW_X, 1, CZ);
+		StringBuilder seen = new StringBuilder();
+		for (ItemEntity item : level.getEntitiesOfClass(ItemEntity.class, new net.minecraft.world.phys.AABB(saw).inflate(6)))
+			seen.append(item.getItem())
+				.append("; ");
+		CreateEngines.LOGGER.info("Showcase saw: speed {}, lying about it: {}",
+			level.getBlockEntity(saw) instanceof com.simibubi.create.content.kinetics.saw.SawBlockEntity be ? be.getSpeed() : 0, seen);
+	}
+
 	/** Puts sound gaskets back under the wear engine's heads that a shot blew. */
 	private static void regasket(ServerLevel level) {
 		for (int x : new int[] { HOT_HEAD, COLD_HEAD })
@@ -169,6 +179,18 @@ final class ShowcaseRunWear {
 	private static RotorHousingBlockEntity rotor(ServerLevel level) {
 		return level.getBlockEntity(pad(ShowcaseRun.ROTARY_BAY).offset(TestEngine.HOUSING)) instanceof RotorHousingBlockEntity housing
 			? housing : null;
+	}
+
+	/** The rotary's own shot is later in the cut, and finds it with new seals. */
+	private static void newSeals(ServerLevel level) {
+		RotorHousingBlockEntity housing = rotor(level);
+		if (housing != null)
+			housing.fitSeals();
+	}
+
+	private static void rotaryStarter(ServerLevel level, boolean on) {
+		level.setBlock(pad(ShowcaseRun.ROTARY_BAY).offset(TestEngine.STARTER_POWER),
+			on ? Blocks.REDSTONE_BLOCK.defaultBlockState() : Blocks.AIR.defaultBlockState(), Block.UPDATE_ALL);
 	}
 
 	private static void failApex(ServerLevel level) {
@@ -237,6 +259,15 @@ final class ShowcaseRunWear {
 	}
 
 	private static void logRadiators(ServerLevel level) {
+		BlockPos basin = pad(ShowcaseRunFeatures.HEAT_BAY).offset(1, CY + 1, CZ - 1);
+		var items = level.getCapability(Capabilities.ItemHandler.BLOCK, basin, Direction.UP);
+		StringBuilder held = new StringBuilder();
+		for (int slot = 0; items != null && slot < items.getSlots(); slot++)
+			if (!items.getStackInSlot(slot)
+				.isEmpty())
+				held.append(items.getStackInSlot(slot))
+					.append("; ");
+		CreateEngines.LOGGER.info("Showcase basin holds: {}", held);
 		for (int x : new int[] { 1, 4 }) {
 			BlockPos pos = pad(ShowcaseRunFeatures.HEAT_BAY).offset(x, CY, CZ - 1);
 			if (level.getBlockEntity(pos) instanceof com.createengines.content.radiator.RadiatorBlockEntity radiator)
@@ -264,17 +295,21 @@ final class ShowcaseRunWear {
 		}));
 		cue.accept("wear_gasket_blown", new Cued(1.5, ShowcaseRunWear::blowGasket3));
 		cue.accept("wear_apex", new Cued(0.5, ShowcaseRunWear::failApex));
-		// The rotary's own shot is later in the cut, and finds it with new seals
-		cue.accept("rotary_orbit", new Cued(0, level -> {
-			RotorHousingBlockEntity housing = rotor(level);
-			if (housing != null)
-				housing.fitSeals();
-		}));
+		cue.accept("rotary_orbit", new Cued(2, level -> ShowcaseRunStaging.log(level, ShowcaseRun.ROTARY_BAY, "the rotary")));
 		cue.accept("wear_turbo", new Cued(0, ShowcaseRunWear::regasket));
 		cue.accept("wear_turbo", new Cued(0.5, ShowcaseRunWear::failTurbo));
+		// A failed set stops the whole rotary: with new seals in, it is started again while the camera is elsewhere
+		cue.accept("wear_turbo", new Cued(0, level -> {
+			newSeals(level);
+			rotaryStarter(level, true);
+		}));
+		cue.accept("gasket_saw", new Cued(5.5, level -> rotaryStarter(level, false)));
 
 		for (int i = 0; i < 4; i++)
 			cue.accept("gasket_saw", new Cued(0.25 + 1.25 * i, ShowcaseRunWear::dropBelt));
+
+		for (double at : new double[] { 2.5, 5.75 })
+			cue.accept("gasket_saw", new Cued(at, ShowcaseRunWear::logSaw));
 
 		cue.accept("radiator_fan_basin", new Cued(0, ShowcaseRunWear::fanAndBasin));
 		cue.accept("radiator_fan_basin", new Cued(0.5, ShowcaseRunWear::stockBasin));
