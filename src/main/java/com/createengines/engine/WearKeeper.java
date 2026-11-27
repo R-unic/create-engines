@@ -290,7 +290,7 @@ public final class WearKeeper {
 				continue;
 			CylinderHeadBlockEntity head = cylinder.rotary() ? null : head(level, cylinder);
 			Wear.State state = head != null && head.hasGasketItem() ? Wear.fitted(head.gasket()) : Wear.NONE;
-			// A light or heavy rod drags its own way with the mode on or off, as a fitted gasket seals either way
+			// A light or heavy rod drags and weighs its own way with the mode on or off, as a fitted gasket seals either way
 			CylinderBlockEntity body = cylinder.rotary() ? null : body(level, cylinder);
 			model.wear = body == null ? state : Wear.withRod(state, body.rodKind());
 		}

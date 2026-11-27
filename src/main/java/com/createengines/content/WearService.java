@@ -38,6 +38,11 @@ public final class WearService {
 		return wear == null ? 0 : Wear.clamp(wear);
 	}
 
+	/** Whether a stack is as new: no wear on it, and not a block broken while failed. Anything that does not wear is. */
+	public static boolean isNew(ItemStack stack) {
+		return wearOf(stack) <= 0 && !Boolean.TRUE.equals(stack.get(CEComponents.FAILED.get()));
+	}
+
 	/** Puts wear on a part; none at all leaves the stack with no wear data, so it stacks with every other new part. Returns the stack. */
 	public static ItemStack withWear(ItemStack stack, double wear) {
 		double w = Wear.clamp(wear);

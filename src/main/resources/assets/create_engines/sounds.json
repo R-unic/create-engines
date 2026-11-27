@@ -54,6 +54,142 @@
       {
         "name": "create_engines:turbo_blowoff",
         "attenuation_distance": 28
+      },
+      {
+        "name": "create_engines:turbo_blowoff2",
+        "attenuation_distance": 28
+      },
+      {
+        "name": "create_engines:turbo_blowoff3",
+        "attenuation_distance": 28
+      },
+      {
+        "name": "create_engines:turbo_blowoff2",
+        "attenuation_distance": 28
+      },
+      {
+        "name": "create_engines:turbo_blowoff3",
+        "attenuation_distance": 28
+      },
+      {
+        "name": "create_engines:turbo_blowoff2",
+        "attenuation_distance": 28
+      },
+      {
+        "name": "create_engines:turbo_blowoff3",
+        "attenuation_distance": 28
+      },
+      {
+        "name": "create_engines:turbo_blowoff2",
+        "attenuation_distance": 28
+      },
+      {
+        "name": "create_engines:turbo_blowoff3",
+        "attenuation_distance": 28
+      },
+      {
+        "name": "create_engines:turbo_blowoff2",
+        "attenuation_distance": 28
+      },
+      {
+        "name": "create_engines:turbo_blowoff3",
+        "attenuation_distance": 28
+      },
+      {
+        "name": "create_engines:turbo_blowoff2",
+        "attenuation_distance": 28
+      },
+      {
+        "name": "create_engines:turbo_blowoff3",
+        "attenuation_distance": 28
+      },
+      {
+        "name": "create_engines:turbo_blowoff2",
+        "attenuation_distance": 28
+      },
+      {
+        "name": "create_engines:turbo_blowoff3",
+        "attenuation_distance": 28
+      },
+      {
+        "name": "create_engines:turbo_blowoff2",
+        "attenuation_distance": 28
+      },
+      {
+        "name": "create_engines:turbo_blowoff3",
+        "attenuation_distance": 28
+      },
+      {
+        "name": "create_engines:turbo_blowoff2",
+        "attenuation_distance": 28
+      },
+      {
+        "name": "create_engines:turbo_blowoff3",
+        "attenuation_distance": 28
+      },
+      {
+        "name": "create_engines:turbo_blowoff2",
+        "attenuation_distance": 28
+      },
+      {
+        "name": "create_engines:turbo_blowoff3",
+        "attenuation_distance": 28
+      },
+      {
+        "name": "create_engines:turbo_blowoff2",
+        "attenuation_distance": 28
+      },
+      {
+        "name": "create_engines:turbo_blowoff3",
+        "attenuation_distance": 28
+      },
+      {
+        "name": "create_engines:turbo_blowoff2",
+        "attenuation_distance": 28
+      },
+      {
+        "name": "create_engines:turbo_blowoff3",
+        "attenuation_distance": 28
+      },
+      {
+        "name": "create_engines:turbo_blowoff2",
+        "attenuation_distance": 28
+      },
+      {
+        "name": "create_engines:turbo_blowoff3",
+        "attenuation_distance": 28
+      },
+      {
+        "name": "create_engines:turbo_blowoff2",
+        "attenuation_distance": 28
+      },
+      {
+        "name": "create_engines:turbo_blowoff3",
+        "attenuation_distance": 28
+      },
+      {
+        "name": "create_engines:turbo_blowoff2",
+        "attenuation_distance": 28
+      },
+      {
+        "name": "create_engines:turbo_blowoff3",
+        "attenuation_distance": 28
+      },
+      {
+        "name": "create_engines:turbo_blowoff2",
+        "attenuation_distance": 28
+      },
+      {
+        "name": "create_engines:turbo_blowoff3",
+        "attenuation_distance": 28
+      },
+      {
+        "name": "create_engines:turbo_blowoff2",
+        "attenuation_distance": 28
+      },
+      {
+        "name": "create_engines:turbo_blowoff3",
+        "attenuation_distance": 28
       }
     ]
   },
@@ -70,6 +206,14 @@
       {
         "name": "create_engines:engine_catch",
         "attenuation_distance": 32
+      },
+      {
+        "name": "create_engines:engine_catch2",
+        "attenuation_distance": 32
+      },
+      {
+        "name": "create_engines:engine_catch3",
+        "attenuation_distance": 32
       }
     ]
   },
@@ -77,6 +221,78 @@
     "sounds": [
       {
         "name": "create_engines:engine_stall",
+        "attenuation_distance": 28
+      },
+      {
+        "name": "create_engines:engine_stall2",
+        "attenuation_distance": 28
+      },
+      {
+        "name": "create_engines:engine_stall3",
+        "attenuation_distance": 28
+      }
+    ]
+  },
+  "engine_catch_hard": {
+    "sounds": [
+      {
+        "name": "create_engines:engine_catch_hard",
+        "attenuation_distance": 32
+      },
+      {
+        "name": "create_engines:engine_catch_hard2",
+        "attenuation_distance": 32
+      },
+      {
+        "name": "create_engines:engine_catch_hard3",
+        "attenuation_distance": 32
+      }
+    ]
+  },
+  "engine_stall_lugged": {
+    "sounds": [
+      {
+        "name": "create_engines:engine_stall_lugged",
+        "attenuation_distance": 28
+      },
+      {
+        "name": "create_engines:engine_stall_lugged2",
+        "attenuation_distance": 28
+      },
+      {
+        "name": "create_engines:engine_stall_lugged3",
+        "attenuation_distance": 28
+      }
+    ]
+  },
+  "engine_stall_starved": {
+    "sounds": [
+      {
+        "name": "create_engines:engine_stall_starved",
+        "attenuation_distance": 28
+      },
+      {
+        "name": "create_engines:engine_stall_starved2",
+        "attenuation_distance": 28
+      },
+      {
+        "name": "create_engines:engine_stall_starved3",
+        "attenuation_distance": 28
+      }
+    ]
+  },
+  "engine_settle": {
+    "sounds": [
+      {
+        "name": "create_engines:engine_settle",
+        "attenuation_distance": 28
+      },
+      {
+        "name": "create_engines:engine_settle2",
+        "attenuation_distance": 28
+      },
+      {
+        "name": "create_engines:engine_settle3",
         "attenuation_distance": 28
       }
     ]
@@ -94,6 +310,30 @@
       {
         "name": "create_engines:exhaust_pop3",
         "attenuation_distance": 28
+      },
+      {
+        "name": "create_engines:exhaust_pop4",
+        "attenuation_distance": 28
+      },
+      {
+        "name": "create_engines:exhaust_pop5",
+        "attenuation_distance": 28
+      }
+    ]
+  },
+  "exhaust_spit": {
+    "sounds": [
+      {
+        "name": "create_engines:exhaust_spit1",
+        "attenuation_distance": 14
+      },
+      {
+        "name": "create_engines:exhaust_spit2",
+        "attenuation_distance": 14
+      },
+      {
+        "name": "create_engines:exhaust_spit3",
+        "attenuation_distance": 14
       }
     ]
   },
@@ -250,18 +490,6 @@
       {
         "name": "create_engines:head_warp2",
         "attenuation_distance": 32
-      }
-    ]
-  },
-  "coolant_boil": {
-    "sounds": [
-      {
-        "name": "create_engines:coolant_boil1",
-        "attenuation_distance": 24
-      },
-      {
-        "name": "create_engines:coolant_boil2",
-        "attenuation_distance": 24
       }
     ]
   },

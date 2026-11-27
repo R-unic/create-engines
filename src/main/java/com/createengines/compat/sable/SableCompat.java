@@ -33,7 +33,11 @@ public final class SableCompat {
 
 	/** Where {@code pos} really is in the world: itself, unless a moving structure holds it. A failure turns this off. */
 	public static Vec3 worldPosition(Level level, BlockPos pos) {
-		Vec3 centre = Vec3.atCenterOf(pos);
+		return worldPosition(level, Vec3.atCenterOf(pos));
+	}
+
+	/** The same for a point that need not be the middle of a block. */
+	public static Vec3 worldPosition(Level level, Vec3 centre) {
 		if (!installed())
 			return centre;
 		try {
@@ -97,6 +101,27 @@ public final class SableCompat {
 			broken = true;
 			LOGGER.warn("Sable did not answer whether a block is on a moving structure; engines will use block positions as they are this session", e);
 			return false;
+		}
+	}
+
+	private static boolean soundsBroken;
+
+	/**
+	 * What the sound engine knows {@code sound} (a sound instance) as. Sable plays a sound that starts on a moving structure
+	 * inside a wrapper of its own, so the sound engine, asked about the instance we made, says it is not playing. Anything
+	 * that asks whether one of our sounds is still going must ask about this. Typed as an object because the sound classes
+	 * are the client's, which this class, loaded on a server too, may not name. {@code sound} itself off a structure, and
+	 * without Sable.
+	 */
+	public static Object playedAs(Object sound) {
+		if (soundsBroken || !installed())
+			return sound;
+		try {
+			return SableSoundBridge.playedAs(sound);
+		} catch (LinkageError | RuntimeException e) {
+			soundsBroken = true;
+			LOGGER.warn("Sable did not answer how it plays a sound; engine sounds on moving structures may stack this session", e);
+			return sound;
 		}
 	}
 

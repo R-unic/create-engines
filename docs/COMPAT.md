@@ -36,7 +36,7 @@ Run it in a private copy of the checkout (see docs/SMOKE.md "Running it"). Each 
 | Pollution of the Realms 9.1.14.0 (mod id `adpother`) | `runGameTestServerPollution` (`PollutionGameTests`, which only do anything with the mod loaded). Not part of `compatMatrix` | Machine: the v2.0.0 record has the plain and the Pollution GameTest runs passing (docs/releases/v2.0.0.md); not re-run for this entry. **Played by another player** (reported to the author, 2026-11-24; their version and pack not recorded, and the author has not seen it): the compat works for them. One report is a data point, not a measurement of the rates |
 | Other Create addons | the list is the author's to choose | **open: no addons chosen** |
 
-What a row checks, beyond the audit's own sweep: no log errors beyond the allow-list, every model and all 128 Ponder
+What a row checks, beyond the audit's own sweep: no log errors beyond the allow-list, every model and all 131 Ponder
 pages render, engines run and power their networks, and the fleet leaks nothing.
 
 Not yet automated for any row: a world saved without the mod opening with it, and a world saved with the mod opening

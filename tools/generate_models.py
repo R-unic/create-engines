@@ -289,6 +289,23 @@ def rod():
     textures = {"rod": IRON, "particle": IRON}
     write("cylinder/rod", textures, rod_elements(-1.5, 12.75, 1, 13))
     write("cylinder/rod_item", textures, rod_elements(0, 13, 1, 15))
+    # The light and heavy rods, slimmer in brass and stouter in steel: first as fitted in a cylinder, then as items
+    write("cylinder/light_rod", {"rod": BRASS, "particle": BRASS},
+          [box((7.25, 1, 7.25), (8.75, 13, 8.75), "rod"),
+           box((6.75, -1.25, 6.5), (9.25, 1.25, 9.5), "rod"),
+           box((7, 12.75, 6.75), (9, 14.75, 9.25), "rod")])
+    write("cylinder/heavy_rod", {"rod": IRON_BLOCK, "particle": IRON_BLOCK},
+          [box((6.5, 1, 6.75), (9.5, 13, 9.25), "rod"),
+           box((6, -1.75, 5.5), (10, 1.75, 10.5), "rod"),
+           box((6.25, 12.5, 6), (9.75, 15.5, 10), "rod")])
+    write("cylinder/light_rod_item", {"rod": BRASS, "particle": BRASS},
+          [box((7.25, 1, 7.25), (8.75, 15, 8.75), "rod"),
+           box((6.75, 0, 6.5), (9.25, 2.5, 9.5), "rod"),
+           box((7, 13.25, 6.75), (9, 15.25, 9.25), "rod")])
+    write("cylinder/heavy_rod_item", {"rod": IRON_BLOCK, "particle": IRON_BLOCK},
+          [box((6.5, 1, 6.75), (9.5, 15, 9.25), "rod"),
+           box((6, 0, 5.5), (10, 3.5, 10.5), "rod"),
+           box((6.25, 12.5, 6), (9.75, 15.5, 10), "rod")])
 
 
 # --- head, injector, plug, valve -----------------------------------------------------------------------------------
@@ -394,8 +411,8 @@ def wear_wrecks():
 
     cylinder_head/wreck         the head a rod went through: a split in its top plate, a flap of the plate thrown up, the broken
                                 rod standing out of the hole with its glowing break, and bolts and shards flung about
-    cylinder_head/blown_gasket  a gasket pushed out of the joint at the bottom of the head, hanging from it, with a soot streak
-                                down the side of the head where the gas came out
+    cylinder_head/blown_gasket  a red gasket squeezed out all round the joint at the bottom of the head, its torn tongues sticking
+                                out past the block, a glowing hole above it and soot up the side where the gas came out
     cylinder/wreck              the wreck inside the bore: the rod bent in two, and the shards of the piston lying in it
     cylinder/seized_ring        a scorched band and a heat-coloured ring on a piston that has seized, drawn at the piston's own pose"""
     textures = {"iron": IRON, "steel": IRON_BLOCK, "dark": DARK, "black": BLACK, "plate": CUT_COPPER, "hot": MAGMA,
@@ -419,7 +436,7 @@ def wear_wrecks():
     ]
     write("cylinder_head/wreck", textures, head)
 
-    # The gasket squeezed out of the joint at the bottom of the head, drooping, and the soot where the gas came out, up the side of the head. Every
+    # The gasket squeezed out of the joint at the bottom of the head, torn and drooping, and the soot where the gas came out, up the side of the head. Every
     # side has them, so a pipe on one face does not hide the damage: the north's are made and turned a quarter turn for each of the others.
     def quarter(element, turns):
         a, b = element["from"], element["to"]
@@ -446,16 +463,30 @@ def wear_wrecks():
 
     def north_side():
         return [
-            tilt(box((2.5, -0.6, -3), (13.5, 0.5, 0.4), "dark"), (8, 0, 0), "x", 22.5),
-            tilt(box((9, -1.4, -3.8), (13.5, -0.5, -1.2), "dark"), (11, -1, -2), "x", 22.5),
-            box((3, 0.5, -0.12), (13, 7, 0), "black"),
-            box((5.5, 7, -0.12), (10.5, 11, 0), "black"),
+            # the gasket itself, bright red and squeezed out all along the joint, so the head wears a collar no sound one has
+            box((0, -0.2, -1.5), (16, 1.8, 0), "gasket"),
+            # a wide torn tongue of it blown out and drooping, and a second torn end curled up the side of the head
+            tilt(box((2, -0.9, -5), (9.5, 0.9, -1), "gasket"), (5.75, 0, -1), "x", 22.5),
+            tilt(box((10.5, 1.2, -4), (14.5, 3, -0.6), "gasket"), (12.5, 1.8, -0.6), "x", -22.5),
+            # the hole the gas leaves by, still glowing, and the soot it has blown up the side, widest at the joint
+            box((4, 1.8, -0.7), (10, 4.2, 0), "hot"),
+            box((2, 4.2, -0.12), (12, 7.5, 0), "black"),
+            box((3.5, 7.5, -0.12), (10.5, 11, 0), "black"),
+            box((5.5, 11, -0.12), (8.5, 13.5, 0), "black"),
         ]
 
     gasket = []
     for turns in range(4):
-        gasket += [quarter(e, turns) for e in north_side()]
-    write("cylinder_head/blown_gasket", textures, gasket)
+        for element in north_side():
+            turned = quarter(element, turns)
+            # The collar and tongues stand out past the block, so each face's patch is worked out again from where it ended up
+            for face, data in turned["faces"].items():
+                data.pop("uv", None)
+                patch = _wrapped_default_uv(turned["from"], turned["to"], face)
+                if patch:
+                    data["uv"] = patch
+            gasket.append(turned)
+    write("cylinder_head/blown_gasket", dict(textures, gasket=RED), gasket)
 
     # A head warped by heat: the joint glowing where it no longer meets the block, a heat-crazed line across the top plate and the
     # scorch round it. Low and thin, so it reads as damage to the head and not as a wreck
@@ -499,19 +530,21 @@ def wear_wrecks():
     ]
     write("cylinder/seized_ring", textures, seized)
 
-    # A failed set of apex seals, in the housing's own frame (+Y along the shaft): the sprung strips of seal poking out between the
-    # posts, bent over, with the soot of the blow-by on the rims either side. Every side has them, because the shaft can lie any way
+    # A failed set of apex seals, in the housing's own frame (+Y along the shaft): thick pale strips of ceramic seal sprung out
+    # across each face, bright against the copper and brass, with the soot of the blow-by on the rims either side. Every side has them, because the shaft can lie any way
     # and pipes hide faces. All of it stays out of the rotor's sweep, which the other rotors on the shaft may still be turning.
     def seal_side():
         return [
-            # a length of seal sprung out through the gap, and the end snapped off it hanging at an angle
-            tilt(box((7.4, 4.5, -2.2), (8.2, 11.5, -1.4), "seal"), (7.8, 8, -1.8), "z", 22.5),
-            tilt(box((9.3, 2.2, -1.6), (10.0, 6.2, -0.9), "seal"), (9.6, 4.2, -1.2), "x", -22.5),
+            # a thick length of seal sprung out through the gap and standing across the face, and the end snapped off it
+            tilt(box((6.8, 1, -3.6), (9.2, 15, -1.8), "seal"), (8, 8, -2.7), "z", 45),
+            tilt(box((10.8, 1.5, -4.6), (13, 7.5, -3), "seal"), (11.9, 4.5, -3.8), "x", -22.5),
             # the glowing break where it let go
-            box((7.2, 11.4, -2.1), (8.0, 12.2, -1.5), "hot"),
-            # soot blown across both rims
-            box((3.5, 0.2, -0.12), (12.5, 1.9, 0), "black"),
-            box((5, 14.1, -0.12), (11, 15.8, 0), "black"),
+            box((6.4, 6.4, -4.2), (9.6, 9.6, -3.6), "hot"),
+            # a length of the bottom rim torn outward by it
+            tilt(box((1.5, 0.4, -3.4), (7, 2.4, -0.2), "rim"), (4.25, 1.4, -0.2), "x", 22.5),
+            # soot blown across both rims and past them
+            box((1, 0, -0.16), (15, 2.6, 0), "black"),
+            box((2.5, 13.4, -0.16), (13.5, 16, 0), "black"),
         ]
 
     seals = []
@@ -525,7 +558,7 @@ def wear_wrecks():
                 if patch:
                     data["uv"] = patch
             seals.append(turned)
-    write("rotor_housing/wreck", dict(textures, seal=BRASS), seals)
+    write("rotor_housing/wreck", dict(textures, seal=QUARTZ, rim=CUT_COPPER), seals)
 
 
 # --- airflow -------------------------------------------------------------------------------------------------------

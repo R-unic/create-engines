@@ -141,10 +141,11 @@ public class CrankshaftBlockEntity extends GeneratingKineticBlockEntity implemen
 			return;
 		if (ambience == null)
 			ambience = new EngineAmbience(this);
-		ambience.tick(summary);
+		// The note first, so that a catch the ambience hears has a note to play it, not a recording under one starting
 		if (summary.state() != EngineState.STALLED && summary.state() != EngineState.INCOMPLETE
 			&& summary.state() != EngineState.BROKEN)
 			EngineNoteSound.ensurePlaying(this);
+		ambience.tick(summary);
 	}
 
 	/** A crank pin turning in a bearing with no oil on it throws sparks, more of them the drier and faster it runs. */
@@ -576,8 +577,8 @@ public class CrankshaftBlockEntity extends GeneratingKineticBlockEntity implemen
 		Thermal.Band band = Thermal.band(temperature);
 		ChatFormatting colour = switch (band) {
 			case COLD -> ChatFormatting.AQUA;
-			case COOL -> ChatFormatting.GREEN;
-			case WARM -> ChatFormatting.GRAY;
+			case COOL -> ChatFormatting.BLUE;
+			case WARM -> ChatFormatting.GREEN;
 			case HOT -> ChatFormatting.GOLD;
 			case OVERHEATING -> ChatFormatting.RED;
 			// A critical block's line flashes, a second red and a second dark red

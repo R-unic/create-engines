@@ -278,6 +278,15 @@ public final class EngineScenes {
 				.blockSurface(cylinder, Direction.NORTH))
 			.placeNearTarget();
 		scene.idle(90);
+
+		scene.overlay()
+			.showText(90)
+			.attachKeyFrame()
+			.text("To stop the engine, put a redstone signal on its camshaft to cut the fuel. The Camshaft page shows how.")
+			.pointAt(util.vector()
+				.topOf(2, 4, 2))
+			.placeNearTarget();
+		scene.idle(100);
 		scene.markAsFinished();
 	}
 
@@ -371,15 +380,64 @@ public final class EngineScenes {
 			.placeNearTarget();
 		scene.idle(110);
 
+		// Shutting the engine down: a lever on the side of one camshaft block
+		BlockPos lever = util.grid()
+			.at(4, 3, 4);
+		scene.world()
+			.setBlock(lever, net.minecraft.world.level.block.Blocks.LEVER.defaultBlockState()
+				.setValue(net.minecraft.world.level.block.LeverBlock.FACE,
+					net.minecraft.world.level.block.state.properties.AttachFace.WALL)
+				.setValue(net.minecraft.world.level.block.LeverBlock.FACING, Direction.SOUTH), false);
+		scene.world()
+			.showSection(util.select()
+				.position(lever), Direction.NORTH);
+		scene.idle(10);
 		scene.overlay()
 			.showText(90)
 			.attachKeyFrame()
 			.colored(PonderPalette.RED)
-			.text("A redstone signal on the camshaft closes the fuel rack. A full-strength signal cuts the fuel and stops the engine.")
+			.text("Shutting the engine down: put a redstone signal, such as a lever, on any block of the camshaft line.")
+			.pointAt(util.vector()
+				.centerOf(lever))
+			.placeNearTarget();
+		scene.idle(40);
+		scene.world()
+			.modifyBlock(lever, s -> s.setValue(net.minecraft.world.level.block.LeverBlock.POWERED, true), false);
+		scene.effects()
+			.indicateRedstone(lever);
+		scene.idle(15);
+		scene.world()
+			.setKineticSpeed(crank, 16);
+		scene.world()
+			.setKineticSpeed(camTrain, -8);
+		scene.idle(15);
+		scene.world()
+			.setKineticSpeed(crank, 6);
+		scene.world()
+			.setKineticSpeed(camTrain, -3);
+		scene.idle(15);
+		scene.world()
+			.setKineticSpeed(crank, 0);
+		scene.world()
+			.setKineticSpeed(camTrain, 0);
+		scene.idle(20);
+
+		scene.overlay()
+			.showText(110)
+			.colored(PonderPalette.RED)
+			.text("The signal's strength closes the fuel rack in proportion: a weak one trims the fuel, and 15 cuts it. The fuel stays in the pipes and tanks.")
 			.pointAt(util.vector()
 				.topOf(4, 3, 3))
 			.placeNearTarget();
-		scene.idle(100);
+		scene.idle(120);
+
+		scene.overlay()
+			.showText(110)
+			.text("An engine with two camshaft lines, such as a V or a flat engine with a cam for each bank, needs a signal on each line. A sensor's own output does not count.")
+			.pointAt(util.vector()
+				.topOf(4, 3, 3))
+			.placeNearTarget();
+		scene.idle(120);
 		scene.markAsFinished();
 	}
 
@@ -3854,7 +3912,7 @@ public final class EngineScenes {
 		scene.overlay()
 			.showText(140)
 			.colored(PonderPalette.BLUE)
-			.text("It warms and cools over about a second and costs the engine nothing. Its heat also comes out as a redstone signal, and goggles read it in heat per second. The server config can switch heat recovery off.")
+			.text("It warms and cools over about a second and costs the engine nothing. Its heat also comes out as a redstone signal, and goggles read it in HU, heat units, per second. The server config can switch heat recovery off.")
 			.pointAt(util.vector()
 				.topOf(exchanger))
 			.placeNearTarget();
@@ -3864,7 +3922,7 @@ public final class EngineScenes {
 			.showText(150)
 			.attachKeyFrame()
 			.colored(PonderPalette.RED)
-			.text("For the most heat, add burning cylinders on the one exhaust: each running at speed on a full shot gives about 3 heat per second, and they add up along a shared manifold. An idle or unfired cylinder gives nothing.")
+			.text("For the most heat, add burning cylinders on the one exhaust: each running at speed on a full shot gives about 3 HU/s, and they add up along a shared manifold. An idle or unfired cylinder gives nothing.")
 			.pointAt(util.vector()
 				.topOf(exchanger))
 			.placeNearTarget();
@@ -3872,7 +3930,7 @@ public final class EngineScenes {
 		scene.overlay()
 			.showText(150)
 			.colored(PonderPalette.RED)
-			.text("Use one exchanger on an exhaust for a hot basin: exchangers on the same exhaust split its heat between them. Goggles show the heat per second; 6 heats a basin, 20 superheats it.")
+			.text("Use one exchanger on an exhaust for a hot basin: exchangers on the same exhaust split its heat between them. Goggles show the figure: 6 HU/s heats a basin, 20 HU/s superheats it.")
 			.pointAt(util.vector()
 				.topOf(exchanger))
 			.placeNearTarget();

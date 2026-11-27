@@ -3,6 +3,7 @@ package com.createengines.content.head;
 import org.jetbrains.annotations.Nullable;
 
 import com.createengines.content.EngineGlow;
+import com.createengines.content.NewPartRequirement;
 import com.createengines.content.PartInstallation;
 import com.createengines.content.WearService;
 import com.createengines.content.PartInstallation.Slot;
@@ -130,7 +131,7 @@ public class CylinderHeadBlock extends DirectionalBlock
 	public ItemRequirement getRequiredItems(BlockState state, @Nullable BlockEntity blockEntity) {
 		ItemRequirement needed = PartInstallation.requirement(state, PARTS);
 		if (blockEntity instanceof CylinderHeadBlockEntity head && head.hasGasketItem() && !head.showsBroken())
-			needed = needed.union(new ItemRequirement(ItemRequirement.ItemUseType.CONSUME, WearService.itemFor(head.gasket())));
+			needed = needed.union(NewPartRequirement.of(WearService.itemFor(head.gasket())));
 		return needed;
 	}
 

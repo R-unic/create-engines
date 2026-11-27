@@ -7,6 +7,7 @@ import java.util.Map;
 
 import org.jetbrains.annotations.Nullable;
 
+import com.createengines.content.WearService;
 import com.createengines.engine.blueprint.Blueprint;
 import com.createengines.engine.blueprint.BlueprintCodec;
 import com.createengines.engine.blueprint.BlueprintException;
@@ -268,13 +269,18 @@ public final class BlueprintBuilder {
 			.toString();
 	}
 
+	/** The blueprint builds new parts, so a worn or wrecked one does not pay for one: that would be a free repair. */
+	private static boolean pays(ItemStack held, ItemStack sample) {
+		return ItemStack.isSameItem(held, sample) && WearService.isNew(held);
+	}
+
 	private static int carried(Player player, ItemStack sample) {
 		int total = 0;
 		for (int slot = 0; slot < player.getInventory()
 			.getContainerSize(); slot++) {
 			ItemStack held = player.getInventory()
 				.getItem(slot);
-			if (ItemStack.isSameItem(held, sample))
+			if (pays(held, sample))
 				total += held.getCount();
 		}
 		return total;
@@ -286,7 +292,7 @@ public final class BlueprintBuilder {
 			.getContainerSize() && left > 0; slot++) {
 			ItemStack held = player.getInventory()
 				.getItem(slot);
-			if (!ItemStack.isSameItem(held, sample))
+			if (!pays(held, sample))
 				continue;
 			int used = Math.min(left, held.getCount());
 			held.shrink(used);

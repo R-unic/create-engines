@@ -36,7 +36,14 @@ import net.minecraft.world.phys.shapes.VoxelShape;
  * any side (a side face takes whichever kind arrives, since a neighbour can only be one). The engine scanner follows
  * pipes through it, so everything the intake run feeds is boosted and everything the exhaust run drains drives it.
  */
-public class TurbochargerBlock extends DirectionalBlock implements InlineDuct, IWrenchable, IBE<TurbochargerBlockEntity> {
+public class TurbochargerBlock extends DirectionalBlock implements InlineDuct, IWrenchable, IBE<TurbochargerBlockEntity>,
+	com.simibubi.create.api.schematic.requirement.SpecialBlockItemRequirement {
+
+	@Override
+	public com.simibubi.create.content.schematics.requirement.ItemRequirement getRequiredItems(BlockState state,
+		net.minecraft.world.level.block.entity.BlockEntity blockEntity) {
+		return com.createengines.content.NewPartRequirement.block(state);
+	}
 
 	public static final DirectionProperty FACING = DirectionalBlock.FACING;
 

@@ -117,7 +117,7 @@ public final class WearScenes {
 			.showText(150)
 			.attachKeyFrame()
 			.colored(PonderPalette.BLUE)
-			.text("A rod wears faster the harder the engine pulls. A light rod drags a little less at speed but wears fast under load, and a heavy one takes load well but drags a little more. That difference in drag is there with wear off too.")
+			.text("A rod wears faster the harder the engine pulls. A light rod drags less and revs up sooner but runs rougher, and a heavy one runs smoother but drags more, wear on or off. In wear mode a light rod wears fast under load, a heavy one slowly.")
 			.pointAt(util.vector()
 				.centerOf(2, 2, 3))
 			.placeNearTarget();

@@ -74,6 +74,7 @@ Balance multipliers. 1.0 is the shipped balance.
 | `overheatPenalty` | `1.0` | 0.0 to 1.0 | Scales the power an overheating engine loses: from 140 degrees each burn gets less done, up to the most it loses (about a quarter) at 165 degrees, and it comes back as the engine cools. Nothing breaks or stops. 0 turns the loss off. |
 | `torsionalFlex` | `1.0` | 0.0 to 2.0 | Scales the rating an engine loses to a long crankshaft: past 8 throws on one unbroken crank line it falls by 2.5 percent a throw at 1.0. A vee or flat has half as many throws as cylinders, and cranks geared together one to one are separate lines. 0 turns it off. |
 | `alternatorEnergy` | `2.0` | 0.0 to 100.0 | Forge Energy an Alternator makes each tick for every RPM of its shaft, while something is drawing it. It puts 2 stress units on the shaft for each RPM while it does, so the default of 2 makes one stress unit worth about one FE a tick. 0 turns FE output off; spark charging is unaffected. |
+| `rpmScale` | `1.0` | 0.25 to 8.0 | Turns every engine's shaft this many times as fast, with its stress capacity per RPM divided to match: an engine giving 10k SU at 256 RPM gives the same 10k SU at 512 RPM at 2. It climbs through the speeds that much faster too. The engine itself runs as at 1, on the same fuel. Speeds shown and set on the engine are the shaft's. Above 1, Create's maxRotationSpeed needs raising to match (512 for 2 from the default 256): the scale only goes as far as that limit divided by 256, and at 256 it does nothing. Machines on the shaft turn faster and so ask for more SU, as behind any gearing. |
 
 ### `[features]`
 
@@ -113,7 +114,14 @@ Other mods, and how the world around an engine answers it.
 | `pollutionEngineCeiling` | `0.0` | 0.0 to 100000.0 | The most steps of each gas one engine may release per minute of running, however much it burns. 0 turns the ceiling off. |
 <!-- /generated:server-settings -->
 
-`[meta] carriedOver` is a bookkeeping flag: it is set once the 1.x file has been read (see "From 1.x" below). Leave it alone.
+### `[meta]`
+
+Both files, server and client, end with this group. It is the mod's own bookkeeping, not a setting to tune, so it is not in
+the generated tables.
+
+| Setting | Default | Range | What it does |
+|---|---|---|---|
+| `carriedOver` | `false` | on or off | The mod sets it to `true` the first time the file loads, after looking for the 1.x file beside it (see "From 1.x" below), whether or not there was one. Leave it alone. If it is set back to `false`, or the line is deleted, the next load reads a 1.x file that is still there again, and its values replace the matching ones you have now. |
 
 ### Things that go together
 
@@ -126,6 +134,13 @@ Other mods, and how the world around an engine answers it.
   what it does by default (see the blend rule in [DATA.md](DATA.md)).
 - Create itself caps rotation at 256 RPM unless you raise `maxRotationSpeed` in `create-server.toml`; engines hit that ceiling.
   The README recommends 512.
+- `rpmScale` gears every engine's shaft without loss: the engine runs as at 1, held to `maxRotationSpeed` divided by the scale,
+  so with the limit raised from 256 to 512 a scale of 2 reproduces the 256 engine exactly, at twice the shaft speed. The scale
+  in force is never more than `maxRotationSpeed` / 256 (nor less than 1 when set above 1). An engine that ran past 256 RPM
+  under a raised limit needs that limit multiplied by the scale to keep all of its range. What shows or sets a speed on an
+  engine (goggles, Dynamometer, governor, Black Box, Display Link, sound) uses shaft speed; advancements judge the engine's own.
+  A Starter's input, and a supercharger driven by a separate shaft, act on the engine as at 1; a motor or supercharger on the
+  engine's own shaft is geared with it.
 
 ## Presets
 
@@ -179,16 +194,16 @@ refused, never clamped, and the command says which.
 |---|---|---|---|
 | `bang` | `1.0` | 0.0 to 2.0 | Volume of a cylinder's firing bang. 0 mutes it. |
 | `engineNote` | `1.0` | 0.0 to 2.0 | Volume of the engine's exhaust note, made up from its speed and firing order as it runs. 0 mutes it, and each cylinder's bang plays at full volume instead. |
-| `mechanical` | `1.0` | 0.0 to 2.0 | Volume of an engine's own noises besides its exhaust: the tick of its valve gear, the squeal of dry bearings, the cough as it catches and dies, and hot metal ticking as it cools. 0 mutes them. |
+| `mechanical` | `1.0` | 0.0 to 2.0 | Volume of an engine's own noises besides its exhaust: the squeal of dry bearings, the cough as it catches and dies, and hot metal ticking as it cools. 0 mutes them. |
 | `boost` | `1.0` | 0.0 to 2.0 | Volume of turbocharger whistle and blow-off and the supercharger whine. 0 mutes them. |
 <!-- /generated:client-settings -->
 
 ## From 1.x
 
-2.0 regrouped the server file once. The 1.x file (`create_engines-server.toml`) is left where it is; the first time the 2.0 file
-loads it reads the 1.x one beside it, copies every value across under its new name, writes what moved and what it left alone
-to the log, and sets `carriedOver` so a value you change later is never overwritten. Names and meanings did not change, only
-where they live:
+2.0 regrouped the config files once. Each 1.x file (`create_engines-server.toml` and `create_engines-client.toml`) is left
+where it is; the first time its 2.0 file loads it reads the 1.x one beside it, copies every value across under its new name,
+writes what moved and what it left alone to the log, and sets [`carriedOver`](#meta) so a value you change later is not
+overwritten. Meanings did not change, only where the settings live and, for some client ones, their names:
 
 | 1.x key | 2.x key |
 |---|---|

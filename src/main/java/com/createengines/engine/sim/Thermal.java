@@ -5,7 +5,8 @@ package com.createengines.engine.sim;
  * <p>
  * The cylinders put heat in, in proportion to the fuel they burn, and friction a little more; the block loses some to the
  * air in proportion to how hot it is, and a coolant supply carries away more of whatever is above its thermostat. A player
- * reads the temperature in degrees (see {@link #degrees}). Nothing here breaks an engine (the wear mode's heat damage is
+ * reads the temperature in degrees (see {@link #degrees}). Heat itself is counted in HU, heat units: the simulation's own
+ * unit, one for one, so every heat figure a player reads is in HU, or HU/s for a rate. Nothing here breaks an engine (the wear mode's heat damage is
  * {@link Wear}'s). The effects are soft: a cold engine drags (thick oil, tight fits) until it has warmed through, a cool one
  * breathes better, as denser air in the cylinders, and an overheating one gets less out of each burn.
  * <p>
@@ -29,6 +30,7 @@ public final class Thermal {
 	/** The temperature a gauge shows for an ambient block, and how many degrees each unit of temperature is: warm reads 90 degrees. */
 	private static final double AMBIENT_DEGREES = 20;
 	private static final double DEGREES_PER_UNIT = 100;
+	private static final double ABSOLUTE_ZERO_DEGREES = -273.15;
 	/** Below this the engine is cold and drags. */
 	public static final double COLD_BELOW = 0.3;
 	/** Friction added to a completely cold engine, as a share of normal. */
@@ -111,6 +113,15 @@ public final class Thermal {
 	/** A temperature as the whole degrees Celsius a gauge shows: ambient is 20, a warm engine 90. Nonsense reads as ambient. */
 	public static int degrees(double temperature) {
 		return (int) Math.round(AMBIENT_DEGREES + DEGREES_PER_UNIT * (Double.isFinite(temperature) ? Math.max(0, temperature) : 0));
+	}
+
+	/**
+	 * A charge or ignition temperature as whole degrees Celsius. Those are absolute temperatures with ambient as 1 (not the
+	 * block's scale, where ambient is 0), and ambient reads the same 20 degrees as an ambient block. Nonsense reads as ambient.
+	 */
+	public static int chargeDegrees(double charge) {
+		double ratio = Double.isFinite(charge) ? Math.max(0, charge) : 1;
+		return (int) Math.round((AMBIENT_DEGREES - ABSOLUTE_ZERO_DEGREES) * ratio + ABSOLUTE_ZERO_DEGREES);
 	}
 
 	/** Share of a fuel's heat release a stone-cold block quenches, for a fuel with a {@link FuelSpec#coldSensitivity()} of 1. */

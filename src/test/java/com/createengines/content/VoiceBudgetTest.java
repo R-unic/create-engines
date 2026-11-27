@@ -27,6 +27,27 @@ class VoiceBudgetTest {
 	}
 
 	@Test
+	void aVoiceThatHadBeenPlayingAndRanDryIsReplacedAtOnce() {
+		VoiceBudget budget = new VoiceBudget(10);
+		Object owner = new Object();
+		budget.finished(owner, 10);
+		budget.lost(owner, 500, VoiceBudget.REST_TICKS, true);
+		assertTrue(budget.tryStart(owner, 500, 0));
+	}
+
+	@Test
+	void aVoiceLostYoungOrNeverPlayedStillRests() {
+		VoiceBudget budget = new VoiceBudget(10);
+		Object young = new Object();
+		budget.lost(young, 500, VoiceBudget.REST_TICKS - 1, true);
+		assertFalse(budget.tryStart(young, 500, 0));
+		Object silent = new Object();
+		budget.lost(silent, 500, 4000, false);
+		assertFalse(budget.tryStart(silent, 500, 0));
+		assertTrue(budget.tryStart(silent, 500 + VoiceBudget.REST_TICKS, 0));
+	}
+
+	@Test
 	void startsInOneWindowAreCappedAcrossOwners() {
 		VoiceBudget budget = new VoiceBudget(1000);
 		int allowed = 0;

@@ -49,6 +49,7 @@ public final class CEConfig {
 	public static final ModConfigSpec.DoubleValue OVERHEAT_PENALTY;
 	public static final ModConfigSpec.DoubleValue TORSIONAL_FLEX;
 	public static final ModConfigSpec.DoubleValue ALTERNATOR_ENERGY;
+	public static final ModConfigSpec.DoubleValue RPM_SCALE;
 
 	public static final ModConfigSpec.BooleanValue FORCED_INDUCTION;
 	public static final ModConfigSpec.BooleanValue SPARK_FOULING;
@@ -196,6 +197,14 @@ public final class CEConfig {
 				"drawing it. It puts 2 stress units on the shaft for each RPM while it does, so the default of 2 makes",
 				"one stress unit worth about one FE a tick. 0 turns FE output off; spark charging is unaffected.")
 			.defineInRange("alternatorEnergy", 2.0, 0.0, 100.0));
+		RPM_SCALE = value("balance.rpmScale", builder.comment(
+				"Turns every engine's shaft this many times as fast, with its stress capacity per RPM divided to match: an",
+				"engine giving 10k SU at 256 RPM gives the same 10k SU at 512 RPM at 2. It climbs through the speeds that much",
+				"faster too. The engine itself runs as at 1, on the same fuel. Speeds shown and set on the engine are the shaft's.",
+				"Above 1, Create's maxRotationSpeed needs raising to match (512 for 2 from the default 256): the scale only goes",
+				"as far as that limit divided by 256, and at 256 it does nothing. Machines on the shaft turn faster and so ask",
+				"for more SU, as behind any gearing.")
+			.defineInRange("rpmScale", 1.0, 0.25, 8.0));
 		builder.pop();
 
 		builder.comment("Feature switches. Turning one off never destroys blocks; the machines just stop doing that job.")

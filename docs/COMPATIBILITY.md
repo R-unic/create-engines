@@ -22,7 +22,7 @@ Standing rules for every release within a major version. They held for 1.x from 
 | `CompatManifestTest` | `src/test/java/.../compat`, `src/test/resources/compat/manifest.txt` | A registry id, block state property, enum value, saved-data key or tag file removed; a recipe, loot table or data map edited |
 | `BehaviourBaselineTest` | `engine/sim`, `compat/behaviour.txt` | Torque curves of 250 builds (every fuel, crude/precision parts, 1 and 6 cylinders, every boost) and the `Tuning` defaults changing |
 | `SimTrajectoryTest` | `engine/sim`, `compat/trajectories.txt` | 40 seeded random engines (every part, boost, direction change, restore) running differently tick by tick, which the torque curves alone can miss |
-| `LegacyWorldGameTests` | `gametest`, `compat/world/*.snbt` | A running engine saved by 1.0.0, 1.1.0, 1.2.0, 1.2.1, 1.3.0 or 2.0.0 (recorded from those releases by `scripts/record-corpus.ps1`; diesel, spark, rotary), or by the 1.3 and 1.4 baseline engines, failing to load or losing saved keys, or any block entity failing to load an empty save |
+| `LegacyWorldGameTests` | `gametest`, `compat/world/*.snbt` | A running engine saved by 1.0.0, 1.1.0, 1.2.0, 1.2.1, 1.3.0, 2.0.0 or 2.3.0 (recorded from those releases by `scripts/record-corpus.ps1`; diesel, spark, rotary), or by the 1.3 and 1.4 baseline engines, failing to load or losing saved keys, or any block entity failing to load an empty save |
 
 ## Working with them
 
@@ -33,8 +33,8 @@ Standing rules for every release within a major version. They held for 1.x from 
 - Reading a saved key that is missing must fall back to the old behaviour (see `GovernorBlockEntity` and
   `ExactRpm` for the pattern).
 - A new fixture is added for each shipped version and loaded by a test beside the old ones (STABILITY.md 2.2). Fixtures from
-  shipped versions are never regenerated. **Gap:** none was added for 2.0.1, 2.0.2, 2.1.0, 2.2.0 or 2.3.0; each release record
-  lists that as an exception (2.14 in 2.3.0), and the newest fixture is still 2.0.0's.
+  shipped versions are never regenerated. **Gap:** none was added for 2.0.1, 2.0.2, 2.1.0 or 2.2.0 (each of their release
+  records lists that as an exception). 2.3.0's was recorded from its tag during 2.4.0's gate, after 2.3.0 shipped.
 - The 1.3 baseline shipped with v1.3.0 and is frozen: its fixture (`engine_1_3.snbt`) and its lines in `behaviour.txt`,
   `trajectories.txt` and `manifest.txt` are never edited. 1.4's own fixture is recorded from the v1.3.0 source with
   `scripts/record-corpus.ps1 v1.3.0` and kept beside it.
@@ -45,7 +45,7 @@ Standing rules for every release within a major version. They held for 1.x from 
 
 - The behaviour baseline covers the simulation, not Create stress or recipe chains end to end; the manifest pins recipe
   text but not what Create does with it.
-- `LegacyWorldGameTests` loads a diesel, a spark and a rotary engine saved by each of 1.0.0, 1.1.0, 1.2.0, 1.2.1, 1.3.0 and
-  2.0.0, one 1.3 and one 1.4 engine, and empty saves for every block entity. Nothing saved by 2.0.1 or later is loaded (see
-  above), so keys added since 2.0.0 (batteries, the Dual-Mass Flywheel, wear) are covered only by their own GameTests and the
+- `LegacyWorldGameTests` loads a diesel, a spark and a rotary engine saved by each of 1.0.0, 1.1.0, 1.2.0, 1.2.1, 1.3.0,
+  2.0.0 and 2.3.0, one 1.3 and one 1.4 engine, and empty saves for every block entity. Nothing saved by 2.0.1 to 2.2.0 is loaded (see
+  above). The 2.3.0 fixtures are plain engines, so keys of batteries, the Dual-Mass Flywheel and wear are covered by their own GameTests and the
   manifest. Other builds (refining column, dyno) are only covered by the empty-save test and the saved-key manifest.

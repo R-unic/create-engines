@@ -43,7 +43,7 @@ import mcfont
 import sfx
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-import create_lettering  # noqa: E402  (Create's logo and the "CREATE" block letters, side by side)
+import create_lettering  # noqa: E402  (the "CREATE" lettering above the wordmark)
 
 HERE = Path(__file__).resolve().parent
 ROOT = HERE.parents[1]
@@ -72,16 +72,23 @@ LAYOUTS = {
     "wide": dict(size=(1920, 1080), icon=120, icon_y=95, create=520, create_y=225, mark=1040, mark_y=372, rule_y=752, sub=5, sub_y=787,
                  links=4, links_y=845, ver=3, ver_y=900, notice=3, notice_y=955, lone=65,
                  caption=4, kicker=3, caption_x=110, caption_gap=28, letterbox=LETTERBOX, big=9, big_gap=56),
-    # The tall cut's end piece keeps every word above the bottom fifth (y 1536 on), where a Shorts player draws its own title
-    "tall": dict(size=(1080, 1920), icon=200, icon_y=300, create=640, create_y=515, mark=980, mark_y=695, rule_y=1055, sub=3, sub_y=1095,
-                 links=3, links_y=1140, ver=2, ver_y=1190, lone=0, notice=3, notice_y=1250, docs=3,
+    # The tall cut keeps every word above SAFE_BOTTOM, and its end piece's smallest words are four screen pixels to a font pixel:
+    # smaller ones were too hard to read on a phone
+    "tall": dict(size=(1080, 1920), icon=130, icon_y=140, create=540, create_y=280, mark=780, mark_y=432, rule_y=735, sub=6, sub_y=768,
+                 links=5, links_y=845, ver=4, ver_y=918, lone=0, notice=4, notice_y=1040, docs=4,
                  caption=3, kicker=2, caption_x=70, caption_gap=330, letterbox=0, big=8, big_gap=560),
 }
+# Shorts and TikTok draw the description, the sound's name and their buttons over the bottom of the video: no word of the tall
+# cut may reach below this (of 1920), and rendering stops if one would
+SAFE_BOTTOM = 1380
+# The big words: screen pixels to a font pixel for the small white line and for the big gold one (tall cut; shrunk to fit)
+BIG_SETUP, BIG_KEY = 10, 17
+GOLD_TOP, GOLD_BOTTOM = (255, 232, 96), (255, 146, 20)  # the gold line's shading, top to bottom
 # The vertical cut: where a `fit` piece's 16:9 band lies (1080x608, a little above the middle), the margins its words keep
 # clear of the app's buttons down the right edge, and where the AI tag sits (top left, where a Shorts player draws nothing)
-FIT_Y = 560
+FIT_Y = 420
 TALL_MARGIN = 130
-TAG_AT = (56, 120)
+TAG_AT = (56, 200)
 
 
 def find_ffmpeg():
@@ -191,7 +198,7 @@ def wrapped(text, scale, limit):
 
 
 def card_image(title, lines, layout, path, footer=None, notice=None, links=None, overlay=False, docs=None, shade=110):
-    """The mod's icon, "CREATE" in Minecraft's title font and the wordmark under it (together the title), a copper rule, and
+    """The mod's icon, the "CREATE" lettering and the wordmark under it (together the title), a copper rule, and
     the lines under it, in Minecraft's font on the dark card. An overlay is the same title on clear glass with a shade (`shade`
     of 255), to lie over footage. `docs` is a line under the AI notice saying where to read how AI is used."""
     lay = LAYOUTS[layout]
@@ -200,7 +207,7 @@ def card_image(title, lines, layout, path, footer=None, notice=None, links=None,
     mark = Image.open(WORDMARK).convert("RGBA")
     mark = mark.resize((lay["mark"], round(mark.height * lay["mark"] / mark.width)), Image.LANCZOS)
     centred(image, mark, lay["mark_y"] + dy)
-    centred(image, create_lettering.sized(lay["create"]), lay["create_y"] + dy)
+    create_lettering.place(image, lay["create"], lay["create_y"] + dy)
     icon = Image.open(LOGO).convert("RGBA").resize((lay["icon"], lay["icon"]), Image.LANCZOS)
     centred(image, icon, lay["icon_y"] + dy)
     draw = ImageDraw.Draw(image)
@@ -211,11 +218,17 @@ def card_image(title, lines, layout, path, footer=None, notice=None, links=None,
     if links:
         centred(image, mcfont.render(links, lay["links"], WHITE), lay["links_y"])
     if footer:
-        centred(image, mcfont.render(footer, lay["ver"], GREY), lay["ver_y"])
+        # Too long for one line of the tall card at a readable size: then two lines of two parts each
+        parts, y = footer.split("  |  "), lay["ver_y"]
+        too_wide = mcfont.width(footer) * lay["ver"] > image.width - 100
+        for row in (["  |  ".join(parts[:2]), "  |  ".join(parts[2:])] if too_wide else [footer]):
+            layer = mcfont.render(row, lay["ver"], WHITE if overlay else GREY)
+            centred(image, layer, y)
+            y += layer.height + lay["ver"] * 2
     if notice:
         # The AI notice: small, near the foot of the card, wrapped to the card's width
         scale, y = lay["notice"], lay["notice_y"]
-        limit = lay["size"][0] - (2 * TALL_MARGIN if layout == "tall" else 200)
+        limit = lay["size"][0] - (180 if layout == "tall" else 200)
         for row in wrapped(notice, scale, limit):
             layer = mcfont.render(row, scale, WHITE if overlay else GREY)
             centred(image, layer, y)
@@ -227,6 +240,8 @@ def card_image(title, lines, layout, path, footer=None, notice=None, links=None,
                 layer = mcfont.render(row, scale, GOLD)
                 centred(image, layer, y)
                 y += layer.height + scale * 2
+        if layout == "tall" and y > SAFE_BOTTOM:
+            sys.exit(f"the end card's words reach y {y}, below {SAFE_BOTTOM} where the app draws its description")
     (image if overlay else image.convert("RGB")).save(path)
 
 
@@ -288,24 +303,45 @@ def outlined(text, scale, color, outline, reach, drop):
     return out
 
 
+def shaded(layer, colour, top, bottom):
+    """Recolours the pixels of `layer` that are exactly `colour` with a vertical gradient from `top` to `bottom`."""
+    pixels = np.array(layer)
+    mine = np.all(pixels[:, :, :3] == colour, axis=2) & (pixels[:, :, 3] > 0)
+    rows = np.nonzero(mine.any(axis=1))[0]
+    if len(rows):
+        t = np.clip((np.arange(pixels.shape[0]) - rows[0]) / max(1, rows[-1] - rows[0]), 0, 1)[:, None]
+        ramp = (np.array(top) * (1 - t) + np.array(bottom) * t).astype(np.uint8)
+        pixels[:, :, :3] = np.where(mine[:, :, None], ramp[:, None, :], pixels[:, :, :3])
+    return Image.fromarray(pixels, "RGBA")
+
+
 def big_words(text, layout, path):
-    """The teaser's few words: huge, white with a gold last word, outlined, centred low in the frame."""
+    """The few big words over a piece, on two lines: the setup in white, then the point of it much bigger in shaded gold, both
+    with a thick dark outline and a soft halo. A `/` in the words says where the gold line starts; without one it is the last
+    word. Returns the picture's size."""
     lay = LAYOUTS[layout]
-    width = lay["size"][0]
-    scale = lay["big"]
-    room = width - (2 * TALL_MARGIN if layout == "tall" else 140)
-    while scale > 3 and mcfont.width(text.upper()) * scale > room:
-        scale -= 1
-    reach = max(3, scale // 3)
-    first, _, last = text.upper().rpartition(" ")
-    parts = [outlined(first, scale, WHITE, INK, reach, reach)] if first else []
-    parts.append(outlined(last, scale, GOLD, INK, reach, reach))
-    space = mcfont.width(" ") * scale
-    image = Image.new("RGBA", (sum(p.width for p in parts) + space * (len(parts) - 1), max(p.height for p in parts)), (0, 0, 0, 0))
-    x = 0
-    for part in parts:
-        image.alpha_composite(part, (x, 0))
-        x += part.width + space
+    room = lay["size"][0] - (2 * TALL_MARGIN if layout == "tall" else 140)
+    setup, slash, key = text.partition("/")
+    if not slash:
+        setup, _, key = text.rpartition(" ")
+    rows = []
+    for words, base, colour in ((setup, BIG_SETUP, WHITE), (key, BIG_KEY, GOLD)):
+        words = words.strip().upper()
+        if not words:
+            continue
+        scale = base if layout == "tall" else base * lay["big"] // BIG_SETUP
+        while scale > 4 and mcfont.width(words) * scale + 3 * scale > room:
+            scale -= 1
+        reach = max(4, scale * 3 // 5)
+        row = outlined(words, scale, colour, INK, reach, reach)
+        rows.append(shaded(row, GOLD, GOLD_TOP, GOLD_BOTTOM) if colour == GOLD else row)
+    gap = 8
+    block = Image.new("RGBA", (max(r.width for r in rows), sum(r.height for r in rows) + gap * (len(rows) - 1)), (0, 0, 0, 0))
+    y = 0
+    for row in rows:
+        block.alpha_composite(row, ((block.width - row.width) // 2, y))
+        y += row.height + gap
+    image, _ = soft_shadow(block, reach=14, strength=120)
     image.save(path)
     return image.size
 
@@ -331,7 +367,7 @@ def plan_full(shots, words, edit):
         if chapter:
             kicker = None if entry["name"] == TITLE_SHOT else chapter
         title = entry["name"] == TITLE_SHOT
-        pieces.append(dict(kind="shot", name=entry["name"], src=shot["start"] + at, dur=entry["dur"], speed=entry["speed"],
+        pieces.append(dict(kind="shot", take=shot.get("take"), name=entry["name"], src=shot["start"] + at, dur=entry["dur"], speed=entry["speed"],
                            mix="cold" if entry["cold"] else "engine" if entry["engine"] else "music",
                            text=None if title else words["captions"].get(entry["name"]), quiet=entry["quiet"], kicker=kicker,
                            flash=title or (bool(chapter) and bool(pieces) and not entry["cold"]), title=title,
@@ -349,7 +385,7 @@ def plan_short(shots, words):
     for name in words["short_shots"].split():
         shot = by_name[name]
         # The middle three seconds of the shot: the camera is under way and has not finished
-        pieces.append(dict(kind="shot", name=name, src=shot["start"] + (shot["end"] - shot["start"] - SHORT_SHOT) / 2, dur=SHORT_SHOT,
+        pieces.append(dict(kind="shot", take=shot.get("take"), name=name, src=shot["start"] + (shot["end"] - shot["start"] - SHORT_SHOT) / 2, dur=SHORT_SHOT,
                            speed=1.0, mix="music", big=words["short_captions"].get(name), flash=True, hit=0.6,
                            fade_in=0.0, fade_out=0.0, title=False))
     pieces.append(dict(kind="card", name="close", dur=BAR, mix="card", fade_in=0.0, fade_out=0.0, sting=True, flash=True))
@@ -373,7 +409,7 @@ def plan_vertical(shots, words, edit):
             sys.exit(f"vertical.txt: {entry['name']} needs {raw:.2f} s of a {length:.2f} s shot (shorten it or speed it up)")
         at = (length - raw) / 2 if entry["at"] is None else min(entry["at"], length - raw)
         end = entry["end"]
-        pieces.append(dict(kind="shot", name=entry["name"], src=shot["start"] + at, dur=entry["dur"], speed=entry["speed"],
+        pieces.append(dict(kind="shot", take=shot.get("take"), name=entry["name"], src=shot["start"] + at, dur=entry["dur"], speed=entry["speed"],
                            mix="cold" if entry["cold"] else "engine" if entry["engine"] else "music",
                            big=None if end else entry["words"], focus=entry["x"], fit=entry["fit"], zoom=entry["zoom"],
                            flash=entry["flash"],
@@ -421,6 +457,28 @@ def captions_of(pieces):
 
 # ---------------------------------------------------------------------------------------------------------------- rendering
 
+def take_of(args, item):
+    """The recording a shot (or a piece of one) comes from: its pickup if it was shot again, else the main one."""
+    return item.get("take") or dict(raw=str(Path(args.raw).resolve()), offset=args.offset, audio=args.audio,
+                                    audio_offset=args.audio_offset)
+
+
+def add_pickups(shots, folder):
+    """Lays the pickups (record.py --pickup: later recordings of a few shots) over the main recording's shots, oldest first, so
+    each shot comes from its latest take."""
+    by_name = {s["name"]: s for s in shots["shots"]}
+    for meta in sorted(folder.glob("*/meta.json"), key=lambda p: p.stat().st_mtime):
+        saved = json.loads(meta.read_text(encoding="utf-8"))
+        sound = meta.with_name("game.wav")
+        heard = sound.is_file() and saved.get("audio_offset") is not None
+        take = dict(raw=str(meta.with_name("raw.mp4").resolve()), offset=saved["offset"],
+                    audio=str(sound.resolve()) if heard else None, audio_offset=saved.get("audio_offset") or 0.0)
+        for shot in json.loads(meta.with_name("trailer_shots.json").read_text(encoding="utf-8-sig"))["shots"]:
+            by_name[shot["name"]] = dict(shot, take=take)
+            print(f"post: {shot['name']} comes from the pickup {meta.parent.name}")
+    shots["shots"] = list(by_name.values())
+
+
 def render_piece(ffmpeg, args, layout, piece, index, work, card_paths):
     """One piece of the cut to its own file, at full quality, with no sound."""
     lay = LAYOUTS[layout]
@@ -434,7 +492,8 @@ def render_piece(ffmpeg, args, layout, piece, index, work, card_paths):
         graph.append(f"[0:v]fps={FPS},format=yuv420p[v0]")
     else:
         raw_len = piece["dur"] * piece["speed"]
-        inputs += ["-ss", f"{args.offset + piece['src']:.3f}", "-t", f"{raw_len + 0.2:.3f}", "-i", str(Path(args.raw).resolve())]
+        take = take_of(args, piece)
+        inputs += ["-ss", f"{take['offset'] + piece['src']:.3f}", "-t", f"{raw_len + 0.2:.3f}", "-i", take["raw"]]
         timed = f"[0:v]setpts=(PTS-STARTPTS)/{piece['speed']},fps={FPS}"
         if layout == "tall" and piece.get("fit"):
             # The whole picture in a band, on a blurred, darkened copy of itself filling the frame (blurred small, so it is cheap)
@@ -502,12 +561,23 @@ def render_piece(ffmpeg, args, layout, piece, index, work, card_paths):
         source = overlay_input(png, piece["dur"])
         # The hook's words are there on the first frame (the one a feed shows before it plays); the rest pop in on the cut
         s, e = (0.0 if piece.get("hook") else 0.12), piece["dur"] - 0.15
-        fade_in = "" if piece.get("hook") else f"fade=t=in:st={s}:d=0.12:alpha=1,"
-        graph.append(f"[{source}:v]format=rgba,{fade_in}fade=t=out:st={e - 0.15:.3f}:d=0.15:alpha=1[big]")
-        # Over a `fit` piece the words sit under the picture's band; otherwise low in the frame, above the app's own title
-        y0 = FIT_Y + round(width * 9 / 16) + 40 if piece.get("fit") else height - lay["letterbox"] - lay["big_gap"] - h
-        rise = "" if piece.get("hook") else f"+26*pow(max(0,1-(t-{s})/0.3),3)"
-        graph.append(f"[{last}][big]overlay=x=(W-w)/2:y='{y0}{rise}':enable='between(t,{s},{e:.3f})'[v5]")
+        fade_in = "" if piece.get("hook") else f"fade=t=in:st={s}:d=0.08:alpha=1,"
+        # They pop: in from small, a little past full size, and back
+        pop = "" if piece.get("hook") else (f"scale=w='trunc(iw*if(lt(t,{s + 0.13:.2f}),0.62+0.46*max(0,t-{s})/0.13,"
+                                            f"if(lt(t,{s + 0.25:.2f}),1.08-0.08*(t-{s + 0.13:.2f})/0.12,1))/2)*2':h=-2:eval=frame,")
+        # The pop comes last: ffmpeg's fade refuses frames whose size changes under it
+        graph.append(f"[{source}:v]format=rgba,{fade_in}fade=t=out:st={e - 0.15:.3f}:d=0.15:alpha=1"
+                     f"{',' + pop.rstrip(',') if pop else ''}[big]")
+        # Over a `fit` piece the words sit under the picture's band; otherwise low in the frame, above the app's description
+        if layout == "tall":
+            # Tall two-line words move up into the gap under the band rather than down past the limit
+            y0 = min(FIT_Y + round(width * 9 / 16) + 24, SAFE_BOTTOM + 20 - h) if piece.get("fit") else SAFE_BOTTOM - h
+            if y0 + h > SAFE_BOTTOM + 20:  # the picture's soft halo may reach a little past the words
+                sys.exit(f"the words {piece['big']!r} reach below {SAFE_BOTTOM}, where the app draws its description")
+        else:
+            y0 = height - lay["letterbox"] - lay["big_gap"] - h
+        # Placed by their centre, so the pop grows out of one spot
+        graph.append(f"[{last}][big]overlay=x=(W-w)/2:y='{y0}+({h}-h)/2':eval=frame:enable='between(t,{s},{e:.3f})'[v5]")
         last = "v5"
     if piece.get("tag"):
         source = overlay_input(card_paths["tag"], piece["dur"])
@@ -605,8 +675,11 @@ def mix_sound(ffmpeg, args, pieces, length, work):
         for i, piece in enumerate(pieces):
             if piece["kind"] != "shot":
                 continue
+            take = take_of(args, piece)
+            if not take["audio"]:
+                continue
             raw_len = piece["dur"] * piece["speed"]
-            part = decode(ffmpeg, Path(args.audio).resolve(), work / f"game_{i:03d}.wav", max(0.0, args.audio_offset + piece["src"]),
+            part = decode(ffmpeg, Path(take["audio"]).resolve(), work / f"game_{i:03d}.wav", max(0.0, take["audio_offset"] + piece["src"]),
                           raw_len + 0.1, piece["speed"])
             n = min(len(part), int(piece["dur"] * RATE))
             fade = min(n, int(0.03 * RATE))  # a few milliseconds of fade at a cut, so it does not click
@@ -687,6 +760,7 @@ def main():
     ffmpeg = find_ffmpeg()
     words = read_captions()
     shots = json.loads(Path(args.shots).read_text(encoding="utf-8-sig"))
+    add_pickups(shots, Path(args.shots).resolve().parent / "pickups")
     layout = "tall" if args.cut == "vertical" else "wide"
     if args.cut == "full":
         pieces = plan_full(shots, words, read_edit())
@@ -785,9 +859,10 @@ def write_vertical_description(path, words):
 def thumbnail(ffmpeg, args, words, shots, work):
     """A 1280x720 still for the mod pages: a frame from the middle of the `thumbnail` shot, the wordmark."""
     shot = next(s for s in shots["shots"] if s["name"] == words["thumbnail"])
-    at = args.offset + (shot["start"] + shot["end"]) / 2
+    take = take_of(args, shot)
+    at = take["offset"] + (shot["start"] + shot["end"]) / 2
     frame = work / "frame.png"
-    subprocess.run([ffmpeg, "-y", "-hide_banner", "-loglevel", "error", "-ss", f"{at:.3f}", "-i", str(Path(args.raw).resolve()),
+    subprocess.run([ffmpeg, "-y", "-hide_banner", "-loglevel", "error", "-ss", f"{at:.3f}", "-i", take["raw"],
                     "-frames:v", "1", "-vf", "scale=1280:720:flags=lanczos", str(frame)], check=True)
     image = Image.open(frame).convert("RGBA")
     shade = Image.new("RGBA", image.size, (0, 0, 0, 0))
@@ -799,8 +874,7 @@ def thumbnail(ffmpeg, args, words, shots, work):
     mark = mark.resize((720, round(mark.height * 720 / mark.width)), Image.LANCZOS)
     mark_y = image.height - mark.height - 44
     image.alpha_composite(mark, (48, mark_y))
-    create = create_lettering.sized(380)
-    image.alpha_composite(create, (48 + (720 - create.width) // 2, mark_y - create.height - 10))
+    create_lettering.place(image, 380, mark_y - create_lettering.height(380) - 10, 48 + (720 - 380) // 2)
     icon = Image.open(LOGO).convert("RGBA").resize((150, 150), Image.LANCZOS)
     image.alpha_composite(icon, (36, 36))
     Path(args.thumbnail).resolve().parent.mkdir(parents=True, exist_ok=True)
@@ -812,9 +886,10 @@ def vertical_thumbnail(ffmpeg, args, words, shots, work):
     letters in the upper middle. The bottom fifth and the right edge are left clear, where the app draws its own buttons and
     title, and the logo sits top left, where nothing is drawn."""
     shot = next(s for s in shots["shots"] if s["name"] == words["vertical_thumbnail"])
-    at = args.offset + shot["start"] + float(words.get("vertical_thumbnail_at", (shot["end"] - shot["start"]) / 2))
+    take = take_of(args, shot)
+    at = take["offset"] + shot["start"] + float(words.get("vertical_thumbnail_at", (shot["end"] - shot["start"]) / 2))
     frame = work / "frame_tall.png"
-    subprocess.run([ffmpeg, "-y", "-hide_banner", "-loglevel", "error", "-ss", f"{at:.3f}", "-i", str(Path(args.raw).resolve()),
+    subprocess.run([ffmpeg, "-y", "-hide_banner", "-loglevel", "error", "-ss", f"{at:.3f}", "-i", take["raw"],
                     "-frames:v", "1", "-vf", "crop=608:1080:(iw-608)/2:0,scale=1080:1920:flags=lanczos", str(frame)], check=True)
     image = Image.open(frame).convert("RGB")
     image = ImageEnhance.Color(image).enhance(1.35)

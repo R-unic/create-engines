@@ -1,6 +1,6 @@
 {
   "type": "create:sequenced_assembly",
-  "ingredient": {"item": "create_engines:rubber_gasket"},
+  "ingredient": {"type": "create_engines:new_part", "item": "create_engines:rubber_gasket"},
   "transitional_item": {"id": "create_engines:incomplete_copper_gasket"},
   "loops": 1,
   "results": [

@@ -189,18 +189,6 @@ class ExhaustLookTest {
 	}
 
 	@Test
-	void valveGearTicksWithTheCrankAndRattlesWhenRoughOrDry() {
-		assertEquals(0, MechanicalNoise.clatterLevel(0, 0, 1), "a stopped engine is silent");
-		float idle = MechanicalNoise.clatterLevel(16, 0, 1);
-		float fast = MechanicalNoise.clatterLevel(200, 0, 1);
-		assertTrue(idle > 0.2f && fast > idle && fast <= 1, "it ticks over, and louder at speed");
-		assertTrue(MechanicalNoise.clatterLevel(100, 0.3f, 1) > MechanicalNoise.clatterLevel(100, 0, 1), "rougher is louder");
-		assertTrue(MechanicalNoise.clatterLevel(100, 0, 0) > MechanicalNoise.clatterLevel(100, 0, 1), "so is dry");
-		assertTrue(MechanicalNoise.clatterPitch(256) > MechanicalNoise.clatterPitch(16), "and it ticks faster");
-		assertEquals(MechanicalNoise.clatterLevel(-100, 0, 1), MechanicalNoise.clatterLevel(100, 0, 1), "either way round");
-	}
-
-	@Test
 	void bearingsSquealOnlyWhenDryAndTurning() {
 		assertEquals(0, MechanicalNoise.squealLevel(100, 1));
 		assertEquals(0, MechanicalNoise.squealLevel(100, MechanicalNoise.DRY_BELOW), "oiled enough");

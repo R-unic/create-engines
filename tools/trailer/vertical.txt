@@ -2,11 +2,14 @@
 # shot it names exists, that every piece is a whole number of half bars, that every piece but the last has words, and that
 # the last is the end piece. It is cut for a feed, where a viewer decides in the first second whether to stay:
 #
-# - no title card at the start: it opens on the engine already growing, with words on screen from the first frame;
-# - a cut every one or two seconds, a promise in the first words ("one click at a time") paid off in the next ("up to a V16");
+# - no title card at the start: it opens full frame (no `fit` band) on a still engine being cranked until it catches,
+#   with words on the first frame that say what this is (`cold_start`, composed for the 9:16 window);
+# - every piece on screen at least 3 s, long enough to read its words and see what it shows, and the whole cut at most 90 s,
+#   inside the length limit of Shorts and TikTok;
 # - the engines heard, not only seen (`engine`), as most viewers have the sound on in a feed but many do not, so the words
 #   carry the story alone too;
-# - the words kept out of the bottom fifth and the right edge, where the app draws its own title and buttons;
+# - every word, the end piece's too, kept above the bottom 28% (y 1380 of 1920) and off the right edge, where the apps
+#   draw their description and buttons;
 # - the end piece lays the title, the links and the AI notice over moving footage, and the cut ends there with no fade, so
 #   it loops cleanly back into the opening.
 #
@@ -22,19 +25,23 @@
 # engine    the music drops and the game's sound comes up
 # cold      game sound only, no music
 # end       the end piece: the title, the links and the AI notice over the footage. Last, and only once.
-# WORDS     the few big words over the piece (the last word is drawn in gold)
+# WORDS     the few big words over the piece, on two lines: a small white one, then a big gold one. A `/` says where the
+#           gold line starts; without one it is the last word
 #
 # A shot may be used more than once (a long shot split so its words can change half-way). A shot that is not in this run
 # (the Aeronautics shots without Sable) is left out.
 
-grow_engine       3     at=2.2   speed=2   fit zoom=1.6   | One click at a time
-grow_engine       3     at=8.2   speed=2   fit zoom=1.6   | Up to a V16
-heavy_starter     3     at=0     engine    flash          | Then crank it
-inline6_turbo     1.5   at=2     engine                   | Bolt on a turbo
-blown_i6_blower   1.5   at=0.75                           | Or a blower
-rotary_orbit      1.5   at=0     engine                   | Even a Wankel
-v8_exhaust_dusk   1.5   engine                            | Five fuels
-rover_departs     3     at=0     speed=1.5 engine  flash  | Put it on wheels
-refinery_column   1.5   at=0.75                           | Refine your own
-factory_line      1.5                                     | Power Create
-factory_wide      6     at=1.5   fit       end
+cold_start        4.5   at=0.2   engine                     | Real engines / in Minecraft
+inline6_turbo     4.5   at=0.75  engine                     | Bolt on a / turbo
+blown_i6_blower   3                                         | Or a / supercharger
+rotary_orbit      3     at=0     engine                     | Even a / rotary
+muffler_off       4.5   at=0.75  engine    flash            | No / muffler
+muffler_on        4.5   at=0.75  engine                     | Now / muffled
+grow_engine       4.5   at=8.2   speed=1.5   fit zoom=1.6   flash | Build up to / a V16
+heavy_starter     4.5   at=0     engine    flash            | Then / crank it
+rover_departs     6     at=0.75  speed=1.25 engine flash    | Put it on / wheels
+fuel_tanks        4.5   at=0.75  fit zoom=1.25 flash        | Five / fuels
+refinery_column   4.5   at=0.75                             | Refine / your own
+factory_line      4.5                                       | Power / Create
+night_pull        6     at=5.25  engine    flash            | Lift off. / Bang
+factory_wide      7.5   at=0.75  fit       end

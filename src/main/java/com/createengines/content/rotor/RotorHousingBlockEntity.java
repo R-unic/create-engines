@@ -7,6 +7,7 @@ import org.jetbrains.annotations.Nullable;
 import com.createengines.config.CEClientConfig;
 import com.createengines.content.EffectRate;
 import com.createengines.content.EngineNoteSound;
+import com.createengines.content.SoundProbe;
 import com.createengines.content.GoggleLines;
 import com.createengines.content.crankshaft.CrankshaftBlockEntity;
 import com.createengines.content.effects.EngineEffects;
@@ -390,6 +391,9 @@ public class RotorHousingBlockEntity extends CrankshaftBlockEntity implements Ga
 	 */
 	private void tickClient() {
 		wearEffects();
+		for (CylinderStatus chamber : chambers)
+			if (chamber != null)
+				EngineNoteSound.reportOpenings(chamber);
 		if (((level.getGameTime() + worldPosition.asLong()) & 3) == 0)
 			EngineEffects.heat(level, worldPosition, engineSummary());
 		if (getTheoreticalSpeed() == 0) {
@@ -422,8 +426,10 @@ public class RotorHousingBlockEntity extends CrankshaftBlockEntity implements Ga
 				if (mouth != null)
 					offerIntake(mouth);
 			}
-			if (current.result() == CycleResult.FIRED && crosses(previous, travelled, FIRING_CYCLE_ANGLE))
+			if (current.result() == CycleResult.FIRED && crosses(previous, travelled, FIRING_CYCLE_ANGLE)) {
+				SoundProbe.firing(primaryPos());
 				ignite(chamber);
+			}
 			if (!current.intakeInlets()
 				.isEmpty() && crosses(previous, travelled, DRAUGHT_CYCLE_ANGLE) && draughts[chamber].allow(level))
 				EngineEffects.draught(level, current, engineSummary());
@@ -448,11 +454,11 @@ public class RotorHousingBlockEntity extends CrankshaftBlockEntity implements Ga
 		RandomSource random = level.random;
 		EngineSummary engine = engineSummary();
 		float volume = CEClientConfig.bangVolume() * Muffling.volume(engine == null ? 0 : engine.muffling());
-		// The engine's note has the bang in it, on the same firing
-		boolean inTheNote = primaryPos() != null && EngineNoteSound.isPlayingFor(primaryPos());
+		// The engine's note, or the shared voice it is mixed into, has the bang in it, on the same firing
+		boolean inTheNote = primaryPos() != null && EngineNoteSound.heard(primaryPos());
 		if (volume > 0 && !inTheNote)
 			level.playLocalSound(worldPosition, CESounds.CYLINDER_FIRE.get(), SoundSource.BLOCKS, volume,
-				1.05f + random.nextFloat() * 0.16f, false);
+				com.createengines.content.effects.Pitches.near(1.13f, random.nextFloat()), false);
 		// Photosensitive mode: the bang is heard, but the flash it comes with is left out
 		if (!CEClientConfig.particles() || CEClientConfig.photosensitive())
 			return;

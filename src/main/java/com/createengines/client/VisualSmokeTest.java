@@ -90,6 +90,9 @@ public final class VisualSmokeTest {
 	/** Run only the refinery (gradle {@code -PsmokeRefinery}): a working column with a flare stack and a basin's goggle line. */
 	private static final String REFINERY_ONLY = "create_engines.visualSmokeTest.refinery";
 
+	/** Run only the sound bench (gradle {@code -PsmokeSound}, driven by tools/sound_bench.py): see {@link ShowcaseRunSoundBench}. */
+	private static final String SOUND_ONLY = "create_engines.visualSmokeTest.sound";
+
 	private record Step(int tick, Runnable action) {
 	}
 
@@ -107,6 +110,10 @@ public final class VisualSmokeTest {
 	public static void register() {
 		if (!Boolean.getBoolean(PROPERTY))
 			return;
+		if (Boolean.getBoolean(SOUND_ONLY)) {
+			ShowcaseRunSoundBench.register();
+			return;
+		}
 		CreateEngines.LOGGER.info("Visual smoke test enabled");
 		NeoForge.EVENT_BUS.addListener(VisualSmokeTest::onClientTick);
 		NeoForge.EVENT_BUS.addListener(VisualSmokeTest::onRenderFrame);

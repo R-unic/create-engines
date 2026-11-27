@@ -8,8 +8,9 @@ package com.createengines.content;
  * instead means a speed change only changes how fast the part turns.
  * <p>
  * The shafts and cogs joined to an engine do still jump with every change, so an accumulated angle slowly falls out of
- * step with them. {@link #alignedAt} brings it back: it jumps to Create's angle (to the nearest quarter turn) on the
- * frame the speed changes, which is when the shafts jump too, and eases out any drift in between.
+ * step with them. {@link #alignedAt} brings it back: when the speed changes, which is when the shafts jump, it catches
+ * up with Create's angle (to the nearest quarter turn) over {@link #CATCH_UP_TICKS}, and it eases out any drift in
+ * between.
  */
 public final class RenderRotation {
 
@@ -22,10 +23,18 @@ public final class RenderRotation {
 	static final double ALIGN_TICKS = 30;
 	/** The most the angle is nudged toward Create's, per tick: slow enough that nobody sees the crank speed up or slow. */
 	static final double ALIGN_MAX_PER_TICK = 0.5;
+	/**
+	 * How long the catch-up after a speed change takes, in ticks. Taken in one frame, the whole engine twitches by up to
+	 * 45 degrees; taken slowly, the crank is seen out of step with its shafts. A few frames is neither, and it is well
+	 * over before an engine can send its next speed.
+	 */
+	static final float CATCH_UP_TICKS = 3;
 
 	private double degrees = Double.NaN;
 	private float lastTime;
 	private float lastSpeed = Float.NaN;
+	/** Ticks left of the catch-up after the last speed change. */
+	private float catchUp;
 
 	/** Degrees turned at {@code renderTime} (not wrapped), having turned at {@code speed} RPM since the last call. */
 	public double at(float renderTime, float speed) {
@@ -45,18 +54,21 @@ public final class RenderRotation {
 		if (Double.isNaN(degrees))
 			degrees = createAngle(renderTime, speed);
 		else {
+			if (align && speed != lastSpeed)
+				catchUp = CATCH_UP_TICKS;
 			float gap = renderTime - lastTime;
 			if (gap > 0) {
 				float ticks = Math.min(gap, MAX_GAP);
 				degrees += ticks * speed * 3d / 10;
 				if (align) {
 					double create = createAngle(renderTime, speed);
-					// Create's shafts jump the instant the speed changes, so the crank jumps with them (to the
-					// nearest quarter turn, at most 45 degrees); easing instead leaves the two out of step for a
-					// second or more after every change, and an engine's speed changes all the time
-					if (speed != lastSpeed)
-						degrees += squareGap(create, degrees);
-					else
+					// Create's shafts jump the instant the speed changes. The crank follows (to the nearest quarter
+					// turn, at most 45 degrees) in an even share of what is left each frame, and is square when the
+					// time is up; the slow nudge alone would leave the two out of step for a second or more
+					if (catchUp > 0) {
+						degrees += squareGap(create, degrees) * Math.min(1, ticks / catchUp);
+						catchUp -= ticks;
+					} else
 						degrees += nudge(create, degrees, ticks);
 				}
 			}
@@ -104,6 +116,7 @@ public final class RenderRotation {
 	/** Takes over an angle worked out elsewhere, so that carrying on from here doesn't jump. */
 	public double follow(float renderTime, double degrees) {
 		this.degrees = degrees;
+		catchUp = 0;
 		lastTime = renderTime;
 		return degrees;
 	}

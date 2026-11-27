@@ -5,6 +5,7 @@ import java.util.Locale;
 
 import org.jetbrains.annotations.Nullable;
 
+import com.createengines.content.EngineNoteSound;
 import com.createengines.content.GoggleLines;
 import com.createengines.content.LoopSource;
 import com.createengines.content.MachineLoopSound;
@@ -91,11 +92,15 @@ public class SuperchargerBlockEntity extends KineticBlockEntity implements Engin
 		return primaryPos != null && served > 0;
 	}
 
+	/** The whine's volume at its loudest: low, for a tone that is heard as long as the shaft turns. */
+	private static final float LOUDEST_WHINE = 0.14f;
+
 	@Override
 	public void tick() {
 		super.tick();
-		if (level != null && level.isClientSide && loopLevel() > 0.02f)
-			MachineLoopSound.ensurePlaying(this, worldPosition, CESounds.SUPERCHARGER_WHINE.get(), 0.2f, this);
+		if (level != null && level.isClientSide && loopLevel() > 0.02f
+			&& !EngineNoteSound.carrySupercharger(onEngine() ? primaryPos : null, this, worldPosition, LOUDEST_WHINE))
+			MachineLoopSound.ensurePlaying(this, worldPosition, CESounds.SUPERCHARGER_WHINE.get(), LOUDEST_WHINE, this);
 	}
 
 	/** The whine rises with the shaft, and is much quieter while the blower is turning but not pushing any engine's air. */
@@ -134,6 +139,13 @@ public class SuperchargerBlockEntity extends KineticBlockEntity implements Engin
 		return getBlockState().getBlock() instanceof SuperchargerBlock block && block.variableDrive();
 	}
 
+	/** How much faster this shaft turns than the engine sees it: other than 1 only on the engine's own scaled shaft. */
+	public void setGearing(double gearing) {
+		this.gearing = gearing;
+	}
+
+	private double gearing = 1;
+
 	/** The boost the engine last reported, atmospheres. */
 	public float boost() {
 		return boost;
@@ -151,7 +163,7 @@ public class SuperchargerBlockEntity extends KineticBlockEntity implements Engin
 	 */
 	public void updateBlower(BlockPos primary, int cylinders, float boost, float bypass) {
 		float next = cylinders * STRESS_PER_CYLINDER * (float) Math.min(1.7, boost / Supercharger.FULL_BOOST)
-			* (variableDrive() ? (float) Supercharger.VARIABLE_DRAG : 1);
+			* (variableDrive() ? (float) Supercharger.VARIABLE_DRAG : 1) / (float) gearing;
 		boolean changed = !primary.equals(primaryPos) || cylinders != served || Math.abs(boost - this.boost) >= 0.01f
 			|| Math.abs(bypass - this.bypass) >= 0.05f;
 		primaryPos = primary;

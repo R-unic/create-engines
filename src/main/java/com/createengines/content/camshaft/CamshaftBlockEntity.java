@@ -182,8 +182,12 @@ public class CamshaftBlockEntity extends KineticBlockEntity implements EngineMem
 					.style(Math.abs(timingError) < 7.5f ? ChatFormatting.GREEN : ChatFormatting.GOLD), tooltip, 1);
 		}
 		int rackPercent = Math.round(rack * 100);
-		GoggleLines.add(CELang.translate("goggles.fuel_rack", rackPercent)
-			.style(rackPercent < 100 ? ChatFormatting.GOLD : ChatFormatting.GRAY), tooltip, 1);
+		if (rack <= 0)
+			GoggleLines.add(CELang.translate("goggles.fuel_cut")
+				.style(ChatFormatting.GOLD), tooltip, 1);
+		else
+			GoggleLines.add(CELang.translate("goggles.fuel_rack", rackPercent)
+				.style(rackPercent < 100 ? ChatFormatting.GOLD : ChatFormatting.GRAY), tooltip, 1);
 		super.addToGoggleTooltip(tooltip, isPlayerSneaking);
 		return true;
 	}

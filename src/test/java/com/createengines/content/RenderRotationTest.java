@@ -8,8 +8,8 @@ import org.junit.jupiter.api.Test;
 /**
  * A crank is drawn from an accumulated angle so a speed change never makes it jump, but the real Create shafts and cogs
  * joined to it are drawn at time x speed and do jump. {@link RenderRotation#alignedAt} must bring the crank back into
- * step with them, to the nearest quarter turn (a shaft looks the same every 90 degrees), jumping only on the frame the
- * speed changes, which is when the shafts jump too.
+ * step with them, to the nearest quarter turn (a shaft looks the same every 90 degrees): within a few frames of the
+ * speed changing, which is when the shafts jump.
  */
 class RenderRotationTest {
 
@@ -115,7 +115,7 @@ class RenderRotationTest {
 	}
 
 	@Test
-	void theCrankIsSquareToTheShaftsInTheVeryFrameTheirSpeedChanges() {
+	void theCrankIsSquareToTheShaftsOnceItsShortCatchUpIsOver() {
 		RenderRotation rotation = new RenderRotation();
 		float time = 100_000;
 		float speed = 20;
@@ -125,11 +125,51 @@ class RenderRotationTest {
 			time += TICK;
 			speed = speeds[(i / 5) % speeds.length];
 			double drawn = rotation.alignedAt(time, speed);
-			// Create jumps its shafts to time x speed on the frame the speed changes, and so must the crank: a gap of any
-			// size would show as the two ends of a joint turning out of step until it eased shut
+			// Create jumps its shafts to time x speed on the frame the speed changes, and the crank must be with them
+			// when its catch-up is spent: a gap left after that would show as the two ends of a joint out of step. Each
+			// speed here is held for five frames, and the change is seen on the first of them
+			if (i % 5 < RenderRotation.CATCH_UP_TICKS - 1)
+				continue;
 			double slack = 0.05 + Math.ulp((float) (time * Math.abs(speed) * 0.3)) * 2;
 			assertTrue(offBy(drawn, time, speed) < slack, "frame " + i + " off by " + offBy(drawn, time, speed));
 		}
+	}
+
+	@Test
+	void theCatchUpIsSharedOutOverTheFramesAtAnyFrameRate() {
+		// Create's angle is time x speed with a large time, so even a small change of speed leaves a gap of up to the
+		// whole 45 degrees: sending speeds less often does not make the jump smaller, which is why it is shared out
+		int worst = 0;
+		for (int step = 0; step < 90; step++) {
+			float time = 100_000 + step;
+			RenderRotation rotation = new RenderRotation();
+			double drawn = rotation.alignedAt(time, 100);
+			time += TICK;
+			drawn = rotation.alignedAt(time, 100);
+			double gap = offBy(drawn + TICK * 101 * 0.3, time + TICK, 101);
+			if (gap < 30)
+				continue;
+			worst++;
+			// Three frames a tick, 60 frames a second
+			float frame = TICK / 3;
+			double biggest = 0;
+			for (int i = 0; i < 12; i++) {
+				float before = time;
+				time += frame;
+				double now = rotation.alignedAt(time, 101);
+				biggest = Math.max(biggest, Math.abs(now - drawn - (time - before) * 101 * 0.3));
+				drawn = now;
+			}
+			assertTrue(biggest < gap / 5, "one frame took " + biggest + " of a gap of " + gap);
+			assertTrue(offBy(drawn, time, 101) < 0.5, "off by " + offBy(drawn, time, 101));
+		}
+		assertTrue(worst > 5, "a one RPM change should often leave a large gap: " + worst + " of 90");
+	}
+
+	@Test
+	void theCatchUpIsOverBeforeAnEngineCanSendItsNextSpeed() {
+		// EngineController sends a changed speed no more than once in ten ticks
+		assertTrue(RenderRotation.CATCH_UP_TICKS < 10);
 	}
 
 	@Test
@@ -140,6 +180,7 @@ class RenderRotationTest {
 		double last = rotation.alignedAt(time, 12);
 		float[] speeds = { 12, 12, 40, 40, 3, -15, -15, 0, 90, 90, 90 };
 		float lastSpeed = 12;
+		float catching = 0;
 		for (int i = 0; i < 400; i++) {
 			float speed = speeds[(i / 7) % speeds.length];
 			float before = time;
@@ -148,8 +189,13 @@ class RenderRotationTest {
 			float gap = time - before;
 			double now = rotation.alignedAt(time, speed);
 			double expected = gap * speed * 3d / 10;
-			// A speed change jumps the crank with the shafts, by up to an eighth of a turn; every other frame is only a nudge
-			double allowed = speed != lastSpeed ? 45 : RenderRotation.ALIGN_MAX_PER_TICK * gap;
+			// A catch-up takes an even share of a gap of up to an eighth of a turn; every other frame is only a nudge. Each
+			// speed here is held for seven frames, of at least 0.4 ticks: nine or more of them are never needed
+			if (speed != lastSpeed)
+				catching = RenderRotation.CATCH_UP_TICKS;
+			double allowed = catching > 0 ? 45 * Math.min(1, gap / RenderRotation.CATCH_UP_TICKS)
+				: RenderRotation.ALIGN_MAX_PER_TICK * gap;
+			catching -= gap;
 			assertTrue(Math.abs(now - last - expected) <= allowed + 1e-9,
 				"frame " + i + " jumped " + (now - last - expected) + " beyond its speed");
 			last = now;

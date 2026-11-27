@@ -7,6 +7,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import com.createengines.CreateEngines;
+import com.createengines.client.SoundStopRace;
 import com.createengines.client.VisualSmokeTest;
 import com.createengines.content.EngineNoteSound;
 import com.createengines.content.crankshaft.CrankshaftBlockEntity;
@@ -60,6 +61,7 @@ final class ThreadChurnAudit {
 	private int serverStart;
 	private int serverTicks = -1;
 	private int frames;
+	private int racesBefore;
 	private int rendererResets;
 	private int streamingPeak;
 	private int staticPeak;
@@ -76,6 +78,7 @@ final class ThreadChurnAudit {
 		Minecraft minecraft = Minecraft.getInstance();
 		if (t == 0) {
 			NeoForge.EVENT_BUS.addListener(frameCounter);
+			racesBefore = SoundStopRace.count();
 			serverStart = minecraft.getSingleplayerServer()
 				.getTickCount();
 			VisualSmokeTest.server(server -> {
@@ -202,6 +205,10 @@ final class ThreadChurnAudit {
 			report.check("threads", "engine " + i + " is running on the client after the churn",
 				summary != null && summary.state() == EngineState.RUNNING && Float.isFinite(summary.rpm()), String.valueOf(summary));
 		}
+		// The error that race leaves in the log is too rare to show by its absence that the fix still applies
+		report.check("threads", "every sound reload went through the stop race fix",
+			SoundStopRace.count() - racesBefore >= SOUND_BREAKS.length,
+			"the mixin on SoundEngine.stopAll ran " + (SoundStopRace.count() - racesBefore) + " times");
 		report.check("threads", "an engine note is playing after the churn", noteCount() > 0, "none after " + t + " ticks");
 		// Three engine notes, and the music and weather streams the game may have going
 		report.check("threads", "streaming voices stayed bounded through the churn", streamingPeak <= 8, "peaked at " + streamingPeak);

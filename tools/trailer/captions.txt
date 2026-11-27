@@ -34,7 +34,7 @@ ai_docs: How AI is used: docs/AI.md on GitHub (R-unic/create-engines)
 ai_docs_url: https://github.com/R-unic/create-engines/blob/master/docs/AI.md
 vertical_ai_tag: Mod made with AI - see docs/AI.md
 
-description: Real combustion engines for Create: inline, V, flat and Wankel layouts, turbochargers and superchargers, a refinery, an electrical chain and a working factory, all turning Create rotation. Everything in this trailer is made in the game with the mod.
+description: Real combustion engines for Create: inline, V, flat and rotary layouts, turbochargers and superchargers, a refinery, an electrical chain and a working factory, all turning Create rotation. Everything in this trailer is made in the game with the mod.
 vertical_description: Real combustion engines for Create: build one cylinder up to a boosted V16, start it and put it to work.
 
 link GitHub: https://github.com/R-unic/create-engines
@@ -47,23 +47,37 @@ chapter hero_v8: Layouts
 chapter inline6_turbo: Forced induction
 chapter grow_engine: Build it big
 chapter instruments_dyno: Instruments
+chapter running_hot: Running hot
+chapter muffler_off: Hear the difference
 chapter electric_alternator: The electrical chain
 chapter service_sump: The service bay
 chapter casing_styles: Casing styles
 chapter factory_flywheel: Drivetrain and factory
 chapter rover_departs: Engine on wheels
-chapter v8_exhaust_dusk: Fuels and the refinery
+chapter fuel_tanks: Fuels and the refinery
+chapter night_pull: After dark
 chapter factory_wide: All together
 
 caption title_sequence: Real combustion engines for Create
+caption cold_start: The starter turns a cold V8 over until it catches.
 caption first_rises: Every engine starts with one cylinder.
 caption hero_v8: A V8, built in Create.
 caption grow_engine: Grow it a click at a time, up to a boosted V16.
 caption inline6_pass: Inline, flat, V or rotary.
 caption flat6_track: Flat, opposed cylinders.
-caption rotary_orbit: Even a twin-rotor Wankel.
+caption rotary_orbit: Even a twin-rotor rotary.
 caption inline6_turbo: Bolt on a turbocharger.
 caption blown_i6_blower: Or drive a supercharger, then cool the charge.
+caption tuning_vgt: A variable-geometry turbo moves its vanes.
+caption tuning_maf: A MAF sensor trims fuel to match the air.
+caption running_hot: Run too hot and the block steams and loses power.
+caption running_cooled: Fit radiators full of coolant to cool it down.
+caption muffler_off: Every note comes from the engine itself. No muffler.
+caption muffler_on: With a muffler: quieter and duller.
+caption exhaust_stub: A short stub of exhaust barks.
+caption exhaust_long: A long run sounds deeper and hollow.
+caption gasket_line: Press copper onto rubber to make a Copper Gasket.
+caption night_pull: Rev it, lift off: blow-off and anti-lag.
 caption heavy_starter: A heavy starter cranks a cold V16 to life.
 caption headphones_on: Too loud? Noise-cancelling headphones.
 caption instruments_dyno: Put it on the dynamometer and read the truth.
@@ -82,7 +96,8 @@ caption service_oil: Used oil goes through a heated mixer and comes back clean.
 caption service_cans: Fill cans, belt them along, drain them into the tank.
 caption rover_departs: With Create Aeronautics, put it on wheels and drive.
 caption rover_wheels: The crank drives a wheel through two gearboxes.
-caption v8_exhaust_dusk: Run diesel, gasoline, ethanol, kerosene or methanol.
+caption fuel_tanks: Run diesel, gasoline, ethanol, kerosene or methanol.
+caption v8_exhaust_dusk: Five fuels to run on.
 caption refinery_column: Refine your own fuel in a full-size column.
 caption refinery_base: A pump feeds it, a funnel adds the coal catalyst.
 caption refinery_tops: A second pump draws the finished fuel off the top.

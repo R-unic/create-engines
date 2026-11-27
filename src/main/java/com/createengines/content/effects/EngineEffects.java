@@ -6,6 +6,7 @@ import org.jetbrains.annotations.Nullable;
 
 import com.createengines.client.RainCaps;
 import com.createengines.config.CEClientConfig;
+import com.createengines.content.EngineNoteSound;
 import com.createengines.content.raincap.RainCapBlock;
 import com.createengines.content.airflow.PortOpeningBlock;
 import com.createengines.content.crankshaft.CrankshaftBlockEntity;
@@ -102,18 +103,24 @@ public final class EngineEffects {
 			level.addParticle(gas, at.x, at.y, at.z, velocity.x, velocity.y, velocity.z);
 		}
 
-		// Boost lit the charge early: a rattle in the pipe and orange flashes
+		BlockPos primary = crank == null ? null : crank.primaryPos();
+		// Boost lit the charge early: a spit of burning gas from the pipe and orange flashes
 		if (random.nextFloat() < ExhaustLook.preignitionRattle(status.preignition())) {
 			flames(level, outlet.at, outlet.normal, 2, 0.18);
 			float volume = CEClientConfig.mechanicalVolume();
-			if (volume > 0)
-				level.playLocalSound(outlet.at.x, outlet.at.y, outlet.at.z, CESounds.PREIGNITION_KNOCK.get(),
-					SoundSource.BLOCKS, 0.3f * volume, 0.9f + random.nextFloat() * 0.3f, false);
+			// A note playing this engine has the spit itself, out of its own pipe
+			if (volume > 0) {
+				float pitch = Pitches.near(1, random.nextFloat());
+				if (!EngineNoteSound.spit(primary, 0.3f * volume, pitch))
+					level.playLocalSound(outlet.at.x, outlet.at.y, outlet.at.z, CESounds.EXHAUST_SPIT.get(),
+						SoundSource.BLOCKS, 0.3f * volume, pitch, false);
+			}
 		}
 
 		float roll = random.nextFloat();
 		if (roll < look.pop())
-			afterfire(level, outlet.at, outlet.normal, 0.7f * Muffling.volume(engine == null ? 0 : engine.muffling()), 1);
+			afterfire(level, primary, outlet.at, outlet.normal,
+				0.7f * Muffling.volume(engine == null ? 0 : engine.muffling()), 1);
 		else if (roll < look.pop() + look.flame())
 			flames(level, outlet.at, outlet.normal, look.flame() > 0.4f ? 3 : 2, 0.14);
 	}
@@ -142,14 +149,19 @@ public final class EngineEffects {
 
 	/**
 	 * Unburned fuel going off in a hot pipe: a crack, a burst of flame and a scatter of sparks, out along {@code normal}.
-	 * The crack is one of the engine's bangs, so it follows that volume setting.
+	 * The crack is one of the engine's bangs, so it follows that volume setting. The note of the engine whose primary
+	 * crankshaft is at {@code primary} plays it if it can, so it rings that engine's pipe.
 	 */
-	public static void afterfire(Level level, Vec3 at, Vec3 normal, float loudness, float pitch) {
+	public static void afterfire(Level level, @Nullable BlockPos primary, Vec3 at, Vec3 normal, float loudness,
+		float pitch) {
 		RandomSource random = level.random;
 		float volume = CEClientConfig.bangVolume();
-		if (volume > 0)
-			level.playLocalSound(at.x, at.y, at.z, CESounds.EXHAUST_POP.get(), SoundSource.BLOCKS, loudness * volume,
-				pitch * (0.9f + random.nextFloat() * 0.25f), false);
+		if (volume > 0) {
+			float varied = Pitches.near(pitch, random.nextFloat());
+			if (!EngineNoteSound.pop(primary, loudness * volume, varied))
+				level.playLocalSound(at.x, at.y, at.z, CESounds.EXHAUST_POP.get(), SoundSource.BLOCKS, loudness * volume,
+					varied, false);
+		}
 		if (!CEClientConfig.particles())
 			return;
 		flames(level, at, normal, 4, 0.24);
@@ -384,15 +396,12 @@ public final class EngineEffects {
 			return;
 		}
 		boolean turning = engine.state() == EngineState.RUNNING || engine.state() == EngineState.OVERLOADED;
-		// An overheating block steams, harder the hotter it is, and a critical one is heard boiling
+		// An overheating block steams, harder the hotter it is
 		if (engine.temperature() >= Thermal.OVERHEATING) {
 			boolean critical = engine.temperature() >= Thermal.CRITICAL;
 			if (random.nextFloat() < (critical ? 0.5f : 0.25f))
 				level.addParticle(new GasParticleOptions(0.95f, 0.95f, 0.96f, 0.7f, 0.4f, 0.5f, 24), x, y, z,
 					(random.nextDouble() - 0.5) * 0.02, 0.05, (random.nextDouble() - 0.5) * 0.02);
-			if (critical && random.nextFloat() < 0.03f)
-				level.playLocalSound(x, y, z, com.createengines.registry.CESounds.COOLANT_BOIL.get(), SoundSource.BLOCKS,
-					0.5f * CEClientConfig.mechanicalVolume(), 0.9f + random.nextFloat() * 0.2f, false);
 		}
 		// A block still giving up its heat shimmers faintly, and a little longer than it takes to stop being hot
 		boolean shimmers = turning ? engine.temperature() >= SHIMMERING : engine.cooling() && engine.temperature() >= SHIMMERING - 0.12f;

@@ -3,6 +3,7 @@ package com.createengines.registry;
 import static com.createengines.CreateEngines.REGISTRATE;
 
 import com.createengines.CreateEngines;
+import com.simibubi.create.content.processing.sequenced.SequencedAssemblyItem;
 import com.tterrag.registrate.util.entry.RegistryEntry;
 
 import net.minecraft.core.registries.Registries;
@@ -24,11 +25,17 @@ public final class CECreativeTabs {
 			.icon(CEBlocks.CRANK_THROW::asStack)
 			.displayItems((parameters, output) -> {
 				for (RegistryEntry<Item, Item> entry : REGISTRATE.getAll(Registries.ITEM))
-					output.accept(entry.get());
+					if (isListed(entry.get()))
+						output.accept(entry.get());
 			})
 			.build());
 
 	private CECreativeTabs() {
+	}
+
+	/** Whether the tab offers this item. A half-made item of a sequenced assembly only exists inside its recipe. */
+	public static boolean isListed(Item item) {
+		return !(item instanceof SequencedAssemblyItem);
 	}
 
 	public static void register(IEventBus modEventBus) {

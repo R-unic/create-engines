@@ -22,6 +22,8 @@ description: Run the Create Engines release gate and fill in the sign-off record
    - 2.3: version, jar name, changelog heading and tag agree; jar contents
    - 2.5: changelog from `git diff <last tag>..HEAD`, review for tick/render allocations and client classes in common
      code, no TODO or debug left, docs numbers updated
+   - 2.6: only if the diff changes the sound system somewhat significantly (STABILITY.md says what counts): the sound
+     bench, at a time agreed with the author; otherwise `n/a` with the reason
 4. Record what actually ran, with numbers. List every exception with who approved it.
 5. Write the Part 3 hands-on list from the changelog. Never tick Part 3 or sign for the author.
-6. Never tag, or ask for a tag, while a box is open or unexplained. Commit, push and publish only when asked.
+6. Never tag, or ask for a tag, while a box is open or unexplained. Push and publish only when asked (committing follows CLAUDE.md).

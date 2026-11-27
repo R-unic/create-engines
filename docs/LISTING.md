@@ -35,8 +35,9 @@ view after converting it, or retype the headings and lists. Modrinth takes the M
 
 ![A V8 from the exhaust side, running](https://raw.githubusercontent.com/R-unic/create-engines/master/docs/images/engine_showcase_v8_exhaust.png)
 
-> 🔊 **Turn your sound up.** The exhaust note is made as it plays, from the engine's speed and firing order: a V-twin
-> lopes, a flat six hums, a dead cylinder limps, and turbos whistle, blow off and crackle.
+> 🔊 **Turn your sound up.** The exhaust note is made as it plays, from the engine's speed, firing order and build: a V-twin
+> lopes, a flat six hums, a crossplane V8 burbles out of its two exhausts, a diesel knocks, a dead cylinder limps, and turbos
+> whistle, blow off and crackle.
 
 An addon for **Create** with working internal combustion engines. Place the crankshaft, cylinders, heads, pistons, cams
 and valves yourself, pipe in air and fuel, and the engine you built fires in order and drives your Create machines.
@@ -131,8 +132,8 @@ and valves yourself, pipe in air and fuel, and the engine you built fires in ord
 - Exhaust colour that reads the mixture, flame from a hot pipe, a cough on starting, and ticking as it cools
 - A turbo whistle that climbs with the wheel, a blow-off flutter when redstone dumps the boost or the throttle lifts,
   anti-lag crackle, and a supercharger whine that rises with its shaft
-- A clatter or squeal when an engine runs dry. Nothing runs underwater
-- **Muffler:** quiets the note, the bangs and the pops without costing any power
+- A squeal when an engine runs dry. Nothing runs underwater
+- **Muffler:** quiets the note, the bangs and the pops, and dulls the note, without costing any power
 - **Engine Casing:** joins into one plate and clads cylinders, pipes, cams, and Create's own shafts and cogwheels to
   hide the sprawl, in plain, riveted, louvred and window styles, and any dye
 - **Engine readouts:** a Display Link set against a crankshaft shows state, speed, power, load, temperature, oil, boost,
@@ -154,7 +155,8 @@ and valves yourself, pipe in air and fuel, and the engine you built fires in ord
 
 Create caps rotation at 256 RPM by default, and engines hit that ceiling. Raise it: in
 `serverconfig/create-server.toml` under `[kinetics]`, set `maxRotationSpeed` to 512 (higher works too). The engine
-simulation is built to stay cheap at speed, and its torque rating follows the limit you set.
+simulation is built to stay cheap at speed, and its torque rating follows the limit you set. For faster shafts without
+stronger engines, the `rpmScale` server setting turns every engine's shaft faster for the same SU.
 
 ## 📦 For modpack makers
 
@@ -174,7 +176,7 @@ The guides are in the repository: [PACKS.md](https://github.com/R-unic/create-en
 
 ## 🧩 For addon authors
 
-A public API under its own version (1.1.0, frozen at 2.0): read any engine (`EngineApi.viewAt`), listen to its state changes
+A public API under its own version, frozen at 2.0: read any engine (`EngineApi.viewAt`), listen to its state changes
 and milestones, and register an `EngineSourceProvider` with a `TorqueSource` to put another kind of engine on a crankshaft,
 with boost, goggle lines and blueprint support. A working example is built and tested with the mod. See
 [ADDONS.md](https://github.com/R-unic/create-engines/blob/master/docs/ADDONS.md) and
@@ -222,22 +224,114 @@ that changes how an existing engine behaves says so in its changelog. More on
 
 ## Changelog for 2.4.0
 
-Unreleased; being written as 2.4 "Running Hot" is built. So far: the second part of the wear mode, two new connecting rods, fixes, new gasket
-recipes, and less work for a server. Three new item IDs (`incomplete_copper_gasket`, `light_connecting_rod`, `heavy_connecting_rod`); no ID,
-key or saved format is renamed or removed. Changes to existing builds are listed first.
+2.4 "Running Hot": heat that follows work, overheating and a Radiator, the second part of the
+wear mode, two new connecting rods, a rework of the engine sound, fixes, new gasket recipes, and less work for a server. New IDs: a block
+(`radiator`), three items (`incomplete_copper_gasket`, `light_connecting_rod`, `heavy_connecting_rod`), a data component
+(`create_engines:failed`) and sound events (`engine_catch_hard`, `engine_stall_lugged`, `engine_stall_starved`, `engine_settle`,
+`exhaust_spit`, `head_warp`, `turbo_fail`). No ID, key or saved format is renamed or removed. Changes to existing builds are listed first.
+- New server setting, `balance.rpmScale` (1 by default, 0.25 to 8): turns every engine's shaft that many times as fast with its SU per RPM
+  divided to match, so the same engine gives the same total SU on the same fuel, at 2 reaching at 512 RPM what it gave at 256. Above 1 it
+  needs Create's `maxRotationSpeed` raised to match, and goes no further than that limit divided by 256, so at Create's default it does
+  nothing. Goggles, the Dynamometer, governors and other readouts use shaft speed. Machines on the shaft turn faster and ask for more SU.
+- Fixed, engines on contraptions: after an engine was moved into a moving structure, its shaft could stand still for seconds while the engine
+  ran on. Create stops a crankshaft it moves, and the engine only set it turning again when its speed matched the last one it had sent.
+- Fixed (wear mode), free repairs. A worn or wrecked part no longer comes out new by any of these:
+  - Crafting: the Forged Piston, Precision Cylinder, Large Battery, Variable Turbocharger and Copper Gasket recipes take only a new piston,
+    cylinder, battery, turbocharger and rubber gasket. A cylinder with a thrown rod's wreck in it is not new.
+  - Building from a blueprint, or with a Schematicannon, takes only new parts, batteries and turbochargers.
+  - Bank Builder: its swap to precision blocks no longer drops the fitted parts while also keeping them in the new block, and keeps their
+    wear. It no longer fits parts into or swaps a wrecked cylinder or head, swaps out a seized piston, or places a wrecked cylinder.
 - **Changed, overheating, with the wear mode on or off.** From 140 degrees an engine's block loses part of the heat of every burn: up to about
   a quarter of its power at 165 degrees and above, and none below 140. It comes back as the engine cools, and nothing breaks or stops. A boosted
   spark engine that hot also lights its charge a little earlier. A server can scale or turn this off with `balance.overheatPenalty`. **An existing
   engine that runs very hot without coolant makes less power than before**; coolant or a Radiator puts it right.
+- **Changed, the speed a rough engine gives, in every world.** An engine now gives its network the mean speed of its firing cycle. Before, it
+  gave whatever the speed was as a game tick ended, which lands somewhere else on a rough engine's surge each time, so its speed wandered and
+  was sent again and again, twitching every shaft on the line. It now holds steady, and so do the goggles, Display Link, Black Box and sound
+  that show it. **What an existing rough engine's network gets, speed and stress capacity, no longer wanders with the surge**, and after a
+  throttle or load change it follows up to one firing cycle later. Smooth engines look as before. The simulation is unchanged.
+- Changed, how a crank is drawn: when its speed does change, it now catches up with Create's shafts over a few frames instead of jumping in
+  one. A rough engine's crank throws and pistons now visibly surge with each firing, by a few degrees. Drawing only.
+- Changed, one set of heat units: every temperature is now in degrees Celsius, including the charge and ignition temperatures in the cylinder
+  goggles (they were in kelvin) and the boost limit in the recipe viewer (it was a bare number), and amounts of heat are in HU, heat units
+  (HU/s on the Exhaust Heat Exchanger and Radiator). Only what is shown changed: data packs and scripts read the same numbers.
 - Changed, heat follows work: a block is now heated by the fuel its cylinders burn, so more boost and more fuel run hotter. Friction counts as
   before on a slow engine and much less on a fast one. An engine near 100 RPM settles where it did; fast engines settle cooler than before,
   and big boosted ones are the hottest. In a measurement with the crank held at 512 RPM, uncooled: a crude four settled near 146 degrees
   (235 before) and a twin-turbo gasoline W24 near 166 (253 before). A block starved of oil now heats up much faster. Cylinder performance,
   ratings and fuel figures are unchanged.
 - Changed, temperature is shown in degrees Celsius: goggles (with new Hot, Overheating and Critical readings), the Display Link's temperature
-  and status sources, and the Black Box. An overheating block steams, and a critical one boils audibly. The Display Link temperature source now
+  and status sources, and the Black Box. An overheating block steams, harder the hotter it is. The Display Link temperature source now
   gives degrees where it gave a percentage of warm; its progress bar is as before.
+- Changed, the sound rework (author, 2026-11-25): **every engine's exhaust note changes**, and is the author's to tune by ear. Only the sound;
+  no engine runs any differently.
+  - Each exhaust run rings its own pipe, pitched by how long the run is (the first few blocks of pipe change it most) and how big the cylinders are, so engines with the same cylinders
+    sound different when their banks go out of different exhausts (a crossplane V8 with an exhaust a bank burbles; a flat-plane does not).
+    Banks that share an exhaust sound smoother.
+  - Cylinders without a spark plug (compression ignition) knock, loudest at idle.
+  - The valve sounds are gone: the note has no valve tick, and the old valve clatter no longer plays.
+  - No two firings are alike: each varies a little in strength and timing, more at idle, on a rough engine and with crude parts.
+  - A Muffler now makes the note duller as well as quieter. It works on its own exhaust run only: on a V with one bank muffled,
+    that bank's firings are the quiet, dull ones.
+  - The length of an exhaust, from the head to its opening, changes the note: a stub barks higher, a long run sounds deeper and a
+    little hollow. Notes ring and echo only briefly, on every length of run.
+  - The note's sound itself is new. Every firing is one of many short synthesized firings, never the same one twice in a
+    row, sent through a model of its exhaust pipe, so a run's length is a real resonance. Nothing is recorded.
+  - The backfire is new from scratch: a crack, the hollow pock of the pipe, a soft rush of flame and the sparks
+    fizzing after it. Five takes in place of three, some with a smaller pop or two of their own.
+  - An engine heard through its own note now makes its backfires and spits in that note, out of its own exhaust pipe, and
+    its crank rocking to a stop after a stall. The recordings that play otherwise are remade from the same sound.
+  - One-off sounds, failures and warnings included, are evened out in loudness, no longer start on a hard edge, and vary
+    much less in pitch from one time to the next.
+  - Under boost, a charge that lights early now leaves the exhaust as a short hiss and fizz with its orange flashes, in
+    place of a run of ringing taps. Wear mode's knock at a cylinder sounds as before.
+  - The note's firings keep time with the engine you see, and the nearest engines are the ones that get a note of their own.
+  - Far off, the crack and knock fade first and only the boom carries. An engine clad in Engine Casing is heard duller and a
+    little quieter.
+  - The recorded bangs give way wherever the note is heard. With `engineNote` at 0 the bangs play as before.
+  - The note is heard sooner: at most 0.2 s is queued where up to 0.4 s was, and it reaches ahead along a rising or
+    falling throttle, so a blip, a catch or a stall sounds closer to when you see it.
+  - Fades are smooth, with no 20-a-second steps. An engine passes between its own note and the shared sound at the same
+    loudness, and two engines about as far away no longer trade notes as you walk between them.
+  - A turbo's whistle and a supercharger's whine are part of the engine's own note where it has one, gliding in pitch with
+    no loop.
+  - The note is heard from the exhaust openings, no longer from the crankshaft.
+  - The world is in it. Far off, the air takes the edge off the note until little but the boom carries. A wall between you
+    and an engine muffles it, more for each block of it. Indoors, the walls and roof send back a short reflection; out in
+    the open there is none.
+  - If a lag spike cuts an engine's note off, it comes back at once.
+- Fix: the shared sound of many engines could play on, heard from anywhere, after all its engines had stopped or unloaded.
+- Fix: on a Create Aeronautics (Sable) moving structure, an engine's note, loops and starter were started again on top of
+  themselves every second or two, piling up until the game ran out of sound channels.
+- Changed, the turbo and supercharger sounds:
+  - A turbo's whistle is a new breathy tone that keeps its bright, airy top, and climbs further as the wheel spools:
+    more than an octave from a slow wheel to full speed.
+  - A supercharger's whine is lower, rounder and quieter: a soft singing tone that follows its shaft, with a low thrum
+    and the whir of air under it.
+  - The blow-off valve is now all air, with none of the old thump: a full rush that flutters softly and slows down. There
+    are three takes, each fluttering at its own rate, with a little whine under them that falls as the wheel runs down.
+    The wastegate's chuff is made from them too.
+  - Many turbos venting together no longer add up to a roar: of those close together in place and time, the first is
+    heard in full, the next two more softly and the rest not at all. Every one is still seen to vent.
+- Changed, big engines are deeper. A V8 rumbles: each exhaust has a low boom that carries from one firing to the next,
+  a crossplane's uneven banks burble harder, and its crack is softer. Every engine of two or more cylinders is voiced
+  lower than before, since more cylinders no longer make each one sound much smaller.
+- Changed, the sounds of an engine catching and stalling are new, three takes of each. A catch coughs, stumbles, then fires
+  quicker and quicker as it flares; a stall's last firings come unevenly with a cylinder or two not lighting, and the crank
+  knocks to a stop and rocks back.
+- New, starts and stalls follow what happened. A cold engine, or one long on the starter, labours through more coughs before
+  it catches. An engine stalled by its load thuds hard and slow into a dead stop, and one out of fuel or too lean sputters out.
+  Engines with more cylinders start and die deeper and louder, compression ignition and cold ones deeper, and a faster engine
+  stalls louder. An engine with its own exhaust note plays its start and stall through it, keeping time: the coughs come at
+  its own speed and firing order, and a stall's firings spread out from the speed it was playing until the crank stops.
+- Changed, many engines (author, 2026-11-25): past the three engines that each get their own note, the nearest three more are mixed into
+  one shared sound, and any further ones make it fuller, instead of each playing a bang per firing. All engines together are held to
+  about 4 dB above the loudest alone, and an engine held at one speed and load settles about 3 dB quieter
+  over half a minute, coming straight back up when its speed, load or firing changes.
 - New, an optional `heat_factor` in the `fuel` data map (default 1) for pack makers. API version 1.3.0.
+- Clearer fuel shut-off. Redstone on a camshaft already cut the fuel; now the Camshaft Ponder page has its own "shutting the engine down"
+  part with a lever, the cylinder, head and injector page points to it, the camshaft and cam lobe items say it when hovered, and goggles on
+  the camshaft, cylinder or head say "Fuel cut: redstone on the camshaft". No engine behaves differently.
 - Changed (wear mode), the failure chance: a worn rod or gasket is far less likely to fail in any one minute, so heavy wear is now a warning
   and not a near certainty. Before, a part 80% worn at 256 RPM was certain to fail within a minute; now that chance is about 5% while warm. It
   grows in proportion to speed (before, with the square), and with heat. Apex seals fail as they did.
@@ -250,14 +344,18 @@ key or saved format is renamed or removed. Changes to existing builds are listed
   It never stops an engine by itself.
 - New (wear mode), turbochargers wear with boost, heat and poor oil. A worn one makes less boost, and a badly worn one can fail and make none
   until it is replaced. A Service Kit sets light wear right on a turbo or a plug.
-- New, **Light Connecting Rod** and **Heavy Connecting Rod**. A light rod has a little less of the friction that grows with speed and wears fast
-  under load; a heavy one has a little more and wears slowly under load. The friction difference applies with the wear mode on or off. The Bank
-  Builder fits them when you carry no standard rod. A blueprint does not record the kind of rod.
+- New, **Light Connecting Rod** and **Heavy Connecting Rod**. With the wear mode on or off, a light rod has a little less of the friction that
+  grows with speed and adds less inertia to the crank (it revs up sooner and runs rougher), and a heavy one has a little more friction and adds
+  more inertia (it runs smoother, so an uneven engine keeps more of its stress, and changes speed slower). In wear mode a light rod also wears
+  fast under load and a heavy one slowly. The Bank Builder fits them when you carry no standard rod. A blueprint does not record the kind of rod.
+  In the cylinder a light rod is slim brass and a heavy one is stout steel.
 - New, the Black Box records a warped head and a failed turbocharger as events, and both, with plug wear, count in the build's wear figure.
 - Fixed (wear mode): breaking a battery, rotor housing or turbocharger and placing it again no longer makes it new, and a thrown rod's wreck
   stays in a cylinder that is broken and placed. Their items now carry `create_engines:wear` and `create_engines:failed`.
 - New saved keys, absent on older worlds: cylinder `Rod`, head `Warped` and `PlugWear`, rotor housing `PlugWear`, turbocharger `Wear` and
-  `WearFailed`. The engine summary's `Failures` is now a long; a saved int reads the same.
+  `WearFailed`, and the Radiator's `Heat`, `Boiling`, `OnEngine`, `FanRpm` and `AirSpeed`. The engine summary's `Failures` is now a long; a
+  saved int reads the same. What a server sends players also gained `FuelCut`, `ExhaustMuffle` and the engine's `Sound*` values; each reads
+  as off or zero when absent.
 - Changed, gasket recipes (author, 2026-11-25): the **Rubber Gasket** is sawn from a Mechanical Belt (a Mechanical Saw cuts one belt into two
   gaskets) instead of crafted from two slime balls and a paper. The **Cardboard Gasket** is crafted from one of Create's Cardboard instead of three
   paper. The **Copper Gasket** is a Create sequenced assembly on a Rubber Gasket: a Deployer puts a copper sheet on, a Press presses it, a second
@@ -278,11 +376,17 @@ key or saved format is renamed or removed. Changes to existing builds are listed
 - Fixed (wear mode): a stock gasket that was fitted by hand is now lost with a head a rod goes through. Before, it could be had back, new, by breaking
   the head with the mode off.
 - Fixed (wear mode): an engine no longer runs for a tick without its saved failures after the mode is switched.
+- Fixed (wear mode): switching the mode while players are connected to a server now reaches them at once. Before, their goggles, item wear bars and
+  wrecked parts showed the old setting until they joined again. The server and the player both need this version.
+- Fixed: reloading sounds, stopping them all or closing the game while sounds play no longer logs `OpenAlUtil: Stop: Invalid name parameter`. The
+  cause is a race in Minecraft's own sound engine, which engines' long-playing sounds made easier to hit.
 - Fixed (wear mode): battery wear is sent to players only when the figure their goggles show moves.
 - Faster on servers: a battery bank is walked once a second for the whole bank (before, once for every battery in it), and placing or breaking a battery
   no longer has every other bank walked again. Switching the wear mode no longer has every engine search every other. An engine with nothing loaded
   to wear is no longer read every tick, a Transmission no longer reads its neighbours' redstone to decide on a shift, and an engine that has not changed
   costs less to check, as does finding geared cranks. None of these was timed.
+- Fixed: buttons and levers go onto a Starter or Heavy Starter again. Since 2.1.0, when its outline began to follow its model, neither could be placed
+  on it. The outline is unchanged, so on a side of the starter they sit slightly out from the motor.
 - Fixed, damaged saves: a starter, supercharger, crankshaft, crank throw, rotor housing, governor, MAF sensor, heat exchanger, reboiler or condenser
   whose save held a number that is not a number (NaN) or an infinity now reads it as zero (a governor's rack position as wide open) instead of
   running with it and writing it back. Sound saves read exactly as before.
@@ -296,6 +400,9 @@ key or saved format is renamed or removed. Changes to existing builds are listed
   as a heated source. It has its own Ponder page. Engines without one run as before.
 - Added, Bank Builder: W and X layouts. W lays three banks (the base face and the faces a quarter turn either side), X all four faces; sneak-use
   cycles inline, vee, flat, W and X before the grade of parts. Inline, vee and flat build exactly as before.
+- Changed (wear mode), easier to spot from a distance: a **blown gasket** is now a bright red one, squeezed out all round the head with torn
+  tongues sticking out and a glowing hole above it. **Failed apex seals** are now thick pale strips sprung out across all four sides of the
+  rotor housing, with a bent length of copper rim. Looks only.
 
 ## Changelog for 2.3.0
 

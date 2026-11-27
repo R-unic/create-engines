@@ -9,6 +9,16 @@
   `ce-code-tools`).
 - Release gate: skill `ce-release-gate`.
 
+## Commit often, keep files small
+
+- Commit each finished, verified piece of work as soon as it is done, with its tests and docs, without waiting to be asked.
+  Do not let several features pile up uncommitted. Stage only your own changes (other sessions may share this checkout).
+- When about 5 local commits are unpushed, push the branch without asking, so all work stays tracked on the remote.
+  Tagging still waits for the author.
+- Do not let files grow to giant sizes. New work goes in a new file or class split by responsibility, not onto the end of a
+  long one. Past about 800 lines, split before adding more. The files that are already too long are listed in
+  [docs/ROADMAP-3.0.md](docs/ROADMAP-3.0.md), "Splitting the giant files".
+
 ## Releases follow the stability contract
 
 Every release (any `vX.Y.Z` tag, patch releases included) follows [docs/STABILITY.md](docs/STABILITY.md). Not optional; hurry
@@ -45,6 +55,13 @@ A significant new block or item goes in the trailer ([docs/SMOKE.md](docs/SMOKE.
 `client/ShowcaseRun`, a caption in `tools/trailer/captions.txt`, a place in the cut in `tools/trailer/edit.txt`, and a line in `src/smoke/trailer-parts.txt` naming the shot.
 `TrailerCoverageTest` fails a part with no line. Mark a part `skip` only with a real reason (inside another part, a variant,
 a tool, a fluid); `later` is an open debt, not a way to pass the test. Captions say only what the mod does.
+
+Each new minor or major version's trailer is composed afresh, so it does not look like the earlier ones: its own opening,
+story, shot order, camera moves, edit and captions, not the last cut with new shots slotted in. It shows off what that
+version adds.
+
+Both forms, long and short, need a tight opening and a concise outro, tuned to each ([docs/SMOKE.md](docs/SMOKE.md),
+"The trailer").
 
 ## When a test, snapshot or ratchet goes red
 

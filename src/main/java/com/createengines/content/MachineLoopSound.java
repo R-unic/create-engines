@@ -3,6 +3,8 @@ package com.createengines.content;
 import java.util.IdentityHashMap;
 import java.util.Map;
 
+import com.createengines.compat.sable.SableCompat;
+
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.resources.sounds.AbstractTickableSoundInstance;
 import net.minecraft.client.resources.sounds.SoundInstance;
@@ -42,6 +44,8 @@ public final class MachineLoopSound extends AbstractTickableSoundInstance {
 	/** The level and pitch the loop is at now, on their way to what the source asks for. */
 	private float level;
 	private float currentPitch;
+	/** How far the loop has crossed over to its engine's note, which is carrying it, 0 to 1. */
+	private float handover;
 
 	private MachineLoopSound(Object owner, BlockPos at, SoundEvent sound, float loudest, LoopSource source, long startedAt) {
 		super(sound, SoundSource.BLOCKS, SoundInstance.createUnseededRandom());
@@ -76,7 +80,7 @@ public final class MachineLoopSound extends AbstractTickableSoundInstance {
 			// Loops the sound engine dropped without ticking would otherwise keep their sources alive until the world is left
 			PLAYING.values()
 				.removeIf(loop -> {
-					boolean dropped = VoiceClock.settled(now, loop.startedAt) && (loop.isStopped() || !sounds.isActive(loop));
+					boolean dropped = VoiceClock.settled(now, loop.startedAt) && (loop.isStopped() || !stillPlaying(sounds, loop));
 					if (dropped)
 						BUDGET.finished(loop.owner, now);
 					return dropped;
@@ -85,7 +89,7 @@ public final class MachineLoopSound extends AbstractTickableSoundInstance {
 		}
 		MachineLoopSound current = PLAYING.get(owner);
 		// A new instance gets a moment to start; one the sound engine declined is only tried again after that, not every tick
-		if (current != null && (!VoiceClock.settled(now, current.startedAt) || !current.isStopped() && sounds.isActive(current)))
+		if (current != null && (!VoiceClock.settled(now, current.startedAt) || !current.isStopped() && stillPlaying(sounds, current)))
 			return;
 		// A replaced instance the sound engine dropped counts as finished, so a flapping source rests between starts
 		if (current != null)
@@ -101,6 +105,15 @@ public final class MachineLoopSound extends AbstractTickableSoundInstance {
 			PLAYING.remove(owner, loop);
 			BUDGET.finished(owner, now);
 		}
+	}
+
+	/**
+	 * Whether the sound engine still has {@code sound}. Every sound of ours that is started again once it has gone must ask
+	 * here, not the sound manager: on a moving structure the manager knows the sound only by Sable's wrapper, so asked
+	 * directly it always says no, and a new copy would start on top of the old one again and again.
+	 */
+	public static boolean stillPlaying(SoundManager sounds, SoundInstance sound) {
+		return sounds.isActive((SoundInstance) SableCompat.playedAs(sound));
 	}
 
 	private static boolean near(BlockPos at) {
@@ -149,8 +162,16 @@ public final class MachineLoopSound extends AbstractTickableSoundInstance {
 			y = at.y;
 			z = at.z;
 		}
-		volume = loudest * source.loopVolume() * level * fade;
+		handover = NoteHandover.step(handover, EngineNoteSound.carries(source));
+		if (handover >= 1) {
+			// The note has it now. Not counted as finished, so it may start again the moment the note lets it go
+			PLAYING.remove(owner, this);
+			stop();
+			return;
+		}
+		volume = loudest * source.loopVolume() * level * fade * NoteHandover.roomGain(handover);
 		pitch = Mth.clamp(currentPitch, 0.5f, 2f);
+		SoundProbe.level(getLocation().getPath(), this, volume, pitch);
 	}
 
 	private void finish() {

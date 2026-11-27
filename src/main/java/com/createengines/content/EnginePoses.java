@@ -8,6 +8,7 @@ import org.joml.Vector3f;
 
 import com.createengines.content.camshaft.CamLobeBlock;
 import com.createengines.content.camshaft.CamshaftBlockEntity;
+import com.createengines.content.crankshaft.CrankThrowBlock;
 import com.createengines.content.crankshaft.CrankshaftBlockEntity;
 import com.createengines.content.cylinder.CylinderBlock;
 import com.createengines.content.cylinder.CylinderBlockEntity;
@@ -16,6 +17,7 @@ import com.createengines.content.head.CylinderHeadBlockEntity;
 import com.createengines.content.rotor.RotorHousingBlockEntity;
 import com.createengines.content.effects.EngineRock;
 import com.createengines.engine.CrankGeometry;
+import com.createengines.engine.EngineSummary;
 import com.createengines.engine.sim.CamProfile;
 import com.createengines.engine.sim.CylinderModel;
 
@@ -67,8 +69,20 @@ public final class EnginePoses {
 		return crank.rotation(renderTime) + crank.throwAngle() + CrankGeometry.createShaftPhase(axis, crank.getBlockPos());
 	}
 
+	/** The angle a crank block is drawn at: its shaft's, and on a throw the engine's surge with it. */
 	public static float crankAngle(CrankshaftBlockEntity crank, float renderTime) {
-		return (float) (drawnShaft(crank, renderTime) % 360);
+		return (float) ((drawnShaft(crank, renderTime) + surge(crank, renderTime)) % 360);
+	}
+
+	/** See {@link CrankSurge}: only the throws, and so the pistons on them, surge. */
+	private static double surge(CrankshaftBlockEntity crank, float renderTime) {
+		if (!(crank.getBlockState()
+			.getBlock() instanceof CrankThrowBlock))
+			return 0;
+		EngineSummary engine = crank.engineSummary();
+		// The engine's turning and not this throw's own angle, so that every throw surges together and none twists
+		return engine == null ? 0
+			: CrankSurge.offset(crank.rotation(renderTime), crank.getTheoreticalSpeed(), engine.ripple(), engine.firing());
 	}
 
 	public static float camAngle(CamshaftBlockEntity cam, float renderTime) {

@@ -9,22 +9,35 @@ leaves the others' recordings alone (a different encoder gives a different file 
     python tools/generate_sounds.py turbo_whistle turbo_blowoff supercharger_whine
     python tools/generate_sounds.py --wav build/sound-preview engine_catch engine_stall
 
+Every sound that plays once goes through the level pass (sound_levels.py): its own loudness, a peak ceiling, no DC and a
+fade at each end.
+
 With --wav DIR the named sounds are written as WAV files into DIR instead, to listen to before encoding them.
 
 Sounds:
   cylinder_fire1..3  the bang of a charge igniting, three cylinders' worth: a hard crack, a mid slap, a gritty thump, an
                      echo off the pipe's end and the pipe ringing after
   starter_whir       a seamless loop of a starter motor turning over; the game bends its pitch with the motor's speed
-  turbo_whistle      a seamless loop of a spooling turbine: a thin whistle over air rush; pitch follows the wheel speed
-  turbo_blowoff      the blow-off valve dumping boost: a thump, a hiss and a flutter of the compressor surging
-  supercharger_whine a seamless loop of a roots blower: gear whine over the beat of its lobes; pitch follows its shaft
-  engine_catch       an engine catching on the starter: a few firings, each sooner and harder than the last
-  engine_stall       an engine dying: its last firings slowing and weakening, a clunk and a sigh from the exhaust
-  exhaust_pop1..3    unburned fuel lighting in a hot exhaust (the backfire): a hard-driven burst of noise with its weight in
-                     the low mids, close reflections and a dense crackle behind it; no fixed tones
+  turbo_whistle      a seamless loop of a spooling turbo: a breathy whistle over a little rushing air (boost_sounds.py)
+  turbo_blowoff, turbo_blowoff2..3  the blow-off valve dumping boost: a hiss of air that starts to flutter as the
+                     compressor surges; three takes, fluttering at their own rates (boost_sounds.py)
+  supercharger_whine a seamless loop of a roots blower: the singing tone of its lobes, the growl of its gears and the air
+                     it gulps (boost_sounds.py)
+  engine_catch, engine_catch2..3  an engine catching on the starter: a cough or two, a stumble, then firings crowding
+                     together as it flares and falls back (start_stall_sounds.py)
+  engine_stall, engine_stall2..3  an engine dying: uneven last firings and unlit chuffs, the crank rocking to a stop
+                     against compression and a sigh from the exhaust (start_stall_sounds.py)
+  engine_settle, engine_settle2..3  a stopping crank alone, rocking against compression, and the sigh after it
+  engine_catch_hard, engine_catch_hard2..3  a cold or long-cranked engine: coughs that come to nothing, then a ragged catch
+  engine_stall_lugged, engine_stall_lugged2..3  dragged down by its load: hard, slowing firings and a heavy stop
+  engine_stall_starved, engine_stall_starved2..3  out of fuel: weak firings among misses, and a soft stop
+  exhaust_pop1..5    unburned fuel lighting in a hot exhaust (the backfire): a crack, a blow-down down the note's pipe, a
+                     soft rush of flame and the sparks fizzing after it, some with a smaller pop or two (exhaust_pop_sounds)
+  exhaust_spit1..3   a charge boost lit early, spat out of the pipe: a quick hiss of burning gas, a small puff and a fizz
+                     (exhaust_pop_sounds)
   metal_tick1..3     hot metal ticking as it cools: a small bright tink
-  preignition_knock1..3  a charge lighting itself early under boost: a quick run of hard metallic knocks
-  engine_clatter     a seamless loop of valve gear: soft tappet knocks over the hum of the gears; pitch follows the crank
+  preignition_knock1..3  a charge lighting itself early under boost: a quick run of hard metallic knocks (at a cylinder, in wear mode)
+  engine_clatter     a seamless loop of valve gear: soft tappet knocks over the hum of the gears (no longer played; the sound ID is kept)
   bearing_squeal     a seamless loop of bearings running dry: a wavering shriek over a stick-slip rasp
   intake_roar        a seamless loop of air gulped through an intake: a hollow rush swelling in eight pulses a second
   rod_thrown1..2     the wear mode's loudest failure: a connecting rod going through the head. A flat, huge crack, a heavy cast-iron
@@ -46,7 +59,12 @@ import wave
 import numpy as np
 from scipy import signal
 
-SR = 44100
+import boost_sounds
+import exhaust_pop_sounds
+import sound_levels
+import start_stall_sounds
+from sound_dsp import SR, band, finish, highpass, lowpass
+
 OUT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "src", "main", "resources", "assets",
                    "create_engines", "sounds")
 
@@ -98,7 +116,10 @@ def write_ogg_ffmpeg(path, samples):
 
 # Sounds that are mostly noise bursts, which the encoder's default quality smears into a grainy, crushed-sounding warble.
 # Only these are encoded at a higher quality; the others keep their recordings.
-HIGH_QUALITY = {"exhaust_pop1": 0.8, "exhaust_pop2": 0.8, "exhaust_pop3": 0.8}
+HIGH_QUALITY = {"exhaust_pop%d" % i: 0.8 for i in range(1, 6)}
+HIGH_QUALITY.update({"exhaust_spit%d" % i: 0.8 for i in range(1, 4)})
+HIGH_QUALITY.update({name: 0.8 for name in start_stall_sounds.SOUNDS})
+HIGH_QUALITY.update({name: 0.8 for name in boost_sounds.SOUNDS if name.startswith("turbo_blowoff")})
 
 
 def write_ogg(lib, name, samples):
@@ -121,23 +142,6 @@ def write_ogg(lib, name, samples):
     lib.sf_write_float(handle, data.ctypes.data_as(ctypes.POINTER(ctypes.c_float)), len(data))
     lib.sf_close(handle)
     print("wrote", os.path.normpath(path), "%.2fs" % (len(data) / SR))
-
-
-def band(noise, low, high, order=3):
-    sos = signal.butter(order, [low, high], btype="bandpass", fs=SR, output="sos")
-    return signal.sosfilt(sos, noise)
-
-
-def lowpass(noise, cutoff, order=3):
-    return signal.sosfilt(signal.butter(order, cutoff, btype="lowpass", fs=SR, output="sos"), noise)
-
-
-def highpass(noise, cutoff, order=2):
-    return signal.sosfilt(signal.butter(order, cutoff, btype="highpass", fs=SR, output="sos"), noise)
-
-
-def finish(mix, peak=0.9):
-    return mix / np.max(np.abs(mix)) * peak
 
 
 def bang(seed, pitch, bright=1.0):
@@ -209,193 +213,6 @@ def starter_loop():
     mix = 0.5 * whine / np.max(np.abs(whine)) * teeth + 0.38 * grit * pulses + 0.3 * rumble
     mix = np.tanh(1.3 * mix)
     return finish(mix, 0.8)
-
-
-def turbo_loop():
-    """One second of spooling turbine that repeats seamlessly. At the game's pitch 1 the whistle sits near 1.8 kHz; the
-    wheel running up bends it from about half that to well over an octave above. Every component is a whole number of
-    cycles long, so the loop has no seam."""
-    rng = np.random.default_rng(3)
-    n = SR
-    t = np.arange(n) / SR
-
-    # The blades passing a fixed point: a thin tone with a quiver, a bright overtone and a sub-tone, and a second tone
-    # a few hertz off it that makes the whistle shimmer
-    f0 = 1800
-    quiver = 0.9 * np.sin(2 * np.pi * 5 * t)
-    whistle = (np.sin(2 * np.pi * f0 * t + quiver) + 0.38 * np.sin(2 * np.pi * 2 * f0 * t + 2 * quiver + 0.7)
-               + 0.12 * np.sin(2 * np.pi * 3 * f0 * t + 1.9) + 0.26 * np.sin(2 * np.pi * (f0 // 2) * t + 0.4)
-               + 0.5 * np.sin(2 * np.pi * (f0 + 7) * t + 1.3))
-
-    # Air going through the housing: a bright rush that swells and ebbs, and a soft low whoosh
-    rush = periodic_noise(rng, n, lambda f: np.where((f > 2500) & (f < 9500), 1 / np.sqrt(np.maximum(f, 1)), 0))
-    rush = rush / np.max(np.abs(rush)) * (0.8 + 0.2 * np.cos(2 * np.pi * 38 * t))
-    whoosh = periodic_noise(rng, n, lambda f: np.where((f > 120) & (f < 650), 1.0, 0.0))
-    whoosh = whoosh / np.max(np.abs(whoosh))
-
-    mix = 0.55 * whistle / np.max(np.abs(whistle)) + 0.34 * rush + 0.24 * whoosh
-    return finish(np.tanh(1.2 * mix), 0.8)
-
-
-def turbo_blowoff():
-    """The blow-off valve letting a charge go: the valve thumps open, the air hisses out and the compressor, suddenly
-    unloaded, flutters as it surges before it settles."""
-    rng = np.random.default_rng(19)
-    n = int(1.0 * SR)
-    t = np.arange(n) / SR
-    rise = np.minimum(t / 0.006, 1)
-
-    thump = np.sin(2 * np.pi * np.cumsum(55 + 90 * np.exp(-t / 0.025)) / SR) * rise * np.exp(-t / 0.05)
-
-    hiss = band(rng.standard_normal(n), 1600, 11000, 2) * rise * (0.6 * np.exp(-t / 0.32) + 0.4 * np.exp(-t / 0.09))
-    # Surge: the hiss chops at a rate that slows as the wheel runs down, chattering rather than switching cleanly
-    chatter_rate = 36 * np.exp(-t / 0.35) + 9
-    chop = 0.5 + 0.5 * np.sign(np.sin(2 * np.pi * np.cumsum(chatter_rate) / SR)) * 0.8
-    chop = lowpass(chop, 220, 2)
-    flutter = band(rng.standard_normal(n), 900, 5200, 2) * chop * rise * np.exp(-t / 0.28)
-
-    mix = 0.8 * thump + 0.5 * hiss / np.max(np.abs(hiss)) + 0.55 * flutter / np.max(np.abs(flutter))
-    mix = np.tanh(1.5 * mix)
-    mix *= np.clip((n - np.arange(n)) / (0.06 * SR), 0, 1)
-    return finish(mix)
-
-
-def supercharger_loop():
-    """One second of roots blower that repeats seamlessly: the gears whine, the lobes beat at 48 Hz and the delivered air
-    thrums a third as fast. At pitch 1 the whine is near 520 Hz. It is deliberately not a clean tone: the gear mesh wanders
-    and is doubled by a slightly detuned twin so it beats, odd partials and a few non-harmonic ones make it metallic, and
-    gritty noise rides on it."""
-    rng = np.random.default_rng(5)
-    n = SR
-    t = np.arange(n) / SR
-
-    # Gear mesh: the pitch drifts a little (whole cycles per second, so it still loops) and the amplitude flutters
-    f0 = 520
-    wander = 2.2 * np.sin(2 * np.pi * 3 * t + 0.4) + 1.3 * np.sin(2 * np.pi * 7 * t + 2.1)
-    twin = f0 + 9
-
-    def tone(f, phase_mod, shift=0.0):
-        return np.sin(2 * np.pi * f * t + phase_mod + rng.uniform(0, 2 * np.pi) + shift)
-
-    whine = sum(tone(k * f0, k * wander) / k ** 0.7 for k in range(1, 7))
-    whine += 0.7 * sum(tone(k * twin, k * wander) / k ** 0.9 for k in range(1, 4))
-    # Rough, metallic partials that are not multiples of the mesh: bearings and lobe tips
-    whine += 0.35 * tone(int(f0 * 2.37), wander) + 0.25 * tone(int(f0 * 3.61), 1.5 * wander)
-    whine += 0.4 * np.sin(2 * np.pi * 13 * (f0 // 3) * t)
-    whine = whine / np.max(np.abs(whine))
-    # Eccentric gears and lobes chop the whole thing unevenly rather than a smooth swell
-    flutter = 0.75 + 0.15 * np.cos(2 * np.pi * 48 * t) + 0.1 * np.cos(2 * np.pi * 23 * t + 1.2)
-    # Overdrive turns the pure sine stack into something with edge
-    whine = np.tanh(2.2 * whine)
-
-    thrum = sum(np.sin(2 * np.pi * k * 96 * t + rng.uniform(0, 2 * np.pi)) / k for k in range(1, 5))
-    air = periodic_noise(rng, n, lambda f: np.where((f > 500) & (f < 3800), 1 / np.sqrt(np.maximum(f, 1)), 0))
-    air = air / np.max(np.abs(air))
-    air *= 0.75 + 0.25 * np.cos(2 * np.pi * 48 * t - 0.8)
-    # Grit: hard-edged noise that pulses with the gears, sitting right on top of the whine
-    grit = periodic_noise(rng, n, lambda f: np.where((f > 900) & (f < 6500), 1 / np.sqrt(np.maximum(f, 1)), 0))
-    grit = grit / np.max(np.abs(grit)) * (0.5 + 0.5 * np.cos(2 * np.pi * 48 * t - 0.3)) ** 1.5
-
-    mix = (0.42 * whine * flutter + 0.3 * thrum / np.max(np.abs(thrum)) + 0.24 * air + 0.2 * grit)
-    return finish(np.tanh(1.25 * mix), 0.8)
-
-
-def firing(t, at, pitch, rng):
-    """One firing heard from outside the engine, starting at time `at`: a thump that drops in pitch and a muffled crack."""
-    local = np.maximum(t - at, 0)
-    gate = (t >= at) * np.minimum(local / 0.002, 1)
-    sweep = (48 + 95 * np.exp(-local / 0.028)) * pitch
-    thump = np.sin(2 * np.pi * np.cumsum(sweep * (t >= at)) / SR) * np.exp(-local / 0.07)
-    crack = band(rng.standard_normal(len(t)), 500 * pitch, 3800, 2) * np.exp(-local / 0.018)
-    body = lowpass(rng.standard_normal(len(t)), 520 * pitch) * np.exp(-local / 0.06)
-    return gate * (thump + 0.3 * crack + 0.5 * body)
-
-
-def engine_catch():
-    """An engine catching on the starter: four firings, each sooner, harder and higher than the last, over a breath of
-    exhaust that swells as it takes hold."""
-    rng = np.random.default_rng(41)
-    n = int(0.85 * SR)
-    t = np.arange(n) / SR
-    mix = np.zeros(n)
-    for at, level, pitch in ((0.02, 0.5, 0.82), (0.21, 0.7, 0.9), (0.36, 0.9, 0.98), (0.48, 1.0, 1.06), (0.58, 0.8, 1.12)):
-        mix += level * firing(t, at, pitch, rng)
-    breath = band(rng.standard_normal(n), 180, 1500, 2)
-    breath = breath / np.max(np.abs(breath)) * np.clip(t / 0.5, 0, 1) ** 2 * np.exp(-np.maximum(t - 0.55, 0) / 0.09)
-    mix = np.tanh(1.5 * (mix + 0.35 * breath))
-    mix *= np.clip((n - np.arange(n)) / (0.12 * SR), 0, 1)
-    return finish(mix)
-
-
-def engine_stall():
-    """An engine dying: its last firings come later and weaker, something inside knocks to a stop, and what is left in
-    the exhaust sighs out."""
-    rng = np.random.default_rng(43)
-    n = int(1.2 * SR)
-    t = np.arange(n) / SR
-    mix = np.zeros(n)
-    for at, level, pitch in ((0.01, 1.0, 1.0), (0.13, 0.8, 0.92), (0.29, 0.6, 0.84), (0.5, 0.42, 0.76)):
-        mix += level * firing(t, at, pitch, rng)
-    # The crank rocking back against compression: a dull knock with a short iron ring
-    local = np.maximum(t - 0.7, 0)
-    gate = (t >= 0.7) * np.minimum(local / 0.001, 1)
-    knock = gate * (band(rng.standard_normal(n), 300, 2400, 2) * np.exp(-local / 0.012) * 0.25
-                    + 0.45 * np.sin(2 * np.pi * 172 * local) * np.exp(-local / 0.05)
-                    + 0.12 * np.sin(2 * np.pi * 437 * local) * np.exp(-local / 0.035))
-    sigh = band(rng.standard_normal(n), 400, 5200, 2)
-    sigh = sigh / np.max(np.abs(sigh)) * np.clip((t - 0.45) / 0.2, 0, 1) * np.exp(-np.maximum(t - 0.65, 0) / 0.2)
-    mix = np.tanh(1.4 * (mix + knock + 0.16 * sigh))
-    mix *= np.clip((n - np.arange(n)) / (0.15 * SR), 0, 1)
-    return finish(mix)
-
-
-def exhaust_pop(seed, pitch):
-    """Unburned fuel lighting in a hot exhaust, as a real backfire sounds: a loud, hard-driven burst of noise with its
-    weight in the low mids (too much low end is a door slamming, too much top is keys dropped), dying over a tenth of a
-    second, and behind it a dense, uneven crackle of tiny pops rather than a few separate clicks. There are no fixed
-    tones and no isolated clicks in it."""
-    rng = np.random.default_rng(seed)
-    n = int(0.34 * SR)
-    t = np.arange(n) / SR
-
-    def burst(at, level, tone, length):
-        k = int(at * SR)
-        m = n - k
-        u = np.arange(m) / SR
-        acc = np.zeros(m)
-        for lo, hi, decay, gain in ((1800, 6500, 0.007, 0.55), (600, 2600, 0.02, 1.0), (220, 1000, 0.04, 1.0),
-                                    (90, 320, 0.05, 0.5)):
-            noise = band(rng.standard_normal(m), lo * tone, hi * tone, 2)
-            noise /= np.max(np.abs(noise))
-            # The strength stutters while it fades: combustion is turbulent, not a clean decay
-            grit = np.clip(1 + 0.3 * lowpass(rng.standard_normal(m), 200, 2) / 0.1, 0.5, 1.5)
-            acc += gain * noise * np.minimum(u / 0.0004, 1) * np.exp(-u / (decay * length)) * grit
-        out = np.zeros(n)
-        out[k:] = level * acc
-        return out
-
-    mix = burst(0.0, 1.0, pitch, 1.0)
-    # The crackle: a dense scatter of tiny pops (about 150 a second, thinning out), each a few hundred hertz wide
-    density = 55 * np.exp(-t / 0.09) / SR
-    hits = (rng.random(n) < density) * rng.uniform(0.3, 1.0, n) * rng.choice([-1, 1], n)
-    # Each tiny pop is a few samples of ringing noise, not a single-sample impulse, which would sound like digital grit
-    grain = np.exp(-np.arange(int(0.003 * SR)) / (0.0008 * SR)) * rng.standard_normal(int(0.003 * SR))
-    crackle = band(np.convolve(hits, grain)[:n], 350 * pitch, 2600, 2)
-    crackle = crackle / np.max(np.abs(crackle)) * np.minimum(t / 0.012, 1)
-    mix = mix / np.max(np.abs(mix)) + 0.55 * crackle * np.exp(-np.maximum(t - 0.02, 0) / 0.1)
-
-    # The pipe: a few close reflections, dulled, to put the pop in a space
-    echoes = np.zeros(n)
-    for _ in range(5):
-        d = int(rng.uniform(0.004, 0.045) * SR)
-        echoes[d:] += rng.uniform(0.15, 0.35) * lowpass(mix, 3000, 1)[:n - d]
-    mix = highpass(mix + echoes, 70)
-
-    # Driven, so it is loud and violent rather than a clean noise burst
-    # (a gentle drive: pushed harder than this the clipping turns the noise into something that sounds bitcrushed)
-    mix = lowpass(np.tanh(1.4 * mix / np.max(np.abs(mix))), 7500, 2)
-    mix *= np.clip((n - np.arange(n)) / (0.05 * SR), 0, 1)
-    return finish(mix)
 
 
 def metal_tick(seed, f0):
@@ -644,27 +461,6 @@ def turbo_fail(seed, pitch):
     return finish(mix, 0.82)
 
 
-def coolant_boil(seed, pitch):
-    """A block hot enough to boil: bubbles knocking about inside it, quicker through the middle, under a hiss of escaping steam."""
-    rng = np.random.default_rng(seed)
-    n = int(1.4 * SR)
-    t = np.arange(n) / SR
-    bubbles = np.zeros(n)
-    at = 0.02
-    while at < 1.25:
-        i = int(at * SR)
-        u = np.arange(n - i) / SR
-        f = rng.uniform(170, 420) * pitch
-        rise = 2 * np.pi * np.cumsum(f * (1 + 1.6 * np.minimum(u / 0.05, 1))) / SR
-        bubbles[i:] += rng.uniform(0.4, 1.0) * np.sin(rise) * np.minimum(u / 0.004, 1) * np.exp(-u / 0.022)
-        at += rng.uniform(0.025, 0.09)
-    swell = np.sin(np.pi * np.clip(t / 1.4, 0, 1))
-    steam = band(rng.standard_normal(n), 3000 * pitch, 9500, 2) * swell
-    mix = 0.9 * bubbles / np.max(np.abs(bubbles)) * (0.35 + 0.65 * swell) + 0.4 * steam / np.max(np.abs(steam))
-    mix *= np.clip((n - np.arange(n)) / (0.2 * SR), 0, 1) * np.minimum(t / 0.02, 1)
-    return finish(mix, 0.6)
-
-
 def apex_fail(seed, pitch):
     """A rotor's apex seal letting go: a sharp snap of hard metal, the broken strip clattering round the chamber as the shaft carries it,
     slower with every turn until it jams, and the wheeze of compression blowing past the tip that is no longer sealed."""
@@ -720,14 +516,9 @@ SOUNDS = {
     "cylinder_fire2": lambda: bang(23, 0.9, 0.78),
     "cylinder_fire3": lambda: bang(37, 1.1, 1.3),
     "starter_whir": starter_loop,
-    "turbo_whistle": turbo_loop,
-    "turbo_blowoff": turbo_blowoff,
-    "supercharger_whine": supercharger_loop,
-    "engine_catch": engine_catch,
-    "engine_stall": engine_stall,
-    "exhaust_pop1": lambda: exhaust_pop(53, 1.0),
-    "exhaust_pop2": lambda: exhaust_pop(59, 0.88),
-    "exhaust_pop3": lambda: exhaust_pop(61, 1.14),
+    **boost_sounds.SOUNDS,
+    **start_stall_sounds.SOUNDS,
+    **exhaust_pop_sounds.SOUNDS,
     "metal_tick1": lambda: metal_tick(67, 3000),
     "metal_tick2": lambda: metal_tick(71, 3600),
     "metal_tick3": lambda: metal_tick(73, 2500),
@@ -750,8 +541,6 @@ SOUNDS = {
     "head_warp1": lambda: head_warp(173, 1.0),
     "head_warp2": lambda: head_warp(179, 0.88),
     "turbo_fail1": lambda: turbo_fail(181, 1.0),
-    "coolant_boil1": lambda: coolant_boil(193, 1.0),
-    "coolant_boil2": lambda: coolant_boil(197, 0.88),
     "turbo_fail2": lambda: turbo_fail(191, 0.87),
 }
 
@@ -795,10 +584,11 @@ def main():
             sys.exit("Unknown sound %r; the sounds are: %s" % (name, ", ".join(SOUNDS)))
     lib = None if preview else load_sndfile()
     for name in names:
+        samples = sound_levels.level(name, SOUNDS[name]())
         if preview:
-            write_wav(preview, name, SOUNDS[name]())
+            write_wav(preview, name, samples)
         else:
-            write_ogg(lib, name, SOUNDS[name]())
+            write_ogg(lib, name, samples)
 
 
 if __name__ == "__main__":

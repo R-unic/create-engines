@@ -1,5 +1,6 @@
 package com.createengines.content.starter;
 
+import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.level.BlockGetter;
@@ -101,5 +102,11 @@ public class StarterBlock extends DirectionalKineticBlock implements IBE<Starter
 	protected VoxelShape getShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext context) {
 		return PartShapes.STARTER[state.getValue(FACING)
 			.ordinal()];
+	}
+
+	/** A full cube to anything mounted on it: the outline follows the motor, but a button or lever still has to go on. */
+	@Override
+	protected VoxelShape getBlockSupportShape(BlockState state, BlockGetter level, BlockPos pos) {
+		return Shapes.block();
 	}
 }

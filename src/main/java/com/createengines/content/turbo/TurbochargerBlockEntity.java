@@ -7,8 +7,10 @@ import org.jetbrains.annotations.Nullable;
 
 import com.createengines.config.CEClientConfig;
 import com.createengines.content.EffectRate;
+import com.createengines.content.EngineNoteSound;
 import com.createengines.content.LoopSource;
 import com.createengines.content.MachineLoopSound;
+import com.createengines.content.effects.BlowOffCrowd;
 import com.createengines.content.effects.EngineEffects;
 import com.createengines.content.effects.GasParticleOptions;
 import com.createengines.content.effects.VentJet;
@@ -34,6 +36,7 @@ import com.createengines.engine.sim.Wear;
 import net.minecraft.core.Direction;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.NbtUtils;
 import net.minecraft.network.chat.Component;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.level.block.entity.BlockEntityType;
@@ -60,11 +63,17 @@ public class TurbochargerBlockEntity extends SmartBlockEntity
 	/** Wheel degrees turned per tick at design speed. */
 	private static final float WHEEL_DEGREES_PER_TICK = 60;
 
+	/** Client only: the blow-offs and the wastegate chuffs heard lately, so many turbos together do not add up. */
+	private static final BlowOffCrowd BLOW_OFFS = new BlowOffCrowd();
+	private static final BlowOffCrowd CHUFFS = new BlowOffCrowd();
+
 	public ScrollValueBehaviour limit;
 	/** Anti-lag, 0 (off) to {@link Turbocharger#MAX_ANTI_LAG}. */
 	public ScrollValueBehaviour antiLag;
 
 	private @Nullable TurboStatus status;
+	/** The primary crankshaft of the engine that sent it, so that engine's note can carry the whistle. Synced, never saved. */
+	private @Nullable BlockPos engine;
 	private float wheelAngle;
 	private float wheelSpeed;
 	/** Client only: whether the wastegate was being held open by redstone at the last tick, and the best boost lately. */
@@ -166,9 +175,10 @@ public class TurbochargerBlockEntity extends SmartBlockEntity
 		return status;
 	}
 
-	public void updateStatus(TurboStatus next) {
-		if (!next.differsFrom(status))
+	public void updateStatus(BlockPos primary, TurboStatus next) {
+		if (!next.differsFrom(status) && primary.equals(engine))
 			return;
+		engine = primary.immutable();
 		status = next;
 		sendData();
 	}
@@ -178,6 +188,7 @@ public class TurbochargerBlockEntity extends SmartBlockEntity
 		if (status == null)
 			return;
 		status = null;
+		engine = null;
 		sendData();
 	}
 
@@ -190,7 +201,7 @@ public class TurbochargerBlockEntity extends SmartBlockEntity
 			wheelAngle = (wheelAngle + wheelSpeed) % 360;
 			if (status != null && status.antiLag() && level.random.nextInt(2) == 0)
 				antiLagPop();
-			if (loopLevel() > 0.02f)
+			if (loopLevel() > 0.02f && !EngineNoteSound.carryTurbo(engine, this, worldPosition, 0.09f))
 				MachineLoopSound.ensurePlaying(this, worldPosition, CESounds.TURBO_WHISTLE.get(), 0.09f, this);
 			blowOff();
 			ventJet();
@@ -206,10 +217,10 @@ public class TurbochargerBlockEntity extends SmartBlockEntity
 		return x * x * (3 - 2 * x);
 	}
 
-	/** From a low hum at a slow wheel to a whistle at design speed, kept well below the shrill end of the recording. */
+	/** From a low breath at a slow wheel to a whistle at design speed, climbing well over an octave on the way. */
 	@Override
 	public float loopPitch() {
-		return 0.55f + 0.5f * Math.min(1.2f, status == null ? 0 : status.spool());
+		return com.createengines.content.effects.Pitches.turboWhistle(status == null ? 0 : status.spool());
 	}
 
 	/** The wheel is slower to come up to its whistle than the gauge is to say so, and it coasts on after the exhaust lets go. */
@@ -245,18 +256,23 @@ public class TurbochargerBlockEntity extends SmartBlockEntity
 		if (chuffs && CEClientConfig.particles())
 			wastegateChuff(boost);
 		if (chuffs && CEClientConfig.boostVolume() > 0)
-			level.playLocalSound(worldPosition, CESounds.TURBO_BLOWOFF.get(), SoundSource.BLOCKS,
-				Math.min(0.9f, 0.3f + boost * 0.5f) * CEClientConfig.boostVolume(), 1.15f + level.random.nextFloat() * 0.1f,
-				false);
+			valveSound(CHUFFS, Math.min(0.9f, 0.3f + boost * 0.5f), 1.2f);
 		if (opens && heldBoost >= 0.25f) {
 			if (CEClientConfig.boostVolume() > 0)
-				level.playLocalSound(worldPosition, CESounds.TURBO_BLOWOFF.get(), SoundSource.BLOCKS,
-					Math.min(1.2f, 0.4f + heldBoost) * CEClientConfig.boostVolume(), 0.95f + level.random.nextFloat() * 0.1f,
-					false);
+				valveSound(BLOW_OFFS, Math.min(1.2f, 0.4f + heldBoost), 1);
 			if (CEClientConfig.particles())
 				ventCharge(heldBoost);
 		}
 		wasVenting = venting;
+	}
+
+	/** The blow-off recording at about {@code pitch}, softer or not at all when others by it have only just played. */
+	private void valveSound(BlowOffCrowd crowd, float volume, float pitch) {
+		float share = crowd.share(level.getGameTime(), worldPosition.getX(), worldPosition.getY(), worldPosition.getZ());
+		if (share > 0)
+			level.playLocalSound(worldPosition, CESounds.TURBO_BLOWOFF.get(), SoundSource.BLOCKS,
+				volume * share * CEClientConfig.boostVolume(),
+				com.createengines.content.effects.Pitches.near(pitch, level.random.nextFloat()), false);
 	}
 
 	/**
@@ -334,7 +350,7 @@ public class TurbochargerBlockEntity extends SmartBlockEntity
 		Vec3 at = Vec3.atCenterOf(worldPosition)
 			.add(out.scale(0.6));
 		if (popRate.allow(level)) {
-			EngineEffects.afterfire(level, at, out, 0.45f, 1.25f);
+			EngineEffects.afterfire(level, engine, at, out, 0.45f, 1.25f);
 			return;
 		}
 		if (!CEClientConfig.particles())
@@ -446,6 +462,8 @@ public class TurbochargerBlockEntity extends SmartBlockEntity
 			tag.putBoolean("WearFailed", true);
 		if (clientPacket && status != null)
 			tag.put("Status", status.write());
+		if (clientPacket && engine != null)
+			tag.put("Engine", NbtUtils.writeBlockPos(engine));
 	}
 
 	@Override
@@ -458,6 +476,9 @@ public class TurbochargerBlockEntity extends SmartBlockEntity
 			status = TurboStatus.read(tag.getCompound("Status"));
 		else if (clientPacket)
 			status = null;
+		if (clientPacket)
+			engine = NbtUtils.readBlockPos(tag, "Engine")
+				.orElse(null);
 	}
 
 	@Override

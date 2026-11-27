@@ -121,7 +121,7 @@ public final class CELang {
 			"Sets each injector's shot from the air its cylinder drew in, trimming a shot that is too big and topping up one that is too small, up to the most the injector can give. Fuel Metering no longer applies. The redstone output is the size of the breath, 15 for one half as large again as the bore");
 
 		raw("goggles.heat_exchanger", "Exhaust Heat Exchanger");
-		raw("goggles.heat_exchanger.heat", "Exhaust heat: %1$s per second");
+		raw("goggles.heat_exchanger.heat", "Exhaust heat: %1$s HU/s");
 		raw("goggles.heat_exchanger.cold", "Cold: not enough heat to warm a basin");
 		raw("goggles.heat_exchanger.warm", "Warm: too little heat to cook anything yet");
 		raw("goggles.heat_exchanger.heated", "Heating a basin on top of it");
@@ -163,7 +163,7 @@ public final class CELang {
 		raw("goggles.recorder.states", "State   %1$s");
 		raw("goggles.recorder.event", "%1$s ago: %2$s to %3$s");
 		raw("goggles.recorder.event_cause", "%1$s ago: %2$s to %3$s, %4$s");
-		raw("goggles.recorder.hint", "Dots are stalled, light shading cranking, medium coasting, solid running and dark overloaded. Warmth is against the 0.7 a warm engine settles at, so a long way under 100 is a cold engine");
+		raw("goggles.recorder.hint", "Dots are stalled, light shading cranking, medium coasting, solid running and dark overloaded. A warm engine settles near 90°C, so far below that is a cold engine");
 		raw("value.replay", "Replay");
 		raw("value.replay.live", "Live");
 		raw("value.replay.back", "%1$s back");
@@ -297,7 +297,7 @@ public final class CELang {
 		raw("goggles.mixture.balanced", "balanced");
 		raw("goggles.mixture.suggest", "Try about %1$s%% fuel metering at this speed, or tune it with a Timing Tool");
 		raw("goggles.ignition.spark", "Spark ignition");
-		raw("goggles.compression", "Charge temperature: %1$s (fuel ignites at %2$s)");
+		raw("goggles.compression", "Charge temperature: %1$s°C (fuel ignites at %2$s°C)");
 		raw("goggles.timing", "Valve timing: %1$s");
 		raw("goggles.timing.on_time", "on time");
 		raw("goggles.timing.early", "%1$s° early");
@@ -363,10 +363,10 @@ public final class CELang {
 		raw("goggles.wear.turbo", "Turbocharger wear: %1$s%%");
 		raw("goggles.wear.turbo_failed", "Turbocharger failed: it makes no boost until it is replaced");
 		raw("goggles.wear.heavy_turbo", "Heavy wear: only a new turbocharger cures it, and one this worn can fail");
-		raw("goggles.wear.rod.light", "Light connecting rod: less drag at speed, wears fast under load");
-		raw("goggles.wear.rod.heavy", "Heavy connecting rod: takes load well, drags more at speed");
-		raw("tooltip.rod.light", "A little less friction at speed; wears fast under load");
-		raw("tooltip.rod.heavy", "Takes load well; a little more friction at speed");
+		raw("goggles.wear.rod.light", "Light connecting rod: less drag, revs up sooner, runs rougher");
+		raw("goggles.wear.rod.heavy", "Heavy connecting rod: runs smoother, revs up slower, drags more");
+		raw("tooltip.rod.light", "Less friction at speed and quicker to rev, but rougher. In wear mode: wears fast under load");
+		raw("tooltip.rod.heavy", "Smoother running, but slower to rev with a little more friction. In wear mode: takes load well");
 		raw("tooltip.wear.failed", "Wrecked: placing it again repairs nothing");
 		raw("message.wear.seals_fitted", "New apex seals fitted");
 		raw("goggles.fault.no_plug", "No spark plug: the chamber is too long and thin for the charge to light itself");
@@ -382,6 +382,8 @@ public final class CELang {
 		raw("goggles.lobe_cylinders", "Actuates %1$s cylinder(s)");
 		raw("goggles.lobe_shared", "Times the first at its angle; the others follow their own crank angles");
 		raw("goggles.fuel_rack", "Fuel rack: %1$s%%");
+		raw("goggles.fuel_cut", "Fuel cut: redstone on the camshaft");
+		raw("tooltip.camshaft.fuel_cut", "Redstone on any block closes the fuel rack; 15 stops the engine");
 
 		raw("goggles.starter", "Starter");
 		raw("goggles.starter.idle", "Idle: needs a redstone signal, and rotation on its input unless a battery can turn it (spark engines only)");
@@ -413,7 +415,7 @@ public final class CELang {
 		raw("goggles.radiator", "Radiator");
 		raw("goggles.radiator.no_engine", "Not touching an engine's crankshaft, cylinder or cylinder head, or the engine has not run lately");
 		raw("goggles.radiator.empty", "Empty: fill it with water or Engine Coolant by bucket or pipe");
-		raw("goggles.radiator.shedding", "Shedding %1$s heat a second");
+		raw("goggles.radiator.shedding", "Shedding %1$s HU/s");
 		raw("goggles.radiator.air.still", "Still air: an Encased Fan blowing at it, or speed on a moving structure, sheds more");
 		raw("goggles.radiator.air.fan", "Fan air: %1$sx the still-air cooling");
 		raw("goggles.radiator.air.ram", "Ram air: %1$sx the still-air cooling");
@@ -497,8 +499,8 @@ public final class CELang {
 		// Recipe viewer pages (JEI and EMI) for the column's routes. EMI names a category by its own key.
 		raw("recipe.fuels.title", "Engine Fuels");
 		raw("recipe.parts.title", "Engine Parts");
-		raw("recipe.fuel.boost.takes", "Takes hard boost: it lights early only past a charge temperature of %1$s");
-		raw("recipe.fuel.boost.limited", "Lights early under boost, past a charge temperature of %1$s");
+		raw("recipe.fuel.boost.takes", "Takes hard boost: it lights early only past a charge temperature of %1$s°C");
+		raw("recipe.fuel.boost.limited", "Lights early under boost, past a charge temperature of %1$s°C");
 		raw("recipe.part.install", "Right-click it into the block. Sneak with an empty hand to take it out");
 		raw("recipe.part.precision", "A precision part fills the same slot as the plain one and improves it");
 		raw("recipe.part.fits", "Goes into:");

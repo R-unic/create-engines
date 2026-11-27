@@ -54,7 +54,8 @@ Minecraft 1.21.1 · NeoForge 21.1.219 or newer · Create 6.0.10 (build 257 or ne
   against boost better than gasoline; methanol carries the least in the bucket and cools the charge most, so it is the
   fuel to push a boosted build with, at a heavy fuel bill
 - Stopping an engine: a redstone signal on any block of a camshaft line closes that line's fuel rack, and full strength cuts
-  the fuel, so a lever stops the engine without emptying anything (an engine with a camshaft per bank needs a signal on each)
+  the fuel, so a lever stops the engine without emptying anything (an engine with a camshaft per bank needs a signal on each).
+  Goggles then say "Fuel cut: redstone on the camshaft"
 - A craftable fuel chain: seeds (or saplings, sunflowers, cocoa beans, dried kelp) to plant oil to diesel, diesel to kerosene with glowstone, sugar crops to ethanol, logs and
   water to methanol over a superheated base, and biodiesel with glycerin on the
   side, all in Create basins. The loop closes: glycerin goes into engine oil and coolant, and used oil is burned as fuel or recycled into oil or charcoal
@@ -108,8 +109,10 @@ Minecraft 1.21.1 · NeoForge 21.1.219 or newer · Create 6.0.10 (build 257 or ne
   block can blow a sound gasket, seize an oiled piston and warp a head. Four head gaskets (stock, cardboard, rubber,
   copper), Apex Seals and a Service Kit to put light wear right. Off, nothing wears. The numbers are in
   [docs/WEAR.md](docs/WEAR.md)
-- **Light and Heavy Connecting Rods**: a light rod drags a little less at speed and wears fast under load, a heavy one
-  takes load well and drags a little more. The difference in drag is there with the wear mode off too
+- **Light and Heavy Connecting Rods**: a light rod drags a little less and gives the crank less to swing, so the engine
+  revs up sooner but runs rougher. A heavy one drags a little more and adds mass, so it runs smoother (a lumpy engine
+  keeps more of its stress) but changes speed slower. Both work with the wear mode off; with it on, a light rod also
+  wears fast under load and a heavy one slowly
 - **Engine readouts**: a Display Link set against a crankshaft shows an engine's state, speed, load, temperature and
   oil on a display board or nixie tubes, and a comparator reads any of an oil sump's tanks, so a pump or an alarm can
   keep the oil topped up
@@ -129,18 +132,21 @@ Minecraft 1.21.1 · NeoForge 21.1.219 or newer · Create 6.0.10 (build 257 or ne
 - Flywheels that matter: a rough engine is rated for less, and rotating mass smooths it out
 - A 13-gear transmission with an Auto mode that shifts to suit the engine, and a **Dynamometer** that draws an engine's torque and power curves
 - A **Black Box** flight recorder that keeps ten minutes of an engine's speed, load and temperature and says why it stalled
-- An exhaust note made up from the engine's speed and firing order, so a V-twin lopes, a six hums and a dead cylinder limps
-- A **Muffler** that quiets the note, the bangs and the pops without costing the engine any power, and **Engine Casing**
+- An exhaust note made up from the engine's speed, firing order and build, so a V-twin lopes, a six hums and a dead cylinder
+  limps; each exhaust run rings its own pipe (a crossplane V8 burbles where a flat-plane does not), a diesel knocks, the cams
+  casing dulls it, distance and walls muffle it, a room answers it, and a build full of engines blends into one sound instead of a wall of bangs
+- A **Muffler** that quiets the note, the bangs and the pops (and dulls the note) without costing the engine any power, and **Engine Casing**
   that joins into one plate and clads cylinders, pipes, cams, and Create's own shafts and cogwheels to hide the sprawl, in
   plain, riveted, louvred and window styles and any of Create's dye colours. A **Rain Cap** flaps on an exhaust outlet, and
   a **Maker's Plate** carries an engine's name, its builder and the figures from its last Dynamometer run. All of it is
   cosmetic and never changes an engine's rating
 - Exhaust that tells the truth: a thin haze when the mixture is right, black when it is rich, white vapour until the
   block warms, a blue cast when fuel has thinned the oil, and a crack of flame when unburned fuel meets a hot pipe.
-  Engines cough as they catch and knock as they die, tick as they cool, squeal and spark when they run dry, draw the
+  Engines cough as they catch and knock as they die (a cold start, a stall under load and running dry each sound
+  their own way, and size shows), tick as they cool, squeal and spark when they run dry, draw the
   air in at their intakes and steam in the rain. Pistons slap about in their bores by how rough the engine is, a V's
   valley cam shows its pushrods, and every cause the goggles name (rich, lean, a fouled plug, a dry sump, a flood, a
-  blocked exhaust, a gasoline pre-ignition rattle, an overload) has a sight or a sound of its own
+  blocked exhaust, a gasoline pre-ignition spit, an overload) has a sight or a sound of its own
 - Nothing burns underwater: water against a cylinder, a head or a rotor housing stops the engine wherever its pipes
   lead, and so does an intake or exhaust that opens in it. A flood stops an engine; it does not wash it away
 
@@ -159,7 +165,7 @@ Minecraft 1.21.1 · NeoForge 21.1.219 or newer · Create 6.0.10 (build 257 or ne
 The server config (`serverconfig/create_engines-v2-server.toml` in the world) is grouped into `[calibration]`
 (`stressPerTorque`, the inertia and friction values), `[limits]` (how far the scanner follows a crankshaft, a manifold or a
 coupling, how big a battery bank gets, and the range a Throttle Body's dial offers), `[balance]` multipliers (`fuelConsumption`, `precisionBonus`, `boostStrength`, `rotaryPower`, `heatRecoveryOutput`,
-`coolingBonus`, `torsionalFlex`, `alternatorEnergy`), `[features]` switches (`forcedInduction`, `sparkFouling`, `oilDilution`,
+`coolingBonus`, `torsionalFlex`, `alternatorEnergy`, `rpmScale`), `[features]` switches (`forcedInduction`, `sparkFouling`, `oilDilution`,
 `oilAgeing`, `engineTemperature`, `pilotInjection`, `rotaryEngines`, `heatRecovery`, `batteryCold`, `crankingDraw`, `meterAllHeads`,
 `wearMode`) and `[compat]` (`altitudeThinning`, `sableAirPressure`, `altitudeStart`, `altitudeScale`, `altitudeFloor`, `fuelFire`,
 `fuelFireByVolatility`, and `pollution`, `pollutionRate`, `carbonRate`, `sulfurRate`, `pollutionAreaCap` and
@@ -222,6 +228,9 @@ Create caps rotation at 256 RPM by default, and engines hit that ceiling. We rec
 512 (higher works too). The engine simulation is built to stay cheap at speed, and its torque rating follows the
 limit you set. Everything else on the kinetic network still obeys Create's own rules.
 
+For faster shafts without stronger engines, set `balance.rpmScale` ([docs/CONFIG.md](docs/CONFIG.md)): at 2, with Create's
+limit at 512, an engine that gave its SU at 256 RPM gives the same SU at 512.
+
 ## Building
 
 ```bash
@@ -234,7 +243,7 @@ see docs/SMOKE.md) and `./gradlew runVisualSmokeTest` (builds an engine and save
 
 The trailer is made by a harness, so it can be cut again when the mod changes: `python tools/trailer/record.py` plays the
 game with shaders, records it and writes the full trailer, a teaser, a vertical cut for Shorts, thumbnails and the video descriptions to
-`run/trailer/` (it needs ffmpeg and Pillow; the full cut is kept to 180 seconds). `python tools/gallery.py` retakes the mod
+`run/trailer/` (it needs ffmpeg and Pillow; the full cut is kept to 240 seconds). `python tools/gallery.py` retakes the mod
 page's pictures, each kept under 2 MB. Both are in [docs/SMOKE.md](docs/SMOKE.md) and open a real game window, so do not run
 them while doing something else on the machine.
 

@@ -102,34 +102,3 @@ write_png("cardboard_gasket", gasket(CARDBOARD, 11, False, 4.0))
 write_png("rubber_gasket", gasket(RUBBER, 12, False, 3.5))
 write_png("copper_gasket", gasket(COPPER, 13, True, 7.5))
 write_png("service_kit", kit())
-
-
-STEEL = ramp("23272b", "343a40", "474e56", "5b636c", "707984", "87909b", "9fa8b2", "b9c1c9", "d3d9df")
-
-
-def rod(colours, width, seed):
-    """A connecting rod lying corner to corner: a small eye at the top, a big one at the bottom, and a shank as thick as {width}."""
-    rows = []
-    last = len(colours) - 1
-    for y in range(16):
-        row = []
-        for x in range(16):
-            along = ((x - 3.5) - (y - 12.0)) / 2.0  # 0 at the big end, about 8.5 at the small one
-            across = ((x - 3.5) + (y - 12.0)) / math.sqrt(2)
-            big = math.hypot(x - 4.5, y - 11.0)
-            small = math.hypot(x - 11.5, y - 4.0)
-            inside = 0.4 <= along <= 7.8 and abs(across) <= width
-            inside = (inside or 1.2 <= big <= 3.4 or 0.9 <= small <= 2.5) and big >= 1.2 and small >= 0.9
-            if not inside:
-                row.append(CLEAR)
-                continue
-            shade = last * 0.62 - across * 0.9 + (hashed(x, y, seed) - 0.5) * 1.2
-            if big > 2.7 and big <= 3.4 or small > 1.9 and small <= 2.5:
-                shade -= 1.6
-            row.append(colours[max(0, min(last, round(shade)))] + (255,))
-        rows.append(row)
-    return rows
-
-
-write_png("light_connecting_rod", rod(BRASS[3:], 0.8, 20))
-write_png("heavy_connecting_rod", rod(STEEL, 2.0, 21))

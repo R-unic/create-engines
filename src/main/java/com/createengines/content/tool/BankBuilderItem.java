@@ -346,19 +346,23 @@ public class BankBuilderItem extends Item {
 					level.setBlockAndUpdate(cylinderPos, cylinder);
 					cylinders++;
 				}
-				if (precision && cylinder.getBlock() instanceof CylinderBlock existing && !existing.precision()) {
+				// A wreck is not the builder's to clear: no part goes in and no block is swapped until a Service Kit has cleared it
+				boolean wrecked = level.getBlockEntity(cylinderPos) instanceof com.createengines.content.cylinder.CylinderBlockEntity body
+					&& body.showsThrown();
+				if (!wrecked && precision && cylinder.getBlock() instanceof CylinderBlock existing && !existing.precision()) {
 					Block better = supplies.takeBlock(CEBlocks.PRECISION_CYLINDER.get());
 					if (better != null) {
 						BlockState swapped = better.defaultBlockState();
 						for (var property : cylinder.getProperties())
 							swapped = copy(cylinder, swapped, property);
-						level.setBlockAndUpdate(cylinderPos, swapped);
+						BlockSwap.keepingContents(level, cylinderPos, swapped);
 						supplies.giveBack(new ItemStack(CEBlocks.CYLINDER.get()));
 						cylinder = swapped;
 						counts[1]++;
 					}
 				}
-				fillCylinder(level, cylinderPos, cylinder, supplies, precision, counts);
+				if (!wrecked)
+					fillCylinder(level, cylinderPos, cylinder, supplies, precision, counts);
 
 				BlockState head = level.getBlockState(headPos);
 				if (!(head.getBlock() instanceof CylinderHeadBlock) || head.getValue(CylinderHeadBlock.FACING) != bore) {
@@ -377,13 +381,15 @@ public class BankBuilderItem extends Item {
 					level.setBlockAndUpdate(headPos, head);
 					heads++;
 				}
-				if (precision && head.getBlock() instanceof CylinderHeadBlock existing && !existing.precision()) {
+				boolean ruined = level.getBlockEntity(headPos) instanceof com.createengines.content.head.CylinderHeadBlockEntity top
+					&& (top.showsBroken() || top.showsWarped());
+				if (!ruined && precision && head.getBlock() instanceof CylinderHeadBlock existing && !existing.precision()) {
 					Block better = supplies.takeBlock(CEBlocks.PRECISION_CYLINDER_HEAD.get());
 					if (better != null) {
 						BlockState swapped = better.defaultBlockState();
 						for (var property : head.getProperties())
 							swapped = copy(head, swapped, property);
-						level.setBlockAndUpdate(headPos, swapped);
+						BlockSwap.keepingContents(level, headPos, swapped);
 						supplies.giveBack(new ItemStack(CEBlocks.CYLINDER_HEAD.get()));
 						head = swapped;
 						counts[1]++;
@@ -498,6 +504,8 @@ public class BankBuilderItem extends Item {
 				changed = true;
 			}
 		} else if (precision && !state.getValue(CylinderBlock.FORGED_PISTON)
+			// A seized piston comes out only with a Service Kit
+			&& !(level.getBlockEntity(pos) instanceof com.createengines.content.cylinder.CylinderBlockEntity stuck && stuck.showsSeized())
 			&& supplies.takeItem(CEItems.FORGED_PISTON) != null) {
 			state = state.setValue(CylinderBlock.FORGED_PISTON, true);
 			// The piston that comes out is as worn as it was in the bore, like one taken out by hand
@@ -559,7 +567,7 @@ public class BankBuilderItem extends Item {
 			for (ItemEntry<Item> item : items) {
 				if (free)
 					return item;
-				if (take(stack -> item.isIn(stack) && WearService.wearOf(stack) <= 0))
+				if (take(stack -> item.isIn(stack) && WearService.isNew(stack)))
 					return item;
 			}
 			return null;
@@ -570,7 +578,7 @@ public class BankBuilderItem extends Item {
 			for (Block block : blocks) {
 				if (free)
 					return block;
-				if (take(stack -> stack.is(block.asItem())))
+				if (take(stack -> stack.is(block.asItem()) && WearService.isNew(stack)))
 					return block;
 			}
 			return null;

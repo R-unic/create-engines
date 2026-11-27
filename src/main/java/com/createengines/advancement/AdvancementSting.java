@@ -20,7 +20,7 @@ import net.neoforged.neoforge.network.registration.PayloadRegistrar;
  */
 public final class AdvancementSting {
 
-	/** The one packet this mod sends: {@code big} is true for a challenge. */
+	/** The sting's packet: {@code big} is true for a challenge. */
 	public record Payload(boolean big) implements CustomPacketPayload {
 
 		public static final Type<Payload> TYPE = new Type<>(CreateEngines.asResource("sting"));
@@ -47,6 +47,7 @@ public final class AdvancementSting {
 			.optional();
 		registrar.playToClient(Payload.TYPE, Payload.CODEC, (payload, context) -> Receiver.play(payload.big()));
 		com.createengines.content.blueprint.BlueprintImport.register(registrar);
+		com.createengines.config.WearModeSync.register(registrar);
 	}
 
 	public static void onEarned(AdvancementEvent.AdvancementEarnEvent event) {

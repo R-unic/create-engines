@@ -34,7 +34,8 @@ The audit's `threads` phase (`ThreadChurnAudit`) is for what no unit test reache
 and the render thread working while the integrated server ticks on its own. Beside running engines the client reloads the
 sound engine, stops and pauses its sounds, reloads the resource packs and throws away what it has drawn, while the server
 thread breaks and rebuilds two of the engines and runs `/reload`. An engine note has to come back within 100 ticks of each
-sound break, and the engines, both threads, the voice counts and direct memory have to be sound afterwards. An exception on
+sound break, every sound reload has to go through the fix for Minecraft's sound stop race (`SoundStopRaceMixin`), and the engines, both threads,
+the voice counts and direct memory have to be sound afterwards. An exception on
 any thread fails the log check. A pass does not prove there is no race: it gives one many chances to happen. Nothing is
 judged by ear.
 
@@ -187,20 +188,112 @@ To re-prove the harness: make a *separate* copy, run `./scripts/smoke-mutations.
 run the Gradle task it names, and check every `EXPECT` line appears among the failures. It refuses to run in a folder with
 `.git`.
 
+## The sound bench
+
+Step 0 of [SOUND-PLAN.md](SOUND-PLAN.md): the game's own sound, recorded and audited, so a change to the sound shows its figures
+from the game and not only from an offline render. It is not part of `./gradlew smoke`: it needs a machine with speakers that
+nothing else is using. The release gate asks for it only when a release changes the sound system somewhat significantly
+([STABILITY.md](STABILITY.md), 2.6).
+
+```
+/c/Python312/python.exe tools/sound_bench.py                 # everything, about 30 minutes
+/c/Python312/python.exe tools/sound_bench.py --scenes v12    # one scene or a few, while iterating
+/c/Python312/python.exe tools/sound_bench.py --moving        # the moving structure only, with Create Aeronautics loaded
+python tools/sound_audit.py run/sound-bench/<date-time>      # audit a finished run again, without the game
+python tools/sound_audit.py --self-test                      # the audit finds made-up faults and passes clean sound
+```
+
+It needs `soundcard`, `numpy` and `scipy`. The runner copies the checkout to `create-engines-soundbench`, runs
+`gradlew runVisualSmokeTest -PsmokeSound` there and records what the default speakers play. Keep them on and everything else
+quiet, and never run it beside a trailer recording: each would record the other. All sound categories but blocks are turned
+off in that copy.
+
+* **Scenes** (`client/ShowcaseRunSoundBench`; `--scenes` takes these names): `single` (diesel), `i4`, `v8_cross`, `v8_flat`,
+  `flat4`, `vtwin`, `i6_diesel`, `v12`, `rotary`, `turbo_i4`, `reference` (silence, a furnace, a minecart, a Mechanical
+  Press), `walls` and `indoors` (below) and, last, `room` (one single, then fifteen more round it, heard from the same spot,
+  then all of them removed).
+  Engines have open exhausts and are heard from 6 blocks. Each runs one script: start, idle, throttle sweep, blip, a load
+  step (a clutch engages Mechanical Presses, fewer for the small engines), stall (its air is taken away), restart, then the
+  listener walks to 34 blocks and back. The rotary idles with its throttle wider open: at the others' idle stop it runs too
+  lean to light.
+* **The soak** (`soak`, `client/ShowcaseRunSoundBenchSoak`, about 4 minutes): the listener stands among sixteen singles.
+  One runs alone first, then all sixteen: as they come up, after time to settle, while the listener paces through them,
+  and standing again for a minute. The audit's faults: the crowd more than 6 dB above the one from the same spot,
+  getting louder as it settles or while left alone (over 1.5 dB), or a second of it played again almost sample for
+  sample (correlation over 0.97, a loop). It reports the loudness against the loudest of the three reference sounds but
+  sets no limit on it. It does not play a warning: warnings are separate sounds that none of the many-engine rules
+  touch, and the capture could not tell one from the engines well enough to judge its level.
+* **Where it is heard** (`client/ShowcaseRunSoundBenchPlaces`): one idling inline four each. `walls` listens from 12 blocks
+  with nothing in the way, then through one, two and three blocks of stone, then in the open again. `indoors` listens from
+  6 blocks out of doors, shut in a stone room with the engine, and out of doors again. `moving` is only run by `--moving`
+  (gradle `runSoundBenchAeronautics`, with Create Aeronautics and Sable): the engine is lifted into a moving structure,
+  held beside the listener, then carried 24 blocks to each side at 8 blocks a second. It has no reference sounds, so its
+  timing is not checked against the Mechanical Press.
+* **The log** (`events.jsonl`) has each phase, each firing as it is drawn, cam sightings, the volume and pitch each tickable
+  engine sound is set to, each read of a note stream, and the engine's speed and load each tick. The mod reports them
+  through `content/SoundProbe`, which does nothing unless the bench is listening. It also has how long each stretch of a
+  stream took to make, and each look round the world for walls or a room.
+* **The audit** (`report.md`, `report.json`, and `wav/<scene>.wav`) reports stream underruns and the least audio a stream
+  had queued; silent gaps while an engine runs; short bursts above 6 kHz that no firing explains; volume or pitch jumping from
+  one tick to the next (from the log) and 50 ms level stairs (from the recording); how long after each firing drawn it is
+  heard; loudness against the three reference sounds; the room of sixteen against its one engine (limit 6 dB); and how
+  alike one firing is to the next. It also reports **how late a change is heard** (how long audio waits in a stream's queue:
+  worked out from the log, not heard, and without the synthesizer's follow, the sound card or the look-ahead), **what the
+  sound costs** (the sound thread's share of one core against the roadmap's 2%, by the clock, and the game thread's looks
+  round the world), and for `walls`, `indoors` and `moving` each phase's loudness and brightness (the middle of its
+  spectrum) against the scene's first. Under **Faults found** it names the room still sounding after its engines are gone
+  ([a bug since fixed](SOUND-PLAN.md#known-bug-the-shared-room-voice-outlives-its-engines-fixed)), and any scene of one
+  engine that played two of its notes at once for over a second (how stacked copies on a moving structure would show).
+  The note's and the room voice's source volumes do not move: their fades are inside the stream, so only the recording can
+  show a stair in them.
+  `--compare <earlier run>` puts that run's figures beside the new ones.
+* **A/B with real engines:** `--refs <folder>` with `<scene>.wav` recordings writes `ab/<scene>.wav`: the real one, a second
+  of silence, the game's, at the same loudness. No recordings are in the repository; which engines to compare with is the
+  author's choice.
+
+Read the figures for what they are. Lag is measured against a clap the game plays through its own sound, so 0 ms means as late
+as any other sound the game plays at once, not the delay to the ear. A firing's onset is only looked for within 0.45 of the gap
+to the next, so on a busy engine a lag is known only to within that window (shown beside it), and firings closer than 90 ms
+are not measured at all. The recorder's clock and the game's drift apart a little over a long run (the report says by how much
+between its two claps), which bounds how far to trust a difference of a few tens of milliseconds.
+
+The click, stair and likeness figures are of everything heard, not of the note alone. A gap is not
+judged where an engine is next to silent between firings, as a slow single is: there only the stream log can show a dropout.
+
+A report that starts with "Do not trust this run" is not evidence. It says so when the recorder lost audio or filled holes with
+zeros, the two sync claps disagree, a Mechanical Press (played at once) does not measure near 0 ms late, the empty pad is not
+silent, or a step never reached its goal (an engine that did not start). The author's listening is what signs off.
+
 ## The trailer
 
 The mod's trailer is made by a harness, so it can be cut again when the mod changes. It is a development aid, not a check, and is
 kept out of the jar and the coverage count like the rest of the picture-taking code.
+
+Each new minor or major version gets a trailer composed differently from the earlier ones (opening, story, shot order,
+camera moves, edit, captions), not the last cut with new shots slotted in, and it shows off that version's new features. The
+harness stays; the composition below describes the current cut and is rewritten with the next one.
+
+Every composition keeps viewers through its first and last seconds, each form in its own way:
+
+- **The opening (first 3 to 5 seconds).** The short form must start in the middle of fast, high-speed machinery: no title card,
+  intro beat or slow build before it. The long form may start with a short intro card; keep it brief and get to intense
+  motion, fast machinery or a dramatic feature reveal inside those seconds.
+- **The outro.** In both forms, keep the calls to action (download links, release date, what to watch next) concise and work
+  them in just before the visuals end, so they are seen before viewers drop off at the end screen. In the short form they lie
+  over moving footage. The long form leads into them smoothly, with no long, separate tail. The AI notice stays.
+
+The current cuts predate these two rules and are not yet checked against them; they apply from the next composition. The
+2.4.0 composition the author picked is planned in [TRAILER-2.4.md](TRAILER-2.4.md).
 
 ```
 python tools/trailer/record.py              # plays the game, records screen and sound, cuts the videos
 python tools/trailer/record.py --post-only  # cuts the last recordings again (new captions or music)
 ```
 
-- **What it records.** `ShowcaseRun` with `-PshowcaseSet=trailer` builds eleven walled pads (the five plain engines; a
+- **What it records.** `ShowcaseRun` with `-PshowcaseSet=trailer` builds walled pads (the five plain engines; a
   pad with the battery sizes, an ignition coil and an injector assist on every head; a blown inline six; the test-bed diesel with its
-  instruments; a diesel driving a row of Create machines, two presses stamping iron and a fan smoking beef over a campfire; and a refining column with its flare
-  stack), runs them, goes fullscreen and flies a camera past them for a little over two and a half minutes of footage, smoothly, every frame. The shots are the
+  instruments; a diesel driving a row of Create machines, two presses stamping iron and a fan smoking beef over a campfire; a refining column with its flare
+  stack; and the later pads below), runs them, goes fullscreen and flies a camera past them for about 222 seconds of footage, smoothly, every frame. The shots are the
   `Shot` records in that class, and every length is a whole number of bars of the music (three seconds) so the cuts land on the beat.
   The run leaves one still from the middle of each shot in `run/showcase-shaders/screenshots`, to check the framing without watching
   it, and `-PtrailerShots=a,b` keeps only the named shots, so a new pad can be looked at in a short run.
@@ -240,8 +333,19 @@ python tools/trailer/record.py --post-only  # cuts the last recordings again (ne
   used-oil pump's motor is switched on at tick 600, after the charcoal and clay have arrived: with only 250 mB of used oil and no
   charcoal or clay the basin cokes it, which is the mod's own recipe. The toasts and chat the first-person clips earn are cleared
   every frame, and this mod's advancement sting and the game's toast sounds are dropped from the run's sound.
+- **The pads of `client/ShowcaseRunFeatures`** (bays 19 to 23): a boosted gasoline six with no coolant, which `running_hot` shows
+  steaming and `running_cooled` cools by fitting two full radiators (the harness holds its block at 190 degrees until then, by
+  reflection, as a free-running engine does not get that hot in a few seconds; the steam and the cooling are the mod's); a diesel
+  four with a variable-geometry turbo and a MAF sensor; a gasoline four whose exhaust is rebuilt at the start of `muffler_off`,
+  `muffler_on`, `exhaust_stub` and `exhaust_long`, so the same engine is heard four ways; a belt where two Deployers and two
+  Presses make Copper Gaskets from Rubber ones; and a twin-turbo gasoline V8 with anti-lag, which in `night_pull`
+  idles, has its throttles opened by their idle stops and revs, then is lifted off twice with redstone on its camshaft. As that
+  shot begins the harness warms the V8 once and, by reflection, gives it the mod's own crank inertia back in place of the
+  recorder's five times (see "A steady crank" below), or it would be too sluggish to be seen revving.
 - **Sound and walls.** Only the courtyard the camera is in is heard (sounds from other pads are cancelled as they start and stopped when
-  the camera moves on); the camera is held inside the walls (see Framing).
+  the camera moves on). Engines are also kept to the courtyard by where their crankshaft is, because the shared "engine room"
+  voice has no place of its own to filter by; during the car's shots only the engine on no courtyard is heard. The camera is held
+  inside the walls (see Framing).
 - **How it is recorded.** `record.py` copies the project to a private folder beside it (as every client run should be), starts
   `ffmpeg` on the whole screen when the game logs `Showcase trailer ready`, and stops it after the last shot. The game runs with
   Iris, Sodium and a shader pack (`runShowcaseShaders`; the pack is the first .zip in `tools/trailer/shaderpacks`, which is not
@@ -262,8 +366,8 @@ python tools/trailer/record.py --post-only  # cuts the last recordings again (ne
   line says so), a light grade (a slight S-curve, a hint of warm highlights and cool shadows, a faint vignette), a 2.2:1 letterbox, and a caption at
   the lower left that slides in, with its chapter's name over it in gold (`chapter <shot>` lines of `captions.txt`; a `quiet`
   piece keeps the caption before it). A chapter starts with a white flash and a hit. The full cut opens cold on the single
-  cylinder with only the game's sound, slams the title (the mod's round icon, `docs/images/icon.png`, "CREATE" in Minecraft's
-  title font, cut from the game's own logo texture by `tools/create_lettering.py`, and the gold wordmark `docs/images/wordmark.png`)
+  cylinder with only the game's sound, slams the title (the mod's round icon, `docs/images/icon.png`, the "CREATE" lettering
+  `docs/images/create_lettering.png`, placed by `tools/create_lettering.py`, and the gold wordmark `docs/images/wordmark.png`)
   over the title shot with a flash and a boom as the music comes in, and ends with a riser into the last shot, a fade through black
   and an end card (the version line from `gradle.properties`, "Links in the description" and the AI notice, `outro_notice`) with a
   sting. The 16:9 thumbnail uses the same title; `tools/listing_art.py` makes the golden listing tile `docs/images/listing_gold.png`.
@@ -278,8 +382,9 @@ python tools/trailer/record.py --post-only  # cuts the last recordings again (ne
   from the shot `thumbnail:` names, and a 9:16 thumbnail for Shorts from the shot `vertical_thumbnail:` names
   (`vertical_thumbnail_at:` seconds in, with `vertical_title:` and `vertical_sub:` for its words).
 - **The vertical cut.** Its own edit, `tools/trailer/vertical.txt` (the file says what each option does), cut for a feed where a
-  viewer decides in the first second: no title card, the engine already growing with big words on the first frame, a cut every
-  one or two seconds, the words clear of the bottom fifth and the right edge where the app draws its own buttons. A `fit` piece
+  viewer decides in the first second: no title card and no 16:9 band at the start, but a full-frame cold start (`cold_start`:
+  a still engine cranked until it catches) with big words on the first frame that say it is Minecraft, every piece
+  at least three seconds and the whole cut at most ninety, the words clear of the bottom fifth and the right edge where the app draws its own buttons. A `fit` piece
   shows the whole 16:9 picture in a band on a blurred copy of itself (`zoom=` for a small subject), the others a 9:16 window
   (`x=` moves it). The AI notice is in it twice: `vertical_ai_tag` at the top from the first frame, for a viewer who leaves
   early, and on the end piece the full `outro_notice` with `ai_docs` under it, pointing to [AI.md](AI.md). The end piece lies
@@ -295,7 +400,7 @@ python tools/trailer/record.py --post-only  # cuts the last recordings again (ne
   does. `TrailerCoverageTest` fails when a new part has no line, when a line names a shot that does not exist, when a shot has no
   caption, and when a shot is missing from `edit.txt`, is there twice, or has a piece that is not a whole number of half bars. A significant new part goes on a pad (or a new one) in `ShowcaseRun`, gets a shot, a caption and a line in `edit.txt`, and its line names the
   shot. A `later` line is a part that is significant and not in the trailer yet: a debt, kept in the open.
-- **Length budget.** The full trailer may run up to 180 seconds (title shot and end card included; the last cut was 127.5 s). It is a
+- **Length budget.** The full trailer may run up to 240 seconds (title shot and end card included). It is a
   limit for the author and for whoever adds shots, not something a test enforces: when new parts would push it past, trim or shorten
   shots rather than let it grow.
 - **What it cannot see.** The test cannot tell that a part is really on screen in its shot, and nobody has heard the synthesised music
@@ -313,8 +418,7 @@ Pictures from other runs (Ponder, goggles, management, coupled, new parts) are n
 
 `src/smoke/log-allowlist.txt` lists log lines that are known harmless. **Every entry must say why.** A line you cannot
 explain is a bug. A line starting `warn:` is a *known intermittent* message: still reported, as a warning, so it stays
-visible without making the build flaky (the one entry today is an OpenAL "Invalid name parameter" at shutdown that
-appeared in 1 of 3 runs). Review the list whenever Create, NeoForge or Minecraft is updated and delete entries whose
+visible without making the build flaky (there is no such entry today). Review the list whenever Create, NeoForge or Minecraft is updated and delete entries whose
 reason no longer holds.
 
 ## Adding to it
@@ -332,7 +436,8 @@ reason no longer holds.
 * New sound event: the fleet must make it play, or it shows as "never started"; add its trigger to the fleet in
   `SmokeAudit.fleet`.
   One documented exception: sounds that fire by chance by design (`CHANCE_SOUNDS` in `SmokeAudit`: the cooling tick, the
-  pre-ignition knock, the flare whoosh) are started by hand at the end of the run if the fleet did not, and a check fails
+  pre-ignition knock and spit, the flare whoosh, and the wear mode's failures and warnings) are started by hand at the end
+  of the run if the fleet did not, and a check fails
   if the sound engine never hears them. A sound that is not random must still be started by the fleet. The whistle
   needs the camera within 48 blocks of the turbo, so the run stands there while the wheel is up to speed.
 * A new class of failure you were bitten by: write the check that would have caught it first, in a layer that can fail
@@ -343,6 +448,7 @@ reason no longer holds.
 * Whether anything *looks right* or reads as Create. Pictures are kept for a human; the pixel checks only catch the
   broken, the blank and the frozen.
 * Audio quality. The audit proves every sound resolves, starts, and does not leak voices; not that it sounds good.
+  [The sound bench](#the-sound-bench) finds faults in what the game plays, but not whether it sounds good either.
 * Multiplayer, other mods, other GPUs, Linux and macOS. Everything here runs one machine's dev environment, single
   player, with Create and Flywheel only.
 * Behaviour over a *real* long session (hours). The fleet runs about a minute; slower leaks need a longer soak.

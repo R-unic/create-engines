@@ -24,7 +24,7 @@ Python is `/c/Python315/python.exe` from Git Bash (plain `python3` there is the 
 
 ## Spend less time
 
-- Iterate with `--tests`. Run the full unit and GameTest suites once, when the change is finished, not after each edit.
+- Iterate with `--tests` (one per call: a repeated `--tests` keeps only the last). Run the full unit and GameTest suites once, when the change is finished, not after each edit.
 - Chain steps in one call: `unit gametest --copy NAME`.
 - Anything with `gametest`, `pitest` or `smoke` goes in the background (`run_in_background: true`). You are told when it
   exits. Never wait with `sleep` or `until grep` loops.
@@ -46,7 +46,9 @@ evidence, and never rerun until it passes.
 | A mid-test config value reverts | the config file watcher: save the value and restore it on disk too |
 | Client `NoSuchMethodError` | it was running during a rebuild: restart it |
 
-Do not kill another session's Java process.
+Do not kill another session's Java process. A leftover `runServer` JVM (ports 25565/25599) shares `run/config` with a
+GameTest server and rewrites the server toml in a loop, flipping `Tuning` toggles mid-test: use a private copy. A running
+`runClient` does the same to a smoke run's client toml (harmless).
 
 ## Writing GameTests
 
@@ -60,4 +62,11 @@ Do not kill another session's Java process.
 
 A green run says nothing about looks or sound. Short client runs, each opens a window (add `--offline`):
 `runVisualSmokeTest -PsmokeScenes` (about 8 min), `-PsmokeEffects` (about 90 s, search the log for "SOUND SMOKE"),
-`-PsmokeWear`. See `docs/SMOKE.md`. Report anything not looked at or listened to as unverified.
+`-PsmokeWear` (about 7 min;
+  needs `wearMode = true` in that checkout's `run/config` server toml, or no damage is drawn). See `docs/SMOKE.md`. Report anything not looked at or listened to as unverified.
+
+- `-PsmokeScenes` ends with `VisualSmokeTest.newBlocks`. A vanilla comparator's `FACING` is its input side. A Ponder speech
+  bubble can hide what a step is about: check the neighbouring frames. Crop `-PsmokeEffects` screenshots with Pillow before
+  judging them.
+- Sound: `SoundAssetsTest`, plus `soundCheck`/`soundReport` in `VisualSmokeTest.effects` (the report lists events never
+  started).

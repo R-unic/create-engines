@@ -68,7 +68,7 @@ intercooler: blown_i6_blower
 jerry_can: service_cans
 kerosene: skip - fluid
 large_battery: electric_battery
-maf_sensor: later - needs a pad with the sensor fitted
+maf_sensor: tuning_maf
 maker_plate: casing_styles
 methanol: skip - fluid
 muffler: inline6_pass
@@ -87,7 +87,7 @@ soot_trap: later - needs a diesel with a trap fitted
 spark_plug: electric_heads
 starter: inline6_pass
 sugar_mash: skip - fluid
-radiator: service_radiator
+radiator: running_cooled
 sump: instruments_governor
 supercharger: skip - the variable-drive supercharger, which the trailer shows, is the same part with a drive
 throttle: inline6_pass
@@ -96,11 +96,11 @@ transmission: factory_gearbox
 turbocharger: inline6_turbo
 used_oil: skip - fluid
 variable_supercharger: blown_i6_blower
-variable_turbocharger: later - needs a pad with a variable-geometry turbo
+variable_turbocharger: tuning_vgt
 cardboard_gasket: later - wear mode (2.3): a head with each gasket tier fitted, and a Service Kit, need a pad of their own
 stock_gasket: later - wear mode (2.3): see cardboard_gasket
-rubber_gasket: later - wear mode (2.3): see cardboard_gasket
-copper_gasket: later - wear mode (2.3): see cardboard_gasket
+rubber_gasket: gasket_line
+copper_gasket: gasket_line
 incomplete_copper_gasket: skip - the half-made Copper Gasket of its sequenced assembly, an intermediate, not a part
 service_kit: later - wear mode (2.3): see cardboard_gasket
 apex_seals: later - wear mode (2.3): a rotor housing with worn seals and one with a new set need a pad of their own

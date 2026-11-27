@@ -65,7 +65,9 @@ class SoundRecorder:
     silence, so a second thread plays an inaudible hiss through the same speakers to keep the stream alive.
     """
 
-    def __init__(self):
+    def __init__(self, blocksize=None):
+        # Frames each end of the loopback may buffer. None is the library's default, about 10 ms, which a busy machine overruns
+        self.blocksize = blocksize
         self.stop = threading.Event()
         self.started = None
         self.chunks = []
@@ -87,19 +89,23 @@ class SoundRecorder:
             import soundcard as sc
             speaker = sc.default_speaker()
             microphone = sc.get_microphone(id=str(speaker.name), include_loopback=True)
-            with microphone.recorder(samplerate=SAMPLE_RATE, channels=2) as recorder:
+            with microphone.recorder(samplerate=SAMPLE_RATE, channels=2, blocksize=self.blocksize) as recorder:
+                self._opened(recorder)
                 self.started = time.time()
                 while not self.stop.is_set():
                     self.chunks.append(recorder.record(numframes=SAMPLE_RATE // 10))
         except Exception as error:  # a device that will not open must not stop the picture being recorded
             self.error = f"could not record the speakers: {error}"
 
+    def _opened(self, recorder):
+        """For a subclass that has something to set on the library's recorder."""
+
     def _keep_alive(self):
         try:
             import numpy as np
             import soundcard as sc
             hiss = (np.random.default_rng(1).standard_normal((SAMPLE_RATE // 10, 2)) * 1e-4).astype("float32")
-            with sc.default_speaker().player(samplerate=SAMPLE_RATE, channels=2) as player:
+            with sc.default_speaker().player(samplerate=SAMPLE_RATE, channels=2, blocksize=self.blocksize) as player:
                 while not self.stop.is_set():
                     player.play(hiss)
         except Exception:
@@ -281,7 +287,10 @@ def record(ffmpeg, raw, sound_path, task, run_dir, extra=()):
         video.stdin.flush()
     video.wait(timeout=60)
     sound_started = sound.finish(sound_path)
-    shots = json.loads((PRIVATE / run_dir / "trailer_shots.json").read_text(encoding="utf-8"))
+    if not ended:
+        sys.exit("the game closed before the tour ended (closed by hand, or it crashed): nothing was cut from the partial take. "
+                 "The game's log is in " + str(PRIVATE / run_dir / "logs"))
+    shots =json.loads((PRIVATE / run_dir / "trailer_shots.json").read_text(encoding="utf-8"))
     shutil.copy(PRIVATE / run_dir / "trailer_shots.json", raw.parent / "trailer_shots.json")
     first_shot = shots["startEpochMs"] / 1000.0
     picture = first_shot - (video_started[0] or time.time())
@@ -305,6 +314,9 @@ def main():
     parser.add_argument("--no-music", action="store_true")
     parser.add_argument("--music")
     parser.add_argument("--post-only", action="store_true")
+    parser.add_argument("--pickup", metavar="SHOTS",
+                        help="record only these shots (comma-separated) again, into run/trailer/pickups, and cut them in over "
+                             "the main recording")
     parser.add_argument("--only", choices=("full", "teaser", "vertical"), help="cut only this one")
     args = parser.parse_args()
 
@@ -320,9 +332,17 @@ def main():
         else:
             task, run_dir = "runShowcaseShaders", "run/showcase-shaders"
         extra = ["-PwithAeronautics"] if task == "runShowcaseShaders" and not args.no_aeronautics else []
-        sound.unlink(missing_ok=True)
-        offset, audio_offset = record(ffmpeg, raw, sound, task, run_dir, extra)
-        meta.write_text(json.dumps({"offset": offset, "audio_offset": audio_offset}), encoding="utf-8")
+        if args.pickup:
+            take = OUT / "pickups" / args.pickup.replace(",", "+")
+            take.mkdir(parents=True, exist_ok=True)
+            extra.append(f"-PtrailerShots={args.pickup}")
+        else:
+            take = OUT
+            shutil.rmtree(OUT / "pickups", ignore_errors=True)  # a whole new recording makes every pickup stale
+        (take / "game.wav").unlink(missing_ok=True)
+        (take / "meta.json").unlink(missing_ok=True)
+        offset, audio_offset = record(ffmpeg, take / "raw.mp4", take / "game.wav", task, run_dir, extra)
+        (take / "meta.json").write_text(json.dumps({"offset": offset, "audio_offset": audio_offset}), encoding="utf-8")
         print(f"first shot begins {offset:.2f} s into the picture"
               + (f" and {audio_offset:.2f} s into the sound" if audio_offset is not None else ""))
     saved = json.loads(meta.read_text(encoding="utf-8"))

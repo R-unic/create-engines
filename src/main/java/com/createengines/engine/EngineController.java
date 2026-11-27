@@ -70,6 +70,7 @@ import com.createengines.content.muffler.SootTrapBlockEntity;
 import com.createengines.engine.sim.Supercharger;
 import com.createengines.engine.sim.Turbocharger;
 import com.createengines.engine.sim.OilSupply;
+import com.createengines.engine.sim.OutputGearing;
 import com.createengines.engine.topology.CylinderFault;
 import com.createengines.engine.topology.EngineLayout;
 import com.createengines.engine.topology.EngineLayout.CamLine;
@@ -112,6 +113,8 @@ public final class EngineController {
 	/** Ticks of a small, steady difference between the rating and the published capacity before it is published. */
 	private static final int SETTLE_INTERVAL = 40;
 	private static final int SYNC_INTERVAL = 10;
+	/** Syncs between looks at the casing round the cylinders: two seconds. */
+	private static final int ENCLOSURE_SYNCS = 40 / SYNC_INTERVAL;
 	/** How long a heavy starter goes on choking an engine after it lets go, ticks, and the last stretch over which that fades. */
 	private static final int COLD_ASSIST_HOLD = 160;
 	private static final int COLD_ASSIST_FADE = 60;
@@ -440,6 +443,7 @@ public final class EngineController {
 			model.resetGas(model.pistonAngle(sim.angle(), sim.rotaryAngle(), sim.direction()));
 		if (motion != null && motion.source() != null) {
 			carryCylinders(motion.source());
+			sim.carryMeanSpeed(motion.source().sim);
 			// A rebuilt engine is re-rated from scratch, but until that is done it is still the engine it was: dropping
 			// its rating to nothing for the moment that takes would overstress everything it was driving
 			torqueCurve = motion.source().torqueCurve;
@@ -610,7 +614,8 @@ public final class EngineController {
 			sim.setAmbientDensity(airDensity());
 			watchWorldWater(level);
 		}
-		double torqueScale = CEConfig.STRESS_PER_TORQUE.get();
+		// SU per RPM of the shaft for each unit of torque: a faster shaft carries the same SU in less per RPM
+		double torqueScale = CEConfig.STRESS_PER_TORQUE.get() / speedScale();
 
 		if (layout.incomplete() || layout.broken()) {
 			// An engine split by an unloaded chunk stops while it is split, but remembers how fast it was turning, as an engine
@@ -661,7 +666,7 @@ public final class EngineController {
 		double floor = 0;
 		int floorDirection = sim.direction();
 		if (primary.hasSource() && crankSpeed != 0 && drivenFromOutside()) {
-			floor = EngineSimulation.rpmToOmega(Math.abs(crankSpeed));
+			floor = EngineSimulation.rpmToOmega(Math.abs(crankSpeed) / speedScale());
 			floorDirection = (int) Math.signum(crankSpeed);
 		}
 		activeStarter = null;
@@ -712,7 +717,7 @@ public final class EngineController {
 		double load = crankSpeed == 0 || primary.isOverStressed() ? 0
 			: primary.networkStress() / Math.abs(crankSpeed) / torqueScale;
 		smoothedLoad += (load - smoothedLoad) * 0.1;
-		double maxOmega = EngineSimulation.rpmToOmega(AllConfigs.server().kinetics.maxRotationSpeed.get());
+		double maxOmega = EngineSimulation.rpmToOmega(engineLimit());
 		sim.tickCranked(load, maxOmega, floor, floorDirection);
 		oilDrawn = 0;
 		sim.lubrication()
@@ -727,7 +732,8 @@ public final class EngineController {
 		readSensors(level);
 
 		// The starter feels the effort of turning the engine as stress on its own input shaft
-		double crankingStress = sim.crankingTorque() * torqueScale;
+		// (the starter's own input is not geared by rpmScale, so its stress is not either)
+		double crankingStress = sim.crankingTorque() * CEConfig.STRESS_PER_TORQUE.get();
 		// A stronger starter takes more of the effort, and gears it down: every starter pushing feels the same stress
 		// on its input, however many there are and however strong, so a heavy one runs a big engine off a weak source
 		double strength = 0;
@@ -887,7 +893,11 @@ public final class EngineController {
 			Supercharger blower = blowers.get(i);
 			blower.limit = be.boostLimit();
 			blower.dump = be.dumping();
-			blower.rpm = be.shaftRpm();
+			// A blower geared off this engine's own shaft turns as much faster as rpmScale turns that: seen as at 1, and its
+			// stress per RPM shrinks to match, so what it takes from the engine is unchanged
+			double gearing = onEngineNetwork(be) ? speedScale() : 1;
+			be.setGearing(gearing);
+			blower.rpm = be.shaftRpm() / gearing;
 			if (crankRpm >= MIN_RATIO_RPM)
 				blower.driveRatio = Math.min(MAX_DRIVE_RATIO, blower.rpm / crankRpm);
 		}
@@ -899,6 +909,12 @@ public final class EngineController {
 	 */
 	private static final java.util.function.Predicate<net.minecraft.world.level.block.state.BlockState> SENSOR_OUTPUT =
 		state -> state.getBlock() instanceof com.createengines.content.airflow.SensorBlock<?>;
+
+	/** Whether redstone has shut the fuel rack of this cylinder's camshaft line all the way. A rotor housing has no cam. */
+	private boolean fuelCut(Cylinder cylinder) {
+		int line = cylinder.camLine();
+		return line >= 0 && line < racks.length && racks[line] <= 0;
+	}
 
 	private void readFuelRacks(Level level) {
 		for (int i = 0; i < racks.length; i++) {
@@ -978,7 +994,7 @@ public final class EngineController {
 		}
 		});
 		int tuned = tunedCount[0];
-		return new Tuning(tuned, skipped + readings.size() - tuned, (int) Math.round(sim.rpm()));
+		return new Tuning(tuned, skipped + readings.size() - tuned, (int) Math.round(sim.rpm() * speedScale()));
 	}
 
 	/**
@@ -1048,14 +1064,16 @@ public final class EngineController {
 			}
 		boolean fitted = target < Double.MAX_VALUE;
 		double position = 1;
+		// A governor is set and read in shaft speed
+		double shaftRpm = sim.rpm() * speedScale();
 		if (fitted) {
 			if (!governorSeeded) {
 				// Just loaded or rebuilt: carry on from the rack the block last reported, not from wide open
 				governorSeeded = true;
 				if (saved >= 0)
-					governor.seed(saved, sim.rpm(), target);
+					governor.seed(saved, shaftRpm, target);
 			}
-			position = governor.update(sim.rpm(), target, EngineSimulation.TICK);
+			position = governor.update(shaftRpm, target, EngineSimulation.TICK);
 		} else if (!layout.governors()
 			.isEmpty()) {
 			// Its block is not loaded for a moment: keep the rack where it was, an unloaded governor must not race the engine
@@ -1067,13 +1085,13 @@ public final class EngineController {
 		}
 		for (CylinderModel model : sim.cylinders())
 			model.governor = position;
-		boolean holding = fitted && !sim.isStopped() && Math.abs(sim.rpm() - target) <= GOVERNED_BAND * target
+		boolean holding = fitted && !sim.isStopped() && Math.abs(shaftRpm - target) <= GOVERNED_BAND * target
 			&& position > 0.05 && position < 0.95;
 		governedTicks = holding ? governedTicks + 1 : 0;
 		governing = fitted && !sim.isStopped() && position < 0.95;
 		// A redstone signal has turned the governed speed down
 		commanded = governing && target < setting - 0.5;
-		float rpm = (float) sim.rpm();
+		float rpm = (float) shaftRpm;
 		for (BlockPos pos : layout.governors())
 			if (LoadedBlocks.blockEntity(level, pos) instanceof GovernorBlockEntity be)
 				be.reading(rpm, (float) position, (float) be.governedSpeed());
@@ -1190,20 +1208,33 @@ public final class EngineController {
 		return false;
 	}
 
+	/** How many times as fast as the engine its shaft turns ({@code balance.rpmScale}, see {@link OutputGearing}). */
+	private static double speedScale() {
+		return OutputGearing.scale(CEConfig.RPM_SCALE.get(), AllConfigs.server().kinetics.maxRotationSpeed.get());
+	}
+
+	private static float engineLimit() {
+		return (float) OutputGearing.engineLimit(speedScale(), AllConfigs.server().kinetics.maxRotationSpeed.get());
+	}
+
+	private boolean onEngineNetwork(KineticBlockEntity be) {
+		return be.hasNetwork() && primary.hasNetwork() && be.network.equals(primary.network);
+	}
+
 	private void publishSpeed() {
 		float maxSpeed = AllConfigs.server().kinetics.maxRotationSpeed.get();
 		float target = 0;
 		if (!sim.isStopped())
-			target = sim.direction() * Math.min(maxSpeed, Math.max(1, Math.round(sim.rpm())));
+			target = sim.direction() * Math.min(maxSpeed, Math.max(1, Math.round(sim.meanRpm() * speedScale())));
 		float current = primary.getGeneratedSpeed();
 		ticksSincePublish++;
-		if (target == current) {
-			// Create zeroes a crank when a rotation conflict breaks a source beside it (a hand crank turned against the
-			// engine), and never asks it again: the engine would run on, firing, with a crank that does not turn
-			if (target != 0 && primary.getSpeed() == 0 && !primary.hasSource() && ticks % 20 == 0)
-				primary.updateGeneratedRotation();
+		// Create zeroes a crank when a rotation conflict breaks a source beside it (a hand crank turned against the engine)
+		// or when it moves it into a moving structure, and never asks it again: the engine would run on, firing, with a crank
+		// that does not turn. Whatever it turns at now: a speed a little off the last one sent is not sent again by itself.
+		if (target != 0 && current != 0 && primary.getSpeed() == 0 && !primary.hasSource() && ticks % 20 == 0)
+			primary.updateGeneratedRotation();
+		if (target == current)
 			return;
-		}
 		boolean startOrStop = target == 0 || current == 0 || Math.signum(target) != Math.signum(current);
 		boolean significant = Math.abs(target - current) >= Math.max(1, Math.abs(current) * 0.04f);
 		if (startOrStop || significant && ticksSincePublish >= PUBLISH_INTERVAL) {
@@ -1259,8 +1290,8 @@ public final class EngineController {
 		key.add(sim.intercoolers()
 			.size());
 		key.add(sim.direction());
-		// The curve runs as fast as the network is allowed to turn, so a raised limit has to be measured for
-		float maxRpm = AllConfigs.server().kinetics.maxRotationSpeed.get();
+		// The curve runs as fast as the engine is allowed to turn, so a raised limit has to be measured for
+		float maxRpm = engineLimit();
 		key.add(maxRpm);
 		if (key.equals(ratingKey)) {
 			ratingSpare = key;
@@ -1306,24 +1337,26 @@ public final class EngineController {
 	/** What a dynamometer block shows; asking for it counts as a dynamometer reading this engine. */
 	public Curve curve() {
 		dynoReadTick = ticks;
-		float maxRpm = AllConfigs.server().kinetics.maxRotationSpeed.get();
+		float maxRpm = engineLimit();
+		double speedScale = speedScale();
 		int points = Dynamometer.pointCount(maxRpm);
 		float[] rpm = new float[points];
 		float[] torque = new float[points];
-		double scale = CEConfig.STRESS_PER_TORQUE.get() * RATING_MARGIN * Torsion.stiffness(flexLoss);
+		double scale = CEConfig.STRESS_PER_TORQUE.get() / speedScale * RATING_MARGIN * Torsion.stiffness(flexLoss);
 		for (int i = 0; i < points; i++) {
-			rpm[i] = (float) Dynamometer.speed(i);
+			rpm[i] = (float) (Dynamometer.speed(i) * speedScale);
 			// The curve in use may have been measured before the limit was raised, so it can be shorter than points
 			if (i < torqueCurve.length && i < rippleCurve.length)
 				torque[i] = (float) (Math.max(0, torqueCurve[i]) * Roughness.smoothness(rippleCurve[i]) * scale);
 		}
-		return new Curve(rpm, torque, (float) sim.rpm(), (float) (ratedTorque() * CEConfig.STRESS_PER_TORQUE.get()),
+		return new Curve(rpm, torque, (float) (sim.meanRpm() * speedScale),
+			(float) (ratedTorque() * CEConfig.STRESS_PER_TORQUE.get() / speedScale),
 			rated && rating == null);
 	}
 
 	private double ratedTorque() {
 		return sim.isStopped() ? 0
-			: Dynamometer.ratedTorque(torqueCurve, rippleCurve, sim.rpm()) * RATING_MARGIN * Torsion.stiffness(flexLoss);
+			: Dynamometer.ratedTorque(torqueCurve, rippleCurve, sim.meanRpm()) * RATING_MARGIN * Torsion.stiffness(flexLoss);
 	}
 
 	/**
@@ -1388,8 +1421,12 @@ public final class EngineController {
 		int firing = 0;
 		int working = 0;
 		float[] listed = firingScratch();
+		SoundBase base = soundBase();
+		// Which exhaust outlet each listed firing goes out of, kept beside it (only the sound)
+		int[] listedOutlets = outletScratch();
 		int listedCount = 0;
-		for (CylinderModel model : models) {
+		for (int i = 0; i < models.size(); i++) {
+			CylinderModel model = models.get(i);
 			if (model == null)
 				continue;
 			working++;
@@ -1397,8 +1434,10 @@ public final class EngineController {
 			if (state != EngineState.STALLED && model.lastCycle().result.fired())
 				firing++;
 			Camshaft camshaft = model.camshaft();
-			if (camshaft != null && camshaft.isPhaseLocked())
+			if (camshaft != null && camshaft.isPhaseLocked()) {
+				listedOutlets[listedCount] = base.outletOf[i];
 				listed[listedCount++] = (float) model.firingRotorAngle();
+			}
 		}
 		// A rotor fires once a turn of the shaft, which in the engine's 720 degrees is twice; its three chambers are the
 		// same event, so only the first is listed
@@ -1408,15 +1447,19 @@ public final class EngineController {
 			if (models.get(i) == null || !placed.rotary() || placed.chamber() != 0)
 				continue;
 			float angle = (float) (((sim.direction() * placed.tdcAngle() + 180) % 360 + 360) % 360);
+			listedOutlets[listedCount] = base.outletOf[i];
 			listed[listedCount++] = angle;
+			listedOutlets[listedCount] = base.outletOf[i];
 			listed[listedCount++] = angle + 360;
 		}
-		// The summary keeps this array, so it is the one thing here that has to be made new; sorted as Float.compare orders them
+		EngineSound.sortFirings(listed, listedOutlets, listedCount);
+		// The summary keeps these arrays, so they are the things here that have to be made new
 		float[] angles = Arrays.copyOf(listed, listedCount);
-		Arrays.sort(angles);
-		float roughness = (float) (sim.isStopped() ? 0 : Dynamometer.roughnessLoss(torqueCurve, rippleCurve, sim.rpm()));
+		EngineSound sound = new EngineSound(Arrays.copyOf(listedOutlets, listedCount), base.pipes, base.compression,
+			base.precision, enclosure, base.muffles);
+		float roughness = (float) (sim.isStopped() ? 0 : Dynamometer.roughnessLoss(torqueCurve, rippleCurve, sim.meanRpm()));
 		Diagnosis.Report report = diagnose(state, firing, roughness);
-		return new EngineSummary(state, (float) sim.rpm(), primary.publishedCapacity(),
+		return new EngineSummary(state, (float) (sim.meanRpm() * speedScale()), primary.publishedCapacity(),
 			(float) (smoothedLoad * torqueScale), (float) (sim.fuelRate() * 60), (float) sim.ripple(), firing,
 			working, (float) sim.inertia(), (float) sim.lubrication()
 				.effective(),
@@ -1430,7 +1473,94 @@ public final class EngineController {
 			(float) sim.thermal()
 				.coolantRate(),
 			pilotLit(), filtered, (float) Torsion.scaled(flexLoss), longestLine, report.health(), report.cause(), muffling(),
-				inductionBoost(), sourceLines(), sim.isStopped() ? 0 : (float) oilRate, wearTotal.total(), wearFailures);
+				inductionBoost(), sourceLines(), sim.isStopped() ? 0 : (float) oilRate, wearTotal.total(), wearFailures, sound);
+	}
+
+	/**
+	 * The part of the engine's sound that only the layout decides, worked out once per controller (the layout never changes for
+	 * one): each cylinder's exhaust outlet, each outlet's run length, how the charge is lit and the share of precision
+	 * cylinders.
+	 */
+	private record SoundBase(int[] outletOf, float[] pipes, float[] muffles, boolean compression,
+							 float precision) {
+	}
+
+	private @Nullable SoundBase soundBase;
+	private int @Nullable [] outletScratch;
+	/** How much of the cylinders' sides are clad in Engine Casing, 0 to 1; looked at now and then, as casing is not part of the layout. */
+	private float enclosure;
+	private int enclosureCountdown;
+
+	private int[] outletScratch() {
+		if (outletScratch == null)
+			outletScratch = new int[Math.max(1, 2 * models.size())];
+		return outletScratch;
+	}
+
+	private SoundBase soundBase() {
+		if (soundBase == null)
+			soundBase = computeSoundBase();
+		return soundBase;
+	}
+
+	private SoundBase computeSoundBase() {
+		List<Cylinder> cylinders = layout.cylinders();
+		EngineSound.Outlets outlets = EngineSound.assignOutlets(cylinders.stream()
+			.mapToInt(Cylinder::exhaust)
+			.toArray());
+		float[] runLength = new float[cylinders.size()];
+		float[] runMuffle = new float[cylinders.size()];
+		for (int i = 0; i < cylinders.size(); i++) {
+			int port = cylinders.get(i)
+				.exhaust();
+			EngineLayout.PortNetwork network = port < 0 ? null : layout.ports()
+				.get(port);
+			runLength[i] = network == null ? Float.NaN : EngineSound.pipeLength(network.run());
+			runMuffle[i] = network == null ? Float.NaN : muffled(network);
+		}
+		float[] pipes = EngineSound.perOutlet(outlets.outletOf(), runLength, outlets.runs().length);
+		float[] muffles = EngineSound.perOutlet(outlets.outletOf(), runMuffle, outlets.runs().length);
+		int spark = 0;
+		int compression = 0;
+		int precise = 0;
+		for (int i = 0; i < cylinders.size(); i++) {
+			Cylinder placed = cylinders.get(i);
+			if (placed.sparkPlug() || placed.rotary())
+				spark++;
+			else
+				compression++;
+			if (placed.precision() != 0)
+				precise++;
+		}
+		return new SoundBase(outlets.outletOf(), pipes, muffles, compression > spark,
+			cylinders.isEmpty() ? 1 : precise / (float) cylinders.size());
+	}
+
+	/**
+	 * Share of the cylinders' sides that are clad in Engine Casing, 0 to 1, looked at every two seconds: casing is not part of
+	 * the layout, so placing it does not rebuild the engine.
+	 */
+	private void refreshEnclosure(Level level) {
+		if (enclosureCountdown-- > 0)
+			return;
+		enclosureCountdown = ENCLOSURE_SYNCS - 1;
+		int sides = 0;
+		int clad = 0;
+		for (Cylinder placed : layout.cylinders())
+			for (Direction side : SIDES) {
+				if (side.getAxis() == placed.bore()
+					.getAxis())
+					continue;
+				BlockPos beside = placed.pos()
+					.relative(side);
+				if (!level.isLoaded(beside))
+					continue;
+				sides++;
+				if (level.getBlockState(beside)
+					.getBlock() instanceof com.createengines.content.EngineCasingBlock)
+					clad++;
+			}
+		enclosure = sides == 0 ? 0 : clad / (float) sides;
 	}
 
 	/**
@@ -1504,7 +1634,7 @@ public final class EngineController {
 		double secondary = sim.isolatedInertia();
 		if (!(secondary > 0))
 			return null;
-		double rpm = sim.rpm();
+		double rpm = sim.meanRpm();
 		double share = DualMass.isolation(rpm, sim.isolationResonanceRpm());
 		double seen = DualMass.effectiveInertia(sim.inertia(), secondary, rpm, sim.isolationResonanceRpm());
 		long isolating = Math.round(share * 10) * 10;
@@ -1543,15 +1673,20 @@ public final class EngineController {
 		float[] muffled = new float[runs.size()];
 		for (int i = 0; i < runs.size(); i++) {
 			EngineLayout.PortNetwork run = runs.get(i);
-			boolean series = run.mufflers()
-				.stream()
-				.anyMatch(muffler -> !run.parallel()
-					.contains(muffler));
 			heads[i] = run.heads();
-			muffled[i] = Muffling.run(series, !series && !run.mufflers()
-				.isEmpty());
+			muffled[i] = muffled(run);
 		}
 		return Muffling.engine(heads, muffled);
+	}
+
+	/** How muffled one exhaust run is, 0 to 1. */
+	private static float muffled(EngineLayout.PortNetwork run) {
+		boolean series = run.mufflers()
+			.stream()
+			.anyMatch(muffler -> !run.parallel()
+				.contains(muffler));
+		return Muffling.run(series, !series && !run.mufflers()
+			.isEmpty());
 	}
 
 	/**
@@ -1693,6 +1828,7 @@ public final class EngineController {
 
 	private void syncDiagnostics(Level level, double torqueScale) {
 		EngineState state = state();
+		refreshEnclosure(level);
 		primary.updateSummary(summary(state, torqueScale));
 		glow(level, state == EngineState.RUNNING || state == EngineState.OVERLOADED);
 		reportMilestones(level, state);
@@ -1730,7 +1866,8 @@ public final class EngineController {
 				cylinder.lobe(), outlets, last != null && last.lean(),
 				last == null || last.equivalence <= 0 ? Float.NaN : (float) last.equivalence, cylinder.sparkPlug(),
 				model == null ? 0 : (float) model.fouling(), model == null ? 0 : (float) model.lobeShift(),
-				openings(cylinder.intake()), last == null ? 0 : (float) last.preignition));
+				openings(cylinder.intake()), last == null ? 0 : (float) last.preignition, fuelCut(cylinder),
+				muffled(cylinder.exhaust())));
 		}
 
 		for (BlockPos pos : layout.batteries())
@@ -1789,7 +1926,13 @@ public final class EngineController {
 			fuel == null ? Float.NaN : (float) fuel.autoignitionTemp(), null, outlets, last != null && last.lean(),
 			last == null || last.equivalence <= 0 ? Float.NaN : (float) last.equivalence, cylinder.sparkPlug(),
 			model == null ? 0 : (float) model.fouling(), 0, openings(cylinder.intake()),
-			last == null ? 0 : (float) last.preignition);
+			last == null ? 0 : (float) last.preignition, false, muffled(cylinder.exhaust()));
+	}
+
+	/** How muffled the exhaust run on a port is, 0 to 1. */
+	private float muffled(int port) {
+		return port < 0 ? 0 : muffled(layout.ports()
+			.get(port));
 	}
 
 	/** Every opening of a port network, clear or not, for the effects at its mouths. */
@@ -1816,7 +1959,7 @@ public final class EngineController {
 				.get(i);
 			Turbocharger turbo = turbos.get(i);
 			if (LoadedBlocks.blockEntity(level, placed.pos()) instanceof TurbochargerBlockEntity be)
-				be.updateStatus(new TurboStatus((float) turbo.spool(), (float) turbo.boost(), (float) turbo.wastegate(),
+				be.updateStatus(layout.primary(), new TurboStatus((float) turbo.spool(), (float) turbo.boost(), (float) turbo.wastegate(),
 					(float) turbo.backPressure(), (float) charge(turbo), !turbo.compressor()
 						.isEmpty(),
 					!turbo.turbine()
@@ -1899,7 +2042,7 @@ public final class EngineController {
 		reportParts(level, state, firing);
 		reportLooks(level, state);
 		EngineMilestones.Snapshot snapshot = new EngineMilestones.Snapshot(state, previousState, rpm,
-			activeStarter != null, firing, primary.publishedCapacity() * rpm, sparkFiring, (float) sim.lubrication()
+			activeStarter != null, firing, (float) (primary.publishedCapacity() * rpm * speedScale()), sparkFiring, (float) sim.lubrication()
 				.effective(),
 			rich, boost, dumping, fouling, firing > 0 && balanced, (float) sim.lubrication()
 				.dilution(),
@@ -1998,7 +2141,7 @@ public final class EngineController {
 				&& turbo.vanes() >= EngineMilestones.VANES_CLOSING;
 			antiLagBoost |= turbo.antiLagging() && turbo.boost() >= EngineMilestones.STAGE_BOOST;
 		}
-		float roughness = (float) (sim.isStopped() ? 0 : Dynamometer.roughnessLoss(torqueCurve, rippleCurve, sim.rpm()));
+		float roughness = (float) (sim.isStopped() ? 0 : Dynamometer.roughnessLoss(torqueCurve, rippleCurve, sim.meanRpm()));
 		// Banks: firing pistons that share a throw, on sides a quarter turn apart (a vee) or opposite (flat)
 		int firing = 0;
 		boolean sharedLobe = false;

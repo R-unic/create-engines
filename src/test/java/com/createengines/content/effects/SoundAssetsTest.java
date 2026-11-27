@@ -138,6 +138,74 @@ class SoundAssetsTest {
 		}
 	}
 
+	private static final Set<String> LOOPS = Set.of("starter_whir", "turbo_whistle", "supercharger_whine",
+		"engine_clatter", "bearing_squeal", "intake_roar");
+
+	/** A recording that plays once starts and ends in silence, sits on zero and leaves itself some headroom. */
+	@Test
+	void everyRecordingThatPlaysOnceIsFadedLevelAndUnderTheCeiling() throws IOException {
+		List<String> problems = new ArrayList<>();
+		for (Path path : recordings()) {
+			String name = path.getFileName().toString().replace(".ogg", "");
+			if (LOOPS.contains(name))
+				continue;
+			float[] samples = VorbisSamples.decode(Files.readAllBytes(path));
+			int rate = Vorbis.read(Files.readAllBytes(path)).rate;
+			float peak = 0;
+			double sum = 0;
+			for (float sample : samples) {
+				peak = Math.max(peak, Math.abs(sample));
+				sum += sample;
+			}
+			if (peak > PEAK_CEILING)
+				problems.add(name + " peaks at " + peak);
+			if (Math.abs(sum / samples.length) > MOST_OFFSET)
+				problems.add(name + " sits " + sum / samples.length + " off zero");
+			// A quarter and a half of the way into a 2 ms fade, a faded sound has hardly begun
+			for (double[] edge : new double[][] {{0.0005, 0.05}, {0.001, 0.15}}) {
+				int span = (int) (edge[0] * rate);
+				float start = 0;
+				float end = 0;
+				for (int i = 0; i < span; i++) {
+					start = Math.max(start, Math.abs(samples[i]));
+					end = Math.max(end, Math.abs(samples[samples.length - 1 - i]));
+				}
+				if (Math.max(start, end) > edge[1] * peak)
+					problems.add(name + " is not faded: its first " + edge[0] * 1000 + " ms reach " + start / peak
+						+ " of its peak, its last " + end / peak);
+			}
+		}
+		assertTrue(problems.isEmpty(), String.join("\n", problems));
+	}
+
+	/** The recordings that stand in for the note are made with its pipe and its weights: the generator's copies of the figures. */
+	@Test
+	void theGeneratorsPipeAndBangsAreTheNotes() throws IOException {
+		Path java = Path.of("src/main/java/com/createengines/content");
+		same(Path.of("tools/engine_pipe.py"), java.resolve("ExhaustPipe.java"), "RING", "MOST_BACK", "OPEN_HZ", "RADIATE_LOSS");
+		same(Path.of("tools/engine_pipe.py"), java.resolve("EngineNoteSynth.java"), "PIPE_HZ");
+		same(Path.of("tools/exhaust_pop_sounds.py"), java.resolve("NoteBangs.java"), "SCALE", "POP_BODY", "POP_CRACK",
+			"POP_FLAME", "SPIT_BODY", "SPIT_JET", "POP_FIZZ", "SPIT_FIZZ");
+		same(Path.of("tools/start_stall_sounds.py"), java.resolve("NoteBangs.java"), "SCALE", "ROCK_BODY", "SIGH");
+		same(Path.of("tools/start_stall_sounds.py"), java.resolve("EngineNoteSynth.java"), "BODY_WEIGHT", "CRACK_WEIGHT");
+	}
+
+	private static void same(Path python, Path java, String... names) throws IOException {
+		for (String name : names)
+			assertEquals(figure(java, "\\b" + name + " = ([0-9.]+)f?;"), figure(python, "(?m)^" + name + " = ([0-9.]+)"),
+				name + " differs between " + java.getFileName() + " and " + python.getFileName());
+	}
+
+	private static double figure(Path file, String pattern) throws IOException {
+		Matcher matcher = Pattern.compile(pattern).matcher(Files.readString(file));
+		assertTrue(matcher.find(), file + " has no figure like " + pattern);
+		return Double.parseDouble(matcher.group(1));
+	}
+
+	/** As far past it as the encoder may overshoot the generator's 0.9, and no further. */
+	private static final float PEAK_CEILING = 0.99f;
+	private static final double MOST_OFFSET = 0.003;
+
 	/** The two facts about an Ogg Vorbis file this test needs: its channel count, and its length from the last page. */
 	private record Vorbis(int channels, int rate, double seconds) {
 

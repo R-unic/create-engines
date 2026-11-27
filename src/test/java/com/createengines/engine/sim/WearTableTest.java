@@ -146,7 +146,7 @@ class WearTableTest {
 
 		out.append("## Repair\n\n");
 		out.append("A Service Kit has " + 24 + " uses. It sets wear above " + f(Wear.REPAIRED_TO, 2) + " and up to " + f(Wear.REPAIRABLE, 2)
-			+ " back to " + f(Wear.REPAIRED_TO, 2) + "; heavier wear needs a new part.\n\n");
+			+ " back to " + f(Wear.REPAIRED_TO, 2) + "; heavier wear needs a new part. A crafting recipe that builds on a part that wears, a blueprint, a Schematicannon and the Bank Builder take only new ones.\n\n");
 
 		out.append("## Running dry\n\n");
 		out.append("A running engine whose oil film is below " + f(Wear.SEIZE_FILM, 2) + " counts a cylinder towards seizing, and oil takes the count down "

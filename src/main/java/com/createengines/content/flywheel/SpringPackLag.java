@@ -45,6 +45,13 @@ public final class SpringPackLag {
 		return Double.isFinite(value) ? Math.clamp(value, 0, 1) : 0;
 	}
 
+	/** The pulse of the firing, -1 to 1, at {@code phase} in cycles of it (only the part past a whole one matters). */
+	public static double firingWave(double phase) {
+		// A huge phase would overflow the product with 2 pi
+		double cycle = Double.isFinite(phase) ? phase - Math.floor(phase) : 0;
+		return Math.sin(2 * Math.PI * cycle);
+	}
+
 	/**
 	 * The extra wind-up of a spring pack that resonates at {@code resonanceRpm} turning at {@code rpm} (its size, not its
 	 * direction), 0 to 1: nothing at a standstill, one at the resonance, nothing again once the secondary is fully isolated.
@@ -73,9 +80,7 @@ public final class SpringPackLag {
 	public static double twist(double rpm, double resonance, double load, double ripple, double phase) {
 		if (!Double.isFinite(rpm) || rpm == 0)
 			return 0;
-		// Only where the crank is in its cycle matters, and a huge phase would overflow the product with 2 pi
-		double cycle = Double.isFinite(phase) ? phase - Math.floor(phase) : 0;
-		double wave = Math.sin(2 * Math.PI * cycle);
+		double wave = firingWave(phase);
 		double swing = RIGID_SWING + (1 - RIGID_SWING) * DualMass.isolation(Math.abs(rpm), resonance);
 		double pulse = PULSE_MAX * (0.6 + 0.4 * unit(ripple / RIPPLE_FULL)) * swing * wave;
 		double twist = WINDUP_MAX * (PRELOAD + (1 - PRELOAD) * unit(load)) + BELL_MAX * bell(rpm, resonance) + pulse;

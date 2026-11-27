@@ -26,6 +26,12 @@ import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.RenderShape;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
+import java.util.List;
+import com.createengines.registry.CELang;
+import net.minecraft.ChatFormatting;
+import net.minecraft.network.chat.Component;
+import net.minecraft.world.item.Item;
+import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.VoxelShape;
 
@@ -69,6 +75,14 @@ public class CamshaftBlock extends RotatedPillarKineticBlock implements IBE<Cams
 	public InteractionResult onSneakWrenched(BlockState state, UseOnContext context) {
 		InteractionResult result = Encasing.uncase(state, context);
 		return result != null ? result : super.onSneakWrenched(state, context);
+	}
+
+	@Override
+	public void appendHoverText(ItemStack stack, Item.TooltipContext context, List<Component> tooltip, TooltipFlag flag) {
+		super.appendHoverText(stack, context, tooltip, flag);
+		tooltip.add(CELang.translate("tooltip.camshaft.fuel_cut")
+			.style(ChatFormatting.GRAY)
+			.component());
 	}
 
 	public boolean isLobe() {

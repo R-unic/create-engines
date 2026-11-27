@@ -3,7 +3,7 @@ package com.createengines.content;
 import org.jetbrains.annotations.Nullable;
 
 import com.simibubi.create.content.schematics.requirement.ItemRequirement;
-import com.simibubi.create.content.schematics.requirement.ItemRequirement.ItemUseType;
+
 import com.tterrag.registrate.util.entry.ItemEntry;
 
 import net.minecraft.core.BlockPos;
@@ -139,11 +139,10 @@ public final class PartInstallation {
 	 * engine would come with its pistons, rods, injectors, plugs and rotors for free.
 	 */
 	public static ItemRequirement requirement(BlockState state, Slot... slots) {
-		ItemRequirement needed = new ItemRequirement(ItemUseType.CONSUME, state.getBlock()
-			.asItem());
+		ItemRequirement needed = NewPartRequirement.block(state);
 		for (Slot slot : slots)
 			if (state.getValue(slot.property()))
-				needed = needed.union(new ItemRequirement(ItemUseType.CONSUME, slot.fitted(state)));
+				needed = needed.union(NewPartRequirement.of(slot.fitted(state)));
 		return needed;
 	}
 

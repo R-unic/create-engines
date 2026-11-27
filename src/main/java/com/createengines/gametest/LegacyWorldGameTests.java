@@ -204,6 +204,23 @@ public class LegacyWorldGameTests {
 		loadAndCheck(helper, "engine_v2_0_0_rotary.snbt", "2.0.0");
 	}
 
+	// Recorded from the v2.3.0 source: what 2.4 (heat, the Radiator, wear part 2) must still load.
+
+	@GameTest(template = "empty_large", timeoutTicks = 400)
+	public static void aDieselEngineSavedBy230Loads(GameTestHelper helper) {
+		loadAndCheck(helper, "engine_v2_3_0_diesel.snbt", "2.3.0");
+	}
+
+	@GameTest(template = "empty_large", timeoutTicks = 400)
+	public static void aSparkEngineSavedBy230Loads(GameTestHelper helper) {
+		loadAndCheck(helper, "engine_v2_3_0_spark.snbt", "2.3.0");
+	}
+
+	@GameTest(template = "empty_large", timeoutTicks = 400)
+	public static void aRotaryEngineSavedBy230Loads(GameTestHelper helper) {
+		loadAndCheck(helper, "engine_v2_3_0_rotary.snbt", "2.3.0");
+	}
+
 	private static void loadAndCheck(GameTestHelper helper, String fixture, String saver) {
 		Path file = fixtureDir().resolve(fixture);
 		if (!Files.exists(file)) {

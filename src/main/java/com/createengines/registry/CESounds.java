@@ -35,13 +35,23 @@ public final class CESounds {
 	public static final DeferredHolder<SoundEvent, SoundEvent> ENGINE_CATCH = register("engine_catch");
 	/** An engine dying: its last firings, a knock as the crank rocks to a stop, and a sigh from the exhaust. */
 	public static final DeferredHolder<SoundEvent, SoundEvent> ENGINE_STALL = register("engine_stall");
+	/** A stopping crank fetching up against compression and rocking back, after a stall the engine's note has played. */
+	public static final DeferredHolder<SoundEvent, SoundEvent> ENGINE_SETTLE = register("engine_settle");
+	/** An engine that is cold, or was long on the starter, labouring through many coughs before it takes hold. */
+	public static final DeferredHolder<SoundEvent, SoundEvent> ENGINE_CATCH_HARD = register("engine_catch_hard");
+	/** An engine dragged to a halt by its load: heavy, slowing thuds into a hard stop. */
+	public static final DeferredHolder<SoundEvent, SoundEvent> ENGINE_STALL_LUGGED = register("engine_stall_lugged");
+	/** An engine running out of fuel: a long, thin sputter. */
+	public static final DeferredHolder<SoundEvent, SoundEvent> ENGINE_STALL_STARVED = register("engine_stall_starved");
 	/** Unburned fuel lighting in a hot exhaust: the crack of an afterfire. */
 	public static final DeferredHolder<SoundEvent, SoundEvent> EXHAUST_POP = register("exhaust_pop");
+	/** A charge that boost lit early, spat out of the exhaust with a flash: a quick hiss of burning gas and a fizz. */
+	public static final DeferredHolder<SoundEvent, SoundEvent> EXHAUST_SPIT = register("exhaust_spit");
 	/** Hot metal ticking as it cools, for a while after an engine stops. */
 	public static final DeferredHolder<SoundEvent, SoundEvent> METAL_TICK = register("metal_tick");
-	/** A charge lighting itself early under boost: a quick run of hard metallic knocks out of the exhaust. */
+	/** A charge lighting itself early under boost: a quick run of hard metallic knocks at the cylinder, in wear mode. */
 	public static final DeferredHolder<SoundEvent, SoundEvent> PREIGNITION_KNOCK = register("preignition_knock");
-	/** Valve gear ticking over the hum of the gears: a seamless loop, pitched with the crank. */
+	/** Valve gear ticking over the hum of the gears. No longer played (author, 2026-11-26); the ID stays, as no sound ID is removed. */
 	public static final DeferredHolder<SoundEvent, SoundEvent> ENGINE_CLATTER = register("engine_clatter");
 	/** Bearings running dry: a seamless loop, as loud as the engine is short of oil. */
 	public static final DeferredHolder<SoundEvent, SoundEvent> BEARING_SQUEAL = register("bearing_squeal");
@@ -67,9 +77,6 @@ public final class CESounds {
 
 	/** The wear mode's: a cylinder head warping from heat, a sharp crack of hot metal and steam hissing from the joint. */
 	public static final DeferredHolder<SoundEvent, SoundEvent> HEAD_WARP = register("head_warp");
-
-	/** A critically hot block boiling: bubbling and a hiss of steam. */
-	public static final DeferredHolder<SoundEvent, SoundEvent> COOLANT_BOIL = register("coolant_boil");
 
 	/** The wear mode's: a turbocharger failing, its wheel rubbing the housing as it screams down. */
 	public static final DeferredHolder<SoundEvent, SoundEvent> TURBO_FAIL = register("turbo_fail");

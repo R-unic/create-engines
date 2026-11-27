@@ -3,7 +3,7 @@
   "category": "misc",
   "key": {
     "P": {
-      "item": "create_engines:piston"
+      "type": "create_engines:new_part", "item": "create_engines:piston"
     },
     "B": {
       "item": "create:brass_sheet"

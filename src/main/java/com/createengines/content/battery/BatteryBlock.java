@@ -46,7 +46,14 @@ import net.minecraft.world.phys.shapes.VoxelShape;
  * the {@link #NORTH}, {@link #EAST}, {@link #SOUTH}, {@link #WEST} and {@link #UP} properties, kept by the block from its
  * neighbours; it changes nothing about the bank.
  */
-public class BatteryBlock extends Block implements IWrenchable, IBE<BatteryBlockEntity> {
+public class BatteryBlock extends Block implements IWrenchable, IBE<BatteryBlockEntity>,
+	com.simibubi.create.api.schematic.requirement.SpecialBlockItemRequirement {
+
+	@Override
+	public com.simibubi.create.content.schematics.requirement.ItemRequirement getRequiredItems(BlockState state,
+		net.minecraft.world.level.block.entity.BlockEntity blockEntity) {
+		return com.createengines.content.NewPartRequirement.block(state);
+	}
 
 	/** The lamp strip: 0 (flat, every lamp dark) to {@link BatteryChemistry#GAUGE_STAGES} (full). Set by the block entity from its charge. */
 	public static final IntegerProperty CHARGE = IntegerProperty.create("charge", 0, BatteryChemistry.GAUGE_STAGES);

@@ -36,12 +36,12 @@ question, not an obstacle ([CLAUDE.md](../CLAUDE.md)).
 | 2.1 | Twin Mass | **Dual-mass flywheel**, the readouts that make a flywheel choice legible, and sharper niches for the existing fuels | Medium to large |
 | 2.2 | Proving Ground | Verification debts: server-from-jar, the step-size finding; **the battery tiers**, then **charge priority, electric injector assist and ignition coils**, with electrolysis to be decided (author, 2026-11-23) | Medium |
 | 2.3 | Wear and Tear | **The opt-in wear mode and nothing else** (author, 2026-11-24): pistons, rods, gaskets (stock and three tiers), rotary apex seals and batteries wear, precision parts wear slower, a rod can be thrown (a flag, a misfire, a broken head, with spectacle) and a gasket can blow, light wear is repaired by an automatable, durable Service Kit and the rest by replacing the part, worn parts keep their wear as items, and the Black Box and Display Link report each part and a total; off by default, nothing runs with it off, and gaskets and seals are not required with it off | Medium to large |
-| 2.4 | Running Hot | **Temperature in degrees, overheating you can reach** (a soft power loss in both modes, an exception the author approved on 2026-11-25), heat that follows work, **the Radiator** (closed loop, sheds more with a fan or on a moving contraption), and **the wear overhaul, part 2** (heat drives wear and failures, rod wear from load, plug and turbo wear wired, gasket recipes) (author, 2026-11-25), **a full sound rework** (each engine's note built from its banks, exhausts, cylinder size, cam and fuel instead of one shared firing sound; client-side only) (author, 2026-11-25), and **a texture rework, with some new models, so the mod looks like part of Create** (author, 2026-11-25, from player complaints) | Large |
-| 2.5 | Open Garage (was 2.4 until 2026-11-25) | Reach: API 1.2, energy and probe mods, the next Create, a second example addon; **piston rings**, **polluted intake air**, **high- and low-compression piston variants**, **rotor variants (a precision rotor among them) with an exhaust niche**, and **nitrous oxide** (liquid, a vaporiser and a gas in the intake manifolds) (author, 2026-11-23), a **W layout for the Bank Builder** (author, 2026-11-24), then **look, sound and performance** only where the 2.0.x pass found something (all of it was 2.3 until the author moved it, 2026-11-24; its sound went to 2.4's sound rework, 2026-11-25) | Medium to large |
+| 2.4 | Running Hot | **Temperature in degrees, overheating you can reach** (a soft power loss in both modes, an exception the author approved on 2026-11-25), heat that follows work, **the Radiator** (closed loop, sheds more with a fan or on a moving contraption), and **the wear overhaul, part 2** (heat drives wear and failures, rod wear from load, plug and turbo wear wired, gasket recipes) (author, 2026-11-25), **a full sound rework** (each engine's note built from its banks, exhausts, cylinder size, cam and fuel instead of one shared firing sound; client-side only, and bearable with many engines running in a build) (author, 2026-11-25), and **splitting the giant source files**, with no behaviour change (author, 2026-11-26) | Large |
+| 2.5 | Open Garage (was 2.4 until 2026-11-25) | Reach: a new API minor (**fuel supply, a shared combustion model and animation for addon engines**, author, 2026-11-26), energy and probe mods, the next Create, a second example addon; **piston rings**, **polluted intake air**, **high- and low-compression piston variants**, **rotor variants (a precision rotor among them) with an exhaust niche**, and **nitrous oxide** (liquid, a vaporiser and a gas in the intake manifolds) (author, 2026-11-23), a **W layout for the Bank Builder** (author, 2026-11-24), then **look, sound and performance** only where the 2.0.x pass found something (all of it was 2.3 until the author moved it, 2026-11-24; its sound went to 2.4's sound rework, 2026-11-25); **a texture rework, with some new models, so the mod looks like part of Create** (author, 2026-11-25, from player complaints; moved from 2.4 on 2026-11-26) | Medium to large |
 | 3.0 | Clean Slate | The second breaking cleanup: drop 1.x migrations, regenerate baselines, API 2.0 | Large |
 
-**Shipped so far (tags):** 2.0.0 (2026-11-21), 2.0.1 and 2.0.2 (2026-11-22), 2.1.0 (2026-11-23), 2.2.0 (2026-11-24) and 2.3.0 (2026-11-25). 2.4, 2.5 and 3.0
-are not started; 2.3.1 was dropped by the author on 2026-11-25 and its fixes go out in 2.4. Each shipped release has its sign-off record in [releases](releases), which lists what the machine gate did not see in a running
+**Shipped so far (tags):** 2.0.0 (2026-11-21), 2.0.1 and 2.0.2 (2026-11-22), 2.1.0 (2026-11-23), 2.2.0 (2026-11-24) and 2.3.0 (2026-11-25). 2.4 is in progress and
+not released, and 2.5 and 3.0 are not started; 2.3.1 was dropped by the author on 2026-11-25 and its fixes go out in 2.4. Each shipped release has its sign-off record in [releases](releases), which lists what the machine gate did not see in a running
 game and what the author's Part 3 pass covered; the "built, not seen in game" notes below are the state at the time of building, kept for the record.
 
 2.2 to 2.5 are independent of 2.1 and of each other; they can swap places or be cut, and 2.1 does not wait on either.
@@ -612,6 +612,9 @@ design section, the design section is the target and the build is to be changed:
      wheeze of blow-by; 1.6 s), a burst of sparks and smoke, `rotor_housing/wreck` (sprung seal strips out between the posts on all four sides, soot on both rims, clear of
      the rotor's sweep, `ApexWreckAssetsTest`), drawn until a new set is fitted, and a housing that keeps smoking. The explosion stand-in is gone. No fire: the author's
      fire was for the thrown rod. `./gradlew runVisualSmokeTest -PsmokeWear` now photographs a failed rotor too.
+     **Redrawn 2026-11-26** (author: the models were the weak point at range, blown gaskets and apex seals most): the gasket is red, with torn tongues past
+     the head's outline and a glowing hole; the seals are thick pale ceramic strips past the housing's outline, with a bent copper rim and more soot.
+     `DamageReadsAfarAssetsTest` holds both. Checked in `tools/preview_models.py` renders and in `-PsmokeWear` at close range, not from far off; this replaces what the two entries above describe.
    - **Not yet:** spark plug and turbo failures have no wreck or sound because they are not wired into an engine (knock breaks nothing, so has no wreck). Open: a first look at the in-game wreck colours (the head's top and the soot are the first guess).
    - **Also open from "seen in game":** the goggles lines, the gasket and kit textures (flat items, first pass), and the four spectacle effects' timing.
 6. **Readouts. Built 2026-11-24 (not seen in game).** `EngineSummary` carries a new `wear` figure (the **plain mean** of every part that wears: each fitted piston and rod,
@@ -673,10 +676,27 @@ wear is. How it is carried (on the block's item, or by dropping the seals as the
 
 ## 2.4 Running Hot (author, 2026-11-25)
 
+### Free wear repairs closed (author, 2026-11-26)
+
+**Built, not seen in game, not released.** A worn or wrecked part could come out new through five crafting recipes, blueprint building,
+a Schematicannon and the Bank Builder (which on a precision swap also duplicated the fitted parts). All of them now take only new parts;
+the recipes use the new ingredient type `create_engines:new_part`. Tests: `WearNoFreeRepairGameTests`. **Exception for the 2.4.0 record, approved by the author on 2026-11-26**: the recipes `copper_gasket`, `forged_piston`, `large_battery`, `precision_cylinder` and
+`variable_turbocharger` changed (manifest lines moved by hand). The Ignition Coil recipe still takes a worn Spark Plug: a coil does not
+wear, so nothing comes back repaired.
+
 **Asked for by the author on 2026-11-25**, with SilverThorn's wear feedback thread (Discord, "wear and tear mode Feedback and tuning sugestions",
 2026-11-25) as input: expand and overhaul wear and tear, a radiator "like the sump but for coolant", a temperature readout in place of
 cold/warm, and "make sure overheating is a point you can reach". The author put it all in a new 2.4 and moved Open Garage to 2.5, and the same day **dropped 2.3.1**: its fixes ship here too.
 **Nothing new is built; this is a first design.**
+
+### Smoother speed ripple (author, 2026-11-26)
+
+**Built, not seen in game, not released.** An engine gives its network the mean speed of its firing cycle instead of the speed as a tick
+ends, its crank catches up with Create's shafts over 3 ticks after a speed change, and a rough engine's throws and pistons are drawn surging
+(how each works: `docs/DESIGN.md` 2.6 and 8). **Exception for the 2.4.0 record, approved by the author on 2026-11-26**: the speed and
+stress capacity a rough engine gives its network, and the speed shown for it, changed from the sampled instant speed to the cycle mean.
+`compat/behaviour.txt` and `compat/trajectories.txt` are not moved by it. `RenderRotationTest`'s same-frame squareness check now allows the
+3-tick catch-up.
 
 ### Fixes carried over (2.3.1 dropped, author 2026-11-25)
 
@@ -688,7 +708,8 @@ These were the 2.3.1 patch. They go out with 2.4 and are listed first in its cha
   "2.4.0"). Exceptions owed in the 2.4.0 record, each with the author's name: `limits.maxBankBatteries` splitting very large banks, the
   Black Box noticing up to 10 s late, the pollution cap read every 3 s, the changed `WearToggle` assertion, and the rubber and cardboard
   gasket recipes replaced (author, 2026-11-25; the old slime and paper recipes removed, manifest lines moved by hand). Still open from the audit: the
-  slower coupling walk (needs the author) and a mid-session `wearMode` toggle not reaching connected players.
+  slower coupling walk (needs the author) and a mid-session `wearMode` toggle not reaching connected players
+  (fixed 2026-11-27).
 - **The Copper Gasket cannot be crafted in 2.3.0.** Its shipped recipe (`recipe/copper_gasket.json`) has the pattern `"C", "CC", "C"`, rows of
   different widths, which vanilla refuses ("Invalid pattern: each row must be the same width", `ShapedRecipePattern`), so the recipe never
   loads and the best gasket is creative-only. Found while triaging SilverThorn's gasket feedback (Discord, 2026-11-25). With 2.3.1 gone there
@@ -699,6 +720,10 @@ These were the 2.3.1 patch. They go out with 2.4 and are listed first in its cha
 - **Explain fuel shut-off in Ponder** (see below).
 
 ### Shutting an engine down: the Ponder explanation
+
+**Built 2026-11-26, not seen in game, not released.** Built as below. The mod had no item summaries, so the tooltip is a line of hover text
+on the Camshaft and Cam Lobe items. The cylinder's goggles say "Fuel cut" too, and the cylinder, head and injector share one Ponder page,
+which has the closing step. Tests: `FuelCutGameTests`. The copper gasket guard under "Fixes carried over" is `ShapedRecipePatternTest`.
 
 **Why:** players asked for a block that cuts the fuel to stop an engine (MachinaCafe, Discord "Fuel injection shutoff", 2026-11-24), and the
 author was using a valve on the fuel line. The mod already has it: a redstone signal on any block of a camshaft line closes that line's
@@ -843,6 +868,14 @@ a head warps after 180 seconds past critical; a warped head drops nothing, like 
 standard rod's speed friction; wrenched or broken blocks carry wear on their item. Not built: a Display Link or goggles readout per part, a
 blueprint record of the rod.
 
+**Added 2026-11-26** (the author: the new rods should have a purpose outside wear mode): with the mode on or off, a rod also scales the
+inertia its cylinder adds to the crank, 0.7 light and 1.5 heavy (first pass), so a heavy rod smooths an engine and a light one lets it rev up
+sooner. Their items are now 3D models like the standard rod's, brass for light and steel for heavy, in place of the flat textures.
+
+**Seen and tested in game (the author, 2026-11-26):** the author has seen the new connecting rods working in cylinders and has tested wear.
+This replaces "not seen in game" above for those. It does not settle the first-pass numbers or the choices left to confirm, and it is not a
+release record box.
+
 **Exceptions owed in the 2.4.0 record**, in addition to those under "Fixes carried over": the loot tables of `battery`, `dry_cell`,
 `large_battery`, `cylinder`, `precision_cylinder`, `rotor_housing`, `turbocharger` and `variable_turbocharger` now copy wear onto the item
 (manifest lines moved by hand); the retuned failure chance and the new heat and load wear (wear mode only); the changed pins in `WearTest`,
@@ -907,12 +940,118 @@ like the engines they are building, even with a correct firing order. Sound only
   A mechanical layer under the exhaust: a valvetrain tick that differs between overhead, pushrod and valley cams, none for a rotary. Crude
   parts sound rougher than precision ones.
 - **Intake and load.** The intake roar joins the note and follows the throttle; on overrun the note drops and the existing exhaust pops
-  carry the crackle; boost and the muffler soften the exhaust as they do now.
+  carry the crackle; boost softens the exhaust as it does now. The Muffler makes the exhaust duller as well as quieter
+  and leaves the valvetrain alone (author, 2026-11-26).
 - **Distance.** Up close the mechanical layer and crack are heard; far off only the low boom of the exhaust carries.
-- **The clack goes.** Every running engine in earshot gets a note voice. The `cylinder_fire` samples are kept registered (no removed
-  sound IDs) but only play past the voice cap, quieter and filtered to sit under the notes that are playing.
+- **The clack goes.** Engines nearest the player get a note voice each; the rest join one shared sound (see "Easy to live with in a
+  build" below) instead of a bang per firing. The `cylinder_fire` samples stay registered (no removed sound IDs) and still play when
+  a player turns `volume.engineNote` to 0, as that setting promises today.
 - **Absorbs 2.5's sound items.** The 2.0.x retune list and the rotary sound (no valvetrain, a smooth rising note, a burble at idle) from
   "Look, sound and performance" in 2.5 are done here, because a rework would redo them anyway.
+
+**Easy to live with in a build** (author, 2026-11-25, from player complaints). Players say the sounds become very annoying in their
+builds: a base with several engines running for hours. Today the engine note has three voices (`EngineNoteSound.MAX_VOICES`), and
+every other engine in earshot plays `cylinder_fire` on each firing, so a factory of engines is a wall of identical clacks. A sound
+that is fine for one engine on a test bench has to stay bearable at the tenth engine and the third hour. So:
+
+- **Many engines are one sound.** Past the nearest few, engines join one shared "engine room" sound per area, a blend of their notes,
+  instead of each playing its own. Its loudness grows slowly with the number of engines (about 3 dB for each doubling), so sixteen
+  engines are a fuller rumble, not sixteen times louder.
+- **A ceiling on the total.** All engines together are never more than a few dB louder than the loudest one alone.
+- **A steady engine settles back.** An engine held at one speed and load drifts a few dB quieter over the first half minute and comes
+  back up as soon as the throttle, load or speed changes: what draws the ear is change, and a running factory should sit in the
+  background. A rev, a stall, a misfire or a warning is always heard at full level.
+- **Nothing harsh on repeat.** The crack and the valvetrain tick are the tiring parts: they fade with distance faster than the boom, and
+  the firing-to-firing variation above keeps any one sound from repeating exactly. Idle is quieter than load.
+- **Enclosed engines are muffled.** An engine inside Engine Casing is heard dulled, like the Muffler's effect. Muffling by any wall in
+  the way is added only if a client profile shows it cheap enough.
+- **The player's controls stay as they are:** the four volume settings in `CEClientConfig`, the Muffler and the noise-cancelling
+  headphones. No new slider (rule: no new tuning dial unless it replaces one).
+- **Tests:** sixteen identical engines in earshot render no more than 6 dB louder than one; engines past the nearest few join the
+  shared sound and none plays `cylinder_fire` per firing (unless `volume.engineNote` is 0); a steady engine's level falls by the set
+  amount and returns within a fraction of a second of a throttle change; warnings are never lowered. A soak with a large base of engines
+  stays inside the sound-thread budget below.
+
+**Valve sounds removed (author, 2026-11-26).** No valve tick in the note for any cam kind, no valve-gear hiss under it, and the
+`engine_clatter` loop no longer plays (its sound ID stays registered). This replaces every mention of a valvetrain or clatter
+layer in this section.
+
+**Build status (2026-11-25).** Built, not heard: the author tunes it in game. See [DESIGN.md](DESIGN.md) "The build's
+voice" and "Many engines". The server works out each engine's voice (`EngineSound`: outlet per firing from its exhaust runs,
+run lengths, compression ignition from cylinders without plugs, cam kind, precision, casing) and syncs it; the synth rings an
+outlet's pipe each, knocks, ticks, varies each firing, and dulls with distance and casing; the clatter loop and the bangs give
+way; the nearest three engines without a note share one voice, any more make it fuller, all are held under a ceiling, and a
+steady engine settles back. After the first tuning (2026-11-26): each cam reading is timed so firings keep step, each
+outlet is muffled on its own, a run's length is the way from head to opening and is heard more strongly, the crack and thump
+start more softly, and the notes go to the nearest engines. Tests: `EngineNoteTimingTest`, `EngineNoteVoiceTest`, `EngineChorusTest`, `EngineRoomMixTest`, `EngineSoundTest`,
+`EngineGameTests.theEngineSyncsWhatItIsBuiltOfForItsSound`, and the existing note tests unchanged. Changed from the design:
+the intake roar stays the sampled loop at the intake mouth (it already follows speed, load and boost, and the note cannot be
+heard from the mouth); overrun is the note's existing coasting level plus the existing pops. Not done: the trailer's engine
+shots re-recorded, the author's tuning, and a client profile with a large build (`EngineNotePerfTest` times one voice, not the
+scene).
+
+**Heard in game (the author, 2026-11-26):** the author has heard the new sounds. This replaces "not heard" above. Final tuning has not been
+signed off, and the trailer re-recording and the client profile are still not done.
+
+**Delivery (2026-11-26).** Step 1 of [SOUND-PLAN.md](SOUND-PLAN.md) is built: a shorter queue, gains and blowers inside
+the note's stream, equal-power handovers and the note heard from the exhaust. Not yet heard or measured in the game.
+
+**Blower sounds (the author, 2026-11-26).** The turbo whistle, blow-off and supercharger whine are reworked
+(`tools/boost_sounds.py` and `BoostWhine`; [DESIGN.md](DESIGN.md), "Turbo and supercharger sounds"), and the turbo's pitch
+range is wider. The author heard a first version the same day: the whistle had lost its high end, the new blow-offs
+sounded much worse than the old one, and the new whine looked likely to grate. Since then the old high end is back, the
+blow-off is the old one with a clear flutter (three takes), many turbos venting together share their loudness, and the
+whine is lower, rounder and quieter. The author heard that too: the whine was still like a whistle being blown, the
+flutter sounded like parts colliding, and the blow-off had far too much low end. So the whine is now a close stack of
+overtones with pulsing air and no tone of its own standing out, and the blow-off is one soft-swelling stream of air with
+nothing below 800 Hz. The author then preferred the whine before that one, which is back, kept all three blow-off takes
+and asked for them fuller (the thumping ones were like a kick drum, the thin one like a shaker): they now have their body
+in the low middle of the range, cut off below 220 Hz. The author then asked for a little whine, as real turbos have: each
+take now has a thin tone under the air that falls as the wheel runs down. Not yet heard.
+
+**Third round (author, 2026-11-26):** long exhaust runs pitched too low and sounded crushed, there was too much reverb on every
+length of run, and the backfire was to be reworked completely. A long run now rings 0.4 of an octave below a middling one
+(was 0.9), a stub an octave above (was 0.9); the resonances ring shorter and no longer longer on low pipes; the thump and
+rumble die sooner; the pipe's reflection is one faint one, 3 to 12 ms, in place of a repeating one of up to 30 ms; and
+`exhaust_pop` is remade (five takes, no echoes). `EngineNoteVoiceTest`'s stub-to-long floor moved from 21 to 16 semitones with
+it. Not yet heard.
+
+**Backfire redesigned again (author, 2026-11-26):** the author asked for a new design of the sound played as sparks leave the
+exhaust. The dry bang is replaced by a crack, the hollow note of an open-ended pipe (112 to 174 Hz across the five takes), a
+soft rush of flame and sparks spitting for about a third of a second (`tools/exhaust_pop_sounds.py`). Same sound IDs, same
+moments played. Not yet heard.
+
+**The sound the author meant (2026-11-26):** it was the pre-ignition knock at the exhaust, heard as a hollow plastic cup
+tapped with a spoon. The exhaust now plays a new sound, `exhaust_spit` (three takes: a darkening hiss of burning gas, a
+small puff and a smooth fizz, no ringing or separate clicks), at the same moments and volume. `preignition_knock` and
+its files are unchanged and still play for wear mode's ping at a cylinder. Not yet heard.
+
+**Backfire tuning (author, 2026-11-26):** the new backfire's separate spark spits sounded like the old leg-breaking
+crackle. They are replaced by the spit's smooth, quiet fizz; the crack, pipe and flame are unchanged. The author said
+"better now" after the spit change and asked for more tuning of the backfire. This version is not yet heard.
+
+**One-shots join the note (sound plan step 3, 2026-11-26):** the author asked to continue onto step 3. An engine with a note
+plays its backfires, spits and the end of a stall in its own stream; the pop, spit, catch and stall recordings are remade
+from the note's grains and pipe, and every recording that plays once is levelled. What differs from the plan:
+[SOUND-PLAN.md](SOUND-PLAN.md), step 3. Not yet heard.
+
+**Faults heard by ear (author, 2026-11-26: add to the roadmap; not built).** A fault should be told apart by its sound, at
+its place in the engine's rhythm. Today the note hears only roughness and the share of cylinders firing, and wear mode's ping
+is the pre-ignition knock recording played high at the cylinder.
+
+- **Knock in the note:** the ping lands on the firing that knocked, inside the engine's stream.
+- **A worn rod:** a knock in time with the crank, louder with load and with wear, so it warns before the rod is thrown.
+- **A blown gasket:** a chuff in time with its cylinder.
+- Wear faults sound with the wear mode on only. They are warnings, so the settling back and the many-engine ceiling never
+  lower them. An engine without a note keeps today's recordings, and no sound ID is removed.
+- Sound only: no rating, sim number or saved key moves. The client may need to be sent more about wear than it is now.
+- Tests: each fault changes the rendered note at its own firing or crank angle; a sound engine, and any engine with the wear
+  mode off, renders sample for sample as before.
+
+**Subtitles (author, 2026-11-26: add to the roadmap; not built).** No sound of the mod has a subtitle, so vanilla's Show
+Subtitles shows nothing for it. Give each sound event one, the warnings (dry seizing, knock, a failing part) first, in words
+that say what is happening. The running note and the other sounds that repeat all the time must not flood the list. Lang keys
+only, appended. Test: every sound event has a subtitle with a translation, or is on a short list that says why not.
 
 **How it is tuned:** a reference set rendered to WAV by the pure-Java synth (I4, I6, crossplane and flat-plane V8, flat four, V-twin, V12,
 W16, rotary, diesel I6), each at idle, mid and redline, for the author to listen to beside real recordings. Final numbers are the author's
@@ -951,55 +1090,69 @@ with it. More resonators per engine must still keep the sound thread under 2% of
 - Light and heavy rods: in or not (new items that change performance with the mode off).
 - Sound rework: whether the 2.3 note stays as a client option for players who like it; which engines are in the reference set.
 
-### Looking like Create: a texture rework and some models (author, 2026-11-25; queued in 2.4)
+### The trailer (author, 2026-11-26; planned, not built)
 
-**Why.** Many players say the mod does not fit Create to look at: its blocks stand out in a Create factory instead of reading as
-part of one. Rule 5 ("it looks like Create") is the standard, and today's art misses it often enough that players notice. This is
-a pass over the art as a whole, not a block at a time.
+A new composition led by the sound rework and the finished wear and parts system, with a brief heat section: it opens on a
+critically hot block steaming, and the Short opens on a pull-back from an exhaust mouth. The plan, its new shots and what it
+needs are in [TRAILER-2.4.md](TRAILER-2.4.md).
 
-**First, find out exactly what is wrong.** Nothing is redrawn from a guess.
+### Splitting the giant files (author, 2026-11-26; queued in 2.4)
 
-- Collect the complaints: what players name (which blocks, what about them: colour, shape, detail, scale), with the
-  `triage-feedback` skill over the feedback channel, and ask in the channel for screenshots where the reports are vague.
-- Audit every block and item side by side with Create's own (`tools/preview_models.py --create-textures`, in the world next to
-  Create machines, and on the mod page's pictures), and write one list, worst first: what each misses and whether a texture fixes
-  it or the model has to change.
+**Why.** The longest files are slow to change and review, parallel sessions collide in them, and AI sessions spend many tokens
+reading them (`EngineController.java` was the most-read file).
 
-**Textures (the bulk of it).** Built from Create's own wherever one fits: its andesite, brass and copper casings, shafts, cogs,
-gauges and trims, used as they are. The mod's own metals keep Create's structure and exact colours (dark outer rim, bright inner rim
-lit top and left, broad low-contrast strokes) in `tools/generate_textures.py`. No per-pixel noise, no posterising, no baked shading
-(the 2026-11-08 art direction, [DESIGN.md](DESIGN.md) "Art (2026-11-08)"). Connected casing textures keep joining, and the wear
-textures (`tools/generate_wear_textures.py`) are redrawn to match the new base.
+**Candidates** (line counts on 2026-11-26, with 2.4 work still uncommitted):
 
-**Models (some, where a texture cannot fix it).** Only the blocks the audit says read wrong in silhouette. Create's vocabulary: a
-casing frame with its kinetic parts showing (a shaft end, a cog, a turning part behind a window), brass or copper trim, chunky
-boxes as in `tools/generate_models.py`. No stepped circles, rows of tiny boxes or reconstructed round parts (the rejected
-"3D pixel art" pass). A model change keeps the block's ID, blockstate and saved data; a new collision shape also moves its goggles
-anchor, Ponder scenes and the smoke screenshots.
+| File | Lines |
+| --- | --- |
+| `gametest/EngineGameTests.java` | 5094 |
+| `ponder/EngineScenes.java` | 4070 |
+| `client/ShowcaseRun.java` | 2370 |
+| `engine/EngineController.java` | 2304 |
+| `tools/generate_models.py` | 2235 |
+| `gametest/BlueprintGameTests.java` | 1776 |
+| `client/VisualSmokeTest.java` | 1295 |
+| `registry/CEBlocks.java` | 1161 |
+| `gametest/StressGameTests.java` | 1147 |
+| `engine/topology/EngineScanner.java` | 1027 |
 
 **How it is done.**
 
-- A small sample first (two or three blocks, before and after, next to Create's), shown to the author before anything bigger; then
-  batches, each approved by the author on a contact sheet before it is merged.
-- Cosmetic only: no rating, recipe or behaviour changes (rule 4).
-- Within 2.x a redrawn model counts as a change to how existing builds look ([CLAUDE.md](../CLAUDE.md), "Genuinely intended
-  behaviour changes"): it needs the author's say-so naming the batch, and each batch is listed under Exceptions in the v2.4.0 release record
-  with who approved it. Resource packs that retexture this mod will show the old look on reworked blocks; the changelog
-  says which blocks changed.
-- Afterwards the mod page's pictures (`tools/gallery.py`), the Ponder screenshots and the trailer (`tools/trailer/record.py`) are
-  taken again, and [LISTING.md](LISTING.md) and the README follow.
+- After the other 2.4 work in these files is committed, so a split never has to be merged with a feature change.
+- One file per commit, split by responsibility, not at a line count. A file that reads well as one piece may stay whole, with the
+  reason noted here.
+- Behaviour-preserving only: `behaviour.txt`, `trajectories.txt`, the manifest and the world fixtures stay untouched; no ID, key,
+  saved data or `com.createengines.api` name changes; no hot path gets slower.
+- Generators draw the same files: after splitting `generate_models.py`, its output is byte-identical.
+- No test is lost: the unit test and GameTest counts match before and after. Anything that finds code by file or class name (tests,
+  `src/smoke/` lists, tools, skills) moves in the same commit, as do the docs that name it.
 
-**Tests.** The client audit's missing-texture and missing-model checks and the smoke screenshots cover every changed block; the
-generators stay the source of every texture and model they draw (regenerated, never hand-edited), and a block whose art comes from
-a generator gets a test that its files match the generator's output where one is cheap.
+**Traps found while planning (2026-11-26).**
 
-**Open for the author.**
+- `CompatManifestTest` records saved-data keys by file name (`nbt:<FileName>:<key>`). Moving a test or block entity that writes saved
+  data to a new class makes its keys look deleted. The test classes that write such keys keep the original class name, and the
+  manifest does not move. Today that is `EngineGameTests` (4 keys), `BlueprintGameTests` (8), `StressGameTests` (1) and
+  `CylinderBlockEntity` (6).
+- A GameTest's name includes its class, so a moved test reports under a new name. Docs that quote `EngineGameTests.x` are updated;
+  release records are history and keep the old name.
 
-- Which blocks go first (the audit's worst-first list is the proposal).
-- Whether the old look ships as an optional built-in resource pack ("Classic"), so a player who liked it keeps it.
+**The cut, file by file** (a first design; a split that reads worse than the whole is dropped, with the reason noted here):
 
-It is in 2.4 at the author's choice (2026-11-25). It touches no simulation code, so it does not wait on the heat work and
-the heat work does not wait on it.
+| File | Split into | Watch |
+| --- | --- | --- |
+| `engine/EngineController.java` | Core: constructor, `tick`, motion, layout. Package-private helpers holding the controller: `EngineInputs` (throttles, turbos, superchargers, fuel racks, governors, sensors, `tuneFuel`, `setAllMetering`), `EngineRating` (rating, curve, capacity), `EngineExhaust` (sound base, muffling, enclosure, soot, pollution), `EngineReadouts` (summary, status lines, diagnosis, sync), `EngineMilestoneReporter` (the `report*` methods) | Runs every tick: scratch arrays stay owned and reused, nothing allocates. pitest re-run. |
+| `gametest/EngineGameTests.java` | About seven classes by subject (starting and stalling, the transmission's `neutral…` tests, fuel and metering, induction, oil and sump, readouts and sensors, water and rain), shared builders in `EngineRigs` | The tests with saved-data keys stay in `EngineGameTests`. |
+| `ponder/EngineScenes.java` | `SceneHelpers` (`setThrow`, `flash`, `playFirings`) and about six themed classes (crank and cams, air and fuel, induction and heat, starting and oil, tools, exhaust and casing) | Scene IDs unchanged; only the plugin's method references move. |
+| `client/ShowcaseRun.java` | `ShowcaseBuild` (floor, engines, bank, pipes, fuelling), `ShowcaseTrailer` (shots, poses, cues, shot list), `ShowcaseHooks` (event handlers), beside the existing `ShowcaseRunAero` and `ShowcaseRunFeatures` | `TrailerCoverageTest`, `TrailerFramingTest` and the skills move with it. |
+| `tools/generate_models.py` | A `tools/models/` package: a core module (`box`, `write`) and one module per existing `# ---` section | Output byte-identical, checked by diffing the generated folder. |
+| `gametest/BlueprintGameTests.java`, `gametest/StressGameTests.java` | By subject, as `EngineGameTests` | Saved-data tests stay in the original class. |
+| `registry/CEBlocks.java` | Block families (`CEEngineBlocks`, `CEInductionBlocks`, `CEElectricBlocks` and so on), blockstate helpers in `CEBlockstates` | Registration order kept, so the creative tab order does not move. `reg:` manifest keys use the Registrate ID and are safe. |
+| `engine/topology/EngineScanner.java` | Optional: `PortTracer` (trace, run length, port network) and `CrankSeeds` | May stay whole if it reads well. |
+| `client/VisualSmokeTest.java` | Later | The sound plan's step 0 is editing it. |
+
+**Order.** First a size ratchet: a test holding each listed file to a line cap that only goes down, so nothing grows back. Then by
+reading cost and risk: `EngineScenes`, `EngineGameTests`, `EngineController`, `ShowcaseRun`, `generate_models.py`, then the rest.
+Each split waits until that file's own 2.4 work is committed, runs the full `ce_run.py` gate, and checks that `compat/` did not move.
 
 ## 2.5 Open Garage
 
@@ -1008,18 +1161,48 @@ the heat work does not wait on it.
 Reach, in the order the author's direction names (other Create addons and pack makers). Everything is optional and compiled
 against without being required.
 
-- **API 1.2**, from what the example addon and real addons find missing. The rule stands: an addon never needs an internal class, and
+- **A new API minor** (the current version is in [API.md](API.md)), from what the example addon and real addons find missing. The rule stands: an addon never needs an internal class, and
   a need is a gap in the API. Candidates already known: reading and subscribing to an engine's readout and its ripple (so the
   dual-mass flywheel is visible to addons), registering a crank-line part (a flywheel of an addon's own, through data), and a
   display source (the data-defined flywheel moved to 2.1 and is already API 1.2: `PartBlocks.flywheel`). Each is a new name in `compat/api-surface.txt` and `compat/script-surface.txt` and a bump of `ApiVersion.MINOR`.
 - **A second example addon** in `examples/`, this time of a part that is not a cylinder (a flywheel or a crank-line part), to prove
   the same route for a second kind of block.
+- **Fuel supply, a shared combustion model and animation for addon sources** (author, 2026-11-26): see "An addon's own engine type"
+  below.
 - **Forge Energy input for engines** and **WTHIT / The One Probe**, both listed as "not done" in the 2.0 record. Each gets a row in
   [COMPAT.md](COMPAT.md) and the compatibility matrix, and is called supported only once its row is green.
 - **The next Create.** Move the supported range when Create and Aeronautics allow (2.0.x settles whether they do now); each Create
   version in range is built and tested against (rule 7), and if two cannot sit side by side the release says so.
 - **Pack tools**, as asked for: check [PACKS.md](PACKS.md) against what pack makers ask for in the feedback channel (the
   `triage-feedback` skill reads it) before choosing anything here. Nothing is built from a guess.
+
+### An addon's own engine type: fuel, combustion and animation (author, 2026-11-26; proposed)
+
+**Asked for by the author on 2026-11-26**, after asking whether the addon API could support an opposed-piston engine. **All three are
+wanted. Nothing is built; the shapes below are a first design.** Today an addon can put such an engine on the crank as a `TorqueSource`
+([ADDONS.md](ADDONS.md)), but has to supply the rest itself. This was found by reading the API and the engine code, not by building one.
+
+- **Fuel supply.** A source can draw from the engine's shared fuel gallery (the fuel piped into any head) and learns which fuel it is
+  and how much it was really given. Today `fuelUsedLastStep()` only adds to the reported fuel rate, and the gallery feeds only the
+  mod's own cylinders and turbo anti-lag. To settle: how an engine made only of addon parts is fuelled, since it has none of the
+  mod's heads.
+- **A shared combustion model.** A source gets this mod's gas, ignition and burn behaviour and supplies only its own geometry (volume
+  against crank angle, and when its valves or ports open). Fuels, pack fuel data, boost, intercooling, cold starts and pre-ignition
+  then behave as they do in a cylinder. Today that code (`CylinderModel`, `Combustion`) is internal. The public surface has to be
+  small enough to keep frozen, with the internals behind it free to change. It must handle two pistons sharing one chamber and a
+  cycle that repeats every 360 degrees; the mod itself still adds no two-stroke.
+- **Animation.** A client can read an engine's crank angle and direction, in step with the engine, so an addon's own pistons and
+  linkages move with the shaft, including a phase lead between two cranks. Today `EngineView` gives only RPM and there is no client
+  angle in the API. The addon still supplies its models and renderer.
+
+**Rules for the work:** each is an addition in a new API minor, with `ApiVersion.MINOR` raised and the new names recorded in
+`compat/api-surface.txt`; nothing allocates in `advance`; and opening up the combustion code is a behaviour-preserving refactor, so
+`compat/behaviour.txt` and `compat/trajectories.txt` stay untouched.
+
+**Proof:** an example addon with an opposed-piston engine built on all three, using only the public API, with GameTests that it starts,
+runs, burns fuel from the supply and stalls without it. Its animation is checked in game. Whether this is the second example addon
+above or a third is open. The same work should check what else an engine made only of addon sources lacks (status and cylinder
+counts, sound, knock, wear, readouts); none of those was checked, and they are not part of this request.
 
 ### Piston variants: high and low compression (author, 2026-11-23; proposed)
 
@@ -1244,6 +1427,55 @@ asks for it:
   2.1 did not already. Cosmetic parts never change a rating (rule 4).
 - **Blueprints.** Whatever the dual-mass flywheel and the 2.x parts show the format missing; a blueprint saved on 2.0 must keep
   loading (the format is part of the promise).
+
+### Looking like Create: a texture rework and some models (author, 2026-11-25; moved from 2.4 to 2.5 on 2026-11-26)
+
+**Why.** Many players say the mod does not fit Create to look at: its blocks stand out in a Create factory instead of reading as
+part of one. Rule 5 ("it looks like Create") is the standard, and today's art misses it often enough that players notice. This is
+a pass over the art as a whole, not a block at a time.
+
+**First, find out exactly what is wrong.** Nothing is redrawn from a guess.
+
+- Collect the complaints: what players name (which blocks, what about them: colour, shape, detail, scale), with the
+  `triage-feedback` skill over the feedback channel, and ask in the channel for screenshots where the reports are vague.
+- Audit every block and item side by side with Create's own (`tools/preview_models.py --create-textures`, in the world next to
+  Create machines, and on the mod page's pictures), and write one list, worst first: what each misses and whether a texture fixes
+  it or the model has to change.
+
+**Textures (the bulk of it).** Built from Create's own wherever one fits: its andesite, brass and copper casings, shafts, cogs,
+gauges and trims, used as they are. The mod's own metals keep Create's structure and exact colours (dark outer rim, bright inner rim
+lit top and left, broad low-contrast strokes) in `tools/generate_textures.py`. No per-pixel noise, no posterising, no baked shading
+(the 2026-11-08 art direction, [DESIGN.md](DESIGN.md) "Art (2026-11-08)"). Connected casing textures keep joining, and the wear
+textures (`tools/generate_wear_textures.py`) are redrawn to match the new base.
+
+**Models (some, where a texture cannot fix it).** Only the blocks the audit says read wrong in silhouette. Create's vocabulary: a
+casing frame with its kinetic parts showing (a shaft end, a cog, a turning part behind a window), brass or copper trim, chunky
+boxes as in `tools/generate_models.py`. No stepped circles, rows of tiny boxes or reconstructed round parts (the rejected
+"3D pixel art" pass). A model change keeps the block's ID, blockstate and saved data; a new collision shape also moves its goggles
+anchor, Ponder scenes and the smoke screenshots.
+
+**How it is done.**
+
+- A small sample first (two or three blocks, before and after, next to Create's), shown to the author before anything bigger; then
+  batches, each approved by the author on a contact sheet before it is merged.
+- Cosmetic only: no rating, recipe or behaviour changes (rule 4).
+- Within 2.x a redrawn model counts as a change to how existing builds look ([CLAUDE.md](../CLAUDE.md), "Genuinely intended
+  behaviour changes"): it needs the author's say-so naming the batch, and each batch is listed under Exceptions in the v2.5.0 release record
+  with who approved it. Resource packs that retexture this mod will show the old look on reworked blocks; the changelog
+  says which blocks changed.
+- Afterwards the mod page's pictures (`tools/gallery.py`), the Ponder screenshots and the trailer (`tools/trailer/record.py`) are
+  taken again, and [LISTING.md](LISTING.md) and the README follow.
+
+**Tests.** The client audit's missing-texture and missing-model checks and the smoke screenshots cover every changed block; the
+generators stay the source of every texture and model they draw (regenerated, never hand-edited), and a block whose art comes from
+a generator gets a test that its files match the generator's output where one is cheap.
+
+**Open for the author.**
+
+- Which blocks go first (the audit's worst-first list is the proposal).
+- Whether the old look ships as an optional built-in resource pack ("Classic"), so a player who liked it keeps it.
+
+The author queued it in 2.4 on 2026-11-25 and moved it to 2.5 on 2026-11-26. It touches no simulation code.
 
 ## 3.0 Clean Slate
 
