@@ -40,8 +40,8 @@ question, not an obstacle ([CLAUDE.md](../CLAUDE.md)).
 | 2.5 | Open Garage (was 2.4 until 2026-11-25) | Reach: a new API minor (**fuel supply, a shared combustion model and animation for addon engines**, author, 2026-11-26), energy and probe mods, the next Create, a second example addon; **piston rings**, **polluted intake air**, **high- and low-compression piston variants**, **rotor variants (a precision rotor among them) with an exhaust niche**, and **nitrous oxide** (liquid, a vaporiser and a gas in the intake manifolds) (author, 2026-11-23), a **W layout for the Bank Builder** (author, 2026-11-24), then **look, sound and performance** only where the 2.0.x pass found something (all of it was 2.3 until the author moved it, 2026-11-24; its sound went to 2.4's sound rework, 2026-11-25); **a texture rework, with some new models, so the mod looks like part of Create** (author, 2026-11-25, from player complaints; moved from 2.4 on 2026-11-26) | Medium to large |
 | 3.0 | Clean Slate | The second breaking cleanup: drop 1.x migrations, regenerate baselines, API 2.0 | Large |
 
-**Shipped so far (tags):** 2.0.0 (2026-11-21), 2.0.1 and 2.0.2 (2026-11-22), 2.1.0 (2026-11-23), 2.2.0 (2026-11-24) and 2.3.0 (2026-11-25). 2.4, 2.5 and 3.0
-are not started; 2.3.1 was dropped by the author on 2026-11-25 and its fixes go out in 2.4. Each shipped release has its sign-off record in [releases](releases), which lists what the machine gate did not see in a running
+**Shipped so far (tags):** 2.0.0 (2026-11-21), 2.0.1 and 2.0.2 (2026-11-22), 2.1.0 (2026-11-23), 2.2.0 (2026-11-24) and 2.3.0 (2026-11-25). 2.4 is in progress and
+not released, and 2.5 and 3.0 are not started; 2.3.1 was dropped by the author on 2026-11-25 and its fixes go out in 2.4. Each shipped release has its sign-off record in [releases](releases), which lists what the machine gate did not see in a running
 game and what the author's Part 3 pass covered; the "built, not seen in game" notes below are the state at the time of building, kept for the record.
 
 2.2 to 2.5 are independent of 2.1 and of each other; they can swap places or be cut, and 2.1 does not wait on either.
