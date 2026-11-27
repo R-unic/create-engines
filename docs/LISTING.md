@@ -228,6 +228,10 @@ that changes how an existing engine behaves says so in its changelog. More on
 
 Not released yet.
 
+- Sound: every wear failure and the dry piston's warning are re-made to sound like machinery, not a cartoon: the thrown rod, blown
+  gasket, piston seizure and its warning, failed apex seals, warped head and failed turbocharger. The sweeping squeals and whistles,
+  long bell-like rings and evenly timed rattles are gone: metal now strikes short and dull, scraping is rough, and leaks hiss and spit
+  unevenly. The sounds play at the same moments, at the same loudness and range. This changes how existing builds sound.
 - New, **High-Compression Piston** and **Low-Compression Piston**, each made from a new Forged Piston (an iron sheet deployed on it, or
   a Mechanical Saw). Both keep the forged piston's light weight, low drag and longer life, and change only the compression: 20% more
   or 20% less. On a four cylinder precision engine on the Dynamometer, against forged pistons: high compression makes about 5% more with

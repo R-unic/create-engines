@@ -40,12 +40,8 @@ Sounds:
   engine_clatter     a seamless loop of valve gear: soft tappet knocks over the hum of the gears (no longer played; the sound ID is kept)
   bearing_squeal     a seamless loop of bearings running dry: a wavering shriek over a stick-slip rasp
   intake_roar        a seamless loop of air gulped through an intake: a hollow rush swelling in eight pulses a second
-  rod_thrown1..2     the wear mode's loudest failure: a connecting rod going through the head. A flat, huge crack, a heavy cast-iron
-                     clang as the head splits, a grinding scrape of the wreck turning against itself, and the ring of the casting
-  gasket_blow1..2    a head gasket blowing: a hard pop, then hot gas hissing out past the joint, sputtering as it settles
-  apex_fail1..2      a rotor's apex seal letting go: a snap, the loose strip clattering round the chamber, and the wheeze of blow-by
-  seize_warning1..2  a dry piston crying out before it seizes: a short shriek that swells and dies away
-piston_seize1..2   a piston seizing in its bore: a rising shriek of dry metal that cuts off in a hard clunk and a low shudder
+  rod_thrown1..2, gasket_blow1..2, apex_fail1..2, head_warp1..2, turbo_fail1..2, piston_seize1..2, seize_warning1..2
+                     the wear mode's failures and the dry piston's warning (failure_sounds.py)
 """
 import ctypes
 import glob
@@ -61,6 +57,7 @@ from scipy import signal
 
 import boost_sounds
 import exhaust_pop_sounds
+import failure_sounds
 import sound_levels
 import start_stall_sounds
 from sound_dsp import SR, band, finish, highpass, lowpass
@@ -119,6 +116,7 @@ def write_ogg_ffmpeg(path, samples):
 HIGH_QUALITY = {"exhaust_pop%d" % i: 0.8 for i in range(1, 6)}
 HIGH_QUALITY.update({"exhaust_spit%d" % i: 0.8 for i in range(1, 4)})
 HIGH_QUALITY.update({name: 0.8 for name in start_stall_sounds.SOUNDS})
+HIGH_QUALITY.update({name: 0.8 for name in failure_sounds.SOUNDS})
 HIGH_QUALITY.update({name: 0.8 for name in boost_sounds.SOUNDS if name.startswith("turbo_blowoff")})
 
 
@@ -340,159 +338,6 @@ def soot_catch(seed, pitch):
     return finish(mix, 0.7)
 
 
-def rod_thrown(seed, pitch):
-    """A connecting rod going through the head: the loudest sound an engine can make. A flat crack that is all edge, the heavy clang of a cast
-    head splitting (inharmonic partials of a struck slab, lower and longer than any tick), a grind of the wreck turning against itself as the
-    crank carries it round, and the ring of the casting afterwards."""
-    rng = np.random.default_rng(seed)
-    n = int(1.7 * SR)
-    t = np.arange(n) / SR
-    rise = np.minimum(t / 0.0003, 1)
-    crack = band(rng.standard_normal(n), 1100 * pitch, 11000, 2) * rise * np.exp(-t / 0.012)
-    crack += 0.6 * band(rng.standard_normal(n), 250 * pitch, 1800, 2) * rise * np.exp(-t / 0.05)
-    # The head splitting: a struck cast slab, its partials far from a harmonic series
-    clang = np.zeros(n)
-    for ratio, level, decay in ((1.0, 1.0, 0.45), (1.62, 0.8, 0.32), (2.31, 0.6, 0.24), (3.77, 0.45, 0.16), (5.2, 0.3, 0.1), (7.4, 0.18, 0.06)):
-        clang += level * np.sin(2 * np.pi * 330 * pitch * ratio * t + rng.uniform(0, 2 * np.pi)) * np.exp(-t / decay)
-    clang *= np.minimum(t / 0.002, 1)
-    thump = np.sin(2 * np.pi * np.cumsum((38 + 130 * np.exp(-t / 0.03)) * pitch) / SR) * np.minimum(t / 0.001, 1) * np.exp(-t / 0.18)
-    thump = np.tanh(2.0 * thump)
-    # The grind: rough noise in the mid-range, jerking with the turn of the crank, dying as it jams
-    jerk = 0.5 + 0.5 * np.abs(np.sin(2 * np.pi * (3.2 + 0.4 * rng.random()) * t * np.exp(-t / 1.4)))
-    grind = band(rng.standard_normal(n), 380, 3000, 2) * jerk * np.minimum(np.maximum(t - 0.05, 0) / 0.12, 1) * np.exp(-np.maximum(t - 0.2, 0) / 0.6)
-    ring = np.zeros(n)
-    for ratio, level, decay in ((1.0, 1.0, 0.9), (2.0, 0.4, 0.5), (3.1, 0.2, 0.3)):
-        ring += level * np.sin(2 * np.pi * 150 * pitch * ratio * t + rng.uniform(0, 2 * np.pi)) * np.exp(-t / decay)
-    ring *= np.minimum(np.maximum(t - 0.02, 0) / 0.03, 1)
-    mix = (1.0 * crack / np.max(np.abs(crack)) + 0.9 * clang / np.max(np.abs(clang)) + 0.9 * thump
-           + 0.55 * grind / np.max(np.abs(grind)) + 0.4 * ring / np.max(np.abs(ring)))
-    delay = int(0.016 * SR)
-    echo = np.zeros(n)
-    echo[delay:] = lowpass(mix, 2200, 1)[:n - delay]
-    mix = np.tanh(1.6 * (mix + 0.3 * echo))
-    mix *= np.clip((n - np.arange(n)) / (0.25 * SR), 0, 1)
-    return finish(mix, 0.95)
-
-
-def gasket_blow(seed, pitch):
-    """A head gasket blowing: a hard pop as the seal goes, then hot gas hissing out past the joint, sputtering as the pressure drops."""
-    rng = np.random.default_rng(seed)
-    n = int(1.3 * SR)
-    t = np.arange(n) / SR
-    rise = np.minimum(t / 0.0005, 1)
-    pop = band(rng.standard_normal(n), 700 * pitch, 6500, 2) * rise * np.exp(-t / 0.012)
-    thump = np.sin(2 * np.pi * np.cumsum((60 + 160 * np.exp(-t / 0.02)) * pitch) / SR) * np.minimum(t / 0.001, 1) * np.exp(-t / 0.07)
-    # The hiss: high, thin noise that holds, then falls away and chatters as the pressure runs out
-    chatter = 0.6 + 0.4 * np.tanh(2.0 * np.sin(2 * np.pi * (26 + 40 * t) * t))
-    hold = np.exp(-np.maximum(t - 0.12, 0) / 0.35) * np.minimum(np.maximum(t - 0.005, 0) / 0.02, 1)
-    # The chatter comes in gradually, not all at once
-    blend = np.clip((t - 0.45) / 0.2, 0, 1)
-    hiss = band(rng.standard_normal(n), 2600, 10500, 2) * hold * (1 + blend * (chatter - 1))
-    body = band(rng.standard_normal(n), 400, 1800, 2) * hold * 0.5
-    mix = (0.9 * pop / np.max(np.abs(pop)) + 0.8 * thump + 0.7 * hiss / np.max(np.abs(hiss)) + 0.4 * body / np.max(np.abs(body)))
-    mix = np.tanh(1.3 * mix)
-    mix *= np.clip((n - np.arange(n)) / (0.2 * SR), 0, 1)
-    return finish(mix, 0.8)
-
-
-def piston_seize(seed, pitch):
-    """A piston seizing in its bore: dry metal shrieking, rising in pitch and harshness as it grabs, cut off dead by a hard clunk, then the low
-    shudder of the engine rocking against the lock."""
-    rng = np.random.default_rng(seed)
-    n = int(1.4 * SR)
-    t = np.arange(n) / SR
-    grab = 0.14  # when it locks: short, so the clunk lands with the smoke and the cylinder stopping
-    f = (1500 + 1800 * np.minimum(t / grab, 1) ** 1.6) * pitch
-    shriek = np.sin(2 * np.pi * np.cumsum(f) / SR + 2.2 * np.sin(2 * np.pi * 9 * t))
-    shriek += 0.5 * np.sin(2 * np.pi * np.cumsum(f * 2.01) / SR) + 0.25 * np.sin(2 * np.pi * np.cumsum(f * 3.02) / SR)
-    stick = band(rng.standard_normal(n), 1800, 7000, 2) * (0.65 + 0.35 * np.sin(2 * np.pi * (40 + 90 * np.minimum(t / grab, 1)) * t))
-    swell = np.minimum(t / 0.06, 1) * np.clip((grab + 0.012 - t) / 0.012, 0, 1)
-    squeal = (0.6 * shriek / np.max(np.abs(shriek)) + 0.5 * stick / np.max(np.abs(stick))) * swell
-    k = int(grab * SR)
-    u = np.arange(n - k) / SR
-    clunk = np.zeros(n)
-    hit = (band(rng.standard_normal(n - k), 200, 3500, 2) * np.exp(-u / 0.02)
-           + sum(lv * np.sin(2 * np.pi * 210 * pitch * r * u + rng.uniform(0, 2 * np.pi)) * np.exp(-u / d)
-                 for r, lv, d in ((1.0, 1.0, 0.18), (1.9, 0.5, 0.1), (3.3, 0.25, 0.06))))
-    clunk[k:] = hit * np.minimum(u / 0.0005, 1)
-    shudder = np.zeros(n)
-    shudder[k:] = np.sin(2 * np.pi * 34 * pitch * u) * np.exp(-u / 0.28) * np.minimum(u / 0.01, 1)
-    mix = 0.8 * squeal + 1.0 * clunk / np.max(np.abs(clunk)) + 0.7 * shudder
-    mix = np.tanh(1.4 * mix)
-    mix *= np.clip((n - np.arange(n)) / (0.2 * SR), 0, 1)
-    return finish(mix, 0.85)
-
-
-def head_warp(seed, pitch):
-    """A cylinder head giving way to heat: two dry cracks as the casting moves, the low ring of it, and steam hissing out of the joint."""
-    rng = np.random.default_rng(seed)
-    n = int(1.5 * SR)
-    t = np.arange(n) / SR
-    crack = np.zeros(n)
-    for at, level in ((0.0, 1.0), (0.17, 0.65)):
-        i = int(at * SR)
-        u = np.arange(n - i) / SR
-        hit = band(rng.standard_normal(n - i), 1200 * pitch, 8000, 2) * np.exp(-u / 0.012)
-        hit += sum(lv * np.sin(2 * np.pi * 430 * pitch * r * u) * np.exp(-u / d)
-                   for r, lv, d in ((1.0, 0.7, 0.22), (2.71, 0.4, 0.12), (4.9, 0.2, 0.06)))
-        crack[i:] += level * hit * np.minimum(u / 0.0004, 1)
-    sputter = 0.75 + 0.25 * np.sin(2 * np.pi * np.cumsum(9 + 6 * np.exp(-t / 0.4)) / SR)
-    steam = band(rng.standard_normal(n), 2600 * pitch, 9000, 2) * sputter * np.minimum(np.maximum(t - 0.08, 0) / 0.12, 1) * np.exp(-np.maximum(t - 0.4, 0) / 0.4)
-    mix = crack / np.max(np.abs(crack)) + 0.55 * steam / np.max(np.abs(steam))
-    mix = np.tanh(1.3 * mix)
-    mix *= np.clip((n - np.arange(n)) / (0.25 * SR), 0, 1)
-    return finish(mix, 0.8)
-
-
-def turbo_fail(seed, pitch):
-    """A turbocharger failing: a bang, then the whine of the wheel dragging on its housing, falling in pitch as it grinds to a stop."""
-    rng = np.random.default_rng(seed)
-    n = int(1.7 * SR)
-    t = np.arange(n) / SR
-    bang = band(rng.standard_normal(n), 300, 6000, 2) * np.minimum(t / 0.0004, 1) * np.exp(-t / 0.02)
-    f = (350 + 3400 * np.exp(-t / 0.5)) * pitch
-    phase = 2 * np.pi * np.cumsum(f) / SR
-    whine = (np.sin(phase) + 0.45 * np.sin(2.03 * phase) + 0.2 * np.sin(3.11 * phase))
-    scrape = band(rng.standard_normal(n), 1400, 7000, 2) * (0.55 + 0.45 * np.sin(phase / 24))
-    fade = np.minimum(t / 0.01, 1) * np.exp(-t / 0.65)
-    mix = bang / np.max(np.abs(bang)) + (0.6 * whine / np.max(np.abs(whine)) + 0.5 * scrape / np.max(np.abs(scrape))) * fade
-    mix = np.tanh(1.3 * mix)
-    mix *= np.clip((n - np.arange(n)) / (0.25 * SR), 0, 1)
-    return finish(mix, 0.82)
-
-
-def apex_fail(seed, pitch):
-    """A rotor's apex seal letting go: a sharp snap of hard metal, the broken strip clattering round the chamber as the shaft carries it,
-    slower with every turn until it jams, and the wheeze of compression blowing past the tip that is no longer sealed."""
-    rng = np.random.default_rng(seed)
-    n = int(1.6 * SR)
-    t = np.arange(n) / SR
-    snap = band(rng.standard_normal(n), 2400 * pitch, 11000, 2) * np.minimum(t / 0.0003, 1) * np.exp(-t / 0.008)
-    snap += 0.7 * sum(lv * np.sin(2 * np.pi * 1250 * pitch * r * t) * np.exp(-t / d)
-                      for r, lv, d in ((1.0, 1.0, 0.09), (2.37, 0.6, 0.05), (4.1, 0.3, 0.03))) * np.minimum(t / 0.001, 1)
-    # The loose strip knocking round: hits that come further apart, each a small ring of its own
-    clatter = np.zeros(n)
-    at, gap, level = 0.07, 0.045, 1.0
-    while at < 1.05:
-        i = int(at * SR)
-        u = np.arange(n - i) / SR
-        f = 820 * pitch * rng.uniform(0.85, 1.2)
-        hit = (np.sin(2 * np.pi * f * u) + 0.5 * np.sin(2 * np.pi * f * 2.76 * u)) * np.exp(-u / 0.018)
-        hit += band(rng.standard_normal(n - i), 1500, 6000, 2) * np.exp(-u / 0.006)
-        clatter[i:] += level * hit * np.minimum(u / 0.0004, 1)
-        at += gap * rng.uniform(0.9, 1.1)
-        gap *= 1.17
-        level *= 0.9
-    # The blow-by: breathy noise pulsing three times a turn, as each flank passes, dying with the rotor
-    pulse = 0.35 + 0.65 * np.abs(np.sin(2 * np.pi * np.cumsum(14 * np.exp(-t / 0.9)) / SR))
-    wheeze = band(rng.standard_normal(n), 900 * pitch, 4200, 2) * pulse * np.minimum(np.maximum(t - 0.04, 0) / 0.1, 1) * np.exp(-np.maximum(t - 0.3, 0) / 0.45)
-    thud = np.sin(2 * np.pi * np.cumsum((52 + 110 * np.exp(-t / 0.025)) * pitch) / SR) * np.minimum(t / 0.001, 1) * np.exp(-t / 0.1)
-    mix = (1.0 * snap / np.max(np.abs(snap)) + 0.7 * clatter / np.max(np.abs(clatter)) + 0.5 * wheeze / np.max(np.abs(wheeze)) + 0.6 * thud)
-    mix = np.tanh(1.4 * mix)
-    mix *= np.clip((n - np.arange(n)) / (0.25 * SR), 0, 1)
-    return finish(mix, 0.85)
-
-
 def flare_whoosh(seed):
     """A gas flame catching and settling: a soft rising rush of air, with a low roar under it, fading out."""
     rng = np.random.default_rng(seed)
@@ -528,20 +373,7 @@ SOUNDS = {
     "engine_clatter": clatter_loop,
     "bearing_squeal": squeal_loop,
     "intake_roar": intake_roar_loop,
-    "rod_thrown1": lambda: rod_thrown(131, 1.0),
-    "rod_thrown2": lambda: rod_thrown(137, 0.88),
-    "gasket_blow1": lambda: gasket_blow(139, 1.0),
-    "gasket_blow2": lambda: gasket_blow(149, 0.85),
-    "seize_warning1": lambda: seize_warning(163, 1.0),
-    "seize_warning2": lambda: seize_warning(167, 0.93),
-    "piston_seize1": lambda: piston_seize(151, 1.0),
-    "piston_seize2": lambda: piston_seize(157, 0.88),
-    "apex_fail1": lambda: apex_fail(163, 1.0),
-    "apex_fail2": lambda: apex_fail(167, 0.87),
-    "head_warp1": lambda: head_warp(173, 1.0),
-    "head_warp2": lambda: head_warp(179, 0.88),
-    "turbo_fail1": lambda: turbo_fail(181, 1.0),
-    "turbo_fail2": lambda: turbo_fail(191, 0.87),
+    **failure_sounds.SOUNDS,
 }
 
 
@@ -554,21 +386,6 @@ def write_wav(directory, name, samples):
         fh.setframerate(SR)
         fh.writeframes((np.clip(samples, -1, 1) * 32767).astype("<i2").tobytes())
     print("wrote", os.path.normpath(path), "%.2fs" % (len(samples) / SR))
-
-
-def seize_warning(seed, pitch):
-    """A dry piston crying out before it seizes: one short shriek of metal on metal that swells, wavers and dies away, with a rasp under it.
-    A one-off, so it starts and ends in silence."""
-    rng = np.random.default_rng(seed)
-    n = int(0.9 * SR)
-    t = np.arange(n) / SR
-    f = (1700 + 350 * np.sin(np.pi * t / 0.9) + 60 * np.sin(2 * np.pi * 11 * t)) * pitch
-    phase = 2 * np.pi * np.cumsum(f) / SR
-    shriek = np.sin(phase) + 0.4 * np.sin(2.01 * phase) + 0.15 * np.sin(3.02 * phase)
-    rasp = band(rng.standard_normal(n), 1500, 5000, 2) * (0.65 + 0.35 * np.sin(2 * np.pi * 47 * t))
-    envelope = np.sin(0.5 * np.pi * np.clip(t / 0.12, 0, 1)) ** 2 * np.sin(0.5 * np.pi * np.clip((0.9 - t) / 0.45, 0, 1)) ** 2
-    mix = (0.7 * shriek / np.max(np.abs(shriek)) + 0.45 * rasp / np.max(np.abs(rasp))) * envelope
-    return finish(mix, 0.7)
 
 
 def main():

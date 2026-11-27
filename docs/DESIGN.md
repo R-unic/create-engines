@@ -473,6 +473,13 @@ faces; and anything that needs doing regularly (an oil change) can be automated 
   beside it as an outside heat source.
 
 
+### Failure sounds (re-made 2026-11-27)
+
+The wear mode's failures and the dry piston's warning are synthesized by `tools/failure_sounds.py`. A recording of a breaking
+engine has no clean pitch: struck metal is many unrelated modes that die at once, weight is low noise, scraping is uneven
+stick-slip through a few broad resonances, a leak is fluttering noise, and no gap repeats. Held or sweeping tones, long rings
+and regular rattles are what made the first takes sound like a cartoon (`FailureSoundsTest` guards against the tones).
+
 ### Turbo and supercharger sounds, and torsional flex (2026-11-02)
 
 - **Sounds** (reworked 2026-11-26). Synthesized by `tools/generate_sounds.py` (which falls back to ffmpeg's libvorbis

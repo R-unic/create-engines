@@ -608,6 +608,10 @@ design section, the design section is the target and the build is to be changed:
      head splitting, a grind of the wreck, the ring of the casting; 1.7 s), `gasket_blow1..2` (a hard pop and hot gas hissing out, sputtering; 1.3 s) and `piston_seize1..2` (a rising
      dry shriek cut off by a clunk and a low shudder; 1.4 s), registered in `CESounds` and `sounds.json`. Changed 2026-11-25 after the author found 20 seconds too fast and the sounds janky: a piston now takes 120 seconds dry at 128 RPM (slower below, faster above, 2.5 times as long forged), cries out with its own one-off `seize_warning1..2` from half way (it was the `bearing_squeal` loop played once), the seizure clunk comes 0.14 s in and not 0.62 s, and the gasket chatter and seizure rasp no longer switch hard on and off.
      Checked by the numbers (levels, no clipping, the envelope in time) and by `SoundAssetsTest`, not by ear: **they need listening to**.
+     **Re-made 2026-11-27** (author: the failure sounds were cartoony, not realistic): all seven, the apex, head and turbo ones too,
+     now come from `tools/failure_sounds.py` (its header says what made the old takes cartoony and what replaces it). The descriptions
+     of their sounds here are what they were. Lengths now run 1.0 to 1.9 s, the loudness targets are unchanged, and `FailureSoundsTest`
+     keeps them from being mostly clean tones. **Not yet heard by the author.**
    - **Failed apex seals. Built 2026-11-24 (not seen or heard in game):** sounds of their own (`apex_fail1..2`: a snap, the loose strip clattering round the chamber, the
      wheeze of blow-by; 1.6 s), a burst of sparks and smoke, `rotor_housing/wreck` (sprung seal strips out between the posts on all four sides, soot on both rims, clear of
      the rotor's sweep, `ApexWreckAssetsTest`), drawn until a new set is fitted, and a housing that keeps smoking. The explosion stand-in is gone. No fire: the author's
