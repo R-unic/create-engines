@@ -1200,7 +1200,11 @@ streamed sound clicks when the filter goes on mid-sound is still to be listened 
   the tooltip says "cannot filter sound". After every change the source's OpenAL error is read and counted, so an error is never left for the sound
   engine's own check to report as its own.
 - **Access transformer.** `META-INF/accesstransformer.cfg`, three lines, the first the mod has: `Channel.source` (the OpenAL source number, private),
-  `SoundEngine.instanceToChannel` and `SoundManager.soundEngine`. No mixin.
+  `SoundEngine.instanceToChannel` and `SoundManager.soundEngine`. The headphones need no mixin.
+- **The sound stop race** (`client.mixin.SoundStopRaceMixin`, 2026-11-27, not part of the headphones). Minecraft's `SoundEngine.stopAll` queues
+  `Channel::stop` on the sound thread for every playing sound, then deletes the same sources itself without waiting, so a queued stop can reach a deleted
+  source (`OpenAlUtil: Stop: Invalid name parameter`). The mixin empties `instanceToChannel` as `stopAll` begins, so nothing is queued;
+  `channelAccess.clear()` still stops and deletes every source. It fails soft (`defaultRequire` 0), and the client audit's thread churn fails if it did not run.
 - **Not done, on purpose.** No config option (the numbers are constants until someone has heard them); no advancement (the tab is crowded); no
   cosmetic variants; the tooltip's filter line is only known after the first muffled sound has played.
 - **Tests.** `MuffleTest` (7); GameTests `HeadphonesGameTests` (5: worn only on the head, equippable in the head slot, in `curios:head`, craftable, and

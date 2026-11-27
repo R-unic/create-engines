@@ -376,6 +376,10 @@ wear mode, two new connecting rods, a rework of the engine sound, fixes, new gas
 - Fixed (wear mode): a stock gasket that was fitted by hand is now lost with a head a rod goes through. Before, it could be had back, new, by breaking
   the head with the mode off.
 - Fixed (wear mode): an engine no longer runs for a tick without its saved failures after the mode is switched.
+- Fixed (wear mode): switching the mode while players are connected to a server now reaches them at once. Before, their goggles, item wear bars and
+  wrecked parts showed the old setting until they joined again. The server and the player both need this version.
+- Fixed: reloading sounds, stopping them all or closing the game while sounds play no longer logs `OpenAlUtil: Stop: Invalid name parameter`. The
+  cause is a race in Minecraft's own sound engine, which engines' long-playing sounds made easier to hit.
 - Fixed (wear mode): battery wear is sent to players only when the figure their goggles show moves.
 - Faster on servers: a battery bank is walked once a second for the whole bank (before, once for every battery in it), and placing or breaking a battery
   no longer has every other bank walked again. Switching the wear mode no longer has every engine search every other. An engine with nothing loaded

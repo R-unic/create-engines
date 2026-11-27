@@ -78,6 +78,8 @@ public class CreateEngines {
 		NeoForge.EVENT_BUS.addListener(EngineTopology::onBlockPlaced);
 		NeoForge.EVENT_BUS.addListener(EngineTopology::onBlockBroken);
 		NeoForge.EVENT_BUS.addListener(AdvancementSting::onEarned);
+		NeoForge.EVENT_BUS.addListener(com.createengines.config.WearModeSync::onServerTick);
+		NeoForge.EVENT_BUS.addListener(com.createengines.config.WearModeSync::onLogin);
 		NeoForge.EVENT_BUS.addListener(Operators::onBlockPlaced);
 		NeoForge.EVENT_BUS.addListener(Operators::onBlockUsed);
 		NeoForge.EVENT_BUS.addListener(Operators::onBlockBroken);

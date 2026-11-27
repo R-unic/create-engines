@@ -708,7 +708,8 @@ These were the 2.3.1 patch. They go out with 2.4 and are listed first in its cha
   "2.4.0"). Exceptions owed in the 2.4.0 record, each with the author's name: `limits.maxBankBatteries` splitting very large banks, the
   Black Box noticing up to 10 s late, the pollution cap read every 3 s, the changed `WearToggle` assertion, and the rubber and cardboard
   gasket recipes replaced (author, 2026-11-25; the old slime and paper recipes removed, manifest lines moved by hand). Still open from the audit: the
-  slower coupling walk (needs the author) and a mid-session `wearMode` toggle not reaching connected players.
+  slower coupling walk (needs the author) and a mid-session `wearMode` toggle not reaching connected players
+  (fixed 2026-11-27).
 - **The Copper Gasket cannot be crafted in 2.3.0.** Its shipped recipe (`recipe/copper_gasket.json`) has the pattern `"C", "CC", "C"`, rows of
   different widths, which vanilla refuses ("Invalid pattern: each row must be the same width", `ShapedRecipePattern`), so the recipe never
   loads and the best gasket is creative-only. Found while triaging SilverThorn's gasket feedback (Discord, 2026-11-25). With 2.3.1 gone there

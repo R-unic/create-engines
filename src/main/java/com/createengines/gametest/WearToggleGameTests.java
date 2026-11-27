@@ -35,6 +35,12 @@ public class WearToggleGameTests {
 	private static final String ROTOR = "wear-toggle-rotor";
 	private static final String ITEMS = "wear-toggle-items";
 	private static final String SWITCH_TICK = "wear-toggle-tick";
+	private static final String PLAYERS = "wear-toggle-players";
+
+	@AfterBatch(batch = PLAYERS)
+	public static void restoreAfterPlayers(ServerLevel level) {
+		GameTestConfig.wearMode(false);
+	}
 
 	@AfterBatch(batch = SWITCH_TICK)
 	public static void restoreAfterSwitchTick(ServerLevel level) {
@@ -162,6 +168,20 @@ public class WearToggleGameTests {
 						"and the new one has the saved seizure: " + summary(helper));
 					helper.succeed();
 				});
+			});
+		});
+	}
+
+	/** NeoForge sends the config only to a player who is joining, so the server has to say it again after a switch. */
+	@GameTest(template = "empty", batch = PLAYERS)
+	public static void theServerTellsItsPlayersWhenTheModeIsSwitched(GameTestHelper helper) {
+		GameTestConfig.wearMode(true);
+		helper.runAfterDelay(2, () -> {
+			helper.assertTrue(Boolean.TRUE.equals(com.createengines.config.WearModeSync.told()), "Told it is on");
+			GameTestConfig.wearMode(false);
+			helper.runAfterDelay(2, () -> {
+				helper.assertTrue(Boolean.FALSE.equals(com.createengines.config.WearModeSync.told()), "Told it is off");
+				helper.succeed();
 			});
 		});
 	}

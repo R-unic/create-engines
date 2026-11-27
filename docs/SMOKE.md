@@ -34,7 +34,8 @@ The audit's `threads` phase (`ThreadChurnAudit`) is for what no unit test reache
 and the render thread working while the integrated server ticks on its own. Beside running engines the client reloads the
 sound engine, stops and pauses its sounds, reloads the resource packs and throws away what it has drawn, while the server
 thread breaks and rebuilds two of the engines and runs `/reload`. An engine note has to come back within 100 ticks of each
-sound break, and the engines, both threads, the voice counts and direct memory have to be sound afterwards. An exception on
+sound break, every sound reload has to go through the fix for Minecraft's sound stop race (`SoundStopRaceMixin`), and the engines, both threads,
+the voice counts and direct memory have to be sound afterwards. An exception on
 any thread fails the log check. A pass does not prove there is no race: it gives one many chances to happen. Nothing is
 judged by ear.
 
@@ -417,8 +418,7 @@ Pictures from other runs (Ponder, goggles, management, coupled, new parts) are n
 
 `src/smoke/log-allowlist.txt` lists log lines that are known harmless. **Every entry must say why.** A line you cannot
 explain is a bug. A line starting `warn:` is a *known intermittent* message: still reported, as a warning, so it stays
-visible without making the build flaky (the one entry today is an OpenAL "Invalid name parameter" at shutdown that
-appeared in 1 of 3 runs). Review the list whenever Create, NeoForge or Minecraft is updated and delete entries whose
+visible without making the build flaky (there is no such entry today). Review the list whenever Create, NeoForge or Minecraft is updated and delete entries whose
 reason no longer holds.
 
 ## Adding to it
