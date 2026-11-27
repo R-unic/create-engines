@@ -1598,6 +1598,25 @@ def intercooler():
     write_item("intercooler/item", "intercooler/block")
 
 
+def air_filter():
+    """An air filter along the Y axis (the block state turns it): a pale pleated element between two copper end plates held
+    apart by brass posts, with a charcoal band round its middle and an inlet stub on each end."""
+    textures = {"plate": COPPER_CASING, "element": QUARTZ, "post": BRASS, "charcoal": DARK, "stub": BRASS,
+                "particle": COPPER_CASING}
+    elements = [box((2, 0, 2), (14, 3, 14), "plate"), box((2, 13, 2), (14, 16, 14), "plate"),
+                box((4, 3, 4), (12, 13, 12), "element"), box((2.75, 7, 2.75), (13.25, 9, 13.25), "charcoal")]
+    for x in (2, 12.5):
+        for z in (2, 12.5):
+            elements.append(box((x, 3, z), (x + 1.5, 13, z + 1.5), "post"))
+    # The pleats: ridges standing out of each face of the element
+    for at in (5, 7.5, 10):
+        elements += [box((at, 3, 3), (at + 1, 13, 4), "element"), box((at, 3, 12), (at + 1, 13, 13), "element"),
+                     box((3, 3, at), (4, 13, at + 1), "element"), box((12, 3, at), (13, 13, at + 1), "element")]
+    elements += [box((6, -0.1, 6), (10, 1, 10), "stub"), box((6, 15, 6), (10, 16.1, 10), "stub")]
+    write("air_filter/block", textures, elements)
+    write_item("air_filter/item", "air_filter/block")
+
+
 def muffler():
     """A muffler along the Y axis (the block state turns it): a wrapped canister between two end caps, with banding
     round it and an exhaust stub on each end."""
@@ -2283,6 +2302,7 @@ def main():
     dyno()
     black_box()
     intercooler()
+    air_filter()
     transmission()
     muffler()
     engine_casing()

@@ -40,13 +40,27 @@ import net.minecraft.nbt.StringTag;
  * @param wear             the wear mode's total: the plain mean of how worn every part of the build is, 0 new to 1 spent, or -1 with the mode off
  *                         (see {@code WearTotal})
  * @param sound            what the engine is built of as far as it changes how it sounds (see EngineSound); only the sound
+ * @param intakeDirt       share of its air density the engine loses to polluted air at its intakes, 0 unless that is turned on
  */
 public record EngineSummary(EngineState state, float rpm, float availableTorque, float loadTorque,
 							float fuelPerMinute, float ripple, int firing, int cylinders, float inertia, float lubrication,
 							boolean starterEngaged, float[] firingAngles, int lines, float thinning, float roughness,
 							float condition, float temperature, float coolantRate, boolean pilot, boolean filtered,
 							float flex, int longestLine, Diagnosis.Health health, Diagnosis.Cause cause, float muffling, float boost,
-								List<StatusLine> sourceLines, float oilPerMinute, float wear, long failures, EngineSound sound) {
+								List<StatusLine> sourceLines, float oilPerMinute, float wear, long failures, EngineSound sound,
+								float intakeDirt) {
+
+	/** The summary as it was before engines breathed polluted air: clean. */
+	public EngineSummary(EngineState state, float rpm, float availableTorque, float loadTorque, float fuelPerMinute,
+						 float ripple, int firing, int cylinders, float inertia, float lubrication,
+						 boolean starterEngaged, float[] firingAngles, int lines, float thinning, float roughness,
+						 float condition, float temperature, float coolantRate, boolean pilot, boolean filtered,
+						 float flex, int longestLine, Diagnosis.Health health, Diagnosis.Cause cause, float muffling, float boost,
+						 List<StatusLine> sourceLines, float oilPerMinute, float wear, long failures, EngineSound sound) {
+		this(state, rpm, availableTorque, loadTorque, fuelPerMinute, ripple, firing, cylinders, inertia, lubrication,
+			starterEngaged, firingAngles, lines, thinning, roughness, condition, temperature, coolantRate, pilot, filtered,
+			flex, longestLine, health, cause, muffling, boost, sourceLines, oilPerMinute, wear, failures, sound, 0);
+	}
 
 		/** The summary as it was before the build's sound was synced: a plain note. */
 		public EngineSummary(EngineState state, float rpm, float availableTorque, float loadTorque, float fuelPerMinute,
@@ -132,6 +146,8 @@ public record EngineSummary(EngineState state, float rpm, float availableTorque,
 		tag.putFloat("Temperature", temperature);
 		tag.putFloat("Coolant", coolantRate);
 		tag.putFloat("OilUse", oilPerMinute);
+		if (intakeDirt > 0)
+			tag.putFloat("IntakeDirt", intakeDirt);
 		if (wear >= 0)
 			tag.putFloat("Wear", wear);
 		if (failures != 0)
@@ -187,7 +203,7 @@ public record EngineSummary(EngineState state, float rpm, float availableTorque,
 			tag.getInt("LongestLine"), healths[Math.clamp(tag.getInt("Health"), 0, healths.length - 1)],
 			causes[Math.clamp(tag.getInt("Cause"), 0, causes.length - 1)], tag.getFloat("Muffling"), tag.getFloat("Boost"),
 			readSourceLines(tag), tag.getFloat("OilUse"), tag.contains("Wear") ? tag.getFloat("Wear") : -1f,
-			Math.max(0, tag.getLong("Failures")), readSound(tag));
+			Math.max(0, tag.getLong("Failures")), readSound(tag), tag.getFloat("IntakeDirt"));
 	}
 
 	/** The build's sound, from a tag that may not have it (an older world, a plain engine): then a plain note. */
@@ -242,7 +258,7 @@ public record EngineSummary(EngineState state, float rpm, float availableTorque,
 			|| Math.abs(flex - other.flex) >= 0.01 || longestLine != other.longestLine || health != other.health
 			|| relativeChange(oilPerMinute, other.oilPerMinute) || Math.abs(wear - other.wear) >= 0.01f || failures != other.failures || cause != other.cause || Math.abs(muffling - other.muffling) >= 0.02
 			|| !Arrays.equals(firingAngles, other.firingAngles) || !sourceLines.equals(other.sourceLines)
-			|| !sound.sameAs(other.sound);
+			|| !sound.sameAs(other.sound) || Math.abs(intakeDirt - other.intakeDirt) >= 0.005f;
 	}
 
 	private static boolean relativeChange(float a, float b) {

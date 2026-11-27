@@ -6,6 +6,7 @@ import java.util.Set;
 import org.jetbrains.annotations.Nullable;
 
 import com.createengines.content.airflow.PortKind;
+import com.createengines.engine.sim.IntakeAir;
 import com.createengines.engine.sim.PortFlow;
 
 import net.minecraft.core.BlockPos;
@@ -157,7 +158,23 @@ public record EngineLayout(BlockPos primary, Axis axis, List<Segment> segments, 
 	public record PortNetwork(PortKind kind, int openings, int flooded, int heads, List<BlockPos> outlets,
 							  List<BlockPos> throttles, List<BlockPos> sensors, List<BlockPos> turbos,
 							  List<BlockPos> superchargers, List<BlockPos> intercoolers, Set<BlockPos> parallel,
-							  List<BlockPos> mufflers, List<BlockPos> traps, int run) {
+							  List<BlockPos> mufflers, List<BlockPos> traps, int run, List<BlockPos> airFilters) {
+
+		/** A line with no air filter in it. */
+		public PortNetwork(PortKind kind, int openings, int flooded, int heads, List<BlockPos> outlets,
+						   List<BlockPos> throttles, List<BlockPos> sensors, List<BlockPos> turbos,
+						   List<BlockPos> superchargers, List<BlockPos> intercoolers, Set<BlockPos> parallel,
+						   List<BlockPos> mufflers, List<BlockPos> traps, int run) {
+			this(kind, openings, flooded, heads, outlets, throttles, sensors, turbos, superchargers, intercoolers, parallel, mufflers,
+				traps, run, List.of());
+		}
+
+		/** What the air filters in this line are worth: nothing with none, less with a branch that goes round every one. */
+		public IntakeAir.Filter filtering() {
+			if (airFilters.isEmpty())
+				return IntakeAir.Filter.NONE;
+			return parallel.containsAll(airFilters) ? IntakeAir.Filter.BYPASSED : IntakeAir.Filter.INLINE;
+		}
 
 		/** A line whose length nobody measured: as long as its openings. */
 		public PortNetwork(PortKind kind, int openings, int flooded, int heads, List<BlockPos> outlets,

@@ -191,7 +191,7 @@ All optional; none is needed to play.
 - **[Create Aeronautics](https://modrinth.com/mod/create-aeronautics):** the thin-air rule is for it, using Sable's own air pressure where Sable is installed. The mod's tests run alongside Aeronautics 1.3.2 and Sable 2.0.6, and
   I have run one engine on one wheeled contraption by hand, and another player has tried it on Aeronautics contraptions of their own. Contraptions beyond those are untried, so treat it as early
 - **[Pollution of the Realms](https://modrinth.com/mod/pollution-of-the-realms):** engines put carbon and sulfur into the air through an open exhaust outlet, more when they run
-  rich and less with a Soot Trap fitted. Nothing is read back into the engine, and a setting turns it off. Another player has used it and reports it works
+  rich and less with a Soot Trap fitted. A setting turns it off, and another, off by default, makes engines breathe dirty air at their intakes, which an Air Filter cleans. Another player has used it and reports it works
 - **[Create: The Factory Must Grow](https://modrinth.com/mod/create-tfmg):** its diesel, gasoline, kerosene and naphtha burn in these
   engines, so its refinery can feed them. Its crude oil, heavy oil, lubrication oil and LPG do not burn here. A GameTest checks the fuel path with
   the mod loaded; its own engines and generators have not been tried beside ours
@@ -243,6 +243,12 @@ Not released yet.
   hand to take them off one at a time; they come out with a seized piston, drop when the cylinder is broken and are destroyed with the
   piston when a rod is thrown.
 - New, a Ponder scene, "Choosing a Piston", goggle lines and item tooltips for all of the above.
+- New, **Air Filter**, for packs with Pollution of the Realms, and polluted intake air for it to clean: a new server setting,
+  `compat.pollutedIntake`, **off by default**. On, carbon and sulfur in the air in front of an intake cost an engine up to 8% of its
+  air density (a running engine feels about two and a half times that), reaching the most at `pollutionAreaCap` steps of gas, or 150
+  with no cap. A filter in the intake run takes 80% of that back, or 40% where the air can go round it. It never wears or clogs. The
+  crankshaft's goggles say what dirty air is costing. Wool or paper, coal or charcoal and copper sheets; without the pollution mod
+  it cannot be crafted and is not in the creative tab, and a placed one is a plain length of intake pipe.
 - Packs can retune the two compression factors with `part_effects/high_compression.json` and `low_compression.json`.
 - The server's `precisionBonus` setting scales the new compression parts as it does the precision ones.
 - Existing builds run as before: no existing part, number or saved state changed.

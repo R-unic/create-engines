@@ -109,3 +109,4 @@ low_compression_piston: skip - inside the cylinder, a variant of the forged pist
 high_compression_rotor: skip - inside the housing, a variant of the rotor
 low_compression_rotor: skip - inside the housing, a variant of the rotor
 piston_ring: skip - inside the cylinder
+air_filter: skip - only in packs with Pollution of the Realms, which the trailer is not shot with

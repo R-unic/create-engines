@@ -221,8 +221,8 @@ final class Combustion {
 		double boost = Math.min(1, Math.max(0, (owner.intakePressure - 1) / PREIGNITION_FULL_BOOST));
 		preignitionLoss = owner.ignition.installed() && boost > 0
 			? burningFuel.preignitionLoss(charge.temperature + Thermal.MAX_HOT_PREIGNITION * owner.hotness) * boost : 0;
-		if (owner.rotorEarlyLoss > 0)
-			preignitionLoss = Math.min(FuelSpec.PREIGNITION_MAX_LOSS, preignitionLoss + owner.rotorEarlyLoss * earlyFuelBoost());
+		// Nothing is added for any cylinder but a high compression rotor, whose figure alone is not 0
+		preignitionLoss = Math.min(FuelSpec.PREIGNITION_MAX_LOSS, preignitionLoss + owner.rotorEarlyLoss * earlyFuelBoost());
 		current.preignition = Math.max(current.preignition, preignitionLoss);
 	}
 
@@ -263,7 +263,7 @@ final class Combustion {
 			* (owner.wear == Wear.NONE ? 1 : owner.wear.seal())
 			* (1 - Thermal.MAX_HOT_BURN_LOSS * owner.hotness)
 			* owner.ringSeal
-			* (owner.rotorBoostGain > 0 ? 1 + owner.rotorBoostGain * earlyFuelBoost() : 1);
+			* (1 + owner.rotorBoostGain * earlyFuelBoost());
 		charge.temperature += heat * (CylinderModel.GAMMA - 1) / (charge.moles + FUEL_HEAT_CAPACITY * fuelPending);
 		current.fuelBurned += burned;
 		owner.burned(heat * burningFuel.heatFactor());

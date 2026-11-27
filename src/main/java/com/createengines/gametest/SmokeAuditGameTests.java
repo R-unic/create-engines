@@ -732,6 +732,18 @@ public class SmokeAuditGameTests {
 					});
 			});
 		}
+		// A switch rather than a number, swept on: engines breathing the dirtiest air there is, from a stand-in for the pollution mod
+		names.add("pollutedIntake on in the dirtiest air");
+		mayLose.add(false);
+		variants.add(() -> {
+			restore(originals);
+			com.createengines.config.CEConfig.POLLUTED_INTAKE.set(true);
+			com.createengines.compat.pollution.PollutionCompat.standInForTests(opening -> Long.MAX_VALUE);
+		});
+		Runnable cleanAir = () -> {
+			com.createengines.config.CEConfig.POLLUTED_INTAKE.set(false);
+			com.createengines.compat.pollution.PollutionCompat.standInForTests(null);
+		};
 		BlockPos at = helper.absolutePos(new BlockPos(0, 1, 0));
 		int perVariant = 500;
 		boolean[] done = {false};
@@ -743,11 +755,13 @@ public class SmokeAuditGameTests {
 				if (!done[0]) {
 					done[0] = true;
 					restore(originals);
+					cleanAir.run();
 					conclude(helper, report);
 				}
 				return;
 			}
 			if (within == 0) {
+				cleanAir.run();
 				variants.get(index).run();
 				for (int x = 0; x <= 7; x++)
 					for (int y = 0; y <= 6; y++)
@@ -792,6 +806,8 @@ public class SmokeAuditGameTests {
 		java.util.Set<Object> covered = java.util.Collections.newSetFromMap(new java.util.IdentityHashMap<>());
 		for (ConfigKnob knob : knobs)
 			covered.add(knob.value());
+		// Not a number, so no knob: the sweep gives it a variant of its own
+		covered.add(com.createengines.config.CEConfig.POLLUTED_INTAKE);
 		TreeSet<String> tuningNames = new TreeSet<>();
 		for (var field : Tuning.class.getDeclaredFields())
 			tuningNames.add(field.getName()

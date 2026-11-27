@@ -1272,8 +1272,8 @@ built, where it differs from the design above, and what is open:
   stock rotor is unchanged.
 - Piston rings (designed nowhere before this): an item, up to three on a fitted piston, each 1% more heat from a burn (about 1.3% power
   on the Dynamometer). No wear. Not on rotors.
-- Open: nothing seen in game (models in a cylinder, the Ponder scene, goggle lines), and `pitest` has not been re-run since `engine/sim`
-  changed. A Bank Builder fits standard and forged pistons only, and no rings.
+- Open: nothing seen in game (models in a cylinder, the Ponder scene, goggle lines). A Bank Builder fits standard and forged pistons
+  only, and no rings. `pitest` was re-run and is at its limit, unchanged.
 
 ### Nitrous oxide: a liquid, a vaporiser and a gas in the intake (author, 2026-11-23; proposed)
 
@@ -1399,6 +1399,15 @@ no existing build or world changes (rule 1), and nothing is read without the pol
   medium and a carbon bed); the rest is copper or copper sheets, as for the other intake parts (author). The exact shape and counts are still to settle, and are
   checked against the other intake recipes so the filter is not cheaper or dearer than they are. Needs tests that it is inert and unobtainable without the
   mod, that the part and its saved data survive the mod being removed, and a Ponder page and goggle line.
+
+**Built 2026-11-27** (the author's go-ahead that day to start the air filter): polluted intake air (`compat.pollutedIntake`, off by
+default) and the Air Filter. Settled as a first pass the author has not yet approved: the dirtiest air costs 8% of air density
+(`IntakeAir.MAX_LOSS`), reached at `pollutionAreaCap` steps or 150 with no cap; carbon and sulfur count the same; a filter in
+series leaves 20% of the loss and one the air can go round 60%; no clogging; the recipe is four copper sheets, two wool or paper
+and one coal or charcoal. The mouth is read as the outlet cap reads it, cached for 3 seconds. The tests use a stand-in for the
+reading. The GameTests pass with the pollution mod loaded too, but none of them has an engine breathe gas that the mod itself put
+there. Open: that, and anything seen in game. For the v2.5.0 record: `creativeTabListsEachItemOnce` now expects the Air Filter to be
+absent without the pollution mod, as this design asks.
 
 ### W layout for the Bank Builder (author, 2026-11-24; proposed)
 

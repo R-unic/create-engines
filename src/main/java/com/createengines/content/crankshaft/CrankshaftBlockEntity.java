@@ -457,6 +457,14 @@ public class CrankshaftBlockEntity extends GeneratingKineticBlockEntity implemen
 				GoggleLines.add(CELang.translate("goggles.oil_filtered")
 					.style(ChatFormatting.GRAY), tooltip, 2);
 			addTemperature(tooltip, engine, isPlayerSneaking);
+			int dirty = Math.round(engine.intakeDirt() * 100);
+			if (dirty >= 1) {
+				GoggleLines.add(CELang.translate("goggles.intake_air", dirty)
+					.style(ChatFormatting.GOLD), tooltip, 1);
+				if (isPlayerSneaking)
+					GoggleLines.add(CELang.translate("goggles.intake_air.hint")
+						.style(ChatFormatting.DARK_GRAY), tooltip, 2);
+			}
 			if (engine.muffling() > 0)
 				GoggleLines.add(CELang.translate("goggles.muffled", Math.round(engine.muffling() * 100))
 					.style(ChatFormatting.GRAY), tooltip, 2);

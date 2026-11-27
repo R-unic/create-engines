@@ -169,7 +169,7 @@ coupling, how big a battery bank gets, and the range a Throttle Body's dial offe
 `oilAgeing`, `engineTemperature`, `pilotInjection`, `rotaryEngines`, `heatRecovery`, `batteryCold`, `crankingDraw`, `meterAllHeads`,
 `wearMode`) and `[compat]` (`altitudeThinning`, `sableAirPressure`, `altitudeStart`, `altitudeScale`, `altitudeFloor`, `fuelFire`,
 `fuelFireByVolatility`, and `pollution`, `pollutionRate`, `carbonRate`, `sulfurRate`, `pollutionAreaCap` and
-`pollutionEngineCeiling` for Pollution of the Realms; every setting with its default and range is in
+`pollutionEngineCeiling` and `pollutedIntake` for Pollution of the Realms; every setting with its default and range is in
 [docs/CONFIG.md](docs/CONFIG.md)), so a modpack can rebalance without code. Turning a feature off
 never removes blocks; they stop doing that job. The first time a world loads in 2.0 it reads the 1.x file
 (`create_engines-server.toml`) beside it and carries every value over, and the log says what moved. The client config
@@ -196,7 +196,8 @@ All optional; none is needed to play.
   Contraptions beyond those have not been tried, so treat it as early.
 - **Pollution of the Realms**: engines put carbon and sulfur into the air through an open exhaust outlet, in proportion to the
   fuel they burn (more carbon when they run rich, less with a Soot Trap fitted; sulfur follows how dirty the fuel is). Nothing
-  is read back into the engine. Another player has used it and reports it works. `compat.pollution`, `pollutionRate` (a quarter of the full amount by default), `carbonRate`, `sulfurRate`, `pollutionAreaCap` (off by default; set, an outlet stops releasing into air that is already thick) and `pollutionEngineCeiling` (most gas one engine may release per minute) control it.
+  is read back into the engine unless a server turns on `compat.pollutedIntake` (off by default): then dirty air at an intake costs
+  an engine some of its power, and an **Air Filter** in the intake takes most of that back. Another player has used it and reports it works. `compat.pollution`, `pollutionRate` (a quarter of the full amount by default), `carbonRate`, `sulfurRate`, `pollutionAreaCap` (off by default; set, an outlet stops releasing into air that is already thick) and `pollutionEngineCeiling` (most gas one engine may release per minute) control it.
 - **Create: Diesel Generators**: its diesel, biodiesel, gasoline, ethanol and plant oil are listed in the common fuel tags, so
   they burn in these engines. This is only the tags (each entry optional); a game with that mod installed has not been run.
 - **KubeJS** (server scripts) and **CC: Tweaked** (a peripheral on a crankshaft, cylinder, head or rotor housing) can watch an

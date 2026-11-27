@@ -72,6 +72,7 @@ public final class CEConfig {
 	public static final ModConfigSpec.DoubleValue ALTITUDE_SCALE;
 	public static final ModConfigSpec.DoubleValue ALTITUDE_FLOOR;
 	public static final ModConfigSpec.BooleanValue POLLUTION;
+	public static final ModConfigSpec.BooleanValue POLLUTED_INTAKE;
 	public static final ModConfigSpec.DoubleValue POLLUTION_RATE;
 	public static final ModConfigSpec.IntValue POLLUTION_AREA_CAP;
 	public static final ModConfigSpec.DoubleValue POLLUTION_ENGINE_CEILING;
@@ -292,8 +293,14 @@ public final class CEConfig {
 		POLLUTION = value("compat.pollution", builder.comment(
 				"With Pollution of the Realms installed, engines put carbon and sulfur into the air through an open",
 				"exhaust outlet in proportion to the fuel they burn. Without that mod this does nothing. Off, they",
-				"stay clean. Engine behaviour is never read back from it.")
+				"stay clean. Nothing is read back by this setting: see pollutedIntake for that.")
 			.define("pollution", true));
+		POLLUTED_INTAKE = value("compat.pollutedIntake", builder.comment(
+				"With Pollution of the Realms installed, engines breathe the air at their intakes: carbon and sulfur there cost them",
+				"up to 8 percent of their air density, which a running engine feels about two and a half times over. The air counts as",
+				"its dirtiest at pollutionAreaCap steps of gas in the 7 by 7 by 7 cube in front of an intake, or 150 with no cap set.",
+				"An Air Filter in the intake takes most of the loss back. Off, the default, engines run the same in any air.")
+			.define("pollutedIntake", false));
 		POLLUTION_RATE = value("compat.pollutionRate", builder.comment(
 				"Scales how much gas an engine puts out. 1 is the full amount the engine would release; the default is a quarter of that. 0 is the same as turning pollution off.")
 			.defineInRange("pollutionRate", 0.25, 0.0, 10.0));

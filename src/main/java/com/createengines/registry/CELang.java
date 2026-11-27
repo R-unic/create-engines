@@ -412,6 +412,8 @@ public final class CELang {
 		raw("goggles.head.no_coil", "Right-click with an Ignition Coil to spend battery charge on a hotter spark");
 		raw("part.needs_plug", "Fit a spark plug first: the coil sits on it");
 		raw("part.needs_piston", "Fit a piston first: the ring goes on it");
+		raw("goggles.intake_air", "Polluted intake air: %1$s%% less air");
+		raw("goggles.intake_air.hint", "An Air Filter in every intake line takes most of it back, or move the intakes to cleaner air");
 		raw("part.rings_full", "This piston has all the rings it takes");
 		raw("goggles.piston.high", "High-compression piston: more power without boost, less room for boost on a spark fuel");
 		raw("goggles.piston.low", "Low-compression piston: less power without boost, far more room for boost on gasoline");

@@ -39,6 +39,7 @@ import com.createengines.content.starter.StarterBlock;
 import com.createengines.content.radiator.RadiatorBlock;
 import com.createengines.content.sump.SumpBlock;
 import com.createengines.content.airflow.InlineDuct;
+import com.createengines.content.airfilter.AirFilterBlock;
 import com.createengines.content.intercooler.IntercoolerBlock;
 import com.createengines.content.muffler.MufflerBlock;
 import com.createengines.content.muffler.SootTrapBlock;
@@ -838,6 +839,7 @@ public final class EngineScanner {
 		List<BlockPos> turbos = new ArrayList<>();
 		List<BlockPos> superchargers = new ArrayList<>();
 		List<BlockPos> intercoolers = new ArrayList<>();
+		List<BlockPos> filters = new ArrayList<>();
 		List<BlockPos> mufflers = new ArrayList<>();
 		List<BlockPos> traps = new ArrayList<>();
 		for (BlockPos pos : visited) {
@@ -852,6 +854,8 @@ public final class EngineScanner {
 				superchargers.add(pos);
 			else if (block instanceof IntercoolerBlock)
 				intercoolers.add(pos);
+			else if (block instanceof AirFilterBlock)
+				filters.add(pos);
 			else if (block instanceof MufflerBlock)
 				mufflers.add(pos);
 			else if (block instanceof SootTrapBlock)
@@ -861,7 +865,7 @@ public final class EngineScanner {
 		// A compressor, turbine or muffler that the air can go round (another branch of the run reaches an opening without
 		// it) shares the flow with whatever is on that branch; one that every path goes through takes all of it
 		Set<BlockPos> parallel = new HashSet<>();
-		for (List<BlockPos> stages : List.of(turbos, superchargers, mufflers, traps))
+		for (List<BlockPos> stages : List.of(turbos, superchargers, mufflers, traps, filters))
 			for (BlockPos stage : stages)
 				if (!trace(start, kind, stage).openings.isEmpty())
 					parallel.add(stage);
@@ -869,7 +873,7 @@ public final class EngineScanner {
 		int number = ports.size();
 		ports.add(new PortNetwork(kind, open, flooded, Math.max(1, heads.size()), List.copyOf(openings), List.copyOf(throttles), List.copyOf(sensors),
 			List.copyOf(turbos), List.copyOf(superchargers), List.copyOf(intercoolers), Set.copyOf(parallel),
-			List.copyOf(mufflers), List.copyOf(traps), runLength(visited, openings, heads)));
+			List.copyOf(mufflers), List.copyOf(traps), runLength(visited, openings, heads), List.copyOf(filters)));
 		for (BlockPos pos : visited) {
 			index.put(pos, number);
 			members.add(pos);

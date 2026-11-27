@@ -40,6 +40,8 @@ public class CEPonderPlugin implements PonderPlugin {
 		scenes.forComponents(CEBlocks.INTAKE_MANIFOLD, CEBlocks.EXHAUST_MANIFOLD, CEBlocks.AIR_INTAKE,
 				CEBlocks.EXHAUST_OUTLET)
 			.addStoryBoard("airflow", EngineScenes::airflow);
+		scenes.forComponents(CEBlocks.AIR_FILTER)
+			.addStoryBoard("airflow", AirFilterScenes::airFilter);
 		scenes.forComponents(CEBlocks.THROTTLE)
 			.addStoryBoard("throttle", EngineScenes::throttle);
 		scenes.forComponents(CEBlocks.MAF_SENSOR)

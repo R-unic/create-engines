@@ -551,6 +551,43 @@ public final class EngineController {
 	 * plot's, and it changes as the structure climbs, so it is read again every {@link #AIR_INTERVAL} ticks.
 	 */
 	private double airDensity() {
+		readIntakeAir();
+		return heightDensity() * (1 - intakeLoss);
+	}
+
+	/** The share of its air density the engine loses to dirty air at its intakes: 0 unless polluted intake air is on. */
+	private double intakeLoss;
+
+	/**
+	 * Reads what the air at each intake opening holds and works out what it costs after any filter, as the mean over the intake
+	 * lines that open to the air. The reading of each mouth is cached, so this is cheap to ask for often.
+	 */
+	private void readIntakeAir() {
+		Level level = primary.getLevel();
+		if (level == null || !com.createengines.compat.pollution.PollutionCompat.pollutedIntake()) {
+			intakeLoss = 0;
+			return;
+		}
+		long full = com.createengines.compat.pollution.PollutionCompat.dirtiestAir();
+		double lost = 0;
+		int lines = 0;
+		for (EngineLayout.PortNetwork network : layout.ports()) {
+			if (network.kind() != com.createengines.content.airflow.PortKind.INTAKE || network.outlets()
+				.isEmpty())
+				continue;
+			double dirt = 0;
+			for (BlockPos opening : network.outlets())
+				dirt += com.createengines.engine.sim.IntakeAir.dirt(
+					com.createengines.compat.pollution.PollutionCompat.gasAtMouth(level, opening), full);
+			lost += com.createengines.engine.sim.IntakeAir.loss(dirt / network.outlets()
+				.size(), network.filtering());
+			lines++;
+		}
+		intakeLoss = lines == 0 ? 0 : lost / lines;
+	}
+
+	/** The air density where the engine is, from its height alone (or Sable's pressure). */
+	private double heightDensity() {
 		if (!com.createengines.engine.sim.Tuning.altitudeThinning)
 			return 1;
 		Level level = primary.getLevel();
@@ -619,7 +656,8 @@ public final class EngineController {
 		if (ticks % AIR_INTERVAL == 0 && com.createengines.compat.sable.SableCompat.installed()) {
 			sim.setAmbientDensity(airDensity());
 			watchWorldWater(level);
-		}
+		} else if (ticks % AIR_INTERVAL == 0 && (intakeLoss > 0 || com.createengines.compat.pollution.PollutionCompat.pollutedIntake()))
+			sim.setAmbientDensity(airDensity());
 		// SU per RPM of the shaft for each unit of torque: a faster shaft carries the same SU in less per RPM
 		double torqueScale = CEConfig.STRESS_PER_TORQUE.get() / speedScale();
 
@@ -1479,7 +1517,8 @@ public final class EngineController {
 			(float) sim.thermal()
 				.coolantRate(),
 			pilotLit(), filtered, (float) Torsion.scaled(flexLoss), longestLine, report.health(), report.cause(), muffling(),
-				inductionBoost(), sourceLines(), sim.isStopped() ? 0 : (float) oilRate, wearTotal.total(), wearFailures, sound);
+				inductionBoost(), sourceLines(), sim.isStopped() ? 0 : (float) oilRate, wearTotal.total(), wearFailures, sound,
+				(float) intakeLoss);
 	}
 
 	/**

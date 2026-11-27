@@ -182,6 +182,7 @@ class ConfigMatrixTest {
 		java.util.Map.entry("carbonRate", "no effect on the sim: it only reports gas to another mod; EmissionsTest"),
 		java.util.Map.entry("sulfurRate", "no effect on the sim: it only reports gas to another mod; EmissionsTest"),
 		java.util.Map.entry("pollutionAreaCap", "no effect on the sim: it only limits gas sent to another mod; PollutionGameTests"),
+		java.util.Map.entry("pollutedIntake", "no effect on the sim tuning: it scales the air density by what is read at the intakes; IntakeAirTest, AirFilterGameTests"),
 		java.util.Map.entry("pollutionEngineCeiling", "no effect on the sim: it only reports gas to another mod; EmissionsTest"),
 		java.util.Map.entry("carriedOver", "bookkeeping of the 1.x file carry-over, ConfigCarryOverTest"));
 

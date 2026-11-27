@@ -33,6 +33,7 @@ import com.createengines.content.flywheel.CastFlywheelBlock;
 import com.createengines.content.flywheel.DualMassFlywheelBlock;
 import com.createengines.content.governor.GovernorBlock;
 import com.createengines.content.head.CylinderHeadBlock;
+import com.createengines.content.airfilter.AirFilterBlock;
 import com.createengines.content.intercooler.IntercoolerBlock;
 import com.createengines.content.muffler.MufflerBlock;
 import com.createengines.content.muffler.SootTrapBlock;
@@ -672,6 +673,18 @@ public final class CEBlocks {
 
 	public static final BlockEntry<IntercoolerBlock> INTERCOOLER =
 		REGISTRATE.block("intercooler", IntercoolerBlock::new)
+			.initialProperties(SharedProperties::copperMetal)
+			.properties(p -> part(p)
+				.mapColor(MapColor.COLOR_ORANGE))
+			.transform(TagGen.pickaxeOnly())
+			.blockstate((c, p) -> BlockStateGen.axisBlock(c, p, s -> AssetLookup.partialBaseModel(c, p)))
+			.item()
+			.transform(ModelGen.customItemModel())
+			.register();
+
+	/** Cleans the air an engine breathes, in packs with Pollution of the Realms. Always registered, so no world loses a block. */
+	public static final BlockEntry<AirFilterBlock> AIR_FILTER =
+		REGISTRATE.block("air_filter", AirFilterBlock::new)
 			.initialProperties(SharedProperties::copperMetal)
 			.properties(p -> part(p)
 				.mapColor(MapColor.COLOR_ORANGE))

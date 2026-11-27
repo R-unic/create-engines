@@ -33,6 +33,11 @@ final class AreaCapCache<K> {
 
 	/** Whether the air at {@code outlet} holds {@code cap} steps of gas or more, reading it with {@code measure} if the last reading is old. */
 	boolean full(K outlet, long now, long cap, LongSupplier measure) {
+		return held(outlet, now, measure) >= cap;
+	}
+
+	/** The steps of gas in the air at {@code outlet}, read with {@code measure} if the last reading is old. */
+	long held(K outlet, long now, LongSupplier measure) {
 		Reading reading = readings.get(outlet);
 		if (reading == null || !current(reading, now)) {
 			if (readings.size() >= PRUNE_FROM)
@@ -41,7 +46,7 @@ final class AreaCapCache<K> {
 			reading = new Reading(now, measure.getAsLong());
 			readings.put(outlet, reading);
 		}
-		return reading.held >= cap;
+		return reading.held;
 	}
 
 	/** {@code steps} of gas went out of {@code outlet}, into the air its reading is of. */

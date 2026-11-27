@@ -3,6 +3,7 @@ package com.createengines.registry;
 import static com.createengines.CreateEngines.REGISTRATE;
 
 import com.createengines.CreateEngines;
+import com.createengines.compat.pollution.PollutionCompat;
 import com.simibubi.create.content.processing.sequenced.SequencedAssemblyItem;
 import com.tterrag.registrate.util.entry.RegistryEntry;
 
@@ -33,8 +34,13 @@ public final class CECreativeTabs {
 	private CECreativeTabs() {
 	}
 
-	/** Whether the tab offers this item. A half-made item of a sequenced assembly only exists inside its recipe. */
+	/**
+	 * Whether the tab offers this item. A half-made item of a sequenced assembly only exists inside its recipe, and the air filter
+	 * only does something, and can only be made, in a game with Pollution of the Realms.
+	 */
 	public static boolean isListed(Item item) {
+		if (item == CEBlocks.AIR_FILTER.asItem() && !PollutionCompat.installed())
+			return false;
 		return !(item instanceof SequencedAssemblyItem);
 	}
 

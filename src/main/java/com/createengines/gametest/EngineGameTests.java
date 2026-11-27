@@ -322,7 +322,9 @@ public class EngineGameTests {
 			.registryOrThrow(Registries.CREATIVE_MODE_TAB)
 			.getOrThrow(CreativeModeTabs.SEARCH);
 		for (RegistryEntry<Item, Item> entry : CreateEngines.REGISTRATE.getAll(Registries.ITEM)) {
-			if (entry.get() == CEItems.INCOMPLETE_COPPER_GASKET.get()) {
+			// The air filter is offered only in a game with Pollution of the Realms, where it does something and can be made
+			if (entry.get() == CEItems.INCOMPLETE_COPPER_GASKET.get() || entry.get() == CEBlocks.AIR_FILTER.asItem()
+				&& !com.createengines.compat.pollution.PollutionCompat.installed()) {
 				assertNotListed(helper, CECreativeTabs.MAIN.get()
 					.getDisplayItems(), entry, "our tab");
 				assertNotListed(helper, search.getDisplayItems(), entry, "search");

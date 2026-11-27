@@ -8,6 +8,7 @@ data:data/c/tags/fluid/methanol.json
 data:data/c/tags/fluid/plantoil.json
 data:data/create_engines/data_maps/fluid/fuel.json	2d4f347e54780cf391946fcd99e5b2e3fced2d2a
 data:data/create_engines/loot_table/advancement/chief_engineer.json	28b298041108ca73ffe6fa38b375092b40c92113
+data:data/create_engines/loot_table/blocks/air_filter.json	f7e304a867ee71b0228e4950edf0e716806f3c08
 data:data/create_engines/loot_table/blocks/air_intake.json	c67253912979b22a0381f88427a063466c73394f
 data:data/create_engines/loot_table/blocks/alternator.json	5c204e3f1c9bf84130e2f70ec7275d04352e3741
 data:data/create_engines/loot_table/blocks/battery.json	96106b0e28a7e6357781054f3e47cf8ee38f1486
@@ -68,6 +69,7 @@ data:data/create_engines/loot_table/blocks/transmission.json	ed74f9d95ae4903430c
 data:data/create_engines/loot_table/blocks/turbocharger.json	3d764cd42c104547a72bad757bfa69de991b0802
 data:data/create_engines/loot_table/blocks/variable_supercharger.json	de4319833874cad7a1903bd2d06b524ab9909d5d
 data:data/create_engines/loot_table/blocks/variable_turbocharger.json	ba7ff302e818bf9744a82ae1b7ec829b09187bcb
+data:data/create_engines/recipe/air_filter.json	369e9d9dd3e101fbe789db2d0ecd145197e4d979
 data:data/create_engines/recipe/air_intake.json	19ab61e99b3bb986b49df3f07421a9a2ee7ac3af
 data:data/create_engines/recipe/alternator.json	f402191911b985ae9a61b72de1c64d911fbb8814
 data:data/create_engines/recipe/apex_seals.json	97a819aaabf2c114690c76171aad583b35193fe8
@@ -351,6 +353,7 @@ nbt:EngineSummary:Flex
 nbt:EngineSummary:Fuel
 nbt:EngineSummary:Health
 nbt:EngineSummary:Inertia
+nbt:EngineSummary:IntakeDirt
 nbt:EngineSummary:Key
 nbt:EngineSummary:Lines
 nbt:EngineSummary:Load
@@ -589,6 +592,7 @@ reg:CESounds:turbo_blowoff
 reg:CESounds:turbo_fail
 reg:CESounds:turbo_whistle
 reg:addRawLang:plugin_create_engines
+reg:block:air_filter
 reg:block:air_intake
 reg:block:alternator
 reg:block:battery

@@ -76,4 +76,14 @@ class AreaCapCacheTest {
 		cache.full("new", AreaCapCache.KEEP, 10, air(0));
 		assertEquals(1, cache.size());
 	}
+
+	@Test
+	void theGasHeldIsReadOnceForAsLongAsAReadingIsKeptAndAgainAfter() {
+		AreaCapCache<String> air = new AreaCapCache<>();
+		long[] reads = {0};
+		java.util.function.LongSupplier measure = () -> 10 + reads[0]++;
+		org.junit.jupiter.api.Assertions.assertEquals(10, air.held("mouth", 0, measure));
+		org.junit.jupiter.api.Assertions.assertEquals(10, air.held("mouth", AreaCapCache.KEEP - 1, measure));
+		org.junit.jupiter.api.Assertions.assertEquals(11, air.held("mouth", AreaCapCache.KEEP, measure));
+	}
 }
