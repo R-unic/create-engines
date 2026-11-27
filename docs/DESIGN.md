@@ -524,7 +524,7 @@ faces; and anything that needs doing regularly (an oil change) can be automated 
   own firing order is what is heard. Firings that did not light (the share of cylinders not firing) are an eighth as loud;
   load brightens the upper resonances and the crack; a coasting or cranking engine only thumps at about a quarter strength.
   Loudness is divided by the firing rate so a V16 at speed is not a wall. Speed and loudness are followed over about a
-  tenth of a second, and the stream queues four tenths ahead, so the note trails the engine by a few tenths. While the
+  tenth of a second, and the stream queues about three tenths ahead, so the note trails the engine by a few tenths. While the
   note plays the cylinders' (and rotor housings') recorded bangs are skipped: the bang is in the note, as a thump (a
   sine dropping from about 150 to 46 Hz) and a low rumble struck by the same firing as the resonances, so it lands with
   the note by construction. A sample played from the cylinder runs a few tenths of a second ahead of a stream and was
@@ -533,10 +533,175 @@ faces; and anything that needs doing regularly (an oil change) can be automated 
   on showed the sound engine accepting the voice and pulling its stream with no errors, but the sound itself has not been
   listened to by the author of it. A new voice is given 20 ticks to start before it is judged declined (master volume at zero
   declines every one) and only then replaced, so a muted client does not build a synthesizer every tick.
+- **Delivery (sound plan step 1, 2026-11-26).** This replaces the tenth-of-a-second reads and the queue figures above.
+  - *The queue.* A note's stream is read a twentieth of a second at a time, reads sized so
+    they do not drift against the ticks (`EngineNotePcm.lengthOfRead`; at step 1's 22.05 kHz that was 1103 and 1102
+    samples), with 0.15 s queued ahead of what is being made. A
+    hitch longer than that runs the stream dry, and the game then drops the note. One that had played for at least two
+    seconds is replaced at once (`VoiceBudget.lost`), the room voice standing in meanwhile; a younger one, or one the sound
+    engine declined, waits out the budget's two-second rest, so no engine starts more than one voice in that time. The
+    sting keeps tenth-of-a-second reads. A read is now 1600 samples exactly, at the 32 kHz of the step 2 note.
+  - *Looking ahead.* Speed and load are carried along their trend by the queue plus the synthesizer's own follow, about
+    0.24 s (`EngineNoteDrive`, `NoteLookahead`): only after two moves the same way, at most 15% past the speed and 0.15
+    past the load. A single step is not extrapolated.
+  - *Gains in the stream.* The source's volume stays at `0.9 * engineNote`. The fade, casing, settling and the chorus's
+    ceiling are glided sample by sample (`EngineNoteMix`). A faded note plays on four ticks so its queue is heard out.
+  - *Blowers.* An engine with a note plays its turbos' whistles and superchargers' whine in the same stream (`BoostWhine`,
+    the recordings' recipe made live, at their level; up to four, `NoteWhines`), at the level and hearing range each would
+    have from where it stands, but from the note's place. Their loops cross-fade out and remain for engines without a
+    note, and for any past four. The pitch the blocks ask for is unchanged, but is no longer held to 0.5 to 2.
+    The turbo's client sync names its engine (`Engine`, never saved).
+  - *Handovers.* A note and the room voice cross-fade at equal power over 16 ticks (`NoteHandover`), the room's copy
+    seeded as the note is and timed as a latecomer to a running stream. A note is held at least 3 s before a nearer
+    engine (by 6 blocks) may take it. The room mix is untouched below 0.8 of full scale.
+  - *Where it is heard.* From the middle of the engine's exhaust openings, each weighed by its run's muffling
+    (`ExhaustCentre`; a cylinder's status syncs `ExhaustMuffle` when above zero), or the crankshaft until they are known.
+  - *The room's own tick* works the scene out when no engine calls in (`EngineRoomScene`, `TickOnce`), so the shared voice
+    falls silent once its engines are gone.
+  - Tests: `NoteDeliveryTest`, `EngineNoteTimingTest`, `SoundSyncGameTests`.
+- **Grains and pipes (sound plan step 2, 2026-11-26).** This replaces the three fixed resonances, the made-up crack,
+  knock, chuff and rumble, and the single pipe echo described elsewhere in this section. The note is made at 32 kHz.
+  - *Grains.* `tools/engine_grains.py` synthesizes single firings into `assets/create_engines/engine_grains.bin` (176
+    grains, 500 kB, nothing recorded): the blow-down's body by ignition, 3 cylinder sizes and 3 loads, the flame front's
+    crack by size, and a diesel's double knock, 8 takes of each. `EngineGrains` reads them once. A firing strikes the
+    same take of the two loads either side of its own, never the take its outlet struck last (`nextTake`). Strikes are
+    overlapped into a ring (`GrainBus`), so a sample costs the same however many firings overlap.
+  - *Pipes.* Each outlet is a waveguide (`ExhaustPipe`): a delay line with an inverting, low-passed return from the open
+    end, tuned to `86 Hz * pitch(size, pipe)` and the outlet's detune, so a run rings that note and its odd harmonics.
+    What comes round falls to about a third in 16 ms on every length (at most 0.88 a pass). The mouth takes some lows
+    off. A muffler is in the loop (the return rolls off from 700 Hz and less comes back), and muffled outlets also go
+    through the muffler filter and level as before (`NoteExit`).
+  - *Beside the pipes.* Crack and knock do not ring the pipe; they fade with the firing rate, and with distance and
+    casing, as before. Under it all are the thump of each firing, a faint noise that swells twice a crank turn, and the
+    tone at the firing rate for fast engines. `NoteExit` holds the last stage: levelling, muffler filter, dulling.
+  - *Level and cost.* On the 30 reference renders the note is within 1.3 dB of step 1's at every one, about 0.6 dB quieter
+    on average. `EngineNotePerfTest` measured 136 to 246 ns a sample against its 600, at 32,000 samples a second.
+  - Tests: `EngineGrainTest`, and every earlier note test unchanged.
+- **One-shots in the note (sound plan step 3, 2026-11-26).**
+  - *Backfire and spit.* An engine with a note plays them in its own stream (`NoteBangs`): a big blow-down, its crack, the
+    flame and the sparks' fizz for a backfire, a darkening jet, a small blow-down and a fizz for a spit. They have a pipe
+    and a last stage of their own, so the note itself is sample for sample what it would be without them. One waits for the
+    engine's next firing, for at most a tenth of a second, and rings that outlet's pipe with its muffler. Which cylinder's
+    flame set it off is not followed: it goes out of whichever outlet fires next. The stream is made ahead of what is
+    seen, so it is heard up to about a quarter of a second after its flash. An engine without a note plays
+    `exhaust_pop` or `exhaust_spit` at once.
+  - *A stall's end.* When the wind-down ends, the note rocks its own crank to rest, three blow-downs and a sigh, as hard as
+    that kind of stall fetches up (`EngineNoteGesture.Kind.slam`, `sigh`). `engine_settle` plays only if the note was lost
+    part way through. A note started on the same tick as a catch comes in at once, not faded, and the note is now started
+    before the catch is looked for, so a catch does not play as a recording under a note that is just starting.
+  - *Recordings.* The pop, spit, catch, stall and settle recordings are made from the same grains and a port of the pipe
+    (`tools/engine_pipe.py`); `SoundAssetsTest` holds the generator's figures to the Java ones.
+  - *Level pass.* Every recording that plays once has a loudness of its kind's own, a peak ceiling, no DC and a fade at
+    each end (`tools/sound_levels.py`, which owns the figures). They were set against offline renders of the note, not
+    against a capture from the game.
+  - *Pitch.* A one-off strays at most 3% either way from its pitch (`content.effects.Pitches`). Pitches that tell you
+    something (the take a catch or stall picks, how near a dry piston is to seizing) are as they were.
+  - Tests: `NoteBangsTest`, `SoundAssetsTest`.
+- **The world around the note (sound plan step 4, 2026-11-26).** It works on what a note's stream and the room voice play,
+  after everything else, so the synthesizer is as it was. Recorded sounds and loops are left to the game. In clear air
+  within 8 blocks and out of doors, the stream is sample for sample what it was.
+  - *Air.* A two-pole low-pass (`NoteAir`), from 12 kHz just past 8 blocks down to 700 Hz at the note's 32-block reach,
+    on top of the synthesizer's own dulling with distance. It takes no level of its own.
+  - *Walls.* Once a second for each engine, one line from the camera to where the engine is heard
+    (`NoteSurroundings.walls`). The walls are the blocks' length of it that runs through full blocks, to the nearest whole
+    one, so a one-block wall at a slant is one and a clipped corner none. The last 1.5 blocks at the engine's end and half
+    a block at the listener's don't count. Leaves, anything smaller than a block and unloaded chunks let sound by. One,
+    two and three or more walls put the filter at 1400, 750 and 450 Hz and pass 0.7, 0.55 and 0.45 of the level; the
+    duller of the air's filter and the walls' is used. The change glides over about a quarter of a second. A blower's
+    whine carried in a note is muffled with it.
+  - *Room.* Once a second, 14 rays from the camera, 12 blocks long (`NoteSurroundings.room`). It is a room as far as most
+    of them hit something and so do the five that point up, steeply enough that a pit's walls don't count as its roof.
+    The reflection (`NoteEcho`) is two taps, the second 1.6 times as late and 0.6 as loud, low-passed at 3 kHz, with
+    nothing fed back. The first comes after the rays' mean there-and-back time (8 to 50 ms) at up to 0.3 of the engine's
+    level, and the whole is turned down by what they add, so indoors is no louder. Each stream has its own; a change of
+    delay cross-fades.
+  - *Moving engines.* Nothing of this mod's. Sable already sets a velocity on every sound placed on a moving structure,
+    so the game's audio library shifts its pitch (`MovingSoundInstanceDelegate`); a second shift would double it. A
+    structure's own blocks are not seen as walls. The room voice is now placed by where its engines are in the world, not
+    by where their blocks are kept. None of this has been heard on a moving structure.
+  - *Cost.* Measured by `NoteSurroundingsTest`, which holds the filters under 60 ns a sample and a second's looking (six
+    engines and the room) under a millisecond.
+  - Tests: `NoteSurroundingsTest`.
+- **Deep engines (2026-11-26).** The author found no build that rumbled as a V8 should; the nearest was a W24 on very long
+  manifolds. A V8 was voiced as eight small cylinders (higher pipes and thumps, a brighter crack), and at idle each
+  firing died before the next.
+  - *Size.* `EngineNoteVoicing.size` now takes a sixth off for each doubling of the cylinder count, not a quarter: 1 for
+    a single, 0.83 a twin, 0.67 a four, 0.5 a V8, 0.33 for sixteen.
+  - *Boom.* Each outlet has a slow resonance (`NoteBoom`) near 55 Hz, a little lower on a longer run, which every firing
+    sets going and which falls to about a third in 70 ms. How much a build has is `EngineNoteVoicing.depth`: none up to
+    two cylinders, half at four, all from eight. It is there to carry one firing to the next, so it goes steeply as
+    firings pass about 28 a second.
+  - *Lope.* A firing is as strong as its own outlet's wait for it, within 0.7 to 1.35 (`EngineNoteVoicing.lope`). An
+    outlet that fires evenly leaves every firing at 1, so only banks that fire unevenly change, as on a crossplane V8 with
+    a bank to each exhaust.
+  - *Top end.* A deep engine's crack is up to 40% weaker.
+  - *Measured offline*, idling at 80 to 240 RPM: a crossplane V8 on short manifolds has about 68 to 72% of its sound below
+    120 Hz, where it had about 43%. Singles and twins have no boom, and a single is as it was. Fours and up are all
+    lower than before. Not heard in game by anyone.
+  - Tests: `EngineNoteDepthTest`, and every earlier note test unchanged.
+- **Sounds on moving structures (2026-11-26).** Sable plays any sound that starts on a moving structure inside a wrapper
+  of its own, so `SoundManager.isActive` says no to the instance this mod made. Every note, loop and starter whir there
+  was taken for dropped and started again over itself, about every second or two, until the game had no sound channel
+  left. Whatever asks now goes through `MachineLoopSound.stillPlaying`, which asks about the wrapper
+  (`SableCompat.playedAs`, `SableSoundBridge`). Test: `SoundStillPlayingTest`, which reads the source, as the unit
+  tests have no game.
+- **The build's voice (2.4 sound rework).** `EngineNoteSynth.Voice` says what the
+  engine is built of: which exhaust outlet each firing goes out of (up to four, `MOST_OUTLETS`), each outlet's pipe length,
+  spark or compression ignition and how much of it is precision parts. The valves make no sound (author, 2026-11-26).
+  Each outlet rings its own three resonances, pitched by `pitch(size, pipe)` (1 at a middling cylinder on a middling run, the
+  old 86/172/345 Hz) and set a little apart from the other outlets with a slightly different weight, so a bank's uneven rhythm is
+  heard through the even rhythm of the whole: a crossplane V8 with a bank to each outlet stops repeating at each firing, and a
+  flat-plane repeats every two (`EngineNoteVoiceTest`). Compression ignition adds a double rap near 2.7 kHz on each firing,
+  loudest at idle and fading to 15% at speed. Each firing varies in strength and lands up to a few degrees late (never more than 6 ms,
+  `MOST_LATE`), more below half load, with `Params.roughness` and with crude parts; seeded per engine, so the same build renders the same samples. The
+  outlet count is worked out on the game thread in `set`, so the audio thread still allocates nothing. `Voice.PLAIN` (one
+  middling outlet, spark, all precision) is the note as it was, for a summary that carries no sound
+  (an older world). The server works the voice out as `engine.EngineSound` and syncs it in the summary (new keys `SoundOutlets`,
+  `SoundPipes`, `SoundCompression`, `SoundPrecision`, `SoundEnclosure`, `SoundMuffles`, written only for an
+  engine that has them): `EngineController.computeSoundBase` gives each cylinder the outlet of its exhaust run (in the order cylinders meet
+  them, a fifth run sharing the fourth outlet), each outlet the length of its run (`PortNetwork.run`, the blocks the gas
+  goes through from a head to the nearest opening, averaged over the heads, through `EngineSound.pipeLength`: a lone opening
+  is a stub, thirteen blocks a long run, by the logarithm of the blocks, so the first pipes move the pitch most; `pipeTone`
+  rings a stub an octave above a middling run and a long run only 0.4 of an octave below it, about six semitones from one block
+  to two, because a long run taken lower dropped under what is heard and left only grit) and its own muffling, compression ignition when
+  most cylinders have no spark plug and the share of
+  precision cylinders; `refreshEnclosure` looks every two seconds at how many of the cylinders' sides are Engine Casing. Each
+  firing angle carries its outlet through the summary's sort. The client feeds `Params.roughness` from the summary's roughness
+  (0.4 is fully rough) and `setDistance` from the listener (over the note's 32-block reach). Casing dulls the note (a low-pass from 9 kHz down to 1.6 kHz) and
+  takes up to a quarter off its volume; distance takes the low-pass to 1.2 kHz and the crack and knock down to a fifth.
+  A run's length is heard three ways: the outlet's resonances span over an octave from stub to long run, the thump of a
+  firing out of it is pitched with them, and toward either end of the range one faint reflection comes back down the pipe (3 to
+  12 ms, none at middling length, never fed round again: a repeating echo was heard as reverb). The intake roar stays the sampled loop heard from the intake mouth, which the note cannot place; the
+  recorded bangs give way wherever the note is heard (`EngineNoteSound.heard`).
+- **Keeping time.** The note runs at the drawn crank's speed, which Create rounds and republishes only on a 4% change, so
+  it does not slip against the flashes; if the shaft is capped far below the engine it runs at the engine's speed and does
+  not follow the cam. Each cam reading carries the time it was taken (`EngineNoteSynth.sight`), and `EngineNoteClock` works
+  out when the samples being rendered will be heard. The sound engine reads four chunks at once when a stream starts, then
+  one at the first tick after each has played, so a read can be late but never early: the clock dates the stream from its
+  first read, keeps to the earliest answer after that (letting it slide at most 0.5 ms a read) and starts over after a
+  stall or pause. An unlocked note takes up the engine's full speed before its first aim. The firing flash is checked once a
+  tick, so it looks half a tick's travel ahead of the cam and lands either side of the firing, not only after it. Simulated
+  offline against a perfect cam, a single's firings are heard within about 15 ms of it from the first one; the sound card's
+  own delay is not in that figure, and nobody has judged it by ear. A reading moves the cycle half way, and only two in a row far off make it jump. A rotary has no cam to read and
+  runs on its own clock.
+- **Many engines (`EngineChorus`, the scene in `EngineNoteSound`).** Every running engine in earshot calls in each tick and the
+  scene is worked out once a tick: the nearest three have their own note (a free voice goes to the nearest engine without
+  one, and a note gives way to an engine at least 6 blocks nearer), the nearest three of the rest are
+  mixed into one shared voice (`EngineRoomMix` in a streamed `EngineNoteSound.Room`, the game's fall-off off and each engine's
+  reach in its own gain, placed at the loudness-weighted middle of its engines), and any further ones only make it fuller
+  (`EngineChorus.fill`, as their powers would add, at most twice). `EngineChorus.ceiling` scales every engine so all of them
+  together are at most 1.6 times (about 4 dB) the loudest alone. `EngineChorus.Settle` drifts an engine held within 3% of its
+  speed and 0.06 of its load about 3 dB down over half a minute and back within a quarter of a second of a change; warnings
+  are separate sounds and never lowered. A slot's engine is faded over three ticks before the slot is given to another. An
+  engine in the shared voice is aimed at its cam's position as one with its own note is. The
+  shared voice is the room's own stream, so it costs one more voice and up to three synthesizers on the sound thread. `EngineNoteVoiceTest.rendersTheReferenceSet` writes the roadmap's reference engines to
+  `build/engine-notes/reference` (idle, mid, high); nobody has listened to them yet. A voice with every layer on costs about 150 ns
+  a sample against `EngineNotePerfTest`'s 600.
 - **Clicks and loudness.** The first note was a click track: a firing was one sample into resonances that rang for six
   thousandths of a second, so each was a spike (crest factor up to 15, a jump from sample to sample up to 13 times the
   level). A firing is now a pressure pulse smoothed over a thousandth of a second, into resonances at 86, 172 and 345 Hz
-  that ring for about 20, 12 and 7 thousandths, with a lowpassed chuff for the rush of gas; the same measures are now a
+  that ring for about 14, 9 and 5 thousandths however the pipe is tuned (they were 20, 12
+  and 7, and longer on a low pipe), with a lowpassed chuff for the rush of gas; the same measures are now a
   crest of 2 to 6 and a step under the level. `EngineNoteSynthTest.noFiringIsAClick` holds that. The whole note is about
   six decibels louder. Past about a hundred firings a second (a four at 3000 RPM, a V8 at 1500) the narrow resonances
   stopped lining up with the pulses and the note fell to half its level in a step, and then sounded thin; the firings
@@ -584,7 +749,12 @@ faces; and anything that needs doing regularly (an oil change) can be automated 
   exhaust stroke from the cylinder's last cycle and the engine's figures: clean haze that grows with load, black by how
   far past rich the mixture is, white while the block is below `Thermal.COLD_BELOW`, blue with oil dilution, a pale mist
   for unlit fuel, a darker thicker cloud for thirty ticks after catching. A rich engine working hard licks flame; unlit
-  fuel into the pipe of a warm, otherwise firing engine pops three times in ten (`exhaust_pop`, on the bang volume).
+  fuel into the pipe of a warm, otherwise firing engine pops three times in ten (`exhaust_pop`, on the bang volume: five takes,
+  each a crack, a blow-down down the note's own pipe, a soft rush of flame and the sparks fizzing after it, some with a
+  smaller pop or two, made by `tools/exhaust_pop_sounds.py`; an engine with a note plays its own, see "One-shots in the
+  note"). A charge boost lit early spits from the pipe with orange
+  flashes (`exhaust_spit`, on the mechanical volume: a hiss of burning gas, a small puff and a fizz, from the same file);
+  `preignition_knock` is only the wear mode's ping at a cylinder.
   Each firing leaves by one outlet picked at random and throws fewer puffs past four cylinders, so particles do not
   multiply with outlets or grow in step with cylinders.
 - **Particles** (`CEParticles`, `client.particle`). `gas` takes a colour, size, opacity, lift and lifetime, swells
@@ -598,13 +768,21 @@ faces; and anything that needs doing regularly (an oil change) can be automated 
   burst of white air when a blow-off valve opens.
 - **Machinery sounds** (`EngineAmbience`, kept by the primary crank on the client; levels in `MechanicalNoise`, pure).
   `engine_catch` on CRANKING or STALLED to RUNNING and `engine_stall` on a turning engine reaching STALLED, each at most
-  once in three seconds; `engine_clatter` (valve gear, pitched with the crank, louder rough or dry) and
-  `bearing_squeal` (below 30 percent lubrication) as `MachineLoopSound` loops; `metal_tick` at random for about twenty
+  once in three seconds; `bearing_squeal` (below 30 percent lubrication) as a `MachineLoopSound` loop; `metal_tick` at random for about twenty
   seconds after a warm engine stops, from a heat figure the client lets decay. All on the new `mechanicalVolume`
   setting. Recordings are synthesized by `tools/generate_sounds.py`, which can now write WAV previews (`--wav DIR`).
-  The catch and the stall have three takes each, picked at random (`tools/start_stall_sounds.py`): uneven noise-built
-  firings with no pitched sweep; a catch coughs, stumbles and flares, a stall spaces out through unlit chuffs and rocks
-  to a stop.
+  The catch and the stall are synthesized by `tools/start_stall_sounds.py`: uneven firings of the note's grains down its
+  pipe. `StartStallTake` (pure) picks the set, three takes each, and its pitch and loudness. A catch is
+  `engine_catch_hard` (many coughs, a slow ragged catch) when the block is cold (below `Thermal.COLD_BELOW`) or the
+  starter had turned it 3 s or more, else `engine_catch`. A stall is `engine_stall_lugged` (hard, slowing firings, a
+  heavy stop) from OVERLOADED, `engine_stall_starved` (a long thin sputter) when the cause is no fuel or too lean, else
+  `engine_stall`; a flooded engine uses the plain one, and water counts before overload. Pitch falls with cylinders,
+  compression ignition and cold; loudness rises with cylinders, and a stall's with the speed it was last burning at.
+  Those recordings have a fixed rhythm, so they play only for an engine without a note of its own. One with a note
+  performs the take itself (`EngineNoteGesture`, pure), so the firings keep its speed and firing order: a catch changes
+  how hard the first firings hit and which miss (for at most 1.5 s, or 2.5 s for a hard one, and at least one firing); a
+  stall winds the note down evenly from the speed it was last playing (0.9 s, lugged 1.2 s, starved 1.7 s),
+  then the note rocks the crank to rest itself (see "One-shots in the note").
 - **Checking it.** `./gradlew runVisualSmokeTest -PsmokeEffects --offline` builds a cold, a rich, a flooded and a dry
   engine and screenshots each effect (about a minute and a half).
 
@@ -749,8 +927,13 @@ Variable-Drive Supercharger = Variable-Geometry Turbocharger.**
   each exhaust `PortNetwork` and, as for turbos, whether the run can go round them (`parallel`). A run is fully muffled by
   one every path goes through and half muffled by one it can go round; the engine's `muffling` (in `EngineSummary`,
   synced) is the average of its exhaust runs weighted by the heads they serve, so one bank of a V muffled is half. The
-  client scales the exhaust note, the cylinder and rotor bangs and the exhaust pops by `Muffling.volume` (a fully muffled
-  engine is a fifth as loud); the mechanical sounds (clatter, squeal, catch and stall) and the turbo and blower are not
+  exhaust note takes it outlet by outlet (`EngineNoteSynth.Voice.muffle`, or `setMuffling` for an engine that sends none):
+  the muffled part of each outlet is scaled by `EngineNoteSynth.MUFFLED_LEVEL` (higher than
+  `Muffling.volume(1)`, so a slow muffled single is still heard) and goes through a two-pole low-pass at 500 Hz, beside
+  the open part, and what the cylinders share (thump, crack) follows the outlet of the latest firing, so one muffled bank is
+  heard as muffled firings between open ones.
+  The client scales the cylinder and rotor bangs and the exhaust pops by `Muffling.volume` (a fully muffled
+  engine is a fifth as loud); the mechanical sounds (squeal, catch and stall) and the turbo and blower are not
   the exhaust and are left alone. Goggles on a crankshaft say how much of the exhaust is muffled. Advancement: Hush Now
   (`MUFFLED`, a running engine at half muffled or more). The volume was calculated, not listened to.
 - **Engine Casing.** A plain cube (riveted plate, steel top and bottom) with no block entity and no behaviour: it joins
