@@ -35,8 +35,9 @@ view after converting it, or retype the headings and lists. Modrinth takes the M
 
 ![A V8 from the exhaust side, running](https://raw.githubusercontent.com/R-unic/create-engines/master/docs/images/engine_showcase_v8_exhaust.png)
 
-> 🔊 **Turn your sound up.** The exhaust note is made as it plays, from the engine's speed and firing order: a V-twin
-> lopes, a flat six hums, a dead cylinder limps, and turbos whistle, blow off and crackle.
+> 🔊 **Turn your sound up.** The exhaust note is made as it plays, from the engine's speed, firing order and build: a V-twin
+> lopes, a flat six hums, a crossplane V8 burbles out of its two exhausts, a diesel knocks, a dead cylinder limps, and turbos
+> whistle, blow off and crackle.
 
 An addon for **Create** with working internal combustion engines. Place the crankshaft, cylinders, heads, pistons, cams
 and valves yourself, pipe in air and fuel, and the engine you built fires in order and drives your Create machines.
@@ -131,8 +132,8 @@ and valves yourself, pipe in air and fuel, and the engine you built fires in ord
 - Exhaust colour that reads the mixture, flame from a hot pipe, a cough on starting, and ticking as it cools
 - A turbo whistle that climbs with the wheel, a blow-off flutter when redstone dumps the boost or the throttle lifts,
   anti-lag crackle, and a supercharger whine that rises with its shaft
-- A clatter or squeal when an engine runs dry. Nothing runs underwater
-- **Muffler:** quiets the note, the bangs and the pops without costing any power
+- A squeal when an engine runs dry. Nothing runs underwater
+- **Muffler:** quiets the note, the bangs and the pops, and dulls the note, without costing any power
 - **Engine Casing:** joins into one plate and clads cylinders, pipes, cams, and Create's own shafts and cogwheels to
   hide the sprawl, in plain, riveted, louvred and window styles, and any dye
 - **Engine readouts:** a Display Link set against a crankshaft shows state, speed, power, load, temperature, oil, boost,
@@ -260,9 +261,61 @@ key or saved format is renamed or removed. Changes to existing builds are listed
 - Changed, temperature is shown in degrees Celsius: goggles (with new Hot, Overheating and Critical readings), the Display Link's temperature
   and status sources, and the Black Box. An overheating block steams, harder the hotter it is. The Display Link temperature source now
   gives degrees where it gave a percentage of warm; its progress bar is as before.
+- Changed, the sound rework (author, 2026-11-25): **every engine's exhaust note changes**, and is the author's to tune by ear. Only the sound;
+  no engine runs any differently.
+  - Each exhaust run rings its own pipe, pitched by how long the run is (the first few blocks of pipe change it most) and how big the cylinders are, so engines with the same cylinders
+    sound different when their banks go out of different exhausts (a crossplane V8 with an exhaust a bank burbles; a flat-plane does not).
+    Banks that share an exhaust sound smoother.
+  - Cylinders without a spark plug (compression ignition) knock, loudest at idle.
+  - The valve sounds are gone: the note has no valve tick, and the old valve clatter no longer plays.
+  - No two firings are alike: each varies a little in strength and timing, more at idle, on a rough engine and with crude parts.
+  - A Muffler now makes the note duller as well as quieter. It works on its own exhaust run only: on a V with one bank muffled,
+    that bank's firings are the quiet, dull ones.
+  - The length of an exhaust, from the head to its opening, changes the note: a stub barks higher, a long run sounds deeper and a
+    little hollow. Notes ring and echo only briefly, on every length of run.
+  - The note's sound itself is new. Every firing is one of many short synthesized firings, never the same one twice in a
+    row, sent through a model of its exhaust pipe, so a run's length is a real resonance. Nothing is recorded.
+  - The backfire is new from scratch: a crack, the hollow pock of the pipe, a soft rush of flame and the sparks
+    fizzing after it. Five takes in place of three, some with a smaller pop or two of their own.
+  - An engine heard through its own note now makes its backfires and spits in that note, out of its own exhaust pipe, and
+    its crank rocking to a stop after a stall. The recordings that play otherwise are remade from the same sound.
+  - One-off sounds, failures and warnings included, are evened out in loudness, no longer start on a hard edge, and vary
+    much less in pitch from one time to the next.
+  - Under boost, a charge that lights early now leaves the exhaust as a short hiss and fizz with its orange flashes, in
+    place of a run of ringing taps. Wear mode's knock at a cylinder sounds as before.
+  - The note's firings keep time with the engine you see, and the nearest engines are the ones that get a note of their own.
+  - Far off, the crack and knock fade first and only the boom carries. An engine clad in Engine Casing is heard duller and a
+    little quieter.
+  - The recorded bangs give way wherever the note is heard. With `engineNote` at 0 the bangs play as before.
+  - The note is heard sooner: at most 0.2 s is queued where up to 0.4 s was, and it reaches ahead along a rising or
+    falling throttle, so a blip, a catch or a stall sounds closer to when you see it.
+  - Fades are smooth, with no 20-a-second steps. An engine passes between its own note and the shared sound at the same
+    loudness, and two engines about as far away no longer trade notes as you walk between them.
+  - A turbo's whistle and a supercharger's whine are part of the engine's own note where it has one, gliding in pitch with
+    no loop.
+  - The note is heard from the exhaust openings, no longer from the crankshaft.
+  - The world is in it. Far off, the air takes the edge off the note until little but the boom carries. A wall between you
+    and an engine muffles it, more for each block of it. Indoors, the walls and roof send back a short reflection; out in
+    the open there is none.
+  - If a lag spike cuts an engine's note off, it comes back at once.
+- Fix: the shared sound of many engines could play on, heard from anywhere, after all its engines had stopped or unloaded.
+- Fix: on a Create Aeronautics (Sable) moving structure, an engine's note, loops and starter were started again on top of
+  themselves every second or two, piling up until the game ran out of sound channels.
+- Changed, big engines are deeper. A V8 rumbles: each exhaust has a low boom that carries from one firing to the next,
+  a crossplane's uneven banks burble harder, and its crack is softer. Every engine of two or more cylinders is voiced
+  lower than before, since more cylinders no longer make each one sound much smaller.
 - Changed, the sounds of an engine catching and stalling are new, three takes of each. A catch coughs, stumbles, then fires
   quicker and quicker as it flares; a stall's last firings come unevenly with a cylinder or two not lighting, and the crank
   knocks to a stop and rocks back.
+- New, starts and stalls follow what happened. A cold engine, or one long on the starter, labours through more coughs before
+  it catches. An engine stalled by its load thuds hard and slow into a dead stop, and one out of fuel or too lean sputters out.
+  Engines with more cylinders start and die deeper and louder, compression ignition and cold ones deeper, and a faster engine
+  stalls louder. An engine with its own exhaust note plays its start and stall through it, keeping time: the coughs come at
+  its own speed and firing order, and a stall's firings spread out from the speed it was playing until the crank stops.
+- Changed, many engines (author, 2026-11-25): past the three engines that each get their own note, the nearest three more are mixed into
+  one shared sound, and any further ones make it fuller, instead of each playing a bang per firing. All engines together are held to
+  about 4 dB above the loudest alone, and an engine held at one speed and load settles about 3 dB quieter
+  over half a minute, coming straight back up when its speed, load or firing changes.
 - New, an optional `heat_factor` in the `fuel` data map (default 1) for pack makers. API version 1.3.0.
 - Clearer fuel shut-off. Redstone on a camshaft already cut the fuel; now the Camshaft Ponder page has its own "shutting the engine down"
   part with a lever, the cylinder, head and injector page points to it, the camshaft and cam lobe items say it when hovered, and goggles on

@@ -194,7 +194,7 @@ refused, never clamped, and the command says which.
 |---|---|---|---|
 | `bang` | `1.0` | 0.0 to 2.0 | Volume of a cylinder's firing bang. 0 mutes it. |
 | `engineNote` | `1.0` | 0.0 to 2.0 | Volume of the engine's exhaust note, made up from its speed and firing order as it runs. 0 mutes it, and each cylinder's bang plays at full volume instead. |
-| `mechanical` | `1.0` | 0.0 to 2.0 | Volume of an engine's own noises besides its exhaust: the tick of its valve gear, the squeal of dry bearings, the cough as it catches and dies, and hot metal ticking as it cools. 0 mutes them. |
+| `mechanical` | `1.0` | 0.0 to 2.0 | Volume of an engine's own noises besides its exhaust: the squeal of dry bearings, the cough as it catches and dies, and hot metal ticking as it cools. 0 mutes them. |
 | `boost` | `1.0` | 0.0 to 2.0 | Volume of turbocharger whistle and blow-off and the supercharger whine. 0 mutes them. |
 <!-- /generated:client-settings -->
 

@@ -132,18 +132,21 @@ Minecraft 1.21.1 · NeoForge 21.1.219 or newer · Create 6.0.10 (build 257 or ne
 - Flywheels that matter: a rough engine is rated for less, and rotating mass smooths it out
 - A 13-gear transmission with an Auto mode that shifts to suit the engine, and a **Dynamometer** that draws an engine's torque and power curves
 - A **Black Box** flight recorder that keeps ten minutes of an engine's speed, load and temperature and says why it stalled
-- An exhaust note made up from the engine's speed and firing order, so a V-twin lopes, a six hums and a dead cylinder limps
-- A **Muffler** that quiets the note, the bangs and the pops without costing the engine any power, and **Engine Casing**
+- An exhaust note made up from the engine's speed, firing order and build, so a V-twin lopes, a six hums and a dead cylinder
+  limps; each exhaust run rings its own pipe (a crossplane V8 burbles where a flat-plane does not), a diesel knocks, the cams
+  casing dulls it, distance and walls muffle it, a room answers it, and a build full of engines blends into one sound instead of a wall of bangs
+- A **Muffler** that quiets the note, the bangs and the pops (and dulls the note) without costing the engine any power, and **Engine Casing**
   that joins into one plate and clads cylinders, pipes, cams, and Create's own shafts and cogwheels to hide the sprawl, in
   plain, riveted, louvred and window styles and any of Create's dye colours. A **Rain Cap** flaps on an exhaust outlet, and
   a **Maker's Plate** carries an engine's name, its builder and the figures from its last Dynamometer run. All of it is
   cosmetic and never changes an engine's rating
 - Exhaust that tells the truth: a thin haze when the mixture is right, black when it is rich, white vapour until the
   block warms, a blue cast when fuel has thinned the oil, and a crack of flame when unburned fuel meets a hot pipe.
-  Engines cough as they catch and knock as they die, tick as they cool, squeal and spark when they run dry, draw the
+  Engines cough as they catch and knock as they die (a cold start, a stall under load and running dry each sound
+  their own way, and size shows), tick as they cool, squeal and spark when they run dry, draw the
   air in at their intakes and steam in the rain. Pistons slap about in their bores by how rough the engine is, a V's
   valley cam shows its pushrods, and every cause the goggles name (rich, lean, a fouled plug, a dry sump, a flood, a
-  blocked exhaust, a gasoline pre-ignition rattle, an overload) has a sight or a sound of its own
+  blocked exhaust, a gasoline pre-ignition spit, an overload) has a sight or a sound of its own
 - Nothing burns underwater: water against a cylinder, a head or a rotor housing stops the engine wherever its pipes
   lead, and so does an intake or exhaust that opens in it. A flood stops an engine; it does not wash it away
 
