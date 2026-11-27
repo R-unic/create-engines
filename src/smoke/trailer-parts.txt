@@ -21,8 +21,8 @@ coolant: skip - fluid
 column_section: refinery_column
 condenser: refinery_column
 connecting_rod: skip - inside the cylinder
-light_connecting_rod: skip - a variant of the connecting rod, inside the cylinder
-heavy_connecting_rod: skip - a variant of the connecting rod, inside the cylinder
+light_connecting_rod: rods_light_heavy
+heavy_connecting_rod: rods_light_heavy
 crank_throw: inline6_pass
 crankshaft: first_rises
 cylinder: first_rises
@@ -87,7 +87,7 @@ soot_trap: later - needs a diesel with a trap fitted
 spark_plug: electric_heads
 starter: inline6_pass
 sugar_mash: skip - fluid
-radiator: running_cooled
+radiator: radiator_fan_basin
 sump: instruments_governor
 supercharger: skip - the variable-drive supercharger, which the trailer shows, is the same part with a drive
 throttle: inline6_pass
@@ -97,10 +97,10 @@ turbocharger: inline6_turbo
 used_oil: skip - fluid
 variable_supercharger: blown_i6_blower
 variable_turbocharger: tuning_vgt
-cardboard_gasket: later - wear mode (2.3): a head with each gasket tier fitted, and a Service Kit, need a pad of their own
-stock_gasket: later - wear mode (2.3): see cardboard_gasket
-rubber_gasket: gasket_line
+cardboard_gasket: wear_parts
+stock_gasket: wear_parts
+rubber_gasket: gasket_saw
 copper_gasket: gasket_line
 incomplete_copper_gasket: skip - the half-made Copper Gasket of its sequenced assembly, an intermediate, not a part
-service_kit: later - wear mode (2.3): see cardboard_gasket
-apex_seals: later - wear mode (2.3): a rotor housing with worn seals and one with a new set need a pad of their own
+service_kit: wear_parts
+apex_seals: wear_parts

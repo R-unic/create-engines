@@ -17,6 +17,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.function.ToDoubleFunction;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
@@ -53,9 +54,18 @@ class SharedStateConcurrencyTest {
 		}
 	}
 
+	/**
+	 * The most a turbo promises under any part effects: one atmosphere over its dial, where its wheel is held. The wastegate
+	 * reads the boost once a tick, so a part that sends a lot of heat out at once can carry a turbo well past its dial.
+	 * With the built-in parts the other tests hold every turbo to {@link Turbocharger#MAX_LIMIT}.
+	 */
+	private static double heldBoost(Turbocharger turbo) {
+		return turbo.limit + 1;
+	}
+
 	/** A sim thread: builds a new engine from a seed now and then, runs it and checks every figure, until told to stop. */
 	private static Thread simThread(String name, long firstSeed, AtomicBoolean stop, AtomicLong ticks, ConcurrentLinkedQueue<Throwable> thrown,
-									CountDownLatch go) {
+									CountDownLatch go, ToDoubleFunction<Turbocharger> mostBoost) {
 		return new Thread(() -> {
 			try {
 				go.await();
@@ -64,7 +74,7 @@ class SharedStateConcurrencyTest {
 					SimStressTest.Rig rig = new SimStressTest.Rig(seed++);
 					for (int i = 0; i < 80 && !stop.get(); i++) {
 						rig.engine.tickCranked(0.5, MAX_OMEGA, EngineSimulation.rpmToOmega(i < 40 ? 32 : 0), 1);
-						SimStressTest.check(rig, MAX_OMEGA, false, i);
+						SimStressTest.check(rig, MAX_OMEGA, false, i, mostBoost);
 						ticks.incrementAndGet();
 					}
 				}
@@ -83,7 +93,7 @@ class SharedStateConcurrencyTest {
 		CountDownLatch go = new CountDownLatch(1);
 		List<Thread> threads = new ArrayList<>();
 		for (int i = 0; i < 3; i++)
-			threads.add(simThread("sim-" + i, 1000L * i, stop, ticks, thrown, go));
+			threads.add(simThread("sim-" + i, 1000L * i, stop, ticks, thrown, go, turbo -> Turbocharger.MAX_LIMIT));
 		threads.add(new Thread(() -> {
 			Random random = new Random(5);
 			try {
@@ -159,7 +169,7 @@ class SharedStateConcurrencyTest {
 		CountDownLatch go = new CountDownLatch(1);
 		List<Thread> threads = new ArrayList<>();
 		for (int i = 0; i < 3; i++)
-			threads.add(simThread("sim-" + i, 7000L + 1000L * i, stop, ticks, thrown, go));
+			threads.add(simThread("sim-" + i, 7000L + 1000L * i, stop, ticks, thrown, go, SharedStateConcurrencyTest::heldBoost));
 		threads.add(new Thread(() -> {
 			Random random = new Random(9);
 			try {
@@ -191,6 +201,27 @@ class SharedStateConcurrencyTest {
 		assertNull(thrown.peek(), "a thread threw: " + thrown.peek());
 		assertTrue(ticks.get() > 1000, "only " + ticks.get() + " ticks ran");
 		assertTrue(swaps.get() > 100, "only " + swaps.get() + " reloads happened");
+	}
+
+	/**
+	 * The engine the test above once happened on, run the same way every time: with one of the pool's effects on every part,
+	 * a turbo passes {@link Turbocharger#MAX_LIMIT} for a tick and stays within what it promises.
+	 */
+	@Test
+	void anExtremePartEffectCarriesATurboPastTheDialRangeButNotPastItsHold() {
+		Map<Part, Effect> effects = new EnumMap<>(Part.class);
+		for (Part part : Part.values())
+			effects.put(part, POOL.get(10));
+		PartEffects.set(effects);
+		SimStressTest.Rig rig = new SimStressTest.Rig(8945);
+		double highest = 0;
+		for (int i = 0; i < 80; i++) {
+			rig.engine.tickCranked(0.5, MAX_OMEGA, EngineSimulation.rpmToOmega(i < 40 ? 32 : 0), 1);
+			SimStressTest.check(rig, MAX_OMEGA, false, i, SharedStateConcurrencyTest::heldBoost);
+			for (Turbocharger turbo : rig.engine.turbos())
+				highest = Math.max(highest, turbo.boost());
+		}
+		assertTrue(highest > Turbocharger.MAX_LIMIT, "this engine no longer passes the dial range, so it tests nothing: " + highest);
 	}
 
 	/**

@@ -73,6 +73,30 @@ public final class ShowcaseRunFraming {
 		return new Placing(ax + back[0] * distance, ay + back[1] * distance, az + back[2] * distance, ax, ay, az);
 	}
 
+	/** The box {@code t} of the way (0 to 1) from one box to another, corner by corner. */
+	public static Box between(Box from, Box to, double t) {
+		return new Box(mix(from.x0(), to.x0(), t), mix(from.y0(), to.y0(), t), mix(from.z0(), to.z0(), t),
+			mix(from.x1(), to.x1(), t), mix(from.y1(), to.y1(), t), mix(from.z1(), to.z1(), t));
+	}
+
+	private static double mix(double a, double b, double t) {
+		return a + (b - a) * t;
+	}
+
+	/**
+	 * Places the camera a set {@code distance} from the middle of the box, looking straight at it, so that point is under the
+	 * crosshair: for a shot that reads a block through goggles, which only reach so far.
+	 */
+	public static Placing atDistance(Box box, double yaw, double pitch, double distance) {
+		double a = Math.toRadians(yaw);
+		double p = Math.toRadians(pitch);
+		double x = (box.x0() + box.x1()) / 2;
+		double y = (box.y0() + box.y1()) / 2;
+		double z = (box.z0() + box.z1()) / 2;
+		return new Placing(x + Math.sin(a) * Math.cos(p) * distance, y + Math.sin(p) * distance,
+			z - Math.cos(a) * Math.cos(p) * distance, x, y, z);
+	}
+
 	private static double dot(double[] a, double[] b) {
 		return a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
 	}

@@ -83,6 +83,28 @@ class TrailerFramingTest {
 		assertEquals(-50, Math.toDegrees(Math.atan2(far.eyeX() - far.aimX(), far.aimZ() - far.eyeZ())), EPSILON);
 	}
 
+	@Test
+	void aMovingBoxStartsAndEndsOnItsTwoBoxesAndPassesHalfWayBetween() {
+		Box from = new Box(7, 5, 6, 8, 6, 7);
+		Box to = new Box(0.5, 1, 2.5, 9, 7, 7.5);
+		assertEquals(from, ShowcaseRunFraming.between(from, to, 0));
+		assertEquals(to, ShowcaseRunFraming.between(from, to, 1));
+		assertEquals(new Box(3.75, 3, 4.25, 8.5, 6.5, 7.25), ShowcaseRunFraming.between(from, to, 0.5));
+	}
+
+	/** The goggle shot: the camera is as far as asked, from the side asked, and the box's middle is dead ahead. */
+	@Test
+	void aShotAtReachStandsThatFarOffAndLooksAtTheMiddleOfTheBox() {
+		Box block = new Box(1, 3, 5, 2, 4, 6);
+		Placing placing = ShowcaseRunFraming.atDistance(block, -34, 4, 3.6);
+		assertEquals(3.6, distance(placing), EPSILON);
+		assertEquals(1.5, placing.aimX(), EPSILON);
+		assertEquals(3.5, placing.aimY(), EPSILON);
+		assertEquals(5.5, placing.aimZ(), EPSILON);
+		assertEquals(-34, Math.toDegrees(Math.atan2(placing.eyeX() - placing.aimX(), placing.aimZ() - placing.eyeZ())), EPSILON);
+		assertTrue(placing.eyeY() > placing.aimY(), "a positive pitch looks down on it");
+	}
+
 	private static double distance(Placing p) {
 		return Math.hypot(Math.hypot(p.eyeX() - p.aimX(), p.eyeY() - p.aimY()), p.eyeZ() - p.aimZ());
 	}
