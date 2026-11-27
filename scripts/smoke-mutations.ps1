@@ -21,7 +21,8 @@
     ./scripts/smoke-mutations.ps1 -Copy <copy> -Set crash     # a missing particle sprite crashes the game; the cause must survive
   Read the output of each: every line starting EXPECT must appear among the failures. Re-run robocopy to undo.
 
-  Last verified 2026-11-16: all caught. If one stops being caught, a check has been weakened; fix the check, not this list.
+  Last verified 2026-11-27: all caught. The slow-tick break of the server set can hold the run past the task's 20-minute limit; copy
+  EngineController.java back and run the set again to see the others. If one stops being caught, a check has been weakened; fix the check, not this list.
 #>
 param(
     [Parameter(Mandatory = $true)][string]$Copy,
@@ -48,13 +49,13 @@ switch ($Set) {
     'server' {
         Remove-Item "$d\src\generated\resources\data\create_engines\loot_table\blocks\sump.json"
         $expect += 'EXPECT [data] block sump has a loot table'
-        Edit-File "$d\src\main\java\com\createengines\content\battery\BatteryBlockEntity.java" 'charge = tag.getFloat("Charge");' 'if (tag.get("Charge") instanceof net.minecraft.nbt.StringTag) throw new IllegalStateException("mutation: hostile data"); charge = tag.getFloat("Charge");'
-        $expect += 'EXPECT [lifecycle] battery - IllegalStateException: mutation: hostile data'
+        Edit-File "$d\src\main\java\com\createengines\content\battery\BatteryBlockEntity.java" 'float read = tag.getFloat("Charge");' 'if (tag.get("Charge") instanceof net.minecraft.nbt.StringTag) throw new IllegalStateException("mutation: hostile data"); float read = tag.getFloat("Charge");'
+        $expect += 'EXPECT [lifecycle] battery [] - IllegalStateException: mutation: hostile data'
         Edit-File "$d\src\main\resources\data\create_engines\recipe\mixing\biodiesel.json" '"item": "minecraft:bone_meal"' '"tag": "create_engines:nothing_here"'
         $expect += 'EXPECT [data] recipe mixing/biodiesel has no empty ingredient'
         Edit-File "$d\src\main\java\com\createengines\engine\EngineController.java" "public void tick() {`n`t`tLevel level = primary.getLevel();" "public void tick() {`n`t`tlong mutationEnd = System.nanoTime() + 700_000L; while (System.nanoTime() < mutationEnd) { }`n`t`tLevel level = primary.getLevel();"
         $expect += 'EXPECT [perf] 16 engines cost under 2 ms a tick'
-        Edit-File "$d\src\main\java\com\createengines\content\battery\BatteryBlockEntity.java" 'charge = tag.getFloat("Charge");' 'if (Float.isNaN(tag.getFloat("Charge"))) throw new IllegalStateException("mutation: bad number"); charge = tag.getFloat("Charge");'
+        Edit-File "$d\src\main\java\com\createengines\content\battery\BatteryBlockEntity.java" 'float read = tag.getFloat("Charge");' 'if (Float.isNaN(tag.getFloat("Charge"))) throw new IllegalStateException("mutation: bad number"); float read = tag.getFloat("Charge");'
         $expect += 'EXPECT [hostile] battery state 0 NOT_A_NUMBER - IllegalStateException: mutation: bad number'
         Edit-File "$d\src\main\java\com\createengines\engine\sim\Tuning.java" 'public static volatile boolean wearMode = false;' "public static volatile boolean wearMode = false;`n`tpublic static volatile boolean mutationUnswept = false;"
         $expect += 'EXPECT [tuning] every Tuning setting is swept'
@@ -87,7 +88,7 @@ switch ($Set) {
     'threads' {
         # A note the sound engine dropped is never forgotten: the dead ones hold all three voices, silent after a reload.
         # (Only stopping an engine from replacing its own note is not enough: another engine's clean-up forgets it.)
-        Edit-File "$d\src\main\java\com\createengines\content\EngineNoteSound.java" 'boolean dropped = VoiceClock.settled(now, note.startedAt) && (note.isStopped() || !sounds.isActive(note));' 'boolean dropped = false;'
+        Edit-File "$d\src\main\java\com\createengines\content\EngineNoteSound.java" 'boolean dropped = VoiceClock.settled(now, note.startedAt) && (note.isStopped() || !MachineLoopSound.stillPlaying(sounds, note));' 'boolean dropped = false;'
         $expect += 'EXPECT [threads] an engine note comes back after the sound engine reloaded'
         $task = 'runSmokeAudit'
     }

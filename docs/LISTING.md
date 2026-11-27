@@ -224,7 +224,7 @@ that changes how an existing engine behaves says so in its changelog. More on
 
 ## Changelog for 2.4.0
 
-Unreleased; being written as 2.4 "Running Hot" is built. So far: heat that follows work, overheating and a Radiator, the second part of the
+2.4 "Running Hot": heat that follows work, overheating and a Radiator, the second part of the
 wear mode, two new connecting rods, a rework of the engine sound, fixes, new gasket recipes, and less work for a server. New IDs: a block
 (`radiator`), three items (`incomplete_copper_gasket`, `light_connecting_rod`, `heavy_connecting_rod`), a data component
 (`create_engines:failed`) and sound events (`engine_catch_hard`, `engine_stall_lugged`, `engine_stall_starved`, `engine_settle`,
@@ -353,7 +353,9 @@ wear mode, two new connecting rods, a rework of the engine sound, fixes, new gas
 - Fixed (wear mode): breaking a battery, rotor housing or turbocharger and placing it again no longer makes it new, and a thrown rod's wreck
   stays in a cylinder that is broken and placed. Their items now carry `create_engines:wear` and `create_engines:failed`.
 - New saved keys, absent on older worlds: cylinder `Rod`, head `Warped` and `PlugWear`, rotor housing `PlugWear`, turbocharger `Wear` and
-  `WearFailed`. The engine summary's `Failures` is now a long; a saved int reads the same.
+  `WearFailed`, and the Radiator's `Heat`, `Boiling`, `OnEngine`, `FanRpm` and `AirSpeed`. The engine summary's `Failures` is now a long; a
+  saved int reads the same. What a server sends players also gained `FuelCut`, `ExhaustMuffle` and the engine's `Sound*` values; each reads
+  as off or zero when absent.
 - Changed, gasket recipes (author, 2026-11-25): the **Rubber Gasket** is sawn from a Mechanical Belt (a Mechanical Saw cuts one belt into two
   gaskets) instead of crafted from two slime balls and a paper. The **Cardboard Gasket** is crafted from one of Create's Cardboard instead of three
   paper. The **Copper Gasket** is a Create sequenced assembly on a Rubber Gasket: a Deployer puts a copper sheet on, a Press presses it, a second
