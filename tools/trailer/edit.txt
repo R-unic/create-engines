@@ -17,7 +17,7 @@
 # `chapter <shot>:`) starts with a flash and a hit, and its name is the small gold line over the captions in it.
 
 # The order follows ShowcaseRunShots, so the light only moves on. at= is chosen so that what a cue does in a shot is on
-# screen: a gasket blowing, the rods changing, the clutch taking up. An engine whose exhaust or timing has just been
+# screen: a gasket blowing, the rods changing. An engine whose exhaust or timing has just been
 # changed misfires for a few seconds, so those pieces start late in their shots.
 
 # Cold open: steam, goggles at Critical, a gasket blowing, in game sound only
@@ -37,7 +37,6 @@ diesel_knock          3     at=1.5    engine
 inline6_turbo         4.5   at=0.75   engine
 blown_i6_blower       3     at=0      engine
 far_boom              4.5   at=4.5    engine
-stall_load            4.5   at=0.75   engine
 headphones_on         3     at=0.5    engine
 # Wear it out
 rods_light_heavy      6     at=0      engine

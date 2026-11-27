@@ -2058,7 +2058,7 @@ public final class ShowcaseRun {
 		CUES.add(new Cue("grow_engine", 14.5, () -> shot("trailer_grow_end")));
 		// More stills, of what a shot's middle does not show, to check it without watching
 		for (var still : java.util.List.of(java.util.Map.entry("heat_critical", 5.0), java.util.Map.entry("exhaust_mouth", 0.1),
-			java.util.Map.entry("far_boom", 8.8), java.util.Map.entry("stall_load", 5.5), java.util.Map.entry("rods_light_heavy", 5.0),
+			java.util.Map.entry("far_boom", 8.8), java.util.Map.entry("rods_light_heavy", 5.0),
 			java.util.Map.entry("gasket_saw", 5.0), java.util.Map.entry("radiator_fan_basin", 5.8),
 			java.util.Map.entry("bank_wx", 2.5), java.util.Map.entry("bank_wx", 5.8)))
 			CUES.add(new Cue(still.getKey(), still.getValue(),

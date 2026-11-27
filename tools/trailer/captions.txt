@@ -64,7 +64,6 @@ caption diesel_knock: No spark plug: compression ignition knocks at idle.
 caption inline6_turbo: Bolt on a turbocharger.
 caption blown_i6_blower: Or drive a supercharger, then cool the charge.
 caption far_boom: Far off, the crack fades and the boom carries.
-caption stall_load: Stalled by its load, it thuds to a stop.
 caption headphones_on: Too loud? Noise-cancelling headphones.
 caption rods_light_heavy: Light rods rev sooner and run rougher; heavy ones smoother.
 caption wear_parts: Four gaskets, a Service Kit, and parts that wear.

@@ -106,8 +106,6 @@ final class ShowcaseRunShots {
 		shots.add(new Shot("blown_i6_blower", "blown_i6", box(0, 3.4, 1.5, 3.5, 6.4, 5.5), -68, -48, 14, 16, 1, 1.12, 0, 3, NO_TIME));
 		// The long dolly away, over open ground, until the engine is small in the frame
 		shots.add(new Shot("far_boom", "open_v8", v8, 90, 96, 8, 13, 1.1, 0.14, 0, 9, NO_TIME));
-		// The presses are clutched in and the diesel cannot carry them
-		shots.add(new Shot("stall_load", "diesel", box(2, 1.5, 4, 15, 5.8, 6.5), -26, -10, 12, 12, 1.02, 1.1, 0, 6, NO_TIME));
 		// First person, standing by the turbo six, the player puts on headphones
 		shots.add(new Shot("headphones_on", "inline6", box(0.5, 1, 3.5, 12.5, 7, 7), -40, -40, 11, 11, 1, 1, 0, 6, NO_TIME));
 	}

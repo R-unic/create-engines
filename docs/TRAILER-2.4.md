@@ -2,7 +2,7 @@
 
 The composition the author picked for 2.4 "Running Hot" (author, 2026-11-26). Built on 2026-11-27: the pads, shots, cues,
 captions and both edits are in. The new shots were checked in the game the same day, from stills and the log. **Nothing has
-been recorded or cut, and `stall_load` does not work yet.** [SMOKE.md](SMOKE.md), "The trailer",
+been recorded or cut.** [SMOKE.md](SMOKE.md), "The trailer",
 has the harness and the rules every composition keeps; this page is only what is new for this cut. Once it is cut and posted, the
 composition part of SMOKE.md is rewritten to describe it and this page is deleted.
 
@@ -91,21 +91,15 @@ wear_gasket_blown "Wear it out", bank_wx "Build a W or X".
 
 The edits themselves (`tools/trailer/edit.txt`, `vertical.txt`) now own the order and the lengths; the tables above are the plan.
 
-- The long cut plans to 184.5 s (181.5 s without the Aeronautics car), under the "about 200" above.
+- The long cut plans to 180 s (177 s without the Aeronautics car), under the "about 200" above.
+- `stall_load` is dropped (author, 2026-11-27): a load alone does not stall an engine. The mod offers Create no more stress
+  than the engine can carry, and a bigger load only marks the network overstressed while the engine runs on (the GameTest
+  `overloadOverstressesWithoutStalling`). A load Create accepted did not stop it either in the check.
 - `headphones_on` is filmed by the turbocharged six: the V16 it stood by is now cold until the montage's `heavy_starter`.
 - `rods_light_heavy` is one engine and one camera, with the rods changed half-way, not two engines side by side.
 - The title shot is in daylight (it was golden hour), so that the light still only moves on.
 - In the vertical cut, the rods, the blown gasket, the hot engine and the last piece are also marked `engine`, to be heard.
 - The montage's one caption is "And all that came before, from one cylinder up." (over `first_rises`).
-
-## Open: the stall
-
-`stall_load` does not stall the diesel, so its caption ("Stalled by its load, it thuds to a stop.") is not true of it. The mod
-offers Create no more stress than the engine can carry: a bigger load only marks the network overstressed, and the engine runs
-on, unloaded (the GameTest `overloadOverstressesWithoutStalling`). A load Create accepts did not stop it either, with the
-throttle shut to its lowest as the clutch took up. The mod's heavy "lugged" stall sound plays when an engine that is
-overstressed dies of something else. The shot, its caption and its line in both edits wait for the author's choice. Do not
-record it as it is.
 
 ## The check of 2026-11-27
 
@@ -118,7 +112,6 @@ after each re-timing.
 
 ## Before recording
 
-- Settle the stall (above).
 - Not checked: anything heard, any movement between the stills, and whether each caption reads true over its piece. The pieces
   that start later than at first (the rebuilt exhausts, the flat-plane V8, the muffled bank) have not been looked at there.
 - The sound rework is the author's to tune by ear and is not signed off ([ROADMAP-3.0.md](ROADMAP-3.0.md), 2.4 "The sound rework"),
