@@ -190,8 +190,9 @@ run the Gradle task it names, and check every `EXPECT` line appears among the fa
 ## The sound bench
 
 Step 0 of [SOUND-PLAN.md](SOUND-PLAN.md): the game's own sound, recorded and audited, so a change to the sound shows its figures
-from the game and not only from an offline render. It is not part of `./gradlew smoke` or the release gate: it needs a machine
-with speakers that nothing else is using.
+from the game and not only from an offline render. It is not part of `./gradlew smoke`: it needs a machine with speakers that
+nothing else is using. The release gate asks for it only when a release changes the sound system somewhat significantly
+([STABILITY.md](STABILITY.md), 2.6).
 
 ```
 /c/Python312/python.exe tools/sound_bench.py                 # everything, about 30 minutes

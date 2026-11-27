@@ -30,6 +30,8 @@ Built from private copy at:
 - [ ] Changelog written from the real diff; every changed behaviour and new ID/key named
 - [ ] Diff review done (tick/sound/render allocation, client classes in common code, saved data without defaults)
 - [ ] No TODO, FIXME or debug code left; docs match the release
+- [ ] Sound bench, only if the sound system changed somewhat significantly (STABILITY.md 2.6): trusted run, scenes ___
+      (`--moving` run, or why not), faults ___, compared with run ___; or `n/a` (name the sound changes, or none):
 
 ## Part 3: hands-on (author, target 10 minutes; actual ___ min)
 

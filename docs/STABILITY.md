@@ -152,6 +152,21 @@ the leak check. The number is kept so that older release records still point som
       numbers (tests, storyboards, mutations), `docs/ADVANCEMENTS.md`, `docs/COMPATIBILITY.md` known gaps, the README's
       feature list and versions, and this file's checklist if the process changed.
 
+### 2.6 Sound bench (only when the release changes the sound system somewhat significantly)
+
+Decided by the diff since the last tag. It applies when the release changes how sound is made, delivered or mixed: the engine
+note's synthesis, the streams and their threading or timing, the voice budget, the shared room voice, walls, rooms, air or
+moving structures, when engine sounds start, follow or stop, or a reworking of many sounds or their levels at once. It does
+not apply to a small, contained change, such as one new or replaced one-shot, one sound's volume, subtitles, or a refactor
+away from the sound code. When in doubt, Claude says what changed and asks the author. If it does not apply, the record
+says `n/a` and names the sound changes there were, or says there were none.
+
+- [ ] The sound bench ([SMOKE.md](SMOKE.md), "The sound bench") run on the release's code, every scene, plus `--moving` if
+      the change can affect a moving structure. The report is trusted (no "Do not trust this run"), every item under
+      **Faults found** is fixed or listed under Exceptions, and its figures are compared with the last bench run
+      (`--compare`), a worse one explained or fixed. It needs the author's machine with its speakers on and nothing else
+      playing, so Claude agrees a time with the author before starting it.
+
 ---
 
 ## Part 3. Hands-on pass (the author, about 10 minutes)
