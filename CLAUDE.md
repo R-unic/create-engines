@@ -13,7 +13,8 @@
 
 - Commit each finished, verified piece of work as soon as it is done, with its tests and docs, without waiting to be asked.
   Do not let several features pile up uncommitted. Stage only your own changes (other sessions may share this checkout).
-  Pushing and tagging still wait for the author.
+- When about 5 local commits are unpushed, push the branch without asking, so all work stays tracked on the remote.
+  Tagging still waits for the author.
 - Do not let files grow to giant sizes. New work goes in a new file or class split by responsibility, not onto the end of a
   long one. Past about 800 lines, split before adding more. The files that are already too long are listed in
   [docs/ROADMAP-3.0.md](docs/ROADMAP-3.0.md), "Splitting the giant files".
