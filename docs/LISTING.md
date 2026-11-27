@@ -264,6 +264,9 @@ key or saved format is renamed or removed. Changes to existing builds are listed
   quicker and quicker as it flares; a stall's last firings come unevenly with a cylinder or two not lighting, and the crank
   knocks to a stop and rocks back.
 - New, an optional `heat_factor` in the `fuel` data map (default 1) for pack makers. API version 1.3.0.
+- Clearer fuel shut-off. Redstone on a camshaft already cut the fuel; now the Camshaft Ponder page has its own "shutting the engine down"
+  part with a lever, the cylinder, head and injector page points to it, the camshaft and cam lobe items say it when hovered, and goggles on
+  the camshaft, cylinder or head say "Fuel cut: redstone on the camshaft". No engine behaves differently.
 - Changed (wear mode), the failure chance: a worn rod or gasket is far less likely to fail in any one minute, so heavy wear is now a warning
   and not a near certainty. Before, a part 80% worn at 256 RPM was certain to fail within a minute; now that chance is about 5% while warm. It
   grows in proportion to speed (before, with the square), and with heat. Apex seals fail as they did.

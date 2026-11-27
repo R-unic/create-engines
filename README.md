@@ -54,7 +54,8 @@ Minecraft 1.21.1 · NeoForge 21.1.219 or newer · Create 6.0.10 (build 257 or ne
   against boost better than gasoline; methanol carries the least in the bucket and cools the charge most, so it is the
   fuel to push a boosted build with, at a heavy fuel bill
 - Stopping an engine: a redstone signal on any block of a camshaft line closes that line's fuel rack, and full strength cuts
-  the fuel, so a lever stops the engine without emptying anything (an engine with a camshaft per bank needs a signal on each)
+  the fuel, so a lever stops the engine without emptying anything (an engine with a camshaft per bank needs a signal on each).
+  Goggles then say "Fuel cut: redstone on the camshaft"
 - A craftable fuel chain: seeds (or saplings, sunflowers, cocoa beans, dried kelp) to plant oil to diesel, diesel to kerosene with glowstone, sugar crops to ethanol, logs and
   water to methanol over a superheated base, and biodiesel with glycerin on the
   side, all in Create basins. The loop closes: glycerin goes into engine oil and coolant, and used oil is burned as fuel or recycled into oil or charcoal
