@@ -409,7 +409,8 @@ python tools/trailer/record.py --post-only  # cuts the last recordings again (ne
   from the shot `thumbnail:` names, and a 9:16 thumbnail for Shorts from the shot `vertical_thumbnail:` names
   (`vertical_thumbnail_at:` seconds in, with `vertical_title:` and `vertical_sub:` for its words;
   `vertical_thumbnail_zoom:`, `_x:` and `_y:` size and place its 9:16 window). Each version's trailer gets a Shorts thumbnail
-  of its own, with a frame and a title that show what that version adds.
+  of its own. It has to stop someone who is only browsing YouTube, and show the update at a glance: the framing carries both
+  (2.4: the exhaust flame, for Running Hot), with a title of a few words.
 - **The vertical cut.** Its own edit, `tools/trailer/vertical.txt` (the file says what each option does), cut for a feed where a
   viewer decides in the first second: no title card and no 16:9 band at the start, but a full-frame pull-back from a barking
   exhaust mouth to the whole engine revving, with big words on the first frame, every piece
