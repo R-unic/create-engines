@@ -15,7 +15,7 @@
 # short_shots            the shots of the teaser, in order, three seconds each (the vertical cut has its own edit, vertical.txt)
 # short_caption <shot>   the few big words over each of those
 # thumbnail              the shot the thumbnail is taken from (the middle of it)
-# vertical_thumbnail     the shot the 9:16 thumbnail (Shorts) is taken from, vertical_thumbnail_at seconds into it; vertical_title is its two big lines split by |, vertical_sub the small one
+# vertical_thumbnail     the shot the 9:16 thumbnail (Shorts) is taken from, vertical_thumbnail_at seconds into it; vertical_title is its two big lines split by |, vertical_sub the small one; vertical_thumbnail_zoom (1 or more) takes a smaller window, vertical_thumbnail_x and _y (0..1, default 0.5) place it. Each version's are its own: the title names what it adds
 # description            the pitch at the top of the video description (post.py writes run/trailer/description.txt with every full cut)
 # link <name>            a line of the description's Links list: "link GitHub: https://..." (add the Modrinth and CurseForge pages here
 #                        once their addresses are fixed; post.py never guesses them)
@@ -118,7 +118,10 @@ short_caption bank_wx: Build a W or X
 
 thumbnail: heat_critical
 
-vertical_thumbnail: exhaust_mouth
-vertical_thumbnail_at: 0.3
-vertical_title: REAL|ENGINES
-vertical_sub: for Create
+vertical_thumbnail: wear_turbo
+vertical_thumbnail_at: 1.5
+vertical_thumbnail_zoom: 1.55
+vertical_thumbnail_x: 0.52
+vertical_thumbnail_y: 0.08
+vertical_title: RUNNING|HOT
+vertical_sub: Version 2.4

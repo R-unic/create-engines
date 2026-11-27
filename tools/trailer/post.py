@@ -893,6 +893,15 @@ def thumbnail(ffmpeg, args, words, shots, work):
     image.convert("RGB").save(args.thumbnail)
 
 
+def tall_crop(words):
+    """The ffmpeg filter that takes the Shorts thumbnail's 9:16 window out of a 16:9 frame. `vertical_thumbnail_x` and
+    `vertical_thumbnail_y` (0..1, default 0.5) place it, `vertical_thumbnail_zoom` (1 or more) makes it that much smaller."""
+    zoom = float(words.get("vertical_thumbnail_zoom", 1))
+    x, y = (float(words.get(f"vertical_thumbnail_{axis}", 0.5)) for axis in "xy")
+    return (f"scale=1920:1080:flags=lanczos,crop={round(608 / zoom)}:{round(1080 / zoom)}:(iw-ow)*{x}:(ih-oh)*{y},"
+            "scale=1080:1920:flags=lanczos")
+
+
 def vertical_thumbnail(ffmpeg, args, words, shots, work):
     """A 1080x1920 still for YouTube Shorts and the like: one close frame at full height, hot colour, the title in huge outlined
     letters in the upper middle. The bottom fifth and the right edge are left clear, where the app draws its own buttons and
@@ -902,7 +911,7 @@ def vertical_thumbnail(ffmpeg, args, words, shots, work):
     at = take["offset"] + shot["start"] + float(words.get("vertical_thumbnail_at", (shot["end"] - shot["start"]) / 2))
     frame = work / "frame_tall.png"
     subprocess.run([ffmpeg, "-y", "-hide_banner", "-loglevel", "error", "-ss", f"{at:.3f}", "-i", take["raw"],
-                    "-frames:v", "1", "-vf", "crop=608:1080:(iw-608)/2:0,scale=1080:1920:flags=lanczos", str(frame)], check=True)
+                    "-frames:v", "1", "-vf", tall_crop(words), str(frame)], check=True)
     image = Image.open(frame).convert("RGB")
     image = ImageEnhance.Color(image).enhance(1.35)
     image = ImageEnhance.Contrast(image).enhance(1.12)
