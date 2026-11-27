@@ -103,6 +103,7 @@ configurations.create('ambientSoundsRuntime')
 configurations.create('energyRuntime')
 // And the GameTest run with Create: The Factory Must Grow (Community Edition) loaded: its fluids must run an engine.
 configurations.create('tfmgRuntime')
+configurations.create('petrochemRuntime')
 // And the GameTest run with Create Aeronautics and Sable loaded (engines on a moving structure).
 def sableJar = configurations.getByName('aeronauticsRuntime')
 tasks.register('extractSableCompanion', Copy) {
@@ -357,6 +358,14 @@ neoForge {
             systemProperty 'create_engines.requireTfmg', 'true'
         }
 
+        // The GameTests with Create: Petrochem loaded, for PetrochemCompatGameTests. Needs -Pneo_version=21.1.230 (docs/COMPAT.md)
+        gameTestServerPetrochem {
+            type = 'gameTestServer'
+            gameDirectory = file('run/gametest-petrochem')
+            systemProperty 'neoforge.enabledGameTestNamespaces', project.mod_id
+            systemProperty 'create_engines.requirePetrochem', 'true'
+        }
+
         // The GameTests with Create Aeronautics and Sable loaded, for the tests that need a moving structure
         gameTestServerSable {
             type = 'gameTestServer'
@@ -425,6 +434,7 @@ dependencies {
     ambientSoundsRuntime("maven.modrinth:creativecore:${creative_core_version}") { transitive = false }
     energyRuntime("maven.modrinth:createaddition:${create_additions_version}") { transitive = false }
     tfmgRuntime("maven.modrinth:tfmg-community-edition:${tfmg_version}") { transitive = false }
+    petrochemRuntime("maven.modrinth:create-petrochem:${petrochem_version}") { transitive = false }
     aeronauticsRuntime("maven.modrinth:create-aeronautics:${aeronautics_version}") { transitive = false }
     aeronauticsRuntime("maven.modrinth:sable:${sable_version}") { transitive = false }
     // Pollution of the Realms has no API: its classes are compiled against (never shipped) and only one bridge class names them
@@ -737,6 +747,32 @@ tasks.matching { it.name == 'runGameTestServerTfmg' }.configureEach {
         modsDir.deleteDir()
         modsDir.mkdirs()
         tfmgMods.files.each { jar -> new File(modsDir, jar.name).bytes = jar.bytes }
+    }
+}
+
+// The Petrochem GameTest row: same method again. Petrochem 1.3.3 needs NeoForge 21.1.230 or newer, newer than this build's, so
+// run it with -Pneo_version=21.1.230; it is not part of compatMatrix or the gate for that reason (docs/COMPAT.md)
+def petrochemMods = configurations.getByName('petrochemRuntime').incoming.files
+def petrochemDir = file('run/gametest-petrochem')
+tasks.register('verifyGameTestsPetrochem', JavaExec) {
+    group = 'verification'
+    description = 'Fails unless the last runGameTestServerPetrochem passed every test and logged no errors.'
+    classpath = verifyOutput
+    mainClass = 'com.createengines.smoke.SmokeVerify'
+    args '--run', 'gametest', '--gametest', '--log', new File(petrochemDir, 'logs/latest.log').path, '--allow', smokeAllowlist.path
+    dependsOn 'classes'
+}
+tasks.matching { it.name == 'runGameTestServerPetrochem' }.configureEach {
+    timeout = java.time.Duration.ofMinutes(20)
+    finalizedBy 'verifyGameTestsPetrochem'
+    doFirst {
+        new File(petrochemDir, 'smoke').deleteDir()
+        new File(petrochemDir, 'crash-reports').deleteDir()
+        new File(petrochemDir, 'logs/latest.log').delete()
+        def modsDir = new File(petrochemDir, 'mods')
+        modsDir.deleteDir()
+        modsDir.mkdirs()
+        petrochemMods.files.each { jar -> new File(modsDir, jar.name).bytes = jar.bytes }
     }
 }
 

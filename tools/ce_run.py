@@ -47,7 +47,8 @@ GATE = ['smoke', 'check', 'runGameTestServerPollution', 'runGameTestServerSable'
 RERUN = re.compile(r'^(test|pitest|runSmokeAudit\w*|runGameTestServer\w*)$')
 GAMETEST_DIRS = {'runGameTestServer': 'run/gametest', 'smoke': 'run/gametest',
                  'runGameTestServerPollution': 'run/gametest-pollution', 'runGameTestServerSable': 'run/gametest-sable',
-                 'runGameTestServerTfmg': 'run/gametest-tfmg', 'runGameTestServerEnergy': 'run/gametest-energy'}
+                 'runGameTestServerTfmg': 'run/gametest-tfmg', 'runGameTestServerPetrochem': 'run/gametest-petrochem',
+                 'runGameTestServerEnergy': 'run/gametest-energy'}
 
 
 def clip(text, width=300):
