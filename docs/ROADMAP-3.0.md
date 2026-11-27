@@ -37,7 +37,7 @@ question, not an obstacle ([CLAUDE.md](../CLAUDE.md)).
 | 2.2 | Proving Ground | Verification debts: server-from-jar, the step-size finding; **the battery tiers**, then **charge priority, electric injector assist and ignition coils**, with electrolysis to be decided (author, 2026-11-23) | Medium |
 | 2.3 | Wear and Tear | **The opt-in wear mode and nothing else** (author, 2026-11-24): pistons, rods, gaskets (stock and three tiers), rotary apex seals and batteries wear, precision parts wear slower, a rod can be thrown (a flag, a misfire, a broken head, with spectacle) and a gasket can blow, light wear is repaired by an automatable, durable Service Kit and the rest by replacing the part, worn parts keep their wear as items, and the Black Box and Display Link report each part and a total; off by default, nothing runs with it off, and gaskets and seals are not required with it off | Medium to large |
 | 2.4 | Running Hot | **Temperature in degrees, overheating you can reach** (a soft power loss in both modes, an exception the author approved on 2026-11-25), heat that follows work, **the Radiator** (closed loop, sheds more with a fan or on a moving contraption), and **the wear overhaul, part 2** (heat drives wear and failures, rod wear from load, plug and turbo wear wired, gasket recipes) (author, 2026-11-25), **a full sound rework** (each engine's note built from its banks, exhausts, cylinder size, cam and fuel instead of one shared firing sound; client-side only, and bearable with many engines running in a build) (author, 2026-11-25), and **splitting the giant source files**, with no behaviour change (author, 2026-11-26) | Large |
-| 2.5 | Open Garage (was 2.4 until 2026-11-25) | Reach: a new API minor (**fuel supply, a shared combustion model and animation for addon engines**, author, 2026-11-26), energy and probe mods, the next Create, a second example addon; **Create: Petrochem and Create: Pocket Sized support** (author, 2026-11-27; planned); **piston rings**, **polluted intake air**, **high- and low-compression piston variants**, **rotor variants (a precision rotor among them) with an exhaust niche**, and **nitrous oxide** (liquid, a vaporiser and a gas in the intake manifolds) (author, 2026-11-23), a **W layout for the Bank Builder** (author, 2026-11-24), then **look, sound and performance** only where the 2.0.x pass found something (all of it was 2.3 until the author moved it, 2026-11-24; its sound went to 2.4's sound rework, 2026-11-25); **a texture rework, with some new models, so the mod looks like part of Create** (author, 2026-11-25, from player complaints; moved from 2.4 on 2026-11-26) | Medium to large |
+| 2.5 | Open Garage (was 2.4 until 2026-11-25) | Reach: a new API minor (**fuel supply, a shared combustion model and animation for addon engines**, author, 2026-11-26), energy and probe mods, the next Create, a second example addon; **Create: Petrochem and Create: Pocket Sized support** (author, 2026-11-27; planned); **piston rings**, **polluted intake air**, **high- and low-compression piston variants**, **rotor variants (a precision rotor among them) with an exhaust niche**, and **nitrous oxide** (liquid, a vaporiser and a gas in the intake manifolds) (author, 2026-11-23), a **W layout for the Bank Builder** (author, 2026-11-24), then **look, sound and performance** only where the 2.0.x pass found something (all of it was 2.3 until the author moved it, 2026-11-24; its sound went to 2.4's sound rework, 2026-11-25); **displacement noise in the engine note**, a sample first (author, 2026-11-27; proposed); **a texture rework, with some new models, so the mod looks like part of Create** (author, 2026-11-25, from player complaints; moved from 2.4 on 2026-11-26) | Medium to large |
 | 3.0 | Clean Slate | The second breaking cleanup: drop 1.x migrations, regenerate baselines, API 2.0 | Large |
 
 **Shipped so far (tags):** 2.0.0 (2026-11-21), 2.0.1 and 2.0.2 (2026-11-22), 2.1.0 (2026-11-23), 2.2.0 (2026-11-24), 2.3.0 (2026-11-25) and 2.4.0 (2026-11-27). 2.5 is in progress and
@@ -1529,6 +1529,38 @@ asks for it:
   2.1 did not already. Cosmetic parts never change a rating (rule 4).
 - **Blueprints.** Whatever the dual-mass flywheel and the 2.x parts show the format missing; a blueprint saved on 2.0 must keep
   loading (the format is part of the promise).
+
+### Displacement noise: the air the pistons move (author, 2026-11-27; proposed, not built)
+
+**From a comment on the mod:** "if I were you, I would look into using noise to create displacement audio". The reading used here is
+ours and has not been confirmed with the commenter: a continuous layer of noise that stands for the air each cylinder pushes out and
+draws in, shaped by the crank angle.
+
+**What the note does today** (read from `EngineNoteSynth`, `NoteUndertone` and `tools/engine_grains.py` on 2026-11-27; the other sound
+files were not checked). Noise is already in the short firing grains (the rush of gas in the blow-down, the crack, the diesel's knock)
+and in a quiet mechanical bed that swells twice a turn. None of those files has a stream that follows each cylinder's intake and
+exhaust strokes, and a cranking or coasting engine is voiced mostly by weaker firings.
+
+**The idea.**
+
+- Loudness follows how fast the gas moves through the valve, from the piston's speed over the stroke and the firing order.
+- The noise gets brighter as the flow gets faster (engine speed, throttle).
+- It goes through the outlet's modelled pipe, so the exhaust run colours it. One noise source for each outlet, shaped by the
+  combined flow of its cylinders, rather than one for each cylinder.
+- Exhaust first. Intake noise only if the exhaust layer is worth keeping.
+
+**Where it should matter most (expected, not heard):** cranking, coasting and low speed with the throttle open, and the gaps between
+firings.
+
+**First step: a sample, before the mod changes.** The same engine rendered offline with and without the layer at cranking, idle, high
+load and coasting, for the author to judge by ear. The idea is dropped if it does not clearly help.
+
+**Rules if it is built.** Client-side sound only: no rating, sim number or saved key moves. It changes how existing builds sound, so it
+needs the author's say-so after hearing the sample. The sound thread stays within 2.4's budget (under 2% of one core with the voice
+cap's worth of voices and banks), measured, with little room to spare at the last soak. Tests: the layer rises and falls at each
+cylinder's crank angle, output stays finite and within level, and a stopped engine is silent.
+
+**Risks.** Too much reads as static or wind, and at high speed the pulses may run together into a steady hiss.
 
 ### Looking like Create: a texture rework and some models (author, 2026-11-25; moved from 2.4 to 2.5 on 2026-11-26)
 
