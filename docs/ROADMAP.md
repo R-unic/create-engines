@@ -483,10 +483,10 @@ throttle and rack) lets players write their own engine management in Lua, withou
 **Status 2026-11-18 (branch `2.0-crossover`, merged with `2.0`):**
 
 - **Engine types as plug-ins:** built by the other 2.0 session (TorqueSource seam, rotary on its own drive, provider registration with
-  boost, goggle lines and rebuilds; see `docs/design/ENGINE_SEAM.md`). **Finished 2026-11-19 (author's decision):** the
+  boost, goggle lines and rebuilds). **Finished 2026-11-19 (author's decision):** the
   boost path is narrowed to `Breather` (19 files still name `CylinderModel`, all cylinder internals), a source can be attached to an intake
   or exhaust network so turbos, blowers and intercoolers act on it, and a provider's watched blocks are recorded in blueprints and accepted
-  by the server. No scanner-rule registry: the watch-and-rebuild hook already rescans. See the end of `docs/design/ENGINE_SEAM.md`.
+  by the server. No scanner-rule registry: the watch-and-rebuild hook already rescans.
 - **Frozen public API:** `api.ApiVersion` 1.1.0 (its own semver; 1.1 added `PartBlocks` and `EngineBuilding`, 2026-11-21), `ApiSurfaceTest` against `compat/api-surface.txt`, provider internals
   moved to `engine.EngineProviders`, `docs/API.md`. Behaviour is covered by the GameTests, not the surface file.
 - **Parts as data, first piece:** the four precision parts (bore, head, piston, injector) are `part_effects/<part>.json`, read on every

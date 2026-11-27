@@ -190,7 +190,7 @@ run the Gradle task it names, and check every `EXPECT` line appears among the fa
 
 ## The sound bench
 
-Step 0 of [SOUND-PLAN.md](SOUND-PLAN.md): the game's own sound, recorded and audited, so a change to the sound shows its figures
+Step 0 of the sound plan: the game's own sound, recorded and audited, so a change to the sound shows its figures
 from the game and not only from an offline render. It is not part of `./gradlew smoke`: it needs a machine with speakers that
 nothing else is using. The release gate asks for it only when a release changes the sound system somewhat significantly
 ([STABILITY.md](STABILITY.md), 2.6).
@@ -242,7 +242,7 @@ off in that copy.
   sound costs** (the sound thread's share of one core against the roadmap's 2%, by the clock, and the game thread's looks
   round the world), and for `walls`, `indoors` and `moving` each phase's loudness and brightness (the middle of its
   spectrum) against the scene's first. Under **Faults found** it names the room still sounding after its engines are gone
-  ([a bug since fixed](SOUND-PLAN.md#known-bug-the-shared-room-voice-outlives-its-engines-fixed)), and any scene of one
+  (a bug since fixed), and any scene of one
   engine that played two of its notes at once for over a second (how stacked copies on a moving structure would show).
   The note's and the room voice's source volumes do not move: their fades are inside the stream, so only the recording can
   show a stair in them.
@@ -282,8 +282,7 @@ Every composition keeps viewers through its first and last seconds, each form in
   them in just before the visuals end, so they are seen before viewers drop off at the end screen. In the short form they lie
   over moving footage. The long form leads into them smoothly, with no long, separate tail. The AI notice stays.
 
-The composition now in the harness is 2.4.0's, which follows both rules. It has been recorded and cut, and is not posted; what is
-still to be checked before it is, is in [TRAILER-2.4.md](TRAILER-2.4.md).
+The composition now in the harness is 2.4.0's, which follows both rules. It has been recorded and cut, and is not posted.
 
 ```
 python tools/trailer/record.py              # plays the game, records screen and sound, cuts the videos

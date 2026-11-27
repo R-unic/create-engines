@@ -1,4 +1,4 @@
-"""The engine note's grains and exhaust pipe for the recordings that stand in for it (docs/SOUND-PLAN.md, step 3): the
+"""The engine note's grains and exhaust pipe for the recordings that stand in for it (step 3 of the sound plan): the
 backfire, spit, catch and stall that play for an engine without a note of its own. The pipe is ExhaustPipe.java ported,
 with the same figures (SoundAssetsTest holds them to each other); the grains are engine_grains.py's own.
 

@@ -652,7 +652,7 @@ faces; and anything that needs doing regularly (an oil change) can be automated 
   - *Top end.* A deep engine's crack is up to 40% weaker.
   - *Measured offline*, idling at 80 to 240 RPM: a crossplane V8 on short manifolds has about 68 to 72% of its sound below
     120 Hz, where it had about 43%. Singles and twins have no boom, and a single is as it was. Fours and up are all
-    lower than before. The sound bench has recorded it in game ([SOUND-PLAN.md](SOUND-PLAN.md), step 5); nobody has
+    lower than before. The sound bench has recorded it in game (step 5 of the sound plan); nobody has
     judged it by ear.
   - Tests: `EngineNoteDepthTest`, and every earlier note test unchanged.
 - **Sounds on moving structures (2026-11-26).** Sable plays any sound that starts on a moving structure inside a wrapper

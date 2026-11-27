@@ -993,7 +993,7 @@ scene).
 **Heard in game (the author, 2026-11-26):** the author has heard the new sounds. This replaces "not heard" above. Final tuning has not been
 signed off, and the trailer re-recording and the client profile are still not done.
 
-**Delivery (2026-11-26).** Step 1 of [SOUND-PLAN.md](SOUND-PLAN.md) is built: a shorter queue, gains and blowers inside
+**Delivery (2026-11-26).** Step 1 of the sound plan is built: a shorter queue, gains and blowers inside
 the note's stream, equal-power handovers and the note heard from the exhaust. Not yet heard or measured in the game.
 
 **Blower sounds (the author, 2026-11-26).** The turbo whistle, blow-off and supercharger whine are reworked
@@ -1033,7 +1033,7 @@ crackle. They are replaced by the spit's smooth, quiet fizz; the crack, pipe and
 **One-shots join the note (sound plan step 3, 2026-11-26):** the author asked to continue onto step 3. An engine with a note
 plays its backfires, spits and the end of a stall in its own stream; the pop, spit, catch and stall recordings are remade
 from the note's grains and pipe, and every recording that plays once is levelled. What differs from the plan:
-[SOUND-PLAN.md](SOUND-PLAN.md), step 3. Not yet heard.
+step 3 of the sound plan. Not yet heard.
 
 **Faults heard by ear (author, 2026-11-26: add to the roadmap; not built).** A fault should be told apart by its sound, at
 its place in the engine's rhythm. Today the note hears only roughness and the share of cylinders firing, and wear mode's ping
@@ -1093,8 +1093,7 @@ with it. More resonators per engine must still keep the sound thread under 2% of
 ### The trailer (author, 2026-11-26; planned, not built)
 
 A new composition led by the sound rework and the finished wear and parts system, with a brief heat section: it opens on a
-critically hot block steaming, and the Short opens on a pull-back from an exhaust mouth. The plan, its new shots and what it
-needs are in [TRAILER-2.4.md](TRAILER-2.4.md).
+critically hot block steaming, and the Short opens on a pull-back from an exhaust mouth.
 
 Added 2026-11-27: built (pads, shots, captions and both edits); not yet run in the game, recorded or cut. Later that day the new shots were checked in the game; the load stall did not work
 and was dropped (author), and nothing is recorded or cut.

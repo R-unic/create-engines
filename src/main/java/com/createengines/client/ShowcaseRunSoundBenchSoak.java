@@ -7,7 +7,7 @@ import com.createengines.gametest.TestEngine;
 import net.minecraft.core.BlockPos;
 
 /**
- * The sound bench's soak (SOUND-PLAN, step 5): the sixteen engines of the room with the listener standing among them for
+ * The sound bench's soak (step 5 of the sound plan): the sixteen engines of the room with the listener standing among them for
  * minutes, as in a base, not outside it for half a minute. One engine is heard first from that spot, to hold the rest
  * against; then all sixteen as they come up, once they have had time to settle, while the listener paces through them
  * (notes pass from engine to engine), and standing still again.

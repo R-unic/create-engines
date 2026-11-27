@@ -1,4 +1,4 @@
-"""Makes the engine note's grains (docs/SOUND-PLAN.md, step 2): single firings, synthesized here, that the note strikes into
+"""Makes the engine note's grains (step 2 of the sound plan): single firings, synthesized here, that the note strikes into
 its modelled exhaust pipes. Nothing is recorded.
 
     python tools/engine_grains.py                 writes src/main/resources/assets/create_engines/engine_grains.bin

@@ -1,4 +1,4 @@
-"""The level pass over every recording that plays once (docs/SOUND-PLAN.md, step 3), for generate_sounds.py: no DC offset,
+"""The level pass over every recording that plays once (step 3 of the sound plan), for generate_sounds.py: no DC offset,
 a short fade at each end, a loudness of its kind's own and a ceiling on its peaks. Loops are left as they were made.
 
 The loudness is of the loudest 400 ms (sound_audit.momentary_lufs), of the recording itself, before the volume the game

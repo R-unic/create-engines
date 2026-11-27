@@ -19,7 +19,7 @@ import org.junit.jupiter.api.Test;
 import com.createengines.engine.EngineSound;
 
 /**
- * The note's sound source (docs/SOUND-PLAN.md, step 2): the grains every firing is struck from, the ring they play through
+ * The note's sound source (step 2 of the sound plan): the grains every firing is struck from, the ring they play through
  * and the modelled exhaust pipe. Pure Java, no Minecraft.
  */
 class EngineGrainTest {
