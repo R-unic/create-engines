@@ -21,6 +21,8 @@ public final class Tuning {
 	public static volatile double coolingBonus = 1;
 	/** How much of the power an overheating engine loses: 1 as designed, 0 none. */
 	public static volatile double overheatPenalty = 1;
+	/** Scales the heat that burned fuel puts into the block, on top of each fuel's heat factor. */
+	public static volatile double heatPerFuel = 1;
 	/** Scales the heat a heat exchanger takes from the exhaust. */
 	public static volatile double heatRecovery = 1;
 
@@ -75,6 +77,7 @@ public final class Tuning {
 		heatRecovery = 1;
 		coolingBonus = 1;
 		overheatPenalty = 1;
+		heatPerFuel = 1;
 		torsionalFlex = 1;
 		forcedInduction = true;
 		sparkFouling = true;

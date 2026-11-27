@@ -47,6 +47,7 @@ public final class CEConfig {
 	public static final ModConfigSpec.DoubleValue HEAT_RECOVERY;
 	public static final ModConfigSpec.DoubleValue COOLING_BONUS;
 	public static final ModConfigSpec.DoubleValue OVERHEAT_PENALTY;
+	public static final ModConfigSpec.DoubleValue HEAT_PER_FUEL;
 	public static final ModConfigSpec.DoubleValue TORSIONAL_FLEX;
 	public static final ModConfigSpec.DoubleValue ALTERNATOR_ENERGY;
 	public static final ModConfigSpec.DoubleValue RPM_SCALE;
@@ -189,6 +190,11 @@ public final class CEConfig {
 				"up to the most it loses (about a quarter) at 165 degrees, and it comes back as the engine cools. Nothing breaks or stops.",
 				"0 turns the loss off.")
 			.defineInRange("overheatPenalty", 1.0, 0.0, 1.0));
+		HEAT_PER_FUEL = value("balance.heatPerFuel", builder.comment(
+				"Scales the heat that burning fuel puts into an engine's block, on top of each fuel's own heat_factor:",
+				"above 1 engines run hotter, below 1 cooler. Friction and outside heat sources are not scaled,",
+				"and neither is the exhaust heat an Exhaust Heat Exchanger takes. Needs engineTemperature.")
+			.defineInRange("heatPerFuel", 1.0, 0.0, 10.0));
 		TORSIONAL_FLEX = value("balance.torsionalFlex", builder.comment(
 				"Scales the rating an engine loses to a long crankshaft: past 8 throws on one unbroken",
 				"crank line it falls by 2.5 percent a throw at 1.0. A vee or flat has half as many throws as cylinders,",
@@ -366,6 +372,7 @@ public final class CEConfig {
 		Tuning.heatRecovery = HEAT_RECOVERY.get();
 		Tuning.coolingBonus = COOLING_BONUS.get();
 		Tuning.overheatPenalty = OVERHEAT_PENALTY.get();
+		Tuning.heatPerFuel = HEAT_PER_FUEL.get();
 		Tuning.torsionalFlex = TORSIONAL_FLEX.get();
 		Tuning.forcedInduction = FORCED_INDUCTION.get();
 		Tuning.sparkFouling = SPARK_FOULING.get();

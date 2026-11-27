@@ -165,7 +165,7 @@ Minecraft 1.21.1 · NeoForge 21.1.219 or newer · Create 6.0.10 (build 257 or ne
 The server config (`serverconfig/create_engines-v2-server.toml` in the world) is grouped into `[calibration]`
 (`stressPerTorque`, the inertia and friction values), `[limits]` (how far the scanner follows a crankshaft, a manifold or a
 coupling, how big a battery bank gets, and the range a Throttle Body's dial offers), `[balance]` multipliers (`fuelConsumption`, `precisionBonus`, `boostStrength`, `rotaryPower`, `heatRecoveryOutput`,
-`coolingBonus`, `torsionalFlex`, `alternatorEnergy`, `rpmScale`), `[features]` switches (`forcedInduction`, `sparkFouling`, `oilDilution`,
+`coolingBonus`, `heatPerFuel`, `torsionalFlex`, `alternatorEnergy`, `rpmScale`), `[features]` switches (`forcedInduction`, `sparkFouling`, `oilDilution`,
 `oilAgeing`, `engineTemperature`, `pilotInjection`, `rotaryEngines`, `heatRecovery`, `batteryCold`, `crankingDraw`, `meterAllHeads`,
 `wearMode`) and `[compat]` (`altitudeThinning`, `sableAirPressure`, `altitudeStart`, `altitudeScale`, `altitudeFloor`, `fuelFire`,
 `fuelFireByVolatility`, and `pollution`, `pollutionRate`, `carbonRate`, `sulfurRate`, `pollutionAreaCap` and

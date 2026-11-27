@@ -34,6 +34,7 @@ class ConfigMatrixTest {
 		new Knob("heatRecovery", v -> Tuning.heatRecovery = v, 0.1, 10.0),
 		new Knob("coolingBonus", v -> Tuning.coolingBonus = v, 0.0, 3.0),
 		new Knob("overheatPenalty", v -> Tuning.overheatPenalty = v, 0.0, 1.0),
+		new Knob("heatPerFuel", v -> Tuning.heatPerFuel = v, 0.0, 10.0),
 		new Knob("torsionalFlex", v -> Tuning.torsionalFlex = v, 0.0, 2.0),
 		new Knob("altitudeStart", v -> Tuning.altitudeStart = v, -64.0, 100000.0),
 		new Knob("altitudeScale", v -> Tuning.altitudeScale = v, 1.0, 100000.0),

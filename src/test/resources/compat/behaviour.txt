@@ -540,6 +540,7 @@ tuning:forcedInduction	true
 tuning:fuelConsumption	1.0
 tuning:fuelFire	true
 tuning:fuelFireByVolatility	true
+tuning:heatPerFuel	1.0
 tuning:heatRecovery	1.0
 tuning:heatRecoveryEnabled	true
 tuning:meterAllHeads	false

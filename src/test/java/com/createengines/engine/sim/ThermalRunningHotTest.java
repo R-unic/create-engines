@@ -17,6 +17,7 @@ class ThermalRunningHotTest {
 	@AfterEach
 	void restore() {
 		Tuning.overheatPenalty = 1;
+		Tuning.heatPerFuel = 1;
 		Tuning.engineTemperature = true;
 	}
 
@@ -105,6 +106,24 @@ class ThermalRunningHotTest {
 			.usable()
 			.heatFactor(), 0);
 		assertTrue(FuelSpec.DIESEL.usable() == FuelSpec.DIESEL, "a sound fuel is left as it is");
+	}
+
+	@Test
+	void theServerSettingScalesOnlyTheHeatOfTheFuelBurned() {
+		double burn = Thermal.heatIn(10, 0, 0, 4);
+		double rest = Thermal.heatIn(0, 10, 4, 4);
+		double usual = settle(FuelSpec.DIESEL, 1);
+		Tuning.heatPerFuel = 2;
+		assertEquals(2 * burn, Thermal.heatIn(10, 0, 0, 4), EPS);
+		assertEquals(rest, Thermal.heatIn(0, 10, 4, 4), 0);
+		assertTrue(settle(FuelSpec.DIESEL, 1) > usual + 0.1, "hotter");
+		Tuning.heatPerFuel = 0.25;
+		assertTrue(settle(FuelSpec.DIESEL, 1) < usual - 0.05, "cooler");
+		Tuning.heatPerFuel = 0;
+		assertEquals(0, Thermal.heatIn(10, 0, 0, 4), 0);
+		Tuning.heatPerFuel = 5;
+		Tuning.reset();
+		assertEquals(1, Tuning.heatPerFuel, 0);
 	}
 
 	@Test

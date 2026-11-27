@@ -255,6 +255,8 @@ Not released yet.
   it cannot be crafted and is not in the creative tab, and a placed one is a plain length of intake pipe.
 - Packs can retune the two compression factors with `part_effects/high_compression.json` and `low_compression.json`.
 - The server's `precisionBonus` setting scales the new compression parts as it does the precision ones.
+- New server setting, `balance.heatPerFuel` (1 by default, 0 to 10): scales the heat that burning fuel puts into an engine's
+  block, for every fuel, on top of a pack's per-fuel `heat_factor`. At 1 engines heat as before.
 - Existing builds run as before: no existing part, number or saved state changed.
 
 ## Changelog for 2.4.0

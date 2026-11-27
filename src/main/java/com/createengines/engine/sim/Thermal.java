@@ -148,7 +148,7 @@ public final class Thermal {
 	 */
 	public static double heatIn(double burnHeat, double otherExhaust, double frictionPower, int cylinders) {
 		double knee = FRICTION_KNEE * Math.max(1, cylinders);
-		return burnHeat * BURN_SHARE + otherExhaust * EXHAUST_HEAT + Math.min(frictionPower, knee) * FRICTION_HEAT
+		return burnHeat * BURN_SHARE * Tuning.heatPerFuel + otherExhaust * EXHAUST_HEAT + Math.min(frictionPower, knee) * FRICTION_HEAT
 			+ Math.max(0, frictionPower - knee) * FAST_FRICTION_HEAT;
 	}
 
