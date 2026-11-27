@@ -340,7 +340,9 @@ python tools/trailer/record.py --post-only  # cuts the last recordings again (ne
   shot begins the harness warms the V8 once and, by reflection, gives it the mod's own crank inertia back in place of the
   recorder's five times (see "A steady crank" below), or it would be too sluggish to be seen revving.
 - **Sound and walls.** Only the courtyard the camera is in is heard (sounds from other pads are cancelled as they start and stopped when
-  the camera moves on); the camera is held inside the walls (see Framing).
+  the camera moves on). Engines are also kept to the courtyard by where their crankshaft is, because the shared "engine room"
+  voice has no place of its own to filter by; during the car's shots only the engine on no courtyard is heard. The camera is held
+  inside the walls (see Framing).
 - **How it is recorded.** `record.py` copies the project to a private folder beside it (as every client run should be), starts
   `ffmpeg` on the whole screen when the game logs `Showcase trailer ready`, and stops it after the last shot. The game runs with
   Iris, Sodium and a shader pack (`runShowcaseShaders`; the pack is the first .zip in `tools/trailer/shaderpacks`, which is not
