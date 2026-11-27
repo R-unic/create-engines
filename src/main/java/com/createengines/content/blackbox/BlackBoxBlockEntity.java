@@ -324,8 +324,9 @@ public class BlackBoxBlockEntity extends SmartBlockEntity implements IHaveGoggle
 		GoggleLines.add(CELang.translate("goggles.recorder.warmth", bars(current.warmth(), Math.max(100, max(current.warmth()))),
 				degrees(warmthNow))
 			.style(switch (com.createengines.engine.sim.Thermal.band(temperature(warmthNow))) {
-				case COLD -> ChatFormatting.BLUE;
-				case COOL, WARM -> ChatFormatting.GRAY;
+				case COLD -> ChatFormatting.AQUA;
+				case COOL -> ChatFormatting.BLUE;
+				case WARM -> ChatFormatting.GREEN;
 				case HOT -> ChatFormatting.GOLD;
 				case OVERHEATING, CRITICAL -> ChatFormatting.RED;
 			}), tooltip, 1);

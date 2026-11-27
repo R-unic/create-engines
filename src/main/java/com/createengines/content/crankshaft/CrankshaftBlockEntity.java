@@ -576,8 +576,8 @@ public class CrankshaftBlockEntity extends GeneratingKineticBlockEntity implemen
 		Thermal.Band band = Thermal.band(temperature);
 		ChatFormatting colour = switch (band) {
 			case COLD -> ChatFormatting.AQUA;
-			case COOL -> ChatFormatting.GREEN;
-			case WARM -> ChatFormatting.GRAY;
+			case COOL -> ChatFormatting.BLUE;
+			case WARM -> ChatFormatting.GREEN;
 			case HOT -> ChatFormatting.GOLD;
 			case OVERHEATING -> ChatFormatting.RED;
 			// A critical block's line flashes, a second red and a second dark red
