@@ -37,7 +37,8 @@ question, not an obstacle ([CLAUDE.md](../CLAUDE.md)).
 | 2.2 | Proving Ground | Verification debts: server-from-jar, the step-size finding; **the battery tiers**, then **charge priority, electric injector assist and ignition coils**, with electrolysis to be decided (author, 2026-11-23) | Medium |
 | 2.3 | Wear and Tear | **The opt-in wear mode and nothing else** (author, 2026-11-24): pistons, rods, gaskets (stock and three tiers), rotary apex seals and batteries wear, precision parts wear slower, a rod can be thrown (a flag, a misfire, a broken head, with spectacle) and a gasket can blow, light wear is repaired by an automatable, durable Service Kit and the rest by replacing the part, worn parts keep their wear as items, and the Black Box and Display Link report each part and a total; off by default, nothing runs with it off, and gaskets and seals are not required with it off | Medium to large |
 | 2.4 | Running Hot | **Temperature in degrees, overheating you can reach** (a soft power loss in both modes, an exception the author approved on 2026-11-25), heat that follows work, **the Radiator** (closed loop, sheds more with a fan or on a moving contraption), and **the wear overhaul, part 2** (heat drives wear and failures, rod wear from load, plug and turbo wear wired, gasket recipes) (author, 2026-11-25), **a full sound rework** (each engine's note built from its banks, exhausts, cylinder size, cam and fuel instead of one shared firing sound; client-side only, and bearable with many engines running in a build) (author, 2026-11-25), and **splitting the giant source files**, with no behaviour change (author, 2026-11-26) | Large |
-| 2.5 | Open Garage (was 2.4 until 2026-11-25) | Reach: a new API minor (**fuel supply, a shared combustion model and animation for addon engines**, author, 2026-11-26), energy and probe mods, the next Create, a second example addon; **Create: Petrochem and Create: Pocket Sized support** (author, 2026-11-27; planned); **piston rings**, **polluted intake air**, **high- and low-compression piston variants**, **rotor variants (a precision rotor among them) with an exhaust niche**, and **nitrous oxide** (liquid, a vaporiser and a gas in the intake manifolds) (author, 2026-11-23), a **W layout for the Bank Builder** (author, 2026-11-24), **light, standard and heavy-duty crank types** (author, 2026-11-27; proposed), then **look, sound and performance** only where the 2.0.x pass found something (all of it was 2.3 until the author moved it, 2026-11-24; its sound went to 2.4's sound rework, 2026-11-25); **displacement noise in the engine note**, a sample first (author, 2026-11-27; proposed); **a texture rework, with some new models, so the mod looks like part of Create** (author, 2026-11-25, from player complaints; moved from 2.4 on 2026-11-26) | Medium to large |
+| 2.5 | Open Garage (was 2.4 until 2026-11-25) | Reach: a new API minor (**fuel supply, a shared combustion model and animation for addon engines**, author, 2026-11-26), energy and probe mods, the next Create, a second example addon; **Create: Petrochem and Create: Pocket Sized support** (author, 2026-11-27; planned); **piston rings**, **polluted intake air**, **high- and low-compression piston variants**, **rotor variants (a precision rotor among them) with an exhaust niche**, (author, 2026-11-23), a **W layout for the Bank Builder** (author, 2026-11-24), **light, standard and heavy-duty crank types** (author, 2026-11-27; proposed), then **look, sound and performance** only where the 2.0.x pass found something (all of it was 2.3 until the author moved it, 2026-11-24; its sound went to 2.4's sound rework, 2026-11-25); **displacement noise in the engine note** (author, 2026-11-27; a first version is in); **a texture rework, with some new models, so the mod looks like part of Create** (author, 2026-11-25, from player complaints; moved from 2.4 on 2026-11-26) | Medium to large |
+| 2.6 | Nitrous | **Nitrous oxide**: a liquid, a vaporiser and a gas in the intake manifolds (author, 2026-11-23; moved from 2.5 on 2026-11-28); nothing built | Medium |
 | 3.0 | Clean Slate | The second breaking cleanup: drop 1.x migrations, regenerate baselines, API 2.0 | Large |
 
 **Shipped so far (tags):** 2.0.0 (2026-11-21), 2.0.1 and 2.0.2 (2026-11-22), 2.1.0 (2026-11-23), 2.2.0 (2026-11-24), 2.3.0 (2026-11-25) and 2.4.0 (2026-11-27). 2.5 is in progress and
@@ -257,7 +258,7 @@ running engine on the rain cap schematic, so no new schematic); the client audit
 **Proposed 2026-11-22, in 2.1 because it is the release with player-facing features; the items are the author's pick from a longer list, the details are not yet decided.** This is not new
 fuels: the Declined list stands, and so does the author's 2026-11-21 answer (no more fuels beyond methanol, no gases, nitrous,
 heavy fuel oil, turbine or two-stroke), **except that the author reversed "no gases, nitrous" on 2026-11-23**: nitrous oxide is
-now proposed in 2.5 (see "Nitrous oxide" there). It gives the seven fuels that exist (plant oil, diesel, gasoline, ethanol, biodiesel,
+now proposed in 2.6 (see "Nitrous oxide" there). It gives the seven fuels that exist (plant oil, diesel, gasoline, ethanol, biodiesel,
 kerosene, methanol) a clearer reason to be picked, the way 1.x gave ethanol its boost niche. The ethanol distillery, which was
 also on the list, is not included here.
 
@@ -1463,64 +1464,6 @@ built, where it differs from the design above, and what is open:
 - Open: nothing seen in game (models in a cylinder, the Ponder scene, goggle lines). A Bank Builder fits standard and forged pistons
   only, and no rings. `pitest` was re-run and is at its limit, unchanged.
 
-### Nitrous oxide: a liquid, a vaporiser and a gas in the intake (author, 2026-11-23; proposed)
-
-**Requested by the author on 2026-11-23 and placed in 2.3 with the piston variants (both now 2.5), which it depends on for its trade-off. Nothing is built; this is a first design.**
-It **reverses the 2026-11-21 answer** quoted under "Fuel character" ("no gases, nitrous"), by the author's own say-so. It is not a fuel (nothing in it burns by
-itself; it carries oxygen), so the Declined entry "new fuels" is not what it touches. It is the first fluid the mod invents that is not a fuel, and the first gas
-(see the open questions). It is the end-game power item the "high and low compression" list was missing: a short, strong, supplied burst of power instead of a longer chain.
-
-- **Liquid nitrous oxide** is a Create fluid with a bucket, stored in any tank or fluid pipe as the fuels are. Where it comes from is still to settle (see below). It
-  does nothing alone: spilled or stored, it is inert and never burns, so it adds no fire and no new way to lose a build.
-- **Frost on the tank** (author, 2026-11-23; proposed). A tank holding liquid nitrous oxide grows a layer of frost, and the Vaporiser frosts over while it is
-  boiling liquid off, so cold reads at a glance. It is **cosmetic only**: no rating, no gameplay effect, and nothing saved (the look is derived from what the tank holds,
-  so a world without the mod loses nothing). **How it is built is the open part,** because the tank is Create's block, not ours: the likeliest route is a client-side
-  overlay drawn over a Create fluid tank whose fluid is nitrous (a render hook that reads the tank, with no mixin into Create and no change to its data), and a plain
-  frost texture state on our own Vaporiser. **Decided by the author on 2026-11-23:** frost **builds up over a few seconds** (and melts back the same way when the tank is
-  emptied), with **frost particles** and a **very subtle crackle**. It **must work with Flywheel and Sodium at the bare minimum** (the plain and contraption paths
-  are wanted too, and a path that cannot draw it falls back to nothing and is listed, never left broken). Still to settle: the exact build-up time, the particle
-  look, how quiet the crackle is (heard by the author and tuned by ear, on the sound-thread rules that fixed the 1.2.0 out-of-memory bug: capped voices, nothing
-  out of earshot), and that none of it costs frames on a large tank bank (a cap, with a client profile before any claim). Tests: the overlay appears only for nitrous,
-  never for another fluid, and a tank without the mod's fluid draws exactly as before; the build-up is a pure function of time and contents (unit tested, bounded,
-  never non-finite); the client audit and the compatibility matrix rows for Flywheel and Sodium stay green with frost on screen; a soak test of the crackle.
-- **The Nitrous Vaporiser** is a new block that takes liquid nitrous oxide on a fluid face and turns it into a gas that flows through the **intake manifolds**
-  it is attached to. It sits on an intake network the way the intercooler does: a new inline part, found by `EngineScanner` beside `network.intercoolers()`, which
-  gives an `EngineLayout.Inline` and a pure `engine/sim` class (`Nitrous`) for the numbers. The gas is a flow and not a stored quantity: while the vaporiser is
-  enabled and has liquid, every cylinder downstream of it on that network breathes nitrous, and a manifold holds nothing (it still never ticks). A redstone signal
-  switches it (the one control, as the governor's setpoint is), and it draws liquid only while a cylinder downstream is firing.
-- **What the gas does** (a first reading, to be measured): more oxygen per intake stroke lets a cylinder burn more fuel per cycle, so power rises by a factor
-  while the injector feeds enough fuel to use it (a lean engine gains little, which keeps it a fuel-system decision). The liquid boiling off also cools the charge,
-  the way ethanol's charge cooling and the intercooler already do. Nitrous therefore stacks with boost, and must read the same pre-ignition model the piston variants use:
-  **high compression plus nitrous is the aggressive build; low compression is where it is safest.** This is the link to the piston variants.
-- **No new punishment (rule 4).** Nitrous only helps. The cost is the liquid it uses up, and the pre-ignition margin it takes from the engine, which is the model
-  that already exists (`Combustion` loses a share of the burn, never the engine). Nothing here can break a part; if the opt-in wear mode is on, extra cylinder
-  pressure wears the gaskets faster, and with it off nothing wears.
-- **Existing builds are untouched (rule 1).** A cylinder with no vaporiser upstream breathes as it does today. `compat/behaviour.txt` and `compat/trajectories.txt`
-  are not touched; new entries are appended for the vaporiser only.
-
-**Decisions needed from the author before any design:**
-1. **Where liquid nitrous oxide comes from. Decided by the author on 2026-11-23: a basin recipe**, made by the player in the way the refinery makes fuels, and not
-   found or looted. Still to settle: the inputs (the first idea is ammonium or nitrate items plus heat, using only items and fluids that already exist, so no new
-   ingredient chain is added), the yield, and the cost, which is checked against the refinery numbers so a bucket is not cheaper than the power it gives.
-2. **How strong, and for how long.** The power factor, the oxygen it adds, and the draw per second. Measured by dyno and shown to the author as a table first
-   (`BoostParityTest` style); none of it is guessed. It must not make boosted engines of the lower classes obsolete (the progression rule in the vision: the end-game
-   is reached by a chain, and nitrous is a burst, not a replacement).
-3. **One vaporiser or tiers,** and whether the vaporiser also takes **gaseous input from a pipe** for packs with other gas mods. The proposal: one block, liquid only, no
-   second dial, and the redstone switch as its only control.
-4. **The first non-fuel fluid.** Whether a Ponder page and the goggle line are enough to explain that a fluid exists that no engine burns, or whether it needs
-   its own tank readout (the fuel tooltip comparison does not apply).
-
-**Built like the rest of 2.x:** the fluid, the bucket and the vaporiser each get lang entries, a goggle line (what the vaporiser feeds, whether it has liquid, the
-power it adds and the pre-ignition margin it uses), recipes, weights, a model from the generator scripts, a Ponder page that sits next to "Choosing a Fuel" and the
-piston variants page, config through `Tuning` for anything with a default (and no new dial unless it replaces one), the data-map or API route if parts are data, a
-blueprint round-trip (a blueprint with a vaporiser keeps it; a 2.0 blueprint loads unchanged), and casing for the vaporiser if the other intake parts have it.
-
-**Tests (new, unasked as always):** `Nitrous` unit tests (no vaporiser or no liquid reproduces today's numbers exactly for every fuel and class; power rises and the margin falls with gas,
-and a lean cylinder gains less than a rich one), a property test that no input produces a non-finite or negative result, a `ConfigMatrixTest` row, GameTests (liquid
-in, vaporiser on, a cylinder downstream gains; a cylinder on another network does not; the redstone switch; the liquid runs out and the engine falls back to normal; save and
-reload with the gas on; chunk unload), a `LegacyWorldGameTests` case showing a 2.0 world with intake manifolds runs the same, a soak test of the draw on the tick path, and `pitest`
-re-run, since `engine/sim` changes. The fluid joins `compat/manifest.txt` when it ships.
-
 ### Rotary depth: rotor variants and an exhaust niche (author, 2026-11-23; proposed)
 
 **The author accepted these on 2026-11-23, from a list of rotary ideas; nothing is built.** (Port variants, the first idea on that
@@ -1677,13 +1620,19 @@ asks for it:
 - **Blueprints.** Whatever the dual-mass flywheel and the 2.x parts show the format missing; a blueprint saved on 2.0 must keep
   loading (the format is part of the promise).
 
-### Displacement noise: the air the pistons move (author, 2026-11-27; proposed, not built)
+### Displacement noise: the air the pistons move (author, 2026-11-27; first version in)
 
 **From a comment on the mod:** "if I were you, I would look into using noise to create displacement audio". The reading used here is
 ours and has not been confirmed with the commenter: a continuous layer of noise that stands for the air each cylinder pushes out and
 draws in, shaped by the crank angle.
 
-**What the note does today** (read from `EngineNoteSynth`, `NoteUndertone` and `tools/engine_grains.py` on 2026-11-27; the other sound
+**Status (author, 2026-11-28): at least rudimentarily built**, as part of the sound work rather than from the sample step below.
+`NoteFlow` sends a rush of gas down each outlet's pipe with each firing; `NoteStrokes` places the exhaust and intake strokes
+on the crank angle, and `NoteBed` voices them between the firings of a slow engine (all of it up to 9 firings a second, none
+from 24). Short of the idea below, from reading those three files: the stroke noise does not go through the outlet's pipe, and
+it is gone at speed. Whether to take it further is open.
+
+**What the note did before that** (read from `EngineNoteSynth`, `NoteUndertone` and `tools/engine_grains.py` on 2026-11-27; the other sound
 files were not checked). Noise is already in the short firing grains (the rush of gas in the blow-down, the crack, the diesel's knock)
 and in a quiet mechanical bed that swells twice a turn. None of those files has a stream that follows each cylinder's intake and
 exhaust strokes, and a cranking or coasting engine is voiced mostly by weaker firings.
@@ -1785,6 +1734,68 @@ approved by the author that day from preview renders; not seen in game.
 **Starter and Heavy Starter redrawn 2026-11-28**, approved by the author that day from preview renders after one round of changes
 (the pinion was still over-modelled, the all-brass heavy motor and the copper solenoid looked wrong); outline refitted; not seen
 in game.
+
+## 2.6 Nitrous (author, 2026-11-28)
+
+The author moved nitrous oxide here from 2.5 on 2026-11-28. Nothing else is placed in 2.6 yet.
+
+### Nitrous oxide: a liquid, a vaporiser and a gas in the intake (author, 2026-11-23; proposed)
+
+**Requested by the author on 2026-11-23 and placed in 2.3 with the piston variants, which it depends on for its trade-off (the variants are built in 2.5). Nothing is built; this is a first design.**
+It **reverses the 2026-11-21 answer** quoted under "Fuel character" ("no gases, nitrous"), by the author's own say-so. It is not a fuel (nothing in it burns by
+itself; it carries oxygen), so the Declined entry "new fuels" is not what it touches. It is the first fluid the mod invents that is not a fuel, and the first gas
+(see the open questions). It is the end-game power item the "high and low compression" list was missing: a short, strong, supplied burst of power instead of a longer chain.
+
+- **Liquid nitrous oxide** is a Create fluid with a bucket, stored in any tank or fluid pipe as the fuels are. Where it comes from is still to settle (see below). It
+  does nothing alone: spilled or stored, it is inert and never burns, so it adds no fire and no new way to lose a build.
+- **Frost on the tank** (author, 2026-11-23; proposed). A tank holding liquid nitrous oxide grows a layer of frost, and the Vaporiser frosts over while it is
+  boiling liquid off, so cold reads at a glance. It is **cosmetic only**: no rating, no gameplay effect, and nothing saved (the look is derived from what the tank holds,
+  so a world without the mod loses nothing). **How it is built is the open part,** because the tank is Create's block, not ours: the likeliest route is a client-side
+  overlay drawn over a Create fluid tank whose fluid is nitrous (a render hook that reads the tank, with no mixin into Create and no change to its data), and a plain
+  frost texture state on our own Vaporiser. **Decided by the author on 2026-11-23:** frost **builds up over a few seconds** (and melts back the same way when the tank is
+  emptied), with **frost particles** and a **very subtle crackle**. It **must work with Flywheel and Sodium at the bare minimum** (the plain and contraption paths
+  are wanted too, and a path that cannot draw it falls back to nothing and is listed, never left broken). Still to settle: the exact build-up time, the particle
+  look, how quiet the crackle is (heard by the author and tuned by ear, on the sound-thread rules that fixed the 1.2.0 out-of-memory bug: capped voices, nothing
+  out of earshot), and that none of it costs frames on a large tank bank (a cap, with a client profile before any claim). Tests: the overlay appears only for nitrous,
+  never for another fluid, and a tank without the mod's fluid draws exactly as before; the build-up is a pure function of time and contents (unit tested, bounded,
+  never non-finite); the client audit and the compatibility matrix rows for Flywheel and Sodium stay green with frost on screen; a soak test of the crackle.
+- **The Nitrous Vaporiser** is a new block that takes liquid nitrous oxide on a fluid face and turns it into a gas that flows through the **intake manifolds**
+  it is attached to. It sits on an intake network the way the intercooler does: a new inline part, found by `EngineScanner` beside `network.intercoolers()`, which
+  gives an `EngineLayout.Inline` and a pure `engine/sim` class (`Nitrous`) for the numbers. The gas is a flow and not a stored quantity: while the vaporiser is
+  enabled and has liquid, every cylinder downstream of it on that network breathes nitrous, and a manifold holds nothing (it still never ticks). A redstone signal
+  switches it (the one control, as the governor's setpoint is), and it draws liquid only while a cylinder downstream is firing.
+- **What the gas does** (a first reading, to be measured): more oxygen per intake stroke lets a cylinder burn more fuel per cycle, so power rises by a factor
+  while the injector feeds enough fuel to use it (a lean engine gains little, which keeps it a fuel-system decision). The liquid boiling off also cools the charge,
+  the way ethanol's charge cooling and the intercooler already do. Nitrous therefore stacks with boost, and must read the same pre-ignition model the piston variants use:
+  **high compression plus nitrous is the aggressive build; low compression is where it is safest.** This is the link to the piston variants.
+- **No new punishment (rule 4).** Nitrous only helps. The cost is the liquid it uses up, and the pre-ignition margin it takes from the engine, which is the model
+  that already exists (`Combustion` loses a share of the burn, never the engine). Nothing here can break a part; if the opt-in wear mode is on, extra cylinder
+  pressure wears the gaskets faster, and with it off nothing wears.
+- **Existing builds are untouched (rule 1).** A cylinder with no vaporiser upstream breathes as it does today. `compat/behaviour.txt` and `compat/trajectories.txt`
+  are not touched; new entries are appended for the vaporiser only.
+
+**Decisions needed from the author before any design:**
+1. **Where liquid nitrous oxide comes from. Decided by the author on 2026-11-23: a basin recipe**, made by the player in the way the refinery makes fuels, and not
+   found or looted. Still to settle: the inputs (the first idea is ammonium or nitrate items plus heat, using only items and fluids that already exist, so no new
+   ingredient chain is added), the yield, and the cost, which is checked against the refinery numbers so a bucket is not cheaper than the power it gives.
+2. **How strong, and for how long.** The power factor, the oxygen it adds, and the draw per second. Measured by dyno and shown to the author as a table first
+   (`BoostParityTest` style); none of it is guessed. It must not make boosted engines of the lower classes obsolete (the progression rule in the vision: the end-game
+   is reached by a chain, and nitrous is a burst, not a replacement).
+3. **One vaporiser or tiers,** and whether the vaporiser also takes **gaseous input from a pipe** for packs with other gas mods. The proposal: one block, liquid only, no
+   second dial, and the redstone switch as its only control.
+4. **The first non-fuel fluid.** Whether a Ponder page and the goggle line are enough to explain that a fluid exists that no engine burns, or whether it needs
+   its own tank readout (the fuel tooltip comparison does not apply).
+
+**Built like the rest of 2.x:** the fluid, the bucket and the vaporiser each get lang entries, a goggle line (what the vaporiser feeds, whether it has liquid, the
+power it adds and the pre-ignition margin it uses), recipes, weights, a model from the generator scripts, a Ponder page that sits next to "Choosing a Fuel" and the
+piston variants page, config through `Tuning` for anything with a default (and no new dial unless it replaces one), the data-map or API route if parts are data, a
+blueprint round-trip (a blueprint with a vaporiser keeps it; a 2.0 blueprint loads unchanged), and casing for the vaporiser if the other intake parts have it.
+
+**Tests (new, unasked as always):** `Nitrous` unit tests (no vaporiser or no liquid reproduces today's numbers exactly for every fuel and class; power rises and the margin falls with gas,
+and a lean cylinder gains less than a rich one), a property test that no input produces a non-finite or negative result, a `ConfigMatrixTest` row, GameTests (liquid
+in, vaporiser on, a cylinder downstream gains; a cylinder on another network does not; the redstone switch; the liquid runs out and the engine falls back to normal; save and
+reload with the gas on; chunk unload), a `LegacyWorldGameTests` case showing a 2.0 world with intake manifolds runs the same, a soak test of the draw on the tick path, and `pitest`
+re-run, since `engine/sim` changes. The fluid joins `compat/manifest.txt` when it ships.
 
 ## 3.0 Clean Slate
 
