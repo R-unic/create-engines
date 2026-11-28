@@ -22,7 +22,7 @@ class FileSizeRatchetTest {
 	private static final Map<String, Integer> CAPS = new TreeMap<>(Map.of(
 		"src/main/java/com/createengines/client/ShowcaseRun.java", 755,
 		"src/main/java/com/createengines/client/VisualSmokeTest.java", 523,
-		"src/main/java/com/createengines/engine/EngineController.java", 799,
+		"src/main/java/com/createengines/engine/EngineController.java", 756,
 		"src/main/java/com/createengines/engine/topology/EngineScanner.java", 739,
 		"src/main/java/com/createengines/gametest/BlueprintGameTests.java", 550,
 		"src/main/java/com/createengines/gametest/EngineGameTests.java", 769,
