@@ -22,7 +22,7 @@ final class NoteExit {
 	private static final float MUFFLE_AMOUNT = amount(MUFFLED_HZ);
 	/** Where the dulling filter sits: open above this, and how low casing and distance take it. */
 	private static final float OPEN_HZ = 9000;
-	private static final float CLAD_HZ = 1350;
+	private static final float CLAD_HZ = 640;
 	private static final float FAR_HZ = 1200;
 
 	private float power = TARGET_POWER;

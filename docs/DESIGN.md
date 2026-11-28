@@ -686,6 +686,46 @@ and regular rattles are what made the first takes sound like a cartoon (`Failure
     unequal runs is still close to an inline four (about 2). Level is within about 3 dB of before, and most builds are
     brighter above 1 kHz. Nobody has judged any of it by ear.
   - Tests: `NoteTimbreTest`, `EngineSoundTest`, `EngineGameTests.aRotaryEngineStartsAndRunsOnGasoline`.
+- **One continuous sound (2026-11-27).** The author found few of the kinds sounded good, the idling crossplane V8 best.
+  Against openly licensed recordings of idling engines from Wikimedia Commons (two crossplane V8s, a flat-plane V8, a
+  straight six, a flat four; used only to measure, none ship), the difference was the space between firings. A real
+  engine's level there fell about 4 to 13 dB; ours fell about 40 to 70 dB above 250 Hz, a click and a clean ring each time.
+  The crossplane V8 had the smallest fall and the least top, nearest the recordings.
+  - *The system* (`NoteSystem`), between the pipes and the resonances, so the kind of engine colours all of it. Four
+    all-pass chambers (4 to 17 ms) spread each pulse. A *roar*, uneven noise mostly 70 to 420 Hz, follows each pulse's
+    power, falls with the time between firings (12 to 200 ms), and never goes under a tenth of the usual power. Two
+    one-pole low-passes then take off the top. How much roar and where the top goes are in `NoteTimbre`.
+  - *Crack and knock* go through a low-pass near 2.6 kHz. *Casing* now filters at 640 Hz instead of 1350 Hz, because the
+    darker note had less top for it to take. A diesel's go through one near 1.4 kHz (`NoteRaps`).
+  - *Heard bare.* The author heard the roar at low speeds as bitcrushed: sparse noise wavering about 70 times a second.
+    Below 10 firings a second it is now at 0.35 of its strength, without its higher grain and nearly steady, coming in
+    fully by 50 a second; its strength also moves no faster than about 6 ms. The rush of gas is turned down likewise.
+  - *Variation.* Even a smooth engine at load now varies a fifth in strength from firing to firing and up to 0.7 ms in
+    time, so its harmonics are less needle-sharp.
+  - *Three kinds.* The author named the straight six, the crossplane V8 (far too quiet at speed) and the diesel six. The
+    six's resonances came down from 520 Hz to 340. A burble keeps its deep voice at idle and opens between 16 and 42
+    firings a second (`NoteOpening`, `NoteTimbre.opened`): the low resonance rises a little, the high one grows, and the
+    deepest bass (`NoteBody`), the boom, the thump and the tone are thinned. A diesel has a low body of its own near
+    155 Hz, more roar and more clatter, instead of only sitting lower. The six changed least: it still has more at 350 to 500 Hz than the recording, and darker, it
+    could not be told from a four.
+  - *Limits.* More roar than this hid the crack, the firing's timing and a muffled bank, which the note tests check.
+  - *Next round.* The author found the six and the V12 still a bit bright, the crossplane V8 still too bassy, and the
+    twin rotary like a diesel truck. The six's and the V12's resonances moved down, with lower top rolloffs and less roar:
+    each is about 7 dB weaker above 1 kHz at 1100 RPM. The V8 loses more bass as it revs; at 420 RPM it can change
+    little, because opened further there it can't be told from a flat-plane (`NoteTimbreTest`). Against two rotary
+    recordings from Wikimedia Commons (an RX-7 and an RX-8), the rotary was noise from 250 Hz to 2 kHz. It now has much
+    less roar and rush, resonances at 380 and 1700 Hz instead of 850 and 2100, and is about 7 dB weaker above 1 kHz. It
+    still has less than the recordings from 60 to 250 Hz: given that, it could not be told from a four.
+  - *Whistle.* The author then heard a high-middle whistle in the V12: at 1100 RPM one tone at 440 Hz, its fourth
+    firing harmonic on a pipe overtone with the resonance moved to 480 beside it, held about half the note's power. The
+    V12's resonances are now at 300 and 750 Hz with more heard dry. The tone is 5 dB weaker. Resonances that cut it
+    further left the V12 mostly bass and much quieter to the ear, or too like a four. Above 1 kHz it is now about 5 dB
+    weaker than before the round above.
+  - *Measured offline.* At the idles rendered, multi-cylinder engines fall about 10 to 25 dB between 250 Hz and 4 kHz,
+    a single and a twin more. The new stage costs 25 to 40 ns a sample by the run, about a quarter on top of
+    a note; the in-game sound bench and soak have not been run on it. The author judged offline renders round by round;
+    none of it has been heard in game.
+  - Tests: `NoteSystemTest`; the earlier note tests as they were, none changed.
 - **Sounds on moving structures (2026-11-26).** Sable plays any sound that starts on a moving structure inside a wrapper
   of its own, so `SoundManager.isActive` says no to the instance this mod made. Every note, loop and starter whir there
   was taken for dropped and started again over itself, about every second or two, until the game had no sound channel

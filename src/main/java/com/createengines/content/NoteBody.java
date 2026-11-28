@@ -49,6 +49,9 @@ final class NoteBody {
 
 	private final Band low = new Band();
 	private final Band high = new Band();
+	/** Where what {@link NoteTimbre#thin} takes off lies under. */
+	private static final float DEEP = (float) (1 - Math.exp(-2 * Math.PI * 170 / RATE));
+	private float deep;
 	private NoteTimbre tuned;
 
 	/** What has gone in, as heard through this engine's exhaust system. */
@@ -58,12 +61,15 @@ final class NoteBody {
 			low.tune(timbre.lowHz(), LOW_Q);
 			high.tune(timbre.highHz(), HIGH_Q);
 		}
-		return (sample * timbre.dry() + low.next(sample) * timbre.lowGain() + high.next(sample) * timbre.highGain())
+		float whole = (sample * timbre.dry() + low.next(sample) * timbre.lowGain() + high.next(sample) * timbre.highGain())
 			* timbre.level();
+		deep = Denormals.flush(deep + DEEP * (whole - deep));
+		return whole - timbre.thin() * deep;
 	}
 
 	void clear() {
 		low.clear();
 		high.clear();
+		deep = 0;
 	}
 }

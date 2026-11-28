@@ -265,6 +265,13 @@ Not released yet.
   fuel) has its own exhaust resonances, and every firing now has a rush of gas behind it. A crossplane V8 burbles, a flat-plane V8
   is brighter, and a rotary buzzes instead of sounding like a four. Timing and firing rhythm are as before. This changes how
   existing engines sound.
+- Sound, **one continuous engine instead of a row of clicks**: set beside recordings of real engines, the note fell nearly
+  silent between firings. Each firing now spreads through the exhaust and has a rumble of gas under it that is still dying
+  when the next arrives, the top end is softer, and casing dulls a little more to stay as noticeable. At low speeds,
+  where it would be heard bare, that rumble is quieter and smoother. A crossplane V8 keeps its deep idle and opens up as
+  it revs instead of seeming to go quiet, and a diesel has a deeper body and a duller knock. A straight six and a V12
+  have less top, and a rotary has far less noise in it.
+  This changes how existing engines sound.
 - New server setting, `balance.heatPerFuel` (1 by default, 0 to 10): scales the heat that burning fuel puts into an engine's
   block, for every fuel, on top of a pack's per-fuel `heat_factor`. At 1 engines heat as before.
 - Existing builds run as before: no existing part, number or saved state changed.
