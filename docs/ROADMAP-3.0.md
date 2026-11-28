@@ -1169,6 +1169,93 @@ reading them (`EngineController.java` was the most-read file).
 reading cost and risk: `EngineScenes`, `EngineGameTests`, `EngineController`, `ShowcaseRun`, `generate_models.py`, then the rest.
 Each split waits until that file's own 2.4 work is committed, runs the full `ce_run.py` gate, and checks that `compat/` did not move.
 
+**Progress.** `ponder/EngineScenes.java` was split into seven scene classes and `SceneHelpers` (339d6a3), and `FileSizeRatchetTest` holds
+it at zero lines. The other files in the cut get a cap in that test as each is split.
+
+### More refactoring found (survey, 2026-11-27)
+
+A read of the code and docs on 2026-11-27 (open-garage at 339d6a3, with that day's uncommitted work), looking for three things: speed,
+seams the addon API needs, and files that cost many tokens to read. Nothing here is built. Every item follows the rules above: no
+behaviour change, `compat/` untouched, no API name removed, one subject per commit.
+
+**Files over the 800-line limit, not yet in the cut** (line counts on 2026-11-27):
+
+| File | Lines | Proposed cut |
+| --- | --- | --- |
+| `client/ShowcaseRun.java`, `engine/EngineController.java` | 2401, 2379 | Already in the cut above. Both grew since 2026-11-26 (+31, +75), so they should get their ratchet caps now, before the split. |
+| `content/EngineNoteSynth.java` | 872 | The note's voices (`NoteBoom`, `ExhaustPipe`, `GrainBus` are already apart): move the per-cylinder firing schedule and the level and pitch tables into their own classes. It runs on the audio thread, so no new allocation per block. |
+| `content/cylinder/CylinderBlockEntity.java` | 872 | Saved data stays in this class (it has 6 `nbt:` keys in the manifest). Move the goggle and tooltip lines into a `CylinderReadout` and the client-side pose and wear-look state into a holder. |
+| `gametest/SmokeAuditGameTests.java`, `client/smoke/SmokeAudit.java` | 845, 843 | By audit subject, as `EngineGameTests`. The smoke harness names its classes in `docs/SMOKE.md` and the skills, which move with them. |
+| `ponder/InductionScenes.java`, `ponder/CrankScenes.java` | 812, 808 | Just over the limit after the first split: turbo and supercharger scenes apart from intercooler and heat; crank and cam scenes apart. |
+| `tools/sound_audit.py`, `tools/trailer/post.py` | 967, 957 | By check (sound_audit) and by stage (post: cut, captions, audio, export). Output byte-identical, checked as for `generate_models.py`. |
+
+Close behind (600 to 800 lines, to watch, not to split yet): `WearGameTests` 794, `CELang` 739, `EngineSimulation` 720,
+`ShowcaseRunSoundBench` 708, `BankBuilderItem` 631, `RotorHousingBlockEntity` 628, `EngineNoteSound` 619, `CylinderModel` 614,
+`CrankshaftBlockEntity` 613, `ColumnPortBlockEntity` 603, `PackToolsGameTests` 601.
+
+**Docs that cost the most to read.** Sessions read these often, and most of each is history:
+
+- `docs/DESIGN.md` (1909 lines): section 0, "Milestone 1 as built", is lines 16 to 1350, over two thirds of the file. Proposed: move it
+  word for word to `docs/design/milestone-1.md` and leave a one-line link, so the design sections (1 to 14) read on their own.
+- `docs/ROADMAP.md` (979 lines) is the finished 1.0.1 to 2.0 plan: all of it shipped. Proposed: move it to `docs/history/` unchanged.
+- `docs/ROADMAP-3.0.md` (this file, about 1700 lines): 2.0.x to 2.4 (lines 49 to 1183) have shipped. Proposed: move each shipped
+  release's section word for word into `docs/history/roadmap-2.x.md`, keeping "At a glance" and the open sections here.
+- `docs/LISTING.md` (1256 lines): the changelog is most of it. Proposed: keep the newest two versions here and move older entries to
+  `docs/history/changelog.md`, if the publish workflow does not read the whole page (to check first).
+
+These are moves, not rewrites, so history stays as written. They need the author's yes, since the docs rules call dated roadmap entries
+history, and `DocsReferencesTest`, `GuideDocsTest` and every link to a moved anchor must be checked in the same commit.
+
+**Speed (server tick).** The simulation core is already clean: `EngineSimulation`, `CylinderModel` and `Wear` allocate only when an
+engine is built. What remains is in `EngineController`, which runs for each engine every tick:
+
+- **Starters are looked up five times a tick each** (`tick`, the loops at lines 727 to 795): `LoadedBlocks.blockEntity` per starter for
+  the ready flag, the fastest, the pushing set, the warming check and the stress share. Resolve each starter once into an owned scratch
+  array at the start of the tick and loop over that. The same tick also allocates a new `pushing` list whenever a starter is cranking,
+  and `pushing.contains(pos)` is a linear search inside a loop over the starters: use a reused flag array.
+- **Inputs read every tick that change only when a player acts**: throttle openings (`readThrottles`), wastegate and anti-lag settings
+  (`readTurbos`), superchargers and governors are each looked up and read every tick. A cheaper shape is for the block entity to tell
+  its engine when a setting changes, and the engine reads only then (nothing does this yet). This changes when a setting takes effect only if
+  the push is late, so it needs a GameTest that a redstone wastegate dump still acts within the same tick.
+- **Work redone on every sync (every 10 ticks)**: in `catchSoot`, whether each trap run is in series is worked out again with a stream,
+  though it depends only on the layout; cache it beside `trapRuns`. `summary` builds a new `EngineSound` (with an `Arrays.copyOf`) and
+  `syncDiagnostics` a new `CylinderStatus` and `TurboStatus` per part each sync: check whether each part's status is unchanged before
+  building and sending it.
+- `syncDiagnostics` runs `reportMilestones` every sync even when everyone near has every milestone. A cheap early exit when the
+  engine's state and parts have not changed since the last report would save the scan (including `countCasings`).
+
+**Speed (client frame).** `EnginePoses.cylinder` builds about fifteen vectors, matrices and quaternions and a new `CylinderPose` for
+every cylinder every frame, and `CylinderVisual` then compares it to the last pose with `Matrix4f.equals`. `valves`, `pushrods`,
+`lobeAngles` and `rotatingPart` (used for every crank and cam part) do the same at smaller scale, and `TurbochargerRenderer` makes two
+matrices a frame. Proposed: compare the inputs (crank angle, state, rod kind) before posing, so a still engine builds nothing, and pose
+into matrices the visual owns. Measure first with the client audit's frame timing, since the JIT may already remove some of this; keep
+the change only if it is measurable on a sixteen-cylinder engine.
+
+**Seams for the addon API** (for "An addon's own engine type" below and the 3.0 clean slate):
+
+- **`Combustion` reaches into `CylinderModel` for about 25 of its fields** (`owner.ignition`, `owner.wear`, `owner.rack`,
+  `owner.intakePressure`, `owner.fuelSupply`, `owner.coil` and so on). Before combustion can be shared with an addon's engine, those
+  reads go behind one small package-private interface or input holder that `CylinderModel` fills, with the geometry already behind
+  `CycleDrive` (`PistonDrive`, `RotaryDrive`). This is the behaviour-preserving step that has to come before any public combustion
+  surface, and is where an opposed-piston drive would plug in. `compat/behaviour.txt` and `trajectories.txt` must not move; pitest
+  re-run.
+- **`TorqueSource` is public API but lives in the internal `engine.sim` package**, so the "API never needs an internal class" rule has
+  one named exception (`ApiVersion` lists it). It cannot move within 2.x. For 3.0: move it to `com.createengines.api` (or a
+  `api.sim` package) along with whatever the combustion surface becomes.
+- **The API package calls internal code directly** (`EngineApi` and `EngineExtensions` run `EngineScanner.scan`, read
+  `CrankshaftBlockEntity.summary()`, and `EngineEvents.stateChanged` takes the internal `EngineState`). That is allowed (it is the
+  implementation side), but each new API minor adds to it. A single internal `ApiBridge` that the API classes call would keep the
+  frozen surface in `api/` and every internal reference in one place, so splitting `EngineController` or `EngineScanner` cannot touch
+  an API file.
+- **`EngineController` is the only way to an engine's inputs and readouts.** The cut above (`EngineInputs`, `EngineReadouts`) is also
+  what the planned API additions need: reading and subscribing to an engine's readout and ripple, and the fuel gallery for addon sources,
+  are much easier to expose from those small classes than from the controller. So the controller split should come before that API
+  minor.
+
+**Suggested order**, after the cut above: the ratchet caps for `ShowcaseRun` and `EngineController` (now, so they stop growing); the
+starter lookups and `catchSoot` caching (small, measurable); the `Combustion` input holder (before any API work on combustion); the doc
+moves (with the author's yes); then the new 800-line files, each after its own feature work is committed.
+
 ### Test guards changed after 2.4.0 (2026-11-27)
 
 Both go under Exceptions in the next release record. Neither changes how an engine runs.
