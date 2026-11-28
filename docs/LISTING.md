@@ -289,6 +289,11 @@ Not released yet.
   stalls, where before the same sound only came faster. Past 256 RPM, where a pack or setting allows it, they rise more
   gently, and a crossplane V8 only once it has opened up. At 256 RPM the voice is where it was; slower engines, idles
   included, now sound deeper, and faster ones higher. This changes how existing engines sound.
+- Sound, **slow engines no longer fall silent between firings**: you now hear the other strokes of the cycle, a quiet
+  steady bed of gas, bearings and gears, and a longer tail on each firing. Engines firing often are as before. This
+  changes how existing engines sound.
+- Sound, **no more clipping**: blower whine on a loud engine could be cut off flat, and some failure, stall and backfire
+  recordings could clip when played back. Those recordings were made again, a little lower at their sharpest moments.
 - Sound, **dry bearings** no longer shriek: the loop that plays while an engine is short of oil is now a quieter, lower grind
   with a short rough chirp on each turn, in place of a high squeal that never let up. It plays at the same times and range.
 - Fixed a small gap between a turbocharger's side and an exhaust outlet or pipe joined to it: a joined side now has a port

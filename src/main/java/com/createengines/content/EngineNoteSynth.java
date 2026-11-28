@@ -11,7 +11,8 @@ import com.createengines.engine.sim.Muffling;
  * <p>
  * Each firing also sends a rush of gas down its pipe ({@link NoteFlow}), and what leaves the pipes goes through the
  * resonances of the kind of engine it is ({@link NoteTimbre}). Under that are a low thump on each firing, a faint
- * mechanical bed that turns with the crank and, where firings run together, a tone at their rate.
+ * mechanical bed that turns with the crank and, where firings run together, a tone at their rate. Between a slow
+ * engine's firings are its other strokes and a steady bed ({@link NoteBed}).
  * <p>
  * What the engine is built of shapes it ({@link Voice}): each exhaust outlet rings its own pipe, tuned by the run's length and
  * the cylinders' size, so the firings an outlet gets, even or uneven, are heard as that outlet's rhythm; compression-ignition
@@ -192,7 +193,8 @@ public final class EngineNoteSynth {
 	 * What the game thread last asked for, with what follows from it worked out there (the closest two
 	 * firings), so the audio thread allocates nothing. One object, so the audio thread never sees the parts of two.
 	 */
-	private record Prepared(Params params, float closest, int outlets, float[] lope, float depth, NoteTimbre timbre) {
+	private record Prepared(Params params, float closest, int outlets, float[] lope, float depth, NoteTimbre timbre,
+							NoteStrokes strokes) {
 	}
 
 	private volatile Prepared prepared = prepare(Params.SILENT);
@@ -220,6 +222,8 @@ public final class EngineNoteSynth {
 	/** The one-offs played in this note's own stream: backfires, spits and a stopped crank rocking to rest. */
 	private final NoteBangs bangs = new NoteBangs();
 	private final NoteExit exit = new NoteExit();
+	private final NoteBed bed = new NoteBed();
+	private float firingsASecond;
 	private int random;
 
 	public EngineNoteSynth(int seed) {
@@ -433,7 +437,7 @@ public final class EngineNoteSynth {
 		return new Prepared(clean, NoteInput.closest(clean.firingAngles), ringing, lope,
 			EngineNoteVoicing.depth(clean.firingAngles.length), NoteTimbre.of(lope, NoteInput.meanRun(clean.voice, ringing),
 				NoteInput.unequalRuns(clean.voice, ringing), clean.voice.ignition() == Ignition.COMPRESSION,
-				clean.voice.rotary()));
+				clean.voice.rotary()), NoteStrokes.of(clean.firingAngles));
 	}
 
 	/** The catch or stall being played, if any. */
@@ -487,24 +491,19 @@ public final class EngineNoteSynth {
 		return current != null && current.kind.dies();
 	}
 
-	private volatile float wantedFar;
-	private float far;
+	private final NoteListening listening = new NoteListening();
 
 	/**
 	 * How far the listener is, 0 (beside it) to 1 (at the edge of hearing), from the game thread. Far off, the crack and the
 	 * knock fade first and the note is heard duller: only the boom of the exhaust carries.
 	 */
 	public void setDistance(float share) {
-		wantedFar = Float.isFinite(share) ? Math.clamp(share, 0f, 1f) : 0f;
+		listening.wantedFar = NoteListening.share(share);
 	}
 
-	private volatile float wantedMuffling;
-	/** How muffled each outlet is, following what is asked. */
-	private final float[] muffled = new float[MOST_OUTLETS];
 	/** The outlet of the latest firing, and how muffled what every cylinder shares is now. */
 	private int firingOutlet;
 	private float firingMuffle;
-	private float mostMuffled;
 	private static final float MUFFLE_SWITCH = (float) (1 - Math.exp(-1 / (0.002 * SAMPLE_RATE)));
 	/**
 	 * How much of the exhaust goes through a muffler, 0 to 1, from the game thread, for a voice that does not say outlet by
@@ -512,7 +511,7 @@ public final class EngineNoteSynth {
 	 * is heard quieter and duller, its crack and knock going first.
 	 */
 	public void setMuffling(float share) {
-		wantedMuffling = Float.isFinite(share) ? Math.clamp(share, 0f, 1f) : 0f;
+		listening.wantedMuffling = NoteListening.share(share);
 	}
 
 	/** Whether there is nothing left to hear: the engine is quiet and the pipe has stopped ringing. */
@@ -522,7 +521,7 @@ public final class EngineNoteSynth {
 				return false;
 		return prepared.params().combustion <= 0 && combustion < 0.001f && raps.idle()
 			&& openSystem.isSilent() && shutSystem.isSilent()
-			&& under.isSilent() && flow.isStill() && bangs.idle();
+			&& under.isSilent() && flow.isStill() && bed.isSilent() && bangs.idle();
 	}
 
 	/** Fills {@code out[offset, offset + count)} with 16-bit samples. */
@@ -585,6 +584,7 @@ public final class EngineNoteSynth {
 		fireDue(p);
 		if (phase >= CYCLE) {
 			phase %= CYCLE;
+			bed.turned();
 			nextEvent = 0;
 			nextJitter = drawJitter(0);
 			fireDue(p);
@@ -606,14 +606,14 @@ public final class EngineNoteSynth {
 				into += flow.next(o) * breath;
 			float mouth = pipes[o].next(into) * OUTLET_WEIGHT[o];
 			double under55 = boom * BOOM_WEIGHT * boomShare * OUTLET_WEIGHT[o];
-			piped += mouth * (1 - muffled[o]);
-			pipedShut += mouth * muffled[o];
-			boomed += under55 * (1 - muffled[o]);
-			boomedShut += under55 * muffled[o];
+			piped += mouth * (1 - listening.muffled[o]);
+			pipedShut += mouth * listening.muffled[o];
+			boomed += under55 * (1 - listening.muffled[o]);
+			boomedShut += under55 * listening.muffled[o];
 		}
 		// The boom is under the resonances, not through them: they would take it away
 		double body = openBody.next(openSystem.next(piped, heardAs), heardAs) + boomed;
-		double behind = mostMuffled > 0.001f
+		double behind = listening.most > 0.001f
 			? shutBody.next(shutSystem.next(pipedShut, heardAs), heardAs) + boomedShut
 			: pipedShut + boomedShut;
 
@@ -626,18 +626,20 @@ public final class EngineNoteSynth {
 		float sharp = highShare;
 		// What every cylinder shares is muffled as the outlet of the latest firing is, so a muffled bank is heard as muffled
 		// firings between open ones
-		firingMuffle += MUFFLE_SWITCH * (muffled[firingOutlet] - firingMuffle);
+		firingMuffle += MUFFLE_SWITCH * (listening.muffled[firingOutlet] - firingMuffle);
 		float open = (float) (body + shared * (1 - firingMuffle) + raps.open() * sharp) * scale * 2;
 		float shut = (float) (behind + shared * firingMuffle + raps.shut() * sharp) * scale * 2;
 		// Only a fast engine is levelled, so the lope of a slow one is left alone, a stopping engine is not turned up, and a
 		// note of a pipe the firing rate happens to hit is turned down
-		float out = exit.next(open, shut, toneShare * Math.min(1f, combustion * 2), mostMuffled > 0.001f);
+		float out = exit.next(open, shut, toneShare * Math.min(1f, combustion * 2), listening.most > 0.001f);
 		if (!Float.isFinite(out)) {
 			reset();
 			return 0;
 		}
+		out += bed.next(out, state.strokes(), phase, rpm, combustion, firingsASecond,
+			Math.max(listening.most, 1 - highShare), pipes[0].note());
 		if (bangs.idle())
-			return out;
+			return EngineRoomMix.limit(out);
 		out = EngineRoomMix.limit(out + bangs.next());
 		cueStarted();
 		return out;
@@ -648,10 +650,10 @@ public final class EngineNoteSynth {
 	 * (two square roots, a power and divisions) are worked out once every {@link #SLOW_EVERY} samples, about 0.7 ms, instead
 	 * of for every sample.
 	 */
-	private static final int SLOW_EVERY = 16;
-	/** Per-slow-step shares of the way distance (about a fifth of a second) and muffling (about a fourteenth) move. */
-	private static final float SLOW_GLIDE = (float) (SLOW_EVERY / (0.18 * SAMPLE_RATE));
-	private static final float MUFFLE_GLIDE = (float) (SLOW_EVERY / (0.073 * SAMPLE_RATE));
+	static final int SLOW_EVERY = 16;
+	/** Firings a second under which the thump and the boom ring longer, in proportion to the gap, and the most. */
+	private static final float RINGS_ON_BELOW = 8;
+	private static final float MOST_STRETCH = 1.6f;
 	private int slowTick;
 	private float pileUp = 1;
 	private float crackShare = 1;
@@ -663,6 +665,11 @@ public final class EngineNoteSynth {
 		rev(NoteRev.of(rpm,
 			timbre.burbles() ? Math.max(NoteRev.FULL_RPM, NoteOpening.openedBy(angles.length)) : NoteRev.FULL_RPM));
 		float eventsPerSecond = angles.length * rpm / 120f;
+		firingsASecond = eventsPerSecond;
+		float stretch = Math.clamp(RINGS_ON_BELOW / (eventsPerSecond + 0.01f), 1f, MOST_STRETCH);
+		under.ring(stretch);
+		for (NoteBoom boom : booms)
+			boom.ring(stretch);
 		float pile = eventsPerSecond / THUMPS_BEFORE_PILE_UP;
 		pileUp = 1 / (float) Math.sqrt(1 + pile * pile);
 		float fade = eventsPerSecond / CRACK_FADE_AT;
@@ -693,22 +700,13 @@ public final class EngineNoteSynth {
 		jitterDegrees = Math.min(Math.min(0.3f * closestFirings, mostLate),
 			scatter + 1.5f * idle + 8 * p.roughness() + 2 * crude);
 		strengthSpread = Math.min(0.6f, 0.2f + 0.15f * idle + 0.35f * p.roughness() + 0.1f * crude);
-		// Distance follows over about a fifth of a second (this runs every 16 samples)
-		far += (wantedFar - far) * SLOW_GLIDE;
-		float[] asked = p.voice().muffle();
-		float most = 0;
-		for (int o = 0; o < MOST_OUTLETS; o++) {
-			muffled[o] += ((asked.length > o ? asked[o] : wantedMuffling) - muffled[o]) * MUFFLE_GLIDE;
-			if (o < outlets)
-				most = Math.max(most, muffled[o]);
-		}
-		mostMuffled = most;
+		listening.follow(p.voice().muffle(), outlets);
 		for (int o = 0; o < MOST_OUTLETS; o++)
-			pipes[o].muffle(muffled[o]);
+			pipes[o].muffle(listening.muffled[o]);
 		float clad = p.voice().enclosure();
-		highShare = (1 - 0.8f * far) * (1 - 0.7f * clad);
-		exit.dulledBy(clad, far);
-		bangs.dulledBy(clad, far);
+		highShare = (1 - 0.8f * listening.far) * (1 - 0.7f * clad);
+		exit.dulledBy(clad, listening.far);
+		bangs.dulledBy(clad, listening.far);
 	}
 
 	/** Firings a second at which the rushes of gas have begun to run together, and each is turned down. */
@@ -750,6 +748,7 @@ public final class EngineNoteSynth {
 		correction = 0;
 		rpm = load = combustion = 0;
 		under.clear();
+		bed.clear();
 		flow.clear();
 		openBody.clear();
 		openSystem.clear();
@@ -777,7 +776,7 @@ public final class EngineNoteSynth {
 
 	private void fire(int index, Params p) {
 		firingOutlet = index < outletOf.length ? outletOf[index] : 0;
-		bangs.fired(pipes[firingOutlet].note(), muffled[firingOutlet]);
+		bangs.fired(pipes[firingOutlet].note(), listening.muffled[firingOutlet]);
 		// Up to strengthSpread weaker than the cylinder's best, a fifth on a smooth engine at load
 		float strength = cylinderGain(index) * (1 + 0.15f - strengthSpread * 0.5f * (noise() + 1));
 		float[] lope = taken.lope();
@@ -807,7 +806,7 @@ public final class EngineNoteSynth {
 			// A diesel knocks hardest at idle and light load, where the charge lights all at once
 			float knock = strength * burn * (0.6f + 0.6f * (1 - Math.min(1f, p.load())));
 			knockTake = nextTake(knockTake, unitNoise());
-			raps.strike(grains.knock(knockTake), knock * knockShare * KNOCK_WEIGHT, muffled[firingOutlet]);
+			raps.strike(grains.knock(knockTake), knock * knockShare * KNOCK_WEIGHT, listening.muffled[firingOutlet]);
 		}
 		if (lit) {
 			// A bigger cylinder thumps lower, and each has its own pitch within that
@@ -819,7 +818,7 @@ public final class EngineNoteSynth {
 			float crack = strength * (CRACK_FLOOR + (1 - CRACK_FLOOR) * p.sharpness) * (0.7f + 0.3f * Math.min(1f, p.load)) * burn;
 			crackTake = nextTake(crackTake, unitNoise());
 			raps.strike(grains.crack(sizeSet(p.size), crackTake), crack * crackShare * CRACK_WEIGHT * (1 - DEEP_SOFTER * depth),
-				muffled[firingOutlet]);
+				listening.muffled[firingOutlet]);
 		}
 	}
 

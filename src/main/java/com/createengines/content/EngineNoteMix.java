@@ -4,7 +4,7 @@ package com.createengines.content;
  * What an engine's own stream plays: its {@link EngineNoteSynth} at a gain applied sample by sample, so a fade, the share
  * the chorus gives it and its casing glide instead of moving in 20 steps a second as a source's volume does, and the
  * whistle and whine of its blowers ({@link BoostWhine}) mixed in at levels of their own. The whole then goes through the
- * air between it and the listener ({@link NoteAir}). The game thread sets the gains each tick; the sound thread glides to
+ * air between it and the listener ({@link NoteAir}) and one limiter, last. The game thread sets the gains each tick; the sound thread glides to
  * them. Pure Java, so it is tested.
  */
 final class EngineNoteMix implements EngineNotePcm.Renderer {
@@ -16,7 +16,13 @@ final class EngineNoteMix implements EngineNotePcm.Renderer {
 	/** The same for a whine's pitch, which a heavy rotor changes slowly: about a tenth of a second. */
 	private static final float BEND = 1f / (0.1f * EngineNoteSynth.SAMPLE_RATE);
 
+	/** The 16-bit value a float sample of 1 is played as. */
+	private static final float FULL = 30000;
+	/** A blower's level is its share of the 16-bit range, not of {@link #FULL}. */
+	private static final float WHINE_SCALE = Short.MAX_VALUE / FULL;
+
 	private final EngineNoteSynth synth;
+	private final float[] mix = new float[EngineNotePcm.CHUNK];
 	private volatile float wanted;
 	private float gain;
 	private final NoteAir air = new NoteAir();
@@ -81,9 +87,15 @@ final class EngineNoteMix implements EngineNotePcm.Renderer {
 	@Override
 	public void render(short[] out, int offset, int count) {
 		synth.applyLock(System.nanoTime());
+		for (int done = 0; done < count; done += mix.length)
+			block(out, offset + done, Math.min(mix.length, count - done));
+	}
+
+	/** Mixed in floats, held under full scale once, last, and made 16 bits once: nothing added can be cut off flat. */
+	private void block(short[] out, int offset, int count) {
 		for (int i = 0; i < count; i++) {
 			gain += (wanted - gain) * GLIDE;
-			out[offset + i] = (short) Math.round(Math.clamp(synth.next(), -1f, 1f) * gain * 30000);
+			mix[i] = synth.next() * gain;
 		}
 		for (int s = 0; s < WHINES; s++) {
 			Slot slot;
@@ -91,14 +103,14 @@ final class EngineNoteMix implements EngineNotePcm.Renderer {
 				slot = slots[s];
 			}
 			if (slot != null)
-				add(slot, out, offset, count);
+				add(slot, count);
 		}
 		// Near by, the air hands each sample back as it was
-		for (int i = offset; i < offset + count; i++)
-			out[i] = (short) Math.clamp(Math.round(air.next(out[i])), Short.MIN_VALUE, Short.MAX_VALUE);
+		for (int i = 0; i < count; i++)
+			out[offset + i] = (short) Math.round(EngineRoomMix.limit(air.next(mix[i])) * FULL);
 	}
 
-	private void add(Slot slot, short[] out, int offset, int count) {
+	private void add(Slot slot, int count) {
 		float level = slot.level;
 		float pitch = slot.pitch;
 		float toLevel = slot.wantedLevel;
@@ -108,8 +120,7 @@ final class EngineNoteMix implements EngineNotePcm.Renderer {
 		for (int i = 0; i < count; i++) {
 			level += (toLevel - level) * GLIDE;
 			pitch += (toPitch - pitch) * BEND;
-			int sum = out[offset + i] + Math.round(slot.voice.next(pitch) * level * 32767);
-			out[offset + i] = (short) Math.clamp(sum, Short.MIN_VALUE, Short.MAX_VALUE);
+			mix[i] += slot.voice.next(pitch) * level * WHINE_SCALE;
 		}
 		slot.level = level;
 		slot.pitch = pitch;

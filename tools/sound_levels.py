@@ -1,5 +1,5 @@
 """The level pass over every recording that plays once (step 3 of the sound plan), for generate_sounds.py: no DC offset,
-a short fade at each end, a loudness of its kind's own and a ceiling on its peaks. Loops are left as they were made.
+a short fade at each end, a loudness of its kind's own and a ceiling on its peaks, between samples too. Loops are left as they were made.
 
 The loudness is of the loudest 400 ms (sound_audit.momentary_lufs), of the recording itself, before the volume the game
 plays it at. For scale, the engine note rendered at idle reads about -16.5.
@@ -7,7 +7,7 @@ plays it at. For scale, the engine note rendered at idle reads about -16.5.
 import re
 
 import numpy as np
-from scipy import signal
+from scipy import ndimage, signal
 
 import sound_audit
 from sound_dsp import SR
@@ -32,6 +32,11 @@ CEILING = 0.9
 KNEE = 0.6
 # Longer than the 2 ms SoundAssetsTest asks for
 FADE = 0.003
+# The most a recording may reach between its samples, where resampling can find it. The encoder overshoots by up to a
+# tenth, and what is shipped must stay under -1 dBFS (0.891)
+TRUE_PEAK = 0.8
+# How long before and after a peak the level is turned down for it
+AROUND = 0.0015
 
 
 def kind_of(name):
@@ -50,6 +55,24 @@ def limit(x):
     over = np.maximum(np.abs(x) - KNEE, 0)
     eased = KNEE + (CEILING - KNEE) * np.tanh(over / (CEILING - KNEE))
     return np.where(over > 0, np.sign(x) * eased, x)
+
+
+def true_peaks(x):
+    """How far the signal reaches round each sample, four times oversampled."""
+    up = np.abs(signal.resample_poly(x, 4, 1))
+    return up[:len(x) * 4].reshape(len(x), 4).max(axis=1)
+
+
+def hold(x):
+    """Turned down, gently and only round each, wherever it would reach past TRUE_PEAK between samples."""
+    n = int(AROUND * SR) | 1
+    for _ in range(8):
+        peaks = true_peaks(x)
+        if peaks.max() <= TRUE_PEAK:
+            break
+        need = np.minimum(1, TRUE_PEAK * 0.995 / np.maximum(peaks, 1e-9))
+        x = x * ndimage.uniform_filter1d(ndimage.minimum_filter1d(need, 2 * n + 1), n)
+    return x
 
 
 def edges(x):
@@ -71,8 +94,8 @@ def level(name, samples):
     gain = 1.0
     # Limiting takes loudness off, so the gain is found by trying it
     for _ in range(12):
-        gain *= 10 ** ((target - loudness(limit(x * gain))) / 20)
-    out = limit(x * gain)
+        gain *= 10 ** ((target - loudness(hold(limit(x * gain)))) / 20)
+    out = hold(limit(x * gain))
     got = loudness(out)
     if abs(got - target) > 0.5:
         raise ValueError(f"{name} cannot be brought to {target} LUFS under its peak ceiling: it reaches {got:.1f}")

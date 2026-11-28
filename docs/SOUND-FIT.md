@@ -5,6 +5,13 @@ Audit of 2026-11-27, on the `open-garage` working tree. Nothing in the sound was
 
 The rule this audit holds the sound to: **engine audio never sounds choppy and never clips.** Today it can do both.
 
+**Since then (2026-11-28):** 4.1 to 4.4 are built, except the valve taps of 4.1, which the author had had removed
+before. The targets of section 5 are held by `NoteContinuityTest` and `SoundTruePeakTest`; what was built is in
+[DESIGN.md](DESIGN.md). Sections 1 to 3 below describe the sound before that. Still open: nothing has been heard; the
+bench and soak have not been run, so underruns (4.5), the sum of several streams and the cost against the 2% budget are
+unmeasured in game (offline, a slow engine's note takes about a quarter to a half more time a sample than before); the
+release record needs its exception entry.
+
 All figures are measured, not heard. Renders are of the synthesizer offline; the bench run quoted is an older one.
 
 ## 1. What was found

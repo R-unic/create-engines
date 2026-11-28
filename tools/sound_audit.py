@@ -124,6 +124,25 @@ def silent_gaps(mono, shortest):
     return [(a * 0.005, (b - a) * 0.005) for a, b in runs(levels < floor) if (b - a) * 0.005 >= shortest]
 
 
+def continuity(mono):
+    """(fall in dB, share of quiet time) as docs/SOUND-FIT.md defines them: the spread of a 20 ms loudness envelope above
+    30 Hz (95th less 5th percentile), and the share of time more than 25 dB under the loud parts."""
+    if len(mono) < RATE // 10:
+        return None
+    heard = signal.sosfilt(signal.butter(2, 30, btype="highpass", fs=RATE, output="sos"), mono)
+    size, hop = RATE // 50, RATE // 200
+    power = np.concatenate([[0], np.cumsum(heard ** 2)])
+    starts = np.arange(0, len(heard) - size, hop)
+    level = 10 * np.log10((power[starts + size] - power[starts]) / size + 1e-14)
+    loud, low = np.percentile(level, [95, 5])
+    return float(loud - low), float(np.mean(level < loud - 25))
+
+
+def rail_samples(audio):
+    """Samples at the 16-bit limit, in either ear."""
+    return int(np.sum(np.abs(audio) >= 32767 / 32768))
+
+
 def padded_holes(mono):
     """(seconds, length) of each run of exact zeros over 10 ms. The speakers always carry the recorder's faint hiss, so these
     are holes the recorder filled, not silence the game played."""
@@ -486,7 +505,7 @@ def analyse_phase(run, phase, start, end, heard_after):
     result = {"seconds": rounded((end - start) / 1000), "lufs": rounded(integrated_lufs(stereo)),
               "momentary": rounded(momentary_lufs(stereo)),
               "peak_db": rounded(db(np.abs(mono).max())) if len(mono) else None,
-              "brightness_hz": rounded(brightness(mono), 0)}
+              "brightness_hz": rounded(brightness(mono), 0), "rail_samples": rail_samples(stereo)}
     states = run.between("state", start, end)
     if states:
         result["rpm"] = [rounded(min(s["rpm"] for s in states)), rounded(max(s["rpm"] for s in states))]
@@ -508,6 +527,9 @@ def analyse_phase(run, phase, start, end, heard_after):
     result["clicks"] = [rounded(t, 3) for t in clicks(mono, [f + heard_after for f in firings], after=0.07, before=0.05)]
     result["stairs_heard"] = [rounded(t, 2) for t in audio_stairs(mono)]
     if phase in RUNNING_PHASES:
+        held = continuity(mono)
+        if held:
+            result["fall_db"], result["quiet_share"] = rounded(held[0]), rounded(held[1], 3)
         shortest = max(0.06, 1.5 * typical) if typical else 0.06
         gaps = silent_gaps(mono, shortest)
         if gaps is None:
@@ -681,6 +703,21 @@ def place_lines(report):
     return lines
 
 
+def continuity_lines(report):
+    rows = []
+    for name, entry in report["scenes"].items():
+        for phase, p in entry["phases"].items():
+            if name != "reference" and (p.get("rail_samples") or "fall_db" in p):
+                rows.append(f"| {name} | {phase} | {shown(p.get('fall_db'))} | {shown(p.get('quiet_share'))} | "
+                            f"{p.get('rail_samples', 0)} |")
+    if not rows:
+        return []
+    return ["", "## Continuity and clipping", "",
+            "Targets (docs/SOUND-FIT.md): fall at most 20 dB from 5 firings a second and 25 dB under that, no quiet time, and no "
+            "sample at the 16-bit limit. Taken from the speakers, so everything the game plays is in it.", "",
+            "| Scene | Phase | Fall dB | Quiet share | Samples at the limit |", "|---|---|---|---|---|"] + rows
+
+
 def markdown(report, old=None):
     lines = ["# Sound bench report", ""]
     if report["problems"]:
@@ -726,7 +763,7 @@ def markdown(report, old=None):
                   f"{shown(soak.get('stayed_db'))} dB. Closest any second came to being played again: "
                   f"{shown(soak.get('exact_repeat'))} (limit {REPEAT_LIMIT}). Against the loudest of the game's other sounds, "
                   f"each from 6 blocks: {shown(soak.get('over_loudest_other_db'))} dB."]
-    lines += wait_lines(report) + cost_lines(report) + place_lines(report)
+    lines += continuity_lines(report) + wait_lines(report) + cost_lines(report) + place_lines(report)
     lines += ["", "## Each phase", ""]
     for name, entry in report["scenes"].items():
         if name == "reference":
@@ -815,6 +852,13 @@ def self_test():
     tone = 0.5 * np.sin(2 * np.pi * 997 * np.arange(RATE * 3) / RATE)
     assert abs(integrated_lufs(np.stack([tone * 2, 0 * tone], axis=1)) - -3.01) < 0.1, "loudness of a full scale 997 Hz sine"
     assert integrated_lufs(np.zeros(RATE)) is None
+
+    steady_noise = np.random.default_rng(9).standard_normal(4 * RATE) * 0.1
+    fall, quiet = continuity(steady_noise)
+    assert fall < 3 and quiet == 0, (fall, quiet)
+    fall, quiet = continuity(thumps(9, times))
+    assert fall > 25 and quiet > 0.3, (fall, quiet)
+    assert rail_samples(np.array([[1.0, 0.0], [-1.0, 0.5]])) == 2
 
     assert silent_gaps(clean, 0.06) == [], "no gap in clean sound"
     sparse = thumps(9, times) - 0.01 * np.sin(2 * np.pi * 55 * np.arange(9 * RATE) / RATE)

@@ -10,7 +10,9 @@ final class NoteBoom {
 	private static final int RATE = EngineNoteSynth.SAMPLE_RATE;
 	/** Seconds in which the boom falls to about a third: longer than a V8's idling firings are apart on one bank. */
 	private static final double RING = 0.07;
-	private static final double FALL = Math.exp(-1 / (RING * RATE));
+	private double fall = Math.exp(-1 / (RING * RATE));
+	private double stretched = 1;
+	private double note;
 	/** The pressure that sets it going rises over a few thousandths of a second, so no firing clicks. */
 	private static final double RISE = Math.exp(-1 / (0.004 * RATE));
 	private static final double SMALLEST_HZ = 30;
@@ -25,10 +27,20 @@ final class NoteBoom {
 
 	/** Makes it boom at {@code hz}. */
 	void tune(double hz) {
+		note = hz;
 		double radians = 2 * Math.PI * Math.clamp(hz, SMALLEST_HZ, HIGHEST_HZ) / RATE;
-		turn = 2 * FALL * Math.cos(radians);
+		turn = 2 * fall * Math.cos(radians);
 		// One firing of strength 1 swings it to about 1, whatever its note
 		drive = Math.sin(radians);
+	}
+
+	/** Lets it ring {@code times} its usual time, for firings far apart. */
+	void ring(double times) {
+		if (times == stretched)
+			return;
+		stretched = times;
+		fall = Math.exp(-1 / (RING * times * RATE));
+		tune(note);
 	}
 
 	/** A firing of this strength. */
@@ -40,7 +52,7 @@ final class NoteBoom {
 	float next() {
 		pulse = RISE * pulse + (1 - RISE) * impulse;
 		impulse = 0;
-		double out = turn * last - FALL * FALL * before + drive * pulse;
+		double out = turn * last - fall * fall * before + drive * pulse;
 		// A tail too small to hear would run into subnormal numbers, which cost many times more to add up
 		if (Math.abs(out) < 1e-18 && pulse < 1e-18)
 			out = pulse = 0;

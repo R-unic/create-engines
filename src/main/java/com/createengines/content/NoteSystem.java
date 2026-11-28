@@ -58,7 +58,8 @@ final class NoteSystem {
 	/** How many times over the roar's power falls to about a third between two firings, and the times it is held to. */
 	private static final double FALLS = 3;
 	private static final double SHORTEST = 0.012;
-	private static final double LONGEST = 0.2;
+	/** Far enough for the roar to carry over a slow engine's gaps. */
+	private static final double LONGEST = 0.4;
 	/**
 	 * Firings a second up to which they are far apart, and from which they cover the roar between them. Far apart, the roar
 	 * is heard bare and its grain and wavering sound like a broken-up recording, so there it is quieter, darker and steadier.

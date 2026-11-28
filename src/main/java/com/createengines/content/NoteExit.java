@@ -69,7 +69,7 @@ final class NoteExit {
 			muffledOne = Denormals.flush(muffledOne + MUFFLE_AMOUNT * (piped - muffledOne));
 			muffledTwo = Denormals.flush(muffledTwo + MUFFLE_AMOUNT * (muffledOne - muffledTwo));
 			float clear = NoteMath.tanh(open * levelled);
-			out = Math.clamp(clear + muffledTwo * MUFFLED_LEVEL, -1f, 1f);
+			out = EngineRoomMix.limit(clear + muffledTwo * MUFFLED_LEVEL);
 		} else {
 			out = NoteMath.tanh(mix * levelled);
 			muffledOne = muffledTwo = 0;

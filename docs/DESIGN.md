@@ -742,6 +742,18 @@ and regular rattles are what made the first takes sound like a cartoon (`Failure
     before), which may be heard as a whine. Nobody has judged it by ear, in a render or in game; the sound bench and
     soak have not been run on it.
   - Tests: `NoteRevTest`; the earlier note tests as they were, none changed.
+- **Never choppy, never clipping (2026-11-28).** The author's rule; the audit, its targets and what is still open are in
+  [SOUND-FIT.md](SOUND-FIT.md).
+  - *The other strokes* (`NoteStrokes`): exhaust, intake and compression, tables over the cycle made from the firing
+    angles. Valve taps were in the audit's plan and are not built: the author had had the valve sounds removed.
+  - *The bed* (`NoteBed`): gas round the pipe's note, a little rumble and two gear tones, with the strokes over it. Its
+    level hangs from the loudest moment of the last two cycles, it stands aside while a firing is loud, it dulls with
+    mufflers, casing and distance, and it is all there up to 9 firings a second and gone from 24.
+  - *Longer tails.* The roar may take up to 0.4 s to fall (was 0.2), and the thump and boom ring up to 1.6 times longer
+    under 8 firings a second. The pipes' ring is as it was.
+  - *One limiter, last* (`EngineRoomMix.limit`), in the synthesizer, the engine's own stream (now mixed in floats) and the
+    shared room. Recordings that play once are held under -1 dBFS true peak by `tools/sound_levels.py`.
+  - Tests: `NoteContinuityTest` (32 to 256 RPM), `SoundTruePeakTest`; the earlier note tests as they were, none changed.
 - **Sounds on moving structures (2026-11-26).** Sable plays any sound that starts on a moving structure inside a wrapper
   of its own, so `SoundManager.isActive` says no to the instance this mod made. Every note, loop and starter whir there
   was taken for dropped and started again over itself, about every second or two, until the game had no sound channel

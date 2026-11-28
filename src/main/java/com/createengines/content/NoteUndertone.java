@@ -19,7 +19,8 @@ final class NoteUndertone {
 	private static final double THUMP_LOW = 46;
 	private static final double THUMP_DROP = 110;
 	private static final float THUMP_SWEEP_FALL = (float) Math.exp(-1 / (0.02 * RATE));
-	private static final float THUMP_FALL = (float) Math.exp(-1 / (0.036 * RATE));
+	private static final double THUMP_SECONDS = 0.036;
+	private static final float THUMP_FALL = (float) Math.exp(-1 / (THUMP_SECONDS * RATE));
 	private static final float THUMP_WEIGHT = 0.35f;
 	/** The thump swells over a few thousandths of a second: its wave is wherever it happens to be when a firing lands. */
 	private static final float THUMP_SWELL = (float) (1 - Math.exp(-1 / (0.004 * RATE)));
@@ -38,6 +39,10 @@ final class NoteUndertone {
 	private static final float TONE_DC_POLE = (float) Math.exp(-2 * Math.PI * 15 / RATE);
 	private static final float TONE_WEIGHT = 3f;
 
+	private float thumpFall = THUMP_FALL;
+	/** How many times longer than usual the thump rings. */
+	private float stretched = 1;
+
 	private double impulse;
 	private double pulse;
 	private float thumpEnvelope;
@@ -54,6 +59,14 @@ final class NoteUndertone {
 	/** A firing of this strength, lit or not: the pressure behind the thump and the tone. */
 	void pressure(float strength) {
 		impulse += strength;
+	}
+
+	/** Lets the thump ring {@code times} its usual time, for firings far apart. */
+	void ring(float times) {
+		if (times == stretched)
+			return;
+		stretched = times;
+		thumpFall = (float) Math.exp(-1 / (THUMP_SECONDS * times * RATE));
 	}
 
 	/** A lit firing restarts the thump's drop, at {@code pitch} times its usual pitch. */
@@ -83,7 +96,7 @@ final class NoteUndertone {
 		thumpPhase += 2 * Math.PI * (THUMP_LOW + THUMP_DROP * thumpSweep) * thumpPitch / RATE;
 		if (thumpPhase > 2 * Math.PI)
 			thumpPhase -= 2 * Math.PI;
-		thumpEnvelope = thumpEnvelope * THUMP_FALL + (float) (pulse * PULSE_GAIN);
+		thumpEnvelope = thumpEnvelope * thumpFall + (float) (pulse * PULSE_GAIN);
 		thumpSwelled += THUMP_SWELL * (thumpEnvelope - thumpSwelled);
 		if (thumpEnvelope < Denormals.FLOOR && thumpSwelled < Denormals.FLOOR)
 			thumpEnvelope = thumpSwelled = 0;
