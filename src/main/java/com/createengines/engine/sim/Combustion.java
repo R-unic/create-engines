@@ -6,6 +6,7 @@ import org.jetbrains.annotations.Nullable;
  * What happens to the fuel in one cylinder: the injector's shot, the spark or the heat of compression that lights it,
  * and the burn. Moved out of {@link CylinderModel}, which owns the cylinder's inputs, its {@link Charge} and its cycle
  * figures, and calls this from its step.
+ * What it is told about that cylinder comes through {@link CombustionInputs}.
  */
 final class Combustion {
 
@@ -21,7 +22,7 @@ final class Combustion {
 	/** The most equivalence ratio that counts toward evaporative cooling: fuel past a rich burn only floods the cylinder. */
 	private static final double MAX_COOLED_EQUIVALENCE = 1.2;
 
-	private final CylinderModel owner;
+	private final CombustionInputs inputs;
 	private final Charge charge;
 	private final CycleStats current;
 	private final Soiling soiling;
@@ -42,8 +43,8 @@ final class Combustion {
 	/** Whether the charge now burning was lit by a coiled spark, which burns it faster; see {@link IgnitionCoil#BURN}. */
 	private boolean coiledBurn;
 
-	Combustion(CylinderModel owner, Charge charge, CycleStats current, Soiling soiling) {
-		this.owner = owner;
+	Combustion(CombustionInputs inputs, Charge charge, CycleStats current, Soiling soiling) {
+		this.inputs = inputs;
 		this.charge = charge;
 		this.current = current;
 		this.soiling = soiling;
@@ -109,31 +110,31 @@ final class Combustion {
 	 * apart from one with no fuel.
 	 */
 	void inject() {
-		FuelSpec fuel = usable(owner.fuelSupply.fuel());
+		FuelSpec fuel = usable(inputs.fuelSupply().fuel());
 		double air = charge.fresh * charge.moles;
-		double shot = (fuel == null ? 0 : owner.usualShot(fuel)) * owner.rack * owner.metering * owner.fuelTrim
-			* owner.governedFuel();
+		double shot = (fuel == null ? 0 : inputs.usualShot(fuel)) * inputs.rack() * inputs.metering() * inputs.fuelTrim()
+			* inputs.governedFuel();
 		// An assist spends its charge on a shot there is fuel for; one the bank cannot spare it for leaves the shot as it would have been
 		assisted = false;
-		if (fuel != null && owner.assist.installed()) {
-			assisted = owner.assist.fire();
+		if (fuel != null && inputs.assist().installed()) {
+			assisted = inputs.assist().fire();
 			if (assisted)
 				current.assistedShots++;
 			else
 				current.deadAssists++;
 		}
-		if (fuel != null && owner.airMatch > 0 && shot > 0) {
+		if (fuel != null && inputs.airMatch() > 0 && shot > 0) {
 			// A MAF sensor sets the shot from the air, whichever way that moves it. The rack still says how much of it is
 			// wanted, and so does a compression engine's governor; a spark engine's throttle is already in the air.
-			double matched = owner.rack * (owner.ignition.installed() ? 1 : owner.governor)
-				* Math.min(air / fuel.airPerMb() * owner.airMatch, InjectorAssist.limit(owner.injectorLimit(fuel), assisted));
+			double matched = inputs.rack() * (inputs.ignition().installed() ? 1 : inputs.governor())
+				* Math.min(air / fuel.airPerMb() * inputs.airMatch(), InjectorAssist.limit(inputs.injectorLimit(fuel), assisted));
 			if (matched < shot)
 				current.mafCut = 1 - matched / shot;
 			else if (matched > shot)
 				current.mafAdded = 1 - shot / matched;
 			shot = matched;
 		}
-		double delivered = fuel == null ? 0 : owner.fuelSupply.draw(shot);
+		double delivered = fuel == null ? 0 : inputs.fuelSupply().draw(shot);
 		current.fuelInjected += delivered;
 		current.freshAirAtInjection = air;
 		current.compressionTemp = Math.max(current.compressionTemp, charge.temperature);
@@ -155,9 +156,9 @@ final class Combustion {
 	 * way, leaves the fuel to waste.
 	 */
 	void spark() {
-		if (!owner.ignition.installed())
+		if (!inputs.ignition().installed())
 			return;
-		if (!owner.ignition.spark()) {
+		if (!inputs.ignition().spark()) {
 			current.deadSparks++;
 			return;
 		}
@@ -166,8 +167,8 @@ final class Combustion {
 			return;
 		// A coil spends its charge on a spark there is fuel to light; one the bank cannot spare it for is the plug's own spark
 		boolean coiled = false;
-		if (owner.coil.installed()) {
-			coiled = owner.coil.fire();
+		if (inputs.coil().installed()) {
+			coiled = inputs.coil().fire();
 			if (coiled)
 				current.coiledSparks++;
 			else
@@ -176,9 +177,9 @@ final class Combustion {
 		double air = charge.fresh * charge.moles;
 		double equivalence = air < CylinderModel.MIN_FRESH_AIR ? Double.MAX_VALUE
 			: fuelPending * burningFuel.airPerMb() / air;
-		if (owner.wear != Wear.NONE && owner.missesSpark(owner.wear.misfire()))
+		if (inputs.wear() != Wear.NONE && inputs.missesSpark(inputs.wear().misfire()))
 			return;
-		if (equivalence < IgnitionCoil.leanLimit(LEAN_LIMIT, coiled) * (owner.wear == Wear.NONE ? 1 : owner.wear.lean()))
+		if (equivalence < IgnitionCoil.leanLimit(LEAN_LIMIT, coiled) * (inputs.wear() == Wear.NONE ? 1 : inputs.wear().lean()))
 			current.flameOut = -1;
 		else if (equivalence > CylinderModel.RICH_LIMIT)
 			current.flameOut = 1;
@@ -196,13 +197,13 @@ final class Combustion {
 	 * chamber never lights itself.
 	 */
 	private boolean pilotLights() {
-		if (!Tuning.pilotInjection || owner.ignition.installed())
+		if (!Tuning.pilotInjection || inputs.ignition().installed())
 			return false;
-		FuelSpec pilot = usable(owner.pilotSupply.fuel());
-		if (pilot == null || charge.temperature * owner.lightingHeat < pilot.autoignitionTemp())
+		FuelSpec pilot = usable(inputs.pilotSupply().fuel());
+		if (pilot == null || charge.temperature * inputs.lightingHeat() < pilot.autoignitionTemp())
 			return false;
 		double shot = CylinderModel.PILOT_SHARE * current.fuelInjected;
-		if (shot <= 0 || owner.pilotSupply.draw(shot) < shot * 0.99)
+		if (shot <= 0 || inputs.pilotSupply().draw(shot) < shot * 0.99)
 			return false;
 		current.pilotShot += shot;
 		return true;
@@ -214,35 +215,35 @@ final class Combustion {
 		burnEquivalence = air < CylinderModel.MIN_FRESH_AIR ? CylinderModel.RICH_LIMIT
 			: fuelPending * burningFuel.airPerMb() / air;
 		burnRate = fuelPending
-			/ InjectorAssist.burn(IgnitionCoil.burn(owner.spec.burnDuration(), coiledBurn), assisted) * Mixture.flameSpeed(burnEquivalence);
+			/ InjectorAssist.burn(IgnitionCoil.burn(inputs.burnDuration(), coiledBurn), assisted) * Mixture.flameSpeed(burnEquivalence);
 		// A spark engine's charge that the boost has already squeezed past its autoignition point burns early and loses
 		// power for it. A compression engine lights itself on purpose, so it loses nothing, and neither does an unboosted
 		// engine: a charge runs hotter with speed alone, and that is the engine's business, not the boost's.
-		double boost = Math.min(1, Math.max(0, (owner.intakePressure - 1) / PREIGNITION_FULL_BOOST));
-		preignitionLoss = owner.ignition.installed() && boost > 0
-			? burningFuel.preignitionLoss(charge.temperature + Thermal.MAX_HOT_PREIGNITION * owner.hotness) * boost : 0;
+		double boost = Math.min(1, Math.max(0, (inputs.intakePressure() - 1) / PREIGNITION_FULL_BOOST));
+		preignitionLoss = inputs.ignition().installed() && boost > 0
+			? burningFuel.preignitionLoss(charge.temperature + Thermal.MAX_HOT_PREIGNITION * inputs.hotness()) * boost : 0;
 		// Nothing is added for any cylinder but a high compression rotor, whose figure alone is not 0
-		preignitionLoss = Math.min(FuelSpec.PREIGNITION_MAX_LOSS, preignitionLoss + owner.rotorEarlyLoss * earlyFuelBoost());
+		preignitionLoss = Math.min(FuelSpec.PREIGNITION_MAX_LOSS, preignitionLoss + inputs.rotorEarlyLoss() * earlyFuelBoost());
 		current.preignition = Math.max(current.preignition, preignitionLoss);
 	}
 
 	/** Boost in atmospheres, up to one, on a fuel that lights early sooner than ethanol does; 0 on one that holds out. */
 	private double earlyFuelBoost() {
-		return burningFuel.preignitionTemp() < FuelSpec.ETHANOL_PREIGNITION ? Math.min(1, Math.max(0, owner.intakePressure - 1)) : 0;
+		return burningFuel.preignitionTemp() < FuelSpec.ETHANOL_PREIGNITION ? Math.min(1, Math.max(0, inputs.intakePressure() - 1)) : 0;
 	}
 
 	void combust(double dt) {
 		if (!burning) {
 			timeSinceInjection += dt;
 			// A rotor's long, thin chamber loses too much heat to its walls for the charge to light itself: only a plug will
-			if (owner.ported() || timeSinceInjection < InjectorAssist.delay(owner.spec.ignitionDelay(), assisted))
+			if (inputs.ported() || timeSinceInjection < InjectorAssist.delay(inputs.ignitionDelay(), assisted))
 				return;
 			boolean piloted = false;
 			// A spark fuel in an engine with no plug is lit by a pilot shot or not at all, however hot boost has made the
 			// charge: a plug-fitted engine's charge past the autoignition point is pre-ignition, which costs power but is
 			// still the plug's burn
-			boolean selfLit = charge.temperature * (owner.ignition.installed() ? 1 : owner.lightingHeat) >= burningFuel.autoignitionTemp()
-				&& (owner.ignition.installed() || !burningFuel.needsSpark());
+			boolean selfLit = charge.temperature * (inputs.ignition().installed() ? 1 : inputs.lightingHeat()) >= burningFuel.autoignitionTemp()
+				&& (inputs.ignition().installed() || !burningFuel.needsSpark());
 			if (!selfLit) {
 				if (!pilotLights())
 					return;
@@ -259,14 +260,14 @@ final class Combustion {
 		fuelPending -= burned;
 		charge.fresh = Math.max(0, (charge.fresh * charge.moles - burned * burningFuel.airPerMb()) / charge.moles);
 		double heat = burned * burningFuel.energyPerMb() * Mixture.efficiency(burnEquivalence)
-			* Thermal.burnFactor(owner.coldness, burningFuel.coldSensitivity()) * (1 - preignitionLoss)
-			* (owner.wear == Wear.NONE ? 1 : owner.wear.seal())
-			* (1 - Thermal.MAX_HOT_BURN_LOSS * owner.hotness)
-			* owner.ringSeal
-			* (1 + owner.rotorBoostGain * earlyFuelBoost());
+			* Thermal.burnFactor(inputs.coldness(), burningFuel.coldSensitivity()) * (1 - preignitionLoss)
+			* (inputs.wear() == Wear.NONE ? 1 : inputs.wear().seal())
+			* (1 - Thermal.MAX_HOT_BURN_LOSS * inputs.hotness())
+			* inputs.ringSeal()
+			* (1 + inputs.rotorBoostGain() * earlyFuelBoost());
 		charge.temperature += heat * (CylinderModel.GAMMA - 1) / (charge.moles + FUEL_HEAT_CAPACITY * fuelPending);
 		current.fuelBurned += burned;
-		owner.burned(heat * burningFuel.heatFactor());
+		inputs.burned(heat * burningFuel.heatFactor());
 		if (fuelPending <= CylinderModel.FUEL_EPSILON)
 			burning = false;
 	}

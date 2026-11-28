@@ -1267,6 +1267,10 @@ the change only if it is measurable on a sixteen-cylinder engine.
 starter lookups and `catchSoot` caching (small, measurable); the `Combustion` input holder (before any API work on combustion); the doc
 moves (with the author's yes); then the new 800-line files, each after its own feature work is committed.
 
+**Combustion's inputs, done (2026-11-27).** `Combustion` now reads its cylinder only through the package-private `CombustionInputs`,
+which `CylinderInputs` answers from a `CylinderModel`, live and without copying. It still takes the `Charge`, the cycle figures and
+`Soiling` directly, and `CylinderModel.step` still drives it: those are the rest of the seam, for whoever designs the public surface.
+
 **Speed work done (2026-11-27).**
 
 - Starters are looked up once a tick, in a seventh controller helper, `EngineStarters`, which also keeps which of them push in an

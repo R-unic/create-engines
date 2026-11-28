@@ -131,7 +131,7 @@ public final class CylinderModel implements Breather {
 	/** Soot on the plug and in the exhaust; see {@link Soiling}. */
 	private final Soiling soiling = new Soiling();
 	/** Injection, ignition and burning of the fuel; see {@link Combustion}. */
-	private final Combustion combustion = new Combustion(this, charge, current, soiling);
+	private final Combustion combustion = new Combustion(new CylinderInputs(this), charge, current, soiling);
 	private double travelSinceCycle;
 
 	public CylinderModel(CylinderSpec spec, CamProfile profile, double tdcCrankAngle, @Nullable Camshaft camshaft,
