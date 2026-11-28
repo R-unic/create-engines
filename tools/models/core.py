@@ -113,6 +113,7 @@ RIVETED = "create_engines:block/rivet_plate"
 MAGMA = "create_engines:block/heat_kindled"
 LAVA = "create_engines:block/heat_seething"
 GLASS = "minecraft:block/glass"
+COIL_CAN = "create_engines:block/coil_can"
 
 
 def write_child(path, parent, textures):

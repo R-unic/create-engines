@@ -1,7 +1,7 @@
 """Precision parts, governor, tools and headphones."""
 
 from models.core import (
-    BLACK, BLUE, BRASS, BRASS_CASING, DARK, GLASS, IRON, IRON_BLOCK, QUARTZ, RED, box, write, write_item)
+    BLACK, BLUE, BRASS, BRASS_CASING, COIL_CAN, DARK, GLASS, IRON, IRON_BLOCK, QUARTZ, RED, box, write, write_item)
 from models.cylinder import glass_panels
 from models.head import assist_elements, coil_elements
 
@@ -70,12 +70,12 @@ def precision_head():
     write("precision_cylinder_head/block_injector_plug", textures, base + injector + plug)
     # The assist stands above the injector's terminal, which it swallows, so that box is left out under it
     assist = assist_elements(18.4, 10.1, 13.4, 1.7, 5.3)
-    assisted = dict(textures, assist=DARK, coil=BLUE)
+    assisted = dict(textures, assist=COIL_CAN)
     write("precision_cylinder_head/block_injector_assist", assisted, base + injector[:1] + assist)
     write("precision_cylinder_head/block_injector_assist_plug", assisted, base + injector[:1] + assist + plug)
     # The coil stands on the plug's ceramic and swallows its terminal and the one that tops the collar, so those are left out under it
     coil = coil_elements(3.5, 5.5, 11.5, 13.5, 20.5)
-    coiled = dict(textures, assist=DARK, coil=BLUE)
+    coiled = dict(textures, assist=COIL_CAN)
     write("precision_cylinder_head/block_plug_coil", coiled, base + plug[:2] + coil)
     write("precision_cylinder_head/block_injector_plug_coil", coiled, base + injector + plug[:2] + coil)
     write("precision_cylinder_head/block_injector_assist_plug_coil", coiled,
@@ -119,8 +119,7 @@ def precision_injector_item():
     write("cylinder_head/precision_injector_item",
           {"body": BRASS, "cap": DARK, "nozzle": IRON_BLOCK, "rail": QUARTZ, "particle": BRASS},
           [box((6, 0, 6), (10, 9, 10), "body"), box((5, 9, 5), (11, 12, 11), "cap"),
-           box((7, -3, 7), (9, 0, 9), "nozzle"), box((4, 10, 7), (6, 11.5, 9), "rail"),
-           box((6.5, -3.6, 6.5), (9.5, -3, 9.5), "nozzle")])
+           box((7, -3, 7), (9, 0, 9), "nozzle"), box((4, 10, 7), (6, 11.5, 9), "rail")])
 
 
 def governor():

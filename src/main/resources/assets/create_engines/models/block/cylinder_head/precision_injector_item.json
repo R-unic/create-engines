@@ -159,62 +159,6 @@
           "texture": "#rail"
         }
       }
-    },
-    {
-      "from": [
-        6.5,
-        -3.6,
-        6.5
-      ],
-      "to": [
-        9.5,
-        -3,
-        9.5
-      ],
-      "faces": {
-        "north": {
-          "texture": "#nozzle",
-          "uv": [
-            6.5,
-            3,
-            9.5,
-            3.6
-          ]
-        },
-        "south": {
-          "texture": "#nozzle",
-          "uv": [
-            6.5,
-            3,
-            9.5,
-            3.6
-          ]
-        },
-        "east": {
-          "texture": "#nozzle",
-          "uv": [
-            6.5,
-            3,
-            9.5,
-            3.6
-          ]
-        },
-        "west": {
-          "texture": "#nozzle",
-          "uv": [
-            6.5,
-            3,
-            9.5,
-            3.6
-          ]
-        },
-        "up": {
-          "texture": "#nozzle"
-        },
-        "down": {
-          "texture": "#nozzle"
-        }
-      }
     }
   ]
 }

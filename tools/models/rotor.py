@@ -3,8 +3,9 @@
 import math
 
 from models.core import (
-    AXIS, AXIS_TOP, BLUE, BRASS, CASING, COPPER_CASING, CUT_COPPER, DARK, IRON, IRON_BLOCK, QUARTZ, RED, box,
+    AXIS, AXIS_TOP, BLUE, BRASS, COIL_CAN, COPPER_CASING, CUT_COPPER, DARK, IRON, IRON_BLOCK, QUARTZ, RED, box,
     shaft, write, write_item)
+from models.head import can
 
 
 # --- rotor housing -------------------------------------------------------------------------------------------------
@@ -13,9 +14,9 @@ ROTOR_RADIUS = 4.6
 ROTOR_ECCENTRICITY = 1.5
 
 
-def rotor_rows(radius=ROTOR_RADIUS, step=0.5):
+def rotor_rows(radius=ROTOR_RADIUS, step=1.5):
     """An equilateral triangle with its apex towards -Z, centred on (8, 8), as non-overlapping rows (z0, z1, half
-    width) half a pixel deep. Its flanks bulge a little, as a Wankel rotor's do."""
+    width) a few broad steps. Its flanks bulge a little, as a Wankel rotor's do."""
     top = 8 - radius
     rows = []
     z = top
@@ -63,28 +64,24 @@ def rotor_dishes(y0, y1):
 
 
 def rotor_housing():
-    textures = {"frame": IRON, "rim": COPPER_CASING, "boss": CASING, "injector": BRASS, "ceramic": QUARTZ,
-                "terminal": IRON_BLOCK, "particle": COPPER_CASING}
+    textures = {"casing": COPPER_CASING, "injector": BRASS, "ceramic": QUARTZ, "terminal": IRON_BLOCK,
+                "particle": COPPER_CASING}
     base = []
-    # An open ring at each end of the shaft, held to the shaft's bearing by four spokes, and four posts holding the rings
+    # A thick casing plate at each end of the shaft with a square window round it, and a post at each corner holding them
     # apart: the rotor shows through every side and down the shaft. The rotor's tips never reach the posts.
-    for y0, y1 in ((0, 2), (14, 16)):
-        base += [box((0, y0, 0), (16, y1, 2), "rim"), box((0, y0, 14), (16, y1, 16), "rim"),
-                 box((0, y0, 2), (2, y1, 14), "rim"), box((14, y0, 2), (16, y1, 14), "rim"),
-                 box((5, y0, 5), (6.5, y1, 11), "boss"), box((9.5, y0, 5), (11, y1, 11), "boss"),
-                 box((6.5, y0, 5), (9.5, y1, 6.5), "boss"), box((6.5, y0, 9.5), (9.5, y1, 11), "boss"),
-                 box((7, y0, 2), (9, y1, 5), "boss"), box((7, y0, 11), (9, y1, 14), "boss"),
-                 box((2, y0, 7), (5, y1, 9), "boss"), box((11, y0, 7), (14, y1, 9), "boss")]
-    for x in (0, 13.5):
-        for z in (0, 13.5):
-            base.append(box((x, 2, z), (x + 2.5, 14, z + 2.5), "frame"))
-    injector = [box((11, 2, 16), (14, 5, 17.5), "injector")]
-    plug = [box((2.5, 2.5, 16), (5.5, 5.5, 19), "ceramic"), box((3.5, 3.5, 19), (4.5, 4.5, 20.5), "terminal"),
-            box((2, 2, 16), (6, 6, 17), "terminal")]
+    for y0, y1 in ((0, 3), (13, 16)):
+        base += [box((0, y0, 0), (16, y1, 5), "casing"), box((0, y0, 11), (16, y1, 16), "casing"),
+                 box((0, y0, 5), (5, y1, 11), "casing"), box((11, y0, 5), (16, y1, 11), "casing")]
+    for x in (0, 13):
+        for z in (0, 13):
+            base.append(box((x, 3, z), (x + 3, 13, z + 3), "casing"))
+    # The injector and plug are screwed into the edge of the lower plate
+    injector = [box((11, 0, 16), (14, 3, 17.5), "injector")]
+    plug = [box((2.5, 0.25, 16), (5.5, 2.75, 19), "ceramic"), box((3.25, 0.75, 19), (4.75, 2.25, 20.5), "terminal"),
+            box((2, 0, 16), (6, 3, 17), "terminal")]
     # The coil of a head's plug, laid along the plug (+Z): it swallows the terminal, so that box is left out under it
-    coil = [box((2.4, 2.4, 18.9), (5.6, 5.6, 21.9), "assist"), box((2.2, 2.2, 19.9), (5.8, 5.8, 20.7), "coil"),
-            box((3.5, 3.5, 21.8), (4.5, 4.5, 22.9), "terminal")]
-    coiled = dict(textures, assist=DARK, coil=BLUE)
+    coil = [can((2.3, 0.05, 18.9), (5.7, 2.95, 21.9)), box((3.25, 0.75, 21.8), (4.75, 2.25, 22.9), "terminal")]
+    coiled = dict(textures, assist=COIL_CAN)
     write("rotor_housing/block", textures, base)
     write("rotor_housing/block_injector", textures, base + injector)
     write("rotor_housing/block_plug", textures, base + plug)

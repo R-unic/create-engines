@@ -9,8 +9,7 @@
     "terminal": "create_engines:block/cast_iron",
     "bolt": "create_engines:block/steel",
     "particle": "create:block/brass_casing",
-    "assist": "create_engines:block/black_oxide",
-    "coil": "create_engines:block/enamel_blue"
+    "assist": "create_engines:block/coil_can"
   },
   "elements": [
     {
@@ -596,156 +595,56 @@
         "north": {
           "texture": "#assist",
           "uv": [
-            2.6,
-            11.5,
-            5.9,
-            13.6
+            0,
+            0,
+            3,
+            3
           ]
         },
         "south": {
           "texture": "#assist",
           "uv": [
-            10.1,
-            11.5,
-            13.4,
-            13.6
+            0,
+            0,
+            3,
+            3
           ]
         },
         "east": {
           "texture": "#assist",
           "uv": [
-            10.7,
-            11.5,
-            14.3,
-            13.6
+            0,
+            0,
+            3,
+            3
           ]
         },
         "west": {
           "texture": "#assist",
           "uv": [
-            1.7,
-            11.5,
-            5.3,
-            13.6
+            0,
+            0,
+            3,
+            3
           ]
         },
         "up": {
-          "texture": "#assist"
+          "texture": "#assist",
+          "uv": [
+            0,
+            3,
+            3,
+            6
+          ]
         },
         "down": {
-          "texture": "#assist"
-        }
-      }
-    },
-    {
-      "from": [
-        9.9,
-        19.2,
-        1.5
-      ],
-      "to": [
-        13.6,
-        19.9,
-        5.5
-      ],
-      "faces": {
-        "north": {
-          "texture": "#coil",
+          "texture": "#assist",
           "uv": [
-            2.4,
-            12.1,
-            6.1,
-            12.8
+            0,
+            3,
+            3,
+            6
           ]
-        },
-        "south": {
-          "texture": "#coil",
-          "uv": [
-            9.9,
-            12.1,
-            13.6,
-            12.8
-          ]
-        },
-        "east": {
-          "texture": "#coil",
-          "uv": [
-            10.5,
-            12.1,
-            14.5,
-            12.8
-          ]
-        },
-        "west": {
-          "texture": "#coil",
-          "uv": [
-            1.5,
-            12.1,
-            5.5,
-            12.8
-          ]
-        },
-        "up": {
-          "texture": "#coil"
-        },
-        "down": {
-          "texture": "#coil"
-        }
-      }
-    },
-    {
-      "from": [
-        13.3,
-        19.4,
-        3.1
-      ],
-      "to": [
-        14.6,
-        20.0,
-        3.9
-      ],
-      "faces": {
-        "north": {
-          "texture": "#terminal",
-          "uv": [
-            1.4,
-            12.0,
-            2.7,
-            12.6
-          ]
-        },
-        "south": {
-          "texture": "#terminal",
-          "uv": [
-            13.3,
-            12.0,
-            14.6,
-            12.6
-          ]
-        },
-        "east": {
-          "texture": "#terminal",
-          "uv": [
-            12.1,
-            12.0,
-            12.9,
-            12.6
-          ]
-        },
-        "west": {
-          "texture": "#terminal",
-          "uv": [
-            3.1,
-            12.0,
-            3.9,
-            12.6
-          ]
-        },
-        "up": {
-          "texture": "#terminal"
-        },
-        "down": {
-          "texture": "#terminal"
         }
       }
     },

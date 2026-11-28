@@ -171,6 +171,21 @@ def black_oxide():
     return rimmed(OXIDE, diagonal(3.6, 1.0, 5.2, period=14.0), outer=(2, 1, 0), inner=(-1, -2, -3, -4))
 
 
+def coil_can():
+    """A wound coil's can. The models show a three-pixel patch of it: rows 0 to 2 are the side, lit lid, blue winding and
+    shaded foot, and rows 3 to 5 the plain end."""
+    winding = (5, 4, 3)
+
+    def pixel(x, y):
+        if y == 1:
+            return pick(BLUE, winding[x % 3])
+        if y < 3:
+            return pick(OXIDE, (7 if y == 0 else 2) - 0.8 * (x % 3 == 2))
+        return pick(OXIDE, 6 - (x % 3) - (y % 3))
+
+    return [[pixel(x, y) for x in range(SIZE)] for y in range(SIZE)]
+
+
 def rivet_plate():
     """Dark plate with a ring of rivets, for the flywheel's faces and the recorder's lid."""
     spots = {(3, 3), (12, 3), (3, 12), (12, 12), (7, 2), (8, 2), (7, 13), (8, 13), (2, 7), (2, 8), (13, 7), (13, 8)}
@@ -639,7 +654,7 @@ def main():
                           ("cast_iron", cast_iron), ("black_oxide", black_oxide), ("rivet_plate", rivet_plate),
                           ("enamel_red", enamel_red), ("enamel_blue", enamel_blue),("flywheel_steel", flywheel_steel), ("flywheel_oxide", flywheel_oxide), ("flywheel_coil", flywheel_coil),
                           ("flywheel_enamel", flywheel_enamel), ("ceramic", ceramic), ("screen", screen), ("column_glow", column_glow), ("heat_wrap", heat_wrap),
-                          ("grille", grille), ("pleats", pleats), ("finned_core", finned_core)):
+                          ("grille", grille), ("pleats", pleats), ("finned_core", finned_core), ("coil_can", coil_can)):
         write_png("block/" + name, painter())
     fluid("thin_still", thin_still, 16, 32, 2, THIN_LEVELS)
     fluid("thin_flow", thin_flow, 32, 32, 2, THIN_LEVELS)

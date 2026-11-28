@@ -1761,6 +1761,10 @@ a generator gets a test that its files match the generator's output where one is
 
 The author queued it in 2.4 on 2026-11-25 and moved it to 2.5 on 2026-11-26. It touches no simulation code.
 
+**Batches approved (for Exceptions in the v2.5.0 release record).** 2026-11-27, by the author: intake and exhaust parts;
+and the rotor housing, rotor, ignition coil and injector assist, with the precision head's redraw refused (its bolts stay).
+Neither batch has been seen in game.
+
 ## 3.0 Clean Slate
 
 The one planned breaking release after 2.0. Like 2.0, it is the only place the promise may be broken, so everything lands in one

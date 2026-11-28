@@ -1,11 +1,9 @@
 {
   "parent": "block/block",
   "textures": {
-    "assist": "create_engines:block/black_oxide",
-    "coil": "create_engines:block/enamel_blue",
-    "terminal": "create_engines:block/cast_iron",
+    "assist": "create_engines:block/coil_can",
     "nozzle": "create_engines:block/steel",
-    "particle": "create_engines:block/black_oxide"
+    "particle": "create_engines:block/coil_can"
   },
   "elements": [
     {
@@ -21,86 +19,58 @@
       ],
       "faces": {
         "north": {
-          "texture": "#assist"
+          "texture": "#assist",
+          "uv": [
+            0,
+            0,
+            3,
+            3
+          ]
         },
         "south": {
-          "texture": "#assist"
+          "texture": "#assist",
+          "uv": [
+            0,
+            0,
+            3,
+            3
+          ]
         },
         "east": {
-          "texture": "#assist"
+          "texture": "#assist",
+          "uv": [
+            0,
+            0,
+            3,
+            3
+          ]
         },
         "west": {
-          "texture": "#assist"
+          "texture": "#assist",
+          "uv": [
+            0,
+            0,
+            3,
+            3
+          ]
         },
         "up": {
-          "texture": "#assist"
+          "texture": "#assist",
+          "uv": [
+            0,
+            3,
+            3,
+            6
+          ]
         },
         "down": {
-          "texture": "#assist"
-        }
-      }
-    },
-    {
-      "from": [
-        5.3,
-        2,
-        5.3
-      ],
-      "to": [
-        10.7,
-        3.4,
-        10.7
-      ],
-      "faces": {
-        "north": {
-          "texture": "#coil"
-        },
-        "south": {
-          "texture": "#coil"
-        },
-        "east": {
-          "texture": "#coil"
-        },
-        "west": {
-          "texture": "#coil"
-        },
-        "up": {
-          "texture": "#coil"
-        },
-        "down": {
-          "texture": "#coil"
-        }
-      }
-    },
-    {
-      "from": [
-        10.4,
-        2.2,
-        7.6
-      ],
-      "to": [
-        12.4,
-        3.2,
-        8.4
-      ],
-      "faces": {
-        "north": {
-          "texture": "#terminal"
-        },
-        "south": {
-          "texture": "#terminal"
-        },
-        "east": {
-          "texture": "#terminal"
-        },
-        "west": {
-          "texture": "#terminal"
-        },
-        "up": {
-          "texture": "#terminal"
-        },
-        "down": {
-          "texture": "#terminal"
+          "texture": "#assist",
+          "uv": [
+            0,
+            3,
+            3,
+            6
+          ]
         }
       }
     },
