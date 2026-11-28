@@ -158,7 +158,8 @@ and valves yourself, pipe in air and fuel, and the engine you built fires in ord
 Create caps rotation at 256 RPM by default, and engines hit that ceiling. Raise it: in
 `serverconfig/create-server.toml` under `[kinetics]`, set `maxRotationSpeed` to 512 (higher works too). The engine
 simulation is built to stay cheap at speed, and its torque rating follows the limit you set. For faster shafts without
-stronger engines, the `rpmScale` server setting turns every engine's shaft faster for the same SU.
+stronger engines, the `rpmScale` server setting turns every engine's shaft faster for the same SU. Pumps and other
+machines on that shaft turn faster too and take more SU, so gear them down or power them separately.
 
 ## 📦 For modpack makers
 

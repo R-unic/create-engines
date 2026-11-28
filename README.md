@@ -230,7 +230,8 @@ Create caps rotation at 256 RPM by default, and engines hit that ceiling. We rec
 limit you set. Everything else on the kinetic network still obeys Create's own rules.
 
 For faster shafts without stronger engines, set `balance.rpmScale` ([docs/CONFIG.md](docs/CONFIG.md)): at 2, with Create's
-limit at 512, an engine that gave its SU at 256 RPM gives the same SU at 512.
+limit at 512, an engine that gave its SU at 256 RPM gives the same SU at 512. Other machines on its shaft turn faster too
+and take more SU, so a build can overstress where it did not at 1.
 
 ## Building
 

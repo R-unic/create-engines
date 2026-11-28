@@ -143,6 +143,12 @@ the generated tables.
   engine (goggles, Dynamometer, governor, Black Box, Display Link, sound) uses shaft speed; advancements judge the engine's own.
   A Starter's input, and a supercharger driven by a separate shaft, act on the engine as at 1; a motor, supercharger or the
   engine's own alternator on the engine's shaft is geared with it, so an alternator takes and makes what it does at 1.
+- **A known quirk of `rpmScale`: machines on the shaft cost more.** A faster shaft carries the same total SU, but whatever it
+  drives turns that many times as fast, and Create charges a machine's stress by its speed. At 8, a Mechanical Pump on an
+  engine's shaft turns 8 times as fast and takes 8 times the SU, so a build that ran at 1 can overstress, a small engine
+  first. The goggles on whatever else shares the shaft may make it look like the culprit. Only the engine's own alternators
+  and superchargers are allowed for. Gear other machines down by the same factor, power them separately, or lower the
+  scale. This is intended, as behind any gearing in Create.
 
 ## Presets
 
