@@ -114,6 +114,8 @@ MAGMA = "create_engines:block/heat_kindled"
 LAVA = "create_engines:block/heat_seething"
 GLASS = "minecraft:block/glass"
 COIL_CAN = "create_engines:block/coil_can"
+DOME = "create_engines:block/piston_dome"
+DISH = "create_engines:block/piston_dish"
 
 
 def write_child(path, parent, textures):

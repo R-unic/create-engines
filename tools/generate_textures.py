@@ -219,6 +219,28 @@ def enamel_blue():
     return rimmed(BLUE, inside, outer=(1, 0, 0), inner=(-2, -3, -4, -5))
 
 
+def piston_crown(shades):
+    """A piston crown seen from above, laid on the models by position: square turnings about the centre, one shade to a
+    pixel of distance from it, lit a little from the top left. shades runs from the centre out."""
+
+    def pixel(x, y):
+        ring = int(max(abs(x - 7.5), abs(y - 7.5)))
+        light = 0.8 if x + y < 15 else -0.4
+        return pick(STEEL, shades[ring] + light + 0.5 * (hashed(x // 2, y // 2, 31) - 0.5))
+
+    return [[pixel(x, y) for x in range(SIZE)] for y in range(SIZE)]
+
+
+def piston_dome():
+    """Bright at the crest, darkening down the shoulders."""
+    return piston_crown((12.0, 11.0, 9.5, 6.0, 8.5, 5.0, 4.0, 3.0))
+
+
+def piston_dish():
+    """Dark under the walls, a soft shine in the bottom of the bowl."""
+    return piston_crown((7.0, 6.0, 3.5, 1.5, 1.0, 1.0, 1.0, 1.0))
+
+
 def flywheel_steel():
     """Machined steel for the flywheel's rims, flange and hub. It tiles both ways (no frame), and is laid along the length of a
     bar: a bright lit edge, a fine turned groove, a broad flat, and a shaded lower edge, with a little repeating grain."""
@@ -652,7 +674,7 @@ def main():
         write_png("particle/glow_%d" % index, glow(17 + 11 * index))
     for name, painter in (("brass", brass), ("copper", copper), ("copper_panel", copper_panel), ("steel", steel),
                           ("cast_iron", cast_iron), ("black_oxide", black_oxide), ("rivet_plate", rivet_plate),
-                          ("enamel_red", enamel_red), ("enamel_blue", enamel_blue),("flywheel_steel", flywheel_steel), ("flywheel_oxide", flywheel_oxide), ("flywheel_coil", flywheel_coil),
+                          ("enamel_red", enamel_red), ("enamel_blue", enamel_blue), ("piston_dome", piston_dome), ("piston_dish", piston_dish),("flywheel_steel", flywheel_steel), ("flywheel_oxide", flywheel_oxide), ("flywheel_coil", flywheel_coil),
                           ("flywheel_enamel", flywheel_enamel), ("ceramic", ceramic), ("screen", screen), ("column_glow", column_glow), ("heat_wrap", heat_wrap),
                           ("grille", grille), ("pleats", pleats), ("finned_core", finned_core), ("coil_can", coil_can)):
         write_png("block/" + name, painter())

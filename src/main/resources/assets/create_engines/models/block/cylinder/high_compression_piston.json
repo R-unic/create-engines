@@ -2,12 +2,10 @@
   "parent": "block/block",
   "textures": {
     "piston": "create_engines:block/black_oxide",
-    "ring": "create_engines:block/brass",
     "pin": "create_engines:block/steel",
-    "high": "create_engines:block/enamel_red",
-    "low": "create_engines:block/enamel_blue",
-    "rim": "create_engines:block/steel",
-    "particle": "create_engines:block/black_oxide"
+    "particle": "create_engines:block/black_oxide",
+    "ring": "create_engines:block/enamel_red",
+    "dome": "create_engines:block/piston_dome"
   },
   "elements": [
     {
@@ -156,33 +154,65 @@
     },
     {
       "from": [
-        4.5,
+        3.5,
         5,
-        4.5
+        3.5
       ],
       "to": [
-        11.5,
-        7,
-        11.5
+        12.5,
+        6,
+        12.5
       ],
       "faces": {
         "north": {
-          "texture": "#high"
+          "texture": "#dome"
         },
         "south": {
-          "texture": "#high"
+          "texture": "#dome"
         },
         "east": {
-          "texture": "#high"
+          "texture": "#dome"
         },
         "west": {
-          "texture": "#high"
+          "texture": "#dome"
         },
         "up": {
-          "texture": "#high"
+          "texture": "#dome"
         },
         "down": {
-          "texture": "#high"
+          "texture": "#dome"
+        }
+      }
+    },
+    {
+      "from": [
+        5,
+        6,
+        5
+      ],
+      "to": [
+        11,
+        7,
+        11
+      ],
+      "faces": {
+        "north": {
+          "texture": "#dome"
+        },
+        "south": {
+          "texture": "#dome"
+        },
+        "east": {
+          "texture": "#dome"
+        },
+        "west": {
+          "texture": "#dome"
+        },
+        "up": {
+          "texture": "#dome"
+        },
+        "down": {
+          "texture": "#dome"
         }
       }
     }

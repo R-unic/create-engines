@@ -1,7 +1,7 @@
 """Precision parts, governor, tools and headphones."""
 
 from models.core import (
-    BLACK, BLUE, BRASS, BRASS_CASING, COIL_CAN, DARK, GLASS, IRON, IRON_BLOCK, QUARTZ, RED, box, write, write_item)
+    BLACK, BLUE, BRASS, BRASS_CASING, COIL_CAN, DARK, DISH, DOME, GLASS, IRON, IRON_BLOCK, QUARTZ, RED, box, write, write_item)
 from models.cylinder import glass_panels
 from models.head import assist_elements, coil_elements
 
@@ -91,19 +91,20 @@ def forged_piston():
 
 
 def compression_pistons():
-    """The high and low compression pistons: a forged piston's dark skirt, band and pin under two crowns that cannot be taken
-    for each other. The high one stands a red dome on its top; the low one is dished, a steel rim round a blue floor. Neither
-    reaches more than a pixel past the forged piston's crown, which is under the head."""
-    textures = {"piston": DARK, "ring": BRASS, "pin": IRON_BLOCK, "high": RED, "low": BLUE, "rim": IRON_BLOCK,
-                "particle": DARK}
+    """The high and low compression pistons: a forged piston's dark skirt and pin, one band in the variant's colour, and a
+    crown that gives the shape away: the high one domed in two broad steps, the low one a deep dish inside a lipped rim.
+    Neither reaches more than a pixel past the forged piston's crown, which is under the head."""
+    textures = {"piston": DARK, "pin": IRON_BLOCK, "particle": DARK}
     pin = box((6.5, -1, 2.6), (9.5, 2, 13.4), "pin")
-    write("cylinder/high_compression_piston", textures,
+    write("cylinder/high_compression_piston", dict(textures, ring=RED, dome=DOME),
           [box((3, -2, 3), (13, 5, 13), "piston"), box((2.9, 3.2, 2.9), (13.1, 3.8, 13.1), "ring"), pin,
-           box((4.5, 5, 4.5), (11.5, 7, 11.5), "high")])
-    write("cylinder/low_compression_piston", textures,
-          [box((3, -2, 3), (13, 4, 13), "piston", up="low"), box((2.9, 2.6, 2.9), (13.1, 3.2, 13.1), "ring"), pin,
-           box((3, 4, 3), (13, 6, 5), "rim"), box((3, 4, 11), (13, 6, 13), "rim"),
-           box((3, 4, 5), (5, 6, 11), "rim"), box((11, 4, 5), (13, 6, 11), "rim")])
+           box((3.5, 5, 3.5), (12.5, 6, 12.5), "dome"), box((5, 6, 5), (11, 7, 11), "dome")])
+    # The rim's walls are the skirt's own metal under a machined top face, so the dish reads as hollowed out of the piston
+    walls = (((3, 4, 3), (13, 6, 4.5)), ((3, 4, 11.5), (13, 6, 13)),
+             ((3, 4, 4.5), (4.5, 6, 11.5)), ((11.5, 4, 4.5), (13, 6, 11.5)))
+    write("cylinder/low_compression_piston", dict(textures, ring=BLUE, dish=DISH, rim=IRON_BLOCK),
+          [box((3, -2, 3), (13, 4, 13), "piston", up="dish"), box((2.9, 2.6, 2.9), (13.1, 3.2, 13.1), "ring"), pin]
+          + [box(a, b, "piston", up="rim") for a, b in walls])
 
 
 def piston_rings():

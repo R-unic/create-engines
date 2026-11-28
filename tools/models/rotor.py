@@ -48,19 +48,30 @@ def rotor_elements(y0=5.0, y1=11.0):
 ROTOR_TEXTURES = {"rotor": IRON_BLOCK, "face": CUT_COPPER, "seal": BRASS, "hub": DARK, "particle": IRON_BLOCK}
 
 
-def rotor_crowns(y0, y1):
-    """The high compression rotor's mark, on both end faces: the red raised block of the high compression piston."""
-    return [box((5.75, y1, 5.75), (10.25, y1 + 0.9, 10.25), "high"), box((5.75, y0 - 0.9, 5.75), (10.25, y0, 10.25), "high")]
+def rotor_band(y0, y1, proud, tex):
+    """A band round the rotor's flanks, standing proud of them, one box to a row. Each box also stands proud of the step
+    it faces, so no face lies in the plane of the slab's."""
+    rows = rotor_rows()
+    starts = [z0 - proud for z0, _, _ in rows] + [rows[-1][1] + proud]
+    return [box((8 - half - proud, y0, starts[i]), (8 + half + proud, y1, starts[i + 1]), tex)
+            for i, (_, _, half) in enumerate(rows)]
 
 
-def rotor_dishes(y0, y1):
-    """The low compression rotor's mark, on both end faces: the low compression piston's steel rim round a blue floor."""
-    elements = []
-    for floor0, floor1, rim0, rim1 in ((y1, y1 + 0.25, y1, y1 + 0.9), (y0 - 0.25, y0, y0 - 0.9, y0)):
-        elements.append(box((6.5, floor0, 6.5), (9.5, floor1, 9.5), "low"))
-        elements += [box((5.5, rim0, 5.5), (10.5, rim1, 6.5), "rotor"), box((5.5, rim0, 9.5), (10.5, rim1, 10.5), "rotor"),
-                     box((5.5, rim0, 6.5), (6.5, rim1, 9.5), "rotor"), box((9.5, rim0, 6.5), (10.5, rim1, 9.5), "rotor")]
-    return elements
+def rotor_domes(thickness):
+    """The high compression rotor's mark, matching the high compression piston: flanks built out in steel, a red band
+    round the middle."""
+    return (rotor_band(8 - thickness * 0.3, 8 - 0.5, 0.35, "crown")
+            + rotor_band(8 - 0.5, 8 + 0.5, 0.5, "high")
+            + rotor_band(8 + 0.5, 8 + thickness * 0.3, 0.35, "crown"))
+
+
+def rotor_dishes(thickness):
+    """The low compression rotor's mark, matching the low compression piston: a blue channel round the flanks between
+    two steel lips."""
+    lip = thickness * 0.3
+    return (rotor_band(8 - lip, 8 - lip + 0.7, 0.4, "crown")
+            + rotor_band(8 - lip + 0.7, 8 + lip - 0.7, 0.1, "low")
+            + rotor_band(8 + lip - 0.7, 8 + lip, 0.4, "crown"))
 
 
 def rotor_housing():
@@ -102,8 +113,8 @@ def rotor_housing():
            box((6, 5.05, 8 + e - 2), (10, 10.95, 8 + e + 2), "journal")])
     write("rotor_housing/rotor", ROTOR_TEXTURES, rotor_elements())
     write("rotor_housing/rotor_item", ROTOR_TEXTURES, rotor_elements(6.0, 10.0))
-    textures = dict(ROTOR_TEXTURES, high=RED, low=BLUE)
+    textures = dict(ROTOR_TEXTURES, crown=IRON_BLOCK)
     for suffix, y0, y1 in (("", 5.0, 11.0), ("_item", 6.0, 10.0)):
         stock = rotor_elements(y0, y1)
-        write("rotor_housing/high_compression_rotor" + suffix, textures, stock + rotor_crowns(y0, y1))
-        write("rotor_housing/low_compression_rotor" + suffix, textures, stock + rotor_dishes(y0, y1))
+        write("rotor_housing/high_compression_rotor" + suffix, dict(textures, high=RED), stock + rotor_domes(y1 - y0))
+        write("rotor_housing/low_compression_rotor" + suffix, dict(textures, low=BLUE), stock + rotor_dishes(y1 - y0))

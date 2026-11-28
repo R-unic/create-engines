@@ -2,12 +2,11 @@
   "parent": "block/block",
   "textures": {
     "piston": "create_engines:block/black_oxide",
-    "ring": "create_engines:block/brass",
     "pin": "create_engines:block/steel",
-    "high": "create_engines:block/enamel_red",
-    "low": "create_engines:block/enamel_blue",
-    "rim": "create_engines:block/steel",
-    "particle": "create_engines:block/black_oxide"
+    "particle": "create_engines:block/black_oxide",
+    "ring": "create_engines:block/enamel_blue",
+    "dish": "create_engines:block/piston_dish",
+    "rim": "create_engines:block/steel"
   },
   "elements": [
     {
@@ -59,7 +58,7 @@
           ]
         },
         "up": {
-          "texture": "#low"
+          "texture": "#dish"
         },
         "down": {
           "texture": "#piston"
@@ -163,26 +162,26 @@
       "to": [
         13,
         6,
-        5
+        4.5
       ],
       "faces": {
         "north": {
-          "texture": "#rim"
+          "texture": "#piston"
         },
         "south": {
-          "texture": "#rim"
+          "texture": "#piston"
         },
         "east": {
-          "texture": "#rim"
+          "texture": "#piston"
         },
         "west": {
-          "texture": "#rim"
+          "texture": "#piston"
         },
         "up": {
           "texture": "#rim"
         },
         "down": {
-          "texture": "#rim"
+          "texture": "#piston"
         }
       }
     },
@@ -190,7 +189,7 @@
       "from": [
         3,
         4,
-        11
+        11.5
       ],
       "to": [
         13,
@@ -199,22 +198,22 @@
       ],
       "faces": {
         "north": {
-          "texture": "#rim"
+          "texture": "#piston"
         },
         "south": {
-          "texture": "#rim"
+          "texture": "#piston"
         },
         "east": {
-          "texture": "#rim"
+          "texture": "#piston"
         },
         "west": {
-          "texture": "#rim"
+          "texture": "#piston"
         },
         "up": {
           "texture": "#rim"
         },
         "down": {
-          "texture": "#rim"
+          "texture": "#piston"
         }
       }
     },
@@ -222,63 +221,63 @@
       "from": [
         3,
         4,
-        5
+        4.5
       ],
       "to": [
-        5,
+        4.5,
         6,
-        11
+        11.5
       ],
       "faces": {
         "north": {
-          "texture": "#rim"
+          "texture": "#piston"
         },
         "south": {
-          "texture": "#rim"
+          "texture": "#piston"
         },
         "east": {
-          "texture": "#rim"
+          "texture": "#piston"
         },
         "west": {
-          "texture": "#rim"
+          "texture": "#piston"
         },
         "up": {
           "texture": "#rim"
         },
         "down": {
-          "texture": "#rim"
+          "texture": "#piston"
         }
       }
     },
     {
       "from": [
-        11,
+        11.5,
         4,
-        5
+        4.5
       ],
       "to": [
         13,
         6,
-        11
+        11.5
       ],
       "faces": {
         "north": {
-          "texture": "#rim"
+          "texture": "#piston"
         },
         "south": {
-          "texture": "#rim"
+          "texture": "#piston"
         },
         "east": {
-          "texture": "#rim"
+          "texture": "#piston"
         },
         "west": {
-          "texture": "#rim"
+          "texture": "#piston"
         },
         "up": {
           "texture": "#rim"
         },
         "down": {
-          "texture": "#rim"
+          "texture": "#piston"
         }
       }
     }
