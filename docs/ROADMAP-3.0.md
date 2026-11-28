@@ -1252,9 +1252,10 @@ NeoForge not read). An oil chain with its own diesel and gasoline engines and a 
   ours into its engines. Check the log and recipes with both loaded (its basins make gasoline and lubricant; ours make fuels too),
   JEI or EMI, and that its fuel tags reach flowing fluids. Its sulfuric acid is in `minecraft:lava`; check what a spill beside fuel
   does. Then the listing, README and COMPAT.md lines.
-- **Status (2026-11-27):** the test row is built and **red** on errors Petrochem's own jar logs, with every test passing
-  ([COMPAT.md](COMPAT.md) has what ran). It needs NeoForge 21.1.230. The world pass and the three questions below are open, and the
-  listing and README claim nothing yet.
+- **Status (2026-11-27):** the test row is built and green ([COMPAT.md](COMPAT.md) has what ran). It needs NeoForge 21.1.230.
+  The author approved ignoring, in that row only, the errors from the 16 recipes Petrochem's jar cannot load; the 2.5.0 release
+  record lists it under Exceptions. The world pass and the three questions below are open, and the listing and README claim
+  nothing yet.
 - **Open for the author:** (a) should `petrochem:lubricant` oil an engine? Today only engine oil (full) and poor lubricants (0.6)
   do. Recommended: yes, through a new full-strength lubricant tag, additive, with its own test. (b) Should the refining column
   take `c:diesel` as feed, so its diesel can be made into our kerosene or gasoline? Recommended: no for now. The column takes only

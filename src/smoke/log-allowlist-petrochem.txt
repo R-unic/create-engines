@@ -1,0 +1,13 @@
+# Only in the Petrochem GameTest row, added to log-allowlist.txt there and nowhere else (approved by the author, 2026-11-27).
+# The Petrochem 1.3.3 jar ships 16 leftover test and example recipes under data/gearbox/recipe, a namespace no mod provides, so
+# the game cannot load them. They are not Petrochem's own recipes (those are under data/petrochem) and nothing of this mod is
+# involved. Delete this file when the row moves to a Petrochem release without them.
+
+# The ERROR line for each, named one by one, so any other recipe that fails to load still fails the row.
+Parsing error loading recipe gearbox:(centrifuging/test|centrifuging/test2|compressing/obsidian|compressing/test|compressing/test2|distilling/test|electrolyzing/test|irradiating/test01|laser_drilling/test|mechanizing/test|pumpjack/test|pyroprocessing/test|reacting/test|sapping/test|sequenced_assembly/test_assembly|transmuting/test01)$
+
+# The exception printed under each: its serializer is one of the missing gearbox ones.
+^com\.google\.gson\.JsonParseException: Unknown registry key in ResourceKey\[minecraft:root / minecraft:recipe_serializer\]: gearbox:[a-z_]+$
+
+# The one under gearbox:sequenced_assembly/test_assembly, which words the same cause differently.
+^com\.google\.gson\.JsonParseException: Failed to parse either\. First: No key id in MapLike\[\{"item":"create:track"\}\];.*minecraft:recipe_serializer\]: gearbox:mechanizing;

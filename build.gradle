@@ -754,13 +754,20 @@ tasks.matching { it.name == 'runGameTestServerTfmg' }.configureEach {
 // run it with -Pneo_version=21.1.230; it is not part of compatMatrix or the gate for that reason (docs/COMPAT.md)
 def petrochemMods = configurations.getByName('petrochemRuntime').incoming.files
 def petrochemDir = file('run/gametest-petrochem')
+// This row alone also ignores the leftover recipes Petrochem's jar cannot load: the shared list and its own, joined
+def petrochemAllowParts = [smokeAllowlist, file('src/smoke/log-allowlist-petrochem.txt')]
+def petrochemAllowlist = layout.buildDirectory.file('petrochem-log-allowlist.txt').get().asFile
 tasks.register('verifyGameTestsPetrochem', JavaExec) {
     group = 'verification'
     description = 'Fails unless the last runGameTestServerPetrochem passed every test and logged no errors.'
     classpath = verifyOutput
     mainClass = 'com.createengines.smoke.SmokeVerify'
-    args '--run', 'gametest', '--gametest', '--log', new File(petrochemDir, 'logs/latest.log').path, '--allow', smokeAllowlist.path
+    args '--run', 'gametest', '--gametest', '--log', new File(petrochemDir, 'logs/latest.log').path, '--allow', petrochemAllowlist.path
     dependsOn 'classes'
+    doFirst {
+        petrochemAllowlist.parentFile.mkdirs()
+        petrochemAllowlist.text = petrochemAllowParts.collect { it.getText('UTF-8') }.join(System.lineSeparator())
+    }
 }
 tasks.matching { it.name == 'runGameTestServerPetrochem' }.configureEach {
     timeout = java.time.Duration.ofMinutes(20)
