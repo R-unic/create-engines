@@ -1061,7 +1061,7 @@ Variable-Drive Supercharger = Variable-Geometry Turbocharger.**
   `tools/derive_cog_casing.py`; they drop the shaft or cog when broken, as Create's do), and it covers cylinders and plain
   intake and exhaust manifolds (not throttles or sensors) with the same `encased` state as the shaft parts: a clad cylinder
   or pipe is a plain casing cube, closed to the piston and rod, and keeps its block entity and connections. Create's
-  cogwheel block entities stay Create's, so they look at neighbouring cogs while ticking and `StressGameTests` skips them in
+  cogwheel block entities stay Create's, so they look at neighbouring cogs while ticking and `StressWorldGameTests` skips them in
   the unloaded-chunk test. It **covers shaft parts**: use one on a crankshaft, crank throw, camshaft or cam lobe and the part gets an
   `encased` block state (`content.Encasing`). A cased part is the same block with the same block entity, so the engine
   scan, sim and visuals are untouched; only its render shape flips from the animated renderer to the block model

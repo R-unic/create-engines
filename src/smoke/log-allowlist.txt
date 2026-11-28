@@ -9,7 +9,7 @@
 Failed to load properties from file: server\.properties
 
 # NeoForge's own FluidStack loader logs this ERROR when a saved fluid amount is negative and then loads an empty fluid. The GameTest
-# churn (StressGameTests, seeds 1 to 6) reloads block entities from deliberately mangled saves, and its mutation mode 2 turns every
+# churn (StressWorldGameTests, seeds 1 to 6) reloads block entities from deliberately mangled saves, and its mutation mode 2 turns every
 # saved integer into -abs(n) - 1, so a tank that held 522 mB reloads as -523. Whether a given run writes one depends on the seeded
 # random picks, which move whenever a block is added to the mod (found when methanol was added, 2026-11-21; kerosene did not hit it).
 # Harmless: the line is NeoForge's response to the corrupt save, and the engine carries on with an empty tank (the test checks that).

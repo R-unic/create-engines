@@ -176,7 +176,7 @@ now use their own folders (`run/gametest`, `run/smoke-client`), so they start fr
 a log or config with a development client. The client audit opens a real window for about two minutes.
 
 **A copy that is reused must have its test world cleared.** `robocopy /MIR /XD run ...` leaves `run/` alone, and the GameTest world in
-`run/gametest/world` keeps its entities between runs. The stress tests (`StressGameTests`) drop hundreds of thousands of items in the
+`run/gametest/world` keeps its entities between runs. The stress tests (`StressWorldGameTests` and its siblings) drop hundreds of thousands of items in the
 chunks they use (a casing for every state of every clad block, a piston and rod for every state of a cylinder), so a second run in the same
 copy loads the first run's pile, and a third the two before it: the heap climbs to the JVM's limit mid-run, the log gets an
 `OutOfMemoryError` from `entity-deserializer` and "Saving oversized chunk" warnings, `verifyGameTests` fails on it, and the server then hangs
