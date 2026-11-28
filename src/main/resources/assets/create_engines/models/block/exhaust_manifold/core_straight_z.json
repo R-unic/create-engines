@@ -41,38 +41,6 @@
           "texture": "#pipe"
         }
       }
-    },
-    {
-      "from": [
-        4.5,
-        4.5,
-        7
-      ],
-      "to": [
-        11.5,
-        11.5,
-        9
-      ],
-      "faces": {
-        "north": {
-          "texture": "#bead"
-        },
-        "south": {
-          "texture": "#bead"
-        },
-        "east": {
-          "texture": "#bead"
-        },
-        "west": {
-          "texture": "#bead"
-        },
-        "up": {
-          "texture": "#bead"
-        },
-        "down": {
-          "texture": "#bead"
-        }
-      }
     }
   ]
 }

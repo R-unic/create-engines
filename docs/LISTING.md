@@ -262,6 +262,9 @@ Not released yet.
   it cannot be crafted and is not in the creative tab, and a placed one is a plain length of intake pipe.
 - Packs can retune the two compression factors with `part_effects/high_compression.json` and `low_compression.json`.
 - The server's `precisionBonus` setting scales the new compression parts as it does the precision ones.
+- Looks, **intake and exhaust parts redrawn** to be simpler and closer to Create: manifolds, throttle, MAF sensor, heat exchanger,
+  air intake (with a thicker neck, and an outline to match), intercooler, air filter, exhaust outlet, muffler and soot trap.
+  Nothing about how they work or connect changes. Resource packs that retexture them will show differences.
 - Sound, **backfires and spits** retuned: they start softer, no longer clip and have much less hiss. A backfire is a deeper bang with
   burning gas behind it, sometimes with one or two smaller ones after; a spit is one soft breath. Where the engine's own note plays
   them, their flame and sparks now wait until the bang is heard instead of showing up to a quarter of a second early.

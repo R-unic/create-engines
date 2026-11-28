@@ -1,49 +1,17 @@
 {
   "parent": "block/block",
   "textures": {
-    "pipe": "create_engines:block/copper_panel",
+    "pipe": "create_engines:block/copper",
     "bead": "create_engines:block/copper",
     "flange": "create_engines:block/copper",
     "gasket": "create_engines:block/black_oxide",
     "body": "create_engines:block/brass",
     "dark": "create_engines:block/black_oxide",
-    "plug": "create_engines:block/steel",
+    "plug": "create_engines:block/enamel_red",
     "bolt": "create_engines:block/brass",
     "particle": "create_engines:block/brass"
   },
   "elements": [
-    {
-      "from": [
-        5,
-        5,
-        5
-      ],
-      "to": [
-        11,
-        11,
-        11
-      ],
-      "faces": {
-        "north": {
-          "texture": "#pipe"
-        },
-        "south": {
-          "texture": "#pipe"
-        },
-        "east": {
-          "texture": "#pipe"
-        },
-        "west": {
-          "texture": "#pipe"
-        },
-        "up": {
-          "texture": "#pipe"
-        },
-        "down": {
-          "texture": "#pipe"
-        }
-      }
-    },
     {
       "from": [
         4,
@@ -78,70 +46,6 @@
     },
     {
       "from": [
-        3.5,
-        5.5,
-        5.5
-      ],
-      "to": [
-        12.5,
-        10.5,
-        10.5
-      ],
-      "faces": {
-        "north": {
-          "texture": "#bead"
-        },
-        "south": {
-          "texture": "#bead"
-        },
-        "east": {
-          "texture": "#bead"
-        },
-        "west": {
-          "texture": "#bead"
-        },
-        "up": {
-          "texture": "#bead"
-        },
-        "down": {
-          "texture": "#bead"
-        }
-      }
-    },
-    {
-      "from": [
-        5.5,
-        5.5,
-        3.5
-      ],
-      "to": [
-        10.5,
-        10.5,
-        12.5
-      ],
-      "faces": {
-        "north": {
-          "texture": "#bead"
-        },
-        "south": {
-          "texture": "#bead"
-        },
-        "east": {
-          "texture": "#bead"
-        },
-        "west": {
-          "texture": "#bead"
-        },
-        "up": {
-          "texture": "#bead"
-        },
-        "down": {
-          "texture": "#bead"
-        }
-      }
-    },
-    {
-      "from": [
         5,
         12,
         5
@@ -174,44 +78,12 @@
     },
     {
       "from": [
-        5.5,
+        6,
         14,
-        5.5
+        8
       ],
       "to": [
-        10.5,
-        15,
-        10.5
-      ],
-      "faces": {
-        "north": {
-          "texture": "#body"
-        },
-        "south": {
-          "texture": "#body"
-        },
-        "east": {
-          "texture": "#body"
-        },
-        "west": {
-          "texture": "#body"
-        },
-        "up": {
-          "texture": "#body"
-        },
-        "down": {
-          "texture": "#body"
-        }
-      }
-    },
-    {
-      "from": [
-        6.5,
-        14.5,
-        10.5
-      ],
-      "to": [
-        9.5,
+        10,
         16,
         12.5
       ],
@@ -233,70 +105,6 @@
         },
         "down": {
           "texture": "#plug"
-        }
-      }
-    },
-    {
-      "from": [
-        4.5,
-        12.5,
-        7
-      ],
-      "to": [
-        5,
-        13.5,
-        9
-      ],
-      "faces": {
-        "north": {
-          "texture": "#bolt"
-        },
-        "south": {
-          "texture": "#bolt"
-        },
-        "east": {
-          "texture": "#bolt"
-        },
-        "west": {
-          "texture": "#bolt"
-        },
-        "up": {
-          "texture": "#bolt"
-        },
-        "down": {
-          "texture": "#bolt"
-        }
-      }
-    },
-    {
-      "from": [
-        11,
-        12.5,
-        7
-      ],
-      "to": [
-        11.5,
-        13.5,
-        9
-      ],
-      "faces": {
-        "north": {
-          "texture": "#bolt"
-        },
-        "south": {
-          "texture": "#bolt"
-        },
-        "east": {
-          "texture": "#bolt"
-        },
-        "west": {
-          "texture": "#bolt"
-        },
-        "up": {
-          "texture": "#bolt"
-        },
-        "down": {
-          "texture": "#bolt"
         }
       }
     }

@@ -283,15 +283,11 @@ def column_glow():
 
 
 def heat_wrap():
-    """Fibreglass exhaust wrap: broad overlapping turns running across the tile, each dark along one edge."""
-    rows = []
-    for y in range(SIZE):
-        row = []
-        for x in range(SIZE):
-            turn = (y + x // 5) % 4
-            row.append(pick(WRAP, 5.5 + (1.2 if turn == 0 else -2.0 if turn == 3 else 0.0) + (hashed(x // 2, y, 9) - 0.5)))
-        rows.append(row)
-    return rows
+    """Fibreglass exhaust wrap: broad turns running across the tile, each lit along the top and dark where the next one
+    laps over it."""
+    turn = (7.0, 6.0, 5.0, 5.0, 2.5)
+    return [[pick(WRAP, turn[(y + x // 8) % 5] + (0.4 if (x // 4 + y // 5) % 3 == 0 else 0.0)) for x in range(SIZE)]
+            for y in range(SIZE)]
 
 
 def grille():
@@ -302,6 +298,34 @@ def grille():
             for x in range(2, 14):
                 rows[y][x] = (0, 0, 0, 0)
     return rows
+
+
+def pleats():
+    """A paper filter element: upright folds of slightly different widths and shades, as pressed paper sits, in shadow
+    under the end plates (it is seen on columns 3 to 12 and rows 2 to 13)."""
+    folds = (5.5, 6.5, 3.0, 5.0, 6.0, 4.5, 1.5, 6.0, 7.0, 5.0, 2.5, 5.5, 6.5, 3.5, 5.0, 4.0)
+
+    def pixel(x, y):
+        shade = -2.0 if y <= 2 else -1.0 if y == 3 else -1.0 if y >= 13 else 0.0
+        return folds[x] + shade + (0.5 if (y + 3 * x) % 11 < 3 else 0.0)
+
+    return [[pick(CERAMIC, pixel(x, y)) for x in range(SIZE)] for y in range(SIZE)]
+
+
+def finned_core():
+    """A radiator core: level fins held between two side rails, each fin catching the light towards the left and the
+    gaps darkest under the top tank (it is seen on columns 3 to 12 and rows 3 to 12)."""
+
+    def pixel(x, y):
+        if x in (3, 12):
+            return 8.0 if x == 3 else 4.0
+        if y % 3 == 0:
+            return 10.5 - max(0, x - 6) * 0.45 + (0.6 if (x + y) % 7 < 2 else 0.0)
+        if y % 3 == 1:
+            return 6.0 - max(0, x - 8) * 0.4
+        return 0.0 if y < 6 else 1.5
+
+    return [[pick(STEEL, pixel(x, y)) for x in range(SIZE)] for y in range(SIZE)]
 
 
 def periodic_noise(x, y, period_x, period_y, seed):
@@ -615,7 +639,7 @@ def main():
                           ("cast_iron", cast_iron), ("black_oxide", black_oxide), ("rivet_plate", rivet_plate),
                           ("enamel_red", enamel_red), ("enamel_blue", enamel_blue),("flywheel_steel", flywheel_steel), ("flywheel_oxide", flywheel_oxide), ("flywheel_coil", flywheel_coil),
                           ("flywheel_enamel", flywheel_enamel), ("ceramic", ceramic), ("screen", screen), ("column_glow", column_glow), ("heat_wrap", heat_wrap),
-                          ("grille", grille)):
+                          ("grille", grille), ("pleats", pleats), ("finned_core", finned_core)):
         write_png("block/" + name, painter())
     fluid("thin_still", thin_still, 16, 32, 2, THIN_LEVELS)
     fluid("thin_flow", thin_flow, 32, 32, 2, THIN_LEVELS)

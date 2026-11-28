@@ -1711,6 +1711,13 @@ cylinder's crank angle, output stays finite and within level, and a stopped engi
 part of one. Rule 5 ("it looks like Create") is the standard, and today's art misses it often enough that players notice. This is
 a pass over the art as a whole, not a block at a time.
 
+**The author added on 2026-11-27:** much of the complaint is that the blocks are over-modelled. The pass takes geometry away (slivers,
+stacked bands, bead rings, tiny bolts, ridges) and leaves detail to the textures. Each part must still read as what it is, and
+neither model nor texture may look AI-generated (patterns are shaded and varied by hand, not ruled evenly).
+
+**Batch 1, intake and exhaust (2026-11-27).** Redrawn and approved by the author the same day for committing, from preview renders;
+not yet seen in game. It goes under Exceptions in the v2.5.0 release record. The air intake's outline grew with its neck.
+
 **First, find out exactly what is wrong.** Nothing is redrawn from a guess.
 
 - Collect the complaints: what players name (which blocks, what about them: colour, shape, detail, scale), with the

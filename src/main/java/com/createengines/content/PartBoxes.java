@@ -47,7 +47,7 @@ public final class PartBoxes {
 	/** Air intake: the plate it stands on, the neck, the bell and the rim. Mouth up. */
 	public static final double[][] AIR_INTAKE = {
 		{3, 0, 3, 13, 3, 13},
-		{4.5, 3, 4.5, 11.5, 8, 11.5},
+		{4, 3, 4, 12, 8, 12},
 		{2.25, 8, 2.25, 13.75, 12, 13.75},
 		{1.5, 12, 1.5, 14.5, 14, 14.5}};
 

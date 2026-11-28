@@ -1,7 +1,7 @@
 """Dynamometer, Black Box, intercooler, filter, muffler, soot trap, soot and jerry can."""
 
 from models.core import (
-    BLACK, BRASS, CASING, COPPER_CASING, DARK, IRON, IRON_BLOCK, QUARTZ, RED, RIVETED, SMOOTH, box, write,
+    BLACK, BRASS, CASING, COPPER, COPPER_CASING, DARK, IRON, IRON_BLOCK, RED, RIVETED, box, write,
     write_item)
 
 
@@ -60,76 +60,50 @@ def black_box():
     write_item("black_box/item", "black_box/block")
 
 
+def _can(textures, window=None):
+    """An exhaust canister along the Y axis: a pipe flange and a short neck at each end of a fat can with a rolled seam
+    round each of its ends, so it reads as a can in a pipe run. window is a band of another texture round its middle."""
+    elements = [box((3.5, 0, 3.5), (12.5, 1.5, 12.5), "flange"), box((5, 1.5, 5), (11, 2.5, 11), "flange"),
+                box((2, 2.5, 2), (14, 4, 14), "seam"), box((2.25, 4, 2.25), (13.75, 12, 13.75), "shell"),
+                box((2, 12, 2), (14, 13.5, 14), "seam"), box((5, 13.5, 5), (11, 14.5, 11), "flange"),
+                box((3.5, 14.5, 3.5), (12.5, 16, 12.5), "flange")]
+    if window:
+        elements.append(box((2.1, 5.5, 2.1), (13.9, 10.5, 13.9), window))
+    return elements
+
+
 def intercooler():
-    """A charge-air cooler along the Y axis (the block state turns it): a finned core between two end tanks, with an
-    inlet stub on each end."""
-    textures = {"tank": COPPER_CASING, "core": DARK, "fin": IRON, "stub": BRASS, "particle": COPPER_CASING}
-    elements = [
-        box((2, 0, 2), (14, 3, 14), "tank"),
-        box((2, 13, 2), (14, 16, 14), "tank"),
-        box((3, 3, 3), (13, 13, 13), "core"),
-    ]
-    # Fins across the core
-    for i in range(7):
-        y = 3.5 + i * 1.4
-        elements.append(box((1.5, y, 2.5), (14.5, y + 0.6, 13.5), "fin"))
-    elements += [box((6, 0, 6), (10, 1, 10), "stub"), box((6, 15, 6), (10, 16, 10), "stub")]
+    """A charge-air cooler along the Y axis (the block state turns it): a steel finned core between two copper tanks."""
+    textures = {"tank": COPPER, "core": "create_engines:block/finned_core", "particle": COPPER}
+    elements = [box((2, 0, 2), (14, 3, 14), "tank"), box((3, 3, 3), (13, 13, 13), "core"),
+                box((2, 13, 2), (14, 16, 14), "tank")]
     write("intercooler/block", textures, elements)
     write_item("intercooler/item", "intercooler/block")
 
 
 def air_filter():
-    """An air filter along the Y axis (the block state turns it): a pale pleated element between two copper end plates held
-    apart by brass posts, with a charcoal band round its middle and an inlet stub on each end."""
-    textures = {"plate": COPPER_CASING, "element": QUARTZ, "post": BRASS, "charcoal": DARK, "stub": BRASS,
-                "particle": COPPER_CASING}
-    elements = [box((2, 0, 2), (14, 3, 14), "plate"), box((2, 13, 2), (14, 16, 14), "plate"),
-                box((4, 3, 4), (12, 13, 12), "element"), box((2.75, 7, 2.75), (13.25, 9, 13.25), "charcoal")]
-    for x in (2, 12.5):
-        for z in (2, 12.5):
-            elements.append(box((x, 3, z), (x + 1.5, 13, z + 1.5), "post"))
-    # The pleats: ridges standing out of each face of the element
-    for at in (5, 7.5, 10):
-        elements += [box((at, 3, 3), (at + 1, 13, 4), "element"), box((at, 3, 12), (at + 1, 13, 13), "element"),
-                     box((3, 3, at), (4, 13, at + 1), "element"), box((12, 3, at), (13, 13, at + 1), "element")]
-    elements += [box((6, -0.1, 6), (10, 1, 10), "stub"), box((6, 15, 6), (10, 16.1, 10), "stub")]
+    """An air filter along the Y axis (the block state turns it): a pleated paper element between two copper casing
+    end plates."""
+    textures = {"plate": COPPER_CASING, "element": "create_engines:block/pleats", "particle": COPPER_CASING}
+    elements = [box((2, 0, 2), (14, 2, 14), "plate"), box((3, 2, 3), (13, 14, 13), "element"),
+                box((2, 14, 2), (14, 16, 14), "plate")]
     write("air_filter/block", textures, elements)
     write_item("air_filter/item", "air_filter/block")
 
 
 def muffler():
-    """A muffler along the Y axis (the block state turns it): a wrapped canister between two end caps, with banding
-    round it and an exhaust stub on each end."""
-    textures = {"shell": SMOOTH, "cap": DARK, "band": IRON, "stub": IRON_BLOCK, "particle": DARK}
-    elements = [
-        box((2, 0, 2), (14, 2, 14), "cap"),
-        box((2, 14, 2), (14, 16, 14), "cap"),
-        box((3, 2, 3), (13, 14, 13), "shell"),
-        box((2.5, 4.5, 2.5), (13.5, 5.5, 13.5), "band"),
-        box((2.5, 10.5, 2.5), (13.5, 11.5, 13.5), "band"),
-        box((6, 0, 6), (10, 1, 10), "stub"),
-        box((6, 15, 6), (10, 16, 10), "stub"),
-    ]
-    write("muffler/block", textures, elements)
+    """A muffler along the Y axis (the block state turns it): a plain cast can in the pipe run."""
+    textures = {"flange": IRON, "seam": DARK, "shell": IRON, "particle": IRON}
+    write("muffler/block", textures, _can(textures))
     write_item("muffler/item", "muffler/block")
 
 
 def soot_trap():
-    """A soot trap along the Y axis (the block state turns it): a dark filter canister with a grille window and two
-    brass bands between steel caps, and an exhaust stub on each end."""
-    textures = {"shell": DARK, "cap": IRON_BLOCK, "band": BRASS, "mesh": "create_engines:block/grille",
-                "stub": IRON, "particle": DARK}
-    elements = [
-        box((2, 0, 2), (14, 2, 14), "cap"),
-        box((2, 14, 2), (14, 16, 14), "cap"),
-        box((3, 2, 3), (13, 14, 13), "shell"),
-        box((2.5, 3.5, 2.5), (13.5, 4.5, 13.5), "band"),
-        box((2.5, 11.5, 2.5), (13.5, 12.5, 13.5), "band"),
-        box((2.6, 5.5, 2.6), (13.4, 10.5, 13.4), "mesh"),
-        box((6, 0, 6), (10, 1, 10), "stub"),
-        box((6, 15, 6), (10, 16, 10), "stub"),
-    ]
-    write("soot_trap/block", textures, elements)
+    """A soot trap along the Y axis (the block state turns it): a dark can with brass seams and a mesh window round its
+    middle, where the soot is caught."""
+    textures = {"flange": IRON, "seam": BRASS, "shell": DARK, "mesh": "create_engines:block/grille",
+                "particle": DARK}
+    write("soot_trap/block", textures, _can(textures, "mesh"))
     write_item("soot_trap/item", "soot_trap/block")
 
 

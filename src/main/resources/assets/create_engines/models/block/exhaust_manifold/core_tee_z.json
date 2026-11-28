@@ -44,46 +44,14 @@
     },
     {
       "from": [
-        4.25,
-        4.25,
-        4.25
-      ],
-      "to": [
-        11.75,
-        11.75,
-        11.75
-      ],
-      "faces": {
-        "north": {
-          "texture": "#bead"
-        },
-        "south": {
-          "texture": "#bead"
-        },
-        "east": {
-          "texture": "#bead"
-        },
-        "west": {
-          "texture": "#bead"
-        },
-        "up": {
-          "texture": "#bead"
-        },
-        "down": {
-          "texture": "#bead"
-        }
-      }
-    },
-    {
-      "from": [
         4,
         4,
-        6.5
+        6
       ],
       "to": [
         12,
         12,
-        9.5
+        10
       ],
       "faces": {
         "north": {

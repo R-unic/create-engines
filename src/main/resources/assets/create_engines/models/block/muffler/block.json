@@ -1,234 +1,233 @@
 {
   "parent": "block/block",
   "textures": {
-    "shell": "create_engines:block/heat_wrap",
-    "cap": "create_engines:block/black_oxide",
-    "band": "create_engines:block/cast_iron",
-    "stub": "create_engines:block/steel",
-    "particle": "create_engines:block/black_oxide"
+    "flange": "create_engines:block/cast_iron",
+    "seam": "create_engines:block/black_oxide",
+    "shell": "create_engines:block/cast_iron",
+    "particle": "create_engines:block/cast_iron"
   },
   "elements": [
     {
       "from": [
-        2,
+        3.5,
         0,
+        3.5
+      ],
+      "to": [
+        12.5,
+        1.5,
+        12.5
+      ],
+      "faces": {
+        "north": {
+          "texture": "#flange"
+        },
+        "south": {
+          "texture": "#flange"
+        },
+        "east": {
+          "texture": "#flange"
+        },
+        "west": {
+          "texture": "#flange"
+        },
+        "up": {
+          "texture": "#flange"
+        },
+        "down": {
+          "texture": "#flange"
+        }
+      }
+    },
+    {
+      "from": [
+        5,
+        1.5,
+        5
+      ],
+      "to": [
+        11,
+        2.5,
+        11
+      ],
+      "faces": {
+        "north": {
+          "texture": "#flange"
+        },
+        "south": {
+          "texture": "#flange"
+        },
+        "east": {
+          "texture": "#flange"
+        },
+        "west": {
+          "texture": "#flange"
+        },
+        "up": {
+          "texture": "#flange"
+        },
+        "down": {
+          "texture": "#flange"
+        }
+      }
+    },
+    {
+      "from": [
+        2,
+        2.5,
         2
       ],
       "to": [
         14,
-        2,
+        4,
         14
       ],
       "faces": {
         "north": {
-          "texture": "#cap"
+          "texture": "#seam"
         },
         "south": {
-          "texture": "#cap"
+          "texture": "#seam"
         },
         "east": {
-          "texture": "#cap"
+          "texture": "#seam"
         },
         "west": {
-          "texture": "#cap"
+          "texture": "#seam"
         },
         "up": {
-          "texture": "#cap"
+          "texture": "#seam"
         },
         "down": {
-          "texture": "#cap"
+          "texture": "#seam"
+        }
+      }
+    },
+    {
+      "from": [
+        2.25,
+        4,
+        2.25
+      ],
+      "to": [
+        13.75,
+        12,
+        13.75
+      ],
+      "faces": {
+        "north": {
+          "texture": "#shell"
+        },
+        "south": {
+          "texture": "#shell"
+        },
+        "east": {
+          "texture": "#shell"
+        },
+        "west": {
+          "texture": "#shell"
+        },
+        "up": {
+          "texture": "#shell"
+        },
+        "down": {
+          "texture": "#shell"
         }
       }
     },
     {
       "from": [
         2,
-        14,
+        12,
         2
       ],
       "to": [
         14,
-        16,
+        13.5,
         14
       ],
       "faces": {
         "north": {
-          "texture": "#cap"
+          "texture": "#seam"
         },
         "south": {
-          "texture": "#cap"
+          "texture": "#seam"
         },
         "east": {
-          "texture": "#cap"
+          "texture": "#seam"
         },
         "west": {
-          "texture": "#cap"
+          "texture": "#seam"
         },
         "up": {
-          "texture": "#cap"
+          "texture": "#seam"
         },
         "down": {
-          "texture": "#cap"
+          "texture": "#seam"
         }
       }
     },
     {
       "from": [
-        3,
-        2,
-        3
-      ],
-      "to": [
-        13,
-        14,
-        13
-      ],
-      "faces": {
-        "north": {
-          "texture": "#shell"
-        },
-        "south": {
-          "texture": "#shell"
-        },
-        "east": {
-          "texture": "#shell"
-        },
-        "west": {
-          "texture": "#shell"
-        },
-        "up": {
-          "texture": "#shell"
-        },
-        "down": {
-          "texture": "#shell"
-        }
-      }
-    },
-    {
-      "from": [
-        2.5,
-        4.5,
-        2.5
-      ],
-      "to": [
+        5,
         13.5,
-        5.5,
-        13.5
+        5
+      ],
+      "to": [
+        11,
+        14.5,
+        11
       ],
       "faces": {
         "north": {
-          "texture": "#band"
+          "texture": "#flange"
         },
         "south": {
-          "texture": "#band"
+          "texture": "#flange"
         },
         "east": {
-          "texture": "#band"
+          "texture": "#flange"
         },
         "west": {
-          "texture": "#band"
+          "texture": "#flange"
         },
         "up": {
-          "texture": "#band"
+          "texture": "#flange"
         },
         "down": {
-          "texture": "#band"
+          "texture": "#flange"
         }
       }
     },
     {
       "from": [
-        2.5,
-        10.5,
-        2.5
+        3.5,
+        14.5,
+        3.5
       ],
       "to": [
-        13.5,
-        11.5,
-        13.5
-      ],
-      "faces": {
-        "north": {
-          "texture": "#band"
-        },
-        "south": {
-          "texture": "#band"
-        },
-        "east": {
-          "texture": "#band"
-        },
-        "west": {
-          "texture": "#band"
-        },
-        "up": {
-          "texture": "#band"
-        },
-        "down": {
-          "texture": "#band"
-        }
-      }
-    },
-    {
-      "from": [
-        6,
-        0,
-        6
-      ],
-      "to": [
-        10,
-        1,
-        10
-      ],
-      "faces": {
-        "north": {
-          "texture": "#stub"
-        },
-        "south": {
-          "texture": "#stub"
-        },
-        "east": {
-          "texture": "#stub"
-        },
-        "west": {
-          "texture": "#stub"
-        },
-        "up": {
-          "texture": "#stub"
-        },
-        "down": {
-          "texture": "#stub"
-        }
-      }
-    },
-    {
-      "from": [
-        6,
-        15,
-        6
-      ],
-      "to": [
-        10,
+        12.5,
         16,
-        10
+        12.5
       ],
       "faces": {
         "north": {
-          "texture": "#stub"
+          "texture": "#flange"
         },
         "south": {
-          "texture": "#stub"
+          "texture": "#flange"
         },
         "east": {
-          "texture": "#stub"
+          "texture": "#flange"
         },
         "west": {
-          "texture": "#stub"
+          "texture": "#flange"
         },
         "up": {
-          "texture": "#stub"
+          "texture": "#flange"
         },
         "down": {
-          "texture": "#stub"
+          "texture": "#flange"
         }
       }
     }
