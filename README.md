@@ -132,8 +132,8 @@ Minecraft 1.21.1 · NeoForge 21.1.219 or newer · Create 6.0.10 (build 257 or ne
 - Flywheels that matter: a rough engine is rated for less, and rotating mass smooths it out
 - A 13-gear transmission with an Auto mode that shifts to suit the engine, and a **Dynamometer** that draws an engine's torque and power curves
 - A **Black Box** flight recorder that keeps ten minutes of an engine's speed, load and temperature and says why it stalled
-- An exhaust note made up from the engine's speed, firing order and build, so a V-twin lopes, a six hums and a dead cylinder
-  limps; each exhaust run rings its own pipe (a crossplane V8 burbles where a flat-plane does not), a diesel knocks, the cams
+- An exhaust note made up from the engine's speed, firing order and build, rising in pitch as it revs, so a V-twin lopes, a six
+  hums and a dead cylinder limps; each exhaust run rings its own pipe (a crossplane V8 burbles where a flat-plane does not), a diesel knocks, the cams
   casing dulls it, distance and walls muffle it, a room answers it, and a build full of engines blends into one sound instead of a wall of bangs
 - A **Muffler** that quiets the note, the bangs and the pops (and dulls the note) without costing the engine any power, and **Engine Casing**
   that joins into one plate and clads cylinders, pipes, cams, and Create's own shafts and cogwheels to hide the sprawl, in

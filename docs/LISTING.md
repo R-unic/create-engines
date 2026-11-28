@@ -272,6 +272,10 @@ Not released yet.
   it revs instead of seeming to go quiet, and a diesel has a deeper body and a duller knock. A straight six and a V12
   have less top, and a rotary has far less noise in it.
   This changes how existing engines sound.
+- Sound, **revving is heard as pitch**: the exhaust and its rumble now rise as an engine revs and fall as it slows or
+  stalls, where before the same sound only came faster. Past 256 RPM, where a pack or setting allows it, they rise more
+  gently, and a crossplane V8 only once it has opened up. At 256 RPM the voice is where it was; slower engines, idles
+  included, now sound deeper, and faster ones higher. This changes how existing engines sound.
 - New server setting, `balance.heatPerFuel` (1 by default, 0 to 10): scales the heat that burning fuel puts into an engine's
   block, for every fuel, on top of a pack's per-fuel `heat_factor`. At 1 engines heat as before.
 - Existing builds run as before: no existing part, number or saved state changed.

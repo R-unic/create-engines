@@ -88,6 +88,22 @@ final class NoteSystem {
 	private float topTwo;
 	private float topAmount = 1;
 	private NoteTimbre tuned;
+	private float bend = 1;
+	/** The roar's band as it is bent: it fills most of what lies between firings, and left still it hid the rest rising. */
+	private float roarTopAmount = ROAR_TOP;
+	private float roarFloorAmount = ROAR_FLOOR;
+	private float raspAmount = RASP_TOP;
+
+	/** Moves the roar and where the top rolls off to {@code times} their usual places ({@link NoteRev}). */
+	void bend(float times) {
+		if (times != bend) {
+			bend = times;
+			tuned = null;
+			roarTopAmount = pole(420 * times);
+			roarFloorAmount = pole(70 * times);
+			raspAmount = pole(1500 * times);
+		}
+	}
 	private int random;
 
 	NoteSystem(int seed) {
@@ -109,7 +125,7 @@ final class NoteSystem {
 	float next(float in, NoteTimbre timbre) {
 		if (timbre != tuned) {
 			tuned = timbre;
-			topAmount = pole(timbre.topHz());
+			topAmount = pole(timbre.topHz() * bend);
 		}
 		float spread = in;
 		for (Chamber chamber : chambers)
@@ -128,9 +144,9 @@ final class NoteSystem {
 		random ^= random >>> 17;
 		random ^= random << 5;
 		float white = random / (float) Integer.MAX_VALUE;
-		roarTop += ROAR_TOP * (white - roarTop);
-		roarFloor += ROAR_FLOOR * (roarTop - roarFloor);
-		rasp += RASP_TOP * (white - rasp);
+		roarTop += roarTopAmount * (white - roarTop);
+		roarFloor += roarFloorAmount * (roarTop - roarFloor);
+		rasp += raspAmount * (white - rasp);
 		// The same noise read from its other end, so the wavering does not follow the hiss it wavers
 		flutter += FLUTTER * ((random << 16) / (float) Integer.MAX_VALUE - flutter);
 		float uneven = Math.max(0f,

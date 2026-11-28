@@ -2,7 +2,7 @@ package com.createengines.content;
 
 /**
  * What kind of engine a note is heard as, apart from its rhythm and pitch: where its exhaust system resonates (two
- * fixed bands that do not move with the engine's speed, as a real silencer, collector and tailpipe do not), how much of
+ * bands, given here as they are from 256 RPM up; below it {@link NoteRev} lowers them with the whole voice), how much of
  * the rush of gas is heard, and how much thump is under it. Without these every build was the same pipe and the same
  * thump, only faster or slower. Worked out from the firing order, the outlets, the fuel and the runs. Pure Java, so it
  * is tested.

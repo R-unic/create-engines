@@ -16,6 +16,11 @@ final class NoteOpening {
 	private NoteTimbre heard;
 	private float open = -1;
 
+	/** The speed by which an engine with this many firings has opened. */
+	static float openedBy(int firings) {
+		return BY * 120 / Math.max(1, firings);
+	}
+
 	/** The tone {@code timbre} is heard as with firings coming this often. */
 	NoteTimbre at(NoteTimbre timbre, float firingsASecond) {
 		float now = Math.round(Math.clamp((firingsASecond - FROM) / (BY - FROM), 0f, 1f) * STEPS) / (float) STEPS;

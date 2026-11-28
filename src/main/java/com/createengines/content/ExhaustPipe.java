@@ -29,6 +29,11 @@ final class ExhaustPipe {
 	private final float[] line = new float[LINE];
 	private int at;
 	private float delay = 100;
+	/** The delay the line is gliding to, the share of the way each sample, and what it was tuned and bent to. */
+	private float aim = 100;
+	private static final float GLIDE = (float) (1 - Math.exp(-1 / (0.002 * EngineNoteSynth.SAMPLE_RATE)));
+	private double built = 100;
+	private float bend = 1;
 	/** The share of the wave a muffler lets come round again. */
 	private float kept = 1;
 	private float damping = pole(OPEN_HZ);
@@ -44,14 +49,28 @@ final class ExhaustPipe {
 		return (float) (1 - Math.exp(-2 * Math.PI * cutoff / EngineNoteSynth.SAMPLE_RATE));
 	}
 
-	/** Makes the run ring at {@code note} hertz. */
+	/** Makes the run ring at {@code note} hertz, times however far it is bent. */
 	void tune(double note) {
+		built = note;
+		place(note * bend);
+		delay = aim;
+	}
+
+	/** Moves the run to {@code times} the note it was tuned to, gliding there ({@link NoteRev}). */
+	void bend(float times) {
+		if (times == bend)
+			return;
+		bend = times;
+		place(built * times);
+	}
+
+	private void place(double note) {
 		hz = Math.clamp(note, EngineNoteSynth.SAMPLE_RATE / (2.0 * (LINE - 4)), 2000);
 		// The end turns the wave over, so a full period is two passes. The filter in the loop delays it too, by about a
 		// sample for each of its time constants, which comes off the line
 		double pass = EngineNoteSynth.SAMPLE_RATE / (2 * hz);
 		double filter = (1 - pole(OPEN_HZ)) / pole(OPEN_HZ);
-		delay = (float) Math.clamp(pass - filter, 2, LINE - 2);
+		aim = (float) Math.clamp(pass - filter, 2, LINE - 2);
 		feedback = (float) Math.min(MOST_BACK, Math.exp(-pass / (RING * EngineNoteSynth.SAMPLE_RATE)));
 	}
 
@@ -72,6 +91,7 @@ final class ExhaustPipe {
 
 	/** Puts {@code in} into the valve end and returns what comes out of the mouth. */
 	float next(float in) {
+		delay += GLIDE * (aim - delay);
 		int whole = (int) delay;
 		float part = delay - whole;
 		float near = line[(at - whole) & (LINE - 1)];

@@ -259,8 +259,36 @@ public final class EngineNoteSynth {
 		flow.sized(size);
 		for (int o = 0; o < MOST_OUTLETS; o++) {
 			pipes[o].tune(PIPE_HZ * pitch(size, voice.pipe(o)) * OUTLET_DETUNE[o]);
-			booms[o].tune(boomNote(voice.pipe(o)) * OUTLET_DETUNE[o]);
+			booms[o].tune(boomNote(voice.pipe(o)) * OUTLET_DETUNE[o] * deep());
 		}
+	}
+
+	/** Where the revs have the voice ({@link NoteRev}). */
+	private float revved = 1;
+
+	/** The boom and the thump follow the revs only up to the usual limit: past it they stay, as the engine's weight. */
+	private float deep() {
+		return Math.min(1, revved);
+	}
+
+	/** Where an outlet's pipe rings now, in hertz. */
+	double pipeNote(int outlet) {
+		return pipes[outlet].note();
+	}
+
+	/** Moves everything that rings to where it does at these revs. */
+	private void rev(float times) {
+		if (times == revved)
+			return;
+		revved = times;
+		for (int o = 0; o < MOST_OUTLETS; o++) {
+			pipes[o].bend(times);
+			booms[o].tune(boomNote(tunedVoice.pipe(o)) * OUTLET_DETUNE[o] * deep());
+		}
+		openBody.bend(times);
+		shutBody.bend(times);
+		openSystem.bend(times);
+		shutSystem.bend(times);
 	}
 
 	/** Where an outlet's boom sits, in hertz: a longer run takes it a little lower, but never out of hearing. */
@@ -632,6 +660,8 @@ public final class EngineNoteSynth {
 	private float boomShare;
 
 	private void refreshSlow() {
+		rev(NoteRev.of(rpm,
+			timbre.burbles() ? Math.max(NoteRev.FULL_RPM, NoteOpening.openedBy(angles.length)) : NoteRev.FULL_RPM));
 		float eventsPerSecond = angles.length * rpm / 120f;
 		float pile = eventsPerSecond / THUMPS_BEFORE_PILE_UP;
 		pileUp = 1 / (float) Math.sqrt(1 + pile * pile);
@@ -783,7 +813,8 @@ public final class EngineNoteSynth {
 			// A bigger cylinder thumps lower, and each has its own pitch within that
 			// A long run takes it lower, a stub higher
 			float run = (float) Math.sqrt(pipeTone(p.voice().pipe(firingOutlet)));
-			under.thump((0.92f + 0.16f * (cylinderGain(index) - 0.88f) / 0.24f) * (1.22f - 0.44f * p.size) * run);
+			under.thump((0.92f + 0.16f * (cylinderGain(index) - 0.88f) / 0.24f) * (1.22f - 0.44f * p.size) * run
+				* deep());
 			// A small, hot cylinder cracks harder than a big, cool one, and the grains by size crack higher
 			float crack = strength * (CRACK_FLOOR + (1 - CRACK_FLOOR) * p.sharpness) * (0.7f + 0.3f * Math.min(1f, p.load)) * burn;
 			crackTake = nextTake(crackTake, unitNoise());

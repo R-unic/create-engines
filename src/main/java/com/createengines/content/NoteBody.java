@@ -1,8 +1,8 @@
 package com.createengines.content;
 
 /**
- * The exhaust system after the pipes: two resonances that stay where they are whatever the engine's speed, which is
- * what gives an engine a voice of its own to be told by ({@link NoteTimbre}). Each stream through it (the open outlets,
+ * The exhaust system after the pipes: two resonances set by the build, moved only as the whole voice moves with the
+ * revs ({@link NoteRev}), which is what gives an engine a voice of its own to be told by ({@link NoteTimbre}). Each stream through it (the open outlets,
  * the muffled ones) has state of its own. Pure Java; the sound thread alone uses it.
  */
 final class NoteBody {
@@ -53,13 +53,22 @@ final class NoteBody {
 	private static final float DEEP = (float) (1 - Math.exp(-2 * Math.PI * 170 / RATE));
 	private float deep;
 	private NoteTimbre tuned;
+	private float bend = 1;
+
+	/** Moves both resonances to {@code times} their notes ({@link NoteRev}). */
+	void bend(float times) {
+		if (times != bend) {
+			bend = times;
+			tuned = null;
+		}
+	}
 
 	/** What has gone in, as heard through this engine's exhaust system. */
 	float next(float sample, NoteTimbre timbre) {
 		if (timbre != tuned) {
 			tuned = timbre;
-			low.tune(timbre.lowHz(), LOW_Q);
-			high.tune(timbre.highHz(), HIGH_Q);
+			low.tune(timbre.lowHz() * bend, LOW_Q);
+			high.tune(timbre.highHz() * bend, HIGH_Q);
 		}
 		float whole = (sample * timbre.dry() + low.next(sample) * timbre.lowGain() + high.next(sample) * timbre.highGain())
 			* timbre.level();

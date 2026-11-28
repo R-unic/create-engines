@@ -726,6 +726,32 @@ and regular rattles are what made the first takes sound like a cartoon (`Failure
     a note; the in-game sound bench and soak have not been run on it. The author judged offline renders round by round;
     none of it has been heard in game.
   - Tests: `NoteSystemTest`; the earlier note tests as they were, none changed.
+- **Revs heard as pitch (2026-11-27).** The author asked for revving to sound like revving, without sounding like one
+  recording sped up. Engines mostly turn at 256 RPM at the most, so a four fires about 9 times a second there and a V12
+  26: a rhythm, not a note. The pitch heard was that of the pipes and resonances, which stood still. Between idle and
+  256 RPM the spectrum of an offline render did not move at all.
+  - *The rise* (`NoteRev`). Pipes, booms, both resonances, the roar's band, the top rolloff and the thump move together,
+    4 semitones for each doubling of speed from 64 to 256 RPM (about 6.7 from 80), and, as the author then asked, 2 for
+    each doubling from 256 to 2048. Past 256 the boom and thump stay, as the engine's weight. Catches and stalls follow
+    it too.
+    Firing times, crack, knock, casing, mufflers and distance do not move. This supersedes the resonances standing still
+    in *Resonances* above.
+  - *Anchored at 256.* There the voice is exactly as tuned before. Anchored at idle instead, so that it only rose above
+    that tuning, seven of the earlier note tests failed (the V8's low share, casing and distance dulling, and kinds told
+    apart among them). So idles are now deeper.
+  - *Uneven banks past 256.* They open up with speed already (*One continuous sound*), a V8 until about 630 RPM, and
+    take up the rise past 256 only from there. Raised on top of the opening, or with the boom and thump rising past 256,
+    `NoteTimbreTest` could no longer tell kinds apart at 420 RPM (3.8 to 3.9 dB where 4 is asked).
+  - *Measured offline.* At 90 RPM the new voice lines up best 5.4 to 6.2 semitones under the old one for a four, a six
+    and a crossplane V8 (6 asked for); the match is loose, as what stays still is in it too, and the V12's was unclear.
+    At 256 RPM old and new line up unshifted. The slow single and four are mostly separate bangs, where the change is
+    harder to see on a spectrogram than on a six or V12. Held at 512 and 1024 RPM against the voice as tuned before, the
+    average frequency moved +0.4 and +4.0 semitones for the four, +6.2 and +4.1 for the six, +1.5 and +1.7 for the V12,
+    and -0.4 and +0.7 for the crossplane V8: it moves unevenly there, as the firings' own tones stand still and the
+    resonances pass over them. At 1024 the six has one tone at 308 Hz with 58% of its power (18% on its strongest
+    before), which may be heard as a whine. Nobody has judged it by ear, in a render or in game; the sound bench and
+    soak have not been run on it.
+  - Tests: `NoteRevTest`; the earlier note tests as they were, none changed.
 - **Sounds on moving structures (2026-11-26).** Sable plays any sound that starts on a moving structure inside a wrapper
   of its own, so `SoundManager.isActive` says no to the instance this mod made. Every note, loop and starter whir there
   was taken for dropped and started again over itself, about every second or two, until the game had no sound channel
