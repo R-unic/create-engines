@@ -236,6 +236,10 @@ Not released yet.
   they leave the pipe as a jet, cool from yellow to red and break up. Sparks are streaks that bounce and skid along the floor. A
   backfire now flashes at the mouth, throws a cone of flame and a few sparks, and leaves a dirty puff, and exhaust smoke
   billows a little as it ages. The photosensitive setting still turns all the flame and sparks off.
+- Effects, **anti-lag flames** now come out of the exhaust openings as well as the turbocharger's turbine end: a tongue of
+  flame out of one of them with each flicker, and a longer one with each crack. No extra sparks.
+- Sound, **louder backfires**: a cylinder's backfire and anti-lag's crack are about 3 dB louder. Spits and every other
+  sound are as before. This changes how existing engines sound.
 - Governor: the Governed Speed can now be set as high as Create's `maxRotationSpeed`, so with a limit of 1024 you can set 1024.
   Before, it stopped at 1000. With a limit of 1000 or less the panel is as it was.
 - New, other mods' lubricants: an engine's oil tanks now take Create: Petrochem's lubricant, which oils as well as engine oil. An oil

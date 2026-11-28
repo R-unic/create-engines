@@ -25,6 +25,11 @@ import com.createengines.engine.sim.Thermal;
 public record ExhaustLook(int puffs, float red, float green, float blue, float alpha, float scale, float speed,
 						  float lift, int lifetime, float flame, float pop) {
 
+	/** How loud a cylinder's backfire is with no muffler and the volume settings at 1: all a recording can be played at. */
+	public static final float BACKFIRE_LOUDNESS = 1f;
+	/** The same for anti-lag's crack at the turbo, which is the smaller bang. */
+	public static final float ANTI_LAG_LOUDNESS = 0.65f;
+
 	public static final ExhaustLook NOTHING = new ExhaustLook(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
 
 	/** Mixture, past rich, at which smoke is as black as it gets. */

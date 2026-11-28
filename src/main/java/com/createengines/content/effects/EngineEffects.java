@@ -144,7 +144,7 @@ public final class EngineEffects {
 		float roll = random.nextFloat();
 		if (roll < look.pop())
 			afterfire(level, primary, outlet.at, outlet.normal,
-				0.7f * Muffling.volume(engine == null ? 0 : engine.muffling()), 1);
+				ExhaustLook.BACKFIRE_LOUDNESS * Muffling.volume(engine == null ? 0 : engine.muffling()), 1);
 		else if (roll < look.pop() + look.flame())
 			ExhaustFire.flames(level, outlet.at, outlet.normal, look.flame() > 0.4f ? 4 : 2, 0.13 + 0.1 * look.flame());
 	}
@@ -178,6 +178,13 @@ public final class EngineEffects {
 	 */
 	public static void afterfire(Level level, @Nullable BlockPos primary, Vec3 at, Vec3 normal, float loudness,
 		float pitch) {
+		afterfire(level, primary, at, normal, loudness, pitch, () -> {
+		});
+	}
+
+	/** As above, with {@code alsoShown} run along with the flash, for fire the same bang shows somewhere else. */
+	public static void afterfire(Level level, @Nullable BlockPos primary, Vec3 at, Vec3 normal, float loudness,
+		float pitch, Runnable alsoShown) {
 		RandomSource random = level.random;
 		float volume = CEClientConfig.bangVolume();
 		NoteCue cue = null;
@@ -190,7 +197,20 @@ public final class EngineEffects {
 		}
 		if (!CEClientConfig.particles())
 			return;
-		withBang(cue, () -> ExhaustFire.backfire(level, at, normal));
+		withBang(cue, () -> {
+			ExhaustFire.backfire(level, at, normal);
+			alsoShown.run();
+		});
+	}
+
+	/**
+	 * A tongue of fire out of one of {@code openings} at random, for fuel burned further up the pipe. Nothing comes out of
+	 * one that is covered or underwater. No more sparks than any lick of flame has.
+	 */
+	public static void flamesFromOutlet(Level level, List<BlockPos> openings, int count, double speed) {
+		Opening outlet = pick(level, openings);
+		if (outlet != null && outlet.open && !outlet.flooded)
+			ExhaustFire.flames(level, outlet.at, outlet.normal, count, speed);
 	}
 
 	/** An engine drowning: a burst of white steam from the block at {@code at} and a hard clunk as it seizes up on water. */

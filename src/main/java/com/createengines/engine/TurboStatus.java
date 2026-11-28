@@ -1,5 +1,9 @@
 package com.createengines.engine;
 
+import java.util.Arrays;
+import java.util.List;
+
+import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
 
 /**
@@ -16,10 +20,17 @@ import net.minecraft.nbt.CompoundTag;
  * @param antiLag     fuel is being burned in the exhaust to hold the spool up off the throttle
  * @param heat        how hot the engine's block is (see Thermal), which a turbine wheel in its exhaust glows with
  * @param offThrottle every cylinder on the turbine has lifted off the throttle, so a blow-off valve opens to dump the charge
+ * @param outlets     the openings of the exhaust network the turbine is on, which anti-lag's fire also comes out of
  */
 public record TurboStatus(float spool, float boost, float wastegate, float backPressure, float charge,
 						  boolean compressor, boolean turbine, float vanes, boolean antiLag, float heat,
-						  boolean offThrottle) {
+						  boolean offThrottle, List<BlockPos> outlets) {
+
+	public TurboStatus(float spool, float boost, float wastegate, float backPressure, float charge,
+					   boolean compressor, boolean turbine, float vanes, boolean antiLag, float heat, boolean offThrottle) {
+		this(spool, boost, wastegate, backPressure, charge, compressor, turbine, vanes, antiLag, heat, offThrottle,
+			List.of());
+	}
 
 	public TurboStatus(float spool, float boost, float wastegate, float backPressure, float charge,
 					   boolean compressor, boolean turbine, float vanes, boolean antiLag, float heat) {
@@ -54,6 +65,10 @@ public record TurboStatus(float spool, float boost, float wastegate, float backP
 		tag.putBoolean("AntiLag", antiLag);
 		tag.putFloat("Heat", heat);
 		tag.putBoolean("OffThrottle", offThrottle);
+		if (!outlets.isEmpty())
+			tag.putLongArray("Outlets", outlets.stream()
+				.mapToLong(BlockPos::asLong)
+				.toArray());
 		return tag;
 	}
 
@@ -62,7 +77,9 @@ public record TurboStatus(float spool, float boost, float wastegate, float backP
 		return new TurboStatus(tag.getFloat("Spool"), boost, tag.getFloat("Wastegate"), tag.getFloat("BackPressure"),
 			tag.contains("Charge") ? tag.getFloat("Charge") : boost, tag.getBoolean("Compressor"),
 			tag.getBoolean("Turbine"), tag.getFloat("Vanes"), tag.getBoolean("AntiLag"), tag.getFloat("Heat"),
-			tag.getBoolean("OffThrottle"));
+			tag.getBoolean("OffThrottle"), Arrays.stream(tag.getLongArray("Outlets"))
+				.mapToObj(BlockPos::of)
+				.toList());
 	}
 
 	/** Whether the figures differ enough to be worth sending. */
@@ -70,6 +87,7 @@ public record TurboStatus(float spool, float boost, float wastegate, float backP
 		return other == null || compressor != other.compressor || turbine != other.turbine
 			|| Math.abs(spool - other.spool) >= 0.02 || Math.abs(boost - other.boost) >= 0.01 || Math.abs(charge - other.charge) >= 0.01
 			|| Math.abs(wastegate - other.wastegate) >= 0.05 || Math.abs(vanes - other.vanes) >= 0.05
-			|| antiLag != other.antiLag || offThrottle != other.offThrottle || Math.abs(heat - other.heat) >= 0.04;
+			|| antiLag != other.antiLag || offThrottle != other.offThrottle || Math.abs(heat - other.heat) >= 0.04
+			|| !outlets.equals(other.outlets);
 	}
 }

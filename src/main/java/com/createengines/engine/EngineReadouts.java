@@ -374,7 +374,7 @@ final class EngineReadouts {
 					!turbo.turbine()
 						.isEmpty(),
 					(float) turbo.vanes(), turbo.antiLagging(), (float) engine.sim.thermal()
-						.temperature(), turbo.offThrottle));
+						.temperature(), turbo.offThrottle, engine.exhaust.openings(placed.exhaust())));
 		}
 	}
 

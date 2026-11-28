@@ -43,6 +43,23 @@ public class SoundSyncGameTests {
 	}
 
 	@GameTest(template = "empty")
+	public static void aTurboTellsClientsWhereItsExhaustComesOut(GameTestHelper helper) {
+		List<BlockPos> outlets = List.of(new BlockPos(1, 2, 3), new BlockPos(-4, 70, 5));
+		TurboStatus piped = new TurboStatus(0.5f, 0.3f, 0, 1.2f, 0.3f, true, true, 0, true, 0, true, outlets);
+		TurboStatus bare = new TurboStatus(0.5f, 0.3f, 0, 1.2f, 0.3f, true, true, 0, true, 0, true);
+		helper.assertTrue(TurboStatus.read(piped.write())
+			.outlets()
+			.equals(outlets), "The openings did not come through");
+		helper.assertTrue(!bare.write()
+			.contains("Outlets"), "A turbo with no openings writes a new key");
+		helper.assertTrue(TurboStatus.read(bare.write())
+			.outlets()
+			.isEmpty(), "Openings from nowhere");
+		helper.assertTrue(piped.differsFrom(bare), "A new opening is not a change to send");
+		helper.succeed();
+	}
+
+	@GameTest(template = "empty")
 	public static void onlyAMuffledExhaustSaysSoInACylindersStatus(GameTestHelper helper) {
 		CylinderStatus open = status(0);
 		CylinderStatus muffled = status(0.5f);

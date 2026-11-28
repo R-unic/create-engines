@@ -18,8 +18,12 @@ class NoteBangShapeTest {
 	private static final int RATE = EngineNoteSynth.SAMPLE_RATE;
 
 	private static float[] bang(NoteBangs.Kind kind) {
+		return bang(kind, 1);
+	}
+
+	private static float[] bang(NoteBangs.Kind kind, float strength) {
 		NoteBangs bangs = new NoteBangs();
-		bangs.ask(kind, 1, 1);
+		bangs.ask(kind, strength, 1);
 		bangs.fired(75, 0);
 		float[] out = new float[RATE / 2];
 		for (int i = 0; i < out.length; i++)
@@ -93,6 +97,26 @@ class NoteBangShapeTest {
 		for (float sample : bang(NoteBangs.Kind.POP))
 			peak = Math.max(peak, Math.abs(sample));
 		assertTrue(peak > 0.45f, "peak " + peak);
+	}
+
+	/**
+	 * The author asked for louder backfires (2026-11-28). In a note a bang's strength is its loudness over the 0.7 it used to
+	 * be played at, so the new one is stronger than 1: it has to gain level and still stay short of full scale.
+	 */
+	@Test
+	void aBackfireAsLoudAsItIsPlayedIsLouderAndNotClipped() {
+		float strength = com.createengines.content.effects.ExhaustLook.BACKFIRE_LOUDNESS / 0.7f;
+		float[] before = bang(NoteBangs.Kind.POP, 1);
+		float[] now = bang(NoteBangs.Kind.POP, strength);
+		double energyBefore = 0;
+		double energyNow = 0;
+		for (int i = 0; i < now.length; i++) {
+			assertTrue(Math.abs(now[i]) < 0.95f, "reaches " + now[i]);
+			energyBefore += before[i] * before[i];
+			energyNow += now[i] * now[i];
+		}
+		double decibels = 10 * Math.log10(energyNow / energyBefore);
+		assertTrue(decibels > 2, "only " + decibels + " dB louder");
 	}
 
 	@Test

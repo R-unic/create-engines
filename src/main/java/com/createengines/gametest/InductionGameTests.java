@@ -57,6 +57,9 @@ public class InductionGameTests {
 				"Both of its sides should be on the engine: " + status);
 			helper.assertTrue(status.boost() > 0.08f, "A firing engine should spool the turbo: " + status);
 			helper.assertTrue(status.backPressure() > 1.03f, "The turbine should hold the exhaust up: " + status);
+			helper.assertTrue(status.outlets()
+				.equals(java.util.List.of(helper.absolutePos(turbo.south()))),
+				"The turbo should know where its exhaust comes out: " + status);
 			// A redstone signal next to the turbo dumps its boost
 			helper.setBlock(turbo.below(), Blocks.REDSTONE_BLOCK);
 		});

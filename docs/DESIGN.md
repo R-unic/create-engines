@@ -187,7 +187,9 @@ mix, not a better piston engine.
   times (closed) a fixed turbine's back-pressure.
 - **Anti-lag** (a 0 to 3 setting beside the boost limit): while every cylinder on the turbine is off the throttle (fuel
   cut, rack shut, throttle closed or governed back) and the engine is turning, it draws `ANTI_LAG_FUEL` mB per second per
-  level from the fuel gallery and adds `ANTI_LAG_HEAT` per level to the turbine. The wastegate was already a boost limit
+  level from the fuel gallery and adds `ANTI_LAG_HEAT` per level to the turbine. Its flames show at the turbo's turbine end
+  and come out of the openings of that exhaust run as well, one at random each time (none from a covered or flooded one),
+  without extra sparks; the turbo is sent the openings' positions for it. The wastegate was already a boost limit
   dial plus a redstone dump.
 - **Bank Builder** (`BankBuilderItem`): use on a crank throw to place a cylinder and head, and fit pistons, rods and
   injectors from the player's inventory, on the clicked face of every throw: inline (that face), vee (and the face a

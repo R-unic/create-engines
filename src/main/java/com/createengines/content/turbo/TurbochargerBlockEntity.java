@@ -341,7 +341,8 @@ public class TurbochargerBlockEntity extends SmartBlockEntity
 
 	/**
 	 * Anti-lag burning fuel in the exhaust to keep the wheel spinning: flame and smoke flicker at the turbine end, and
-	 * every so often it goes off with a crack, higher than a cylinder's afterfire, and a burst of flame and sparks.
+	 * every so often it goes off with a crack, higher than a cylinder's afterfire, and a burst of flame and sparks. The
+	 * flames carry on down the pipe and out of the exhaust's openings.
 	 */
 	private void antiLagPop() {
 		Vec3 out = Vec3.atLowerCornerOf(getBlockState().getValue(TurbochargerBlock.FACING)
@@ -350,15 +351,18 @@ public class TurbochargerBlockEntity extends SmartBlockEntity
 		Vec3 at = Vec3.atCenterOf(worldPosition)
 			.add(out.scale(0.6));
 		if (popRate.allow(level)) {
-			EngineEffects.afterfire(level, engine, at, out, 0.45f, 1.25f);
+			List<BlockPos> outlets = status.outlets();
+			EngineEffects.afterfire(level, engine, at, out, com.createengines.content.effects.ExhaustLook.ANTI_LAG_LOUDNESS, 1.25f,
+				() -> EngineEffects.flamesFromOutlet(level, outlets, 4, 0.2));
 			return;
 		}
 		if (!CEClientConfig.particles())
 			return;
 		var random = level.random;
-		if (random.nextBoolean())
+		if (random.nextBoolean()) {
 			com.createengines.content.effects.ExhaustFire.flames(level, at, out, 1, 0.1);
-		else
+			EngineEffects.flamesFromOutlet(level, status.outlets(), 1, 0.13);
+		} else
 			level.addParticle(new GasParticleOptions(0.25f, 0.25f, 0.25f, 0.6f, 0.5f, 0.6f, 24), at.x, at.y, at.z,
 				out.x * 0.04 + (random.nextDouble() - 0.5) * 0.04, 0.03, out.z * 0.04 + (random.nextDouble() - 0.5) * 0.04);
 	}
