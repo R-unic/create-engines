@@ -221,6 +221,7 @@ nbt:AlternatorBlockEntity:Charging
 nbt:AlternatorBlockEntity:EngineShare
 nbt:AlternatorBlockEntity:FellowRate
 nbt:AlternatorBlockEntity:Fellows
+nbt:AlternatorBlockEntity:Gearing
 nbt:AlternatorBlockEntity:Supplying
 nbt:BatteryBlockEntity:Charge
 nbt:BatteryBlockEntity:Cold

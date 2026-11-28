@@ -296,8 +296,11 @@ final class EngineReadouts {
 			if (LoadedBlocks.blockEntity(level, pos) instanceof SumpBlockEntity sump)
 				sump.attachToEngine(engine.layout.primary());
 		for (BlockPos pos : engine.layout.alternators())
-			if (LoadedBlocks.blockEntity(level, pos) instanceof AlternatorBlockEntity alternator)
+			if (LoadedBlocks.blockEntity(level, pos) instanceof AlternatorBlockEntity alternator) {
 				alternator.attachToEngine(engine.layout.primary(), engine.layout.batteries(), engine.layout.alternators());
+				// On the engine's own scaled shaft it takes and makes what it would at 1, as a supercharger does
+				alternator.setGearing(engine.inputs.onEngineNetwork(alternator) ? EngineController.speedScale() : 1);
+			}
 
 		for (int line = 0; line < engine.camshafts.size(); line++) {
 			Camshaft camshaft = engine.camshafts.get(line);

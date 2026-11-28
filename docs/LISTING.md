@@ -228,6 +228,9 @@ that changes how an existing engine behaves says so in its changelog. More on
 
 Not released yet.
 
+- Fix, `balance.rpmScale`: an engine's own alternator on its shaft is now geared with it. Above 1 it took more of the engine
+  than at 1, and could overstress it; it now takes the same SU and makes the same charge and Forge Energy as at 1. At 2 that is
+  half the charge and energy it gave before; below 1 it gives and takes more than before. Nothing changes at 1.
 - Effects, **flames and sparks** redrawn. Exhaust flames are the mod's own tongues of fire instead of vanilla's torch flame:
   they leave the pipe as a jet, cool from yellow to red and break up. Sparks are streaks that bounce and skid along the floor. A
   backfire now flashes at the mouth, throws a cone of flame and a few sparks, and leaves a dirty puff, and exhaust smoke

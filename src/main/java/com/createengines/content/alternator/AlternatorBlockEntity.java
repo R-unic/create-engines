@@ -95,6 +95,12 @@ public class AlternatorBlockEntity extends KineticBlockEntity implements EngineM
 	private int fellows = 1;
 	private float fellowRate;
 	private int ticks;
+	/**
+	 * How much faster this shaft turns than the engine sees it: other than 1 only for an alternator of the engine on its own
+	 * scaled shaft ({@code balance.rpmScale}). Saved, so a loaded world does not feel the unscaled stress before the engine
+	 * has looked.
+	 */
+	private double gearing = 1;
 
 	public AlternatorBlockEntity(BlockEntityType<?> type, BlockPos pos, BlockState state) {
 		super(type, pos, state);
@@ -179,8 +185,29 @@ public class AlternatorBlockEntity extends KineticBlockEntity implements EngineM
 		return chargeRate;
 	}
 
+	/** Called by the engine: see {@link #gearing}. */
+	public void setGearing(double gearing) {
+		if (this.gearing == gearing)
+			return;
+		this.gearing = gearing;
+		if (level != null && !level.isClientSide && hasNetwork())
+			getOrCreateNetwork().updateStressFor(this, calculateStressApplied());
+		sendData();
+	}
+
+	/** The shaft's speed as the engine sees it, RPM: what the charge and the energy are made from. */
+	private float gearedSpeed() {
+		return (float) (Math.abs(getSpeed()) / gearing);
+	}
+
+	/** Stress per RPM while charging or supplying: it shrinks as the shaft is geared up, so the SU stays the same. */
+	private float loadPerRpm() {
+		return (float) (CHARGING_STRESS * outputShare() / gearing);
+	}
+
 	@Override
 	public void detachFromEngine() {
+		setGearing(1);
 		primaryPos = null;
 		engineBatteries = List.of();
 		engineAlternators = List.of();
@@ -193,7 +220,7 @@ public class AlternatorBlockEntity extends KineticBlockEntity implements EngineM
 
 	@Override
 	public float calculateStressApplied() {
-		lastStressApplied = charging || supplying ? CHARGING_STRESS * outputShare() : 0;
+		lastStressApplied = charging || supplying ? loadPerRpm() : 0;
 		return lastStressApplied;
 	}
 
@@ -218,7 +245,7 @@ public class AlternatorBlockEntity extends KineticBlockEntity implements EngineM
 		ghost.tick(this);
 		boolean turning = getSpeed() != 0 && !isOverStressed();
 		List<BatteryBlockEntity> batteries = turning ? batteries() : List.of();
-		float budget = turning ? Math.abs(getSpeed()) * CHARGE_PER_RPM * outputShare() : 0;
+		float budget = turning ? gearedSpeed() * CHARGE_PER_RPM * outputShare() : 0;
 		boolean wanted = false;
 		for (BatteryBlockEntity battery : batteries)
 			if (!battery.isFull()) {
@@ -262,7 +289,7 @@ public class AlternatorBlockEntity extends KineticBlockEntity implements EngineM
 		float share = 0;
 		if (primaryPos != null && level.isLoaded(primaryPos) && level.getBlockEntity(primaryPos) instanceof CrankshaftBlockEntity crank
 			&& crank.publishedCapacity() > 0)
-			share = Math.min(1, CHARGING_STRESS * outputShare() / crank.publishedCapacity());
+			share = Math.min(1, loadPerRpm() / crank.publishedCapacity());
 		int count = 0;
 		float total = 0;
 		for (BlockPos pos : engineAlternators)
@@ -292,7 +319,7 @@ public class AlternatorBlockEntity extends KineticBlockEntity implements EngineM
 	private boolean supplyEnergy(boolean turning) {
 		double perRpm = CEConfig.ALTERNATOR_ENERGY.get() * outputShare();
 		if (turning && perRpm > 0) {
-			double made = Math.abs(getSpeed()) * perRpm + energyCarry;
+			double made = gearedSpeed() * perRpm + energyCarry;
 			int whole = (int) made;
 			int stored = output.fill(Math.min(whole, output.space()));
 			energyCarry = stored < whole ? 0 : made - whole;
@@ -333,6 +360,7 @@ public class AlternatorBlockEntity extends KineticBlockEntity implements EngineM
 		tag.putFloat("EngineShare", engineShare);
 		tag.putInt("Fellows", fellows);
 		tag.putFloat("FellowRate", fellowRate);
+		tag.putDouble("Gearing", gearing);
 	}
 
 	@Override
@@ -340,6 +368,9 @@ public class AlternatorBlockEntity extends KineticBlockEntity implements EngineM
 		super.read(tag, registries, clientPacket);
 		charging = tag.getBoolean("Charging");
 		supplying = tag.getBoolean("Supplying");
+		// No key, or a damaged one, reads as ungeared
+		double saved = tag.getDouble("Gearing");
+		gearing = saved > 0 && Double.isFinite(saved) ? Math.clamp(saved, 0.25, 8) : 1;
 		batteriesFound = tag.getInt("Batteries");
 		if (clientPacket) {
 			chargeRate = finite(tag.getFloat("ChargeRate"));
@@ -388,7 +419,7 @@ public class AlternatorBlockEntity extends KineticBlockEntity implements EngineM
 				.style(ChatFormatting.GOLD), tooltip, 1);
 		if (supplying)
 			GoggleLines.add(CELang.translate("goggles.alternator.energy",
-					Math.round(Math.abs(getSpeed()) * CEConfig.ALTERNATOR_ENERGY.get()))
+					Math.round(gearedSpeed() * CEConfig.ALTERNATOR_ENERGY.get()))
 				.style(ChatFormatting.DARK_GREEN), tooltip, 1);
 		super.addToGoggleTooltip(tooltip, isPlayerSneaking);
 		return true;

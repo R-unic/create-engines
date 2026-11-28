@@ -75,7 +75,7 @@ Balance multipliers. 1.0 is the shipped balance.
 | `heatPerFuel` | `1.0` | 0.0 to 10.0 | Scales the heat that burning fuel puts into an engine's block, on top of each fuel's own heat_factor: above 1 engines run hotter, below 1 cooler. Friction and outside heat sources are not scaled, and neither is the exhaust heat an Exhaust Heat Exchanger takes. Needs engineTemperature. |
 | `torsionalFlex` | `1.0` | 0.0 to 2.0 | Scales the rating an engine loses to a long crankshaft: past 8 throws on one unbroken crank line it falls by 2.5 percent a throw at 1.0. A vee or flat has half as many throws as cylinders, and cranks geared together one to one are separate lines. 0 turns it off. |
 | `alternatorEnergy` | `2.0` | 0.0 to 100.0 | Forge Energy an Alternator makes each tick for every RPM of its shaft, while something is drawing it. It puts 2 stress units on the shaft for each RPM while it does, so the default of 2 makes one stress unit worth about one FE a tick. 0 turns FE output off; spark charging is unaffected. |
-| `rpmScale` | `1.0` | 0.25 to 8.0 | Turns every engine's shaft this many times as fast, with its stress capacity per RPM divided to match: an engine giving 10k SU at 256 RPM gives the same 10k SU at 512 RPM at 2. It climbs through the speeds that much faster too. The engine itself runs as at 1, on the same fuel. Speeds shown and set on the engine are the shaft's. Above 1, Create's maxRotationSpeed needs raising to match (512 for 2 from the default 256): the scale only goes as far as that limit divided by 256, and at 256 it does nothing. Machines on the shaft turn faster and so ask for more SU, as behind any gearing. |
+| `rpmScale` | `1.0` | 0.25 to 8.0 | Turns every engine's shaft this many times as fast, with its stress capacity per RPM divided to match: an engine giving 10k SU at 256 RPM gives the same 10k SU at 512 RPM at 2. It climbs through the speeds that much faster too. The engine itself runs as at 1, on the same fuel. Speeds shown and set on the engine are the shaft's. Above 1, Create's maxRotationSpeed needs raising to match (512 for 2 from the default 256): the scale only goes as far as that limit divided by 256, and at 256 it does nothing. Machines on the shaft turn faster and so ask for more SU, as behind any gearing. The engine's own alternators and superchargers are geared with it instead. |
 
 ### `[features]`
 
@@ -141,8 +141,8 @@ the generated tables.
   in force is never more than `maxRotationSpeed` / 256 (nor less than 1 when set above 1). An engine that ran past 256 RPM
   under a raised limit needs that limit multiplied by the scale to keep all of its range. What shows or sets a speed on an
   engine (goggles, Dynamometer, governor, Black Box, Display Link, sound) uses shaft speed; advancements judge the engine's own.
-  A Starter's input, and a supercharger driven by a separate shaft, act on the engine as at 1; a motor or supercharger on the
-  engine's own shaft is geared with it.
+  A Starter's input, and a supercharger driven by a separate shaft, act on the engine as at 1; a motor, supercharger or the
+  engine's own alternator on the engine's shaft is geared with it, so an alternator takes and makes what it does at 1.
 
 ## Presets
 

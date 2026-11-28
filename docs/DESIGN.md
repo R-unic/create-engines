@@ -1630,7 +1630,8 @@ large crank-angle steps and handles stalling mid-tick naturally.
 
 **RPM scale.** `balance.rpmScale` is applied only where the engine meets its shaft (`OutputGearing`, `EngineController`):
 published speed ×scale, SU per RPM ÷scale, shaft speeds read back ÷scale, and a supercharger on the engine's network has
-its stress per RPM ÷scale. `engine/sim` never sees it, so saved motion and the behaviour guards are unaffected.
+its stress per RPM ÷scale. So has an alternator of the engine on that network, and it makes charge and Forge Energy from
+its shaft speed ÷scale (saved as `Gearing`, so a loaded world feels no unscaled stress first). `engine/sim` never sees it, so saved motion and the behaviour guards are unaffected.
 
 **Running above Create's default 256 RPM limit.** The limit is a server setting (`kinetics.maxRotationSpeed` in
 `create-server.toml`), and we recommend raising it: nothing in the mod assumes 256. The simulation is kept cheap so that

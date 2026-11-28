@@ -211,7 +211,7 @@ public final class CEConfig {
 				"faster too. The engine itself runs as at 1, on the same fuel. Speeds shown and set on the engine are the shaft's.",
 				"Above 1, Create's maxRotationSpeed needs raising to match (512 for 2 from the default 256): the scale only goes",
 				"as far as that limit divided by 256, and at 256 it does nothing. Machines on the shaft turn faster and so ask",
-				"for more SU, as behind any gearing.")
+				"for more SU, as behind any gearing. The engine's own alternators and superchargers are geared with it instead.")
 			.defineInRange("rpmScale", 1.0, 0.25, 8.0));
 		builder.pop();
 
