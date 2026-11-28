@@ -43,6 +43,7 @@ evidence, and never rerun until it passes.
 | GameTests "never finished" | crash, or another server holds the world lock |
 | `OutOfMemoryError`, hang after "All N required tests passed" | stale `run/gametest/world` (`--copy` deletes it) |
 | Many unrelated config tests red | a broken config sweep left extreme values in `run/gametest/config` (`--copy` deletes it) |
+| All tests pass, then "Could not save data", "Failed to save level" | another run used the same `--copy` name and deleted the test world mid-run: make the name yours alone, or use a detached worktree of the commit |
 | A mid-test config value reverts | the config file watcher: save the value and restore it on disk too |
 | Client `NoSuchMethodError` | it was running during a rebuild: restart it |
 
