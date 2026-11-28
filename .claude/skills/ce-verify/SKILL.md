@@ -66,8 +66,8 @@ A green run says nothing about looks or sound. Short client runs, each opens a w
 `-PsmokeWear` (about 7 min;
   needs `wearMode = true` in that checkout's `run/config` server toml, or no damage is drawn). See `docs/SMOKE.md`. Report anything not looked at or listened to as unverified.
 
-- `-PsmokeScenes` ends with `VisualSmokeTest.newBlocks`. A vanilla comparator's `FACING` is its input side. A Ponder speech
+- `-PsmokeScenes` ends with `VisualSmokeTestScenes.newBlocks`. A vanilla comparator's `FACING` is its input side. A Ponder speech
   bubble can hide what a step is about: check the neighbouring frames. Crop `-PsmokeEffects` screenshots with Pillow before
   judging them.
-- Sound: `SoundAssetsTest`, plus `soundCheck`/`soundReport` in `VisualSmokeTest.effects` (the report lists events never
+- Sound: `SoundAssetsTest`, plus `soundCheck`/`soundReport` in `VisualSmokeTestEffects.effects` (the report lists events never
   started).

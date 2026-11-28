@@ -1,6 +1,7 @@
 package com.createengines.ponder;
 
 import com.createengines.CreateEngines;
+import com.createengines.registry.CECasingBlocks;
 import com.createengines.registry.CEBlocks;
 import com.createengines.registry.CEItems;
 import com.tterrag.registrate.util.entry.ItemProviderEntry;
@@ -114,7 +115,7 @@ public class CEPonderPlugin implements PonderPlugin {
 			.addStoryBoard("rain_cap", WearScenes::wearAndTear);
 		scenes.forComponents(CEBlocks.CRANKSHAFT, CEBlocks.CAST_FLYWHEEL, CEBlocks.DUAL_MASS_FLYWHEEL, CEBlocks.TURBOCHARGER, CEBlocks.ROTOR_HOUSING)
 			.addStoryBoard("rain_cap", AeronauticsScenes::movingEngine);
-		scenes.forComponents(CEBlocks.ENGINE_CASING)
+		scenes.forComponents(CECasingBlocks.ENGINE_CASING)
 			.addStoryBoard("engine_casing", ExhaustCasingScenes::engineCasing);
 		scenes.forComponents(CEBlocks.CRANKSHAFT, CEBlocks.CRANK_THROW, CEBlocks.ROTOR_HOUSING)
 			.addStoryBoard("engine_readouts", ToolScenes::engineReadouts);

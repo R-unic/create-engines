@@ -8,6 +8,7 @@ import com.createengines.content.cylinder.CylinderBlockEntity;
 import com.createengines.content.starter.StarterBlock;
 import com.createengines.content.starter.StarterBlockEntity;
 import com.createengines.engine.EngineState;
+import com.createengines.registry.CECasingBlocks;
 import com.createengines.registry.CEBlocks;
 import com.simibubi.create.AllBlocks;
 import com.simibubi.create.content.kinetics.base.KineticBlockEntity;
@@ -127,15 +128,15 @@ public class StarterCasingGameTests {
 	 */
 	@GameTest(template = "empty", timeoutTicks = 100)
 	public static void casingCoversShaftsCogsCylindersAndPipes(GameTestHelper helper) {
-		net.minecraft.world.level.block.Block casing = CEBlocks.ENGINE_CASING.get();
+		net.minecraft.world.level.block.Block casing = CECasingBlocks.ENGINE_CASING.get();
 		for (net.minecraft.world.level.block.Block block : new net.minecraft.world.level.block.Block[] {
 			AllBlocks.SHAFT.get(), AllBlocks.COGWHEEL.get(), AllBlocks.LARGE_COGWHEEL.get()})
 			helper.assertTrue(com.simibubi.create.content.decoration.encasing.EncasingRegistry.getVariants(block)
 				.stream()
 				.anyMatch(variant -> variant instanceof com.simibubi.create.content.decoration.encasing.EncasedBlock cased
 					&& cased.getCasing() == casing), "Engine Casing should encase " + block);
-		BlockState[] cased = {CEBlocks.ENGINE_CASED_SHAFT.getDefaultState(), CEBlocks.ENGINE_CASED_COGWHEEL.getDefaultState(),
-			CEBlocks.ENGINE_CASED_LARGE_COGWHEEL.getDefaultState()};
+		BlockState[] cased = {CECasingBlocks.ENGINE_CASED_SHAFT.getDefaultState(), CECasingBlocks.ENGINE_CASED_COGWHEEL.getDefaultState(),
+			CECasingBlocks.ENGINE_CASED_LARGE_COGWHEEL.getDefaultState()};
 		for (int i = 0; i < cased.length; i++) {
 			BlockPos pos = new BlockPos(1 + i, 2, 1);
 			helper.setBlock(pos, cased[i]);
@@ -161,8 +162,8 @@ public class StarterCasingGameTests {
 	 */
 	@GameTest(template = "empty", timeoutTicks = 100)
 	public static void casingTakesDyeAndWashesClean(GameTestHelper helper) {
-		java.util.List<com.createengines.content.EngineCasingBlock> casings = java.util.List.of(CEBlocks.ENGINE_CASING.get(),
-			CEBlocks.ENGINE_RIVETED_CASING.get(), CEBlocks.ENGINE_LOUVRED_CASING.get());
+		java.util.List<com.createengines.content.EngineCasingBlock> casings = java.util.List.of(CECasingBlocks.ENGINE_CASING.get(),
+			CECasingBlocks.ENGINE_RIVETED_CASING.get(), CECasingBlocks.ENGINE_LOUVRED_CASING.get());
 		net.minecraft.world.entity.player.Player player = helper.makeMockPlayer(net.minecraft.world.level.GameType.SURVIVAL);
 		for (int i = 0; i < casings.size(); i++) {
 			BlockPos pos = new BlockPos(1 + i, 2, 1);
@@ -212,8 +213,8 @@ public class StarterCasingGameTests {
 				.setValue(com.createengines.content.Encasing.ENCASED, true),
 			CEBlocks.INTAKE_MANIFOLD.getDefaultState()
 				.setValue(com.createengines.content.Encasing.ENCASED, true),
-			CEBlocks.ENGINE_CASED_SHAFT.getDefaultState(), CEBlocks.ENGINE_CASED_COGWHEEL.getDefaultState(),
-			CEBlocks.ENGINE_CASED_LARGE_COGWHEEL.getDefaultState()};
+			CECasingBlocks.ENGINE_CASED_SHAFT.getDefaultState(), CECasingBlocks.ENGINE_CASED_COGWHEEL.getDefaultState(),
+			CECasingBlocks.ENGINE_CASED_LARGE_COGWHEEL.getDefaultState()};
 		for (int i = 0; i < clad.length; i++) {
 			BlockPos pos = new BlockPos(2 + i * 2, 2, 2);
 			helper.setBlock(pos, clad[i]);
@@ -345,7 +346,7 @@ public class StarterCasingGameTests {
 		for (int i = 0; i < parts.length; i++) {
 			BlockPos pos = new BlockPos(2 + i * 2, 2, 2);
 			helper.setBlock(pos, parts[i]);
-			net.minecraft.world.item.ItemStack casing = CEBlocks.ENGINE_WINDOW_CASING.asStack(2);
+			net.minecraft.world.item.ItemStack casing = CECasingBlocks.ENGINE_WINDOW_CASING.asStack(2);
 			dye(helper, player, pos, casing);
 			BlockState state = helper.getBlockState(pos);
 			helper.assertTrue(state.getValue(encased) && state.getValue(windowed), "Window casing should clad " + parts[i]);
@@ -353,7 +354,7 @@ public class StarterCasingGameTests {
 			helper.assertTrue(state.getShape(helper.getLevel(), helper.absolutePos(pos))
 				.equals(net.minecraft.world.phys.shapes.Shapes.block()), "A clad part is a full block");
 			helper.assertTrue(com.createengines.content.Encasing.casingStack(state)
-				.is(CEBlocks.ENGINE_WINDOW_CASING.asItem()), "It gives the window casing back");
+				.is(CECasingBlocks.ENGINE_WINDOW_CASING.asItem()), "It gives the window casing back");
 			dye(helper, player, pos, new net.minecraft.world.item.ItemStack(net.minecraft.world.item.Items.GREEN_DYE));
 			helper.assertTrue(dyeOf(helper, pos) == com.createengines.content.CasingPaint.GREEN,
 				"A windowed part takes a dye too");
@@ -361,23 +362,23 @@ public class StarterCasingGameTests {
 		// Plain casing on a crank is not windowed, and returns plain casing
 		BlockPos plain = new BlockPos(2, 2, 6);
 		helper.setBlock(plain, CEBlocks.CRANKSHAFT.getDefaultState());
-		dye(helper, player, plain, CEBlocks.ENGINE_CASING.asStack(1));
+		dye(helper, player, plain, CECasingBlocks.ENGINE_CASING.asStack(1));
 		helper.assertTrue(helper.getBlockState(plain)
 			.getValue(encased), "Plain casing clads a crank");
 		helper.assertFalse(helper.getBlockState(plain)
 			.getValue(windowed), "and leaves it without a window, state is " + helper.getBlockState(plain));
 		helper.assertTrue(com.createengines.content.Encasing.casingStack(helper.getBlockState(plain))
-			.is(CEBlocks.ENGINE_CASING.asItem()), "and gives plain casing back");
+			.is(CECasingBlocks.ENGINE_CASING.asItem()), "and gives plain casing back");
 		// A cylinder and a pipe have no window to give: the window casing does nothing to them
 		BlockPos cylinder = new BlockPos(6, 2, 6);
 		helper.setBlock(cylinder, CEBlocks.CYLINDER.getDefaultState());
-		dye(helper, player, cylinder, CEBlocks.ENGINE_WINDOW_CASING.asStack(1));
+		dye(helper, player, cylinder, CECasingBlocks.ENGINE_WINDOW_CASING.asStack(1));
 		helper.assertFalse(helper.getBlockState(cylinder)
 			.getValue(encased), "A cylinder takes no window casing");
 		// A rotor housing is a crank part that draws its own way: no window for it either
 		BlockPos rotor = new BlockPos(8, 2, 6);
 		helper.setBlock(rotor, CEBlocks.ROTOR_HOUSING.getDefaultState());
-		dye(helper, player, rotor, CEBlocks.ENGINE_WINDOW_CASING.asStack(1));
+		dye(helper, player, rotor, CECasingBlocks.ENGINE_WINDOW_CASING.asStack(1));
 		helper.assertFalse(helper.getBlockState(rotor)
 			.getValue(encased), "A rotor housing takes no window casing");
 		helper.succeed();
@@ -393,8 +394,8 @@ public class StarterCasingGameTests {
 		net.minecraft.world.entity.player.Player player = helper.makeMockPlayer(net.minecraft.world.level.GameType.SURVIVAL);
 		var style = com.createengines.content.Encasing.STYLE;
 		var encased = com.createengines.content.Encasing.ENCASED;
-		var plates = java.util.Map.of(com.createengines.content.CasingStyle.RIVETED, CEBlocks.ENGINE_RIVETED_CASING,
-			com.createengines.content.CasingStyle.LOUVRED, CEBlocks.ENGINE_LOUVRED_CASING);
+		var plates = java.util.Map.of(com.createengines.content.CasingStyle.RIVETED, CECasingBlocks.ENGINE_RIVETED_CASING,
+			com.createengines.content.CasingStyle.LOUVRED, CECasingBlocks.ENGINE_LOUVRED_CASING);
 		int row = 0;
 		for (var plate : plates.entrySet()) {
 			BlockState[] parts = {CEBlocks.CRANKSHAFT.getDefaultState(), CEBlocks.CRANK_THROW.getDefaultState(),
@@ -425,15 +426,15 @@ public class StarterCasingGameTests {
 		helper.assertTrue(com.createengines.content.Encasing.styleOf(CEBlocks.CRANKSHAFT.getDefaultState()
 			.setValue(encased, true)) == com.createengines.content.CasingStyle.PLAIN, "A part with no plate is plain");
 		// Each casing makes Create's shaft and cogwheels of its own kind, and each is a working kinetic block
-		var variants = java.util.Map.of(CEBlocks.ENGINE_RIVETED_CASING.get(),
-			java.util.List.of(CEBlocks.ENGINE_RIVETED_CASED_SHAFT, CEBlocks.ENGINE_RIVETED_CASED_COGWHEEL,
-				CEBlocks.ENGINE_RIVETED_CASED_LARGE_COGWHEEL),
-			CEBlocks.ENGINE_LOUVRED_CASING.get(),
-			java.util.List.of(CEBlocks.ENGINE_LOUVRED_CASED_SHAFT, CEBlocks.ENGINE_LOUVRED_CASED_COGWHEEL,
-				CEBlocks.ENGINE_LOUVRED_CASED_LARGE_COGWHEEL),
-			CEBlocks.ENGINE_WINDOW_CASING.get(),
-			java.util.List.of(CEBlocks.ENGINE_WINDOW_CASED_SHAFT, CEBlocks.ENGINE_WINDOW_CASED_COGWHEEL,
-				CEBlocks.ENGINE_WINDOW_CASED_LARGE_COGWHEEL));
+		var variants = java.util.Map.of(CECasingBlocks.ENGINE_RIVETED_CASING.get(),
+			java.util.List.of(CECasingBlocks.ENGINE_RIVETED_CASED_SHAFT, CECasingBlocks.ENGINE_RIVETED_CASED_COGWHEEL,
+				CECasingBlocks.ENGINE_RIVETED_CASED_LARGE_COGWHEEL),
+			CECasingBlocks.ENGINE_LOUVRED_CASING.get(),
+			java.util.List.of(CECasingBlocks.ENGINE_LOUVRED_CASED_SHAFT, CECasingBlocks.ENGINE_LOUVRED_CASED_COGWHEEL,
+				CECasingBlocks.ENGINE_LOUVRED_CASED_LARGE_COGWHEEL),
+			CECasingBlocks.ENGINE_WINDOW_CASING.get(),
+			java.util.List.of(CECasingBlocks.ENGINE_WINDOW_CASED_SHAFT, CECasingBlocks.ENGINE_WINDOW_CASED_COGWHEEL,
+				CECasingBlocks.ENGINE_WINDOW_CASED_LARGE_COGWHEEL));
 		net.minecraft.world.level.block.Block[] bases = {AllBlocks.SHAFT.get(), AllBlocks.COGWHEEL.get(),
 			AllBlocks.LARGE_COGWHEEL.get()};
 		int x = 1;

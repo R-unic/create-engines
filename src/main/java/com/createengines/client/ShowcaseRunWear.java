@@ -80,10 +80,10 @@ final class ShowcaseRunWear {
 
 	static void build(ServerLevel level, ServerPlayer player) {
 		WearKeeper.roller = () -> 1.0;
-		ShowcaseRun.attempt("the wear engine", () -> ShowcaseRun.bank(level, player, pad(WEAR_BAY), BankBuilderItem.Layout.INLINE,
+		ShowcaseRun.attempt("the wear engine", () -> ShowcaseRunBuild.bank(level, player, pad(WEAR_BAY), BankBuilderItem.Layout.INLINE,
 			WEAR_THROWS, new ShowcaseRun.Kit(ShowcaseRun.Fuel.GASOLINE, 1, false, 0, false, false, false)));
 		ShowcaseRun.attempt("the rod twin", () -> {
-			ShowcaseRun.bank(level, player, pad(ROD_BAY), BankBuilderItem.Layout.INLINE, ROD_THROWS,
+			ShowcaseRunBuild.bank(level, player, pad(ROD_BAY), BankBuilderItem.Layout.INLINE, ROD_THROWS,
 				ShowcaseRun.Kit.plain(ShowcaseRun.Fuel.GASOLINE));
 			// No flywheel, so that each firing shows in the crank's speed
 			set(level, pad(ROD_BAY), ROD_THROWS + 5, CY, CZ, Blocks.AIR.defaultBlockState());
@@ -103,7 +103,7 @@ final class ShowcaseRunWear {
 
 	/** The four gaskets, a Service Kit and a set of Apex Seals, each on a depot of its own in a row. */
 	private static void parts(ServerLevel level, BlockPos at) {
-		ShowcaseRun.dais(level, at, SAW_X + 4);
+		ShowcaseRunBuild.dais(level, at, SAW_X + 4);
 		Item[] shown = { CEItems.STOCK_GASKET.get(), CEItems.CARDBOARD_GASKET.get(), CEItems.RUBBER_GASKET.get(),
 			CEItems.COPPER_GASKET.get(), CEItems.SERVICE_KIT.get(), CEItems.APEX_SEALS.get() };
 		for (int i = 0; i < shown.length; i++) {
@@ -124,7 +124,7 @@ final class ShowcaseRunWear {
 		set(level, at, SAW_X, 1, CZ, AllBlocks.MECHANICAL_SAW.getDefaultState()
 			.setValue(DirectionalKineticBlock.FACING, Direction.UP)
 			.setValue(DirectionalAxisKineticBlock.AXIS_ALONG_FIRST_COORDINATE, true));
-		ShowcaseRun.motor(level, at.offset(SAW_X - 1, 1, CZ), Direction.EAST, 48);
+		ShowcaseRunBuild.motor(level, at.offset(SAW_X - 1, 1, CZ), Direction.EAST, 48);
 	}
 
 	private static void dropBelt(ServerLevel level) {
@@ -236,11 +236,11 @@ final class ShowcaseRunWear {
 			ShowcaseRunFeatures.radiator(level, x);
 		set(level, at, 1, CY + 1, CZ - 1, AllBlocks.BASIN.getDefaultState());
 		set(level, at, 1, CY + 3, CZ - 1, AllBlocks.MECHANICAL_MIXER.getDefaultState());
-		ShowcaseRun.drive(level, at, 0, CY + 3, CZ - 1, Axis.Y, Direction.UP, 64);
+		ShowcaseRunWorks.drive(level, at, 0, CY + 3, CZ - 1, Axis.Y, Direction.UP, 64);
 		// Facing south, at the radiator; a positive speed from a motor on its south-facing shaft blows that way
 		set(level, at, 4, CY, CZ - 2, AllBlocks.ENCASED_FAN.getDefaultState()
 			.setValue(BlockStateProperties.FACING, Direction.SOUTH));
-		ShowcaseRun.motor(level, at.offset(4, CY, CZ - 3), Direction.SOUTH, 128);
+		ShowcaseRunBuild.motor(level, at.offset(4, CY, CZ - 3), Direction.SOUTH, 128);
 	}
 
 	/** Copper and zinc into the basin: Create's brass, a recipe that needs heat. */

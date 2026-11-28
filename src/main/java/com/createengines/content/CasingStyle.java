@@ -3,7 +3,7 @@ package com.createengines.content;
 import net.minecraft.util.StringRepresentable;
 import net.minecraft.world.item.ItemStack;
 
-import com.createengines.registry.CEBlocks;
+import com.createengines.registry.CECasingBlocks;
 
 /**
  * Which of the four Engine Casing blocks a part is clad in. A crank, cam, cylinder or pipe remembers it in
@@ -27,10 +27,10 @@ public enum CasingStyle implements StringRepresentable {
 	/** The casing block item that clads a part in this style, and that taking the casing off gives back. */
 	public ItemStack casingStack() {
 		return switch (this) {
-			case PLAIN -> CEBlocks.ENGINE_CASING.asStack();
-			case RIVETED -> CEBlocks.ENGINE_RIVETED_CASING.asStack();
-			case LOUVRED -> CEBlocks.ENGINE_LOUVRED_CASING.asStack();
-			case WINDOW -> CEBlocks.ENGINE_WINDOW_CASING.asStack();
+			case PLAIN -> CECasingBlocks.ENGINE_CASING.asStack();
+			case RIVETED -> CECasingBlocks.ENGINE_RIVETED_CASING.asStack();
+			case LOUVRED -> CECasingBlocks.ENGINE_LOUVRED_CASING.asStack();
+			case WINDOW -> CECasingBlocks.ENGINE_WINDOW_CASING.asStack();
 		};
 	}
 

@@ -13,6 +13,7 @@ import java.util.function.Supplier;
 import org.jetbrains.annotations.Nullable;
 
 import com.createengines.CreateEngines;
+import com.createengines.registry.CECasingBlocks;
 import com.createengines.registry.CEBlocks;
 import com.createengines.registry.CEFluids;
 import com.createengines.registry.CEItems;
@@ -145,7 +146,7 @@ public final class CEAdvancements {
 		on("builder/bank_builder", "first_light/crankshaft", () -> CEItems.BANK_BUILDER.get(), AdvancementType.TASK,
 			Milestone.BANK_BUILT, "Assembly Line",
 			"Use a Bank Builder on a crankshaft to lay out its cylinders and heads in one click.");
-		on("builder/engine_casing", "first_light/alive", () -> CEBlocks.ENGINE_CASING.get(), AdvancementType.TASK,
+		on("builder/engine_casing", "first_light/alive", () -> CECasingBlocks.ENGINE_CASING.get(), AdvancementType.TASK,
 			Milestone.CLAD, "Under the Hood",
 			"Run an engine with four or more blocks of Engine Casing built round its cylinders.");
 

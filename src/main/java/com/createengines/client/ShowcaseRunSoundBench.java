@@ -155,12 +155,12 @@ public final class ShowcaseRunSoundBench {
 	private static Rig bank(String id, String title, BankBuilderItem.Layout layout, int throwsCount,
 		ShowcaseRun.Kit kit, FiringPlanner.Style style) {
 		Builder builder = (level, player, at) -> {
-			ShowcaseRun.bank(level, player, at, layout, throwsCount, kit);
+			ShowcaseRunBuild.bank(level, player, at, layout, throwsCount, kit);
 			// Open exhausts: the reference is the engine, not its mufflers
 			for (BlockPos pos : blocks(at, throwsCount + 12))
 				if (level.getBlockState(pos)
 					.is(CEBlocks.MUFFLER.get()))
-					ShowcaseRun.pipe(level, pos, CEBlocks.EXHAUST_MANIFOLD.get());
+					ShowcaseRunBuild.pipe(level, pos, CEBlocks.EXHAUST_MANIFOLD.get());
 		};
 		return new Rig(id, title, builder, new BlockPos(1, CY, CZ), new BlockPos(0, CY - 1, CZ), throwsCount + 6,
 			throwsCount + 12, style, IDLE, PRESSES);

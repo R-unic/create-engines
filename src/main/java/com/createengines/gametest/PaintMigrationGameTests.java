@@ -9,6 +9,7 @@ import com.createengines.CreateEngines;
 import com.createengines.content.CasingPaint;
 import com.createengines.content.Encasing;
 import com.createengines.content.PaintedBlockEntity;
+import com.createengines.registry.CECasingBlocks;
 import com.createengines.registry.CEBlocks;
 
 import net.minecraft.core.BlockPos;
@@ -50,9 +51,9 @@ public class PaintMigrationGameTests {
 			.setValue(clad, true));
 		parts.put(new BlockPos(7, 2, 1), CEBlocks.INTAKE_MANIFOLD.getDefaultState()
 			.setValue(clad, true));
-		parts.put(new BlockPos(1, 2, 3), TestEngine.axisX(CEBlocks.ENGINE_CASED_SHAFT.getDefaultState()));
-		parts.put(new BlockPos(3, 2, 3), TestEngine.axisX(CEBlocks.ENGINE_CASED_COGWHEEL.getDefaultState()));
-		parts.put(new BlockPos(5, 2, 3), TestEngine.axisX(CEBlocks.ENGINE_CASED_LARGE_COGWHEEL.getDefaultState()));
+		parts.put(new BlockPos(1, 2, 3), TestEngine.axisX(CECasingBlocks.ENGINE_CASED_SHAFT.getDefaultState()));
+		parts.put(new BlockPos(3, 2, 3), TestEngine.axisX(CECasingBlocks.ENGINE_CASED_COGWHEEL.getDefaultState()));
+		parts.put(new BlockPos(5, 2, 3), TestEngine.axisX(CECasingBlocks.ENGINE_CASED_LARGE_COGWHEEL.getDefaultState()));
 		CasingPaint[] dyes = { CasingPaint.RED, CasingPaint.BLUE, CasingPaint.LIME, CasingPaint.YELLOW, CasingPaint.PURPLE,
 			CasingPaint.ORANGE, CasingPaint.CYAN };
 		Map<BlockPos, CasingPaint> out = new LinkedHashMap<>();

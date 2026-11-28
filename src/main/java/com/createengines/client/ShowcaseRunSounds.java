@@ -47,7 +47,7 @@ final class ShowcaseRunSounds {
 
 	static void build(ServerLevel level, ServerPlayer player) {
 		ShowcaseRun.attempt("the open V8", () -> {
-			ShowcaseRun.bank(level, player, pad(V8_BAY), BankBuilderItem.Layout.VEE, V8_THROWS,
+			ShowcaseRunBuild.bank(level, player, pad(V8_BAY), BankBuilderItem.Layout.VEE, V8_THROWS,
 				ShowcaseRun.Kit.plain(ShowcaseRun.Fuel.GASOLINE));
 			// No flywheel, so that it revs
 			set(level, pad(V8_BAY), V8_THROWS + 5, CY, CZ, Blocks.AIR.defaultBlockState());
@@ -55,7 +55,7 @@ final class ShowcaseRunSounds {
 			ShowcaseRunStaging.throttles(level, V8_BAY, V8_THROWS, false, V8_IDLE);
 		});
 		ShowcaseRun.attempt("the diesel", () -> {
-			ShowcaseRun.bank(level, player, pad(DIESEL_BAY), BankBuilderItem.Layout.INLINE, DIESEL_THROWS,
+			ShowcaseRunBuild.bank(level, player, pad(DIESEL_BAY), BankBuilderItem.Layout.INLINE, DIESEL_THROWS,
 				ShowcaseRun.Kit.plain(ShowcaseRun.Fuel.DIESEL));
 			muffle(level, DIESEL_BAY, DIESEL_THROWS, BankBuilderItem.Layout.INLINE, -1);
 		});
@@ -69,7 +69,7 @@ final class ShowcaseRunSounds {
 		BlockPos at = pad(bay);
 		int bankIndex = 0;
 		for (Direction bore : BankBuilderItem.faces(layout, Axis.X, Direction.UP)) {
-			Direction exhaust = ShowcaseRun.intakeSide(bore)
+			Direction exhaust = ShowcaseRunBuild.intakeSide(bore)
 				.getOpposite();
 			List<BlockPos> row = new ArrayList<>();
 			for (int x = 2; x <= throwCount + 2; x++)
@@ -80,12 +80,12 @@ final class ShowcaseRunSounds {
 			if (bankIndex++ == muffled)
 				level.setBlock(last, axisX(CEBlocks.MUFFLER.getDefaultState()), Block.UPDATE_ALL);
 			else
-				ShowcaseRun.pipe(level, last, CEBlocks.EXHAUST_MANIFOLD.get());
+				ShowcaseRunBuild.pipe(level, last, CEBlocks.EXHAUST_MANIFOLD.get());
 			// Each pipe joins up again to whatever is beside it now
 			for (BlockPos pos : row)
 				if (level.getBlockState(pos)
 					.is(CEBlocks.EXHAUST_MANIFOLD.get()))
-					ShowcaseRun.pipe(level, pos, (ManifoldBlock) CEBlocks.EXHAUST_MANIFOLD.get());
+					ShowcaseRunBuild.pipe(level, pos, (ManifoldBlock) CEBlocks.EXHAUST_MANIFOLD.get());
 		}
 	}
 

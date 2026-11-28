@@ -1,22 +1,19 @@
 package com.createengines.client;
 
+import static com.createengines.client.VisualSmokeTestScenes.*;
+import static com.createengines.client.VisualSmokeTestEffects.*;
+
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.function.Supplier;
 
 import com.createengines.CreateEngines;
-import com.createengines.content.CasingPaint;
-import com.createengines.content.EngineCasingBlock;
 import com.createengines.content.EnginePoses;
 import com.createengines.content.airflow.ManifoldBlock;
 import com.createengines.content.airflow.PortOpeningBlock;
 import com.createengines.content.crankshaft.CrankshaftBlockEntity;
 import com.createengines.content.cylinder.CylinderBlock;
-import com.createengines.content.governor.GovernorBlockEntity;
-import com.createengines.content.tool.TimingToolItem;
-import com.createengines.engine.topology.FiringPlanner;
-import com.createengines.content.head.CylinderHeadBlock;
 import com.createengines.content.head.CylinderHeadBlockEntity;
 import com.createengines.engine.CrankGeometry;
 import com.createengines.gametest.TestEngine;
@@ -48,11 +45,8 @@ import net.minecraft.world.level.WorldDataConfiguration;
 import net.minecraft.world.level.levelgen.Heightmap;
 import net.minecraft.world.level.levelgen.WorldOptions;
 import net.minecraft.world.level.levelgen.presets.WorldPresets;
-import net.neoforged.neoforge.fluids.FluidStack;
-import net.neoforged.neoforge.fluids.capability.IFluidHandler;
 import net.neoforged.neoforge.client.event.ClientTickEvent;
 import net.neoforged.neoforge.client.event.RenderFrameEvent;
-import net.neoforged.neoforge.client.event.sound.PlaySoundEvent;
 import net.neoforged.neoforge.common.NeoForge;
 
 /**
@@ -62,47 +56,47 @@ import net.neoforged.neoforge.common.NeoForge;
  */
 public final class VisualSmokeTest {
 
-	private static final String PROPERTY = "create_engines.visualSmokeTest";
+	static final String PROPERTY = "create_engines.visualSmokeTest";
 	/** Run only the newest Ponder pages (gradle {@code -PsmokeScenes}), for a short check of those. */
-	private static final String SCENES_ONLY = "create_engines.visualSmokeTest.scenes";
+	static final String SCENES_ONLY = "create_engines.visualSmokeTest.scenes";
 
 	/** Run only the twin-rotor engine (gradle {@code -PsmokeRotary}), for a short look at the rotary parts. */
-	private static final String ROTARY_ONLY = "create_engines.visualSmokeTest.rotary";
+	static final String ROTARY_ONLY = "create_engines.visualSmokeTest.rotary";
 
 	/** Run only the flywheel, dynamometer, variable turbo and bank builder (gradle {@code -PsmokeNewParts}). */
-	private static final String NEW_PARTS_ONLY = "create_engines.visualSmokeTest.newParts";
+	static final String NEW_PARTS_ONLY = "create_engines.visualSmokeTest.newParts";
 
 	/** Run only the engines' smoke, steam, sparks and bubbles (gradle {@code -PsmokeEffects}). */
-	private static final String EFFECTS_ONLY = "create_engines.visualSmokeTest.effects";
+	static final String EFFECTS_ONLY = "create_engines.visualSmokeTest.effects";
 
 	/** Run only the wear mode's wrecks (gradle {@code -PsmokeWear}): a thrown rod and its broken head, a blown gasket and a seized piston, each against a sound engine. */
-	private static final String WEAR_ONLY = "create_engines.visualSmokeTest.wear";
+	static final String WEAR_ONLY = "create_engines.visualSmokeTest.wear";
 
 	/** Run only the pushrod close-up (gradle {@code -PsmokePushrods}): one cylinder with its cam beside the block. */
-	private static final String PUSHRODS_ONLY = "create_engines.visualSmokeTest.pushrods";
+	static final String PUSHRODS_ONLY = "create_engines.visualSmokeTest.pushrods";
 	/** Run only the casing wall (gradle {@code -PsmokeCasings}): every casing plate in a row of dyes. */
-	private static final String CASINGS_ONLY = "create_engines.visualSmokeTest.casings";
+	static final String CASINGS_ONLY = "create_engines.visualSmokeTest.casings";
 	/** Run only the rain cap close-up (gradle {@code -PsmokeRainCap}): a cap on the first engine's exhaust outlet. */
-	private static final String RAIN_CAP_ONLY = "create_engines.visualSmokeTest.rainCap";
+	static final String RAIN_CAP_ONLY = "create_engines.visualSmokeTest.rainCap";
 	/** Run only the window casing close-up (gradle {@code -PsmokeWindow}): the first engine's crank behind glass. */
-	private static final String WINDOW_ONLY = "create_engines.visualSmokeTest.window";
+	static final String WINDOW_ONLY = "create_engines.visualSmokeTest.window";
 
 	/** Run only the refinery (gradle {@code -PsmokeRefinery}): a working column with a flare stack and a basin's goggle line. */
-	private static final String REFINERY_ONLY = "create_engines.visualSmokeTest.refinery";
+	static final String REFINERY_ONLY = "create_engines.visualSmokeTest.refinery";
 
 	/** Run only the sound bench (gradle {@code -PsmokeSound}, driven by tools/sound_bench.py): see {@link ShowcaseRunSoundBench}. */
-	private static final String SOUND_ONLY = "create_engines.visualSmokeTest.sound";
+	static final String SOUND_ONLY = "create_engines.visualSmokeTest.sound";
 
-	private record Step(int tick, Runnable action) {
+	record Step(int tick, Runnable action) {
 	}
 
 	/** Where the spark engine stands, relative to the first. */
-	private static final BlockPos SPARK_OFFSET = new BlockPos(12, 0, 0);
+	static final BlockPos SPARK_OFFSET = new BlockPos(12, 0, 0);
 
-	private static final List<Step> STEPS = new ArrayList<>();
-	private static boolean worldRequested;
-	private static int ticksInWorld = -1;
-	private static BlockPos origin = BlockPos.ZERO;
+	static final List<Step> STEPS = new ArrayList<>();
+	static boolean worldRequested;
+	static int ticksInWorld = -1;
+	static BlockPos origin = BlockPos.ZERO;
 
 	private VisualSmokeTest() {
 	}
@@ -117,71 +111,11 @@ public final class VisualSmokeTest {
 		CreateEngines.LOGGER.info("Visual smoke test enabled");
 		NeoForge.EVENT_BUS.addListener(VisualSmokeTest::onClientTick);
 		NeoForge.EVENT_BUS.addListener(VisualSmokeTest::onRenderFrame);
-		NeoForge.EVENT_BUS.addListener(VisualSmokeTest::onPlaySound);
+		NeoForge.EVENT_BUS.addListener(VisualSmokeTestEffects::onPlaySound);
 		schedule();
 	}
 
-	/** How many times each of this mod's sound events was started in this run, for {@link #soundReport}. */
-	private static final java.util.Map<net.minecraft.resources.ResourceLocation, Integer> SOUNDS_PLAYED =
-		new java.util.TreeMap<>();
-
-	private static void onPlaySound(PlaySoundEvent event) {
-		if (event.getSound() != null && CreateEngines.MOD_ID.equals(event.getSound()
-			.getLocation()
-			.getNamespace()))
-			SOUNDS_PLAYED.merge(event.getSound()
-				.getLocation(), 1, Integer::sum);
-	}
-
-	/**
-	 * The sound smoke test's client half: every sound event this mod registers must resolve through the loaded
-	 * {@code sounds.json} to a recording the resource packs actually hold. Problems are logged as errors starting
-	 * "SOUND SMOKE FAIL", so a run's log can be searched for them.
-	 */
-	private static void soundCheck() {
-		Minecraft minecraft = Minecraft.getInstance();
-		int problems = 0;
-		int checked = 0;
-		for (var id : net.minecraft.core.registries.BuiltInRegistries.SOUND_EVENT.keySet()) {
-			if (!CreateEngines.MOD_ID.equals(id.getNamespace()))
-				continue;
-			checked++;
-			var weighed = minecraft.getSoundManager()
-				.getSoundEvent(id);
-			if (weighed == null) {
-				CreateEngines.LOGGER.error("SOUND SMOKE FAIL {}: no entry in the loaded sounds.json", id);
-				problems++;
-				continue;
-			}
-			var sound = weighed.getSound(net.minecraft.util.RandomSource.create());
-			if (sound == net.minecraft.client.sounds.SoundManager.EMPTY_SOUND
-				|| sound == net.minecraft.client.sounds.SoundManager.INTENTIONALLY_EMPTY_SOUND) {
-				CreateEngines.LOGGER.error("SOUND SMOKE FAIL {}: resolves to no sound", id);
-				problems++;
-				continue;
-			}
-			var file = sound.getPath();
-			if (minecraft.getResourceManager()
-				.getResource(file)
-				.isEmpty()) {
-				CreateEngines.LOGGER.error("SOUND SMOKE FAIL {}: recording {} is not in the resource packs", id, file);
-				problems++;
-			}
-		}
-		CreateEngines.LOGGER.info("SOUND SMOKE resolved {} sound events, {} problems", checked, problems);
-	}
-
-	/** Which of this mod's sound events actually started during the run, and which never did. */
-	private static void soundReport() {
-		var never = new java.util.TreeSet<String>();
-		for (var id : net.minecraft.core.registries.BuiltInRegistries.SOUND_EVENT.keySet())
-			if (CreateEngines.MOD_ID.equals(id.getNamespace()) && !SOUNDS_PLAYED.containsKey(id))
-				never.add(id.getPath());
-		CreateEngines.LOGGER.info("SOUND SMOKE played {}", SOUNDS_PLAYED);
-		CreateEngines.LOGGER.info("SOUND SMOKE never started in this run: {}", never);
-	}
-
-	private static void schedule() {
+	static void schedule() {
 		STEPS.add(new Step(40, () -> {
 			Minecraft.getInstance().options.hideGui = true;
 			server(server -> {
@@ -387,436 +321,6 @@ public final class VisualSmokeTest {
 		newScenes(10600);
 	}
 
-	/**
-	 * A muffler in the test engine's exhaust, engine casing round its cylinder, and an oil pan with a comparator and a lamp
-	 * against its crank, then the goggles on the muffled crank and pan, and every Ponder page that is new or gained steps;
-	 * then quits.
-	 */
-	private static void newBlocks(int start) {
-		STEPS.add(new Step(start, () -> {
-			Minecraft.getInstance().options.hideGui = true;
-			server(server -> {
-				var level = server.overworld();
-				// The outlet moves out a block and a muffler takes its place against the head
-				level.setBlock(origin.offset(TestEngine.EXHAUST.west()), CEBlocks.EXHAUST_OUTLET.getDefaultState()
-					.setValue(PortOpeningBlock.FACING, Direction.WEST), 3);
-				level.setBlock(origin.offset(TestEngine.EXHAUST), CEBlocks.MUFFLER.getDefaultState()
-					.setValue(net.minecraft.world.level.block.state.properties.BlockStateProperties.AXIS,
-						Direction.Axis.X), 3);
-				// Casing round the cylinder and the east side of the head, leaving the pipes' faces clear
-				for (BlockPos beside : List.of(new BlockPos(1, 3, 2), new BlockPos(3, 3, 2), new BlockPos(2, 3, 1),
-					new BlockPos(2, 3, 3), new BlockPos(3, 4, 2)))
-					level.setBlock(origin.offset(beside), CEBlocks.ENGINE_CASING.getDefaultState(), 3);
-				// An oil pan under the crank with oil in it, read by a comparator that lights a lamp
-				BlockPos pan = origin.offset(3, 1, 2);
-				level.setBlock(pan, CEBlocks.SUMP.getDefaultState(), 3);
-				level.setBlock(origin.offset(4, 0, 2), Blocks.STONE.defaultBlockState(), 3);
-				level.setBlock(origin.offset(4, 1, 2), Blocks.COMPARATOR.defaultBlockState()
-					.setValue(net.minecraft.world.level.block.HorizontalDirectionalBlock.FACING, Direction.WEST), 3);
-				level.setBlock(origin.offset(5, 1, 2), Blocks.REDSTONE_LAMP.defaultBlockState(), 3);
-				if (level.getBlockEntity(pan) instanceof com.createengines.content.sump.SumpBlockEntity sump)
-					sump.tank()
-						.fill(new FluidStack(CEFluids.ENGINE_OIL.get()
-							.getSource(), 500), IFluidHandler.FluidAction.EXECUTE);
-			});
-		}));
-		frames("muffler", start + 60, -2.0, 5.0, -0.5, -60, 22);
-		frames("casing", start + 100, 2.5, 5.2, -2.5, 0, 24);
-		frames("pan_comparator", start + 140, 4.5, 3.2, -1.5, 0, 28);
-		STEPS.add(new Step(start + 180, () -> view(-2.5, 6.5, -1.5, -55, 37)));
-		STEPS.add(new Step(start + 195, () -> shot("blocks_overview")));
-		STEPS.add(new Step(start + 200, () -> Minecraft.getInstance().options.hideGui = false));
-		goggles("muffled_crank", start + 205, 1.5, 2.0, 0.4, 0, 28);
-		goggles("sump", start + 235, 3.5, 2.0, 0.4, 0, 28);
-		// The pages that are new, and those that gained steps
-		ponder("refinery", start + 300, CEBlocks.REBOILER::asStack, 80, 200, 380, 560, 700, 860);
-		// The reboiler's second page; its first is the column itself
-		ponderScene("refinery_lean", start + 1300, CEBlocks.REBOILER::asStack, 1, 100, 250, 400, 560);
-		ponder("soot_trap", start + 2100, CEBlocks.SOOT_TRAP::asStack, 100, 250, 400, 580);
-		ponder("jerry_can", start + 2900, CEItems.JERRY_CAN::asStack, 100, 250, 400);
-		STEPS.add(new Step(start + 3700, () -> Minecraft.getInstance()
-			.stop()));
-	}
-
-	private static final BlockPos REFINERY_OFFSET = new BlockPos(0, 0, 14);
-
-	/**
-	 * A 2x2 column over a seething burner fed plant oil, a flare stack on its condenser, and a basin of plant oil on
-	 * a burner beside it; logs the basin's goggle lines ("REFINERY SMOKE") then takes pictures. Then the run ends.
-	 */
-	private static void refinery(int start) {
-		STEPS.add(new Step(start, () -> server(server -> {
-			var level = server.overworld();
-			BlockPos base = origin.offset(REFINERY_OFFSET);
-			for (int x = 0; x < 2; x++)
-				for (int z = 0; z < 2; z++) {
-					level.setBlock(base.offset(x, 0, z), CEBlocks.HEAT_EXCHANGER.getDefaultState()
-						.setValue(com.simibubi.create.content.processing.burner.BlazeBurnerBlock.HEAT_LEVEL,
-							com.simibubi.create.content.processing.burner.BlazeBurnerBlock.HeatLevel.KINDLED), 3);
-					level.setBlock(base.offset(x, 1, z), CEBlocks.REBOILER.getDefaultState(), 3);
-					level.setBlock(base.offset(x, 2, z), CEBlocks.COLUMN_SECTION.getDefaultState(), 3);
-					level.setBlock(base.offset(x, 3, z), CEBlocks.COLUMN_SECTION.getDefaultState(), 3);
-					level.setBlock(base.offset(x, 4, z), CEBlocks.CONDENSER.getDefaultState(), 3);
-				}
-			level.setBlock(base.offset(0, 5, 0), CEBlocks.FLARE_STACK.getDefaultState(), 3);
-			// A leaning column of its own, west of the first: straight for two layers, then a step east and up
-			BlockPos lean = base.offset(-6, 0, 0);
-			level.setBlock(lean, CEBlocks.HEAT_EXCHANGER.getDefaultState(), 3);
-			level.setBlock(lean.above(), CEBlocks.REBOILER.getDefaultState(), 3);
-			int[] layerX = {0, 0, 1, 1, 2};
-			for (int i = 0; i < layerX.length; i++)
-				level.setBlock(lean.offset(layerX[i], 2 + i, 0), CEBlocks.COLUMN_SECTION.getDefaultState(), 3);
-			level.setBlock(lean.offset(2, 2 + layerX.length, 0), CEBlocks.CONDENSER.getDefaultState(), 3);
-			BlockPos basin = base.offset(5, 1, 0);
-			level.setBlock(basin.below(), com.simibubi.create.AllBlocks.BLAZE_BURNER.getDefaultState()
-				.setValue(com.simibubi.create.content.processing.burner.BlazeBurnerBlock.HEAT_LEVEL,
-					com.simibubi.create.content.processing.burner.BlazeBurnerBlock.HeatLevel.KINDLED), 3);
-			level.setBlock(basin, com.simibubi.create.AllBlocks.BASIN.getDefaultState(), 3);
-		})));
-		STEPS.add(new Step(start + 40, () -> server(server -> {
-			var level = server.overworld();
-			BlockPos base = origin.offset(REFINERY_OFFSET);
-			var feed = level.getCapability(net.neoforged.neoforge.capabilities.Capabilities.FluidHandler.BLOCK,
-				base.above(), Direction.UP);
-			if (feed != null)
-				feed.fill(new FluidStack(CEFluids.PLANT_OIL.get()
-					.getSource(), 1000), IFluidHandler.FluidAction.EXECUTE);
-			var coal = level.getBlockEntity(base.above());
-			if (coal instanceof com.createengines.content.refinery.ColumnPortBlockEntity port)
-				port.insertCatalyst(new ItemStack(net.minecraft.world.item.Items.COAL, 16));
-			if (level.getBlockEntity(base.offset(5, 1, 0)) instanceof com.simibubi.create.content.processing.basin.BasinBlockEntity basin)
-				basin.getTanks()
-					.getFirst()
-					.getPrimaryHandler()
-					.fill(new FluidStack(CEFluids.PLANT_OIL.get()
-						.getSource(), 500), IFluidHandler.FluidAction.EXECUTE);
-		})));
-		STEPS.add(new Step(start + 110, () -> server(server -> {
-			if (server.overworld()
-				.getBlockEntity(origin.offset(REFINERY_OFFSET)
-					.above()) instanceof com.createengines.content.refinery.ColumnPortBlockEntity port)
-				CreateEngines.LOGGER.info("REFINERY SMOKE column {} heat {} rate {} catalyst {}", port.limit(), port.heat(),
-					port.rate(), port.catalystStack());
-		})));
-		// The client's own goggle text for the basin, which is where the mixin must have applied
-		STEPS.add(new Step(start + 120, () -> {
-			var level = Minecraft.getInstance().level;
-			BlockPos basin = origin.offset(REFINERY_OFFSET)
-				.offset(5, 1, 0);
-			if (level != null && level.getBlockEntity(basin) instanceof com.simibubi.create.api.equipment.goggles.IHaveGoggleInformation goggles) {
-				List<net.minecraft.network.chat.Component> lines = new ArrayList<>();
-				goggles.addToGoggleTooltip(lines, false);
-				boolean hinted = lines.stream()
-					.anyMatch(l -> l.getString()
-						.contains("refining column would make"));
-				CreateEngines.LOGGER.info("REFINERY SMOKE basin goggles {} lines, hint {}: {}", lines.size(),
-					hinted ? "PRESENT" : "MISSING", lines.stream()
-						.map(net.minecraft.network.chat.Component::getString)
-						.toList());
-				if (!hinted)
-					CreateEngines.LOGGER.error("REFINERY SMOKE FAIL: the basin goggles carry no column hint");
-			} else
-				CreateEngines.LOGGER.error("REFINERY SMOKE FAIL: no basin on the client at {}", basin);
-		}));
-		frames("refinery_column", start + 160, 3.0, 6.0, 9.0, 0, 18);
-		frames("refinery_top", start + 200, 6.0, 8.0, 10.0, 45, 30);
-		frames("refinery_basin", start + 240, 8.5, 4.0, 12.0, 20, 25);
-		frames("refinery_seam_top", start + 280, 1.0, 5.0, 11.0, 0, 15);
-		frames("refinery_seam_low", start + 320, 1.0, 2.0, 11.0, 0, 10);
-		frames("refinery_overhead", start + 360, 1.0, 9.0, 14.6, 0, 85);
-		STEPS.add(new Step(start + 410, () -> server(server -> {
-			var level = server.overworld();
-			BlockPos spot = origin.offset(REFINERY_OFFSET)
-				.offset(9, 1, 0);
-			level.setBlock(spot, CEBlocks.SOOT_TRAP.getDefaultState(), 3);
-			level.setBlock(spot.offset(3, 0, 0), Blocks.STONE.defaultBlockState(), 3);
-			level.setBlock(spot.offset(5, 0, 0), Blocks.STONE.defaultBlockState(), 3);
-			command(server, "summon minecraft:item_frame " + (spot.getX() + 3) + " " + spot.getY() + " "
-				+ (spot.getZ() - 1) + " {Facing:2b,Invulnerable:1b,Item:{id:\"create_engines:soot\",count:1}}");
-			command(server, "summon minecraft:item_frame " + (spot.getX() + 5) + " " + spot.getY() + " "
-				+ (spot.getZ() - 1) + " {Facing:2b,Invulnerable:1b,Item:{id:\"create_engines:jerry_can\",count:1}}");
-		})));
-		frames("refinery_trap_and_items", start + 440, 11.5, 3.2, 10.5, 0, 12);
-		frames("refinery_lean_side", start + 470, -5.0, 5.0, 8.5, 0, 6);
-		frames("refinery_lean_close", start + 500, -5.0, 4.5, 11.0, 0, 8);
-		frames("refinery_below", start + 540, 4.0, 0.6, 12.0, 25, -25);
-		STEPS.add(new Step(start + 620, () -> Minecraft.getInstance()
-			.stop()));
-	}
-
-	/** The firing order, compact V and mixture pages, from {@code start}; then quits. */
-	private static void newScenes(int start) {
-		ponderScene("firing_order", start, CEBlocks.CAM_LOBE::asStack, 1, 120, 400, 600, 780, 960, 1350, 1560);
-		ponderScene("compact_v", start + 1700, CEBlocks.CAM_LOBE::asStack, 2, 250, 450, 700);
-		ponder("mixture", start + 2500, CEItems.FUEL_INJECTOR::asStack, 500, 750, 900, 1000);
-		ponder("supercharger", start + 3600, CEBlocks.SUPERCHARGER::asStack, 250, 600, 900, 1250, 1600);
-		management(start + 5400);
-	}
-
-	/** Where the engine-management engine stands, relative to the first. */
-	private static final BlockPos MANAGEMENT_OFFSET = new BlockPos(36, 0, 0);
-
-	/**
-	 * A fresh engine with a MAF sensor in its intake and the injector turned up so the sensor has something to cut; then
-	 * its Ponder page, and the end of the run.
-	 */
-	private static void management(int start) {
-		int dx = MANAGEMENT_OFFSET.getX();
-		STEPS.add(new Step(start, () -> {
-			Minecraft.getInstance().options.hideGui = true;
-			server(server -> {
-				var level = server.overworld();
-				BlockPos at = origin.offset(MANAGEMENT_OFFSET);
-				TestEngine.build(level, at, true);
-				BlockPos intake = at.offset(TestEngine.AIR_INTAKE);
-				level.removeBlock(intake, false);
-				level.setBlock(intake, pipe(CEBlocks.MAF_SENSOR.get(), Direction.SOUTH, Direction.WEST), 3);
-				level.setBlock(intake.west(), CEBlocks.AIR_INTAKE.getDefaultState()
-					.setValue(PortOpeningBlock.FACING, Direction.WEST), 3);
-				if (level.getBlockEntity(at.offset(TestEngine.HEAD)) instanceof CylinderHeadBlockEntity head)
-					head.metering.setValue(CylinderHeadBlockEntity.MAX_METERING);
-			});
-		}));
-		STEPS.add(new Step(start + 250, () -> server(server -> server.overworld()
-			.removeBlock(origin.offset(MANAGEMENT_OFFSET)
-				.offset(TestEngine.STARTER_POWER), false))));
-		STEPS.add(new Step(start + 520, () -> view(dx - 2.5, 6.5, -1.5, -55, 37)));
-		STEPS.add(new Step(start + 535, () -> shot("management_overview")));
-		STEPS.add(new Step(start + 540, () -> {
-			Minecraft.getInstance().options.hideGui = false;
-			server(server -> command(server, "item replace entity @a armor.head with create:goggles"));
-		}));
-		goggles("maf", start + 560, dx + 2.5, 5.0, -1.0, 0, 11);
-		goggles("management_cylinder", start + 650, dx + 2.5, 2.0, -0.5, 0, 2.3f);
-		ponder("maf_sensor", start + 700, CEBlocks.MAF_SENSOR::asStack, 250, 650, 1000);
-		precision(start + 1800);
-	}
-
-	/** Where the precision engine stands, relative to the first. */
-	private static final BlockPos PRECISION_OFFSET = new BlockPos(72, 0, 0);
-
-	/**
-	 * A fresh engine built from precision parts under a governor, then the pages for the governor, the timing tool and
-	 * the precision parts, and the end of the run.
-	 */
-	private static void precision(int start) {
-		int dx = PRECISION_OFFSET.getX();
-		STEPS.add(new Step(start, () -> {
-			Minecraft.getInstance().options.hideGui = true;
-			server(server -> {
-				var level = server.overworld();
-				BlockPos at = origin.offset(PRECISION_OFFSET);
-				TestEngine.build(level, at, true);
-				level.setBlock(at.offset(TestEngine.CYLINDER), CEBlocks.PRECISION_CYLINDER.getDefaultState()
-					.setValue(CylinderBlock.FACING, Direction.UP)
-					.setValue(CylinderBlock.HAS_PISTON, true)
-					.setValue(CylinderBlock.FORGED_PISTON, true)
-					.setValue(CylinderBlock.HAS_ROD, true), 3);
-				level.setBlock(at.offset(TestEngine.HEAD), CEBlocks.PRECISION_CYLINDER_HEAD.getDefaultState()
-					.setValue(CylinderHeadBlock.FACING, Direction.UP)
-					.setValue(CylinderHeadBlock.HAS_INJECTOR, true)
-					.setValue(CylinderHeadBlock.FINE_INJECTOR, true), 3);
-				if (level.getBlockEntity(at.offset(TestEngine.HEAD)) instanceof CylinderHeadBlockEntity head) {
-					head.tank()
-						.fill(new FluidStack(CEFluids.DIESEL.get()
-							.getSource(), 250), IFluidHandler.FluidAction.EXECUTE);
-					head.oilTank()
-						.fill(new FluidStack(CEFluids.ENGINE_OIL.get()
-							.getSource(), 250), IFluidHandler.FluidAction.EXECUTE);
-				}
-				BlockPos governor = at.offset(3, 3, 2);
-				level.setBlock(governor, CEBlocks.GOVERNOR.getDefaultState(), 3);
-				if (level.getBlockEntity(governor) instanceof GovernorBlockEntity be)
-					be.target.setValue(80);
-			});
-		}));
-		STEPS.add(new Step(start + 250, () -> server(server -> server.overworld()
-			.removeBlock(origin.offset(PRECISION_OFFSET)
-				.offset(TestEngine.STARTER_POWER), false))));
-		STEPS.add(new Step(start + 520, () -> view(dx - 2.5, 6.5, -1.5, -55, 37)));
-		STEPS.add(new Step(start + 535, () -> shot("precision_overview")));
-		STEPS.add(new Step(start + 540, () -> {
-			Minecraft.getInstance().options.hideGui = false;
-			server(server -> command(server, "item replace entity @a armor.head with create:goggles"));
-		}));
-		goggles("governor", start + 560, dx + 3.5, 4.5, -0.5, 0, 18);
-		goggles("precision_head", start + 590, dx + 2.5, 5.0, -1.0, 0, 11);
-		goggles("precision_cylinder", start + 620, dx + 2.5, 2.0, -0.5, 0, 2.3f);
-		ponder("governor", start + 700, CEBlocks.GOVERNOR::asStack, 250, 550, 800);
-		ponder("timing_tool", start + 1700, CEItems.TIMING_TOOL::asStack, 250, 550, 800);
-		ponder("precision_parts", start + 2700, CEBlocks.PRECISION_CYLINDER::asStack, 250, 550, 800);
-		coupled(start + 3700);
-	}
-
-	/** Where the coupled engine stands, relative to the first. */
-	private static final BlockPos COUPLED_OFFSET = new BlockPos(96, 0, 0);
-
-	/** Two crank lines geared together, timed as one engine, then the page for coupled crankshafts and the end of the run. */
-	private static void coupled(int start) {
-		int dx = COUPLED_OFFSET.getX();
-		STEPS.add(new Step(start, () -> {
-			Minecraft.getInstance().options.hideGui = true;
-			server(server -> {
-				var level = server.overworld();
-				BlockPos at = origin.offset(COUPLED_OFFSET);
-				TestEngine.build(level, at, true);
-				TestEngine.addCoupledLine(level, at);
-				if (level.getBlockEntity(at.offset(TestEngine.HEAD)) instanceof CylinderHeadBlockEntity head)
-					head.oilTank()
-						.fill(new FluidStack(CEFluids.ENGINE_OIL.get()
-							.getSource(), 250), IFluidHandler.FluidAction.EXECUTE);
-			});
-		}));
-		// The new line is found on the next rescan; time both lines once it has been
-		STEPS.add(new Step(start + 140, () -> server(server -> TimingToolItem.apply(server.overworld(),
-			origin.offset(COUPLED_OFFSET)
-				.offset(TestEngine.THROW_2),
-			FiringPlanner.Style.SMOOTH))));
-		STEPS.add(new Step(start + 250, () -> server(server -> server.overworld()
-			.removeBlock(origin.offset(COUPLED_OFFSET)
-				.offset(TestEngine.STARTER_POWER), false))));
-		STEPS.add(new Step(start + 520, () -> view(dx - 2.5, 6.5, -1.5, -55, 37)));
-		STEPS.add(new Step(start + 535, () -> shot("coupled_overview")));
-		STEPS.add(new Step(start + 540, () -> {
-			Minecraft.getInstance().options.hideGui = false;
-			server(server -> command(server, "item replace entity @a armor.head with create:goggles"));
-		}));
-		goggles("coupled", start + 560, dx + 2.5, 4.0, 7.0, 180, 31);
-		ponderScene("coupled_cranks", start + 700, CEBlocks.CRANKSHAFT::asStack, 1, 250, 550, 800, 1100);
-		STEPS.add(new Step(start + 2100, () -> Minecraft.getInstance()
-			.stop()));
-	}
-
-	/** Where the twin-rotor engine stands, relative to the first. */
-	private static final BlockPos ROTARY_OFFSET = new BlockPos(108, 0, 0);
-
-	/**
-	 * A bare rotor housing turned slowly by a motor on its west end, filmed down its open east end and from the side, to
-	 * look at how the rotor sits and moves in it.
-	 */
-	private static void rotaryBench(int start) {
-		int dx = ROTARY_OFFSET.getX() + 20;
-		STEPS.add(new Step(start, () -> {
-			Minecraft.getInstance().options.hideGui = true;
-			server(server -> {
-				var level = server.overworld();
-				BlockPos at = origin.offset(dx, 0, 0);
-				level.setBlock(at.offset(2, 2, 2), com.createengines.registry.CEBlocks.ROTOR_HOUSING.getDefaultState()
-					.setValue(net.minecraft.world.level.block.state.properties.BlockStateProperties.AXIS,
-						net.minecraft.core.Direction.Axis.X)
-					.setValue(com.createengines.content.rotor.RotorHousingBlock.HAS_ROTOR, true), 3);
-				level.setBlock(at.offset(1, 2, 2), com.simibubi.create.AllBlocks.CREATIVE_MOTOR.getDefaultState()
-					.setValue(com.simibubi.create.content.kinetics.motor.CreativeMotorBlock.FACING,
-						net.minecraft.core.Direction.EAST), 3);
-				if (level.getBlockEntity(at.offset(1, 2, 2)) instanceof com.simibubi.create.content.kinetics.motor.CreativeMotorBlockEntity motor)
-					motor.generatedSpeed.setValue(8);
-			});
-		}));
-		for (int i = 0; i < 8; i++) {
-			int frame = i;
-			STEPS.add(new Step(start + 60 + i * 14, () -> view(dx + 4.0, 1.0, 2.5, 90, 0)));
-			STEPS.add(new Step(start + 70 + i * 14, () -> shot("bench_end_" + frame)));
-		}
-		STEPS.add(new Step(start + 60 + 8 * 14, () -> view(dx + 2.5, 1.0, 4.6, 180, 0)));
-		for (int i = 0; i < 4; i++) {
-			int frame = i;
-			STEPS.add(new Step(start + 70 + 8 * 14 + i * 14, () -> shot("bench_side_" + frame)));
-		}
-		STEPS.add(new Step(start + 300, () -> Minecraft.getInstance()
-			.stop()));
-	}
-
-	/** A twin-rotor engine, running, from the side, from above and through goggles; then the end of the run. */
-	private static void rotary(int start) {
-		int dx = ROTARY_OFFSET.getX();
-		STEPS.add(new Step(start, () -> {
-			Minecraft.getInstance().options.hideGui = true;
-			server(server -> {
-				var level = server.overworld();
-				BlockPos at = origin.offset(ROTARY_OFFSET);
-				TestEngine.buildRotary(level, at, true);
-				TestEngine.addSecondRotor(level, at);
-			});
-		}));
-		// The second rotor is found on the next rescan; release the starter once both are running
-		STEPS.add(new Step(start + 300, () -> server(server -> server.overworld()
-			.removeBlock(origin.offset(ROTARY_OFFSET)
-				.offset(TestEngine.STARTER_POWER), false))));
-		STEPS.add(new Step(start + 400, () -> view(dx - 2.5, 6.5, -1.5, -55, 37)));
-		STEPS.add(new Step(start + 415, () -> shot("rotary_overview")));
-		frames("rotary_side", start + 440, dx + 3.0, 2.5, 5.0, 180, 3);
-		frames("rotary_slant", start + 480, dx + 5.5, 4.2, 5.0, 160, 25);
-		STEPS.add(new Step(start + 520, () -> {
-			Minecraft.getInstance().options.hideGui = false;
-			server(server -> command(server, "item replace entity @a armor.head with create:goggles"));
-		}));
-		goggles("rotor", start + 540, dx + 2.5, 2.5, 4.5, 180, 8);
-		// The new items in the hotbar, beside a cylinder head to compare with
-		STEPS.add(new Step(start + 570, () -> server(server -> {
-			command(server, "item replace entity @a hotbar.0 with create_engines:rotor_housing");
-			command(server, "item replace entity @a hotbar.1 with create_engines:rotor");
-			command(server, "item replace entity @a hotbar.2 with create_engines:cylinder_head");
-		})));
-		STEPS.add(new Step(start + 580, () -> shot("rotary_hotbar")));
-		ponder("rotor", start + 600, CEBlocks.ROTOR_HOUSING::asStack, 100, 250, 400, 560, 760, 900, 1020);
-		STEPS.add(new Step(start + 1700, () -> Minecraft.getInstance()
-			.stop()));
-	}
-
-	/** The flywheel, dynamometer and variable turbo beside the test engine, a goggle readout, the new items and pages. */
-	private static void newParts(int start) {
-		STEPS.add(new Step(start, () -> {
-			Minecraft.getInstance().options.hideGui = true;
-			server(server -> {
-				var level = server.overworld();
-				level.setBlock(origin.offset(0, 2, 2), CEBlocks.CAST_FLYWHEEL.getDefaultState()
-					.setValue(net.minecraft.world.level.block.state.properties.BlockStateProperties.AXIS,
-						net.minecraft.core.Direction.Axis.X), 3);
-				level.setBlock(origin.offset(2, 2, 1), CEBlocks.DYNO.getDefaultState(), 3);
-				level.setBlock(origin.offset(4, 0, 0), CEBlocks.VARIABLE_TURBOCHARGER.getDefaultState()
-					.setValue(com.createengines.content.turbo.TurbochargerBlock.FACING, Direction.UP), 3);
-				level.setBlock(origin.offset(6, 0, 0), CEBlocks.TURBOCHARGER.getDefaultState()
-					.setValue(com.createengines.content.turbo.TurbochargerBlock.FACING, Direction.UP), 3);
-			});
-		}));
-		STEPS.add(new Step(start + 300, () -> server(server -> server.overworld()
-			.removeBlock(origin.offset(TestEngine.STARTER_POWER), false))));
-		STEPS.add(new Step(start + 500, () -> view(-2.5, 6.5, -1.5, -55, 37)));
-		STEPS.add(new Step(start + 515, () -> shot("newparts_overview")));
-		frames("newparts_front", start + 540, 3.5, 2.5, -2.5, 0, 12);
-		frames("newparts_flywheel", start + 580, -2.0, 3.0, 0.5, -45, 18);
-		frames("newparts_turbos", start + 620, 5.0, 2.5, -2.5, 0, 14);
-		STEPS.add(new Step(start + 660, () -> {
-			Minecraft.getInstance().options.hideGui = false;
-			server(server -> {
-				command(server, "item replace entity @a armor.head with create:goggles");
-				command(server, "item replace entity @a hotbar.0 with create_engines:cast_flywheel");
-				command(server, "item replace entity @a hotbar.1 with create_engines:dyno");
-				command(server, "item replace entity @a hotbar.2 with create_engines:variable_turbocharger");
-				command(server, "item replace entity @a hotbar.3 with create_engines:bank_builder");
-				command(server, "item replace entity @a hotbar.4 with create_engines:timing_tool");
-			});
-		}));
-		goggles("dyno", start + 680, 2.5, 3.0, -1.2, 0, 25);
-		STEPS.add(new Step(start + 720, () -> shot("newparts_hotbar")));
-		ponder("flywheel", start + 740, CEBlocks.CAST_FLYWHEEL::asStack, 150, 450, 800);
-		ponder("bank_builder", start + 1800, CEItems.BANK_BUILDER::asStack, 150, 450, 800, 1100);
-		ponder("dyno", start + 3100, CEBlocks.DYNO::asStack, 250, 600, 950);
-		ponder("turbo_tuning", start + 4300, CEBlocks.VARIABLE_TURBOCHARGER::asStack, 250, 650, 1000, 1350);
-		STEPS.add(new Step(start + 5800, () -> Minecraft.getInstance()
-			.stop()));
-	}
-
-	/** Where the rich, the flooded and the dry engine of {@link #effects} stand, relative to the first. */
-	private static final BlockPos RICH_OFFSET = new BlockPos(12, 0, 0);
-	private static final BlockPos FLOODED_OFFSET = new BlockPos(24, 0, 0);
-	private static final BlockPos DRY_OFFSET = new BlockPos(36, 0, 0);
-	/** The turbocharged diesel and the supercharged spark engine of {@link #effects}, which exist to be heard. */
-	private static final BlockPos TURBO_OFFSET = new BlockPos(48, 0, 0);
-	private static final BlockPos BLOWER_OFFSET = new BlockPos(60, 0, 0);
-	private static final List<BlockPos> EFFECT_ENGINES =
-		List.of(BlockPos.ZERO, RICH_OFFSET, FLOODED_OFFSET, DRY_OFFSET, TURBO_OFFSET, BLOWER_OFFSET);
-
 	/** The first engine's exhaust opened into a turbine, its intake drawn through the compressor (as the turbo GameTest). */
 	public static void addTurbo(net.minecraft.world.level.Level level, BlockPos origin) {
 		BlockPos turbo = origin.offset(TestEngine.EXHAUST);
@@ -852,291 +356,8 @@ public final class VisualSmokeTest {
 			cylinderHead.metering.setValue(CylinderHeadBlockEntity.MAX_METERING);
 	}
 
-	/**
-	 * What engines throw out: the first engine catching from cold and settling, one beside it with its injector wide
-	 * open, one with its air intake underwater and one with no oil. Then the first is choked so it dies, it rains, and
-	 * each engine's figures are logged so the pictures can be read against them.
-	 */
-	/** Where the five wear engines stand: a thrown rod and its broken head, a blown gasket, a seized piston, a sound one to compare and a rotor with failed seals. */
-	private static final BlockPos WRECK_OFFSET = BlockPos.ZERO;
-	private static final BlockPos BLOWN_OFFSET = new BlockPos(14, 0, 0);
-	private static final BlockPos SEIZED_OFFSET = new BlockPos(28, 0, 0);
-	private static final BlockPos SOUND_OFFSET = new BlockPos(42, 0, 0);
-	private static final BlockPos APEX_OFFSET = new BlockPos(56, 0, 0);
-
-	/**
-	 * The wear mode's wrecks, each photographed from the side that shows it, running (a wreck is drawn whatever the engine is doing), against an
-	 * engine with nothing wrong; then the run ends. It shows that a thrown rod's wreck stands out of a broken head and lies in the bore, that a
-	 * blown gasket hangs from the joint with its soot streak, and that a seized piston is scorched.
-	 */
-	private static void wear(int start) {
-		STEPS.add(new Step(start, () -> server(server -> {
-			var level = server.overworld();
-			for (BlockPos offset : List.of(WRECK_OFFSET, BLOWN_OFFSET, SEIZED_OFFSET, SOUND_OFFSET))
-				TestEngine.build(level, origin.offset(offset), true);
-			BlockPos wreck = origin.offset(WRECK_OFFSET);
-			level.setBlock(wreck.offset(TestEngine.CYLINDER), level.getBlockState(wreck.offset(TestEngine.CYLINDER))
-				.setValue(com.createengines.content.cylinder.CylinderBlock.HAS_PISTON, false)
-				.setValue(com.createengines.content.cylinder.CylinderBlock.HAS_ROD, false), 3);
-			if (level.getBlockEntity(wreck.offset(TestEngine.CYLINDER)) instanceof com.createengines.content.cylinder.CylinderBlockEntity cylinder)
-				cylinder.throwRod();
-			if (level.getBlockEntity(wreck.offset(TestEngine.HEAD)) instanceof CylinderHeadBlockEntity head)
-				head.breakHead();
-			if (level.getBlockEntity(origin.offset(BLOWN_OFFSET)
-				.offset(TestEngine.HEAD)) instanceof CylinderHeadBlockEntity head)
-				head.blow();
-			if (level.getBlockEntity(origin.offset(SEIZED_OFFSET)
-				.offset(TestEngine.CYLINDER)) instanceof com.createengines.content.cylinder.CylinderBlockEntity cylinder)
-				cylinder.seize();
-			TestEngine.buildRotary(level, origin.offset(APEX_OFFSET), true);
-			if (level.getBlockEntity(origin.offset(APEX_OFFSET)
-				.offset(TestEngine.HOUSING)) instanceof com.createengines.content.rotor.RotorHousingBlockEntity housing)
-				housing.failApex();
-		})));
-		// The head from above and the side, then the cylinder through its glass, of each engine in turn
-		int at = start + 60;
-		for (BlockPos offset : List.of(WRECK_OFFSET, BLOWN_OFFSET, SEIZED_OFFSET, SOUND_OFFSET, APEX_OFFSET)) {
-			String name = offset.equals(WRECK_OFFSET) ? "wreck" : offset.equals(BLOWN_OFFSET) ? "blown" : offset.equals(SEIZED_OFFSET) ? "seized" : offset.equals(APEX_OFFSET) ? "apex" : "sound";
-			int x = offset.getX();
-			frames("wear_" + name + "_head", at, x + 3.5, 6.2, 0.2, 20, 38);
-			frames("wear_" + name + "_north", at + 30, x + 2.5, 4.4, -1.4, 0, 8);
-			frames("wear_" + name + "_cylinder", at + 60, x + 2.5, 2.0, -0.5, 0, 2.3f);
-			at += 100;
-		}
-		STEPS.add(new Step(at + 20, () -> {
-			logEngines("wear");
-			soundReport();
-			Minecraft.getInstance()
-				.stop();
-		}));
-	}
-
-	private static void effects(int start) {
-		STEPS.add(new Step(start - 10, VisualSmokeTest::soundCheck));
-		STEPS.add(new Step(start, () -> server(server -> {
-			var level = server.overworld();
-			BlockPos rich = origin.offset(RICH_OFFSET);
-			TestEngine.build(level, rich, true);
-			if (level.getBlockEntity(rich.offset(TestEngine.HEAD)) instanceof CylinderHeadBlockEntity head)
-				head.metering.setValue(CylinderHeadBlockEntity.MAX_METERING);
-			BlockPos flooded = origin.offset(FLOODED_OFFSET);
-			TestEngine.build(level, flooded, true);
-			BlockPos mouth = flooded.offset(TestEngine.AIR_INTAKE)
-				.north();
-			for (Direction side : new Direction[] {Direction.NORTH, Direction.EAST, Direction.WEST, Direction.DOWN})
-				level.setBlock(mouth.relative(side), Blocks.GLASS.defaultBlockState(), 3);
-			level.setBlock(mouth, Blocks.WATER.defaultBlockState(), 3);
-			TestEngine.build(level, origin.offset(DRY_OFFSET), true, false);
-			BlockPos turbo = origin.offset(TURBO_OFFSET);
-			TestEngine.build(level, turbo, true);
-			addTurbo(level, turbo);
-			BlockPos blown = origin.offset(BLOWER_OFFSET);
-			TestEngine.buildSpark(level, blown, true);
-			addBlower(level, blown);
-		})));
-		// The first engine was built a second ago: these catch it cranking, catching and clearing its throat
-		for (int i = 0; i < 4; i++)
-			frames("effects_start_" + i, start + 10 + i * 40, -1.5, 4.0, -2.0, -18, 5);
-		STEPS.add(new Step(start + 200, () -> server(server -> {
-			for (BlockPos offset : EFFECT_ENGINES)
-				server.overworld()
-					.removeBlock(origin.offset(offset)
-						.offset(TestEngine.STARTER_POWER), false);
-		})));
-		frames("effects_running", start + 360, -1.5, 4.0, -2.0, -18, 5);
-		frames("effects_intake", start + 390, 5.5, 3.6, -0.5, 73, 13);
-		frames("effects_rich", start + 420, RICH_OFFSET.getX() - 1.5, 4.0, -2.0, -18, 5);
-		frames("effects_dry", start + 450, DRY_OFFSET.getX() + 2.5, 1.0, -0.4, 0, 0);
-		frames("effects_turbo", start + 480, TURBO_OFFSET.getX() - 1.5, 4.0, -2.0, -18, 5);
-		frames("effects_blower", start + 500, BLOWER_OFFSET.getX() - 1.5, 4.0, -2.0, -18, 5);
-		// Dump the turbo's boost with a redstone block beneath it: the blow-off valve. Then a signal on its camshaft shuts
-		// the fuel rack, so the engine is off the throttle and anti-lag has to crack fuel in the exhaust
-		STEPS.add(new Step(start + 400, () -> server(server -> server.overworld()
-			.setBlock(origin.offset(TURBO_OFFSET)
-				.offset(TestEngine.EXHAUST)
-				.below(), Blocks.REDSTONE_BLOCK.defaultBlockState(), 3))));
-		STEPS.add(new Step(start + 430, () -> server(server -> server.overworld()
-			.setBlock(origin.offset(TURBO_OFFSET)
-				.offset(new BlockPos(4, 5, 3)), Blocks.REDSTONE_BLOCK.defaultBlockState(), 3))));
-		// Crank the flooded one again, which nothing can light, and look at its intake and its cylinder
-		STEPS.add(new Step(start + 470, () -> server(server -> server.overworld()
-			.setBlock(origin.offset(FLOODED_OFFSET)
-				.offset(TestEngine.STARTER_POWER), Blocks.REDSTONE_BLOCK.defaultBlockState(), 3))));
-		frames("effects_flooded", start + 520, FLOODED_OFFSET.getX() - 0.5, 3.6, -1.5, -56, 10);
-		STEPS.add(new Step(start + 550, () -> {
-			Minecraft.getInstance().options.hideGui = false;
-			server(server -> command(server, "item replace entity @a armor.head with create:goggles"));
-		}));
-		goggles("effects_flooded_cylinder", start + 560, FLOODED_OFFSET.getX() + 2.5, 2.0, -0.5, 0, 2.3f);
-		// Starve the first engine of air so it dies hot, and let it rain on all of them
-		STEPS.add(new Step(start + 590, () -> {
-			Minecraft.getInstance().options.hideGui = true;
-			logEngines("running");
-			server(server -> command(server, "weather rain"));
-		}));
-		// The first engine loses its air a while before the end, so it has time to run down and stall (it coasts a long way)
-		STEPS.add(new Step(start + 400, () -> server(server -> server.overworld()
-			.removeBlock(origin.offset(TestEngine.AIR_INTAKE), false))));
-		frames("effects_rain", start + 760, RICH_OFFSET.getX() + 0.5, 4.2, -0.8, -31, 12);
-		STEPS.add(new Step(start + 1150, () -> {
-			logEngines("after the stall");
-			soundReport();
-			Minecraft.getInstance()
-				.stop();
-		}));
-	}
-
-	/**
-	 * The first engine with its camshaft moved down a layer to sit against the cylinder block (as the pushrod GameTest
-	 * does), so its valves are worked through pushrods and rockers. Photographed along the cam's axis, where the rods and
-	 * rockers are in profile, and from the cam's side, over a whole turn of the cam; then the run ends.
-	 */
-	private static void pushrods(int start) {
-		STEPS.add(new Step(start, () -> server(server -> {
-			var level = server.overworld();
-			for (int x = 2; x <= 5; x++)
-				level.setBlock(origin.offset(x, 4, 3), Blocks.AIR.defaultBlockState(), 3);
-			level.setBlock(origin.offset(6, 3, 3), Blocks.AIR.defaultBlockState(), 3);
-			level.setBlock(origin.offset(6, 4, 3), Blocks.AIR.defaultBlockState(), 3);
-			BlockPos lobe = origin.offset(2, 3, 3);
-			level.setBlock(lobe, TestEngine.axisX(CEBlocks.CAM_LOBE.getDefaultState()), 3);
-			for (int x = 3; x <= 4; x++)
-				level.setBlock(origin.offset(x, 3, 3), TestEngine.axisX(CEBlocks.CAMSHAFT.getDefaultState()), 3);
-			double tdc = CrankGeometry.topDeadCentreAngle(net.minecraft.core.Direction.Axis.X, 0, Direction.UP);
-			if (level.getBlockEntity(lobe) instanceof com.createengines.content.camshaft.CamshaftBlockEntity cam)
-				cam.lobeAngle.setValue((int) Math.round(((tdc / 2) % 180 + 180) % 180
-					/ com.createengines.content.camshaft.CamshaftBlockEntity.LOBE_ANGLE_STEP));
-		})));
-		STEPS.add(new Step(start + 200, () -> server(server -> server.overworld()
-			.removeBlock(origin.offset(TestEngine.STARTER_POWER), false))));
-		STEPS.add(new Step(start + 330, () -> view(-0.8, 3.9, 3.3, -90, 0)));
-		for (int i = 0; i < 8; i++) {
-			int frame = i;
-			STEPS.add(new Step(start + 345 + i * 3, () -> shot("pushrods_axis_" + frame)));
-		}
-		STEPS.add(new Step(start + 380, () -> view(2.5, 4.6, 5.6, 180, 15)));
-		for (int i = 0; i < 8; i++) {
-			int frame = i;
-			STEPS.add(new Step(start + 395 + i * 3, () -> shot("pushrods_side_" + frame)));
-		}
-		STEPS.add(new Step(start + 440, () -> Minecraft.getInstance()
-			.stop()));
-	}
-
-	/**
-	 * A wall of Engine Casing, three plates high (plain, riveted, louvred) and nine dyes wide (none and eight colours),
-	 * photographed face on; then the run ends. It shows that the plates join, that the tint reaches them and that the
-	 * rivets and slats survive it.
-	 */
-	private static void casings(int start) {
-		var paints = List.of(CasingPaint.NONE, CasingPaint.WHITE, CasingPaint.ORANGE, CasingPaint.YELLOW,
-			CasingPaint.LIME, CasingPaint.CYAN, CasingPaint.BLUE, CasingPaint.PURPLE, CasingPaint.BLACK);
-		var plates = List.of(CEBlocks.ENGINE_CASING, CEBlocks.ENGINE_RIVETED_CASING, CEBlocks.ENGINE_LOUVRED_CASING);
-		STEPS.add(new Step(start, () -> server(server -> {
-			var level = server.overworld();
-			for (int row = 0; row < plates.size(); row++)
-				for (int column = 0; column < paints.size(); column++)
-					level.setBlock(origin.offset(column, 6 + row, 0), plates.get(row)
-						.getDefaultState()
-						.setValue(EngineCasingBlock.PAINT, paints.get(column)), 3);
-			// And below them, casing clad onto a part, in a dye each (the shaft parts run along the wall)
-			var clad = com.createengines.content.Encasing.ENCASED;
-			dyed(level, origin.offset(0, 5, 0), CEBlocks.CYLINDER.getDefaultState()
-				.setValue(clad, true), CasingPaint.RED);
-			dyed(level, origin.offset(1, 5, 0), TestEngine.axisX(CEBlocks.CRANKSHAFT.getDefaultState())
-				.setValue(clad, true), CasingPaint.BLUE);
-			dyed(level, origin.offset(2, 5, 0), TestEngine.axisX(CEBlocks.CAMSHAFT.getDefaultState())
-				.setValue(clad, true), CasingPaint.LIME);
-			dyed(level, origin.offset(3, 5, 0), CEBlocks.INTAKE_MANIFOLD.getDefaultState()
-				.setValue(clad, true), CasingPaint.YELLOW);
-			dyed(level, origin.offset(4, 5, 0), TestEngine.axisX(CEBlocks.ENGINE_CASED_SHAFT.getDefaultState()),
-				CasingPaint.PURPLE);
-			dyed(level, origin.offset(5, 5, 0), TestEngine.axisX(CEBlocks.ENGINE_CASED_COGWHEEL.getDefaultState()),
-				CasingPaint.ORANGE);
-			dyed(level, origin.offset(6, 5, 0), TestEngine.axisX(CEBlocks.ENGINE_CASED_LARGE_COGWHEEL.getDefaultState()),
-				CasingPaint.CYAN);
-		})));
-		STEPS.add(new Step(start + 60, () -> view(4.5, 6.5, 7, 180, 0)));
-		for (int i = 0; i < 3; i++) {
-			int frame = i;
-			STEPS.add(new Step(start + 90 + i * 5, () -> shot("casings_" + frame)));
-		}
-		STEPS.add(new Step(start + 120, () -> Minecraft.getInstance()
-			.stop()));
-	}
-
-	/** Places a part and dyes its casing, which a clad part holds in its block entity. */
-	private static void dyed(net.minecraft.server.level.ServerLevel level, net.minecraft.core.BlockPos pos,
-		net.minecraft.world.level.block.state.BlockState state, CasingPaint paint) {
-		level.setBlock(pos, state, 3);
-		if (level.getBlockEntity(pos) instanceof com.createengines.content.PaintedBlockEntity held)
-			held.setCasingPaint(paint);
-	}
-
-	/**
-	 * A rain cap on the first engine's exhaust outlet, photographed close up from the end and from the side over a run of
-	 * ticks, so some frames catch the flap lifted by a pulse; then the run ends.
-	 */
-	private static void rainCap(int start) {
-		STEPS.add(new Step(start, () -> server(server -> server.overworld()
-			.setBlock(origin.offset(TestEngine.EXHAUST.west()), CEBlocks.RAIN_CAP.getDefaultState()
-				.setValue(com.createengines.content.raincap.RainCapBlock.FACING, Direction.WEST), 3))));
-		STEPS.add(new Step(start + 200, () -> server(server -> server.overworld()
-			.removeBlock(origin.offset(TestEngine.STARTER_POWER), false))));
-		STEPS.add(new Step(start + 330, () -> view(-1.2, 4.9, 2.5, -90, 10)));
-		for (int i = 0; i < 10; i++) {
-			int frame = i;
-			STEPS.add(new Step(start + 345 + i * 2, () -> shot("raincap_end_" + frame)));
-		}
-		STEPS.add(new Step(start + 380, () -> view(0.5, 4.7, 4.3, 180, 5)));
-		for (int i = 0; i < 10; i++) {
-			int frame = i;
-			STEPS.add(new Step(start + 395 + i * 2, () -> shot("raincap_side_" + frame)));
-		}
-		// Then its Ponder page, which should show the flap working
-		ponder("rain_cap", start + 440, CEBlocks.RAIN_CAP::asStack, 100, 250, 335, 350, 366, 372, 378, 384, 390, 396, 560, 700);
-		STEPS.add(new Step(start + 1200, () -> Minecraft.getInstance()
-			.stop()));
-	}
-
-	/**
-	 * Window casing on the running first engine's crank journals and its throw, photographed from the front over a turn of
-	 * the crank, and a loose block of it beside them; then the run ends.
-	 */
-	private static void windowCasing(int start) {
-		STEPS.add(new Step(start, () -> server(server -> {
-			var level = server.overworld();
-			for (BlockPos part : List.of(TestEngine.PRIMARY, TestEngine.THROW, new BlockPos(3, 2, 2)))
-				level.setBlock(origin.offset(part), level.getBlockState(origin.offset(part))
-					.setValue(com.createengines.content.Encasing.ENCASED, true)
-					.setValue(com.createengines.content.Encasing.WINDOWED, true), 3);
-			level.setBlock(origin.offset(4, 2, 3), CEBlocks.ENGINE_WINDOW_CASING.getDefaultState(), 3);
-			// A maker's plate on the cylinder's front, named and stamped
-			BlockPos plate = origin.offset(2, 3, 3);
-			level.setBlock(plate, CEBlocks.MAKER_PLATE.getDefaultState()
-				.setValue(com.createengines.content.plate.MakerPlateBlock.FACING, Direction.SOUTH), 3);
-			if (level.getBlockEntity(plate) instanceof com.createengines.content.plate.MakerPlateBlockEntity be) {
-				be.setNameAndBuilder("Old Faithful the Third, Mk II", "Riley");
-				be.stamp(new com.createengines.engine.sim.PlateFigures(24.5f, 96, 2400f, 128));
-			}
-		})));
-		STEPS.add(new Step(start + 200, () -> server(server -> server.overworld()
-			.removeBlock(origin.offset(TestEngine.STARTER_POWER), false))));
-		STEPS.add(new Step(start + 330, () -> view(2.5, 3.6, 5.2, 180, 22)));
-		for (int i = 0; i < 6; i++) {
-			int frame = i;
-			STEPS.add(new Step(start + 345 + i * 4, () -> shot("window_" + frame)));
-		}
-		STEPS.add(new Step(start + 360, () -> view(2.5, 3.6, 4.0, 180, 8)));
-		STEPS.add(new Step(start + 370, () -> shot("plate_0")));
-		STEPS.add(new Step(start + 380, () -> view(-1.2, 3.2, 2.5, -90, 15)));
-		STEPS.add(new Step(start + 395, () -> shot("window_end")));
-		STEPS.add(new Step(start + 430, () -> Minecraft.getInstance()
-			.stop()));
-	}
-
 	/** Writes each of the {@link #effects} engines' figures, as this client has them, to the log. */
-	private static void logEngines(String when) {
+	static void logEngines(String when) {
 		Minecraft minecraft = Minecraft.getInstance();
 		for (BlockPos offset : List.of(BlockPos.ZERO, RICH_OFFSET, FLOODED_OFFSET, DRY_OFFSET))
 			if (minecraft.level != null && minecraft.level.getBlockEntity(origin.offset(offset)
@@ -1145,7 +366,7 @@ public final class VisualSmokeTest {
 					crank.summary(), minecraft.particleEngine.countParticles());
 	}
 
-	private static BlockState pipe(Block block, Direction... open) {
+	static BlockState pipe(Block block, Direction... open) {
 		BlockState state = block.defaultBlockState();
 		for (Direction direction : open)
 			state = state.setValue(ManifoldBlock.CONNECTIONS.get(direction), true);
@@ -1153,7 +374,7 @@ public final class VisualSmokeTest {
 	}
 
 	/** Four screenshots two ticks apart from one viewpoint, to see things move. */
-	private static void frames(String name, int tick, double x, double y, double z, float yaw, float pitch) {
+	static void frames(String name, int tick, double x, double y, double z, float yaw, float pitch) {
 		STEPS.add(new Step(tick, () -> view(x, y, z, yaw, pitch)));
 		for (int i = 0; i < 4; i++) {
 			int frame = i;
@@ -1161,7 +382,7 @@ public final class VisualSmokeTest {
 		}
 	}
 
-	private static void ponder(String name, int tick, Supplier<ItemStack> component, int... shotsAfter) {
+	static void ponder(String name, int tick, Supplier<ItemStack> component, int... shotsAfter) {
 		STEPS.add(new Step(tick, () -> ScreenOpener.open(PonderUI.of(component.get()))));
 		for (int after : shotsAfter)
 			STEPS.add(new Step(tick + after, () -> shot("ponder_" + name + "_" + after)));
@@ -1170,7 +391,7 @@ public final class VisualSmokeTest {
 	}
 
 	/** As {@link #ponder}, for the {@code scene}th page of a component with several. */
-	private static void ponderScene(String name, int tick, Supplier<ItemStack> component, int scene, int... shotsAfter) {
+	static void ponderScene(String name, int tick, Supplier<ItemStack> component, int scene, int... shotsAfter) {
 		STEPS.add(new Step(tick, () -> {
 			PonderUI ui = PonderUI.of(component.get());
 			try {
@@ -1188,24 +409,24 @@ public final class VisualSmokeTest {
 			.setScreen(null)));
 	}
 
-	private static void goggles(String name, int tick, double x, double y, double z, float yaw, float pitch) {
+	static void goggles(String name, int tick, double x, double y, double z, float yaw, float pitch) {
 		STEPS.add(new Step(tick, () -> view(x, y, z, yaw, pitch)));
 		STEPS.add(new Step(tick + 15, () -> shot("goggles_" + name)));
 	}
 
 	// Animation smoothness: while the engine cranks, fires and speeds up, compare each frame's drawn crank angle with
 	// how far its speed says it should have turned since the last frame
-	private static final int MEASURE_FROM = 60;
-	private static final int MEASURE_TO = 520;
-	private static float lastTime = Float.NaN;
-	private static float lastAngle;
-	private static float lastCreateAngle;
-	private static float worstJump;
-	private static float worstCreateJump;
-	private static int speedChanges;
-	private static float lastSpeed;
+	static final int MEASURE_FROM = 60;
+	static final int MEASURE_TO = 520;
+	static float lastTime = Float.NaN;
+	static float lastAngle;
+	static float lastCreateAngle;
+	static float worstJump;
+	static float worstCreateJump;
+	static int speedChanges;
+	static float lastSpeed;
 
-	private static void onRenderFrame(RenderFrameEvent.Post event) {
+	static void onRenderFrame(RenderFrameEvent.Post event) {
 		Minecraft minecraft = Minecraft.getInstance();
 		if (minecraft.level == null || ticksInWorld < MEASURE_FROM)
 			return;
@@ -1238,7 +459,7 @@ public final class VisualSmokeTest {
 		lastSpeed = speed;
 	}
 
-	private static void onClientTick(ClientTickEvent.Post event) {
+	static void onClientTick(ClientTickEvent.Post event) {
 		Minecraft minecraft = Minecraft.getInstance();
 		if (!worldRequested) {
 			if (minecraft.screen instanceof TitleScreen || minecraft.screen instanceof AccessibilityOnboardingScreen) {
@@ -1270,7 +491,7 @@ public final class VisualSmokeTest {
 	}
 
 	/** Stands the camera on an invisible barrier at a position relative to the test structure's origin. */
-	private static void view(double x, double y, double z, float yaw, float pitch) {
+	static void view(double x, double y, double z, float yaw, float pitch) {
 		double wx = origin.getX() + x;
 		double wy = origin.getY() + y;
 		double wz = origin.getZ() + z;
@@ -1282,7 +503,7 @@ public final class VisualSmokeTest {
 		});
 	}
 
-	private static void shot(String name) {
+	static void shot(String name) {
 		Minecraft minecraft = Minecraft.getInstance();
 		Screenshot.grab(minecraft.gameDirectory, "engine_" + name + ".png", minecraft.getMainRenderTarget(),
 			message -> CreateEngines.LOGGER.info("Smoke test screenshot: {}", message.getString()));

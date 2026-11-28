@@ -26,6 +26,7 @@ import com.createengines.engine.EngineState;
 import com.createengines.engine.EngineSummary;
 import com.createengines.engine.sim.CycleResult;
 import com.createengines.engine.topology.CylinderFault;
+import com.createengines.registry.CECasingBlocks;
 import com.createengines.registry.CEBlocks;
 import com.createengines.registry.CECreativeTabs;
 import com.createengines.registry.CEItems;
@@ -463,7 +464,7 @@ public class EngineGameTests {	private static final BlockPos MOTOR = TestEngine.
 				.setValue(com.createengines.content.airflow.PortOpeningBlock.FACING, Direction.WEST));
 			helper.setBlock(TestEngine.EXHAUST, CEBlocks.MUFFLER.getDefaultState()
 				.setValue(BlockStateProperties.AXIS, Axis.X));
-			helper.setBlock(TestEngine.CYLINDER.east(), CEBlocks.ENGINE_CASING.getDefaultState());
+			helper.setBlock(TestEngine.CYLINDER.east(), CECasingBlocks.ENGINE_CASING.getDefaultState());
 		});
 		helper.runAtTickTime(200, () -> {
 			com.createengines.engine.EngineSound sound = summary(helper).sound();

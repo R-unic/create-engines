@@ -93,11 +93,11 @@ final class ShowcaseRunFeatures {
 	private static BlockPos gasketEnd;
 
 	static void build(ServerLevel level, ServerPlayer player) {
-		ShowcaseRun.attempt("the hot engine", () -> ShowcaseRun.bank(level, player, pad(HEAT_BAY), BankBuilderItem.Layout.INLINE, HOT_THROWS,
+		ShowcaseRun.attempt("the hot engine", () -> ShowcaseRunBuild.bank(level, player, pad(HEAT_BAY), BankBuilderItem.Layout.INLINE, HOT_THROWS,
 			new ShowcaseRun.Kit(ShowcaseRun.Fuel.GASOLINE, 1, false, 0, false, false, false)));
 		ShowcaseRun.attempt("the tuning pad", () -> tuning(level, player, pad(TUNING_BAY)));
 		ShowcaseRun.attempt("the sound pad", () -> {
-			ShowcaseRun.bank(level, player, pad(SOUND_BAY), BankBuilderItem.Layout.INLINE, SOUND_THROWS,
+			ShowcaseRunBuild.bank(level, player, pad(SOUND_BAY), BankBuilderItem.Layout.INLINE, SOUND_THROWS,
 				ShowcaseRun.Kit.plain(ShowcaseRun.Fuel.GASOLINE));
 			exhaust(level, Exhaust.STRAIGHT);
 		});
@@ -111,7 +111,7 @@ final class ShowcaseRunFeatures {
 	 * inline, so its crank and rods are in the open under the cylinders and the camera sees them start.
 	 */
 	private static void coldStart(ServerLevel level, ServerPlayer player, BlockPos at) {
-		ShowcaseRun.coldBank(level, player, at, BankBuilderItem.Layout.INLINE, NIGHT_THROWS,
+		ShowcaseRunWorks.coldBank(level, player, at, BankBuilderItem.Layout.INLINE, NIGHT_THROWS,
 			new ShowcaseRun.Kit(ShowcaseRun.Fuel.GASOLINE, 1, false, 0, false, false, false));
 	}
 
@@ -122,10 +122,10 @@ final class ShowcaseRunFeatures {
 
 	/** A diesel four with a variable-geometry turbocharger, and a MAF sensor in the intake pipe on the turbo's way in. */
 	private static void tuning(ServerLevel level, ServerPlayer player, BlockPos at) {
-		ShowcaseRun.bank(level, player, at, BankBuilderItem.Layout.INLINE, 4,
+		ShowcaseRunBuild.bank(level, player, at, BankBuilderItem.Layout.INLINE, 4,
 			new ShowcaseRun.Kit(ShowcaseRun.Fuel.DIESEL, 1, true, 0, false, false, false));
 		// The last pipe between the throttle off the compressor and the intake row (an inline's intake is on its north side)
-		ShowcaseRun.pipe(level, at.offset(6, CY + 2, CZ - 1), (ManifoldBlock) CEBlocks.MAF_SENSOR.get());
+		ShowcaseRunBuild.pipe(level, at.offset(6, CY + 2, CZ - 1), (ManifoldBlock) CEBlocks.MAF_SENSOR.get());
 	}
 
 	/** Rebuilds the sound pad's exhaust, everything east of the last head. */
@@ -155,12 +155,12 @@ final class ShowcaseRunFeatures {
 		// The row over the heads, and the run past them
 		for (int x = 2; x < outlet; x++)
 			if (shape != Exhaust.MUFFLED || x != lastThrow + 1)
-				ShowcaseRun.pipe(level, at.offset(x, y, z), CEBlocks.EXHAUST_MANIFOLD.get());
+				ShowcaseRunBuild.pipe(level, at.offset(x, y, z), CEBlocks.EXHAUST_MANIFOLD.get());
 		// Each joins up again to whatever is beside it now
 		for (int x = 2; x < outlet; x++)
 			if (level.getBlockState(at.offset(x, y, z))
 				.is(CEBlocks.EXHAUST_MANIFOLD.get()))
-				ShowcaseRun.pipe(level, at.offset(x, y, z), CEBlocks.EXHAUST_MANIFOLD.get());
+				ShowcaseRunBuild.pipe(level, at.offset(x, y, z), CEBlocks.EXHAUST_MANIFOLD.get());
 	}
 
 	/**
@@ -169,12 +169,12 @@ final class ShowcaseRunFeatures {
 	 */
 	private static void gasketLine(ServerLevel level, BlockPos at) {
 		DEPLOYERS.clear();
-		ShowcaseRun.dais(level, at, GASKET_TO + 2);
+		ShowcaseRunBuild.dais(level, at, GASKET_TO + 2);
 		BlockState shaftZ = AllBlocks.SHAFT.getDefaultState()
 			.setValue(BlockStateProperties.AXIS, Axis.Z);
 		set(level, at, GASKET_FROM, 1, CZ, shaftZ);
 		set(level, at, GASKET_TO, 1, CZ, shaftZ);
-		ShowcaseRun.motor(level, at.offset(GASKET_FROM, 1, CZ + 1), Direction.NORTH, 24);
+		ShowcaseRunBuild.motor(level, at.offset(GASKET_FROM, 1, CZ + 1), Direction.NORTH, 24);
 		com.simibubi.create.content.kinetics.belt.item.BeltConnectorItem.createBelts(level, at.offset(GASKET_FROM, 1, CZ),
 			at.offset(GASKET_TO, 1, CZ));
 		set(level, at, GASKET_TO + 1, 1, CZ, AllBlocks.DEPOT.getDefaultState());
@@ -186,7 +186,7 @@ final class ShowcaseRunFeatures {
 			.setValue(DirectionalAxisKineticBlock.AXIS_ALONG_FIRST_COORDINATE, true);
 		BlockState press = AllBlocks.MECHANICAL_PRESS.getDefaultState()
 			.setValue(BlockStateProperties.HORIZONTAL_FACING, Direction.WEST);
-		ShowcaseRun.motor(level, at.offset(1, 3, CZ), Direction.EAST, 128);
+		ShowcaseRunBuild.motor(level, at.offset(1, 3, CZ), Direction.EAST, 128);
 		for (int x = 2; x <= 8; x++) {
 			boolean machine = x % 2 == 0;
 			boolean deploys = x == 2 || x == 6;
@@ -202,7 +202,7 @@ final class ShowcaseRunFeatures {
 	 * {@link #defineCues}). No load and no rich fuel: either holds it to a slow, uneven crawl.
 	 */
 	private static void night(ServerLevel level, ServerPlayer player, BlockPos at) {
-		ShowcaseRun.bank(level, player, at, BankBuilderItem.Layout.VEE, NIGHT_THROWS,
+		ShowcaseRunBuild.bank(level, player, at, BankBuilderItem.Layout.VEE, NIGHT_THROWS,
 			new ShowcaseRun.Kit(ShowcaseRun.Fuel.GASOLINE, 2, false, 0, false, false, false));
 		set(level, at, NIGHT_THROWS + 5, CY, CZ, Blocks.AIR.defaultBlockState());
 		for (BlockEntity part : ShowcaseRunStaging.parts(level, NIGHT_BAY, NIGHT_THROWS))

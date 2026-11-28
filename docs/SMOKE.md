@@ -423,7 +423,7 @@ python tools/trailer/record.py --post-only  # cuts the last recordings again (ne
   `TrailerCoverageTest` checks the edit names real shots on the beat, has words on every piece and ends on the end piece, and
   that the AI lines are there and AI.md exists.
 - **The gameplay clips.** The first-person shots keep the player's hand and the item in it; the recorder hides the hotbar, the
-  crosshair and the picked item's name (`ShowcaseRun.onRenderGuiLayer`).
+  crosshair and the picked item's name (`ShowcaseRunHooks.onRenderGuiLayer`).
 - **The video description.** Every full cut also writes `run/trailer/description.txt` (`post.py`, so `--post-only` too): the pitch, the links, chapters from the `chapter <shot>` lines (a chapter under ten seconds long is dropped, as YouTube would ignore it), the version line and the AI notice with the address of [AI.md](AI.md). The words, links and chapters are in `captions.txt`; the Modrinth and CurseForge addresses are not there yet (post.py does not guess them).
 - **Output.** `run/trailer/trailer.mp4`, `trailer_teaser.mp4`, `trailer_vertical.mp4`, `thumbnail.png`, `thumbnail_vertical.png`, `description.txt` and `description_vertical.txt`, with the raw recordings and the shot timings beside them.
 - **Keeping it current.** `src/smoke/trailer-parts.txt` has a line for every block and item saying which shot shows it, or why none
