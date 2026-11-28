@@ -29,9 +29,6 @@ public abstract class IntakeCoreBlock extends Block implements InlineDuct, IWren
 
 	public static final EnumProperty<Direction.Axis> AXIS = BlockStateProperties.AXIS;
 
-	private static final VoxelShape[] SHAPES = {
-		Block.box(0, 1, 1, 16, 15, 15), Block.box(1, 0, 1, 15, 16, 15), Block.box(1, 1, 0, 15, 15, 16)};
-
 	protected IntakeCoreBlock(Properties properties) {
 		super(properties);
 		registerDefaultState(defaultBlockState().setValue(AXIS, Direction.Axis.X));
@@ -66,9 +63,12 @@ public abstract class IntakeCoreBlock extends Block implements InlineDuct, IWren
 
 	@Override
 	protected VoxelShape getShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext context) {
-		return SHAPES[state.getValue(AXIS)
+		return shapes()[state.getValue(AXIS)
 			.ordinal()];
 	}
+
+	/** This part's outline, one shape per axis. */
+	protected abstract VoxelShape[] shapes();
 
 	@Override
 	protected BlockState rotate(BlockState state, Rotation rotation) {

@@ -44,23 +44,69 @@ public final class PartBoxes {
 		{12, 3, 5.5, 15.5, 9, 10.5},
 		{5, 12, 5, 11, 16, 11}};
 
-	/** Air intake: the plate it stands on, the neck, the bell and the rim. Mouth up. */
+	/** Air intake: the plate it stands on, the neck, the bell's two steps and the rim. Mouth up. */
 	public static final double[][] AIR_INTAKE = {
-		{3, 0, 3, 13, 3, 13},
-		{4, 3, 4, 12, 8, 12},
-		{2.25, 8, 2.25, 13.75, 12, 13.75},
+		{3, 0, 3, 13, 2, 13},
+		{4, 2, 4, 12, 8, 12},
+		{3, 8, 3, 13, 10, 13},
+		{2.25, 10, 2.25, 13.75, 12, 13.75},
 		{1.5, 12, 1.5, 14.5, 14, 14.5}};
 
-	/** Exhaust outlet: the plate, the pipe, the collar and the flared rim. Mouth up. */
+	/** Exhaust outlet: the plate, the pipe with the band round it, the collar and the flared rim. Mouth up. */
 	public static final double[][] EXHAUST_OUTLET = {
 		{3, 0, 3, 13, 1.5, 13},
-		{4.5, 1.5, 4.5, 11.5, 3, 11.5},
-		{5, 3, 5, 11, 12, 11},
+		{5.5, 1.5, 5.5, 10.5, 12, 10.5},
+		{5, 3, 5, 11, 8, 11},
 		{4, 12, 4, 12, 15, 12},
 		{3.5, 15, 3.5, 12.5, 16, 12.5}};
 
-	/** Turbocharger: the housing fills the block along its facing; its four corner pegs sit inside the same box. */
-	public static final double[][] TURBOCHARGER = {{1, 0, 1, 15, 16, 15}};
+	/** Turbocharger: the two housings, the narrow waist between them, and the stub that stands out of the waist. */
+	public static final double[][] TURBOCHARGER = {
+		{1, 0, 1, 15, 6, 15},
+		{3.5, 6, 3.5, 12.5, 10, 12.5},
+		{11.5, 7, 7, 13.5, 10.5, 9},
+		{1, 10, 1, 15, 16, 15}};
+
+	/** Variable turbocharger: the turbocharger, with the vane actuator on the side of the lower housing. */
+	public static final double[][] VARIABLE_TURBOCHARGER = {
+		{1, 0, 1, 15, 6, 15},
+		{3.5, 6, 3.5, 12.5, 10, 12.5},
+		{11.5, 7, 7, 13.5, 10.5, 9},
+		{1, 10, 1, 15, 16, 15},
+		{13.5, 1.5, 6, 16, 4.5, 10}};
+
+	/** Supercharger: the case, and the pipe flange on each of the four faces round the shaft. Shaft along Y. */
+	public static final double[][] SUPERCHARGER = {
+		{1, 0, 1, 15, 16, 15},
+		{6, 4, 0, 10, 12, 16},
+		{0, 4, 6, 16, 12, 10}};
+
+	/** Variable supercharger: the supercharger, with its drive actuator beside one flange. */
+	public static final double[][] VARIABLE_SUPERCHARGER = {
+		{1, 0, 1, 15, 16, 15},
+		{6, 4, 0, 10, 12, 16},
+		{0, 4, 6, 16, 12, 10},
+		{1, 6.5, 14.5, 4.5, 9.5, 16}};
+
+	/** Air filter: the two end plates and the drum between them. Pipes along Y. */
+	public static final double[][] AIR_FILTER = {
+		{2, 0, 2, 14, 2, 14},
+		{3, 2, 3, 13, 14, 13},
+		{2, 14, 2, 14, 16, 14}};
+
+	/** Intercooler: the two end tanks and the core between them. Pipes along Y. */
+	public static final double[][] INTERCOOLER = {
+		{2, 0, 2, 14, 3, 14},
+		{3, 3, 3, 13, 13, 13},
+		{2, 13, 2, 14, 16, 14}};
+
+	/** Muffler and soot trap: the canister, and at each end the neck and the pipe flange. Pipes along Y. */
+	public static final double[][] EXHAUST_CANISTER = {
+		{3.5, 0, 3.5, 12.5, 1.5, 12.5},
+		{5, 1.5, 5, 11, 2.5, 11},
+		{2, 2.5, 2, 14, 13.5, 14},
+		{5, 13.5, 5, 11, 14.5, 11},
+		{3.5, 14.5, 3.5, 12.5, 16, 12.5}};
 
 	/** Cam lobe's swept lobes (the block adds the shaft through them). */
 	public static final double[][] CAM_LOBE = {{2.5, 3.5, 2.5, 13.5, 12.5, 13.5}};
@@ -68,26 +114,23 @@ public final class PartBoxes {
 	/** Crank throw's swinging web as the disc it sweeps (the block adds the shaft through it). */
 	public static final double[][] CRANK_THROW = {{1, 3, 1, 15, 13, 15}};
 
-	/** Throttle body, stood on the manifold's core: the butterfly housing and the linkage stack above it. */
+	/** Throttle body, stood on the manifold's core: the butterfly housing and the linkage above it. */
 	public static final double[][] THROTTLE_BODY = {
 		{4, 4, 4, 12, 12, 12},
-		{3.5, 5.5, 5.5, 12.5, 10.5, 10.5},
-		{5.5, 5.5, 3.5, 10.5, 10.5, 12.5},
-		{4.5, 12, 6.5, 12, 15, 11.5}};
+		{6, 12, 7, 12, 15, 9},
+		{8.5, 12, 9.5, 11.5, 13.5, 11.5}};
 
-	/** Mass airflow sensor body: the tube and the connector that stands out of it. */
+	/** Mass airflow sensor body: the tube, the mount on it and the connector that stands out of that. */
 	public static final double[][] MAF_BODY = {
 		{4, 4, 4, 12, 12, 12},
-		{3.5, 5.5, 5.5, 12.5, 10.5, 10.5},
-		{5.5, 5.5, 3.5, 10.5, 10.5, 12.5},
-		{4.5, 12, 5, 11.5, 16, 12.5}};
+		{5, 12, 5, 11, 14, 11},
+		{6, 14, 8, 10, 16, 12.5}};
 
-	/** Heat exchanger body: the finned drum. */
+	/** Heat exchanger body: the drum, its two fins and the cap on top. */
 	public static final double[][] EXCHANGER_BODY = {
 		{4, 4, 4, 12, 12, 12},
-		{3.5, 5.5, 5.5, 12.5, 10.5, 10.5},
-		{5.5, 5.5, 3.5, 10.5, 10.5, 12.5},
-		{2, 4, 2, 14, 15.5, 14}};
+		{2.5, 5, 2.5, 13.5, 10, 13.5},
+		{2, 12, 2, 14, 15.5, 14}};
 
 	/**
 	 * The boxes drawn facing up, turned to {@code facing}. The turns are the ones the part's blockstate gives its model

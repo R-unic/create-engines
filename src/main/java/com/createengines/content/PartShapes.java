@@ -51,6 +51,12 @@ public final class PartShapes {
 	public static final VoxelShape[] AIR_INTAKE = directional(PartBoxes.AIR_INTAKE);
 	public static final VoxelShape[] EXHAUST_OUTLET = directional(PartBoxes.EXHAUST_OUTLET);
 	public static final VoxelShape[] TURBOCHARGER = directional(PartBoxes.TURBOCHARGER);
+	public static final VoxelShape[] VARIABLE_TURBOCHARGER = directional(PartBoxes.VARIABLE_TURBOCHARGER);
+	public static final VoxelShape[] SUPERCHARGER = axial(PartBoxes.SUPERCHARGER);
+	public static final VoxelShape[] VARIABLE_SUPERCHARGER = axial(PartBoxes.VARIABLE_SUPERCHARGER);
+	public static final VoxelShape[] AIR_FILTER = axial(PartBoxes.AIR_FILTER);
+	public static final VoxelShape[] INTERCOOLER = axial(PartBoxes.INTERCOOLER);
+	public static final VoxelShape[] EXHAUST_CANISTER = axial(PartBoxes.EXHAUST_CANISTER);
 	public static final VoxelShape[] CAM_LOBE = axial(PartBoxes.CAM_LOBE);
 	public static final VoxelShape[] CRANK_THROW = axial(PartBoxes.CRANK_THROW);
 	public static final VoxelShape THROTTLE_BODY = union(PartBoxes.THROTTLE_BODY);

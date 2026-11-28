@@ -48,8 +48,6 @@ public class TurbochargerBlock extends DirectionalBlock implements InlineDuct, I
 
 	public static final DirectionProperty FACING = DirectionalBlock.FACING;
 
-	private static final VoxelShape[] SHAPES = PartShapes.TURBOCHARGER;
-
 	public TurbochargerBlock(Properties properties) {
 		super(properties);
 		registerDefaultState(defaultBlockState().setValue(FACING, Direction.UP));
@@ -116,7 +114,7 @@ public class TurbochargerBlock extends DirectionalBlock implements InlineDuct, I
 
 	@Override
 	protected VoxelShape getShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext context) {
-		return SHAPES[state.getValue(FACING)
+		return (variableGeometry() ? PartShapes.VARIABLE_TURBOCHARGER : PartShapes.TURBOCHARGER)[state.getValue(FACING)
 			.ordinal()];
 	}
 

@@ -1,5 +1,6 @@
 package com.createengines.content.muffler;
 
+import com.createengines.content.PartShapes;
 import org.jetbrains.annotations.Nullable;
 
 import com.createengines.content.airflow.InlineDuct;
@@ -31,9 +32,6 @@ import net.minecraft.world.phys.shapes.VoxelShape;
 public abstract class ExhaustCanisterBlock extends Block implements InlineDuct, IWrenchable {
 
 	public static final EnumProperty<Direction.Axis> AXIS = BlockStateProperties.AXIS;
-
-	private static final VoxelShape[] SHAPES = {
-		Block.box(0, 2, 2, 16, 14, 14), Block.box(2, 0, 2, 14, 16, 14), Block.box(2, 2, 0, 14, 14, 16)};
 
 	protected ExhaustCanisterBlock(Properties properties) {
 		super(properties);
@@ -69,7 +67,7 @@ public abstract class ExhaustCanisterBlock extends Block implements InlineDuct, 
 
 	@Override
 	protected VoxelShape getShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext context) {
-		return SHAPES[state.getValue(AXIS)
+		return PartShapes.EXHAUST_CANISTER[state.getValue(AXIS)
 			.ordinal()];
 	}
 

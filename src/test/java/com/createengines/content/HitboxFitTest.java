@@ -124,6 +124,34 @@ class HitboxFitTest {
 		fit("air_intake", PartBoxes.AIR_INTAKE, "air_intake/block");
 		fit("exhaust_outlet", PartBoxes.EXHAUST_OUTLET, "exhaust_outlet/block");
 		fit("turbocharger", PartBoxes.TURBOCHARGER, "turbocharger/block");
+		fit("variable_turbocharger", PartBoxes.VARIABLE_TURBOCHARGER, "variable_turbocharger/block");
+	}
+
+	@Test
+	void inlineShapesFitTheirModels() throws IOException {
+		fit("supercharger", PartBoxes.SUPERCHARGER, "supercharger/block");
+		fit("variable_supercharger", PartBoxes.VARIABLE_SUPERCHARGER, "variable_supercharger/block");
+		fit("air_filter", PartBoxes.AIR_FILTER, "air_filter/block");
+		fit("intercooler", PartBoxes.INTERCOOLER, "intercooler/block");
+		fit("muffler", PartBoxes.EXHAUST_CANISTER, "muffler/block");
+		fit("soot_trap", PartBoxes.EXHAUST_CANISTER, "soot_trap/block");
+	}
+
+	/** The outline's hull alone does not show empty air beside a narrow part of a model, so some of it is named here. */
+	@Test
+	void theAirBesideNarrowPartsIsNotClickable() {
+		assertEmpty("air filter drum", PartBoxes.AIR_FILTER, 2.5, 8, 8);
+		assertEmpty("intercooler core", PartBoxes.INTERCOOLER, 2.5, 8, 8);
+		assertEmpty("muffler flange", PartBoxes.EXHAUST_CANISTER, 2.5, 0.5, 8);
+		assertEmpty("turbocharger waist", PartBoxes.TURBOCHARGER, 2, 8, 8);
+		assertEmpty("exhaust pipe", PartBoxes.EXHAUST_OUTLET, 5.2, 10, 8);
+		assertEmpty("throttle side", PartBoxes.THROTTLE_BODY, 3.7, 8, 8);
+		assertEmpty("sensor side", PartBoxes.MAF_BODY, 3.7, 8, 8);
+		assertEmpty("between exchanger fins and cap", PartBoxes.EXCHANGER_BODY, 2.7, 11, 8);
+	}
+
+	private static void assertEmpty(String name, double[][] shape, double x, double y, double z) {
+		assertTrue(!inAnyBox(shape, x, y, z), name + ": clickable where there is nothing");
 	}
 
 	@Test
@@ -170,7 +198,8 @@ class HitboxFitTest {
 		double[][][] all = {PartBoxes.ALTERNATOR, PartBoxes.BLACK_BOX, PartBoxes.GOVERNOR, PartBoxes.FLARE_STACK,
 			PartBoxes.STARTER, PartBoxes.AIR_INTAKE, PartBoxes.EXHAUST_OUTLET, PartBoxes.TURBOCHARGER,
 			PartBoxes.CAM_LOBE, PartBoxes.CRANK_THROW, PartBoxes.THROTTLE_BODY, PartBoxes.MAF_BODY,
-			PartBoxes.EXCHANGER_BODY};
+			PartBoxes.EXCHANGER_BODY, PartBoxes.VARIABLE_TURBOCHARGER, PartBoxes.SUPERCHARGER,
+			PartBoxes.VARIABLE_SUPERCHARGER, PartBoxes.AIR_FILTER, PartBoxes.INTERCOOLER, PartBoxes.EXHAUST_CANISTER};
 		for (double[][] boxes : all)
 			for (int facing = 0; facing < 6; facing++)
 				for (double[] b : PartBoxes.directional(facing, boxes))

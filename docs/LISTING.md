@@ -274,6 +274,10 @@ Not released yet.
   on four corner posts, with its injector and spark plug low on one edge, and the rotor has broader steps. Ignition coils and
   injector assists are single cans with a painted winding. Nothing about how they work changes. Resource packs that retexture
   them will show differences.
+- Changed, outlines: the selection outline and collision of the **intake and exhaust parts** follow their models again after the
+  redraw: Air Intake, Exhaust Outlet, Air Filter, Intercooler, Muffler, Soot Trap, both Turbochargers (open at the waist), both
+  Superchargers (out to their pipe flanges), and the body on a Throttle, Mass Airflow Sensor and Heat Exchanger. No IDs, saved
+  data or engine numbers change.
 - Sound, **backfires and spits** retuned: they start softer, no longer clip and have much less hiss. A backfire is a deeper bang with
   burning gas behind it, sometimes with one or two smaller ones after; a spit is one soft breath. Where the engine's own note plays
   them, their flame and sparks now wait until the bang is heard instead of showing up to a quarter of a second early.

@@ -1,5 +1,7 @@
 package com.createengines.content.airfilter;
 
+import com.createengines.content.PartShapes;
+import net.minecraft.world.phys.shapes.VoxelShape;
 import com.createengines.content.airflow.IntakeCoreBlock;
 
 /**
@@ -11,5 +13,10 @@ public class AirFilterBlock extends IntakeCoreBlock {
 
 	public AirFilterBlock(Properties properties) {
 		super(properties);
+	}
+
+	@Override
+	protected VoxelShape[] shapes() {
+		return PartShapes.AIR_FILTER;
 	}
 }

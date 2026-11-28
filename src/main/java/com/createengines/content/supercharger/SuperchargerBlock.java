@@ -1,5 +1,6 @@
 package com.createengines.content.supercharger;
 
+import com.createengines.content.PartShapes;
 import org.jetbrains.annotations.Nullable;
 
 import com.createengines.content.airflow.InlineDuct;
@@ -29,9 +30,6 @@ import net.minecraft.world.phys.shapes.VoxelShape;
  * crank's own shaft line it comes out of the engine's output.
  */
 public class SuperchargerBlock extends RotatedPillarKineticBlock implements InlineDuct, IBE<SuperchargerBlockEntity> {
-
-	private static final VoxelShape[] SHAPES = {
-		Block.box(0, 1, 1, 16, 15, 15), Block.box(1, 0, 1, 15, 16, 15), Block.box(1, 1, 0, 15, 15, 16)};
 
 	public SuperchargerBlock(Properties properties) {
 		super(properties);
@@ -65,7 +63,7 @@ public class SuperchargerBlock extends RotatedPillarKineticBlock implements Inli
 
 	@Override
 	protected VoxelShape getShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext context) {
-		return SHAPES[state.getValue(AXIS)
+		return (variableDrive() ? PartShapes.VARIABLE_SUPERCHARGER : PartShapes.SUPERCHARGER)[state.getValue(AXIS)
 			.ordinal()];
 	}
 
