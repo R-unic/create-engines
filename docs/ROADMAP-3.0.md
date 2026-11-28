@@ -1196,12 +1196,12 @@ Close behind (600 to 800 lines, to watch, not to split yet): `WearGameTests` 794
 **Docs that cost the most to read.** Sessions read these often, and most of each is history:
 
 - `docs/DESIGN.md` (1909 lines): section 0, "Milestone 1 as built", is lines 16 to 1350, over two thirds of the file. Proposed: move it
-  word for word to `docs/design/milestone-1.md` and leave a one-line link, so the design sections (1 to 14) read on their own.
+  word for word to docs/design/milestone-1.md (new) and leave a one-line link, so the design sections (1 to 14) read on their own.
 - `docs/ROADMAP.md` (979 lines) is the finished 1.0.1 to 2.0 plan: all of it shipped. Proposed: move it to `docs/history/` unchanged.
 - `docs/ROADMAP-3.0.md` (this file, about 1700 lines): 2.0.x to 2.4 (lines 49 to 1183) have shipped. Proposed: move each shipped
-  release's section word for word into `docs/history/roadmap-2.x.md`, keeping "At a glance" and the open sections here.
+  release's section word for word into docs/history/roadmap-2.x.md (new), keeping "At a glance" and the open sections here.
 - `docs/LISTING.md` (1256 lines): the changelog is most of it. Proposed: keep the newest two versions here and move older entries to
-  `docs/history/changelog.md`, if the publish workflow does not read the whole page (to check first).
+  docs/history/changelog.md (new), if the publish workflow does not read the whole page (to check first).
 
 These are moves, not rewrites, so history stays as written. They need the author's yes, since the docs rules call dated roadmap entries
 history, and `DocsReferencesTest`, `GuideDocsTest` and every link to a moved anchor must be checked in the same commit.
