@@ -8,34 +8,30 @@ from models.core import (
 # --- starter, battery, alternator ----------------------------------------------------------------------------------
 
 def starter():
-    textures = {"body": CASING, "pinion": BRASS, "coil": COPPER, "plate": IRON, "bolt": BRASS, "particle": CASING}
+    # "body" is the casing of the two end flanges and "can" the motor between them: the heavy starter swaps both
+    textures = {"body": CASING, "can": IRON, "pinion": BRASS, "solenoid": IRON_BLOCK, "particle": CASING}
+
+    def flange(a, b, **kwargs):
+        """An end flange, its sides showing the casing's metal frame rather than the planks inside it."""
+        w, d = b[0] - a[0], b[2] - a[2]
+        rim = {"north": [0, 0, w, 2], "south": [16 - w, 14, 16, 16], "west": [0, 0, d, 2], "east": [16 - d, 14, 16, 16]}
+        return box(a, b, "body", uv=dict(rim, up=[0, 0, 16, 16], down=[0, 0, 16, 16]), **kwargs)
+
     elements = [
-        # Mounting plate round the input socket, so the shaft shows in the middle
-        box((4, 0, 4), (12, 2, 6), "body"), box((4, 0, 10), (12, 2, 12), "body"),
-        box((4, 0, 6), (6, 2, 10), "body"), box((10, 0, 6), (12, 2, 10), "body"),
-        # Motor can, an octagon, with the wound field banding it
-        box((3, 2, 4), (13, 10, 12), "body"),
-        box((4, 2, 3), (12, 10, 13), "body"),
-        box((2.75, 3.5, 4.75), (13.25, 4.5, 11.25), "coil"),
-        box((4.75, 3.5, 2.75), (11.25, 4.5, 13.25), "coil"),
-        box((2.75, 7.5, 4.75), (13.25, 8.5, 11.25), "coil"),
-        box((4.75, 7.5, 2.75), (11.25, 8.5, 13.25), "coil"),
-        # Solenoid riding on the side, with its terminals
-        box((12, 3, 5.5), (15.5, 9, 10.5), "coil"),
-        box((14.5, 9, 6), (15.5, 10.5, 7), "plate"),
-        box((14.5, 9, 9), (15.5, 10.5, 10), "plate"),
-        # Nose housing and mounting ears
-        box((5, 10, 5), (11, 12, 11), "body"),
-        box((1, 10, 6.5), (15, 12, 9.5), "plate"),
-        box((1.75, 12, 7.25), (2.75, 12.5, 8.25), "bolt"),
-        box((13.25, 12, 7.25), (14.25, 12.5, 8.25), "bolt"),
-        # The pinion that meshes with the crank
-        box((6.5, 12, 6.5), (9.5, 13, 9.5), "pinion"),
-        box((6, 13, 6), (10, 16, 10), "pinion"),
-        box((5, 13.5, 7), (6, 15.5, 9), "pinion"),
-        box((10, 13.5, 7), (11, 15.5, 9), "pinion"),
-        box((7, 13.5, 5), (9, 15.5, 6), "pinion"),
-        box((7, 13.5, 10), (9, 15.5, 11), "pinion"),
+        # Input end, in four so the shaft shows in the middle
+        box((3, 0, 3), (13, 2, 6), "body"), box((3, 0, 10), (13, 2, 13), "body"),
+        box((3, 0, 6), (6, 2, 10), "body"), box((10, 0, 6), (13, 2, 10), "body"),
+        # The motor can, an octagon
+        box((4, 2, 3), (12, 10, 13), "can"),
+        box((3, 2, 4), (13, 10, 12), "can"),
+        # Drive end flange, which bolts to the engine
+        flange((2, 10, 2), (14, 12, 14)),
+        # The pinion that meshes with the crank: a plain cross, so no two faces lie on each other
+        box((5, 12, 6.5), (11, 16, 9.5), "pinion"),
+        box((6.5, 12, 5), (9.5, 16, 6.5), "pinion"),
+        box((6.5, 12, 9.5), (9.5, 16, 11), "pinion"),
+        # Solenoid riding on the side
+        box((12, 3, 5.5), (15.5, 10, 10.5), "solenoid"),
     ]
     write("starter/block", textures, elements)
 

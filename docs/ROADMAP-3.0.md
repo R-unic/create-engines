@@ -1782,6 +1782,10 @@ tube, framed junctions and tee collars on the intake manifold and the throttle a
 air intake (`intake_flange`, `intake_pipe`, `intake_bell` textures). A speckled first pass was refused; the calmer one was
 approved by the author that day from preview renders; not seen in game.
 
+**Starter and Heavy Starter redrawn 2026-11-28**, approved by the author that day from preview renders after one round of changes
+(the pinion was still over-modelled, the all-brass heavy motor and the copper solenoid looked wrong); outline refitted; not seen
+in game.
+
 ## 3.0 Clean Slate
 
 The one planned breaking release after 2.0. Like 2.0, it is the only place the promise may be broken, so everything lands in one

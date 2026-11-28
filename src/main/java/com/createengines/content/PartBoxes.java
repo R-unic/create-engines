@@ -36,13 +36,12 @@ public final class PartBoxes {
 		{3, 0, 3, 13, 2, 13},
 		{5, 2, 5, 11, 16, 11}};
 
-	/** Starter: the base and motor, the flanged drive plate and mounting lug, and the drive stub. Output up. */
+	/** Starter: the base and motor, the drive end flange, the pinion, and the solenoid on the side. Output up. */
 	public static final double[][] STARTER = {
-		{2.75, 0, 2.75, 13.25, 10, 13.25},
-		{5, 10, 5, 11, 12, 11},
-		{1, 10, 6.5, 15, 12, 9.5},
-		{12, 3, 5.5, 15.5, 9, 10.5},
-		{5, 12, 5, 11, 16, 11}};
+		{3, 0, 3, 13, 10, 13},
+		{2, 10, 2, 14, 12, 14},
+		{5, 12, 5, 11, 16, 11},
+		{12, 3, 5.5, 15.5, 10, 10.5}};
 
 	/** Air intake: the plate it stands on, the neck, the bell's two steps and the rim. Mouth up. */
 	public static final double[][] AIR_INTAKE = {
