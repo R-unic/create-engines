@@ -29,11 +29,14 @@ public class GasParticle extends TextureSheetParticle {
 	private static final float FADE_IN = 2;
 
 	private final float solid;
+	/** Where in its slow swirl this puff starts, so neighbours do not sway together. */
+	private final float swirl;
 
 	protected GasParticle(ClientLevel level, double x, double y, double z, double xSpeed, double ySpeed, double zSpeed,
 						  GasParticleOptions options, SpriteSet sprites) {
 		super(level, x, y, z);
 		this.solid = options.alpha();
+		this.swirl = random.nextFloat() * Mth.TWO_PI;
 		xd = xSpeed;
 		yd = ySpeed;
 		zd = zSpeed;
@@ -66,6 +69,10 @@ public class GasParticle extends TextureSheetParticle {
 
 	@Override
 	public void tick() {
+		// Billowing: the older a puff, the more the air has hold of it
+		float billow = 0.0025f * age / lifetime;
+		xd += Mth.sin(age * 0.3f + swirl) * billow;
+		zd += Mth.cos(age * 0.3f + swirl) * billow;
 		super.tick();
 		if (removed)
 			return;

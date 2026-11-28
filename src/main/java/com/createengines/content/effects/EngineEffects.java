@@ -18,7 +18,6 @@ import com.createengines.engine.sim.Muffling;
 import com.createengines.engine.sim.CycleResult;
 import com.createengines.engine.sim.Thermal;
 import com.createengines.engine.topology.CylinderFault;
-import com.createengines.registry.CEParticles;
 import com.createengines.registry.CESounds;
 
 import net.minecraft.core.BlockPos;
@@ -139,7 +138,7 @@ public final class EngineEffects {
 						SoundSource.BLOCKS, 0.3f * volume, pitch, false);
 			}
 			Opening from = outlet;
-			withBang(cue, () -> flames(level, from.at, from.normal, 2, 0.18));
+			withBang(cue, () -> ExhaustFire.flames(level, from.at, from.normal, 3, 0.2));
 		}
 
 		float roll = random.nextFloat();
@@ -147,7 +146,7 @@ public final class EngineEffects {
 			afterfire(level, primary, outlet.at, outlet.normal,
 				0.7f * Muffling.volume(engine == null ? 0 : engine.muffling()), 1);
 		else if (roll < look.pop() + look.flame())
-			flames(level, outlet.at, outlet.normal, look.flame() > 0.4f ? 3 : 2, 0.14);
+			ExhaustFire.flames(level, outlet.at, outlet.normal, look.flame() > 0.4f ? 4 : 2, 0.13 + 0.1 * look.flame());
 	}
 
 	/** A slow single's firing, as a ring of puffs that travels out of the pipe and widens as it goes. */
@@ -191,10 +190,7 @@ public final class EngineEffects {
 		}
 		if (!CEClientConfig.particles())
 			return;
-		withBang(cue, () -> {
-			flames(level, at, normal, 4, 0.24);
-			sparks(level, at, normal.scale(0.22), 3, 0.1);
-		});
+		withBang(cue, () -> ExhaustFire.backfire(level, at, normal));
 	}
 
 	/** An engine drowning: a burst of white steam from the block at {@code at} and a hard clunk as it seizes up on water. */
@@ -225,30 +221,6 @@ public final class EngineEffects {
 		level.addParticle(new GasParticleOptions(0.35f, 0.36f, 0.4f, 0.8f, 0.5f, 0.3f, 30), from.x, from.y, from.z, 0, 0.04, 0);
 	}
 
-	/** Tongues of flame out along {@code normal}. */
-	public static void flames(Level level, Vec3 at, Vec3 normal, int count, double speed) {
-		if (CEClientConfig.photosensitive())
-			return;
-		RandomSource random = level.random;
-		for (int i = 0; i < count; i++) {
-			Vec3 velocity = normal.scale(speed * (0.7 + random.nextDouble() * 0.6))
-				.add(jitter(random, 0.05));
-			Vec3 from = at.add(jitter(random, 0.1));
-			level.addParticle(CEParticles.EXHAUST_FLAME.get(), from.x, from.y, from.z, velocity.x, velocity.y, velocity.z);
-		}
-	}
-
-	/** Sparks thrown from {@code at}, {@code push} their common velocity and {@code scatter} how far each strays from it. */
-	public static void sparks(Level level, Vec3 at, Vec3 push, int count, double scatter) {
-		if (CEClientConfig.photosensitive())
-			return;
-		RandomSource random = level.random;
-		for (int i = 0; i < count; i++) {
-			Vec3 velocity = push.add(jitter(random, scatter * 2));
-			level.addParticle(CEParticles.SPARK.get(), at.x, at.y, at.z, velocity.x, velocity.y + scatter * 0.5, velocity.z);
-		}
-	}
-
 	/**
 	 * One cylinder's intake stroke, at one of the intakes its air comes through: a wisp of the air in front of the mouth
 	 * drawn into it, faster as the engine turns faster. An intake underwater bubbles instead, and a covered one is still.
@@ -272,8 +244,8 @@ public final class EngineEffects {
 		float spit = ExhaustLook.intakeSpit(status.result(), engine != null && engine.firing() > 0,
 			engine == null ? 0 : engine.temperature());
 		if (spit > 0 && random.nextFloat() < spit) {
-			flames(level, inlet.at, inlet.normal, 2, 0.1);
-			sparks(level, inlet.at, inlet.normal.scale(0.12), 2, 0.08);
+			ExhaustFire.flames(level, inlet.at, inlet.normal, 2, 0.1);
+			ExhaustFire.sparks(level, inlet.at, inlet.normal.scale(0.12), 1, 0.08);
 		}
 		// Burned gas with nowhere to go comes back out the way the air went in
 		if (ExhaustLook.chuffsBack(CylinderFault.exhaustShut(status.faults()), false) && random.nextFloat() < 0.7f) {

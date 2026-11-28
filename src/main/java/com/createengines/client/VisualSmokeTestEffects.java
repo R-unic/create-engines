@@ -12,6 +12,7 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.phys.Vec3;
 import net.neoforged.neoforge.client.event.sound.PlaySoundEvent;
 
 /** Sounds, effects and wear in the visual smoke test. Part of {@link VisualSmokeTest}, and like it kept out of the jar. */
@@ -149,6 +150,19 @@ final class VisualSmokeTestEffects {
 		}));
 	}
 
+	private interface Burst {
+		void at(net.minecraft.world.level.Level level, Vec3 at, Vec3 out);
+	}
+
+	private static void fire(String name, int tick, Burst burst) {
+		double x = RICH_OFFSET.getX() + 0.5;
+		STEPS.add(new Step(tick, () -> view(x + 0.8, 2.4, -6.5, 0, 6)));
+		STEPS.add(new Step(tick + 15, () -> burst.at(Minecraft.getInstance().level,
+			Vec3.atLowerCornerOf(origin).add(x, 3.2, -3.5), new Vec3(1, 0, 0))));
+		for (int after : new int[] {1, 3, 6, 12})
+			STEPS.add(new Step(tick + 15 + after, () -> shot(name + "_" + after)));
+	}
+
 	static void effects(int start) {
 		STEPS.add(new Step(start - 10, VisualSmokeTestEffects::soundCheck));
 		STEPS.add(new Step(start, () -> server(server -> {
@@ -181,6 +195,13 @@ final class VisualSmokeTestEffects {
 					.removeBlock(origin.offset(offset)
 						.offset(TestEngine.STARTER_POWER), false);
 		})));
+		// The fire on its own, in clear air and seen side on: a backfire, a lick of flame and a shower of sparks, each
+		// photographed over its short life
+		fire("effects_backfire", start + 250, com.createengines.content.effects.ExhaustFire::backfire);
+		fire("effects_flame", start + 290,
+			(level, at, out) -> com.createengines.content.effects.ExhaustFire.flames(level, at, out, 4, 0.2));
+		fire("effects_sparks", start + 320,
+			(level, at, out) -> com.createengines.content.effects.ExhaustFire.sparks(level, at, out.scale(0.25), 6, 0.12));
 		frames("effects_running", start + 360, -1.5, 4.0, -2.0, -18, 5);
 		frames("effects_intake", start + 390, 5.5, 3.6, -0.5, 73, 13);
 		frames("effects_rich", start + 420, RICH_OFFSET.getX() - 1.5, 4.0, -2.0, -18, 5);

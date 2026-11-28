@@ -1,5 +1,8 @@
 {
   "textures": [
-    "minecraft:flame"
+    "create_engines:flame_0",
+    "create_engines:flame_1",
+    "create_engines:flame_2",
+    "create_engines:flame_3"
   ]
 }

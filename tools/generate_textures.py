@@ -441,6 +441,36 @@ def glow(seed):
     return rows
 
 
+FLAMES = 4
+
+
+def flame(age):
+    """One frame of a tongue of flame, 8 wide and 16 tall, leading end at the top: a round bright head and a ragged tail,
+    which later frames break into rags. The heart is white, so it takes the game's tint as it is; the body and rim are
+    warmer and darker, so one tint gives a flame a bright heart and a red edge."""
+    rows = []
+    for j in range(16):
+        # Half width of the tongue at this row: round at the head, tapering down the tail
+        half = 3.8 * math.sqrt(max(0.0, 1 - ((5 - j) / 5.0) ** 2)) if j < 5 else 3.8 * (1 - (j - 5) / 12.0)
+        sway = 0.9 * math.sin(j * 0.8 + age * 2.1) * (j / 15.0)
+        row = []
+        for i in range(8):
+            depth = half - abs(i - 3.5 - sway)
+            torn = hashed(i, (j + 3 * age) // 2, 83 + age) < 0.14 * age + 0.25 * max(0, j - 8) / 7.0
+            if depth <= 0 or torn:
+                row.append((0, 0, 0, 0))
+                continue
+            heart = depth > 1.7 and j < 11
+            row.append((255, 255, 255, 255) if heart else (255, 190, 130, 255) if depth > 0.8 else (225, 105, 60, 255))
+        rows.append(row)
+    return rows
+
+
+def spark_streak():
+    """A spark's streak, 4 wide and 8 tall: solid at the leading end, fading down its tail."""
+    return [[(255, 255, 255, (255, 255, 255, 235, 200, 160, 115, 70)[j])] * 4 for j in range(8)]
+
+
 def casing_plate(x, y):
     """The flat plate of engine casing: rows of broken strokes in steel, the same in every tile so that connected
     tiles read as one sheet."""
@@ -600,8 +630,10 @@ def main():
     engine_casing("engine_window_casing", "window")
     for index in range(PUFFS):
         write_png("particle/puff_%d" % index, puff(61 + 7 * index))
-    # A spark is one solid square, sized and coloured by the particle that draws it
-    write_png("particle/spark", [[(255, 255, 255, 255)] * 4 for _ in range(4)])
+    for index in range(FLAMES):
+        write_png("particle/flame_%d" % index, flame(index))
+    # A spark is a streak, sized, coloured and stretched by the particle that draws it
+    write_png("particle/spark", spark_streak())
 
 
 main()

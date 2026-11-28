@@ -357,7 +357,7 @@ public class TurbochargerBlockEntity extends SmartBlockEntity
 			return;
 		var random = level.random;
 		if (random.nextBoolean())
-			EngineEffects.flames(level, at, out, 1, 0.1);
+			com.createengines.content.effects.ExhaustFire.flames(level, at, out, 1, 0.1);
 		else
 			level.addParticle(new GasParticleOptions(0.25f, 0.25f, 0.25f, 0.6f, 0.5f, 0.6f, 24), at.x, at.y, at.z,
 				out.x * 0.04 + (random.nextDouble() - 0.5) * 0.04, 0.03, out.z * 0.04 + (random.nextDouble() - 0.5) * 0.04);

@@ -14,9 +14,9 @@ import net.neoforged.neoforge.registries.DeferredHolder;
 import net.neoforged.neoforge.registries.DeferredRegister;
 
 /**
- * The mod's own particles. What each one is drawn from is in {@code assets/create_engines/particles}: vanilla's flame
- * and spark, and for gas a few white puffs drawn like vanilla's campfire smoke so they can be tinted any colour. How
- * they move is in {@code client.particle}.
+ * The mod's own particles. What each one is drawn from is in {@code assets/create_engines/particles}: white sprites from
+ * {@code tools/generate_textures.py} that the particles tint, for flame tongues, sparks, glows and, drawn like vanilla's
+ * campfire smoke, puffs of gas. How they move is in {@code client.particle}.
  */
 public final class CEParticles {
 

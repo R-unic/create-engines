@@ -874,7 +874,12 @@ and regular rattles are what made the first takes sound like a cartoon (`Failure
   and fades, and is drawn from four white puffs made by `tools/generate_textures.py` in the manner of vanilla's
   campfire smoke (vanilla's own are grey, so they cannot be tinted white, and its small smoke set shrinks to a speck).
   The game's particle shader discards anything fainter than 0.1, so no look starts below about 0.25.
-  `exhaust_flame` is vanilla's flame, short-lived and aimed; `spark` is one bright pixel that falls and cools.
+  `exhaust_flame` and `spark` are drawn along their velocity (`StreakParticle`; the arithmetic is `FlameMotion`, pure
+  and unit-tested). A flame tongue is four frames of its own that cool from pale yellow to a sooty brown and break into
+  rags, drawn out into a jet while fast; a spark is a streak as long as it is fast, which bounces and skids off blocks,
+  goes out in water and flickers at the end. `ExhaustFire` composes them: a lick of flame is a glow at the mouth,
+  tongues at spread speeds and now and then an ember; a backfire is a flash, a cone of flame, three sparks
+  and a dirty puff. The photosensitive setting drops all of it. Gas puffs sway more as they age.
 - **Around the engine** (`EngineEffects`). A wisp of air drawn into an intake on each intake stroke; bubbles from any
   flooded mouth and off the wet faces of a submerged cylinder while the crank turns; rain boiling off a head above temperature 0.35, and a shimmer over a running one
   above 0.62 (so coolant shows); sparks off crank throws below 30 percent lubrication and off a starter's pinion; a

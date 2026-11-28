@@ -228,6 +228,10 @@ that changes how an existing engine behaves says so in its changelog. More on
 
 Not released yet.
 
+- Effects, **flames and sparks** redrawn. Exhaust flames are the mod's own tongues of fire instead of vanilla's torch flame:
+  they leave the pipe as a jet, cool from yellow to red and break up. Sparks are streaks that bounce and skid along the floor. A
+  backfire now flashes at the mouth, throws a cone of flame and a few sparks, and leaves a dirty puff, and exhaust smoke
+  billows a little as it ages. The photosensitive setting still turns all the flame and sparks off.
 - New, other mods' lubricants: an engine's oil tanks now take Create: Petrochem's lubricant, which oils as well as engine oil. An oil
   exchange burns it off and makes no used oil. Packs can add other fluids to the new `create_engines:lubricants` fluid tag. Before,
   the tanks refused it.

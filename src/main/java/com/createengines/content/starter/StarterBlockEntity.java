@@ -5,7 +5,6 @@ import java.util.List;
 import org.jetbrains.annotations.Nullable;
 
 import com.createengines.config.CEClientConfig;
-import com.createengines.content.effects.EngineEffects;
 import com.createengines.engine.Signals;
 import com.createengines.engine.topology.EngineMember;
 import com.createengines.content.GoggleLines;
@@ -182,7 +181,7 @@ public class StarterBlockEntity extends KineticBlockEntity implements EngineMemb
 			.add(towards.scale(0.5))
 			.add((level.random.nextDouble() - 0.5) * 0.5, (level.random.nextDouble() - 0.5) * 0.5,
 				(level.random.nextDouble() - 0.5) * 0.5);
-		EngineEffects.sparks(level, at, towards.scale(-0.05), 1, 0.08);
+		com.createengines.content.effects.ExhaustFire.sparks(level, at, towards.scale(-0.05), 1, 0.08);
 	}
 
 	@Override
