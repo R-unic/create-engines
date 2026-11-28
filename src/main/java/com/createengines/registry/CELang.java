@@ -533,6 +533,7 @@ public final class CELang {
 		REGISTRATE.addRawLang("tag.fluid.c.kerosene", "Kerosene");
 		REGISTRATE.addRawLang("tag.fluid.c.methanol", "Methanol");
 		REGISTRATE.addRawLang("tag.fluid.c.plantoil", "Plant Oil");
+		REGISTRATE.addRawLang("tag.fluid.create_engines.lubricants", "Lubricants");
 		REGISTRATE.addRawLang("tag.fluid.create_engines.poor_lubricants", "Poor Lubricants");
 		REGISTRATE.addRawLang("tag.item.create_engines.ferments_mash", "Mash Ingredients");
 		// The weights engine blocks have on a moving structure (Create Aeronautics, through Sable): data/sable/physics_block_properties

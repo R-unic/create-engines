@@ -183,6 +183,7 @@ data:data/create_engines/tags/block/weight/flywheel.json
 data:data/create_engines/tags/block/weight/heavy.json
 data:data/create_engines/tags/block/weight/light.json
 data:data/create_engines/tags/block/weight/medium.json
+data:data/create_engines/tags/fluid/lubricants.json
 data:data/create_engines/tags/fluid/poor_lubricants.json
 data:data/create_engines/tags/item/ferments_mash.json
 enumvalue:CasingPaint:black

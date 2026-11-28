@@ -1259,6 +1259,7 @@
   "tag.fluid.c.kerosene": "Kerosene",
   "tag.fluid.c.methanol": "Methanol",
   "tag.fluid.c.plantoil": "Plant Oil",
+  "tag.fluid.create_engines.lubricants": "Lubricants",
   "tag.fluid.create_engines.poor_lubricants": "Poor Lubricants",
   "tag.item.create_engines.ferments_mash": "Mash Ingredients",
   "tag.item.curios.head": "Head Curios"

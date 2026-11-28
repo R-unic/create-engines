@@ -294,6 +294,7 @@ Replace a route like any recipe, by providing a file at the same path; remove on
 
 | File | What it is |
 |---|---|
+| `data/create_engines/tags/fluid/lubricants.json` | other mods' fluids an engine's oil pan accepts as **full-strength oil**: they lubricate as engine oil does, but an oil exchange burns them off and makes no used oil. The shipped tag holds Create: Petrochem's lubricant (optional); add a fluid to make it one |
 | `data/create_engines/tags/fluid/poor_lubricants.json` | fluids an engine's oil pan accepts as **oil enough in a pinch** (poorly: they lubricate, but badly). The shipped tag holds plant oil and the common plant-oil fluid tags from other mods; add a fluid to make it a poor lubricant |
 | `data/create_engines/tags/item/ferments_mash.json` | items that ferment sugar mash into ethanol in the mod's Create mixing recipes (the shipped tag holds apples and mushrooms) |
 | `data/neoforge/data_maps/item/furnace_fuels.json` | the burn time of soot as a furnace fuel (200 ticks); a vanilla data map |

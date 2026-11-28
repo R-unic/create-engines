@@ -276,7 +276,7 @@ public final class CEFluids {
 	/** How well plant oil lubricates next to engine oil: a poor man's oil that thins and breaks down quickly. */
 	public static final double PLANT_OIL_LUBRICITY = 0.6;
 
-	/** Anything an engine's oil tank will take: proper engine oil, or plant oil in a pinch. */
+	/** Anything an engine's oil tank will take: engine oil, another mod's full-strength lubricant, or plant oil in a pinch. */
 	public static boolean isLubricant(FluidStack stack) {
 		return lubricity(stack) > 0;
 	}
@@ -289,9 +289,19 @@ public final class CEFluids {
 			.isSame(ENGINE_OIL.get()))
 			return 1;
 		Fluid fluid = stack.getFluid();
+		if (fluid.builtInRegistryHolder()
+			.is(LUBRICANTS))
+			return 1;
 		return fluid.isSame(PLANT_OIL.get()) || fluid.builtInRegistryHolder()
 			.is(POOR_LUBRICANTS) ? PLANT_OIL_LUBRICITY : 0;
 	}
+
+	/**
+	 * Other mods' lubricating oils, as good as engine oil in a running engine. They are not engine oil: an oil exchange burns them
+	 * off and makes no used oil, so one can never be recycled into this mod's engine oil.
+	 */
+	public static final TagKey<Fluid> LUBRICANTS =
+		TagKey.create(Registries.FLUID, ResourceLocation.fromNamespaceAndPath(CreateEngines.MOD_ID, "lubricants"));
 
 	/** Plant oils from any mod ({@code c:plantoil}, {@code c:vegetable_oil}, {@code c:seed_oil}...): oil enough for an engine in a pinch. */
 	public static final TagKey<Fluid> POOR_LUBRICANTS =

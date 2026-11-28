@@ -1254,13 +1254,12 @@ NeoForge not read). An oil chain with its own diesel and gasoline engines and a 
   does. Then the listing, README and COMPAT.md lines.
 - **Status (2026-11-27):** the test row is built and green ([COMPAT.md](COMPAT.md) has what ran). It needs NeoForge 21.1.230.
   The author approved ignoring, in that row only, the errors from the 16 recipes Petrochem's jar cannot load; the 2.5.0 release
-  record lists it under Exceptions. The world pass and the three questions below are open, and the listing and README claim
-  nothing yet.
-- **Open for the author:** (a) should `petrochem:lubricant` oil an engine? Today only engine oil (full) and poor lubricants (0.6)
-  do. Recommended: yes, through a new full-strength lubricant tag, additive, with its own test. (b) Should the refining column
-  take `c:diesel` as feed, so its diesel can be made into our kerosene or gasoline? Recommended: no for now. The column takes only
-  our fluids, which also keeps our volume-gaining routes out of any loop with another mod's recipes. (c) Balance: a pumped-crude
-  chain feeds our engines without the bio chain's cost. Recommended: accept it, as for TFMG; packs can retune the fuel data.
+  record lists it under Exceptions. The lubricant tag is built. The world pass is open, and the listing's "Works with" list and the
+  README claim no Petrochem support yet.
+- **Decided (author, 2026-11-27):** (a) `petrochem:lubricant` oils an engine at full strength, through the new additive
+  `create_engines:lubricants` tag. It is not engine oil: an exchange burns it off, so it cannot be recycled into engine oil. (b) The
+  refining column does **not** take `c:diesel`; it keeps taking only this mod's fluids. (c) Pumped crude feeding engines without the
+  bio chain's cost is accepted, as for TFMG; packs can retune the fuel data.
 
 **[Create: Pocket Sized](https://modrinth.com/mod/create-pocket-sized)** (`pocket`, 0.32.0, alpha, NeoForge 1.21.1,
 [source](https://github.com/misterblusky9/pocket)). Scales Aeronautics' moving structures from 1/32x to 8x through its bundled

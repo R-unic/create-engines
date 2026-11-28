@@ -1,0 +1,12 @@
+{
+  "values": [
+    {
+      "id": "petrochem:lubricant",
+      "required": false
+    },
+    {
+      "id": "petrochem:flowing_lubricant",
+      "required": false
+    }
+  ]
+}

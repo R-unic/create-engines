@@ -3,6 +3,8 @@ package com.createengines.gametest;
 import com.createengines.CreateEngines;
 import com.createengines.content.crankshaft.CrankshaftBlockEntity;
 import com.createengines.content.head.CylinderHeadBlockEntity;
+import com.createengines.content.sump.SumpBlockEntity;
+import com.createengines.registry.CEBlocks;
 import com.createengines.engine.EngineState;
 import com.createengines.engine.EngineSummary;
 import com.createengines.engine.sim.FuelSpec;
@@ -74,6 +76,32 @@ public class PetrochemCompatGameTests {
 			"petrochem:heavy_naphta"})
 			helper.assertTrue(CEDataMaps.fuel(fluid(helper, id)) == null,
 				id + " is not an engine fuel but burns as " + CEDataMaps.fuel(fluid(helper, id)));
+		helper.succeed();
+	}
+
+	/** Its lubricant oils an engine as engine oil does, and an oil exchange burns it off: it never becomes used oil. */
+	@GameTest(template = "empty")
+	public static void petrochemLubricantOilsAnEngineAndNeverBecomesUsedOil(GameTestHelper helper) {
+		if (absent(helper))
+			return;
+		for (String id : new String[] {"petrochem:lubricant", "petrochem:flowing_lubricant"}) {
+			double lubricity = CEFluids.lubricity(new FluidStack(fluid(helper, id), 1000));
+			helper.assertTrue(lubricity == 1, id + " should oil as well as engine oil, lubricity " + lubricity);
+		}
+		BlockPos at = new BlockPos(1, 2, 1);
+		helper.setBlock(at, CEBlocks.SUMP.getDefaultState());
+		SumpBlockEntity sump = helper.getBlockEntity(at);
+		int filled = sump.fluidCapability()
+			.fill(new FluidStack(fluid(helper, "petrochem:lubricant"), 800), FluidAction.EXECUTE);
+		helper.assertTrue(filled == 800 && sump.tank()
+			.getFluidAmount() == 800, "The oil tank should take its lubricant, took " + filled);
+		sump.exchange.setValue(SumpBlockEntity.EXCHANGE_RATES.length - 1);
+		double swapped = sump.exchange(10);
+		helper.assertTrue(swapped > 0 && sump.tank()
+			.getFluidAmount() == 800 - (int) swapped, "The exchange should have drawn lubricant, swapped " + swapped);
+		helper.assertTrue(sump.usedTank()
+			.isEmpty(), "No used oil should come of it: " + sump.usedTank()
+				.getFluidAmount() + " mB");
 		helper.succeed();
 	}
 

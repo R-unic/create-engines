@@ -228,6 +228,9 @@ that changes how an existing engine behaves says so in its changelog. More on
 
 Not released yet.
 
+- New, other mods' lubricants: an engine's oil tanks now take Create: Petrochem's lubricant, which oils as well as engine oil. An oil
+  exchange burns it off and makes no used oil. Packs can add other fluids to the new `create_engines:lubricants` fluid tag. Before,
+  the tanks refused it.
 - Sound: every wear failure and the dry piston's warning are re-made to sound like machinery, not a cartoon: the thrown rod, blown
   gasket, piston seizure and its warning, failed apex seals, warped head and failed turbocharger. The sweeping squeals and whistles,
   long bell-like rings and evenly timed rattles are gone: metal now strikes short and dull, scraping is rough, and leaks hiss and spit
