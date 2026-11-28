@@ -1769,6 +1769,10 @@ The author queued it in 2.4 on 2026-11-25 and moved it to 2.5 on 2026-11-26. It 
 and the rotor housing, rotor, ignition coil and injector assist, with the precision head's redraw refused (its bolts stay).
 Neither batch has been seen in game.
 
+**Crankshaft and crank throw redrawn 2026-11-28**, approved by the author the same day from preview renders; not yet seen in
+game. The main bearing loses its bolts, joint line, oil feeds and thrust collars; each web is an arm and a counterweight with a
+plain pin between them.
+
 **Compression parts redrawn 2026-11-28** (author's request that day): the high compression piston has a stepped steel dome, the low
 one a dish hollowed inside its own rim (`piston_dome`, `piston_dish` textures), each with one band in red or blue. The rotors carry
 the same on their flanks, no longer on the end faces where the eccentric's webs ran through the marks. Approved by the author that day from the preview render; not seen in game.

@@ -8,54 +8,28 @@ from models.core import AXIS, AXIS_TOP, BRASS, CASING, DARK, IRON, IRON_BLOCK, b
 # --- crank, throw, cam ---------------------------------------------------------------------------------------------
 
 def crankshaft():
-    textures = {"axis": AXIS, "end": AXIS_TOP, "collar": CASING, "journal": IRON, "bolt": BRASS, "groove": DARK,
-                "particle": CASING}
+    """A main bearing on the crank's line: the journal with a flange at each end, and the split bearing round it."""
+    textures = {"axis": AXIS, "end": AXIS_TOP, "journal": IRON, "bearing": CASING, "strap": BRASS, "particle": CASING}
     elements = [
         shaft((6, 0, 6), (10, 16, 10)),
-        # The journal, with a thrust collar at each end that keeps the crank from walking along its line
-        box((5, 2.5, 5), (11, 13.5, 11), "journal"),
-        box((4.5, 2.5, 4.5), (11.5, 3.5, 11.5), "collar"),
-        box((4.5, 12.5, 4.5), (11.5, 13.5, 11.5), "collar"),
-        # The split main bearing: a lower shell and a cap, with the joint between them showing as a dark line
-        box((4, 5, 4), (12, 7.75, 12), "collar"),
-        box((4, 8.25, 4), (12, 11, 12), "collar"),
-        box((3.75, 7.75, 3.75), (12.25, 8.25, 12.25), "groove"),
-        # The oil feed into the shell, on the side the rest of the engine leaves free
-        box((3.5, 6, 7), (4, 7, 9), "groove"),
-        box((12, 6, 7), (12.5, 7, 9), "groove"),
+        box((4.5, 2, 4.5), (11.5, 4, 11.5), "journal"),
+        box((4.5, 12, 4.5), (11.5, 14, 11.5), "journal"),
+        box((5.5, 4, 5.5), (10.5, 12, 10.5), "journal"),
+        box((4, 5, 4), (12, 11, 12), "bearing"),
+        # The cap's ears, on the two sides the throws leave free
+        box((3, 6.5, 6), (13, 9.5, 10), "strap"),
     ]
-    # Cap bolts at the corners, with a brass nut standing proud of the cap
-    for x in (3.6, 11.4):
-        for z in (3.6, 11.4):
-            elements.append(box((x, 5.5, z), (x + 1, 10.5, z + 1), "bolt"))
-            elements.append(box((x - 0.25, 10.5, z - 0.25), (x + 1.25, 11.5, z + 1.25), "bolt"))
     write("crankshaft/block", textures, elements)
 
 
 def crank_throw():
-    textures = {"axis": AXIS, "end": AXIS_TOP, "web": IRON, "pin": IRON_BLOCK, "weight": DARK, "collar": CASING,
-                "bolt": BRASS, "particle": IRON}
-    elements = [shaft((6, 0, 6), (10, 3, 10)), shaft((6, 13, 6), (10, 16, 10)),
-                box((5, 2, 5), (11, 3, 11), "collar"), box((5, 13, 5), (11, 14, 11), "collar")]
+    """Two webs, each an arm out to the pin with a broad counterweight behind it, and the pin between them."""
+    textures = {"axis": AXIS, "end": AXIS_TOP, "web": IRON, "pin": IRON_BLOCK, "weight": DARK, "particle": IRON}
+    elements = [shaft((6, 0, 6), (10, 3, 10)), shaft((6, 13, 6), (10, 16, 10))]
     for y0 in (3, 11):
-        y1 = y0 + 2
-        outer = 2.9 if y0 == 3 else 13
-        # A web: a broad hub round the shaft that narrows into an arm out to the pin
-        elements.append(box((3.5, y0, 3.5), (12.5, y1, 10), "web"))
-        elements.append(box((5, y0, 9), (11, y1, 15), "web"))
-        # The counterweight on the far side from the pin, which balances the pin and the big end of the rod: a heavy
-        # fan that is widest at its rim
-        elements.append(box((3.5, y0, 1.5), (12.5, y1, 4), "weight"))
-        elements.append(box((3, y0, 1.5), (13, y1, 3), "weight"))
-        elements.append(box((4.5, y0, 1), (11.5, y1, 1.5), "weight"))
-        # Two balance holes drilled in the outer face of the weight
-        elements.append(box((4.5, outer, 2.2), (6.5, outer + 0.1, 3.8), "web"))
-        elements.append(box((9.5, outer, 2.2), (11.5, outer + 0.1, 3.8), "web"))
-    # The crank pin, with a fillet at each web, and the oil way across it
-    elements.append(box((6.25, 5, 10.25), (9.75, 11, 13.75), "pin"))
-    elements.append(box((5.75, 5, 9.75), (10.25, 5.6, 13.9), "pin"))
-    elements.append(box((5.75, 10.4, 9.75), (10.25, 11, 13.9), "pin"))
-    elements.append(box((6, 7.6, 10), (10, 8.4, 14), "bolt"))
+        elements.append(box((4.5, y0, 6.5), (11.5, y0 + 2, 15), "web"))
+        elements.append(box((2.5, y0, 1), (13.5, y0 + 2, 6.5), "weight"))
+    elements.append(box((6, 5, 10), (10, 11, 14), "pin"))
     write("crank_throw/block", textures, elements)
 
 
