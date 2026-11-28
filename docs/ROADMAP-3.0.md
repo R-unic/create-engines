@@ -37,7 +37,7 @@ question, not an obstacle ([CLAUDE.md](../CLAUDE.md)).
 | 2.2 | Proving Ground | Verification debts: server-from-jar, the step-size finding; **the battery tiers**, then **charge priority, electric injector assist and ignition coils**, with electrolysis to be decided (author, 2026-11-23) | Medium |
 | 2.3 | Wear and Tear | **The opt-in wear mode and nothing else** (author, 2026-11-24): pistons, rods, gaskets (stock and three tiers), rotary apex seals and batteries wear, precision parts wear slower, a rod can be thrown (a flag, a misfire, a broken head, with spectacle) and a gasket can blow, light wear is repaired by an automatable, durable Service Kit and the rest by replacing the part, worn parts keep their wear as items, and the Black Box and Display Link report each part and a total; off by default, nothing runs with it off, and gaskets and seals are not required with it off | Medium to large |
 | 2.4 | Running Hot | **Temperature in degrees, overheating you can reach** (a soft power loss in both modes, an exception the author approved on 2026-11-25), heat that follows work, **the Radiator** (closed loop, sheds more with a fan or on a moving contraption), and **the wear overhaul, part 2** (heat drives wear and failures, rod wear from load, plug and turbo wear wired, gasket recipes) (author, 2026-11-25), **a full sound rework** (each engine's note built from its banks, exhausts, cylinder size, cam and fuel instead of one shared firing sound; client-side only, and bearable with many engines running in a build) (author, 2026-11-25), and **splitting the giant source files**, with no behaviour change (author, 2026-11-26) | Large |
-| 2.5 | Open Garage (was 2.4 until 2026-11-25) | Reach: a new API minor (**fuel supply, a shared combustion model and animation for addon engines**, author, 2026-11-26), energy and probe mods, the next Create, a second example addon; **Create: Petrochem and Create: Pocket Sized support** (author, 2026-11-27; planned); **piston rings**, **polluted intake air**, **high- and low-compression piston variants**, **rotor variants (a precision rotor among them) with an exhaust niche**, and **nitrous oxide** (liquid, a vaporiser and a gas in the intake manifolds) (author, 2026-11-23), a **W layout for the Bank Builder** (author, 2026-11-24), then **look, sound and performance** only where the 2.0.x pass found something (all of it was 2.3 until the author moved it, 2026-11-24; its sound went to 2.4's sound rework, 2026-11-25); **displacement noise in the engine note**, a sample first (author, 2026-11-27; proposed); **a texture rework, with some new models, so the mod looks like part of Create** (author, 2026-11-25, from player complaints; moved from 2.4 on 2026-11-26) | Medium to large |
+| 2.5 | Open Garage (was 2.4 until 2026-11-25) | Reach: a new API minor (**fuel supply, a shared combustion model and animation for addon engines**, author, 2026-11-26), energy and probe mods, the next Create, a second example addon; **Create: Petrochem and Create: Pocket Sized support** (author, 2026-11-27; planned); **piston rings**, **polluted intake air**, **high- and low-compression piston variants**, **rotor variants (a precision rotor among them) with an exhaust niche**, and **nitrous oxide** (liquid, a vaporiser and a gas in the intake manifolds) (author, 2026-11-23), a **W layout for the Bank Builder** (author, 2026-11-24), **small-bore engines on a twin-rod crank** (author, 2026-11-27; proposed), then **look, sound and performance** only where the 2.0.x pass found something (all of it was 2.3 until the author moved it, 2026-11-24; its sound went to 2.4's sound rework, 2026-11-25); **displacement noise in the engine note**, a sample first (author, 2026-11-27; proposed); **a texture rework, with some new models, so the mod looks like part of Create** (author, 2026-11-25, from player complaints; moved from 2.4 on 2026-11-26) | Medium to large |
 | 3.0 | Clean Slate | The second breaking cleanup: drop 1.x migrations, regenerate baselines, API 2.0 | Large |
 
 **Shipped so far (tags):** 2.0.0 (2026-11-21), 2.0.1 and 2.0.2 (2026-11-22), 2.1.0 (2026-11-23), 2.2.0 (2026-11-24), 2.3.0 (2026-11-25) and 2.4.0 (2026-11-27). 2.5 is in progress and
@@ -1608,6 +1608,25 @@ saved on 2.x keeps its layout), so no existing build changes (rule 1).
   facing, each built from every face, every cylinder finds a lobe and scans as one engine, blocked and missing counted, a
   W blueprint round trip). The Ponder step went on the Bank Builder page only, not the firing-order page. Not yet seen in
   game, and the changelog line is owed when the release that carries it is prepared.
+
+### Small-bore engines: a twin-rod crank and a two-piston cylinder (author, 2026-11-27; proposed)
+
+Suggested by SilverThorn on Discord on 2026-11-20 ("smaller engine idea"); the author asked for it to go on the roadmap on
+2026-11-27. Nothing is built or designed beyond the idea.
+
+- **The idea:** a second crank type whose throw takes two connecting rods, offset from each other, and a new cylinder part that
+  holds the two smaller pistons. More pistons fit in the same space. Smaller pistons mean less inertia, so a higher redline, and
+  less piston area, so less torque.
+- **Additive:** new blocks and items only. The existing crankshaft, cylinder and their numbers stay as they are (rule 1).
+- **Overlap to settle first** (author): the Rotary Housing already fills part of the compact, high-revving niche (the author's
+  reply at the time: "that was sort of the idea for rotaries, but this might fit too"). The two need to differ by more than
+  looks.
+- **Still to settle** (author): the offset between the two rods and what it does to firing order; whether total displacement per
+  block is below, equal to or above a normal cylinder's; which layouts, heads, cams, pistons and the Bank Builder take it; and
+  the recipes and where it sits in progression.
+- **Tests (new with the feature):** existing engines unchanged (`compat/behaviour.txt` and `compat/trajectories.txt`
+  untouched), dyno figures for the new engine shown to the author before any number is fixed, firing plans per layout,
+  blueprint round trip, save and reload, and `pitest` re-run if `engine/sim` changes.
 
 ### Look, sound and performance (was 2.4 Paint and Polish; merged into 2.3 by the author on 2026-11-23, then moved with the rest to 2.4 on 2026-11-24, and to 2.5 on 2026-11-25)
 
