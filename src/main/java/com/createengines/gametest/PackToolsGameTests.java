@@ -194,7 +194,7 @@ public class PackToolsGameTests {
 		helper.runAtTickTime(2900, () -> helper.fail("the engine never announced a stall: " + changes.stream()
 			.map(c -> c.from() + ">" + c.to())
 			.toList()));
-		helper.onEachTick(() -> {
+		EveryTick.run(helper, () -> {
 			boolean started = changes.stream()
 				.anyMatch(EngineStateChangeEvent::started);
 			if (started && !starved[0]) {
@@ -319,7 +319,7 @@ public class PackToolsGameTests {
 		EngineSourceProvider provider = providerFor(primary, made);
 		EngineExtensions.register(provider);
 		TestEngine.build(helper.getLevel(), helper.absolutePos(BlockPos.ZERO), true);
-		helper.onEachTick(() -> {
+		EveryTick.run(helper, () -> {
 			if (sourceCount(helper) < 0 || made.isEmpty() || made.get(made.size() - 1).steps < 10)
 				return;
 			EngineExtensions.unregister(provider);
@@ -469,7 +469,7 @@ public class PackToolsGameTests {
 			EngineExtensions.unregister(nulls);
 			EngineProviders.reportFailuresTo(null);
 		};
-		helper.onEachTick(() -> {
+		EveryTick.run(helper, () -> {
 			if (sourceCount(helper) < 0)
 				return;
 			clean.run();
@@ -491,7 +491,7 @@ public class PackToolsGameTests {
 		EngineSourceProvider provider = providerFor(primary, made);
 		EngineExtensions.register(provider);
 		TestEngine.build(helper.getLevel(), helper.absolutePos(BlockPos.ZERO), true);
-		helper.onEachTick(() -> {
+		EveryTick.run(helper, () -> {
 			if (!(helper.getLevel()
 				.getBlockEntity(primary) instanceof CrankshaftBlockEntity crank) || crank.summary() == null
 				|| made.isEmpty() || made.get(made.size() - 1).pressure < 0 || crank.summary()
@@ -541,7 +541,7 @@ public class PackToolsGameTests {
 		BlockPos far = near.offset(40, 0, 0);
 		int[] asked = {0};
 		boolean[] placed = {false};
-		helper.onEachTick(() -> {
+		EveryTick.run(helper, () -> {
 			int count = sourceCount(helper);
 			if (count < 0 || made.isEmpty())
 				return;
@@ -577,7 +577,7 @@ public class PackToolsGameTests {
 		EngineSourceProvider provider = providerFor(primary, made);
 		TestEngine.build(helper.getLevel(), helper.absolutePos(BlockPos.ZERO), true);
 		boolean[] registered = {false};
-		helper.onEachTick(() -> {
+		EveryTick.run(helper, () -> {
 			int count = sourceCount(helper);
 			if (count < 0)
 				return;

@@ -115,7 +115,7 @@ public class SableGameTests {
 			return;
 		}
 		boolean[] flooding = {false};
-		helper.onEachTick(() -> {
+		EveryTick.run(helper, () -> {
 			// The water goes round wherever the structure is now, so a falling structure stays in it
 			if (flooding[0])
 				fillAround(level, SableCompat.worldBlockPos(level, cylinderPos), 4, net.minecraft.world.level.block.Blocks.WATER);

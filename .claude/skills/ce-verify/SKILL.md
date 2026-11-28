@@ -57,6 +57,8 @@ GameTest server and rewrites the server toml in a loop, flipping `Tuning` toggle
   neighbouring test. Use `empty_large` (48x20x48) for anything long.
 - Mock players from `makeMockServerPlayerInLevel` make Create throw "sync_edge_group may not be sent to the client"
   intermittently: do not test advancement awards with them.
+- Run something every tick with `EveryTick.run(helper, task)`, never `helper.onEachTick`: the vanilla method costs the square
+  of the timeout (`GameTestTickingTest` fails it).
 - The unit test classpath has no Minecraft: keep sim, recorder and synth classes free of `net.minecraft` imports.
 
 ## In-game looks and sound

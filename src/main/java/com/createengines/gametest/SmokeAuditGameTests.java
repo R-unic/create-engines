@@ -140,7 +140,7 @@ public class SmokeAuditGameTests {
 		int variants = kinds.length * poisons.length;
 		boolean[] done = {false};
 		GameTestConfig.wearMode(true);
-		helper.onEachTick(() -> {
+		EveryTick.run(helper, () -> {
 			long t = helper.getTick();
 			int index = (int) (t / perVariant);
 			int within = (int) (t % perVariant);
@@ -469,7 +469,7 @@ public class SmokeAuditGameTests {
 			stage[0] = 1;
 			stageStart[0] = helper.getTick();
 		});
-		helper.onEachTick(() -> {
+		EveryTick.run(helper, () -> {
 			long elapsed = helper.getTick() - stageStart[0];
 			switch (stage[0]) {
 				case 1 -> {
@@ -611,7 +611,7 @@ public class SmokeAuditGameTests {
 		BlockPos at = helper.absolutePos(new BlockPos(0, 1, 0));
 		int perVariant = 500;
 		int[] variant = {-1};
-		helper.onEachTick(() -> {
+		EveryTick.run(helper, () -> {
 			long t = helper.getTick();
 			int index = (int) (t / perVariant);
 			int within = (int) (t % perVariant);
@@ -748,7 +748,7 @@ public class SmokeAuditGameTests {
 		BlockPos at = helper.absolutePos(new BlockPos(0, 1, 0));
 		int perVariant = 500;
 		boolean[] done = {false};
-		helper.onEachTick(() -> {
+		EveryTick.run(helper, () -> {
 			long t = helper.getTick();
 			int index = (int) (t / perVariant);
 			int within = (int) (t % perVariant);

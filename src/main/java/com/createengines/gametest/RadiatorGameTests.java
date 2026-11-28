@@ -105,7 +105,7 @@ public class RadiatorGameTests {
 	public static void aHardWorkingRadiatorHeatsABasinButNeverSuperheatsAndGoesColdOffTheEngine(GameTestHelper helper) {
 		RadiatorBlockEntity radiator = place(helper, AT);
 		boolean[] feeding = {true};
-		helper.onEachTick(() -> {
+		EveryTick.run(helper, () -> {
 			if (feeding[0])
 				radiator.ran(500, 0);
 			helper.assertTrue(helper.getBlockState(AT)

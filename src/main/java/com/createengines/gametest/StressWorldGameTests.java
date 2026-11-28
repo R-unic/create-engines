@@ -178,7 +178,7 @@ public class StressWorldGameTests {
 		// engine formed and that the chunk is not loaded again afterwards, is unchanged.
 		final int formLimit = 600;
 		final int unloadLimit = 300;
-		helper.onEachTick(() -> {
+		EveryTick.run(helper, () -> {
 			int now = tick[0]++;
 			if (formedAt[0] < 0) {
 				CrankshaftBlockEntity crank = (CrankshaftBlockEntity) level.getBlockEntity(origin.offset(TestEngine.PRIMARY));
@@ -276,7 +276,7 @@ public class StressWorldGameTests {
 		TestEngine.build(level, origin, true);
 		List<String> problems = new ArrayList<>();
 		int[] ticks = {0};
-		helper.onEachTick(() -> {
+		EveryTick.run(helper, () -> {
 			if (ticks[0]++ >= 600)
 				return;
 			int actions = random.nextInt(3);

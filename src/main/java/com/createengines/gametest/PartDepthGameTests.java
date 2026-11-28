@@ -59,7 +59,7 @@ public class PartDepthGameTests {
 		helper.setBlock(byMotor, CEBlocks.STARTER.getDefaultState()
 			.setValue(StarterBlock.FACING, Direction.UP));
 		((CreativeMotorBlockEntity) helper.getBlockEntity(byMotor.below())).generatedSpeed.setValue(40);
-		helper.onEachTick(() -> ((HandCrankBlockEntity) helper.getBlockEntity(byHand.below())).turn(false));
+		EveryTick.run(helper, () -> ((HandCrankBlockEntity) helper.getBlockEntity(byHand.below())).turn(false));
 		helper.succeedWhen(() -> {
 			StarterBlockEntity hand = helper.getBlockEntity(byHand);
 			StarterBlockEntity motor = helper.getBlockEntity(byMotor);

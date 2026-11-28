@@ -102,7 +102,7 @@ public class RotaryGameTests {
 	public static void twoTouchingRotorHousingsSurviveStarting(GameTestHelper helper) {
 		TestEngine.buildRotary(helper.getLevel(), helper.absolutePos(BlockPos.ZERO), true);
 		TestEngine.addSecondRotor(helper.getLevel(), helper.absolutePos(BlockPos.ZERO));
-		helper.onEachTick(() -> {
+		EveryTick.run(helper, () -> {
 			helper.assertTrue(helper.getBlockState(TestEngine.HOUSING).is(CEBlocks.ROTOR_HOUSING.get()),
 				"The first rotor housing broke: " + helper.getBlockState(TestEngine.HOUSING));
 			helper.assertTrue(helper.getBlockState(TestEngine.HOUSING_2).is(CEBlocks.ROTOR_HOUSING.get()),
@@ -155,7 +155,7 @@ public class RotaryGameTests {
 			helper.setBlock(beside, housing);
 		});
 		helper.runAtTickTime(800, () -> helper.setBlock(inLine, housing));
-		helper.onEachTick(() -> {
+		EveryTick.run(helper, () -> {
 			long t = helper.getTick();
 			helper.assertTrue(helper.getBlockState(TestEngine.HOUSING).is(CEBlocks.ROTOR_HOUSING.get()),
 				"The running housing broke at tick " + t);
@@ -210,7 +210,7 @@ public class RotaryGameTests {
 		second.oilTank()
 			.fill(new FluidStack(CEFluids.ENGINE_OIL.get()
 				.getSource(), 250), FluidAction.EXECUTE);
-		helper.onEachTick(() -> {
+		EveryTick.run(helper, () -> {
 			long t = helper.getTick();
 			helper.assertTrue(helper.getBlockState(TestEngine.HOUSING).is(CEBlocks.ROTOR_HOUSING.get()),
 				"The first housing broke at tick " + t);
@@ -279,7 +279,7 @@ public class RotaryGameTests {
 		helper.setBlock(pump, AllBlocks.MECHANICAL_PUMP.getDefaultState()
 			.setValue(com.simibubi.create.content.kinetics.base.DirectionalKineticBlock.FACING, Direction.EAST));
 		BlockPos[] watched = {TestEngine.HOUSING, TestEngine.HOUSING_2, TestEngine.ALTERNATOR, TestEngine.PRIMARY, box, pump, crank};
-		helper.onEachTick(() -> {
+		EveryTick.run(helper, () -> {
 			for (BlockPos at : watched)
 				helper.assertFalse(helper.getBlockState(at).isAir(), "Block at " + at + " broke at tick " + helper.getTick());
 		});
@@ -288,7 +288,7 @@ public class RotaryGameTests {
 			helper.setBlock(STARTER_POWER, Blocks.AIR);
 			((com.simibubi.create.content.kinetics.motor.CreativeMotorBlockEntity) helper.getBlockEntity(TestEngine.MOTOR))
 				.generatedSpeed.setValue(0);
-			helper.onEachTick(() -> {
+			EveryTick.run(helper, () -> {
 				if (helper.getBlockEntity(crank) instanceof com.simibubi.create.content.kinetics.crank.HandCrankBlockEntity hand)
 					hand.turn(againstIt);
 				helper.assertTrue(!helper.getBlockState(TestEngine.HOUSING).isAir() && !helper.getBlockState(TestEngine.HOUSING_2).isAir(),
@@ -346,7 +346,7 @@ public class RotaryGameTests {
 			be.oilTank().drain(1000, FluidAction.EXECUTE);
 		}
 		int[] worst = {0};
-		helper.onEachTick(() -> {
+		EveryTick.run(helper, () -> {
 			long t = helper.getTick();
 			if (t >= 10 && (every == 1 || (t - 10) % every < 12) && helper.getBlockEntity(crank) instanceof com.simibubi.create.content.kinetics.crank.HandCrankBlockEntity hand)
 				hand.turn(false);
@@ -455,7 +455,7 @@ public class RotaryGameTests {
 			.fill(new FluidStack(CEFluids.GASOLINE.get().getSource(), 4000), FluidAction.EXECUTE);
 		int[] worst = {0};
 		BlockPos[] watched = {farCrank, cog, box, h1, h2, alt, nearCrank, pump, pipe1, pipe2};
-		helper.onEachTick(() -> {
+		EveryTick.run(helper, () -> {
 			long t = helper.getTick();
 			BlockPos now = t < 400 ? farCrank : nearCrank;
 			if (t >= 10 && (t < 350 || (t >= 450 && t < 1000)) && helper.getBlockEntity(now) instanceof com.simibubi.create.content.kinetics.crank.HandCrankBlockEntity hand)
@@ -505,7 +505,7 @@ public class RotaryGameTests {
 			});
 		BlockPos turned = farEnd ? farCrank : nearCrank;
 		int[] worst = {0};
-		helper.onEachTick(() -> {
+		EveryTick.run(helper, () -> {
 			long t = helper.getTick();
 			BlockPos now = farThenNear ? (t < 300 ? farCrank : nearCrank) : turned;
 			int from = farThenNear && t >= 300 ? 300 : 10;
@@ -558,7 +558,7 @@ public class RotaryGameTests {
 		} else
 			helper.runAtTickTime(300, () -> helper.setBlock(STARTER_POWER, Blocks.AIR));
 		int[] worst = {0};
-		helper.onEachTick(() -> {
+		EveryTick.run(helper, () -> {
 			long t = helper.getTick();
 			if (byHand && t < 600 && helper.getBlockEntity(crank) instanceof com.simibubi.create.content.kinetics.crank.HandCrankBlockEntity hand)
 				hand.turn(false);
@@ -580,7 +580,7 @@ public class RotaryGameTests {
 			.setValue(RotorHousingBlock.HAS_ROTOR, true)
 			.setValue(RotorHousingBlock.HAS_INJECTOR, true)
 			.setValue(RotorHousingBlock.HAS_SPARK_PLUG, true));
-		helper.onEachTick(() -> {
+		EveryTick.run(helper, () -> {
 			helper.assertTrue(helper.getBlockState(TestEngine.HOUSING).is(CEBlocks.ROTOR_HOUSING.get()),
 				"The first rotor housing broke: " + helper.getBlockState(TestEngine.HOUSING));
 			helper.assertTrue(helper.getBlockState(at).is(CEBlocks.ROTOR_HOUSING.get()),

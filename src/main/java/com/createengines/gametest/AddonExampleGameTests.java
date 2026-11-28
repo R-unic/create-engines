@@ -35,7 +35,7 @@ public class AddonExampleGameTests {
 		TestEngine.build(helper.getLevel(), helper.absolutePos(BlockPos.ZERO), true);
 		BlockPos motor = TestEngine.THROW.below();
 		int[] phase = {0};
-		helper.onEachTick(() -> {
+		EveryTick.run(helper, () -> {
 			int count = sources(helper);
 			if (count < 0)
 				return;
@@ -78,7 +78,7 @@ public class AddonExampleGameTests {
 		EngineProviders.blockChanged(helper.getLevel(), helper.absolutePos(TestEngine.THROW.below()),
 			Blocks.GOLD_BLOCK.defaultBlockState());
 		helper.runAtTickTime(300, () -> helper.setBlock(TestEngine.STARTER_POWER, Blocks.AIR));
-		helper.onEachTick(() -> {
+		EveryTick.run(helper, () -> {
 			if (!(helper.getLevel()
 				.getBlockEntity(helper.absolutePos(TestEngine.PRIMARY)) instanceof CrankshaftBlockEntity crank) || crank.summary() == null
 				|| crank.summary()
