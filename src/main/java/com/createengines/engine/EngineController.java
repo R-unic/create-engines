@@ -129,6 +129,7 @@ public final class EngineController {
 	/** Ticks left that a heavy starter is still choking the engine; full strength until {@link #COLD_ASSIST_FADE} remain. */
 	int coldAssistTicks;
 	@Nullable BlockPos activeStarter;
+	private final EngineStarters starters;
 	/** What the spark plugs draw from, told how cold the engine is each tick and drawn on by a starter; null before the first build. */
 	private @Nullable BatteryIgnition ignitionSupply;
 	/** Whether a working cylinder has a spark plug: only a spark engine's starter draws on the batteries. */
@@ -144,6 +145,7 @@ public final class EngineController {
 	public EngineController(CrankshaftBlockEntity primary, EngineLayout layout, @Nullable Motion motion) {
 		this.primary = primary;
 		this.layout = layout;
+		starters = new EngineStarters(layout);
 		Level level = primary.getLevel();
 
 		camshafts = new ArrayList<>();
@@ -540,36 +542,13 @@ public final class EngineController {
 		}
 		// A spark engine with charge in its batteries can be cranked by a starter with nothing on its input; a compression engine cannot
 		boolean electricStart = drawsBattery && ignitionSupply.deliverableShare() > 0;
-		for (BlockPos pos : layout.starters())
-			if (LoadedBlocks.blockEntity(level, pos) instanceof StarterBlockEntity starter)
-				starter.setElectricReady(electricStart);
-		double starterTop = 0;
-		for (BlockPos pos : layout.starters()) {
-			if (!(LoadedBlocks.blockEntity(level, pos) instanceof StarterBlockEntity starter) || !starter.wantsToCrank())
-				continue;
-			double omega = EngineSimulation.rpmToOmega(starter.crankRpm());
-			if (omega > starterTop)
-				starterTop = omega;
-			if (omega > floor) {
-				floor = omega;
-				floorDirection = starter.crankDirection() * senseAt(pos);
-				activeStarter = pos;
-			}
-		}
-		// Starters turning the crank the same way as the one that sets the pace all push on it, so a big engine can be
-		// cranked by several drives, each feeling its share of the effort. One much slower than the leader would just
-		// be overrun by its clutch, so it sits out.
-		List<BlockPos> pushing = activeStarter == null ? List.of() : new ArrayList<>();
-		if (activeStarter != null)
-			for (BlockPos pos : layout.starters())
-				if (LoadedBlocks.blockEntity(level, pos) instanceof StarterBlockEntity starter && starter.wantsToCrank()
-					&& starter.crankDirection() * senseAt(pos) == floorDirection
-					&& EngineSimulation.rpmToOmega(starter.crankRpm()) >= starterTop * 0.5)
-					pushing.add(pos);
+		starters.resolve(level);
+		starters.setElectricReady(electricStart);
+		activeStarter = starters.choose(floor, floorDirection);
+		floor = starters.floor;
+		floorDirection = starters.floorDirection;
 		// A heavy starter keeps choking a cold engine for a few seconds after it lets go, so it can catch and settle
-		boolean warming = false;
-		for (BlockPos pos : pushing)
-			warming |= LoadedBlocks.blockEntity(level, pos) instanceof StarterBlockEntity starter && starter.warmsColdEngines();
+		boolean warming = starters.warming();
 		coldAssistTicks = warming ? COLD_ASSIST_HOLD : Math.max(0, coldAssistTicks - 1);
 		sim.thermal()
 			.setCrankAssist(Math.min(1, coldAssistTicks / (double) COLD_ASSIST_FADE));
@@ -597,18 +576,8 @@ public final class EngineController {
 		double crankingStress = sim.crankingTorque() * CEConfig.STRESS_PER_TORQUE.get();
 		// A stronger starter takes more of the effort, and gears it down: every starter pushing feels the same stress
 		// on its input, however many there are and however strong, so a heavy one runs a big engine off a weak source
-		double strength = 0;
-		for (BlockPos pos : pushing)
-			if (LoadedBlocks.blockEntity(level, pos) instanceof StarterBlockEntity starter)
-				strength += starter.strength();
-		double share = crankingStress / Math.max(1, strength);
-		for (BlockPos pos : layout.starters())
-			if (LoadedBlocks.blockEntity(level, pos) instanceof StarterBlockEntity starter) {
-				boolean active = pushing.contains(pos);
-				starter.updateCranking(layout.primary(), active ? share : 0, active);
-					starter.setDrawingCharge(active && drawsBattery && cranking && ignitionSupply.deliverableShare() > 0);
-					starter.setBatteryWeak(drawsBattery && BatteryChemistry.isLow(ignitionSupply.deliverableShare()) && starter.wantsToCrank());
-			}
+		double share = crankingStress / Math.max(1, starters.strength());
+		starters.report(layout.primary(), share, drawsBattery, cranking, ignitionSupply);
 
 		publishSpeed();
 		ratings.publishCapacity(torqueScale);
@@ -651,18 +620,6 @@ public final class EngineController {
 	public double crankAssist() {
 		return sim.thermal()
 			.crankAssist();
-	}
-
-	/**
-	 * Which way the crank line a starter turns is geared, relative to the engine's own direction: -1 if it turns the
-	 * other way, so that cranking it forwards turns the engine backwards.
-	 */
-	private int senseAt(BlockPos starter) {
-		for (EngineLayout.Segment segment : layout.segments())
-			if (segment.pos()
-				.distManhattan(starter) == 1)
-				return segment.sense();
-		return 1;
 	}
 
 	private void measureCamshafts(Level level, float crankSpeed) {

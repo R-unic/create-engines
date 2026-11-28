@@ -32,6 +32,8 @@ final class EngineExhaust {
 	float muffling = Float.NaN;
 	@Nullable List<EngineLayout.PortNetwork> trapRuns;
 	int exhaustHeads;
+	/** Parallel to {@link #trapRuns}: whether the exhaust cannot go round every trap of that run. */
+	private boolean @Nullable [] trapSeries;
 
 	/**
 	 * The part of the engine's sound that only the layout decides, worked out once per controller (the layout never changes for
@@ -184,17 +186,23 @@ final class EngineExhaust {
 				.filter(network -> network.kind() == com.createengines.content.airflow.PortKind.EXHAUST)
 				.mapToInt(EngineLayout.PortNetwork::heads)
 				.sum();
+			trapSeries = new boolean[trapRuns.size()];
+			for (int i = 0; i < trapSeries.length; i++) {
+				EngineLayout.PortNetwork run = trapRuns.get(i);
+				trapSeries[i] = run.traps()
+					.stream()
+					.anyMatch(trap -> !run.parallel()
+						.contains(trap));
+			}
 		}
 		java.util.List<EngineLayout.PortNetwork> runs = trapRuns;
 		if (runs.isEmpty())
 			return;
 		int totalHeads = exhaustHeads;
 		double caught = 0;
-		for (EngineLayout.PortNetwork run : runs) {
-			boolean series = run.traps()
-				.stream()
-				.anyMatch(trap -> !run.parallel()
-					.contains(trap));
+		for (int i = 0; i < runs.size(); i++) {
+			EngineLayout.PortNetwork run = runs.get(i);
+			boolean series = trapSeries[i];
 			double each = SootCollector.share(soot, run.heads(), totalHeads, SootCollector.catchShare(series, !series),
 				run.traps()
 					.size());

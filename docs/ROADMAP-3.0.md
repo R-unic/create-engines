@@ -1256,6 +1256,18 @@ the change only if it is measurable on a sixteen-cylinder engine.
 starter lookups and `catchSoot` caching (small, measurable); the `Combustion` input holder (before any API work on combustion); the doc
 moves (with the author's yes); then the new 800-line files, each after its own feature work is committed.
 
+**Speed work done (2026-11-27).**
+
+- Starters are looked up once a tick, in a seventh controller helper, `EngineStarters`, which also keeps which of them push in an
+  owned array, so cranking no longer allocates a list. Which way each starter's line is geared is worked out once.
+- Whether each soot trap run is in series is worked out once, with the runs.
+- **Not done: the client posing.** The matrix work of one cylinder's pose, timed on its own on Java 21 (a loop, not the game), is
+  about 130 ns: some 2 µs a frame for sixteen cylinders. That does not justify posing into owned matrices. The rest of
+  `animate` (block state, status and model uploads) was not timed.
+- **Not done: the work on every sync, and the milestone scan.** They run every 10 ticks, not every tick, and were not measured. An
+  early exit for milestones could lose an advancement if it missed a change.
+- **Not done: reading inputs only when a player changes them**, which can change when a setting takes effect.
+
 ### Test guards changed after 2.4.0 (2026-11-27)
 
 Both go under Exceptions in the next release record. Neither changes how an engine runs.
