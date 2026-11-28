@@ -881,7 +881,7 @@ and regular rattles are what made the first takes sound like a cartoon (`Failure
   burst of white air when a blow-off valve opens.
 - **Machinery sounds** (`EngineAmbience`, kept by the primary crank on the client; levels in `MechanicalNoise`, pure).
   `engine_catch` on CRANKING or STALLED to RUNNING and `engine_stall` on a turning engine reaching STALLED, each at most
-  once in three seconds; `bearing_squeal` (below 30 percent lubrication) as a `MachineLoopSound` loop; `metal_tick` at random for about twenty
+  once in three seconds; `bearing_squeal` (below 30 percent lubrication) as a `MachineLoopSound` loop (since 2.5.0 a grind with a short rough chirp each turn, not the held 2.45 kHz shriek it was); `metal_tick` at random for about twenty
   seconds after a warm engine stops, from a heat figure the client lets decay. All on the new `mechanicalVolume`
   setting. Recordings are synthesized by `tools/generate_sounds.py`, which can now write WAV previews (`--wav DIR`).
   The catch and the stall are synthesized by `tools/start_stall_sounds.py`: uneven firings of the note's grains down its

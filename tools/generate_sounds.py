@@ -38,7 +38,7 @@ Sounds:
   metal_tick1..3     hot metal ticking as it cools: a small bright tink
   preignition_knock1..3  a charge lighting itself early under boost: a quick run of hard metallic knocks (at a cylinder, in wear mode)
   engine_clatter     a seamless loop of valve gear: soft tappet knocks over the hum of the gears (no longer played; the sound ID is kept)
-  bearing_squeal     a seamless loop of bearings running dry: a wavering shriek over a stick-slip rasp
+  bearing_squeal     a seamless loop of bearings running dry: a stick-slip grind with a short rough chirp each turn
   intake_roar        a seamless loop of air gulped through an intake: a hollow rush swelling in eight pulses a second
   rod_thrown1..2, gasket_blow1..2, apex_fail1..2, head_warp1..2, turbo_fail1..2, piston_seize1..2, seize_warning1..2
                      the wear mode's failures and the dry piston's warning (failure_sounds.py)
@@ -280,23 +280,27 @@ def clatter_loop():
 
 
 def squeal_loop():
-    """One second of a bearing running dry that repeats seamlessly: a shriek that wavers as the shaft turns, breaking
-    up into a rasp where the metal sticks and slips. Every part is a whole number of cycles long."""
+    """One second of a bearing running dry that repeats seamlessly: a stick-slip grind, and once in each turn of the
+    shaft a short rough chirp where the metal catches. No tone is held: a steady high shriek, as this once was, is
+    unbearable on a loop. Every part is a whole number of cycles long."""
     rng = np.random.default_rng(29)
     n = SR
     t = np.arange(n) / SR
-    f0 = 2450
-    waver = 1.6 * np.sin(2 * np.pi * 7 * t) + 0.7 * np.sin(2 * np.pi * 3 * t + 1.1)
-    shriek = (np.sin(2 * np.pi * f0 * t + waver) + 0.45 * np.sin(2 * np.pi * 2 * f0 * t + 2 * waver + 0.5)
-              + 0.2 * np.sin(2 * np.pi * 3 * f0 * t + 3 * waver + 1.4) + 0.3 * np.sin(2 * np.pi * (f0 + 61) * t + 0.9))
-    # It comes and goes with each turn of the shaft
-    shriek *= 0.55 + 0.45 * np.cos(2 * np.pi * 4 * t) ** 2
-    slip = (0.5 + 0.5 * np.sign(np.sin(2 * np.pi * 43 * t)))
+    turns = 4
+    index = np.floor(t * turns).astype(int) % turns
+    levels = np.array([1.0, 0.7, 0.9, 0.6])[index]
+    # The chirp takes the first two fifths of a turn, swelling and dying away; the rest of the turn is only the grind
+    along = (t * turns) % 1
+    caught = np.where(along < 0.4, np.sin(np.pi * np.minimum(along / 0.4, 1)) ** 2, 0.0) * levels
+    # A band of noise and not a sine, so it scrapes where it would whistle
+    chirp = periodic_noise(rng, n, lambda f: np.exp(-0.5 * ((f - 1050) / 110) ** 2))
+    chirp = chirp / np.max(np.abs(chirp)) * caught
+    slip = 0.5 + 0.5 * np.sign(np.sin(2 * np.pi * 43 * t))
     slip = lowpass(np.tile(slip, 3), 600, 2)[n:2 * n]
-    rasp = periodic_noise(rng, n, lambda f: np.where((f > 1500) & (f < 5200), 1 / np.sqrt(np.maximum(f, 1)), 0))
-    rasp = rasp / np.max(np.abs(rasp)) * slip
-    mix = 0.6 * shriek / np.max(np.abs(shriek)) + 0.4 * rasp
-    return finish(np.tanh(1.2 * mix), 0.8)
+    grind = periodic_noise(rng, n, lambda f: np.where((f > 220) & (f < 1500), 1 / np.sqrt(np.maximum(f, 1)), 0))
+    grind = grind / np.max(np.abs(grind)) * (0.25 + 0.75 * slip) * (0.7 + 0.3 * caught)
+    mix = 0.55 * chirp + 0.6 * grind
+    return finish(np.tanh(1.2 * mix), 0.7)
 
 
 def intake_roar_loop():
