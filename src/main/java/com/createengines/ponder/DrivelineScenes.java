@@ -104,7 +104,7 @@ public final class DrivelineScenes {
 			.showText(110)
 			.attachKeyFrame()
 			.colored(PonderPalette.BLUE)
-			.text("Its Governed Speed is set with the value panel to any exact speed up to 256 RPM, or in steps of 5 up to 1000. A spark engine is governed on its throttle instead, because a charge that is too lean will not light.")
+			.text("Its Governed Speed is set with the value panel to any exact speed up to 256 RPM, or in steps of 5 up to 1000, or further if Create's speed limit is higher. A spark engine is governed on its throttle instead, because a charge that is too lean will not light.")
 			.pointAt(util.vector()
 				.blockSurface(block, Direction.NORTH))
 			.placeNearTarget();

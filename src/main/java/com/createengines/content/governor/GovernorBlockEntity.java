@@ -16,6 +16,7 @@ import com.simibubi.create.foundation.blockEntity.behaviour.ValueSettingsBehavio
 import com.simibubi.create.foundation.blockEntity.behaviour.ValueSettingsBoard;
 import com.simibubi.create.foundation.blockEntity.behaviour.ValueSettingsFormatter;
 import com.simibubi.create.foundation.blockEntity.behaviour.scrollValue.ScrollValueBehaviour;
+import com.simibubi.create.infrastructure.config.AllConfigs;
 
 import net.createmod.catnip.math.VecHelper;
 import net.minecraft.ChatFormatting;
@@ -39,11 +40,15 @@ import net.minecraft.world.phys.Vec3;
  */
 public class GovernorBlockEntity extends SmartBlockEntity implements IHaveGoggleInformation, EngineMember {
 
-	/** The target is stored as an exact speed in RPM. Above {@link #EXACT_MAX} the value panel sets it in these steps. */
+	/**
+	 * The target is stored as an exact speed in RPM. Above {@link #EXACT_MAX} the value panel sets it in these steps, or in
+	 * wider ones when the top is too far off for them (see {@code coarseStep}).
+	 */
 	public static final int COARSE_STEP = 5;
 	/** The highest speed the value panel's exact row reaches: Create's default RPM limit. */
 	public static final int EXACT_MAX = 256;
 	public static final int MIN_TARGET = 20;
+	/** The top of the dial unless Create's RPM limit is higher still (see {@link #maxTarget()}). */
 	public static final int MAX_TARGET = 1000;
 	public static final int DEFAULT_TARGET = 80;
 	/** Marks data written with the target in RPM; older data holds it in steps of {@link #COARSE_STEP}. */
@@ -75,30 +80,37 @@ public class GovernorBlockEntity extends SmartBlockEntity implements IHaveGoggle
 				return TARGET_TYPE;
 			}
 
-			/** Two rows: any exact speed up to a standard engine's limit, and steps of 5 for a raised one. */
+			/** Two rows: any exact speed up to a standard engine's limit, and coarse steps for a raised one. */
 			@Override
 			public ValueSettingsBoard createBoard(Player player, BlockHitResult hitResult) {
 				return new ValueSettingsBoard(label, EXACT_MAX, 16,
 					List.of(CELang.translate("value.governed_speed.exact")
 						.component(),
-						CELang.translate("value.governed_speed.coarse")
-							.component()),
-					new ValueSettingsFormatter(settings -> Component.literal(rpmOf(settings) + " RPM")));
+						coarseLabel()),
+					new ValueSettingsFormatter(
+						settings -> Component.literal(Math.min(rpmOf(settings), maxTarget()) + " RPM")));
 			}
 
 			@Override
 			public ValueSettings getValueSettings() {
 				int rpm = getValue();
-				return rpm <= EXACT_MAX ? new ValueSettings(0, rpm) : new ValueSettings(1, rpm / COARSE_STEP);
+				return rpm <= EXACT_MAX ? new ValueSettings(0, rpm) : new ValueSettings(1, rpm / coarseStep());
 			}
 
 			@Override
 			public void setValueSettings(Player player, ValueSettings settings, boolean ctrlDown) {
-				int rpm = Mth.clamp(rpmOf(settings), MIN_TARGET, MAX_TARGET);
+				int rpm = Mth.clamp(rpmOf(settings), MIN_TARGET, maxTarget());
 				if (rpm == getValue())
 					return;
 				setValue(rpm);
 				playFeedbackSound(this);
+			}
+
+			/** The top is read on every change: Create's limit is a server setting and can change while the world runs. */
+			@Override
+			public void setValue(int value) {
+				between(MIN_TARGET, maxTarget());
+				super.setValue(value);
 			}
 		};
 		target.between(MIN_TARGET, MAX_TARGET);
@@ -109,7 +121,28 @@ public class GovernorBlockEntity extends SmartBlockEntity implements IHaveGoggle
 
 	/** The speed a value panel selection stands for: exact in the first row, in steps of 5 in the second. */
 	private static int rpmOf(ValueSettings settings) {
-		return settings.row() == 0 ? settings.value() : settings.value() * COARSE_STEP;
+		return settings.row() == 0 ? settings.value() : settings.value() * coarseStep();
+	}
+
+	/**
+	 * The highest speed that can be set: Create's {@code maxRotationSpeed} where that is above {@link #MAX_TARGET}. A
+	 * lower limit does not shorten the dial, so a speed already set or held in a blueprint stays good.
+	 */
+	public static int maxTarget() {
+		return Math.max(MAX_TARGET, AllConfigs.server().kinetics.maxRotationSpeed.get());
+	}
+
+	/** The speed between neighbours in the coarse row: {@link #COARSE_STEP}, wider if that would not reach the top. */
+	private static int coarseStep() {
+		return Math.max(COARSE_STEP, Mth.positiveCeilDiv(maxTarget(), EXACT_MAX));
+	}
+
+	private static Component coarseLabel() {
+		int step = coarseStep();
+		return step == COARSE_STEP ? CELang.translate("value.governed_speed.coarse")
+			.component()
+			: CELang.translate("value.governed_speed.steps", step)
+				.component();
 	}
 
 	/** The speed the governor holds, RPM. */

@@ -5,6 +5,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
+import java.util.function.IntSupplier;
 
 import org.jetbrains.annotations.Nullable;
 
@@ -51,11 +52,20 @@ public final class EngineDials {
 	 *
 	 * @param name      what the blueprint calls it: lower case with underscores, never renamed once shipped
 	 * @param min       smallest value the block's value box takes
-	 * @param max       largest value
+	 * @param highest   largest value, asked each time: the governor's follows Create's RPM limit
 	 * @param behaviour the dial on a block entity of that block, or null if this one has none (a plain crankshaft has no
 	 *                  throw angle)
 	 */
-	public record Dial(String name, int min, int max, Function<BlockEntity, ScrollValueBehaviour> behaviour) {
+	public record Dial(String name, int min, IntSupplier highest, Function<BlockEntity, ScrollValueBehaviour> behaviour) {
+
+		public Dial(String name, int min, int max, Function<BlockEntity, ScrollValueBehaviour> behaviour) {
+			this(name, min, () -> max, behaviour);
+		}
+
+		/** Largest value the block's value box takes now. */
+		public int max() {
+			return highest.getAsInt();
+		}
 
 		/** The dial's value box on this block entity, or null if it has none. */
 		public @Nullable ScrollValueBehaviour on(BlockEntity entity) {
@@ -109,7 +119,7 @@ public final class EngineDials {
 			new Dial("wide", ThrottleBlockEntity.minWide(), ThrottleBlockEntity.maxWide(), e -> ((ThrottleBlockEntity) e).wide));
 		add(t, CEBlocks.MAF_SENSOR, new Dial("target", MafSensorBlockEntity.MIN_TARGET, MafSensorBlockEntity.MAX_TARGET,
 			e -> ((MafSensorBlockEntity) e).target));
-		add(t, CEBlocks.GOVERNOR, new Dial("target", GovernorBlockEntity.MIN_TARGET, GovernorBlockEntity.MAX_TARGET,
+		add(t, CEBlocks.GOVERNOR, new Dial("target", GovernorBlockEntity.MIN_TARGET, GovernorBlockEntity::maxTarget,
 			e -> ((GovernorBlockEntity) e).target));
 		Dial turboLimit = new Dial("limit", TurbochargerBlockEntity.MIN_LIMIT, TurbochargerBlockEntity.MAX_LIMIT,
 			e -> ((TurbochargerBlockEntity) e).limit);

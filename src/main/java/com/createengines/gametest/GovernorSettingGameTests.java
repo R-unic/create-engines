@@ -1,9 +1,11 @@
 package com.createengines.gametest;
 
 import com.createengines.CreateEngines;
+import com.createengines.content.blueprint.EngineDials;
 import com.createengines.content.governor.GovernorBlockEntity;
 import com.createengines.registry.CEBlocks;
 import com.simibubi.create.foundation.blockEntity.behaviour.ValueSettingsBehaviour.ValueSettings;
+import com.simibubi.create.infrastructure.config.AllConfigs;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.gametest.framework.GameTest;
@@ -63,6 +65,52 @@ public class GovernorSettingGameTests {
 		governor.target.setValue(600);
 		helper.assertTrue(governor.target.getValueSettings()
 			.equals(new ValueSettings(1, 120)), "Above it the second row shows fives: " + governor.target.getValueSettings());
+		helper.succeed();
+	}
+
+	/** Runs the check with Create's RPM limit at {@code limit}, all within this tick, and puts the limit back. */
+	private static void withCreateLimit(int limit, Runnable check) {
+		var setting = AllConfigs.server().kinetics.maxRotationSpeed;
+		int original = setting.get();
+		setting.set(limit);
+		try {
+			check.run();
+		} finally {
+			setting.set(original);
+		}
+	}
+
+	@GameTest(template = "empty")
+	public static void aRaisedCreateLimitRaisesTheTopOfTheDial(GameTestHelper helper) {
+		GovernorBlockEntity governor = governor(helper);
+		Player player = helper.makeMockPlayer(GameType.CREATIVE);
+		withCreateLimit(1024, () -> {
+			governor.target.setValueSettings(player, new ValueSettings(1, 205), false);
+			helper.assertTrue(governor.target() == 1024, "The top of the panel should be Create's limit: " + governor.target());
+			governor.target.setValue(1010);
+			helper.assertTrue(governor.target() == 1010, "A speed past 1000 should be kept: " + governor.target());
+			int listed = EngineDials.find("create_engines:governor", "target")
+				.max();
+			helper.assertTrue(listed == 1024, "A blueprint should be allowed the same top: " + listed);
+		});
+		withCreateLimit(256, () -> {
+			helper.assertTrue(governor.target() == 1010, "Lowering the limit should not rewrite a set speed: " + governor.target());
+			governor.target.setValue(5000);
+			helper.assertTrue(governor.target() == GovernorBlockEntity.MAX_TARGET, "The dial is back to 1000: " + governor.target());
+		});
+		helper.succeed();
+	}
+
+	@GameTest(template = "empty")
+	public static void aVeryHighLimitIsReachedInWiderSteps(GameTestHelper helper) {
+		GovernorBlockEntity governor = governor(helper);
+		Player player = helper.makeMockPlayer(GameType.CREATIVE);
+		withCreateLimit(8192, () -> {
+			governor.target.setValueSettings(player, new ValueSettings(1, 256), false);
+			helper.assertTrue(governor.target() == 8192, "The last step should reach the limit: " + governor.target());
+			helper.assertTrue(governor.target.getValueSettings()
+				.equals(new ValueSettings(1, 256)), "And show where it was picked: " + governor.target.getValueSettings());
+		});
 		helper.succeed();
 	}
 

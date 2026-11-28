@@ -54,6 +54,7 @@ public final class CELang {
 		raw("value.governed_speed", "Governed Speed");
 		raw("value.governed_speed.exact", "Exact RPM");
 		raw("value.governed_speed.coarse", "RPM in fives");
+		raw("value.governed_speed.steps", "RPM in steps of %s");
 
 		raw("goggles.governor", "Governor");
 		raw("goggles.governor.no_engine", "Not touching a crankshaft block or a cylinder head");
