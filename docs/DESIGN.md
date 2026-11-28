@@ -685,7 +685,7 @@ and regular rattles are what made the first takes sound like a cartoon (`Failure
     are about 7; an even four and a rotary went from 1.7 to about 6, a four and a six from 2.5 to about 5. A flat four on
     unequal runs is still close to an inline four (about 2). Level is within about 3 dB of before, and most builds are
     brighter above 1 kHz. Nobody has judged any of it by ear.
-  - Tests: `NoteTimbreTest`, `EngineSoundTest`, `EngineGameTests.aRotaryEngineStartsAndRunsOnGasoline`.
+  - Tests: `NoteTimbreTest`, `EngineSoundTest`, `RotaryGameTests.aRotaryEngineStartsAndRunsOnGasoline`.
 - **One continuous sound (2026-11-27).** The author found few of the kinds sounded good, the idling crossplane V8 best.
   Against openly licensed recordings of idling engines from Wikimedia Commons (two crossplane V8s, a flat-plane V8, a
   straight six, a flat four; used only to measure, none ship), the difference was the space between firings. A real

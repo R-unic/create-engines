@@ -20,6 +20,7 @@ class FileSizeRatchetTest {
 
 	/** Path to the most lines it may have. Zero means the file was split up and is gone. */
 	private static final Map<String, Integer> CAPS = new TreeMap<>(Map.of(
+		"src/main/java/com/createengines/gametest/EngineGameTests.java", 768,
 		"src/main/java/com/createengines/ponder/EngineScenes.java", 0));
 
 	@Test
