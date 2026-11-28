@@ -41,6 +41,7 @@ public class TurbochargerRenderer extends SafeBlockEntityRenderer<TurbochargerBl
 							  int light, int overlay) {
 		BlockState state = be.getBlockState();
 		var facing = state.getValue(TurbochargerBlock.FACING);
+		renderPorts(be, state, ms, buffer, light);
 		// Modelled with the compressor up: spin about that axis, then turn it to face the way the block does
 		Matrix4f pose = new Matrix4f(FACING_POSE[facing.get3DDataValue()])
 			.rotateY((float) Math.toRadians(be.wheelAngle(partialTicks)))
@@ -71,5 +72,27 @@ public class TurbochargerRenderer extends SafeBlockEntityRenderer<TurbochargerBl
 			.color(tint)
 			.renderInto(ms, buffer.getBuffer(RenderType.solid()));
 		ms.popPose();
+	}
+
+	private static void renderPorts(TurbochargerBlockEntity be, BlockState state, PoseStack ms, MultiBufferSource buffer,
+									int light) {
+		if (be.getLevel() == null)
+			return;
+		for (Direction side : Direction.values()) {
+			if (!TurbochargerBlock.portJoined(be.getLevel(), be.getBlockPos(), state, side))
+				continue;
+			Matrix4f pose = new Matrix4f(FACING_POSE[side.get3DDataValue()]).translate(-0.5f, -0.5f, -0.5f);
+			ms.pushPose();
+			ms.last()
+				.pose()
+				.mul(pose);
+			ms.last()
+				.normal()
+				.mul(new Matrix3f(pose).normal());
+			CachedBuffers.partial(CEPartialModels.TURBO_PORT, state)
+				.light(light)
+				.renderInto(ms, buffer.getBuffer(RenderType.solid()));
+			ms.popPose();
+		}
 	}
 }

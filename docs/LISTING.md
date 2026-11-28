@@ -278,6 +278,8 @@ Not released yet.
   included, now sound deeper, and faster ones higher. This changes how existing engines sound.
 - Sound, **dry bearings** no longer shriek: the loop that plays while an engine is short of oil is now a quieter, lower grind
   with a short rough chirp on each turn, in place of a high squeal that never let up. It plays at the same times and range.
+- Fixed a small gap between a turbocharger's side and an exhaust outlet or pipe joined to it: a joined side now has a port
+  flange.
 - New server setting, `balance.heatPerFuel` (1 by default, 0 to 10): scales the heat that burning fuel puts into an engine's
   block, for every fuel, on top of a pack's per-fuel `heat_factor`. At 1 engines heat as before.
 - Existing builds run as before: no existing part, number or saved state changed.

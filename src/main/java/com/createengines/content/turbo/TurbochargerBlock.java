@@ -5,6 +5,7 @@ import org.jetbrains.annotations.Nullable;
 
 import com.createengines.content.airflow.AirflowPort;
 import com.createengines.content.airflow.InlineDuct;
+import com.createengines.content.airflow.ManifoldBlock;
 import com.createengines.content.airflow.Pipes;
 import com.createengines.content.airflow.PortKind;
 import com.createengines.engine.topology.EngineTopology;
@@ -75,6 +76,19 @@ public class TurbochargerBlock extends DirectionalBlock implements InlineDuct, I
 		if (side.getAxis() != facing.getAxis())
 			return true;
 		return kind == PortKind.INTAKE ? side == facing : side == facing.getOpposite();
+	}
+
+	/** Whether a pipe, a port or a duct beside {@code side} is joined to it, which is where a port flange shows. */
+	public static boolean portJoined(BlockGetter level, BlockPos pos, BlockState state, Direction side) {
+		if (side.getAxis() == state.getValue(FACING)
+			.getAxis())
+			return false;
+		BlockState next = level.getBlockState(pos.relative(side));
+		Direction back = side.getOpposite();
+		// A pipe keeps its own connections: one that has been wrenched shut beside the turbo is not joined
+		if (next.getBlock() instanceof ManifoldBlock)
+			return next.getValue(ManifoldBlock.CONNECTIONS.get(back));
+		return Pipes.accepts(next, back, PortKind.INTAKE) || Pipes.accepts(next, back, PortKind.EXHAUST);
 	}
 
 	@Override

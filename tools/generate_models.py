@@ -1198,6 +1198,13 @@ def turbocharger():
     write("turbocharger/item", {**textures, **wheel_textures}, elements + wheel)
 
 
+def turbo_port():
+    """The flange a turbocharger shows on a side that something is joined to. The housings stand a pixel in from the
+    block's sides, so without it a pipe or an outlet on a side stops that pixel short. Modelled on the top face; the
+    renderer turns it to each joined side."""
+    write("turbocharger/port", {"flange": IRON, "particle": IRON}, [box((3, 15, 3), (13, 16, 13), "flange")])
+
+
 def variable_turbocharger():
     """A turbocharger with a ring of vanes round its turbine: the same housings and wheels, in gold-coloured
     compressor casing, with a vane ring and an actuator on the turbine housing."""
@@ -2294,6 +2301,7 @@ def main():
     battery()
     alternator()
     turbocharger()
+    turbo_port()
     variable_turbocharger()
     supercharger()
     variable_supercharger()

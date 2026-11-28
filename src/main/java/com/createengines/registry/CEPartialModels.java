@@ -49,6 +49,7 @@ public final class CEPartialModels {
 	/** The flap of a rain cap, which the renderer lifts about its hinge. */
 	public static final PartialModel RAIN_CAP_FLAP = block("rain_cap/flap");
 	public static final PartialModel TURBO_WHEEL = block("turbocharger/wheel");
+	public static final PartialModel TURBO_PORT = block("turbocharger/port");
 	public static final PartialModel SUPERCHARGER_ROTOR = block("supercharger/rotor");
 	public static final PartialModel FLYWHEEL_DISC = block("cast_flywheel/disc");
 	/** A Dual-Mass Flywheel's two masses, drawn apart so the secondary can lag the primary (see SpringPackLag). */
