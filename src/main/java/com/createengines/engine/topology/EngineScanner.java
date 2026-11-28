@@ -15,12 +15,7 @@ import java.util.Set;
 import org.jetbrains.annotations.Nullable;
 
 import com.createengines.config.CEConfig;
-import com.createengines.content.airflow.ManifoldBlock;
-import com.createengines.content.airflow.Pipes;
 import com.createengines.content.airflow.PortKind;
-import com.createengines.content.airflow.PortOpeningBlock;
-import com.createengines.content.airflow.SensorBlock;
-import com.createengines.content.airflow.ThrottleBlock;
 import com.createengines.content.alternator.AlternatorBlock;
 import com.createengines.content.battery.BatteryBlock;
 import com.createengines.content.camshaft.CamLobeBlock;
@@ -38,13 +33,6 @@ import com.createengines.content.rotor.RotorHousingBlock;
 import com.createengines.content.starter.StarterBlock;
 import com.createengines.content.radiator.RadiatorBlock;
 import com.createengines.content.sump.SumpBlock;
-import com.createengines.content.airflow.InlineDuct;
-import com.createengines.content.airfilter.AirFilterBlock;
-import com.createengines.content.intercooler.IntercoolerBlock;
-import com.createengines.content.muffler.MufflerBlock;
-import com.createengines.content.muffler.SootTrapBlock;
-import com.createengines.content.supercharger.SuperchargerBlock;
-import com.createengines.content.turbo.TurbochargerBlock;
 import com.createengines.engine.CrankGeometry;
 import com.createengines.engine.sim.Tuning;
 import com.createengines.engine.topology.EngineLayout.CamLine;
@@ -71,15 +59,18 @@ import net.minecraft.world.level.block.state.properties.BlockStateProperties;
  */
 public final class EngineScanner {
 
-	private static final int MAX_SHAFT_WALK = 16;
+	static final int MAX_SHAFT_WALK = 16;
 
-	private final Level level;
-	private final Set<BlockPos> members = new LinkedHashSet<>();
+	/** Port networks are traced apart. */
+	final PortTracer tracer = new PortTracer(this);
+
+	final Level level;
+	final Set<BlockPos> members = new LinkedHashSet<>();
 	/** Flywheels on the crank lines' shafts: alternators touching one belong to the engine too. */
 	private final Set<BlockPos> flywheelBlocks = new LinkedHashSet<>();
-	private final List<PortNetwork> ports = new ArrayList<>();
+	final List<PortNetwork> ports = new ArrayList<>();
 	/** Known port networks by a member's position; a turbocharger is in one of each kind, so the kinds are kept apart. */
-	private final Map<PortKind, Map<BlockPos, Integer>> portIndex = new EnumMap<>(PortKind.class);
+	final Map<PortKind, Map<BlockPos, Integer>> portIndex = new EnumMap<>(PortKind.class);
 	private final List<CamLine> camLines = new ArrayList<>();
 	private final Map<BlockPos, Integer> camIndex = new HashMap<>();
 	private final Set<BlockPos> sumps = new LinkedHashSet<>();
@@ -98,7 +89,15 @@ public final class EngineScanner {
 		return new EngineScanner(level).run(seed);
 	}
 
-	private BlockState state(BlockPos pos) {
+	/**
+	 * Crankshaft blocks of any engine that a change at {@code pos} could affect. Used for blocks that are not yet
+	 * part of a known engine, e.g. a cylinder just placed against a crank throw.
+	 */
+	public static Set<BlockPos> crankSeeds(Level level, BlockPos pos) {
+		return CrankSeeds.crankSeeds(level, pos);
+	}
+
+	BlockState state(BlockPos pos) {
 		if (!level.isLoaded(pos)) {
 			incomplete = true;
 			return Blocks.AIR.defaultBlockState();
@@ -106,7 +105,7 @@ public final class EngineScanner {
 		return level.getBlockState(pos);
 	}
 
-	private static boolean isCrank(BlockState state, Axis axis) {
+	static boolean isCrank(BlockState state, Axis axis) {
 		return state.getBlock() instanceof CrankshaftBlock && state.getValue(BlockStateProperties.AXIS) == axis;
 	}
 
@@ -393,7 +392,7 @@ public final class EngineScanner {
 			BlockPos at = queue.poll();
 			for (Direction direction : Direction.values()) {
 				BlockPos next = at.relative(direction);
-				if (!(loadedState(level, next).getBlock() instanceof BatteryBlock) || !batteries.add(next.immutable()))
+				if (!(CrankSeeds.loadedState(level, next).getBlock() instanceof BatteryBlock) || !batteries.add(next.immutable()))
 					continue;
 				members.add(next.immutable());
 				queue.add(next.immutable());
@@ -545,11 +544,11 @@ public final class EngineScanner {
 			if (face.getAxis() == axis)
 				continue;
 			BlockPos neighbour = pos.relative(face);
-			PortKind kind = portKindFacing(state(neighbour), face);
+			PortKind kind = PortTracer.portKindFacing(state(neighbour), face);
 			if (kind == PortKind.INTAKE && draft.intake < 0)
-				draft.intake = portNetwork(neighbour, kind);
+				draft.intake = tracer.portNetwork(neighbour, kind);
 			else if (kind == PortKind.EXHAUST && draft.exhaust < 0)
-				draft.exhaust = portNetwork(neighbour, kind);
+				draft.exhaust = tracer.portNetwork(neighbour, kind);
 		}
 		draft.faults |= portFaults(draft);
 
@@ -616,11 +615,11 @@ public final class EngineScanner {
 				draft.lobe = neighbour.immutable();
 				continue;
 			}
-			PortKind kind = portKindFacing(neighbourState, face);
+			PortKind kind = PortTracer.portKindFacing(neighbourState, face);
 			if (kind == PortKind.INTAKE && draft.intake < 0)
-				draft.intake = portNetwork(neighbour, kind);
+				draft.intake = tracer.portNetwork(neighbour, kind);
 			else if (kind == PortKind.EXHAUST && draft.exhaust < 0)
-				draft.exhaust = portNetwork(neighbour, kind);
+				draft.exhaust = tracer.portNetwork(neighbour, kind);
 		}
 
 		// A cam beside the cylinder block works the valves through pushrods, which leaves the head's faces for pipes
@@ -691,200 +690,6 @@ public final class EngineScanner {
 		return null;
 	}
 
-	/**
-	 * The port kind of the duct block reached by stepping {@code towards} from a head, if it connects back: a pipe
-	 * that is open on that side, or an opening whose back is against the head.
-	 */
-	private static @Nullable PortKind portKindFacing(BlockState state, Direction towards) {
-		if (state.getBlock() instanceof ManifoldBlock manifold)
-			return state.getValue(ManifoldBlock.CONNECTIONS.get(towards.getOpposite())) ? manifold.kind() : null;
-		if (state.getBlock() instanceof PortOpeningBlock opening
-			&& state.getValue(PortOpeningBlock.FACING) == towards)
-			return opening.kind();
-		// A head bolted straight to an inline duct uses whichever face is for one kind of air; a turbo's compressor face
-		// is an intake and its turbine face an exhaust, and its side faces need a pipe to say which
-		if (state.getBlock() instanceof InlineDuct duct)
-			return duct.kindFacingHead(state, towards.getOpposite());
-		return null;
-	}
-
-	/** Whether the duct block at {@code state}, a pipe or an inline duct, is open towards {@code direction} for {@code kind}. */
-	private static boolean opensTowards(BlockState state, Direction direction, PortKind kind) {
-		if (state.getBlock() instanceof ManifoldBlock)
-			return state.getValue(ManifoldBlock.CONNECTIONS.get(direction));
-		return state.getBlock() instanceof InlineDuct duct && duct.acceptsPipe(state, direction, kind);
-	}
-
-	private record Trace(Set<BlockPos> visited, Set<BlockPos> openings, Set<BlockPos> heads) {
-	}
-
-	/**
-	 * Follows the pipes from {@code start}, wherever they are open, to the heads and openings at their ends, as if the
-	 * duct block at {@code excluded} (if any) were not there. A turbocharger, supercharger or intercooler is a junction
-	 * like any other pipe block: the run goes in at one face and out of another.
-	 */
-	private Trace trace(BlockPos start, PortKind kind, @Nullable BlockPos excluded) {
-		int limit = CEConfig.MAX_MANIFOLD_BLOCKS.get();
-		Set<BlockPos> visited = new HashSet<>();
-		Set<BlockPos> openings = new LinkedHashSet<>();
-		Set<BlockPos> heads = new HashSet<>();
-		Deque<BlockPos> queue = new ArrayDeque<>();
-
-		if (state(start).getBlock() instanceof PortOpeningBlock)
-			openings.add(start.immutable());
-		else if (!start.equals(excluded)) {
-			queue.add(start.immutable());
-			visited.add(start.immutable());
-		}
-		while (!queue.isEmpty() && visited.size() < limit) {
-			BlockPos duct = queue.poll();
-			BlockState ductState = state(duct);
-			for (Direction direction : Direction.values()) {
-				if (!opensTowards(ductState, direction, kind))
-					continue;
-				BlockPos next = duct.relative(direction);
-				if (next.equals(excluded))
-					continue;
-				BlockState state = state(next);
-				Block block = state.getBlock();
-				if (block instanceof ManifoldBlock manifold && manifold.kind() == kind) {
-					if (state.getValue(ManifoldBlock.CONNECTIONS.get(direction.getOpposite()))
-						&& visited.add(next.immutable()))
-						queue.add(next.immutable());
-				} else if (block instanceof InlineDuct inline) {
-					if (inline.acceptsPipe(state, direction.getOpposite(), kind) && visited.add(next.immutable()))
-						queue.add(next.immutable());
-				} else if (block instanceof PortOpeningBlock opening && opening.kind() == kind
-					&& state.getValue(PortOpeningBlock.FACING) == direction)
-					openings.add(next.immutable());
-				else if ((block instanceof CylinderHeadBlock || block instanceof RotorHousingBlock)
-					&& Pipes.accepts(state, direction.getOpposite(), kind))
-					heads.add(next.immutable());
-			}
-		}
-		// An opening also serves the head its back is against
-		for (BlockPos opening : openings) {
-			BlockPos behind = opening.relative(state(opening).getValue(PortOpeningBlock.FACING)
-				.getOpposite());
-			if (state(behind).getBlock() instanceof CylinderHeadBlock
-				|| state(behind).getBlock() instanceof RotorHousingBlock)
-				heads.add(behind.immutable());
-		}
-		return new Trace(visited, openings, heads);
-	}
-
-	/**
-	 * How many blocks the gas goes through between a head and the nearest opening, the opening included, averaged over the
-	 * heads: how long the run sounds. Worked back from the openings through the pipes of the trace. A head with an opening
-	 * on it, or one the pipes do not reach, is left out; with none left the run is one block.
-	 */
-	private static int runLength(Set<BlockPos> ducts, Set<BlockPos> openings, Set<BlockPos> heads) {
-		Map<BlockPos, Integer> distance = new HashMap<>();
-		Deque<BlockPos> queue = new ArrayDeque<>();
-		for (BlockPos opening : openings) {
-			distance.put(opening, 1);
-			queue.add(opening);
-		}
-		while (!queue.isEmpty()) {
-			BlockPos from = queue.poll();
-			for (Direction direction : Direction.values()) {
-				BlockPos next = from.relative(direction);
-				if (!ducts.contains(next) || distance.containsKey(next))
-					continue;
-				distance.put(next, distance.get(from) + 1);
-				queue.add(next);
-			}
-		}
-		int total = 0;
-		int counted = 0;
-		for (BlockPos head : heads) {
-			int nearest = Integer.MAX_VALUE;
-			for (Direction direction : Direction.values()) {
-				BlockPos beside = head.relative(direction);
-				Integer steps = ducts.contains(beside) ? distance.get(beside) : null;
-				if (steps != null)
-					nearest = Math.min(nearest, steps);
-			}
-			if (nearest != Integer.MAX_VALUE) {
-				total += nearest;
-				counted++;
-			}
-		}
-		return counted == 0 ? 1 : Math.round(total / (float) counted);
-	}
-
-	private int portNetwork(BlockPos start, PortKind kind) {
-		Map<BlockPos, Integer> index = portIndex.computeIfAbsent(kind, $ -> new HashMap<>());
-		Integer known = index.get(start);
-		if (known != null)
-			return known;
-
-		Trace trace = trace(start, kind, null);
-		Set<BlockPos> visited = trace.visited;
-		Set<BlockPos> openings = trace.openings;
-		Set<BlockPos> heads = trace.heads;
-
-		int open = 0;
-		int flooded = 0;
-		for (BlockPos opening : openings) {
-			BlockState openingState = state(opening);
-			if (PortOpeningBlock.isFlooded(level, opening, openingState))
-				flooded++;
-			else if (PortOpeningBlock.isOpen(level, opening, openingState))
-				open++;
-		}
-
-		List<BlockPos> throttles = new ArrayList<>();
-		List<BlockPos> sensors = new ArrayList<>();
-		List<BlockPos> turbos = new ArrayList<>();
-		List<BlockPos> superchargers = new ArrayList<>();
-		List<BlockPos> intercoolers = new ArrayList<>();
-		List<BlockPos> filters = new ArrayList<>();
-		List<BlockPos> mufflers = new ArrayList<>();
-		List<BlockPos> traps = new ArrayList<>();
-		for (BlockPos pos : visited) {
-			Block block = state(pos).getBlock();
-			if (block instanceof ThrottleBlock)
-				throttles.add(pos);
-			else if (block instanceof SensorBlock<?>)
-				sensors.add(pos);
-			else if (block instanceof TurbochargerBlock)
-				turbos.add(pos);
-			else if (block instanceof SuperchargerBlock)
-				superchargers.add(pos);
-			else if (block instanceof IntercoolerBlock)
-				intercoolers.add(pos);
-			else if (block instanceof AirFilterBlock)
-				filters.add(pos);
-			else if (block instanceof MufflerBlock)
-				mufflers.add(pos);
-			else if (block instanceof SootTrapBlock)
-				traps.add(pos);
-		}
-
-		// A compressor, turbine or muffler that the air can go round (another branch of the run reaches an opening without
-		// it) shares the flow with whatever is on that branch; one that every path goes through takes all of it
-		Set<BlockPos> parallel = new HashSet<>();
-		for (List<BlockPos> stages : List.of(turbos, superchargers, mufflers, traps, filters))
-			for (BlockPos stage : stages)
-				if (!trace(start, kind, stage).openings.isEmpty())
-					parallel.add(stage);
-
-		int number = ports.size();
-		ports.add(new PortNetwork(kind, open, flooded, Math.max(1, heads.size()), List.copyOf(openings), List.copyOf(throttles), List.copyOf(sensors),
-			List.copyOf(turbos), List.copyOf(superchargers), List.copyOf(intercoolers), Set.copyOf(parallel),
-			List.copyOf(mufflers), List.copyOf(traps), runLength(visited, openings, heads), List.copyOf(filters)));
-		for (BlockPos pos : visited) {
-			index.put(pos, number);
-			members.add(pos);
-		}
-		for (BlockPos pos : openings) {
-			index.put(pos, number);
-			members.add(pos);
-		}
-		return number;
-	}
-
 	private int camLine(BlockPos lobe) {
 		Integer known = camIndex.get(lobe);
 		if (known != null)
@@ -913,7 +718,7 @@ public final class EngineScanner {
 		return index;
 	}
 
-	private static boolean isCam(BlockState state, Axis axis) {
+	static boolean isCam(BlockState state, Axis axis) {
 		return state.getBlock() instanceof CamshaftBlock && state.getValue(BlockStateProperties.AXIS) == axis;
 	}
 
@@ -930,147 +735,5 @@ public final class EngineScanner {
 			cursor = cursor.relative(direction);
 		}
 		return false;
-	}
-
-	/**
-	 * Crankshaft blocks of any engine that a change at {@code pos} could affect. Used for blocks that are not yet
-	 * part of a known engine, e.g. a cylinder just placed against a crank throw.
-	 */
-	public static Set<BlockPos> crankSeeds(Level level, BlockPos pos) {
-		Set<BlockPos> seeds = new HashSet<>();
-		if (!level.isLoaded(pos))
-			return seeds;
-		BlockState state = level.getBlockState(pos);
-		Block block = state.getBlock();
-
-		if (block instanceof CrankshaftBlock)
-			seeds.add(pos);
-		else if (block instanceof CylinderBlock)
-			addIfCrank(level, pos.relative(state.getValue(CylinderBlock.FACING)
-				.getOpposite()), seeds);
-		else if (block instanceof CylinderHeadBlock)
-			addHeadSeed(level, pos, state, seeds);
-		else if (block instanceof StarterBlock)
-			addIfCrank(level, pos.relative(state.getValue(StarterBlock.FACING)), seeds);
-		else if (block instanceof CamshaftBlock) {
-			Axis axis = state.getValue(BlockStateProperties.AXIS);
-			for (AxisDirection sign : AxisDirection.values()) {
-				Direction direction = Direction.fromAxisAndDirection(axis, sign);
-				BlockPos cursor = pos;
-				for (int i = 0; i < MAX_SHAFT_WALK * 4 && isCam(loadedState(level, cursor), axis); i++) {
-					for (Direction side : Direction.values()) {
-						BlockState sideState = loadedState(level, cursor.relative(side));
-						addHeadSeed(level, cursor.relative(side), sideState, seeds);
-						addCylinderSeed(level, cursor.relative(side), sideState, seeds);
-					}
-					cursor = cursor.relative(direction);
-				}
-			}
-		} else if (block instanceof BatteryBlock) {
-			// A bank: any battery in it may be the one an engine touches
-			Set<BlockPos> bank = new HashSet<>();
-			Deque<BlockPos> queue = new ArrayDeque<>();
-			bank.add(pos.immutable());
-			queue.add(pos.immutable());
-			while (!queue.isEmpty()) {
-				BlockPos at = queue.poll();
-				for (Direction direction : Direction.values()) {
-					BlockPos next = at.relative(direction);
-					BlockState nextState = loadedState(level, next);
-					addHeadSeed(level, next, nextState, seeds);
-					addIfCrank(level, next, seeds);
-					if (nextState.getBlock() instanceof BatteryBlock && bank.add(next.immutable()))
-						queue.add(next.immutable());
-				}
-			}
-		} else if (block instanceof RadiatorBlock) {
-			for (Direction direction : Direction.values()) {
-				BlockPos next = pos.relative(direction);
-				BlockState nextState = loadedState(level, next);
-				addHeadSeed(level, next, nextState, seeds);
-				addCylinderSeed(level, next, nextState, seeds);
-				addIfCrank(level, next, seeds);
-			}
-		} else if (block instanceof AlternatorBlock || block instanceof SumpBlock
-			|| block instanceof GovernorBlock) {
-			for (Direction direction : Direction.values())
-				addHeadSeed(level, pos.relative(direction), loadedState(level, pos.relative(direction)), seeds);
-		} else if (block instanceof ManifoldBlock || block instanceof PortOpeningBlock
-			|| block instanceof InlineDuct) {
-			Set<BlockPos> visited = new HashSet<>();
-			Deque<BlockPos> queue = new ArrayDeque<>();
-			queue.add(pos);
-			visited.add(pos);
-			while (!queue.isEmpty() && visited.size() < CEConfig.MAX_MANIFOLD_BLOCKS.get()) {
-				BlockPos duct = queue.poll();
-				for (Direction direction : Direction.values()) {
-					BlockPos next = duct.relative(direction);
-					if (!level.isLoaded(next))
-						continue;
-					BlockState nextState = level.getBlockState(next);
-					if ((nextState.getBlock() instanceof ManifoldBlock || nextState.getBlock() instanceof InlineDuct)
-						&& visited.add(next))
-						queue.add(next);
-					else
-						addHeadSeed(level, next, nextState, seeds);
-				}
-			}
-		} else if (state.hasProperty(BlockStateProperties.AXIS)
-			&& (AllBlocks.SHAFT.has(state) || AllBlocks.FLYWHEEL.has(state))) {
-			Axis axis = state.getValue(BlockStateProperties.AXIS);
-			for (AxisDirection sign : AxisDirection.values()) {
-				Direction direction = Direction.fromAxisAndDirection(axis, sign);
-				BlockPos cursor = pos.relative(direction);
-				for (int i = 0; i < MAX_SHAFT_WALK && level.isLoaded(cursor); i++) {
-					BlockState cursorState = level.getBlockState(cursor);
-					if (isCrank(cursorState, axis)) {
-						seeds.add(cursor);
-						break;
-					}
-					if (!cursorState.hasProperty(BlockStateProperties.AXIS)
-						|| cursorState.getValue(BlockStateProperties.AXIS) != axis)
-						break;
-					cursor = cursor.relative(direction);
-				}
-			}
-		}
-
-		for (Direction direction : Direction.values())
-			addIfCrank(level, pos.relative(direction), seeds);
-		return seeds;
-	}
-
-	/** The block at {@code pos}, or air if its chunk is not loaded: a lookup here must never load a chunk. */
-	private static BlockState loadedState(Level level, BlockPos pos) {
-		return level.isLoaded(pos) ? level.getBlockState(pos) : Blocks.AIR.defaultBlockState();
-	}
-
-	private static void addHeadSeed(Level level, BlockPos pos, BlockState state, Set<BlockPos> seeds) {
-		// A rotor housing is its own head, and sits in the crankshaft line
-		if (state.getBlock() instanceof RotorHousingBlock) {
-			seeds.add(pos.immutable());
-			return;
-		}
-		if (!(state.getBlock() instanceof CylinderHeadBlock))
-			return;
-		Direction outward = state.getValue(CylinderHeadBlock.FACING);
-		BlockPos cylinder = pos.relative(outward.getOpposite());
-		if (!level.isLoaded(cylinder))
-			return;
-		BlockState cylinderState = level.getBlockState(cylinder);
-		if (cylinderState.getBlock() instanceof CylinderBlock && cylinderState.getValue(CylinderBlock.FACING) == outward)
-			addIfCrank(level, cylinder.relative(outward.getOpposite()), seeds);
-	}
-
-	private static void addCylinderSeed(Level level, BlockPos pos, BlockState state, Set<BlockPos> seeds) {
-		if (state.getBlock() instanceof CylinderBlock)
-			addIfCrank(level, pos.relative(state.getValue(CylinderBlock.FACING)
-				.getOpposite()), seeds);
-	}
-
-	private static void addIfCrank(Level level, BlockPos pos, Set<BlockPos> seeds) {
-		if (level.isLoaded(pos) && level.getBlockState(pos)
-			.getBlock() instanceof CrankshaftBlock)
-			seeds.add(pos.immutable());
 	}
 }
