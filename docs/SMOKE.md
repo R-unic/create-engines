@@ -138,7 +138,7 @@ client audit is the guard.
   black in one pack and fine in another (1.4.0: pushrods, rockers and head plugs, found by a player, not by the audit, which
   passed with it on screen). So the audit also measures every quad's coordinates against its own sprite (`UvBounds`), for
   blocks, items and the Flywheel partial models, and `ModelUvAssetsTest` does the same for the model files with no game.
-  The allowance is half a pixel; fix a failure in `tools/generate_models.py` (`WRAP_UV`, `WRAP_MIN_OVERRUN`) or give the
+  The allowance is half a pixel; fix a failure in `tools/models/core.py` (`WRAP_UV`, `WRAP_MIN_OVERRUN`) or give the
   face a `uv`, never by widening it. The pixel check missed this one too: a shaded missing texture is dark purple, not magenta.
 * **Trends over snapshots.** The 1.2.0 sound crash was a slow leak of direct memory. No screenshot shows that; a series of
   `BufferPoolMXBean` readings with a climbing fit does (`PerfSampler.climbing`). Heap is sampled after a GC so garbage is

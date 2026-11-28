@@ -13,7 +13,7 @@ import java.util.List;
 import org.junit.jupiter.api.Test;
 
 /**
- * The dual-mass flywheel's wheel model ({@code tools/generate_models.py}, {@code dual_mass_flywheel()}). It shares the Cast
+ * The dual-mass flywheel's wheel model ({@code tools/models/flywheel.py}, {@code dual_mass_flywheel()}). It shares the Cast
  * Flywheel's block shape, so the model must stay inside the same collision thickness, carry a full-length shaft so it turns
  * with the axle, and not fight itself or its collars for pixels. Fix a failure in the generator, never by widening a bound.
  */

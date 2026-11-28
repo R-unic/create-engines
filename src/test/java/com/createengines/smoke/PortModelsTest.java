@@ -20,7 +20,7 @@ import java.util.Map;
 import org.junit.jupiter.api.Test;
 
 /**
- * The air intake and exhaust outlet models ({@code tools/generate_models.py}, {@code air_intake()} and
+ * The air intake and exhaust outlet models ({@code tools/models/airflow.py}, {@code air_intake()} and
  * {@code exhaust_outlet()}). They were redrawn in 2.0 as a look change only: the blocks, their shapes, facing and what
  * they connect to stayed as they were. These pin what the rest of the mod relies on, so a later tweak to the art cannot
  * quietly break it. Fix a failure in the generator, never by widening a bound here.

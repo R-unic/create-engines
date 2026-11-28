@@ -14,7 +14,7 @@ import java.util.List;
 import org.junit.jupiter.api.Test;
 
 /**
- * The cast flywheel's wheel model ({@code tools/generate_models.py}, {@code cast_flywheel()}): a spoked wheel that turns
+ * The cast flywheel's wheel model ({@code tools/models/flywheel.py}, {@code cast_flywheel()}): a spoked wheel that turns
  * with the shaft. Its look changed in 2.0 while the block, its mass and its collision shape stayed as they were, so these
  * pin the parts of the model that the rest of the block depends on. Fix a failure in the generator, never by widening a
  * bound here.
