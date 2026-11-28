@@ -115,8 +115,11 @@ public final class WearService {
 
 	/** An item used on a cylinder head: a gasket goes in, a Service Kit sets right light wear. */
 	public static ItemInteractionResult onHead(ItemStack stack, Level level, BlockPos pos, Player player, InteractionHand hand) {
+		// Sneaking with either kit takes the gasket out; otherwise the creative one mends everything, a broken head too
+		if (CreativeService.isKit(stack) && !player.isShiftKeyDown())
+			return CreativeService.onBlock(level, pos, player, hand);
 		Wear.Gasket tier = gasketOf(stack);
-		boolean kit = CEItems.SERVICE_KIT.isIn(stack);
+		boolean kit = CEItems.SERVICE_KIT.isIn(stack) || CreativeService.isKit(stack);
 		if (tier == null && !kit)
 			return ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION;
 		if (!level.isClientSide && LoadedBlocks.blockEntity(level, pos) instanceof CylinderHeadBlockEntity head) {
@@ -157,6 +160,8 @@ public final class WearService {
 
 	/** A Service Kit used on a cylinder: it pulls a seized piston out, or else sets right the light wear of the piston and rod fitted. */
 	public static ItemInteractionResult onCylinder(ItemStack stack, Level level, BlockPos pos, Player player, InteractionHand hand) {
+		if (CreativeService.isKit(stack))
+			return CreativeService.onBlock(level, pos, player, hand);
 		boolean part = CylinderBlock.isPiston(stack) || CEItems.PISTON_RING.isIn(stack) || rodOf(stack) != null;
 		if (!CEItems.SERVICE_KIT.isIn(stack) && !part)
 			return ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION;
@@ -204,6 +209,8 @@ public final class WearService {
 
 	/** A Service Kit used on a battery: it sets right light wear (the battery's capacity comes back to what a lightly worn one held). */
 	public static ItemInteractionResult onBattery(ItemStack stack, Level level, BlockPos pos, Player player, InteractionHand hand) {
+		if (CreativeService.isKit(stack))
+			return CreativeService.onBlock(level, pos, player, hand);
 		if (!CEItems.SERVICE_KIT.isIn(stack))
 			return ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION;
 		if (!level.isClientSide && LoadedBlocks.blockEntity(level, pos) instanceof BatteryBlockEntity battery)
@@ -217,6 +224,8 @@ public final class WearService {
 	 */
 	/** A Service Kit used on a turbocharger: it sets right light wear. */
 	public static ItemInteractionResult onTurbo(ItemStack stack, Level level, BlockPos pos, Player player, InteractionHand hand) {
+		if (CreativeService.isKit(stack))
+			return CreativeService.onBlock(level, pos, player, hand);
 		if (!CEItems.SERVICE_KIT.isIn(stack))
 			return ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION;
 		if (!level.isClientSide && LoadedBlocks.blockEntity(level, pos) instanceof com.createengines.content.turbo.TurbochargerBlockEntity turbo)
@@ -226,6 +235,8 @@ public final class WearService {
 
 	/** An item used on a rotor housing: seals or a Service Kit. */
 	public static ItemInteractionResult onRotor(ItemStack stack, Level level, BlockPos pos, Player player, InteractionHand hand) {
+		if (CreativeService.isKit(stack))
+			return CreativeService.onBlock(level, pos, player, hand);
 		boolean seals = CEItems.APEX_SEALS.isIn(stack);
 		boolean kit = CEItems.SERVICE_KIT.isIn(stack);
 		if (!seals && !kit)

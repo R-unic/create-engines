@@ -21,6 +21,8 @@ import net.neoforged.neoforge.items.wrapper.RecipeWrapper;
  * Create looks recipes up by item and cannot say "wear between a tenth and a third", so the repair is offered to the Deployer as a recipe
  * made on the spot from the very part in front of it (see {@link DeployerRecipeSearchEvent}). It is made only for a single part that a kit
  * could set right, so a stack of worn parts is not all repaired for one use, and nothing is made for a part that is new or too worn.
+ * The creative kit is offered for anything worn or failed, sets it to new and is kept.
+ * <p>
  * Nothing is registered with the recipe manager, so it is not in JEI or EMI.
  */
 public final class WearRepairRecipes {
@@ -42,6 +44,8 @@ public final class WearRepairRecipes {
 
 	/** Whether a kit held to this part would set it right: a single part, lightly worn. */
 	public static boolean repairs(ItemStack processed, ItemStack tool) {
+		if (CreativeService.isKit(tool))
+			return processed.getCount() == 1 && !WearService.isNew(processed);
 		return processed.getCount() == 1 && CEItems.SERVICE_KIT.isIn(tool) && processed.getItem() instanceof WornPartItem
 			&& Wear.repairable(WearService.wearOf(processed));
 	}
@@ -52,9 +56,15 @@ public final class WearRepairRecipes {
 	 * kit is for.
 	 */
 	public static RecipeHolder<DeployerApplicationRecipe> repair(ItemStack worn, ItemStack tool) {
-		ItemStack fixed = WearService.withWear(worn.copyWithCount(1), Wear.repaired(WearService.wearOf(worn)));
+		boolean creative = CreativeService.isKit(tool);
+		ItemStack fixed = creative ? CreativeService.mend(worn.copyWithCount(1))
+			: WearService.withWear(worn.copyWithCount(1), Wear.repaired(WearService.wearOf(worn)));
 		var id = CreateEngines.asResource("wear_repair");
-		DeployerApplicationRecipe recipe = new ItemApplicationRecipe.Builder<DeployerApplicationRecipe>(DeployerApplicationRecipe::new, id)
+		var builder = new ItemApplicationRecipe.Builder<DeployerApplicationRecipe>(DeployerApplicationRecipe::new, id);
+		// A tool that is not kept and cannot take damage is used up, so the creative kit must be kept
+		if (creative)
+			builder.toolNotConsumed();
+		DeployerApplicationRecipe recipe = builder
 			.require(Ingredient.of(worn.getItem()))
 			.require(Ingredient.of(tool.getItem()))
 			.output(fixed)

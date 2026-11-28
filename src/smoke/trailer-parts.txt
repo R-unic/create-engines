@@ -103,6 +103,7 @@ rubber_gasket: gasket_saw
 copper_gasket: gasket_line
 incomplete_copper_gasket: skip - the half-made Copper Gasket of its sequenced assembly, an intermediate, not a part
 service_kit: wear_parts
+creative_service_kit: skip - a creative-only tool, a variant of the Service Kit
 apex_seals: wear_parts
 high_compression_piston: skip - inside the cylinder, a variant of the forged piston
 low_compression_piston: skip - inside the cylinder, a variant of the forged piston

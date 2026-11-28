@@ -107,7 +107,7 @@ Minecraft 1.21.1 · NeoForge 21.1.219 or newer · Create 6.0.10 (build 257 or ne
   turbochargers, apex seals and batteries wear with speed, heat, load, boost and lack of oil. A badly worn rod can be
   thrown, a gasket blown or a turbo failed, a dry piston seized, and a spark engine that knocks wears faster. A very hot
   block can blow a sound gasket, seize an oiled piston and warp a head. Four head gaskets (stock, cardboard, rubber,
-  copper), Apex Seals and a Service Kit to put light wear right. Off, nothing wears. The numbers are in
+  copper), Apex Seals and a Service Kit to put light wear right (and a Creative Service Kit that mends anything). Off, nothing wears. The numbers are in
   [docs/WEAR.md](docs/WEAR.md)
 - **Light and Heavy Connecting Rods**: a light rod drags a little less and gives the crank less to swing, so the engine
   revs up sooner but runs rougher. A heavy one drags a little more and adds mass, so it runs smoother (a lumpy engine

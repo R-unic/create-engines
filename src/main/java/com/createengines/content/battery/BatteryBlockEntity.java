@@ -143,6 +143,16 @@ public class BatteryBlockEntity extends SmartBlockEntity implements IHaveGoggleI
 		return true;
 	}
 
+	/** The creative Service Kit: the battery holds what a new one does. Returns whether anything changed. */
+	public boolean restore() {
+		if (wear == 0)
+			return false;
+		wear = 0;
+		setChanged();
+		sendData();
+		return true;
+	}
+
 	/** The share of this battery's own capacity that is charged, 0 to 1. */
 	public float chargeFraction() {
 		return charge / capacity();

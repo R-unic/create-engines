@@ -109,7 +109,7 @@ public class CEPonderPlugin implements PonderPlugin {
 			.addStoryBoard("rain_cap", ExhaustCasingScenes::rainCap);
 		scenes.forComponents(CEItems.HEADPHONES)
 			.addStoryBoard("rain_cap", HeadphonesScenes::headphones);
-		scenes.forComponents(CEItems.SERVICE_KIT, CEItems.STOCK_GASKET, CEItems.CARDBOARD_GASKET, CEItems.RUBBER_GASKET, CEItems.COPPER_GASKET,
+		scenes.forComponents(CEItems.SERVICE_KIT, CEItems.CREATIVE_SERVICE_KIT, CEItems.STOCK_GASKET, CEItems.CARDBOARD_GASKET, CEItems.RUBBER_GASKET, CEItems.COPPER_GASKET,
 			CEItems.PISTON, CEItems.FORGED_PISTON, CEItems.CONNECTING_ROD, CEItems.LIGHT_CONNECTING_ROD, CEItems.HEAVY_CONNECTING_ROD,
 			CEItems.HIGH_COMPRESSION_PISTON, CEItems.LOW_COMPRESSION_PISTON, CEItems.APEX_SEALS)
 			.addStoryBoard("rain_cap", WearScenes::wearAndTear);

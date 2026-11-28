@@ -73,8 +73,8 @@ def gasket(colours, seed, bolts, mid):
     return rows
 
 
-def kit():
-    """A small brass tin with a red band and a spanner mark: the Service Kit."""
+def kit(body=BRASS, band=RED):
+    """A small brass tin with a red band and a spanner mark: the Service Kit. The creative one is the same tin in purple."""
     rows = []
     for y in range(16):
         row = []
@@ -86,15 +86,19 @@ def kit():
             lit = 7 - (x - 1) * 0.12 - (y - 3) * 0.2 + (hashed(x, y, 5) - 0.5) * 1.2
             if edge:
                 lit -= 3.2
-            colour = BRASS
+            colour = body
             if 6 <= y <= 9:
-                colour, lit = RED, 3.6 + (hashed(x, y, 6) - 0.5) - (2 if edge else 0)
+                colour, lit = band, 3.6 + (hashed(x, y, 6) - 0.5) - (2 if edge else 0)
             # a cross of two light strokes in the red band
             if y in (7, 8) and 4 <= x <= 11 or (x in (7, 8) and 5 <= y <= 10):
-                colour, lit = BRASS, 9.0
+                colour, lit = body, 9.0
             row.append(colour[max(0, min(len(colour) - 1, round(lit)))] + (255,))
         rows.append(row)
     return rows
+
+
+PURPLE = ramp("1f0d33", "2e1650", "42206e", "57308c", "6c40a6", "8253bd", "9868d0", "ae80df", "c398ea", "d6b2f2", "e6ccf8", "f4e6fd")
+PINK = ramp("3d0d2b", "5c1642", "80215c", "a32f76", "c0428e", "d65ba5", "e87abb")
 
 
 # Hand-placed: two rings lying one on the other seen from above and in front, the upper one split. k outline, h lit, m mid, s shade
@@ -129,3 +133,4 @@ write_png("cardboard_gasket", gasket(CARDBOARD, 11, False, 4.0))
 write_png("rubber_gasket", gasket(RUBBER, 12, False, 3.5))
 write_png("copper_gasket", gasket(COPPER, 13, True, 7.5))
 write_png("service_kit", kit())
+write_png("creative_service_kit", kit(PURPLE, PINK))

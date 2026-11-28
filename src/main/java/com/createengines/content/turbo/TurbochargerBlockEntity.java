@@ -421,6 +421,20 @@ public class TurbochargerBlockEntity extends SmartBlockEntity
 		return true;
 	}
 
+	/** The creative Service Kit: as new, a failed turbo too. Returns whether anything changed. */
+	public boolean restore() {
+		boolean wasFailed = failed;
+		if (!wasFailed && wear == 0)
+			return false;
+		failed = false;
+		wear = 0;
+		setChanged();
+		sendData();
+		if (wasFailed)
+			com.createengines.engine.topology.EngineTopology.wearChanged(level, worldPosition);
+		return true;
+	}
+
 	// The block's item keeps the wear and the failure, so breaking a turbo and placing it again is no repair
 
 	@Override

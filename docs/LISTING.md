@@ -265,6 +265,10 @@ Not released yet.
   with no cap. A filter in the intake run takes 80% of that back, or 40% where the air can go round it. It never wears or clogs. The
   crankshaft's goggles say what dirty air is costing. Wool or paper, coal or charcoal and copper sheets; without the pollution mod
   it cannot be crafted and is not in the creative tab, and a placed one is a plain length of intake pipe.
+- New, Creative Service Kit (`creative_service_kit`, creative only, no recipe, never runs out): sets any wear back to new on whatever it is used
+  on, and mends a blown gasket, a broken or warped head, a seized piston, failed apex seals and a failed turbo in place. It clears a thrown
+  rod's wreck (the lost piston and rod still have to be fitted). It also mends a whole stack held in the other hand, and a Deployer can use
+  it. Sneaking with it on a head takes the gasket out, as with the Service Kit.
 - Packs can retune the two compression factors with `part_effects/high_compression.json` and `low_compression.json`.
 - The server's `precisionBonus` setting scales the new compression parts as it does the precision ones.
 - Looks, **intake and exhaust parts redrawn** to be simpler and closer to Create: manifolds, throttle, MAF sensor, heat exchanger,

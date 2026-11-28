@@ -106,7 +106,7 @@ from 7%. Hours for knock alone to take a standard piston from new to spent; a fo
 
 ## Repair
 
-A Service Kit has 24 uses. It sets wear above 0.10 and up to 0.35 back to 0.10; heavier wear needs a new part. A crafting recipe that builds on a part that wears, a blueprint, a Schematicannon and the Bank Builder take only new ones.
+A Service Kit has 24 uses. It sets wear above 0.10 and up to 0.35 back to 0.10; heavier wear needs a new part. The Creative Service Kit has no recipe and no limit on uses: it sets any wear back to new and undoes every failure. A crafting recipe that builds on a part that wears, a blueprint, a Schematicannon and the Bank Builder take only new ones.
 
 ## Running dry
 

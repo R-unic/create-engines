@@ -119,6 +119,14 @@ public final class CEItems {
 		.model((c, p) -> p.generated(c, p.modLoc("item/service_kit")))
 		.register();
 
+	/** The Service Kit for creative mode: no recipe, never wears out, and mends any wear or failure back to new. */
+	public static final ItemEntry<Item> CREATIVE_SERVICE_KIT = REGISTRATE
+		.item("creative_service_kit", p -> (Item) new com.createengines.content.CreativeServiceKitItem(p))
+		.properties(p -> p.stacksTo(1)
+			.rarity(net.minecraft.world.item.Rarity.EPIC))
+		.model((c, p) -> p.generated(c, p.modLoc("item/creative_service_kit")))
+		.register();
+
 	/**
 	 * Wear mode: a fresh set of apex seals for a rotor housing, fitted by right-clicking it. It replaces the set there, worn or failed. With the
 	 * mode off a fitted set does nothing and a housing needs none: the stock set is not an item.

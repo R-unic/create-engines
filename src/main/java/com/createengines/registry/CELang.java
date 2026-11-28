@@ -335,6 +335,7 @@ public final class CELang {
 		raw("goggles.wear.gasket.copper", "Copper");
 		raw("goggles.wear.gasket_blown", "Head gasket blown or missing: the cylinder under it is stopped until a gasket is fitted");
 		raw("tooltip.wear", "Worn: %1$s%%");
+		raw("tooltip.creative_service_kit", "Mends any wear or failure back to new, and never runs out");
 		raw("tooltip.gasket.seals", "Seals a cylinder head: about %1$s%% more power than a head with none fitted, with or without the wear mode");
 		raw("message.wear.gasket_removed", "Gasket taken out, with its wear");
 		raw("message.wear.no_gasket_to_take", "No gasket has been fitted here to take out");

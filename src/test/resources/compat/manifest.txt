@@ -708,6 +708,7 @@ reg:item:blueprint
 reg:item:cardboard_gasket
 reg:item:connecting_rod
 reg:item:copper_gasket
+reg:item:creative_service_kit
 reg:item:forged_piston
 reg:item:fuel_injector
 reg:item:headphones

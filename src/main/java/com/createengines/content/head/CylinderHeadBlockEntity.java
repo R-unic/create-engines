@@ -295,6 +295,21 @@ public class CylinderHeadBlockEntity extends SmartBlockEntity implements IHaveGo
 		return true;
 	}
 
+	/** The creative Service Kit: the gasket and plug are new again, and a blow, a break and a warp are undone. Returns whether anything changed. */
+	public boolean restore() {
+		boolean failure = blown || broken || warped;
+		heatSoak = 0;
+		if (!failure && gasketWear == 0 && plugWear == 0)
+			return false;
+		blown = broken = warped = false;
+		gasketWear = plugWear = 0;
+		setChanged();
+		sendData();
+		if (failure)
+			EngineTopology.wearChanged(level, worldPosition);
+		return true;
+	}
+
 	@Override
 	protected void write(CompoundTag tag, HolderLookup.Provider registries, boolean clientPacket) {
 		super.write(tag, registries, clientPacket);
