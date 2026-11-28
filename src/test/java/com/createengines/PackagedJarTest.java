@@ -66,7 +66,7 @@ class PackagedJarTest {
 		"com/createengines/content/starter/StarterRenderer",
 		"com/createengines/content/starter/StarterWhirSound",
 		"com/createengines/content/turbo/TurbochargerRenderer",
-		"com/createengines/ponder/EngineScenes");
+		"com/createengines/ponder/ExhaustCasingScenes");
 
 	/** Class names in a class file's constant pool: every CONSTANT_Class and every type named in a descriptor-ish string. */
 	static List<String> referencedClasses(InputStream in) throws IOException {

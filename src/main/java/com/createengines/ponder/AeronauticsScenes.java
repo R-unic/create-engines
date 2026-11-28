@@ -40,10 +40,10 @@ public final class AeronauticsScenes {
 			.add(util.select()
 				.position(2, 3, 5));
 
-		EngineScenes.setThrow(scene, util.select()
+		SceneHelpers.setThrow(scene, util.select()
 			.position(2, 1, 3), 0);
-		EngineScenes.setLobe(scene, util.select()
-			.position(2, 4, 3), EngineScenes.LOBE_FOR_UPRIGHT_CYLINDER);
+		SceneHelpers.setLobe(scene, util.select()
+			.position(2, 4, 3), SceneHelpers.LOBE_FOR_UPRIGHT_CYLINDER);
 		ElementLink<WorldSectionElement> engine = scene.world()
 			.showIndependentSection(whole, Direction.DOWN);
 		scene.world()

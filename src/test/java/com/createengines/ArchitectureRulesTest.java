@@ -60,7 +60,7 @@ class ArchitectureRulesTest {
 		"com/createengines/content/starter/StarterRenderer.java",
 		"com/createengines/content/starter/StarterWhirSound.java",
 		"com/createengines/content/turbo/TurbochargerRenderer.java",
-		"com/createengines/ponder/EngineScenes.java");
+		"com/createengines/ponder/ExhaustCasingScenes.java");
 
 	private static List<Path> sources() throws IOException {
 		try (Stream<Path> walk = Files.walk(ROOT)) {
@@ -133,7 +133,7 @@ class ArchitectureRulesTest {
 		for (String entry : CLIENT_TOUCHING) {
 			String name = entry.substring(entry.lastIndexOf('/') + 1);
 			boolean client = name.contains("Renderer") || name.contains("Sound") || name.contains("Client")
-				|| name.equals("EnginePartRenderers.java") || name.equals("GoggleLines.java") || name.equals("EngineScenes.java")
+				|| name.equals("EnginePartRenderers.java") || name.equals("GoggleLines.java") || name.equals("ExhaustCasingScenes.java")
 				|| name.equals("EngineEffects.java") || name.equals("RainCapBlockEntity.java");
 			assertTrue(client, entry + " is not obviously client-only; it should not be on the list without a reason here");
 		}
