@@ -1,9 +1,9 @@
 {
   "parent": "block/block",
   "textures": {
-    "pipe": "create_engines:block/copper",
+    "pipe": "create_engines:block/intake_pipe",
     "bead": "create_engines:block/copper",
-    "flange": "create_engines:block/copper",
+    "flange": "create_engines:block/intake_flange",
     "gasket": "create_engines:block/black_oxide",
     "bolt": "create_engines:block/brass",
     "particle": "create_engines:block/copper"
@@ -22,22 +22,58 @@
       ],
       "faces": {
         "north": {
-          "texture": "#pipe"
+          "texture": "#pipe",
+          "uv": [
+            0,
+            0,
+            7,
+            6
+          ]
         },
         "south": {
-          "texture": "#pipe"
+          "texture": "#pipe",
+          "uv": [
+            0,
+            0,
+            7,
+            6
+          ]
         },
         "east": {
-          "texture": "#pipe"
+          "texture": "#pipe",
+          "uv": [
+            0,
+            6,
+            7,
+            13
+          ]
         },
         "west": {
-          "texture": "#pipe"
+          "texture": "#pipe",
+          "uv": [
+            0,
+            6,
+            7,
+            13
+          ]
         },
         "up": {
-          "texture": "#pipe"
+          "texture": "#pipe",
+          "uv": [
+            0,
+            0,
+            7,
+            6
+          ]
         },
         "down": {
-          "texture": "#pipe"
+          "texture": "#pipe",
+          "uv": [
+            0,
+            0,
+            7,
+            6
+          ]
         }
       }
     },
@@ -54,22 +90,58 @@
       ],
       "faces": {
         "north": {
-          "texture": "#flange"
+          "texture": "#pipe",
+          "uv": [
+            8,
+            0,
+            12,
+            8
+          ]
         },
         "south": {
-          "texture": "#flange"
+          "texture": "#pipe",
+          "uv": [
+            8,
+            0,
+            12,
+            8
+          ]
         },
         "east": {
-          "texture": "#flange"
+          "texture": "#pipe",
+          "uv": [
+            8,
+            8,
+            16,
+            16
+          ]
         },
         "west": {
-          "texture": "#flange"
+          "texture": "#pipe",
+          "uv": [
+            8,
+            8,
+            16,
+            16
+          ]
         },
         "up": {
-          "texture": "#flange"
+          "texture": "#pipe",
+          "uv": [
+            8,
+            0,
+            12,
+            8
+          ]
         },
         "down": {
-          "texture": "#flange"
+          "texture": "#pipe",
+          "uv": [
+            8,
+            0,
+            12,
+            8
+          ]
         }
       }
     }

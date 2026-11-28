@@ -158,6 +158,64 @@ def copper_panel():
     return rimmed(COPPER, inside)
 
 
+def painted(*pieces):
+    """A tile put together from patches drawn by hand, each given as (column, row, lines). A character is a step of the
+    copper ramp (0 darkest, c lightest)."""
+    rows = [[COPPER[6]] * SIZE for _ in range(SIZE)]
+    for column, row, lines in pieces:
+        for y, line in enumerate(lines):
+            for x, c in enumerate(line):
+                rows[row + y][column + x] = COPPER[int(c, 16)]
+    return rows
+
+
+def intake_flange():
+    """The bolted flange of an intake pipe. Top left, 9 by 9: its face, a lit rim and a rivet in each corner. Under it, 9
+    by 2: its edge. The models say which patch each face shows."""
+    face = ("999999995",
+            "977777764",
+            "97a666a64",
+            "976666564",
+            "976666664",
+            "976666664",
+            "97a666a64",
+            "966566554",
+            "544444443")
+    edge = ("999999998",
+            "555555554")
+    return painted((0, 0, face), (0, 9, edge))
+
+
+def intake_pipe():
+    """The cast copper of an intake pipe, drawn running left to right. Top left, 7 by 6: the tube, with a raised joint
+    across it. Under it, 7 by 7: a junction. Top middle, 4 by 8: the collar of a tee, and under that, 8 by 8: the collar
+    seen end on."""
+    tube = ("6664766",
+            "8886a88",
+            "7775977",
+            "6664866",
+            "6664766",
+            "5553655")
+    junction = ("9999995",
+                "9777764",
+                "9766664",
+                "9766664",
+                "9766664",
+                "9666654",
+                "5444443")
+    collar = ("9765",) + ("a876", "9765") + ("8654",) * 4 + ("6543",)
+    end = ("99999995",) + ("97777764",) + ("97666664",) * 4 + ("96666654",) + ("54444443",)
+    return painted((0, 0, tube), (0, 6, junction), (8, 0, collar), (8, 8, end))
+
+
+def intake_bell():
+    """The air intake's trumpet, seen on columns 2 to 14 and rows 4 to 14: two rolled lips, then the neck with a strap
+    round it. The light falls from the left of centre, as on Create's tanks."""
+    lit = (-1, -1, -1, 0, 0, 0, 1, 1, 0, 0, 0, 0, -1, -1, -1, -1)
+    levels = {4: 9, 5: 6, 6: 8, 7: 5, 8: 5, 9: 7, 10: 9, 11: 5, 12: 7, 13: 6}
+    return [[pick(COPPER, levels.get(y, 6) + lit[x]) for x in range(SIZE)] for y in range(SIZE)]
+
+
 def steel():
     return rimmed(STEEL, strokes(8.0, 3.2, 7), inner=(-1, -3, -5, -6))
 
@@ -673,6 +731,7 @@ def main():
     for index in range(GLOWS):
         write_png("particle/glow_%d" % index, glow(17 + 11 * index))
     for name, painter in (("brass", brass), ("copper", copper), ("copper_panel", copper_panel), ("steel", steel),
+                          ("intake_flange", intake_flange), ("intake_pipe", intake_pipe), ("intake_bell", intake_bell),
                           ("cast_iron", cast_iron), ("black_oxide", black_oxide), ("rivet_plate", rivet_plate),
                           ("enamel_red", enamel_red), ("enamel_blue", enamel_blue), ("piston_dome", piston_dome), ("piston_dish", piston_dish),("flywheel_steel", flywheel_steel), ("flywheel_oxide", flywheel_oxide), ("flywheel_coil", flywheel_coil),
                           ("flywheel_enamel", flywheel_enamel), ("ceramic", ceramic), ("screen", screen), ("column_glow", column_glow), ("heat_wrap", heat_wrap),

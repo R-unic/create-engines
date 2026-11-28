@@ -278,6 +278,9 @@ Not released yet.
   on four corner posts, with its injector and spark plug low on one edge, and the rotor has broader steps. Ignition coils and
   injector assists are single cans with a painted winding. Nothing about how they work changes. Resource packs that retexture
   them will show differences.
+- Looks, **intake pipes repainted**: the intake manifold, air intake, and the pipe arms of the throttle and MAF sensor have
+  framed flanges, jointed tubes and a banded bell in place of plain copper. Shapes and workings are unchanged. Resource packs
+  that retexture them will show differences.
 - Changed, outlines: the selection outline and collision of the **intake and exhaust parts** follow their models again after the
   redraw: Air Intake, Exhaust Outlet, Air Filter, Intercooler, Muffler, Soot Trap, both Turbochargers (open at the waist), both
   Superchargers (out to their pipe flanges), and the body on a Throttle, Mass Airflow Sensor and Heat Exchanger. No IDs, saved

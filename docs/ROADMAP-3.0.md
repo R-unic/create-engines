@@ -1777,6 +1777,11 @@ plain pin between them.
 one a dish hollowed inside its own rim (`piston_dome`, `piston_dish` textures), each with one band in red or blue. The rotors carry
 the same on their flanks, no longer on the end faces where the eccentric's webs ran through the marks. Approved by the author that day from the preview render; not seen in game.
 
+**Intake pipes repainted 2026-11-28** (author: mostly smooth copper), shapes unchanged: framed flanges with rivets, a jointed
+tube, framed junctions and tee collars on the intake manifold and the throttle and MAF sensor arms, and a banded bell on the
+air intake (`intake_flange`, `intake_pipe`, `intake_bell` textures). A speckled first pass was refused; the calmer one was
+approved by the author that day from preview renders; not seen in game.
+
 ## 3.0 Clean Slate
 
 The one planned breaking release after 2.0. Like 2.0, it is the only place the promise may be broken, so everything lands in one

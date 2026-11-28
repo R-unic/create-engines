@@ -1,8 +1,8 @@
 """Intake, outlet, rain cap, Maker's Plate, framed blueprint and pipes."""
 
 from models.core import (
-    BLACK, BRASS, BRASS_CASING, COPPER, COPPER_CASING, DARK, IRON, IRON_BLOCK, LAVA, MAGMA, RED, SMOOTH,
-    box, write)
+    BLACK, BRASS, BRASS_CASING, COPPER, COPPER_CASING, DARK, INTAKE_BELL, INTAKE_FLANGE, INTAKE_PIPE,
+    IRON, IRON_BLOCK, LAVA, MAGMA, RED, SMOOTH, box, write)
 
 
 # --- airflow -------------------------------------------------------------------------------------------------------
@@ -10,7 +10,8 @@ from models.core import (
 def air_intake():
     """A back flange, a neck, and a bell in two broad lifts to a cast mouth ring, with a louvred grille over a dark well.
     The back flange covers the pipe joint and the mouth ring keeps its 13 by 13 outline."""
-    textures = {"body": COPPER, "rim": IRON, "grille": "create_engines:block/grille", "well": BLACK, "particle": COPPER}
+    textures = {"body": INTAKE_BELL, "rim": IRON, "grille": "create_engines:block/grille", "well": BLACK,
+                "particle": COPPER}
     elements = [
         box((3, 0, 3), (13, 2, 13), "rim"),
         box((4, 2, 4), (12, 8, 12), "body"),
@@ -186,15 +187,49 @@ def heat_glow():
             box((3.6, 15.5, 3.6), (12.4, 15.6, 12.4), "glow")]
 
 
+# The two axes of the block each face shows across and down its texture
+FACE_AXES = {"north": (0, 1), "south": (0, 1), "east": (2, 1), "west": (2, 1), "up": (0, 2), "down": (0, 2)}
+# The styles whose arms are the intake's cast copper
+INTAKE_STYLES = ("intake", "throttle", "maf")
+
+
+def skinned(element, axis):
+    """Gives an intake pipe's box the hand drawn patch for what it is, laid so that it runs with the pipe, which lies
+    along axis (0 x, 1 y, 2 z; None for a junction): see intake_flange() and intake_pipe() in generate_textures.py. A
+    flange keeps its own texture only where it is a thin plate; the collar of a tee takes the pipe's."""
+    size = [element["to"][i] - element["from"][i] for i in range(3)]
+    kind = element["faces"]["up"]["texture"][1:]
+    plate = kind == "flange" and axis is not None and size[axis] <= 2
+    for name, face in element["faces"].items():
+        across, down = FACE_AXES[name]
+        end_on = axis is not None and axis not in (across, down)
+        if plate:
+            patch = [0, 0, 9, 9] if end_on else [0, 9, 9, 11]
+        elif kind == "flange":
+            patch = [8, 8, 16, 16] if end_on else [8, 0, 12, 8]
+        elif axis is None or end_on:
+            patch = [0, 6, 7, 13]
+        else:
+            patch = [0, 0, min(7, size[axis]), 6]
+        face["uv"] = patch
+        # A flange edge patch runs across the pipe, the tube patch along it
+        if not end_on and axis is not None and axis == (across if plate else down):
+            face["rotation"] = 90
+        if kind == "flange" and not plate:
+            face["texture"] = "#pipe"
+    return element
+
+
 PIPE_STYLES = {
-    "intake_manifold": ("intake", {"pipe": COPPER, "bead": COPPER, "flange": COPPER, "gasket": DARK,
+    "intake_manifold": ("intake", {"pipe": INTAKE_PIPE, "bead": COPPER, "flange": INTAKE_FLANGE, "gasket": DARK,
                                    "bolt": BRASS, "particle": COPPER}),
     "exhaust_manifold": ("exhaust", {"pipe": DARK, "bead": IRON, "flange": IRON, "gasket": DARK, "wrap": SMOOTH,
                                      "bolt": BRASS, "particle": DARK}),
-    "throttle": ("throttle", {"pipe": COPPER, "bead": COPPER, "flange": COPPER, "gasket": DARK, "body": IRON_BLOCK,
+    "throttle": ("throttle", {"pipe": INTAKE_PIPE, "bead": COPPER, "flange": INTAKE_FLANGE, "gasket": DARK,
+                              "body": IRON_BLOCK,
                               "dark": DARK, "bolt": BRASS, "grip": RED,
                               "particle": IRON_BLOCK}),
-    "maf_sensor": ("maf", {"pipe": COPPER, "bead": COPPER, "flange": COPPER, "gasket": DARK, "body": BRASS,
+    "maf_sensor": ("maf", {"pipe": INTAKE_PIPE, "bead": COPPER, "flange": INTAKE_FLANGE, "gasket": DARK, "body": BRASS,
                            "dark": DARK, "plug": RED, "bolt": BRASS, "particle": BRASS}),
     "heat_exchanger": ("heat", {"pipe": DARK, "bead": IRON, "flange": IRON, "gasket": DARK, "wrap": SMOOTH,
                                  "body": IRON_BLOCK, "fin": COPPER, "plate": DARK, "bolt": BRASS,
@@ -206,6 +241,8 @@ def pipes():
     for name, (style, textures) in PIPE_STYLES.items():
         arm_style = "exhaust" if style in ("exhaust", "heat") else "intake"
         core_elements = core(style)
+        if style == "intake":
+            core_elements = [skinned(e, None) for e in core_elements]
         write(name + "/core", textures, core_elements)
         if style == "heat":
             for level, glow in (("kindled", MAGMA), ("seething", LAVA)):
@@ -213,15 +250,22 @@ def pipes():
                 write(name + "/glow_" + level, {"glow": glow, "particle": glow}, elements)
         if name.endswith("_manifold"):
             # Fittings for the shapes a run takes, drawn along z (the north-south axis) and turned for the others
-            write(name + "/core_elbow", textures, [box((4.5, 4.5, 4.5), (11.5, 11.5, 11.5), "pipe")])
+            elbow = box((4.5, 4.5, 4.5), (11.5, 11.5, 11.5), "pipe")
+            write(name + "/core_elbow", textures, [skinned(elbow, None) if style == "intake" else elbow])
             for axis, direction in (("x", "east"), ("y", "up"), ("z", "north")):
                 straight = [box((5, 5, 4.5), (11, 11, 11.5), "pipe")]
                 tee = [box((5, 5, 4.5), (11, 11, 11.5), "pipe"), box((4, 4, 6), (12, 12, 10), "flange")]
-                write(name + "/core_straight_" + axis, textures, [oriented(e, direction) for e in straight])
-                write(name + "/core_tee_" + axis, textures, [oriented(e, direction) for e in tee])
+                for shape, pieces in (("straight", straight), ("tee", tee)):
+                    pieces = [oriented(e, direction) for e in pieces]
+                    if style == "intake":
+                        pieces = [skinned(e, "xyz".index(axis)) for e in pieces]
+                    write(name + "/core_" + shape + "_" + axis, textures, pieces)
         arms = {}
         for direction in ("north", "south", "east", "west", "up", "down"):
             arms[direction] = [oriented(e, direction) for e in arm(arm_style)]
+            if style in INTAKE_STYLES:
+                along = {"east": 0, "west": 0, "up": 1, "down": 1, "north": 2, "south": 2}[direction]
+                arms[direction] = [skinned(e, along) for e in arms[direction]]
             write(name + "/arm_" + direction, textures, arms[direction])
         # The item shows a straight length of pipe
         write(name + "/item", textures, core_elements + arms["east"] + arms["west"])

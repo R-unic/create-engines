@@ -235,8 +235,10 @@ def render(models, size, yaw_deg, create_root, pitch_deg=30.0, background=(66, 7
                         z = pts[0][2] + da * s + db * q
                         if z <= zrow[px]:
                             continue
-                        tx = (u0 + (u1 - u0) * s) * sw / 16
-                        ty = (v0 + (v1 - v0) * q) * sh / 16
+                        # A face's rotation turns its patch clockwise, in quarters
+                        us, vs = ((s, q), (q, 1 - s), (1 - s, 1 - q), (1 - q, s))[spec.get("rotation", 0) // 90]
+                        tx = (u0 + (u1 - u0) * us) * sw / 16
+                        ty = (v0 + (v1 - v0) * vs) * sh / 16
                         pixel = sprite[min(sh - 1, max(0, int(ty)))][min(sw - 1, max(0, int(tx)))]
                         if pixel[3] < 128:
                             continue
