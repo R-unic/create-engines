@@ -84,11 +84,6 @@ final class ShowcaseRunSoundLog implements SoundProbe.Listener {
 		event("render", ",\"n\":" + samples + ",\"ns\":" + nanos);
 	}
 
-	@Override
-	public void looked(long nanos) {
-		event("look", ",\"ns\":" + nanos);
-	}
-
 	void flush() {
 		try {
 			for (String line = lines.poll(); line != null; line = lines.poll()) {

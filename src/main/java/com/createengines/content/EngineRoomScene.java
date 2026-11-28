@@ -20,16 +20,13 @@ import net.minecraft.world.phys.Vec3;
  * Every running engine in earshot this tick, gathered as their crankshafts call in, and worked out once a tick: how much
  * each settles, the ceiling over all of them, and which engines are mixed into the shared "engine room" voice
  * ({@link EngineNoteSound.Room}). It is worked out by whichever calls first in a tick, a crankshaft or the room voice itself, so engines
- * that all stop calling in at once are still forgotten and the voice falls silent. Once a second it also asks the world what
- * walls stand between the listener and each engine, and what room the listener is in ({@link NoteSurroundings}). It uses
- * nothing of the client itself: the listener and the sounds are {@link EngineNoteSound}'s. Client thread only.
+ * that all stop calling in at once are still forgotten and the voice falls silent. It uses nothing of the client itself:
+ * the listener and the sounds are {@link EngineNoteSound}'s. Client thread only.
  */
 final class EngineRoomScene {
 
 	/** Ticks an engine stays in the scene after it last called in. */
 	private static final int FORGET_TICKS = 20;
-	/** Ticks between looks for the walls in each engine's way, and between feeling out the listener's room. */
-	private static final int LOOK_TICKS = 20;
 
 	private static final Map<BlockPos, Heard> HEARD = new HashMap<>();
 	private static final EngineRoomSlots<Heard> SLOTS = new EngineRoomSlots<>();
@@ -41,9 +38,6 @@ final class EngineRoomScene {
 	/** The nearest engine with no note at all, or null: the next to be given one. */
 	private static @Nullable Heard nearestWithout;
 	private static EngineNoteSound.Room room;
-	private static NoteSurroundings.Room surroundings = NoteSurroundings.Room.OUTDOORS;
-	/** When the listener's room was last felt out, or -1 for not yet. */
-	private static long feltAt = -1;
 
 	private EngineRoomScene() {
 	}
@@ -60,9 +54,6 @@ final class EngineRoomScene {
 		double reportedPhase = Double.NaN;
 		long reportedAt;
 		boolean counted;
-		/** The walls last found between the listener and this engine, and when they were looked for (-1: never). */
-		int walls;
-		long wallsAt = -1;
 	}
 
 	static void offer(CrankshaftBlockEntity crank, long now) {
@@ -73,43 +64,10 @@ final class EngineRoomScene {
 		Heard heard = HEARD.computeIfAbsent(crank.getBlockPos(), $ -> new Heard());
 		heard.crank = crank;
 		heard.seenAt = now;
-		Vec3 from = source(crank.getBlockPos());
-		heard.distance = EngineNoteSound.distance(from);
-		look(heard, from, now);
+		heard.distance = EngineNoteSound.distance(source(crank.getBlockPos()));
 		float share = summary.cylinders() > 0 ? summary.firing() / (float) summary.cylinders() : 1;
 		float settled = heard.settle.update(Math.abs(summary.rpm()), EngineNoteSound.load(summary), share, 0.05f);
 		heard.level = EngineChorus.reach(heard.distance) * settled * EngineNoteSound.buildVolume(summary);
-	}
-
-	/** Looks, when it is time to, for the walls in an engine's way and for the room the listener is in. */
-	private static void look(Heard heard, Vec3 from, long now) {
-		Vec3 ear = EngineNoteSound.ear();
-		Level level = heard.crank.getLevel();
-		if (ear == null || level == null)
-			return;
-		if (due(heard.wallsAt, now)) {
-			heard.wallsAt = now;
-			heard.walls = heard.distance <= EngineChorus.REACH ? NoteWorldProbe.walls(level, ear, from) : 0;
-		}
-		if (due(feltAt, now)) {
-			feltAt = now;
-			surroundings = NoteWorldProbe.room(level, ear);
-		}
-	}
-
-	private static boolean due(long lookedAt, long now) {
-		return lookedAt < 0 || now < lookedAt || now - lookedAt >= LOOK_TICKS;
-	}
-
-	/**
-	 * Puts the engine at {@code at}, heard from {@code distance} blocks, in its place in the world: the air and walls its
-	 * note passes through, and the listener's room. An engine no longer in the scene keeps what it last had in its way.
-	 */
-	static void surround(BlockPos at, double distance, EngineNoteMix mix) {
-		mix.setRoom(surroundings);
-		Heard heard = HEARD.get(at);
-		if (heard != null)
-			mix.setAir(NoteSurroundings.cutoff(distance, heard.walls), NoteSurroundings.wallLevel(heard.walls));
 	}
 
 	/** Works the scene out, if nothing has this tick. */
@@ -196,8 +154,6 @@ final class EngineRoomScene {
 		if (room != null)
 			room.end();
 		room = null;
-		surroundings = NoteSurroundings.Room.OUTDOORS;
-		feltAt = -1;
 		ONCE.reset();
 	}
 
@@ -282,7 +238,7 @@ final class EngineRoomScene {
 			// The heard level counts the mufflers, which the note already has in it
 			float level = fading ? 0 : heard.level / Muffling.volume(summary.muffling()) * ceiling * fill * handover;
 			room.mix.set(s, heard.synth, level);
-			room.mix.setAir(s, NoteSurroundings.cutoff(heard.distance, heard.walls), NoteSurroundings.wallLevel(heard.walls));
+			room.mix.setAir(s, NoteAir.cutoff(heard.distance));
 			// An engine on a moving structure is kept far from where it is, so the middle is taken of where they all really are
 			Vec3 from = SableCompat.worldPosition(heard.crank.getLevel(), source(at));
 			double w = Math.max(0.01, heard.level * handover);
@@ -291,7 +247,6 @@ final class EngineRoomScene {
 			cy += w * from.y;
 			cz += w * from.z;
 		}
-		room.mix.setRoom(surroundings);
 		if (weight > 0)
 			room.moveTo(cx / weight, cy / weight, cz / weight);
 	}

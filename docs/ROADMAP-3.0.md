@@ -968,7 +968,8 @@ that is fine for one engine on a test bench has to stay bearable at the tenth en
 - **Nothing harsh on repeat.** The crack and the valvetrain tick are the tiring parts: they fade with distance faster than the boom, and
   the firing-to-firing variation above keeps any one sound from repeating exactly. Idle is quieter than load.
 - **Enclosed engines are muffled.** An engine inside Engine Casing is heard dulled, like the Muffler's effect. Muffling by any wall in
-  the way is added only if a client profile shows it cheap enough.
+  the way is added only if a client profile shows it cheap enough. (2026-11-27: it was built for 2.4 and then removed at
+  the author's word, with the room reflection; both are left to sound mods.)
 - **The player's controls stay as they are:** the four volume settings in `CEClientConfig`, the Muffler and the noise-cancelling
   headphones. No new slider (rule: no new tuning dial unless it replaces one).
 - **Tests:** sixteen identical engines in earshot render no more than 6 dB louder than one; engines past the nearest few join the

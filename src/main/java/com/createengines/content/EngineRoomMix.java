@@ -21,9 +21,8 @@ final class EngineRoomMix implements EngineNotePcm.Renderer {
 	/** What the sound thread last rendered in each slot, and at what gain. */
 	private final EngineNoteSynth[] playing = new EngineNoteSynth[SLOTS];
 	private final float[] gain = new float[SLOTS];
-	/** What lies between each slot's engine and the listener; the listener's room is round them all. */
+	/** The air between each slot's engine and the listener. */
 	private final NoteAir[] airs = new NoteAir[SLOTS];
-	private final NoteEcho echo = new NoteEcho();
 
 	EngineRoomMix() {
 		for (int s = 0; s < SLOTS; s++)
@@ -41,14 +40,9 @@ final class EngineRoomMix implements EngineNotePcm.Renderer {
 		wanted.set(slot, Float.floatToIntBits(Float.isFinite(level) ? Math.clamp(level, 0f, 2f) : 0f));
 	}
 
-	/** What the air and any walls leave of the engine in {@code slot}; on the game thread. */
-	void setAir(int slot, float cutoff, float level) {
-		airs[slot].set(cutoff, level);
-	}
-
-	/** The listener's room; on the game thread. */
-	void setRoom(NoteSurroundings.Room room) {
-		echo.set(room.echo(), room.seconds());
+	/** Where the air over its distance puts the filter for the engine in {@code slot}; on the game thread. */
+	void setAir(int slot, float cutoff) {
+		airs[slot].set(cutoff);
 	}
 
 	/** Whether nothing is in any slot and every slot has faded out. */
@@ -85,7 +79,7 @@ final class EngineRoomMix implements EngineNotePcm.Renderer {
 			gain[s] = g;
 		}
 		for (int i = 0; i < samples; i++)
-			out[offset + i] = (short) Math.round(limit(echo.next(mix[i])) * 30000);
+			out[offset + i] = (short) Math.round(limit(mix[i]) * 30000);
 		for (int i = samples; i < count; i++)
 			out[offset + i] = 0;
 		rendered += samples;

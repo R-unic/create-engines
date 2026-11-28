@@ -62,9 +62,9 @@ import net.neoforged.neoforge.fluids.capability.IFluidHandler.FluidAction;
 /**
  * The sound bench (gradle {@code -PsmokeSound}, run by tools/sound_bench.py, which records the speakers): reference engines
  * one at a time, each heard from the same distance through the same script (start, idle, throttle sweep, blip, load step,
- * stall, restart, a walk away and back), then vanilla and Create sounds from that distance to compare levels with, one
- * engine behind walls and indoors ({@link ShowcaseRunSoundBenchPlaces}) and a room of sixteen. With Create Aeronautics
- * loaded it can instead carry an engine past the listener on a moving structure. Everything that happens is logged with its time, for tools/sound_audit.py. Named like the showcase
+ * stall, restart, a walk away and back), then vanilla and Create sounds from that distance to compare levels with and a
+ * room of sixteen. With Create Aeronautics loaded it can instead carry an engine past the listener on a moving structure
+ * ({@link ShowcaseRunSoundBenchPlaces}). Everything that happens is logged with its time, for tools/sound_audit.py. Named like the showcase
  * so the release jar leaves it out (build.gradle).
  * <p>
  * {@code -PsoundScenes=single,v12} runs only those scenes.

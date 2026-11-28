@@ -3,9 +3,9 @@ package com.createengines.content;
 /**
  * What an engine's own stream plays: its {@link EngineNoteSynth} at a gain applied sample by sample, so a fade, the share
  * the chorus gives it and its casing glide instead of moving in 20 steps a second as a source's volume does, and the
- * whistle and whine of its blowers ({@link BoostWhine}) mixed in at levels of their own. The whole then goes through what
- * lies between it and the listener ({@link NoteAir}) and the listener's room ({@link NoteEcho}). The game thread sets the
- * gains each tick; the sound thread glides to them. Pure Java, so it is tested.
+ * whistle and whine of its blowers ({@link BoostWhine}) mixed in at levels of their own. The whole then goes through the
+ * air between it and the listener ({@link NoteAir}). The game thread sets the gains each tick; the sound thread glides to
+ * them. Pure Java, so it is tested.
  */
 final class EngineNoteMix implements EngineNotePcm.Renderer {
 
@@ -20,7 +20,6 @@ final class EngineNoteMix implements EngineNotePcm.Renderer {
 	private volatile float wanted;
 	private float gain;
 	private final NoteAir air = new NoteAir();
-	private final NoteEcho echo = new NoteEcho();
 
 	/** One blower: what the game thread asks, and where the sound thread has got to. */
 	private static final class Slot {
@@ -43,14 +42,9 @@ final class EngineNoteMix implements EngineNotePcm.Renderer {
 		this.synth = synth;
 	}
 
-	/** What the air and any walls leave of the note; on the game thread. */
-	void setAir(float cutoff, float level) {
-		air.set(cutoff, level);
-	}
-
-	/** The listener's room; on the game thread. */
-	void setRoom(NoteSurroundings.Room room) {
-		echo.set(room.echo(), room.seconds());
+	/** Where the air over the distance puts the filter; on the game thread. */
+	void setAir(float cutoff) {
+		air.set(cutoff);
 	}
 
 	/** The share of the synthesizer to play, 0 to 1; on the game thread. */
@@ -99,9 +93,9 @@ final class EngineNoteMix implements EngineNotePcm.Renderer {
 			if (slot != null)
 				add(slot, out, offset, count);
 		}
-		// With nothing in the way and no room, both hand each sample back as it was
+		// Near by, the air hands each sample back as it was
 		for (int i = offset; i < offset + count; i++)
-			out[i] = (short) Math.clamp(Math.round(echo.next(air.next(out[i]))), Short.MIN_VALUE, Short.MAX_VALUE);
+			out[i] = (short) Math.clamp(Math.round(air.next(out[i])), Short.MIN_VALUE, Short.MAX_VALUE);
 	}
 
 	private void add(Slot slot, short[] out, int offset, int count) {

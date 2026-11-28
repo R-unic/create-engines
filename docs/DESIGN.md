@@ -626,31 +626,21 @@ and regular rattles are what made the first takes sound like a cartoon (`Failure
   - *Pitch.* A one-off strays at most 3% either way from its pitch (`content.effects.Pitches`). Pitches that tell you
     something (the take a catch or stall picks, how near a dry piston is to seizing) are as they were.
   - Tests: `NoteBangsTest`, `NoteBangShapeTest`, `HeldFlashesTest`, `SoundAssetsTest`.
-- **The world around the note (sound plan step 4, 2026-11-26).** It works on what a note's stream and the room voice play,
-  after everything else, so the synthesizer is as it was. Recorded sounds and loops are left to the game. In clear air
-  within 8 blocks and out of doors, the stream is sample for sample what it was.
+- **The air around the note (sound plan step 4, 2026-11-26; walls and rooms taken out 2026-11-27).** It works on what a
+  note's stream and the room voice play, after everything else, so the synthesizer is as it was. Recorded sounds and loops
+  are left to the game. Within 8 blocks the stream is sample for sample what it was.
   - *Air.* A two-pole low-pass (`NoteAir`), from 12 kHz just past 8 blocks down to 700 Hz at the note's 32-block reach,
-    on top of the synthesizer's own dulling with distance. It takes no level of its own.
-  - *Walls.* Once a second for each engine, one line from the camera to where the engine is heard
-    (`NoteSurroundings.walls`). The walls are the blocks' length of it that runs through full blocks, to the nearest whole
-    one, so a one-block wall at a slant is one and a clipped corner none. The last 1.5 blocks at the engine's end and half
-    a block at the listener's don't count. Leaves, anything smaller than a block and unloaded chunks let sound by. One,
-    two and three or more walls put the filter at 1400, 750 and 450 Hz and pass 0.7, 0.55 and 0.45 of the level; the
-    duller of the air's filter and the walls' is used. The change glides over about a quarter of a second. A blower's
-    whine carried in a note is muffled with it.
-  - *Room.* Once a second, 14 rays from the camera, 12 blocks long (`NoteSurroundings.room`). It is a room as far as most
-    of them hit something and so do the five that point up, steeply enough that a pit's walls don't count as its roof.
-    The reflection (`NoteEcho`) is two taps, the second 1.6 times as late and 0.6 as loud, low-passed at 3 kHz, with
-    nothing fed back. The first comes after the rays' mean there-and-back time (8 to 50 ms) at up to 0.3 of the engine's
-    level, and the whole is turned down by what they add, so indoors is no louder. Each stream has its own; a change of
-    delay cross-fades.
+    on top of the synthesizer's own dulling with distance. It takes no level of its own. The change glides over about a
+    quarter of a second.
+  - *Walls and rooms.* The mod does neither. It first counted the blocks in a line to each engine and added a short room
+    reflection indoors; the author had both removed, to leave them to mods made for it, such as Sound Physics Remastered.
+    How an engine's streamed note sounds under that mod has not been heard.
   - *Moving engines.* Nothing of this mod's. Sable already sets a velocity on every sound placed on a moving structure,
-    so the game's audio library shifts its pitch (`MovingSoundInstanceDelegate`); a second shift would double it. A
-    structure's own blocks are not seen as walls. The room voice is now placed by where its engines are in the world, not
-    by where their blocks are kept. None of this has been heard on a moving structure.
-  - *Cost.* Measured by `NoteSurroundingsTest`, which holds the filters under 60 ns a sample and a second's looking (six
-    engines and the room) under a millisecond.
-  - Tests: `NoteSurroundingsTest`.
+    so the game's audio library shifts its pitch (`MovingSoundInstanceDelegate`); a second shift would double it. The room
+    voice is placed by where its engines are in the world, not by where their blocks are kept. None of this has been heard
+    on a moving structure.
+  - *Cost.* `NoteAirTest` holds the filter under 60 ns a sample.
+  - Tests: `NoteAirTest`.
 - **Deep engines (2026-11-26).** The author found no build that rumbled as a V8 should; the nearest was a W24 on very long
   manifolds. A V8 was voiced as eight small cylinders (higher pipes and thumps, a brighter crack), and at idle each
   firing died before the next.

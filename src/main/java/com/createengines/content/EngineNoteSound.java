@@ -107,8 +107,8 @@ public final class EngineNoteSound extends AbstractTickableSoundInstance {
 		// The fade is in the stream, which starts from nothing, so the source's volume does not move
 		volume = LOUDEST * CEClientConfig.engineNoteVolume();
 		Vec3 from = moveToExhaust();
-		// Set before the stream is first read, so a note starting behind a wall starts muffled
-		EngineRoomScene.surround(crank.getBlockPos(), distance(from), mix);
+		// Set before the stream is first read, so a note starting far off starts dull
+		mix.setAir(NoteAir.cutoff(distance(from)));
 	}
 
 	private Vec3 moveToExhaust() {
@@ -376,13 +376,6 @@ public final class EngineNoteSound extends AbstractTickableSoundInstance {
 		return player == null ? Double.POSITIVE_INFINITY : Math.sqrt(player.distanceToSqr(from));
 	}
 
-	/** Where the player hears from, which the camera says, or null with no world to hear in. */
-	static @Nullable Vec3 ear() {
-		Minecraft minecraft = Minecraft.getInstance();
-		return minecraft.player == null ? null : minecraft.gameRenderer.getMainCamera()
-			.getPosition();
-	}
-
 	private static boolean near(CrankshaftBlockEntity crank) {
 		Player player = Minecraft.getInstance().player;
 		return player != null && player.distanceToSqr(crank.getBlockPos()
@@ -411,7 +404,7 @@ public final class EngineNoteSound extends AbstractTickableSoundInstance {
 		Vec3 from = moveToExhaust();
 		double away = distance(from);
 		synth.setDistance((float) (away / EngineChorus.REACH));
-		EngineRoomScene.surround(at, away, mix);
+		mix.setAir(NoteAir.cutoff(away));
 		if (summary == null) {
 			// A broken-up engine has no stall left to play
 			synth.endGesture();

@@ -98,6 +98,9 @@ One engine at 256 RPM, V8, full load, 20 s, with backfires, through its whole st
 
 A blower beside the listener asks for about 0.1 to 0.15; one much nearer than its engine asks for more.
 
+Later the same day the room echo was removed, with wall muffling. Its rows no longer apply; blower whine still clips the
+stream by itself.
+
 ## 3. Audit by part
 
 | Part | State | Choppy or clipping risk |

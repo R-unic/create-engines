@@ -286,6 +286,9 @@ Not released yet.
   flange.
 - New server setting, `balance.heatPerFuel` (1 by default, 0 to 10): scales the heat that burning fuel puts into an engine's
   block, for every fuel, on top of a pack's per-fuel `heat_factor`. At 1 engines heat as before.
+- Sound, **walls and rooms are left to sound mods**: an engine's note is no longer muffled by blocks between you and it, and
+  no longer gets a reflection indoors. Distance still dulls it, and casing and mufflers work as before. Without a mod such
+  as Sound Physics Remastered, an engine behind a wall is now heard as clearly as one in the open.
 - Existing builds run as before: no existing part, number or saved state changed.
 
 ## Changelog for 2.4.0

@@ -1,6 +1,6 @@
 """Runs the sound bench, records what the game plays and audits it (docs/SMOKE.md, "The sound bench").
 
-    /c/Python312/python.exe tools/sound_bench.py [--scenes single,walls,room] [--refs DIR] [--compare RUN] [--no-copy]
+    /c/Python312/python.exe tools/sound_bench.py [--scenes single,v12,room] [--refs DIR] [--compare RUN] [--no-copy]
     /c/Python312/python.exe tools/sound_bench.py --moving     # the moving structure, with Create Aeronautics loaded
 
 1. Copies the project to a private folder beside it (create-engines-soundbench), because running the game from the shared

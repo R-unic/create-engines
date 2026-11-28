@@ -24,9 +24,6 @@ public final class SoundProbe {
 
 		/** A stretch of a stream was made on the sound thread, taking {@code nanos} of the clock. */
 		void rendered(int samples, long nanos);
-
-		/** The game thread looked round the world for walls or a room, taking {@code nanos} of the clock. */
-		void looked(long nanos);
 	}
 
 	/** Volatile: streams are read on the sound thread. */
@@ -73,11 +70,5 @@ public final class SoundProbe {
 		Listener to = listener;
 		if (to != null)
 			to.rendered(samples, nanos);
-	}
-
-	static void looked(long nanos) {
-		Listener to = listener;
-		if (to != null)
-			to.looked(nanos);
 	}
 }

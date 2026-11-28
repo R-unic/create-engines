@@ -13,8 +13,7 @@ that no firing explains; volume or pitch moving in 50 ms stairs; how long after 
 loudness against a furnace, a minecart and a Mechanical Press heard from the same spot; the room of sixteen against one of
 its engines; how alike one firing sounds to the next; how long newly made audio waits in a stream's queue, which is how
 late a change of throttle is heard (worked out from the log, not heard); what making the
-sound costs the sound thread and looking round the world costs the game thread; how walls, a room and a moving structure
-change what is heard; and whether one engine ever plays two notes at once.
+sound costs the sound thread; how a moving structure changes what is heard; and whether one engine ever plays two notes at once.
 
 Lag is measured against a clap the game plays through its own sound, so 0 ms means "as late as any sound the game plays at
 once". It is not the delay to the ear. The audit finds faults; the author's listening is still what signs off.
@@ -35,9 +34,7 @@ NOTE_RATE = 32000
 TICK_HZ = 20
 # An engine is meant to be heard through these phases, all from the listening distance
 # The scenes that move one idling engine's surroundings and nothing else, each phase held against the scene's first
-PLACE_SCENES = {"walls": ("open", "wall1", "wall2", "wall3", "open_again"),
-                "indoors": ("outdoors", "indoors", "outdoors_again"),
-                "moving": ("held", "leave", "pass", "pass_back")}
+PLACE_SCENES = {"moving": ("held", "leave", "pass", "pass_back")}
 RUNNING_PHASES = ("alone", "crowd_early", "crowd_waiting", "crowd_settled", "pace", "stay", "idle", "sweep", "settle", "load_approach", "load_on", "load_off", "restarted", "one", "sixteen",
                   *(phase for phases in PLACE_SCENES.values() for phase in phases))
 # The roadmap's budget for the sound thread, as a share of one core
@@ -271,7 +268,7 @@ def alikeness(mono, onsets):
 
 
 def brightness(mono):
-    """The middle of the sound's spectrum in Hz (the power-weighted mean frequency, above 20 Hz): what a wall or the air
+    """The middle of the sound's spectrum in Hz (the power-weighted mean frequency, above 20 Hz): what the air
     takes the top off. None for silence."""
     if len(mono) < RATE // 2:
         return None
@@ -281,17 +278,15 @@ def brightness(mono):
     return float((frequencies[kept] * power[kept]).sum() / total) if total > 1e-14 else None
 
 
-def cost(renders, looks, seconds):
-    """What a stretch's sound cost, from the log's [(samples, nanos)] of audio made and [nanos] of looking round the world:
-    shares of one core over ``seconds``, and the slowest single piece of each. Clock time, so a thread the machine set
+def cost(renders, seconds):
+    """What a stretch's sound cost, from the log's [(samples, nanos)] of audio made: its share of one core over
+    ``seconds``, and the slowest single piece. Clock time, so a thread the machine set
     aside half way through counts in full."""
     if not renders or seconds <= 0:
         return None
     samples, spent = sum(n for n, _ in renders), sum(ns for _, ns in renders)
     return {"sound_core_share": spent / 1e9 / seconds, "ns_per_sample": spent / max(samples, 1),
-            "worst_read_ms": max(ns for _, ns in renders) / 1e6,
-            "looks": len(looks), "look_core_share": sum(looks) / 1e9 / seconds,
-            "worst_look_ms": max(looks) / 1e6 if looks else None}
+            "worst_read_ms": max(ns for _, ns in renders) / 1e6}
 
 
 def stacked_seconds(levels):
@@ -569,8 +564,7 @@ def analyse(run):
             total["worst_db"] = rounded(max(total["worst_db"], loud))
             total["worst_semitones"] = rounded(max(total["worst_semitones"], pitch), 2)
         entry["level_steps"] = steps
-        spent = cost([(e["n"], e["ns"]) for e in run.between("render", start, end)],
-                     [e["ns"] for e in run.between("look", start, end)], (end - start) / 1000)
+        spent = cost([(e["n"], e["ns"]) for e in run.between("render", start, end)], (end - start) / 1000)
         entry["cost"] = None if spent is None else {k: None if v is None else round(float(v), 5) for k, v in spent.items()}
         entry["notes_stacked_s"] = rounded(stacked_seconds(
             [(e["t"], e["id"]) for e in run.between("level", start, end) if e["voice"] == "note"]))
@@ -661,13 +655,12 @@ def cost_lines(report):
     lines = ["", "## What the sound costs", "",
              f"The sound thread's budget is {100 * CPU_LIMIT_SHARE:.0f}% of one core. Averaged over each whole scene, by the "
              "clock, so time the thread was set aside counts too. The note streams and the room voice only: the game's own "
-             "mixing is not in it. `Looking` is the game thread feeling for walls and rooms.", "",
-             "| Scene | Sound thread | ns a sample | Slowest read ms | Looking | Slowest look ms |", "|---|---|---|---|---|---|"]
+             "mixing is not in it.", "",
+             "| Scene | Sound thread | ns a sample | Slowest read ms |", "|---|---|---|---|"]
     for name, c in spent.items():
         over = " **over**" if c["sound_core_share"] > CPU_LIMIT_SHARE else ""
-        worst = "–" if c["worst_look_ms"] is None else f"{c['worst_look_ms']:.3f}"
         lines.append(f"| {name} | {100 * c['sound_core_share']:.2f}%{over} | {c['ns_per_sample']:.0f} | "
-                     f"{c['worst_read_ms']:.2f} | {100 * c['look_core_share']:.3f}% | {worst} |")
+                     f"{c['worst_read_ms']:.2f} |")
     return lines
 
 
@@ -898,10 +891,10 @@ def self_test():
     assert brightness(dull) < 0.2 * brightness(noise), "less top is less bright"
     assert brightness(np.zeros(RATE)) is None
 
-    spent = cost([(1600, 2_000_000)] * 20, [100_000, 300_000], 1.0)
+    spent = cost([(1600, 2_000_000)] * 20, 1.0)
     assert abs(spent["sound_core_share"] - 0.04) < 1e-9 and spent["ns_per_sample"] == 1250, spent
-    assert spent["worst_look_ms"] == 0.3 and spent["looks"] == 2, spent
-    assert cost([], [], 1.0) is None
+    assert spent["worst_read_ms"] == 2, spent
+    assert cost([], 1.0) is None
 
     random = np.random.default_rng(11)
     fresh = random.standard_normal(12 * RATE) * 0.1

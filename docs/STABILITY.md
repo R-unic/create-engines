@@ -155,7 +155,7 @@ the leak check. The number is kept so that older release records still point som
 ### 2.6 Sound bench (only when the release changes the sound system somewhat significantly)
 
 Decided by the diff since the last tag. It applies when the release changes how sound is made, delivered or mixed: the engine
-note's synthesis, the streams and their threading or timing, the voice budget, the shared room voice, walls, rooms, air or
+note's synthesis, the streams and their threading or timing, the voice budget, the shared room voice, air or
 moving structures, when engine sounds start, follow or stop, or a reworking of many sounds or their levels at once. It does
 not apply to a small, contained change, such as one new or replaced one-shot, one sound's volume, subtitles, or a refactor
 away from the sound code. When in doubt, Claude says what changed and asks the author. If it does not apply, the record
