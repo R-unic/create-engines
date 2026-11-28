@@ -11,8 +11,8 @@ description: Cheap ways to read, look up and edit code in Create Engines. Use be
 shows which methods hold a match. It also takes Markdown (`docs/ROADMAP.md`, `docs/ROADMAP-3.0.md`, `docs/DESIGN.md`) and
 prints headings with ranges. Then use Read with `offset` and `limit`. Read a whole file only when most of it matters.
 
-The costly ones: `EngineController.java`, `EngineScanner.java`, `EngineSimulation.java`, `CylinderModel.java`,
-`EngineGameTests.java`, `ShowcaseRun.java`, `tools/generate_models.py` and the docs above.
+The costly ones: `EngineSimulation.java`, `CylinderModel.java`, `CylinderBlockEntity.java`, `EngineNoteSynth.java`,
+`SmokeAuditGameTests.java` and the docs above.
 
 ## Library code: `tools/ce_lib.py`
 

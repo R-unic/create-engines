@@ -1169,8 +1169,18 @@ reading them (`EngineController.java` was the most-read file).
 reading cost and risk: `EngineScenes`, `EngineGameTests`, `EngineController`, `ShowcaseRun`, `generate_models.py`, then the rest.
 Each split waits until that file's own 2.4 work is committed, runs the full `ce_run.py` gate, and checks that `compat/` did not move.
 
-**Progress.** `ponder/EngineScenes.java` was split into seven scene classes and `SceneHelpers` (339d6a3), and `FileSizeRatchetTest` holds
-it at zero lines. The other files in the cut get a cap in that test as each is split.
+**Progress (2026-11-27).** Every file in the cut is split, and `FileSizeRatchetTest` caps each at its length after the split.
+All are now under 800 lines. Where the result differs from the first design:
+
+- `EngineScenes` became seven scene classes and `SceneHelpers`; the two over 800 lines were then trimmed.
+- `EngineController` has six helpers: those designed, and `EngineAmbient` (intake air, altitude, world water). Its public
+  methods and records stayed, so no caller changed.
+- `EngineScanner` was split after all, into `PortTracer` and `CrankSeeds`.
+- `ShowcaseRun` became `ShowcaseRunBuild`, `Works`, `Rover`, `Camera` and `Hooks`, keeping the prefix that leaves them out of the jar.
+- `VisualSmokeTest` became it, `VisualSmokeTestScenes` and `VisualSmokeTestEffects`.
+- `CEBlocks` gave up only `CEBlockstates` and `CECasingBlocks`; the rest reads well as one list, and its order is the creative tab's.
+- **Not run in a client:** the showcase and visual smoke splits are compiled only.
+- `generate_models.py` is now its `main()` over the `tools/models/` package. Its output was compared before and after: identical.
 
 ### More refactoring found (survey, 2026-11-27)
 
