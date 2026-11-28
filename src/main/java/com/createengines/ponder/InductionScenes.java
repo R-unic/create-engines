@@ -4,6 +4,7 @@ import static com.createengines.ponder.SceneHelpers.*;
 
 import com.createengines.content.turbo.TurbochargerBlockEntity;
 import com.createengines.engine.TurboStatus;
+
 import com.simibubi.create.AllBlocks;
 import com.simibubi.create.content.processing.burner.BlazeBurnerBlock;
 import com.simibubi.create.content.processing.burner.BlazeBurnerBlock.HeatLevel;
@@ -19,7 +20,7 @@ import net.minecraft.core.Direction;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 
-/** Ponder scenes for forced induction, heat and the fuels. Text here is the English source; datagen writes it to the lang file. */
+/** Ponder scenes for forced induction and heat. Text here is the English source; datagen writes it to the lang file. */
 public final class InductionScenes {
 
 	private InductionScenes() {
@@ -691,120 +692,6 @@ public final class InductionScenes {
 			.text("A fluid tank in its place is a boiler heated the same way: kindled is one level of boiler and seething is two. Put Create steam engines on it, and their power adds to the engine's: a combined cycle, from heat that was going up the chimney.")
 			.pointAt(util.vector()
 				.topOf(2, 4, 4))
-			.placeNearTarget();
-		scene.idle(160);
-		scene.markAsFinished();
-	}
-
-	public static void fuels(SceneBuilder builder, SceneBuildingUtil util) {
-		CreateSceneBuilder scene = new CreateSceneBuilder(builder);
-		scene.title("fuels", "Making Fuel in a Basin");
-		scene.configureBasePlate(0, 0, 7);
-		scene.world()
-			.showSection(util.select()
-				.layer(0), Direction.UP);
-
-		Selection pressed = util.select()
-			.fromTo(1, 1, 3, 2, 4, 3);
-		Selection heated = util.select()
-			.fromTo(3, 1, 3, 4, 4, 3);
-		Selection superheated = util.select()
-			.fromTo(5, 1, 3, 5, 4, 3);
-		Selection drive = util.select()
-			.fromTo(1, 4, 3, 5, 4, 3);
-
-		scene.world()
-			.showSection(pressed, Direction.DOWN);
-		scene.world()
-			.setKineticSpeed(drive, 32);
-		scene.idle(15);
-		scene.overlay()
-			.showText(130)
-			.attachKeyFrame()
-			.text("A Basin is the simple way to make fuel; a Refining Column makes the same fuels faster and gives more from the feed. Seeds or saplings pressed in a Basin make Plant Oil, six seeds to 100 mB or two saplings to 50 mB. Sugar cane, beetroot or potatoes pressed with water make Sugar Mash.")
-			.pointAt(util.vector()
-				.topOf(1, 2, 3))
-			.placeNearTarget();
-		scene.idle(140);
-
-		scene.world()
-			.showSection(heated, Direction.DOWN);
-		scene.idle(15);
-		scene.overlay()
-			.showText(140)
-			.attachKeyFrame()
-			.colored(PonderPalette.GREEN)
-			.text("Over a blaze burner, or an Exhaust Heat Exchanger, a heated Basin cooks Plant Oil with coal into Diesel, and Sugar Mash with an apple or any mushroom into Ethanol.")
-			.pointAt(util.vector()
-				.topOf(3, 2, 3))
-			.placeNearTarget();
-		scene.idle(150);
-
-		scene.overlay()
-			.showText(140)
-			.text("Plant Oil, Ethanol and bone meal make more Diesel, with Glycerin on the side. Plant Oil with Glycerin makes a better Engine Oil.")
-			.pointAt(util.vector()
-				.topOf(3, 2, 3))
-			.placeNearTarget();
-		scene.idle(150);
-
-		scene.world()
-			.showSection(superheated, Direction.DOWN);
-		scene.idle(15);
-		scene.overlay()
-			.showText(120)
-			.attachKeyFrame()
-			.colored(PonderPalette.RED)
-			.text("Heated too, Diesel with blaze powder cracks into Gasoline, at no more than the cost of making Diesel.")
-			.pointAt(util.vector()
-				.topOf(5, 2, 3))
-			.placeNearTarget();
-		scene.idle(130);
-
-		scene.overlay()
-			.showText(150)
-			.colored(PonderPalette.RED)
-			.text("Superheated, as over a big engine's Exhaust Heat Exchanger, Sugar Mash with an apple or mushroom and a sugar distils 100 mB of Ethanol instead of 50. Create runs the recipe that asks for the most items, so the extra sugar is what selects it.")
-			.pointAt(util.vector()
-				.topOf(5, 2, 3))
-			.placeNearTarget();
-		scene.idle(160);
-
-		scene.overlay()
-			.showText(150)
-			.colored(PonderPalette.BLUE)
-			.text("Diesel burns by compression alone. Gasoline and Ethanol need a spark plug, or a diesel pilot shot. Ethanol carries less energy than gasoline, but a hot, boosted charge will not light it early.")
-			.pointAt(util.vector()
-				.topOf(5, 2, 3))
-			.placeNearTarget();
-		scene.idle(160);
-
-		scene.overlay()
-			.showText(150)
-			.attachKeyFrame()
-			.colored(PonderPalette.GREEN)
-			.text("Water with Glycerin makes Engine Coolant. Used Oil from an oil exchange heated with charcoal makes Engine Oil again, 300 mB instead of 250 if superheated with a clay ball as well, or coked on its own it makes charcoal, which goes back into Diesel. Nothing is wasted.")
-			.pointAt(util.vector()
-				.topOf(3, 2, 3))
-			.placeNearTarget();
-		scene.idle(160);
-
-		scene.overlay()
-			.showText(150)
-			.colored(PonderPalette.BLUE)
-			.text("Heated, Diesel with glowstone dust makes Kerosene instead of Gasoline. A refining column goes the way of the catalyst fed to its Reboiler. Kerosene needs a spark plug, carries more energy than Diesel and a little less than Gasoline, and holds out against a hot, boosted charge better than Gasoline does.")
-			.pointAt(util.vector()
-				.topOf(3, 2, 3))
-			.placeNearTarget();
-		scene.idle(160);
-
-		scene.overlay()
-			.showText(150)
-			.attachKeyFrame()
-			.colored(PonderPalette.BLUE)
-			.text("Superheated, logs and water make Methanol: 60 mB to the log in a basin, a little more in a refining column with a log fed to a Reboiler. It needs a spark plug and carries the least energy of any fuel, so an injector must give it a lot more flow. In return it cools the charge most, leaves no soot, and a hot, boosted charge will hardly light it early, even past what Ethanol takes.")
-			.pointAt(util.vector()
-				.topOf(3, 2, 3))
 			.placeNearTarget();
 		scene.idle(160);
 		scene.markAsFinished();

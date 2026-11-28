@@ -24,7 +24,7 @@ public class CEPonderPlugin implements PonderPlugin {
 		scenes.forComponents(CEBlocks.CRANKSHAFT, CEBlocks.CRANK_THROW)
 			.addStoryBoard("crankshaft", CrankScenes::crankshaft);
 		scenes.forComponents(CEBlocks.CRANKSHAFT, CEBlocks.CRANK_THROW)
-			.addStoryBoard("coupled_cranks", CrankScenes::coupledCranks);
+			.addStoryBoard("coupled_cranks", DrivelineScenes::coupledCranks);
 		// The injector's own page is about metering it; it is registered ahead of the cylinder scene so it comes first
 		scenes.forComponents(CEItems.FUEL_INJECTOR)
 			.addStoryBoard("mixture", AirFuelScenes::mixture);
@@ -121,7 +121,7 @@ public class CEPonderPlugin implements PonderPlugin {
 		scenes.forComponents(CEBlocks.HEAT_EXCHANGER)
 			.addStoryBoard("heat_exchanger", InductionScenes::heatExchanger);
 		scenes.forComponents(CEBlocks.HEAT_EXCHANGER)
-			.addStoryBoard("fuels", InductionScenes::fuels);
+			.addStoryBoard("fuels", AirFuelScenes::fuels);
 		scenes.forComponents(CEBlocks.REBOILER, CEBlocks.COLUMN_SECTION, CEBlocks.CONDENSER, CEBlocks.FLARE_STACK)
 			.addStoryBoard("refinery", RefineryScenes::refinery);
 		scenes.forComponents(CEBlocks.REBOILER, CEBlocks.COLUMN_SECTION, CEBlocks.CONDENSER)
@@ -137,10 +137,10 @@ public class CEPonderPlugin implements PonderPlugin {
 			helper.forComponents(CreateEngines.asResource(fuel + "_bucket"))
 				.addStoryBoard("rain_cap", FuelScenes::choosingAFuel)
 				.addStoryBoard("refinery", RefineryScenes::refinery)
-				.addStoryBoard("fuels", InductionScenes::fuels);
+				.addStoryBoard("fuels", AirFuelScenes::fuels);
 		// The rest are ingredients and by-products, not fuels to choose between: only how they are made.
 		for (String fuel : new String[] {"sugar_mash", "glycerin", "used_oil", "coolant"})
 			helper.forComponents(CreateEngines.asResource(fuel + "_bucket"))
-				.addStoryBoard("fuels", InductionScenes::fuels);
+				.addStoryBoard("fuels", AirFuelScenes::fuels);
 	}
 }

@@ -5,6 +5,7 @@ import static com.createengines.ponder.SceneHelpers.*;
 import com.createengines.content.cylinder.CylinderBlock;
 import com.createengines.content.head.CylinderHeadBlock;
 import com.createengines.registry.CEItems;
+
 import com.simibubi.create.foundation.ponder.CreateSceneBuilder;
 
 import net.createmod.catnip.math.Pointing;
@@ -685,124 +686,6 @@ public final class CrankScenes {
 				.topOf(3, 4, 3))
 			.placeNearTarget();
 		scene.idle(160);
-		scene.markAsFinished();
-	}
-
-	public static void coupledCranks(SceneBuilder builder, SceneBuildingUtil util) {
-		CreateSceneBuilder scene = new CreateSceneBuilder(builder);
-		scene.title("coupled_cranks", "Coupled Crankshafts");
-		scene.configureBasePlate(0, 0, 6);
-		scene.world()
-			.showSection(util.select()
-				.layer(0), Direction.UP);
-
-		Selection crankA = util.select()
-			.fromTo(1, 1, 2, 3, 1, 2);
-		Selection crankB = util.select()
-			.fromTo(1, 1, 3, 4, 1, 3);
-		Selection engineA = util.select()
-			.fromTo(2, 2, 2, 2, 3, 2)
-			.add(util.select()
-				.position(2, 3, 1))
-			.add(util.select()
-				.position(1, 3, 2));
-		Selection engineB = util.select()
-			.fromTo(3, 2, 3, 3, 3, 3)
-			.add(util.select()
-				.position(3, 3, 4))
-			.add(util.select()
-				.position(4, 3, 3));
-		Selection camA = util.select()
-			.fromTo(1, 4, 2, 3, 4, 2);
-		Selection camB = util.select()
-			.fromTo(2, 4, 3, 4, 4, 3);
-		Selection gears = util.select()
-			.fromTo(0, 1, 2, 0, 1, 3);
-
-		setThrow(scene, util.select()
-			.position(2, 1, 2), 0);
-		setThrow(scene, util.select()
-			.position(3, 1, 3), THROW_HALF_TURN);
-		setLobe(scene, util.select()
-			.position(2, 4, 2), LOBE_FOR_UPRIGHT_CYLINDER);
-		setLobe(scene, util.select()
-			.position(3, 4, 3), lobeFor(THROW_HALF_TURN, Direction.UP, true));
-
-		scene.world()
-			.showSection(crankA, Direction.DOWN);
-		scene.world()
-			.showSection(engineA, Direction.DOWN);
-		scene.world()
-			.showSection(camA, Direction.DOWN);
-		scene.idle(10);
-		scene.world()
-			.showSection(crankB, Direction.DOWN);
-		scene.world()
-			.showSection(engineB, Direction.DOWN);
-		scene.world()
-			.showSection(camB, Direction.DOWN);
-		scene.idle(15);
-
-		scene.overlay()
-			.showText(110)
-			.attachKeyFrame()
-			.colored(PonderPalette.RED)
-			.text("A crankshaft is an engine. A second line of crank blocks beside it is a second engine, however close: each has its own speed and its own firing.")
-			.pointAt(util.vector()
-				.topOf(3, 1, 3))
-			.placeNearTarget();
-		scene.idle(120);
-
-		scene.world()
-			.showSection(gears, Direction.EAST);
-		scene.idle(10);
-		scene.overlay()
-			.showText(120)
-			.attachKeyFrame()
-			.colored(PonderPalette.GREEN)
-			.text("Gear them together one to one and they become one engine, sharing a single set of revs. Any Create gearing does it: cogwheels, chain drives, gearboxes, belts.")
-			.pointAt(util.vector()
-				.centerOf(0, 1, 2))
-			.placeNearTarget();
-		scene.world()
-			.setKineticSpeed(crankA, 32);
-		scene.world()
-			.setKineticSpeed(gears, 32);
-		scene.world()
-			.setKineticSpeed(crankB, -32);
-		scene.world()
-			.setKineticSpeed(camA, 16);
-		scene.world()
-			.setKineticSpeed(camB, -16);
-		scene.idle(130);
-
-		scene.overlay()
-			.showText(120)
-			.attachKeyFrame()
-			.colored(PonderPalette.BLUE)
-			.text("Two meshed cogwheels turn the second crank the other way; the engine allows for it. Each throw's angle still sets its own piston's place in the cycle, and the Timing Tool sets the throws and lobes on every line at once.")
-			.pointAt(util.vector()
-				.topOf(3, 1, 3))
-			.placeNearTarget();
-		scene.idle(130);
-
-		scene.overlay()
-			.showText(120)
-			.attachKeyFrame()
-			.text("Fuel, oil, batteries, sensors and every cylinder on either crank belong to the one engine. It is rated and fired as a whole, so wide W, H and X layouts, or more cylinders than one crank can carry, are just more lines.")
-			.pointAt(util.vector()
-				.topOf(2, 3, 2))
-			.placeNearTarget();
-		scene.idle(130);
-
-		scene.overlay()
-			.showText(110)
-			.colored(PonderPalette.WHITE)
-			.text("Only an exact one-to-one ratio couples. Cranks geared two to one, say, stay separate engines feeding one network, and the faster one wins. Goggles show how many crankshafts an engine has.")
-			.pointAt(util.vector()
-				.centerOf(0, 1, 3))
-			.placeNearTarget();
-		scene.idle(120);
 		scene.markAsFinished();
 	}
 }
